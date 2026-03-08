@@ -1,0 +1,30 @@
+<div class="mt-8 border-t pt-6">
+    <div class="flex justify-between items-end mb-4">
+        <h2 class="text-xl font-bold">{{ 'productDetail.productDetails' | translate }}</h2>
+        <div class="flex gap-4 text-sm text-subtle">
+            <button class="hover:text-black flex items-center gap-1"><svg class="w-4 h-4" fill="none"
+                    stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z">
+                    </path>
+                </svg>{{ 'productDetail.save' | translate }}</button>
+            <button class="hover:text-black flex items-center gap-1">{{ 'productDetail.reportItem' | translate
+                }}</button>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-y-6 gap-x-4 mb-4">
+        @for (attr of attributes(); track attr.nombre) {
+        <div class="text-center">
+            <p class="text-xs text-subtle">{{ attr.nombre }}</p>
+            <p class="text-sm font-medium text-on mt-1">{{ attr.valor }}</p>
+        </div>
+        }
+    </div>
+    <button class="text-sm text-subtle hover:text-on flex items-center gap-1 font-medium mt-2">
+        {{ 'productDetail.viewAllDetails' | translate }} <svg class="w-4 h-4" fill="none" stroke="currentColor"
+            viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+        </svg>
+    </button>
+</div>

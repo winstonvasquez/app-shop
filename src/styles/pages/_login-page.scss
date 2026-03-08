@@ -1,0 +1,76 @@
+.login-layout {
+    background-color: var(--color-background);
+
+    .bg-pattern {
+        background-color: var(--color-surface);
+        background-image: radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--color-primary) 5%, transparent), transparent);
+
+        &::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image:
+                radial-gradient(var(--color-border) 1px, transparent 1px);
+            background-size: 32px 32px;
+            opacity: 0.15;
+            mask-image: linear-gradient(to bottom, black, transparent);
+        }
+    }
+
+    .glass-panel {
+        background: color-mix(in srgb, var(--color-surface-raised) 60%, transparent);
+        backdrop-filter: blur(12px);
+        border: 1px solid color-mix(in srgb, var(--color-white) 5%, transparent);
+        box-shadow:
+            0 25px 50px -12px rgba(0, 0, 0, 0.5),
+            inset 0 1px 1px color-mix(in srgb, var(--color-white) 10%, transparent);
+    }
+
+    .form-container {
+        animation: slide-up 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .btn-primary-gradient {
+        background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
+        border: 1px solid color-mix(in srgb, var(--color-white) 10%, transparent);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+        &:hover:not(:disabled) {
+            transform: translateY(-2px);
+            filter: brightness(1.1);
+            box-shadow:
+                0 20px 25px -5px color-mix(in srgb, var(--color-primary) 30%, transparent),
+                0 10px 10px -5px color-mix(in srgb, var(--color-primary) 20%, transparent);
+        }
+
+        &:active:not(:disabled) {
+            transform: translateY(0);
+        }
+    }
+}
+
+@keyframes slide-up {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Custom spacing utility for input fields if needed */
+.py-4\.5 {
+    padding-top: 1.125rem;
+    padding-bottom: 1.125rem;
+}
+
+.pl-12 {
+    padding-left: 3rem;
+}
+
+.pr-4 {
+    padding-right: 1rem;
+}

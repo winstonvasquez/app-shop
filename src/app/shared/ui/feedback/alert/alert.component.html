@@ -1,0 +1,22 @@
+<div [class]="'alert alert-' + type()">
+    @if (icon()) {
+        <span class="alert-icon">{{ getIcon() }}</span>
+    }
+    
+    <div class="alert-content">
+        @if (title()) {
+            <h4 class="alert-title">{{ title() }}</h4>
+        }
+        <p class="alert-message">{{ message() }}</p>
+    </div>
+    
+    @if (dismissible()) {
+        <button 
+            type="button"
+            class="alert-close"
+            (click)="onDismiss()"
+            aria-label="Cerrar">
+            ✕
+        </button>
+    }
+</div>

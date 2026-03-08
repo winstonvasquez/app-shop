@@ -1,0 +1,26 @@
+<div class="form-field">
+    <label [for]="id()" class="form-label">
+        {{ label() }}
+        @if (required()) {
+            <span class="required-indicator">*</span>
+        }
+    </label>
+    
+    <input
+        [id]="id()"
+        [type]="type()"
+        [formControl]="control()"
+        [placeholder]="placeholder()"
+        [disabled]="disabled()"
+        [class.error]="hasError()"
+        class="form-input"
+    />
+    
+    @if (hint() && !hasError()) {
+        <p class="form-hint">{{ hint() }}</p>
+    }
+    
+    @if (hasError()) {
+        <p class="form-error">{{ errorMessage() }}</p>
+    }
+</div>

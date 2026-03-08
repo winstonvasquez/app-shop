@@ -1,0 +1,109 @@
+<!-- ════════════════════════════════════════════
+     PROMO BANNER / HERO SLIDER
+     — Not full width (margins via parent padding)
+     — Rounded corners
+     — Reduced height (≈ 30% shorter than typical)
+     — Content: left-aligned badge/title/cta
+     ════════════════════════════════════════════ -->
+<section class="w-full relative overflow-hidden rounded-[24px] group h-[340px] bg-background">
+
+    <!-- ── Carousel Track ── -->
+    <div class="absolute inset-0 flex transition-transform duration-700 ease-out"
+        [style.transform]="'translateX(' + (-currentSlide() * 100) + '%)'">
+
+        @for (banner of banners(); track banner.id) {
+        <div class="min-w-full h-full relative flex-shrink-0">
+
+            <!-- Background image — right side, dramatic crop -->
+            <img [src]="banner.imageUrl" [alt]="banner.title"
+                class="absolute inset-0 w-full h-full object-cover object-[60%_center] scale-[1.04]">
+
+            <!-- Left darkness gradient — strong fade for text readability -->
+            <div class="absolute inset-0 z-[1] bg-gradient-to-r from-background via-background/80 to-transparent">
+            </div>
+
+            <!-- Bottom vignette -->
+            <div class="absolute bottom-0 left-0 right-0 h-32 z-[1] bg-gradient-to-t from-background/60 to-transparent">
+            </div>
+
+            <!-- Subtle red glow — top-left corner -->
+            <div class="absolute -top-16 -left-16 w-64 h-64 rounded-full pointer-events-none z-[1] opacity-20"
+                style="background: radial-gradient(circle, var(--color-primary) 0%, transparent 70%);">
+            </div>
+
+            <!-- ── Text content ── -->
+            <div class="absolute inset-0 flex flex-col justify-center z-10 pl-[clamp(32px,6%,80px)] pr-[45%]">
+
+                <!-- Badge -->
+                <div
+                    class="inline-flex items-center gap-1.5 self-start mb-4 px-3 py-1.5 rounded-lg text-white text-[10px] font-extrabold uppercase tracking-[0.18em] bg-primary shadow-lg shadow-primary/20">
+                    <svg class="w-2.5 h-2.5 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+                    </svg>
+                    <span>OFERTA ESPECIAL</span>
+                </div>
+
+                <!-- Title -->
+                <h2
+                    class="text-white font-black leading-[1] tracking-tight mb-2.5 text-[clamp(2.2rem,4vw,3.5rem)] drop-shadow-2xl">
+                    {{ banner.title }}
+                </h2>
+
+                <!-- Subtitle -->
+                @if (banner.subtitle) {
+                <p class="font-medium leading-relaxed mb-6 text-[0.9rem] text-white/50 max-w-[340px]">
+                    {{ banner.subtitle }}
+                </p>
+                }
+
+                <!-- CTA button -->
+                @if (banner.ctaText) {
+                <div>
+                    <button
+                        class="btn-primary px-8 py-3 rounded-xl font-bold text-[14px] flex items-center gap-2 group/cta shadow-xl shadow-primary/10">
+                        <span>{{ banner.ctaText | translate }}</span>
+                        <svg class="w-4 h-4 transition-transform duration-300 group-hover/cta:translate-x-1" fill="none"
+                            viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                                d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                        </svg>
+                    </button>
+                </div>
+                }
+            </div>
+        </div>
+        }
+    </div>
+
+    <!-- ── Navigation Controls ── -->
+    <div class="absolute inset-y-0 left-4 right-4 flex items-center justify-between pointer-events-none z-20">
+        <button (click)="previousSlide()"
+            class="pointer-events-auto w-10 h-10 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 focus:outline-none hover:scale-110 active:scale-95 bg-white/10 backdrop-blur-md border border-white/10"
+            aria-label="Anterior">
+            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7" />
+            </svg>
+        </button>
+
+        <button (click)="nextSlide()"
+            class="pointer-events-auto w-10 h-10 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 focus:outline-none hover:scale-110 active:scale-95 bg-white/10 backdrop-blur-md border border-white/10"
+            aria-label="Siguiente">
+            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7" />
+            </svg>
+        </button>
+    </div>
+
+    <!-- ── Dots ── -->
+    @if (banners().length > 1) {
+    <div class="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 z-20">
+        @for (banner of banners(); track banner.id; let i = $index) {
+        <button (click)="goToSlide(i)" class="h-1 rounded-full transition-all duration-300 focus:outline-none"
+            [class.w-8]="currentSlide() === i" [class.w-2]="currentSlide() !== i"
+            [class.bg-white]="currentSlide() === i" [class.bg-white/20]="currentSlide() !== i"
+            [attr.aria-label]="'Slide ' + (i + 1)">
+        </button>
+        }
+    </div>
+    }
+</section>

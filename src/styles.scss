@@ -1,0 +1,36 @@
+/* ============================================
+ * app-shop 7-1 SCSS Architecture
+ * ============================================ */
+
+/* Load Tailwind directives first for @apply support in partials */
+@use 'styles/base/tailwind';
+
+/* 1. Abstracts */
+@use 'styles/abstracts/variables';
+
+/* 2. Vendors */
+@use 'styles/vendors/admin-utilities';
+@use 'styles/vendors/utilities';
+
+/* 3. Base */
+@use 'styles/base/reset';
+@use 'styles/base/typography';
+
+/* 4. Layout */
+@use 'styles/layout/layout';
+
+/* 5. Themes */
+@use 'styles/themes/default';
+
+/* 6. Components */
+@use 'styles/components/ui';
+@use 'styles/components/alert';
+@use 'styles/components/data-table';
+@use 'styles/components/form-field';
+@use 'styles/components/language-selector';
+@use 'styles/components/loading-spinner';
+@use 'styles/components/modal';
+@use 'styles/components/page-header';
+
+/* 7. Pages */
+@use 'styles/pages/pos-page';

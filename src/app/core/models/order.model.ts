@@ -1,0 +1,50 @@
+export interface OrderResponse {
+    id: number;
+    usuarioId: number;
+    userId: number; // Alias para compatibilidad
+    total: number;
+    estado: string;
+    fechaCreacion?: string;
+    fechaActualizacion?: string;
+    fechaPedido: string; // Fecha del pedido
+    detalles?: OrderDetail[];
+    direccionEnvio?: DireccionEnvio;
+}
+
+export interface OrderDetail {
+    id: number;
+    productoId: number;
+    productoNombre: string; // Nombre del producto
+    varianteNombre?: string; // Nombre de la variante
+    sku: string; // SKU del producto
+    cantidad: number;
+    precioUnitario: number;
+    subtotal: number;
+}
+
+export interface DireccionEnvio {
+    direccion: string;
+    ciudad: string;
+    codigoPostal?: string;
+    pais?: string;
+    region?: string;
+    nombreDestinatario?: string;
+    telefono?: string;
+}
+
+export interface OrderRequest {
+    usuarioId: number;
+    detalles: OrderDetailRequest[];
+    direccionEnvio: DireccionEnvio;
+    metodoPago: string;
+}
+
+export interface OrderDetailRequest {
+    productoId: number;
+    cantidad: number;
+}
+
+export interface OrderStatusUpdate {
+    estado: string;
+    observaciones?: string;
+}

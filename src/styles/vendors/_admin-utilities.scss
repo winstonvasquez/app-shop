@@ -1,0 +1,427 @@
+/* Admin Component Utilities — Dark-first, semantic tokens */
+/* Uses --color-surface / --color-border / --color-text-* for automatic theme adaptation */
+
+/* ============================================
+   BUTTON VARIANTS
+   ============================================ */
+
+.btn {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 font-medium rounded-xl
+           transition-all duration-200 focus-visible:ring-2 focus-visible:ring-offset-2
+           cursor-pointer border-0;
+    ring-offset-color: var(--color-surface);
+}
+
+.btn-primary {
+    @apply focus-visible:ring-[var(--color-primary)] hover:brightness-110;
+    background: var(--color-primary);
+    color: white;
+}
+
+.btn-secondary {
+    @apply focus-visible:ring-gray-500;
+    background: var(--color-surface-raised);
+    color: var(--color-text-primary);
+    border: 1px solid var(--color-border);
+}
+
+.btn-secondary:hover {
+    filter: brightness(1.15);
+}
+
+.btn-outline {
+    @apply focus-visible:ring-gray-500;
+    border: 1px solid var(--color-border);
+    background: transparent;
+    color: var(--color-text-secondary);
+}
+
+.btn-outline:hover {
+    background: var(--color-surface-raised);
+    color: var(--color-text-primary);
+}
+
+.btn-danger {
+    @apply bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-500;
+}
+
+.btn-sm {
+    @apply px-3 py-1.5 text-sm rounded-lg;
+}
+
+.btn-lg {
+    @apply px-6 py-3 text-base;
+}
+
+/* Icon-only button */
+.btn-icon {
+    @apply inline-flex items-center justify-center w-8 h-8 rounded-lg
+           transition-all duration-200 cursor-pointer border-0;
+    background: transparent;
+    color: var(--color-text-secondary);
+}
+
+.btn-icon:hover {
+    background: var(--color-surface-raised);
+    color: var(--color-text-primary);
+}
+
+.btn-icon-edit:hover {
+    color: var(--color-accent);
+    background: color-mix(in oklch, var(--color-accent) 12%, var(--color-surface));
+}
+
+.btn-icon-delete:hover {
+    color: var(--color-error);
+    background: color-mix(in oklch, var(--color-error) 12%, var(--color-surface));
+}
+
+/* ============================================
+   CARD PATTERNS
+   ============================================ */
+
+.card {
+    @apply rounded-xl;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    box-shadow: var(--shadow-sm);
+}
+
+.card-header {
+    @apply px-6 py-4 flex items-center justify-between;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.card-title {
+    @apply text-base font-semibold;
+    color: var(--color-text-primary);
+}
+
+.card-action {
+    @apply text-sm font-medium hover:underline;
+    color: var(--color-primary);
+}
+
+.card-body {
+    @apply p-6;
+}
+
+.card-footer {
+    @apply px-6 py-4 rounded-b-xl;
+    border-top: 1px solid var(--color-border);
+    background: var(--color-surface-raised);
+}
+
+/* ============================================
+   FORM PATTERNS
+   ============================================ */
+
+.input-field {
+    @apply w-full px-4 py-2.5 rounded-lg text-sm
+           focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent
+           transition-all duration-200;
+    border: 1px solid var(--color-border);
+    background: var(--color-surface-raised);
+    color: var(--color-text-primary);
+}
+
+.input-field::placeholder {
+    color: var(--color-text-muted);
+}
+
+.input-field-error {
+    border-color: var(--color-error);
+}
+
+.input-field-error:focus {
+    --tw-ring-color: var(--color-error);
+}
+
+.input-label {
+    @apply block text-sm font-medium mb-1.5;
+    color: var(--color-text-secondary);
+}
+
+.input-error-message {
+    @apply text-xs mt-1;
+    color: var(--color-error);
+}
+
+.input-hint {
+    @apply text-xs mt-1;
+    color: var(--color-text-muted);
+}
+
+/* ============================================
+   BADGE PATTERNS
+   ============================================ */
+
+.badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold;
+}
+
+.badge-success {
+    background: color-mix(in oklch, var(--color-success) 18%, var(--color-surface));
+    color: var(--color-success);
+}
+
+.badge-warning {
+    background: color-mix(in oklch, var(--color-warning) 18%, var(--color-surface));
+    color: var(--color-warning);
+}
+
+.badge-error {
+    background: color-mix(in oklch, var(--color-error) 18%, var(--color-surface));
+    color: var(--color-error);
+}
+
+.badge-neutral {
+    background: var(--color-surface-raised);
+    color: var(--color-text-secondary);
+}
+
+.badge-accent {
+    background: color-mix(in oklch, var(--color-accent) 18%, var(--color-surface));
+    color: var(--color-accent);
+}
+
+/* ============================================
+   TABLE PATTERNS
+   ============================================ */
+
+.table {
+    @apply w-full border-collapse;
+}
+
+.table-header {
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-surface-raised);
+}
+
+.table-header-cell {
+    @apply px-6 py-3 text-left text-xs font-medium uppercase tracking-wider;
+    color: var(--color-text-muted);
+}
+
+.table-row {
+    border-bottom: 1px solid var(--color-border);
+    transition: background-color 150ms;
+}
+
+.table-row:hover {
+    background: var(--color-surface-raised);
+}
+
+.table-cell {
+    @apply px-6 py-4 text-sm;
+    color: var(--color-text-primary);
+}
+
+/* ============================================
+   ALERT PATTERNS
+   ============================================ */
+
+.alert {
+    @apply flex items-center gap-3 p-4 rounded-lg text-sm;
+}
+
+.alert-success {
+    background: color-mix(in oklch, var(--color-success) 12%, var(--color-surface));
+    color: var(--color-success);
+    border: 1px solid color-mix(in oklch, var(--color-success) 30%, var(--color-border));
+}
+
+.alert-warning {
+    background: color-mix(in oklch, var(--color-warning) 12%, var(--color-surface));
+    color: var(--color-warning);
+    border: 1px solid color-mix(in oklch, var(--color-warning) 30%, var(--color-border));
+}
+
+.alert-error {
+    background: color-mix(in oklch, var(--color-error) 12%, var(--color-surface));
+    color: var(--color-error);
+    border: 1px solid color-mix(in oklch, var(--color-error) 30%, var(--color-border));
+}
+
+.alert-info {
+    background: var(--color-surface-raised);
+    color: var(--color-text-secondary);
+    border: 1px solid var(--color-border);
+}
+
+/* ============================================
+   MODAL PATTERNS
+   ============================================ */
+
+.modal-overlay {
+    @apply fixed inset-0 z-50 flex items-center justify-center p-4;
+    background: rgb(0 0 0 / 0.75);
+}
+
+.modal-content {
+    @apply rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+}
+
+.modal-header {
+    @apply px-6 py-4 flex items-center justify-between;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.modal-title {
+    @apply text-lg font-semibold;
+    color: var(--color-text-primary);
+}
+
+.modal-close-btn {
+    @apply w-8 h-8 flex items-center justify-center rounded-lg
+           transition-all duration-200 cursor-pointer border-0;
+    background: transparent;
+    color: var(--color-text-muted);
+}
+
+.modal-close-btn:hover {
+    background: var(--color-surface-raised);
+    color: var(--color-text-primary);
+}
+
+.modal-body {
+    @apply p-6;
+}
+
+.modal-footer {
+    @apply px-6 py-4 flex items-center justify-end gap-3 rounded-b-xl;
+    border-top: 1px solid var(--color-border);
+    background: var(--color-surface-raised);
+}
+
+/* ============================================
+   LOADING PATTERNS
+   ============================================ */
+
+.loading-container {
+    @apply flex flex-col items-center justify-center py-16;
+    color: var(--color-text-muted);
+}
+
+.spinner {
+    @apply w-10 h-10 border-[3px] rounded-full animate-spin mb-4;
+    border-color: var(--color-border);
+    border-top-color: var(--color-primary);
+}
+
+.spinner-sm {
+    @apply w-4 h-4 border-2 rounded-full animate-spin;
+    border-color: rgba(255, 255, 255, 0.25);
+    border-top-color: white;
+}
+
+/* Empty state */
+.empty-state {
+    @apply flex flex-col items-center justify-center py-16 text-center;
+    color: var(--color-text-muted);
+}
+
+.empty-state-icon {
+    @apply w-16 h-16 mb-4;
+    color: var(--color-border);
+}
+
+.empty-state-title {
+    @apply text-lg font-semibold mb-2;
+    color: var(--color-text-secondary);
+}
+
+.empty-state-desc {
+    @apply text-sm mb-6;
+    color: var(--color-text-muted);
+}
+
+/* ============================================
+   PAGE LAYOUT PATTERNS
+   ============================================ */
+
+.page-container {
+    @apply p-6;
+}
+
+.page-header {
+    @apply flex justify-between items-start mb-8;
+}
+
+.page-title {
+    @apply text-2xl font-bold mb-1;
+    color: var(--color-text-primary);
+}
+
+.page-subtitle {
+    @apply text-sm;
+    color: var(--color-text-muted);
+}
+
+/* Filters bar */
+.filters-bar {
+    @apply flex items-center gap-3 mb-6 flex-wrap;
+}
+
+.search-box {
+    @apply relative flex-1;
+    max-width: 400px;
+}
+
+.search-box-icon {
+    @apply absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none;
+    color: var(--color-text-muted);
+}
+
+.search-box input {
+    @apply w-full pl-10 pr-4 py-2.5 rounded-xl text-sm
+           focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent
+           transition-all duration-200;
+    border: 1px solid var(--color-border);
+    background: var(--color-surface-raised);
+    color: var(--color-text-primary);
+}
+
+.search-box input::placeholder {
+    color: var(--color-text-muted);
+}
+
+/* Pagination */
+.pagination {
+    @apply flex items-center justify-between px-4 py-3 mt-0;
+    border-top: 1px solid var(--color-border);
+}
+
+.pagination-info {
+    @apply text-sm;
+    color: var(--color-text-muted);
+}
+
+.pagination-controls {
+    @apply flex items-center gap-1;
+}
+
+.btn-page {
+    @apply inline-flex items-center justify-center min-w-[36px] h-9 px-2 rounded-lg text-sm font-medium
+           transition-all duration-200 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed;
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+    color: var(--color-text-secondary);
+}
+
+.btn-page:hover:not(:disabled) {
+    background: var(--color-surface-raised);
+    color: var(--color-text-primary);
+}
+
+.btn-page.active {
+    background: var(--color-primary);
+    color: white;
+    border-color: var(--color-primary);
+}
+
+.btn-page.active:hover {
+    filter: brightness(1.1);
+}

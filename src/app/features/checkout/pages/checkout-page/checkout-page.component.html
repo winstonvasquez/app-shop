@@ -1,0 +1,338 @@
+<div class="bg-[var(--color-background)] min-h-screen pb-10">
+    <div class="container mx-auto px-4 max-w-[1200px] pt-6">
+
+        <!-- Header minimal -->
+        <div class="flex items-center justify-between mb-6 border-b border-[var(--color-border)] pb-4">
+            <h1 class="text-2xl font-bold flex items-center gap-2 text-[var(--color-text-primary)]">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z">
+                    </path>
+                </svg>
+                Finalizar compra
+            </h1>
+        </div>
+
+        @if (cartItems().length === 0) {
+        <div class="text-center py-16 bg-[var(--color-surface)] rounded-lg shadow-sm">
+            <p class="text-[var(--color-text-muted)] mb-4 text-lg">Tu carrito está vacío</p>
+            <button (click)="goHome()"
+                class="bg-accent text-white font-bold px-8 py-3 rounded-full hover:brightness-110 transition-all">Volver
+                a la tienda</button>
+        </div>
+        } @else {
+
+        <!-- 2 Column Layout -->
+        <div class="flex flex-col lg:flex-row gap-6">
+
+            <!-- LEFT COLUMN -->
+            <div class="w-full lg:w-2/3 flex flex-col gap-4">
+
+                <!-- Green Banners -->
+                <div
+                    class="bg-[color-mix(in_oklch,var(--color-success)_12%,var(--color-surface))] border border-[color-mix(in_oklch,var(--color-success)_30%,transparent)] text-[var(--color-success)] p-3 rounded-lg flex items-center gap-2 font-medium">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd"
+                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                            clip-rule="evenodd"></path>
+                    </svg>
+                    Elegible para un ahorro adicional de S/ {{ discountTotal() | number:'1.2-2' }}
+                </div>
+
+                <div class="bg-[var(--color-success)] text-white p-3 rounded-lg flex items-center gap-2 font-bold shadow-sm">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4">
+                        </path>
+                    </svg>
+                    ENVÍO GRATIS especial para ti
+                </div>
+
+                <!-- Shipping Address -->
+                <div class="bg-[var(--color-surface)] rounded-lg p-5 shadow-sm border border-[var(--color-border)]">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-lg font-bold text-[var(--color-text-primary)]">Dirección de envío</h2>
+                        <button class="text-[var(--color-primary)] text-sm font-medium hover:brightness-110 transition-all">Editar</button>
+                    </div>
+                    <div class="flex gap-4">
+                        <div class="mt-1">
+                            <svg class="w-6 h-6 text-[var(--color-text-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z">
+                                </path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="font-bold text-[var(--color-text-primary)]">{{ shippingAddress.name }} <span
+                                    class="font-normal text-[var(--color-text-muted)] ml-2">{{ shippingAddress.phone }}</span></p>
+                            <p class="text-[var(--color-text-secondary)] mt-1">{{ shippingAddress.street }}</p>
+                            <p class="text-[var(--color-text-secondary)]">{{ shippingAddress.district }}, {{ shippingAddress.city }}, {{
+                                shippingAddress.region }}</p>
+                            <p class="text-[var(--color-text-secondary)]">{{ shippingAddress.country }}</p>
+                        </div>
+                    </div>
+
+                    <div class="mt-5 border-t border-[var(--color-border)] pt-4">
+                        <div class="flex items-start gap-3">
+                            <input type="radio" checked class="mt-1 w-4 h-4 accent-[var(--color-accent)]">
+                            <div>
+                                <p class="font-bold text-[var(--color-text-primary)]">Envío Estándar - GRATIS</p>
+                                <p class="text-sm text-[var(--color-text-muted)]">Entrega estimada de 4 a 10 días hábiles</p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Delivery Guarantee -->
+                    <div
+                        class="flex gap-4 items-center mt-3 bg-[var(--color-surface-raised)] p-3 rounded-md border border-[var(--color-border)] text-xs text-[var(--color-text-secondary)]">
+                        <div class="flex items-center gap-1"><svg class="w-4 h-4 text-[var(--color-success)]" fill="currentColor"
+                                viewBox="0 0 20 20">
+                                <path fill-rule="evenodd"
+                                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                    clip-rule="evenodd"></path>
+                            </svg> S/ 5 de crédito por entrega tardía</div>
+                        <div class="flex items-center gap-1"><svg class="w-4 h-4 text-[var(--color-success)]" fill="currentColor"
+                                viewBox="0 0 20 20">
+                                <path fill-rule="evenodd"
+                                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                    clip-rule="evenodd"></path>
+                            </svg> Reembolso de artículos dañados</div>
+                    </div>
+                </div>
+
+                <!-- Payment Methods -->
+                <div class="bg-[var(--color-surface)] rounded-lg p-5 shadow-sm border border-[var(--color-border)]">
+                    <h2 class="text-lg font-bold mb-4 text-[var(--color-text-primary)]">Métodos de pago</h2>
+                    <p class="text-sm text-[var(--color-text-secondary)] mb-4 text-center">Todas las transacciones son seguras y están
+                        encriptadas.</p>
+
+                    <div class="border border-[var(--color-border)] rounded-lg overflow-hidden">
+                        @for (metodo of paymentMethods(); track metodo.id) {
+                        <label class="flex flex-col border-b last:border-b-0 border-[var(--color-border)] cursor-pointer"
+                            [class.bg-[color-mix(in_oklch,var(--color-accent)_8%,var(--color-surface))]]="selectedPaymentMethod() === metodo.codigo">
+                            <div class="flex items-center gap-3 p-4">
+                                <input type="radio" name="payment" [value]="metodo.codigo"
+                                    [checked]="selectedPaymentMethod() === metodo.codigo"
+                                    (change)="setPaymentMethod(metodo.codigo)"
+                                    class="w-4 h-4 accent-[var(--color-accent)]">
+                                <img [src]="metodo.iconoUrl" [alt]="metodo.nombre" class="h-8 object-contain">
+                                <span class="font-medium text-[var(--color-text-primary)] ml-auto">{{ metodo.nombre }}</span>
+                            </div>
+
+                            <!-- Extended details for selected Visa / Cards -->
+                            @if (selectedPaymentMethod() === metodo.codigo && (metodo.codigo === 'VIS' || metodo.codigo
+                            === 'MAS')) {
+                            <div class="px-11 pb-4">
+                                <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-center text-sm mb-4">
+                                    <div
+                                        class="border border-[var(--color-accent)] text-[var(--color-accent)] bg-[var(--color-surface)] py-1 rounded-md font-bold cursor-pointer">
+                                        1 x S/ {{ finalTotal() | number:'1.2-2' }}</div>
+                                    <div
+                                        class="border border-[var(--color-border)] text-[var(--color-text-secondary)] bg-[var(--color-surface)] py-1 rounded-md cursor-pointer hover:border-[var(--color-text-muted)]">
+                                        2 x S/ {{ (finalTotal()/2) | number:'1.2-2' }}</div>
+                                    <div
+                                        class="border border-[var(--color-border)] text-[var(--color-text-secondary)] bg-[var(--color-surface)] py-1 rounded-md cursor-pointer hover:border-[var(--color-text-muted)]">
+                                        3 x S/ {{ (finalTotal()/3) | number:'1.2-2' }}</div>
+                                    <div
+                                        class="border border-[var(--color-border)] text-[var(--color-text-secondary)] bg-[var(--color-surface)] py-1 rounded-md cursor-pointer hover:border-[var(--color-text-muted)]">
+                                        6 x S/ {{ (finalTotal()/6) | number:'1.2-2' }}</div>
+                                </div>
+                                <div class="flex flex-col gap-3">
+                                    <div class="relative">
+                                        <input type="text" placeholder="Número de la tarjeta"
+                                            class="w-full border border-[var(--color-border)] bg-[var(--color-surface-raised)] text-[var(--color-text-primary)] rounded-md py-2.5 px-3 focus:outline-none focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[var(--color-accent)]">
+                                        <div class="absolute right-2 top-2 flex gap-1">
+                                            <img src="https://upload.wikimedia.org/wikipedia/commons/4/41/Visa_Logo.png"
+                                                class="h-6">
+                                        </div>
+                                    </div>
+                                    <div class="flex gap-3">
+                                        <input type="text" placeholder="Fecha de exp. (MM/AA)"
+                                            class="w-1/2 border border-[var(--color-border)] bg-[var(--color-surface-raised)] text-[var(--color-text-primary)] rounded-md py-2.5 px-3 focus:outline-none focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[var(--color-accent)]">
+                                        <input type="text" placeholder="CVV"
+                                            class="w-1/2 border border-[var(--color-border)] bg-[var(--color-surface-raised)] text-[var(--color-text-primary)] rounded-md py-2.5 px-3 focus:outline-none focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[var(--color-accent)]">
+                                    </div>
+                                </div>
+
+                                <div class="mt-4 pt-4 border-t border-[var(--color-border)]">
+                                    <h3 class="font-bold text-[var(--color-text-primary)] mb-2">Dirección de facturación</h3>
+                                    <label class="flex items-center gap-2 cursor-pointer">
+                                        <input type="radio" checked class="w-4 h-4 accent-[var(--color-accent)]">
+                                        <span class="text-sm text-[var(--color-text-secondary)]">Igual a la dirección de envío</span>
+                                    </label>
+                                </div>
+                            </div>
+                            }
+                        </label>
+                        }
+                    </div>
+                </div>
+
+                <!-- Items to checkout -->
+                <div class="bg-[var(--color-surface)] rounded-lg p-5 shadow-sm border border-[var(--color-border)]">
+                    <h2 class="text-lg font-bold mb-4 text-[var(--color-text-primary)]">Revisar artículos y envíos</h2>
+                    <div
+                        class="bg-[var(--color-surface-raised)] p-3 rounded-md mb-4 text-xs font-medium text-[var(--color-text-secondary)] flex items-start gap-2 border border-[var(--color-border)]">
+                        <svg class="w-4 h-4 text-[var(--color-warning)] mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd"
+                                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                                clip-rule="evenodd"></path>
+                        </svg>
+                        Los artículos del paquete se separarán de los artículos frágiles
+                    </div>
+
+                    <div class="flex flex-col gap-4">
+                        @for (item of cartItems(); track item.productId) {
+                        <div class="flex gap-4 p-2">
+                            <div
+                                class="w-24 h-24 flex-shrink-0 border border-[var(--color-border)] rounded-md overflow-hidden bg-[var(--color-surface-raised)]">
+                                <img [src]="item.image" alt="Product" class="w-full h-full object-cover">
+                            </div>
+                            <div class="flex flex-col flex-grow justify-between">
+                                <div>
+                                    <p class="text-sm text-[var(--color-text-primary)] line-clamp-2 leading-tight">{{ item.name }} {{
+                                        item.description }}</p>
+                                    <div class="mt-1">
+                                        <span
+                                            class="bg-[var(--color-text-primary)] text-[var(--color-surface)] text-[10px] font-bold px-1.5 py-0.5 rounded-sm">CASI
+                                            AGOTADO(S)</span>
+                                    </div>
+                                </div>
+                                <div class="flex justify-between items-end mt-2">
+                                    <div class="text-xs text-[var(--color-text-muted)]">Cant: <span class="font-bold text-[var(--color-text-primary)]">{{
+                                            item.quantity }}</span></div>
+                                    <div class="text-right">
+                                        <p class="text-[var(--color-text-muted)] line-through text-xs mb-0.5">S/ {{ (item.price *
+                                            item.quantity * 1.5).toFixed(2) }}</p>
+                                        <p class="font-bold text-lg leading-none text-[var(--color-text-primary)]">S/ {{ (item.price *
+                                            item.quantity).toFixed(2) }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        }
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- RIGHT COLUMN (Sticky Order Summary) -->
+            <div class="w-full lg:w-1/3">
+                <div class="sticky top-6 flex flex-col gap-4">
+
+                    <div class="bg-[var(--color-surface)] rounded-lg p-5 shadow-sm border border-[var(--color-border)]">
+                        <h2 class="text-lg font-bold mb-4 text-[var(--color-text-primary)]">Resumen de tu pedido</h2>
+
+                        <!-- Promo Code -->
+                        <div class="flex gap-2 mb-6">
+                            <input type="text" [(ngModel)]="couponCode" placeholder="Introduce cod. cupón"
+                                class="flex-grow border border-[var(--color-border)] bg-[var(--color-surface-raised)] text-[var(--color-text-primary)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[var(--color-accent)] placeholder:text-[var(--color-text-muted)]">
+                            <button (click)="applyCoupon()"
+                                class="bg-[var(--color-text-primary)] text-[var(--color-surface)] font-bold px-4 rounded-lg text-sm hover:opacity-90 transition-opacity">Aplicar</button>
+                        </div>
+
+                        <!-- Totals List -->
+                        <div class="flex flex-col gap-2 text-sm text-[var(--color-text-secondary)] border-b border-[var(--color-border)] pb-4 mb-4">
+                            <div class="flex justify-between">
+                                <span>Total artículos ({{ cartItems().length }})</span>
+                                <span>S/ {{ (cartTotal() + itemDiscounts()).toFixed(2) }}</span>
+                            </div>
+                            <div class="flex justify-between text-[var(--color-accent)] font-medium">
+                                <span>Total descuento de artículos</span>
+                                <span>-S/ {{ itemDiscounts().toFixed(2) }}</span>
+                            </div>
+                            <div class="flex justify-between text-[var(--color-accent)] font-medium">
+                                <span>Descuento por tiempo limitado</span>
+                                <span>-S/ {{ limitedTimeDiscount().toFixed(2) }}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Total estimado de Envío</span>
+                                <span>S/ 23.50</span>
+                            </div>
+                            <div class="flex justify-between text-[var(--color-success)] font-medium">
+                                <span>Descuento de Envío</span>
+                                <span>-S/ 23.50</span>
+                            </div>
+                        </div>
+
+                        <!-- Final Total -->
+                        <div class="flex justify-between items-end mb-6">
+                            <span class="font-bold text-[var(--color-text-primary)]">Total</span>
+                            <div class="text-right">
+                                <span class="text-xl font-bold text-[var(--color-accent)] leading-none block">S/ {{ finalTotal() |
+                                    number:'1.2-2' }}</span>
+                                <span class="text-xs text-[var(--color-success)] font-medium">Ahorras S/ {{ discountTotal() |
+                                    number:'1.2-2' }} en total</span>
+                            </div>
+                        </div>
+
+                        <!-- Donation -->
+                        <div class="bg-[color-mix(in_oklch,var(--color-accent)_8%,var(--color-surface))] p-3 rounded-lg border border-[color-mix(in_oklch,var(--color-accent)_20%,transparent)] flex items-start gap-3 mb-6 cursor-pointer"
+                            (click)="toggleDonation()">
+                            <input type="checkbox" [checked]="donatingToStore()"
+                                class="mt-1 w-4 h-4 accent-[var(--color-accent)] rounded">
+                            <div class="flex-grow text-xs text-[var(--color-text-secondary)]">
+                                <span class="text-[var(--color-accent)] font-bold block mb-0.5">Dona con {{
+                                    systemParams.storeName() }} 🎁</span>
+                                <span>Acepto donar S/ 0.38 al Fondo de Supervivencia de Especies y estoy de acuerdo con
+                                    las condiciones.</span>
+                            </div>
+                        </div>
+
+                        <!-- Mock Submit Button -->
+                        <div class="mb-5">
+                            <button (click)="placeOrder()" [disabled]="isLoading()"
+                                class="w-full bg-accent text-white font-bold text-lg py-3.5 px-4 rounded-full shadow-lg shadow-accent/30 hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed transform active:scale-95">
+                                @if (isLoading()) {
+                                <span class="flex items-center justify-center gap-2">
+                                    <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                                    Procesando...
+                                </span>
+                                } @else {
+                                Realizar pedido
+                                }
+                            </button>
+                            <p class="text-center text-[10px] text-[var(--color-text-muted)] mt-2 font-medium">Los artículos casi se han
+                                agotado.</p>
+                        </div>
+
+                        <!-- Trust Badges Under Button -->
+                        <div class="text-xs text-[var(--color-text-secondary)]">
+                            <div class="flex items-center gap-1.5 justify-center mb-3 text-[var(--color-text-muted)]">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z">
+                                    </path>
+                                </svg>
+                                Todas las transacciones son seguras y están encriptadas
+                            </div>
+
+                            <div class="bg-[var(--color-surface-raised)] rounded-lg p-3 border border-[var(--color-border)]">
+                                <h4 class="font-bold flex items-center gap-1.5 mb-2 text-[var(--color-text-primary)]"><svg class="w-4 h-4 text-[var(--color-success)]"
+                                        fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd"
+                                            d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                            clip-rule="evenodd"></path>
+                                    </svg> {{ systemParams.storeName() }} protege tu información</h4>
+                                <p class="text-[var(--color-text-muted)] mb-2 leading-tight">Certificación de Estándar de Seguridad de
+                                    Datos para la Industria de Tarjeta de Pago (PCI DSS)</p>
+                                <div class="flex gap-1.5 flex-wrap">
+                                    @for (cert of certifications(); track cert.id) {
+                                    <div class="h-6 w-10 border border-[var(--color-border)] rounded flex items-center justify-center bg-[var(--color-surface)]"
+                                        [title]="cert.nombre">
+                                        <img [src]="cert.iconoUrl" [alt]="cert.nombre" class="max-h-5 max-w-[24px]">
+                                    </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+        }
+    </div>
+</div>

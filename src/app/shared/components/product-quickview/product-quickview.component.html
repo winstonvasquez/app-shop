@@ -1,0 +1,116 @@
+@if (quickviewService.isOpen()) {
+<div class="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in"
+    (click)="close()">
+    <div class="bg-[var(--color-surface)] rounded-lg shadow-xl w-full max-w-[850px] max-h-[90vh] overflow-y-auto relative flex flex-col md:flex-row overflow-hidden"
+        (click)="$event.stopPropagation()">
+
+        <!-- Close Button -->
+        <button (click)="close()"
+            class="absolute top-4 right-4 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors z-10 w-8 h-8 flex items-center justify-center bg-[var(--color-surface)]/80 rounded-full backdrop-blur-xs">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+        </button>
+
+        @if (isLoading()) {
+        <div class="flex items-center justify-center w-full h-96">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--color-accent)]"></div>
+        </div>
+        } @else if (product(); as p) {
+
+        <!-- Left Side: Images -->
+        <div class="w-full md:w-1/2 bg-[var(--color-surface-raised)] p-4 flex flex-col">
+            <div
+                class="relative aspect-[4/5] w-full bg-[var(--color-surface)] rounded-sm overflow-hidden mb-4 border border-[var(--color-border)] shadow-sm">
+                @if (p.images && p.images.length > 0) {
+                <img [src]="p.images[activeImageIndex()].url" [alt]="p.nombre" class="w-full h-full object-contain" />
+                } @else {
+                <div class="w-full h-full flex items-center justify-center text-[var(--color-text-muted)]">
+                    Sin imagen
+                </div>
+                }
+            </div>
+
+            <div class="flex gap-2 overflow-x-auto pb-2 scrollbar-thin">
+                @for (img of p.images; track $index) {
+                <button (click)="changeImage($index)"
+                    class="w-16 h-16 flex-shrink-0 border-2 rounded-sm overflow-hidden transition-colors"
+                    [class.border-[var(--color-accent)]]="activeImageIndex() === $index"
+                    [class.border-transparent]="activeImageIndex() !== $index">
+                    <img [src]="img.url" class="w-full h-full object-cover" />
+                </button>
+                }
+            </div>
+        </div>
+
+        <!-- Right Side: Info & Variants -->
+        <div class="w-full md:w-1/2 p-6 flex flex-col">
+            <h2 class="text-[17px] text-[var(--color-text-primary)] mt-2 mb-1.5">{{ p.nombre }}</h2>
+
+            <div class="text-[13px] text-[var(--color-text-muted)] mb-2 flex flex-wrap items-center gap-1.5">
+                <span>{{ p.salesCount || '253' }} {{ 'product.sold' | translate }}</span>
+                <span>|</span>
+                <span>{{ 'productDetail.soldBy' | translate }} <span
+                        class="bg-[color-mix(in_oklch,var(--color-primary)_10%,var(--color-surface))] font-bold text-[var(--color-primary)] px-1 rounded-sm">{{
+                        p.seller.name || 'Fashion Forward' }}</span></span>
+            </div>
+
+            @if (p.categoryRankText) {
+            <div class="mb-4">
+                <span class="bg-[var(--color-success)] text-white text-xs font-bold px-1.5 py-0.5 rounded-sm inline-block shadow-sm">
+                    {{ p.categoryRankText }}
+                </span>
+            </div>
+            }
+
+            <!-- Pricing blocks based on image -->
+            <div class="mb-2">
+                <div class="flex items-baseline gap-2 flex-wrap">
+                    @if (p.originalPrice) {
+                    <span class="text-[var(--color-text-muted)] line-through text-lg font-medium">S/ {{ p.originalPrice | number:'1.2-2'
+                        }}</span>
+                    }
+                    <span class="text-[var(--color-accent)] font-bold text-xl flex items-center gap-1">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        {{ 'product.lastDay' | translate | uppercase }}
+                    </span>
+                </div>
+                <div class="flex items-end gap-2 mt-0.5">
+                    <span class="text-[var(--color-text-secondary)] text-sm">{{ 'product.est' | translate }}</span>
+                    <span class="text-[var(--color-accent)] font-bold text-3xl leading-none">S/ {{ p.precioBase | number:'1.2-2'
+                        }}</span>
+                </div>
+
+                <div class="flex items-center gap-2 mt-2 text-xs">
+                    <span class="text-[var(--color-text-secondary)]">{{ 'product.afterPromotions' | translate }} <span class="font-bold">S/
+                            93.42
+                            ></span></span>
+                    @if (p.discount) {
+                    <span class="text-[var(--color-accent)] border border-[var(--color-accent)] px-1 rounded-sm uppercase tracking-tight">{{
+                        p.discount }}</span>
+                    }
+                </div>
+            </div>
+
+            <!-- the Variants Component -->
+            <div class="flex-grow mt-2">
+                <app-product-variants [product]="p" [variants]="p.variants"
+                    (addToCart)="onAddToCart($event)"></app-product-variants>
+            </div>
+
+            <a href="/products/{{p.id}}" (click)="close()"
+                class="mt-4 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] flex items-center justify-between group py-2 border-t border-[var(--color-border)]">
+                {{ 'productDetail.viewAllDetails' | translate }}
+                <svg class="w-4 h-4 text-[var(--color-text-muted)] group-hover:text-[var(--color-text-primary)] transition-colors" fill="none"
+                    stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                </svg>
+            </a>
+        </div>
+        }
+    </div>
+</div>
+}

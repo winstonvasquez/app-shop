@@ -1,0 +1,122 @@
+<div class="relative flex items-center w-full max-w-[650px] mx-auto group">
+    <!-- Search Input — premium dark-glass pill -->
+    <input type="text" [placeholder]="'header.search' | translate" [(ngModel)]="searchQuery"
+        (ngModelChange)="searchQueryChanged($event)" (focus)="onFocus()" (keyup.enter)="executeSearch()"
+        class="w-full h-[48px] pl-6 pr-16 rounded-full bg-white/10 backdrop-blur-md text-white border border-white/10 hover:border-white/20 outline-none focus:bg-white/15 focus:border-primary/50 focus:ring-4 focus:ring-primary/10 shadow-lg text-[15px] placeholder:text-white/40 transition-all duration-300">
+
+    @if (searchQuery()) {
+    <button (click)="clearSearch()"
+        class="icon-btn icon-btn-sm absolute right-[72px] top-1/2 -translate-y-1/2 text-white/40 hover:text-white transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+            <path
+                d="M12 2C6.47 2 2 6.47 2 12s4.47 10 10 10 10-4.47 10-10S17.53 2 12 2zm5 13.59L15.59 17 12 13.41 8.41 17 7 15.59 10.59 12 7 8.41 8.41 7 12 10.59 15.59 7 17 8.41 13.41 12 17 15.59z" />
+        </svg>
+    </button>
+    }
+
+    <button (click)="executeSearch()"
+        class="absolute right-1.5 top-1.5 bottom-1.5 bg-primary hover:bg-primary-dark text-white rounded-full px-5 flex items-center justify-center shadow-lg shadow-primary/20 transition-all active:scale-95 group/btn">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
+            class="transition-transform duration-200 group-hover/btn:scale-110">
+            <circle cx="11" cy="11" r="8" />
+            <path d="m21 21-4.3-4.3" />
+        </svg>
+    </button>
+
+    <!-- Dropdown Panel -->
+    <div *ngIf="isOpen() && (recentSearches().length > 0 || popularSearches.length > 0 || searchQuery())"
+        class="absolute top-[120%] left-0 w-full bg-[var(--color-surface)] rounded-xl shadow-2xl border border-[var(--color-border)] z-50 overflow-hidden text-[var(--color-text-primary)] animate-in fade-in slide-in-from-top-2 duration-200">
+
+        <div class="p-6">
+            @if (searchQuery()) {
+            @if (isSearching()) {
+            <div class="py-4 flex items-center justify-center text-[var(--color-text-muted)]">
+                <span class="text-sm">Buscando "{{ searchQuery() }}"...</span>
+            </div>
+            } @else if (searchResults().length > 0) {
+            <h3 class="font-bold text-[15px] text-[var(--color-text-primary)] mb-3">Resultados de búsqueda</h3>
+            <div class="space-y-1">
+                <button *ngFor="let result of searchResults()" (mousedown)="executeSearch(result.nombre)"
+                    class="w-full flex items-center gap-3 px-2 py-2 hover:bg-[var(--color-surface-raised)] rounded-lg transition-colors text-[15px] text-left">
+                    <div
+                        class="w-10 h-10 rounded-full bg-[var(--color-surface-raised)] flex items-center justify-center text-[var(--color-text-muted)] shrink-0 border border-[var(--color-border)]">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8" />
+                            <path d="m21 21-4.3-4.3" />
+                        </svg>
+                    </div>
+                    <div class="flex flex-col overflow-hidden">
+                        <span class="truncate text-[var(--color-text-primary)] font-medium">{{ result.nombre }}</span>
+                        <span class="text-xs text-[var(--color-text-muted)]">S/ {{ result.precioBase | number:'1.2-2'
+                            }}</span>
+                    </div>
+                </button>
+            </div>
+            } @else {
+            <div class="py-4 flex items-center justify-center text-[var(--color-text-muted)]">
+                <span class="text-sm">No se encontraron productos para "{{ searchQuery() }}"</span>
+            </div>
+            }
+            } @else {
+            <!-- Recent Searches -->
+            <div *ngIf="recentSearches().length > 0" class="mb-6">
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="font-bold text-[15px] text-[var(--color-text-primary)]">Búsquedas recientes</h3>
+                    <button (click)="clearRecent()" class="icon-btn icon-btn-sm text-[var(--color-text-muted)]"
+                        title="Borrar historial">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 6h18" />
+                            <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                            <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                            <line x1="10" y1="11" x2="10" y2="17" />
+                            <line x1="14" y1="11" x2="14" y2="17" />
+                        </svg>
+                    </button>
+                </div>
+                <div class="space-y-1">
+                    <button *ngFor="let recent of recentSearches()" (mousedown)="executeSearch(recent)"
+                        class="w-full flex items-center gap-3 px-2 py-2 hover:bg-[var(--color-surface-raised)] rounded-lg transition-colors text-sm text-left group">
+                        <div
+                            class="w-10 h-10 rounded-full bg-[var(--color-surface-raised)] flex items-center justify-center text-[var(--color-text-muted)] shrink-0 group-hover:bg-[var(--color-border)] group-hover:shadow-sm">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <circle cx="11" cy="11" r="8" />
+                                <path d="m21 21-4.3-4.3" />
+                            </svg>
+                        </div>
+                        <span class="truncate text-[var(--color-text-primary)] font-medium">{{ recent }}</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Popular Searches -->
+            <div *ngIf="popularSearches.length > 0">
+                <h3 class="font-bold text-[15px] text-[var(--color-text-primary)] mb-3">Popular ahora</h3>
+                <div class="space-y-1">
+                    <button *ngFor="let popular of popularSearches" (mousedown)="executeSearch(popular.title)"
+                        class="w-full flex items-center gap-3 px-2 py-2 hover:bg-[var(--color-surface-raised)] rounded-lg transition-colors text-[15px] text-left">
+                        <img *ngIf="popular.image" [src]="popular.image"
+                            class="w-10 h-10 rounded-full object-cover shrink-0 border border-[var(--color-border)]"
+                            alt="">
+                        <div *ngIf="!popular.image"
+                            class="w-10 h-10 rounded-full bg-[var(--color-surface-raised)] flex items-center justify-center text-[var(--color-text-muted)] shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <circle cx="11" cy="11" r="8" />
+                                <path d="m21 21-4.3-4.3" />
+                            </svg>
+                        </div>
+                        <span class="truncate text-[var(--color-text-primary)]">{{ popular.title }}</span>
+                        <span *ngIf="popular.icon" class="ml-1 text-lg">{{ popular.icon }}</span>
+                    </button>
+                </div>
+            </div>
+            }
+        </div>
+    </div>
+</div>

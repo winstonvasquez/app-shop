@@ -1,0 +1,103 @@
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Resumen General</h1>
+        <p class="page-subtitle">Bienvenido de vuelta. Aquí está el resumen de tu tienda.</p>
+    </div>
+</div>
+
+<!-- Metrics Cards -->
+<div class="metrics-grid">
+    @for (metric of metrics(); track metric.label) {
+    <div class="metric-card">
+        <div class="metric-header">
+            <span class="metric-label">{{ metric.label }}</span>
+            <div class="metric-icon" [class]="metric.iconColor">
+                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" [attr.d]="metric.iconPath" />
+                </svg>
+            </div>
+        </div>
+        <div class="metric-value">{{ metric.value }}</div>
+        <div class="metric-change" [class.positive]="metric.isPositive" [class.negative]="!metric.isPositive">
+            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" [attr.d]="arrowUpIcon" />
+            </svg>
+            <span>{{ metric.change }}</span>
+        </div>
+    </div>
+    }
+</div>
+
+<!-- Content Grid -->
+<div class="content-grid">
+    <!-- Sales Chart -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Ventas del Mes</h2>
+            <a href="#" class="card-action">Ver detalles →</a>
+        </div>
+        <div class="card-body">
+            <div class="chart-placeholder">
+                Gráfico de ventas (integrar Chart.js)
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Products -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Más Vendidos</h2>
+            <a href="#" class="card-action">Ver todos →</a>
+        </div>
+        <div class="card-body">
+            @for (product of topProducts(); track product.name) {
+            <div class="product-item">
+                <div class="product-image"></div>
+                <div class="product-info">
+                    <div class="product-name">{{ product.name }}</div>
+                    <div class="product-category">{{ product.category }}</div>
+                </div>
+                <div class="product-sales">{{ product.sales }}</div>
+            </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Recent Orders -->
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title">Pedidos Recientes</h2>
+        <a href="#" class="card-action">Ver todos →</a>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="table">
+            <thead class="table-header">
+                <tr>
+                    <th class="table-header-cell">ID Pedido</th>
+                    <th class="table-header-cell">Cliente</th>
+                    <th class="table-header-cell">Producto</th>
+                    <th class="table-header-cell">Fecha</th>
+                    <th class="table-header-cell">Total</th>
+                    <th class="table-header-cell">Estado</th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (order of recentOrders(); track order.id) {
+                <tr class="table-row">
+                    <td class="table-cell font-medium">{{ order.id }}</td>
+                    <td class="table-cell">{{ order.customer }}</td>
+                    <td class="table-cell">{{ order.product }}</td>
+                    <td class="table-cell text-subtle">{{ order.date }}</td>
+                    <td class="table-cell font-semibold">{{ order.total }}</td>
+                    <td class="table-cell">
+                        <span class="status-badge" [class]="order.status">
+                            {{ order.statusLabel }}
+                        </span>
+                    </td>
+                </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

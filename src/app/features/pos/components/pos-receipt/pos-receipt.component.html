@@ -1,0 +1,164 @@
+<div class="receipt-screen">
+
+    @if (venta(); as v) {
+    <div class="receipt-paper">
+
+        <!-- Encabezado oscuro con gradiente brand -->
+        <div class="receipt-header">
+            <div class="receipt-logo-row">
+                <svg viewBox="0 0 20 20" fill="currentColor" width="22" height="22" class="opacity-85 text-error">
+                    <path
+                        d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 3H6.28l-.31-1.243A1 1 0 005 1H3z" />
+                    <path d="M16 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM6.5 18a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" />
+                </svg>
+                <span class="receipt-company-name">MicroShop</span>
+            </div>
+            <p class="receipt-ruc">DEMO COMERCIAL S.A.C. · RUC: 20123456789</p>
+            <p class="receipt-address">Lima, Perú</p>
+            <div class="receipt-cpe-badge">
+                <span>🇵🇪</span>
+                {{ v.tipoCpe }} Electrónica — SUNAT
+            </div>
+        </div>
+
+        <!-- Cuerpo del comprobante -->
+        <div class="receipt-body">
+
+            <!-- Metadata -->
+            <div class="receipt-meta-card">
+                <div class="receipt-meta-row">
+                    <span>Comprobante</span>
+                    <strong class="receipt-meta-mono">{{ v.numeroCpe ?? '—' }}</strong>
+                </div>
+                <div class="receipt-meta-row">
+                    <span>Ticket interno</span>
+                    <strong class="receipt-meta-mono">{{ v.numeroTicket }}</strong>
+                </div>
+                <div class="receipt-meta-row">
+                    <span>Fecha y hora</span>
+                    <strong>{{ v.fechaCreacion | date:'dd/MM/yyyy HH:mm' }}</strong>
+                </div>
+                <div class="receipt-meta-row">
+                    <span>Cliente</span>
+                    <strong>{{ v.clienteNombre ?? 'Público general' }}</strong>
+                </div>
+                <div class="receipt-meta-row">
+                    <span>Cajero</span>
+                    <strong>{{ v.cajeroNombre }}</strong>
+                </div>
+            </div>
+
+            <!-- Líneas de detalle -->
+            <div class="receipt-items">
+                <div class="receipt-items-header">
+                    <span>Descripción</span>
+                    <span class="text-right">Importe</span>
+                </div>
+                @for (d of v.detalles; track d.id) {
+                <div class="receipt-line">
+                    <div class="receipt-line-left">
+                        <p class="receipt-line-name">{{ d.varianteNombre }}</p>
+                        <p class="receipt-line-detail">{{ d.cantidad }} u × S/{{ fmt(d.precioUnitario) }} · <span
+                                class="mono">{{ d.varianteSku }}</span></p>
+                    </div>
+                    <span class="receipt-line-price">S/{{ fmt(d.subtotalLinea) }}</span>
+                </div>
+                }
+            </div>
+
+            <!-- Totales -->
+            <div class="receipt-totals">
+                <div class="receipt-total-row">
+                    <span>Op. gravadas</span>
+                    <span class="mono">S/{{ fmt(v.subtotal) }}</span>
+                </div>
+                <div class="receipt-total-row">
+                    <span>IGV 18%</span>
+                    <span class="mono">S/{{ fmt(v.igv) }}</span>
+                </div>
+                @if (v.descuento > 0) {
+                <div class="receipt-total-row receipt-total-row--discount">
+                    <span>Descuento</span>
+                    <span class="mono">−S/{{ fmt(v.descuento) }}</span>
+                </div>
+                }
+            </div>
+
+            <!-- Línea de corte (thermal) -->
+            <div class="receipt-cut-line"></div>
+
+            <!-- Total final -->
+            <div class="receipt-grand-total">
+                <span class="receipt-grand-label">TOTAL</span>
+                <span class="receipt-grand-amount">S/{{ fmt(v.total) }}</span>
+            </div>
+
+            <!-- Forma de pago -->
+            <div class="receipt-payment-detail">
+                <div class="receipt-total-row">
+                    <span>{{ v.metodoPago }} recibido</span>
+                    <span class="mono">S/{{ fmt(v.montoRecibido) }}</span>
+                </div>
+                @if (v.vuelto > 0) {
+                <div class="receipt-total-row receipt-total-row--change">
+                    <span>Vuelto</span>
+                    <span class="mono">S/{{ fmt(v.vuelto) }}</span>
+                </div>
+                }
+            </div>
+
+            <!-- QR SUNAT -->
+            <div class="receipt-qr-section">
+                <div class="receipt-qr-placeholder">QR</div>
+                <p class="receipt-qr-label">Verifica en: sunat.gob.pe</p>
+            </div>
+
+        </div>
+
+        <!-- Footer thermal -->
+        <div class="receipt-footer">
+            ¡Gracias por su compra! · Conserve su comprobante
+        </div>
+
+    </div>
+
+    <!-- Acciones -->
+    <div class="receipt-actions flex gap-3 mt-6">
+        <button class="btn-secondary flex-1 gap-2 !h-12 !rounded-xl !text-[14px]" (click)="nuevaVenta.emit()">
+            <svg viewBox="0 0 20 20" fill="currentColor" width="15" height="15">
+                <path
+                    d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 3H6.28l-.31-1.243A1 1 0 005 1H3z" />
+                <path d="M16 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM6.5 18a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" />
+            </svg>
+            Nueva venta
+        </button>
+        <button class="btn-secondary flex-[0.8] gap-2 !h-12 !rounded-xl !text-[14px]" (click)="imprimirRecibo.emit()">
+            <svg viewBox="0 0 20 20" fill="currentColor" width="15" height="15">
+                <path fill-rule="evenodd"
+                    d="M5 4v3H4a2 2 0 00-2 2v3a2 2 0 002 2h1v2a1 1 0 001 1h8a1 1 0 001-1v-2h1a2 2 0 002-2V9a2 2 0 00-2-2h-1V4a1 1 0 00-1-1H6a1 1 0 00-1 1zm2 0h6v3H7V4zm-1 9H5v-2H4v3h12v-3h-1v2H6v-2zm8-5a1 1 0 100 2 1 1 0 000-2z"
+                    clip-rule="evenodd" />
+            </svg>
+            Imprimir
+        </button>
+        <button class="btn-primary flex-[0.8] gap-2 !h-12 !rounded-xl !text-[14px]">
+            <svg viewBox="0 0 20 20" fill="currentColor" width="15" height="15">
+                <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+                <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+            </svg>
+            Enviar
+        </button>
+    </div>
+
+    } @else {
+    <div class="receipt-empty">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48"
+            class="opacity-20">
+            <path stroke-linecap="round" stroke-linejoin="round"
+                d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+        </svg>
+        <p class="receipt-empty-title">Sin comprobante</p>
+        <p class="receipt-empty-sub">Realiza una venta para ver el recibo</p>
+    </div>
+    }
+
+</div>

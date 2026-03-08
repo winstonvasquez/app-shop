@@ -1,0 +1,110 @@
+<div class="companies-page">
+    <app-page-header
+        title="Gestión de Empresas"
+        subtitle="Administra las empresas del sistema"
+        [breadcrumbs]="breadcrumbs">
+        <div actions>
+            <button class="btn btn-primary" (click)="openCreateModal()">
+                + Nueva Empresa
+            </button>
+        </div>
+    </app-page-header>
+
+    <!-- Filters -->
+    <div class="filters-section">
+        <div class="search-box">
+            <svg class="search-icon" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input type="text" class="search-input" placeholder="Buscar por nombre o RUC..." [value]="searchQuery()"
+                (input)="onSearch($event)" />
+        </div>
+
+        <div class="filter-group">
+            <label for="activeFilter">Estado:</label>
+            <select id="activeFilter" (change)="onActiveFilterChange($event)"
+                [value]="filterActive() === null ? '' : filterActive()">
+                <option value="">Todos</option>
+                <option value="true">Activos</option>
+                <option value="false">Inactivos</option>
+            </select>
+        </div>
+
+        <div class="results-count">
+            Mostrando {{ filteredCount() }} de {{ totalCompanies() }} empresas
+        </div>
+    </div>
+
+    @if (error()) {
+        <app-alert
+            type="error"
+            [message]="error()!"
+            [dismissible]="true"
+            (dismiss)="error.set(null)">
+        </app-alert>
+    }
+
+    <app-data-table
+        [data]="companies()"
+        [columns]="columns"
+        [actions]="actions"
+        [loading]="loading()">
+    </app-data-table>
+
+    <app-modal
+        [isOpen]="showModal()"
+        [title]="editMode() ? 'Editar Empresa' : 'Nueva Empresa'"
+        size="md"
+        (close)="closeModal()">
+        
+        <form [formGroup]="companyForm" (ngSubmit)="onSubmit()" body>
+            @if (submitError()) {
+                <app-alert
+                    type="error"
+                    [message]="submitError()!"
+                    [dismissible]="true"
+                    (dismiss)="submitError.set(null)">
+                </app-alert>
+            }
+
+            <app-form-field
+                label="Nombre"
+                [control]="getControl('name')"
+                type="text"
+                placeholder="Ej: Empresa ABC S.A.C."
+                [required]="true">
+            </app-form-field>
+
+            <app-form-field
+                label="RUC"
+                [control]="getControl('ruc')"
+                type="text"
+                placeholder="Ej: 20123456789"
+                hint="Solo números, máximo 20 dígitos"
+                [required]="true">
+            </app-form-field>
+
+            <div class="form-group">
+                <label class="checkbox-label">
+                    <input type="checkbox" formControlName="active" class="checkbox-input" />
+                    <span>Empresa activa</span>
+                </label>
+                <small class="form-hint">Las empresas inactivas no aparecerán en los selectores</small>
+            </div>
+        </form>
+
+        <div footer>
+            <button type="button" class="btn btn-secondary" (click)="closeModal()" [disabled]="submitting()">
+                Cancelar
+            </button>
+            <button type="submit" class="btn btn-primary" (click)="onSubmit()" [disabled]="submitting() || companyForm.invalid">
+                @if (submitting()) {
+                    Guardando...
+                } @else {
+                    {{ editMode() ? 'Actualizar' : 'Crear' }} Empresa
+                }
+            </button>
+        </div>
+    </app-modal>
+</div>

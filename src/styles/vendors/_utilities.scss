@@ -1,0 +1,154 @@
+/* Custom Utilities - Project-Specific Patterns */
+
+/* ============================================
+   TEMU-STYLE GRADIENTS
+   ============================================ */
+
+.gradient-primary {
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+}
+
+.gradient-accent {
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
+}
+
+.gradient-surface {
+    background: linear-gradient(180deg, var(--color-surface) 0%, var(--color-gray-50) 100%);
+}
+
+/* ============================================
+   CUSTOM ANIMATIONS
+   ============================================ */
+
+@keyframes shimmer {
+    0% {
+        background-position: -1000px 0;
+    }
+
+    100% {
+        background-position: 1000px 0;
+    }
+}
+
+.animate-shimmer {
+    animation: shimmer 2s infinite linear;
+    background: linear-gradient(90deg,
+            var(--color-gray-100) 0%,
+            var(--color-gray-200) 50%,
+            var(--color-gray-100) 100%);
+    background-size: 1000px 100%;
+}
+
+@keyframes fade-in-up {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-fade-in-up {
+    animation: fade-in-up 0.5s var(--ease-out);
+}
+
+/* ============================================
+   CUSTOM SHADOWS
+   ============================================ */
+
+.shadow-temu {
+    box-shadow:
+        0 2px 8px -2px rgb(215 19 42 / 0.1),
+        0 4px 16px -4px rgb(215 19 42 / 0.05);
+}
+
+.shadow-temu-lg {
+    box-shadow:
+        0 8px 24px -4px rgb(215 19 42 / 0.15),
+        0 16px 48px -8px rgb(215 19 42 / 0.1);
+}
+
+/* ============================================
+   GLASSMORPHISM
+   ============================================ */
+
+.glass {
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.dark .glass {
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* ============================================
+   TEXT UTILITIES
+   ============================================ */
+
+.text-gradient-primary {
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.text-balance {
+    text-wrap: balance;
+}
+
+/* ============================================
+   CONTAINER PATTERNS
+   ============================================ */
+
+.container-narrow {
+    max-width: 768px;
+    margin-inline: auto;
+    padding-inline: var(--spacing-md);
+}
+
+.container-wide {
+    max-width: 1440px;
+    margin-inline: auto;
+    padding-inline: var(--spacing-lg);
+}
+
+/* ============================================
+   SCROLLBAR STYLING
+   ============================================ */
+
+.scrollbar-thin::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+    background: var(--color-gray-100);
+    border-radius: var(--radius-full);
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+    background: var(--color-gray-300);
+    border-radius: var(--radius-full);
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: var(--color-gray-400);
+}
+
+.dark .scrollbar-thin::-webkit-scrollbar-track {
+    background: var(--color-gray-800);
+}
+
+.dark .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: var(--color-gray-600);
+}
+
+.dark .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: var(--color-gray-500);
+}

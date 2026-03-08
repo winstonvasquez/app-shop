@@ -1,0 +1,24 @@
+.admin-layout {
+    display: flex;
+    min-height: 100vh;
+    background: var(--color-background);
+}
+
+.main-content {
+    margin-left: 260px;
+    flex: 1;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.dashboard-content {
+    flex: 1;
+    padding: 2rem;
+}
+
+@media (max-width: 768px) {
+    .main-content {
+        margin-left: 0;
+    }
+}

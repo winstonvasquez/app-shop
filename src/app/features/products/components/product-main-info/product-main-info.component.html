@@ -1,0 +1,119 @@
+<div class="flex flex-col gap-2 font-sans">
+
+    <!-- Top Banner -->
+    @if (product().topBannerText || product().returnPolicyText) {
+    <div class="flex items-stretch text-sm mb-1">
+        <div class="bg-[var(--color-primary)] text-white font-bold px-3 py-1.5 flex items-center justify-center rounded-l-sm">
+            <span class="flex flex-col leading-none text-xs text-center">
+                @if (product().topBannerText) {
+                <span class="text-[10px] uppercase font-normal tracking-wide mb-0.5">{{ product().topBannerText
+                    }}</span>
+                } @else {
+                <span class="text-[10px] uppercase font-normal tracking-wide mb-0.5">{{ 'productDetail.offer' |
+                    translate }}</span>
+                }
+            </span>
+        </div>
+        <div
+            class="bg-[var(--color-warning)] text-[color-mix(in_oklch,var(--color-warning)_30%,black)] flex-1 flex items-center px-3 py-1.5 font-medium justify-between rounded-r-sm">
+            <div class="flex items-center gap-3 text-xs">
+                <span class="flex items-center gap-1"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg> {{ 'productDetail.freeShipping' | translate }}</span>
+                <span class="opacity-30 font-light">|</span>
+                <span class="flex items-center gap-1"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg> {{ product().returnPolicyText || ('productDetail.freeReturn' | translate) }}</span>
+            </div>
+            <!-- Share Icon -->
+            <svg class="w-4 h-4 cursor-pointer hover:opacity-70 transition-opacity" fill="none" stroke="currentColor"
+                viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
+            </svg>
+        </div>
+    </div>
+    }
+
+    <!-- Title -->
+    <h1 class="text-base md:text-[17px] font-bold text-[var(--color-text-primary)] leading-snug">
+        {{ product().nombre }}
+    </h1>
+
+    <!-- Stats & Sold By -->
+    <div class="flex items-center gap-2 text-[13px] text-[var(--color-text-muted)] mt-1">
+        <span class="text-[var(--color-text-primary)] border-b border-[var(--color-text-primary)] cursor-pointer">{{ product().salesCount || '0' }}</span>
+        <span>|</span>
+        <span class="flex items-center gap-1">
+            {{ 'productDetail.soldBy' | translate }}
+            @if (product().starSeller) {
+            <span
+                class="bg-[var(--color-primary)] text-white font-bold text-[10px] px-1 py-0.5 rounded-sm flex items-center gap-0.5 cursor-pointer hover:brightness-110 transition-all"><svg
+                    class="w-3 h-3 text-[var(--color-warning)]" fill="currentColor" viewBox="0 0 20 20">
+                    <path
+                        d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z">
+                    </path>
+                </svg> {{ 'productDetail.starSeller' | translate }}</span>
+            } @else {
+            <span class="font-bold text-[var(--color-text-primary)]">{{ product().seller.name }}</span>
+            }
+        </span>
+
+        <div class="flex items-center ml-auto gap-0.5 text-[var(--color-warning)]">
+            <span class="font-bold mr-1 text-[var(--color-text-primary)]">{{ product().rating || '0.0' }}</span>
+            <!-- Stars -->
+            @for (star of [1,2,3,4,5]; track $index) {
+            <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 20 20">
+                <path
+                    d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z">
+                </path>
+            </svg>
+            }
+        </div>
+    </div>
+
+    <!-- Recommendation Badge -->
+    @if (product().categoryRankText) {
+    <div class="inline-flex items-center gap-1 mt-1 cursor-pointer w-max">
+        <span
+            class="bg-[var(--color-success)] text-white text-[11px] font-bold px-1.5 py-0.5 rounded-sm flex items-center gap-1 shadow-sm">
+            {{ product().categoryRankText }}
+        </span>
+        <span class="text-[var(--color-text-muted)] text-xs hover:text-[var(--color-text-primary)]">{{ 'productDetail.inSimilarProducts' | translate
+            }}</span>
+    </div>
+    }
+
+    <!-- Price Block -->
+    <div class="mt-4 flex flex-col gap-1.5">
+        <div class="flex items-baseline gap-2">
+            <span class="text-[26px] font-bold text-[var(--color-accent)] tracking-tight">S/ {{ product().precioBase }}</span>
+            @if(product().originalPrice) {
+            <span class="text-[var(--color-text-muted)] line-through text-sm font-medium">S/ {{ product().originalPrice }}</span>
+            }
+
+            <!-- Discount Tags -->
+            @if(product().discount) {
+            <span
+                class="text-[var(--color-accent)] text-[10px] font-bold border border-[var(--color-accent)]/30 ml-1 px-1.5 py-0.5 whitespace-nowrap rounded-sm">
+                {{ product().discount }}
+            </span>
+            }
+
+            @if(product().badge) {
+            <span
+                class="text-[var(--color-accent)] text-[10px] font-bold border border-[var(--color-accent)]/30 px-1.5 py-0.5 whitespace-nowrap uppercase flex items-center gap-1 rounded-sm">
+                {{ product().badge }}
+                <svg class="w-3 h-3 text-[var(--color-accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
+                    </path>
+                </svg>
+            </span>
+            }
+        </div>
+    </div>
+
+</div>

@@ -1,0 +1,197 @@
+<section class="catalog-panel">
+
+    <!-- Barra de búsqueda -->
+    <div class="flex items-center gap-3 p-3 bg-surface border-b border-[var(--color-border)] shrink-0">
+        <div class="relative flex-1">
+            <!-- Spinner de búsqueda en curso (reemplaza lupa) -->
+            @if (isSearching()) {
+            <svg class="absolute left-3 top-1/2 -translate-y-1/2 text-muted animate-spin" viewBox="0 0 20 20"
+                fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                <path d="M10 3a7 7 0 017 7" stroke-linecap="round" />
+            </svg>
+            } @else {
+            <svg class="absolute left-3 top-1/2 -translate-y-1/2 text-muted" viewBox="0 0 20 20" fill="currentColor"
+                width="16" height="16">
+                <path fill-rule="evenodd"
+                    d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+                    clip-rule="evenodd" />
+            </svg>
+            }
+            <input #searchInput class="input-field !pl-10 !h-11" type="text"
+                placeholder="Buscar producto, SKU, código..." [value]="searchQuery()"
+                (input)="onSearch($any($event.target).value)" (keydown.enter)="onEnterSearch($any($event.target).value)"
+                autocomplete="off" autocorrect="off" spellcheck="false">
+        </div>
+        <button class="btn-secondary !h-11 !w-11 !p-0 shrink-0" title="Escanear código de barras">
+            <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
+                <path fill-rule="evenodd"
+                    d="M3 4a1 1 0 011-1h3a1 1 0 010 2H5v2a1 1 0 01-2 0V5a1 1 0 010-1h1zm10-1h3a1 1 0 011 1v3a1 1 0 01-2 0V5h-2a1 1 0 010-2zM4 11a1 1 0 112 0v2h2a1 1 0 010 2H4a1 1 0 01-1-1v-3zm10 3h-2a1 1 0 010-2h2v-2a1 1 0 012 0v3a1 1 0 01-1 1h-1z"
+                    clip-rule="evenodd" />
+            </svg>
+        </button>
+    </div>
+
+    <!-- Filtros de categoría — barra plegable -->
+    <div class="catalog-cats-bar" [class.catalog-cats-bar--plegada]="categoriasPlegadas()">
+
+        @if (!categoriasPlegadas()) {
+        <div class="catalog-categories" [class.catalog-categories--expanded]="categoriasExpandidas()">
+
+            <button class="btn-secondary !rounded-full !py-1 !px-4 !h-8 !text-xs !font-semibold transition-colors"
+                [class.!bg-primary]="selectedCategoria() === null" [class.!text-white]="selectedCategoria() === null"
+                [class.!border-primary]="selectedCategoria() === null"
+                (click)="selectCategoria(null, $any($event.currentTarget))">
+                Todos
+            </button>
+            @for (cat of categorias(); track cat) {
+            <button class="btn-secondary !rounded-full !py-1 !px-4 !h-8 !text-xs !font-semibold transition-colors"
+                [class.!bg-primary]="selectedCategoria() === cat" [class.!text-white]="selectedCategoria() === cat"
+                [class.!border-primary]="selectedCategoria() === cat"
+                (click)="selectCategoria(cat, $any($event.currentTarget))">
+                {{ cat }}
+            </button>
+            }
+
+            <!-- Botón "Ver todas / Menos" al borde derecho -->
+            <button class="cat-more-btn" (click)="toggleExpandir()"
+                [title]="categoriasExpandidas() ? 'Ver menos categorías' : 'Ver todas las categorías'">
+                @if (categoriasExpandidas()) {
+                <svg viewBox="0 0 20 20" fill="currentColor" width="11" height="11">
+                    <path fill-rule="evenodd"
+                        d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z"
+                        clip-rule="evenodd" />
+                </svg>
+                Menos
+                } @else {
+                +{{ categorias().length }}
+                <svg viewBox="0 0 20 20" fill="currentColor" width="11" height="11">
+                    <path fill-rule="evenodd"
+                        d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                        clip-rule="evenodd" />
+                </svg>
+                }
+            </button>
+
+        </div>
+        }
+
+        <!-- Handle de colapso: siempre visible, plega/desplega la barra entera -->
+        <button class="cat-fold-handle" (click)="togglePlegado()"
+            [title]="categoriasPlegadas() ? 'Mostrar categorías' : 'Plegar categorías'">
+            @if (categoriasPlegadas()) {
+            <svg viewBox="0 0 20 20" fill="currentColor" width="10" height="10">
+                <path fill-rule="evenodd"
+                    d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                    clip-rule="evenodd" />
+            </svg>
+            <span class="cat-fold-label">Categorías</span>
+            } @else {
+            <svg viewBox="0 0 20 20" fill="currentColor" width="10" height="10">
+                <path fill-rule="evenodd"
+                    d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z"
+                    clip-rule="evenodd" />
+            </svg>
+            }
+        </button>
+
+    </div>
+
+    <!-- Grilla de productos -->
+    <div class="catalog-grid-wrap">
+
+        @if (isLoading()) {
+        <div class="catalog-empty">
+            <div class="catalog-loading-grid">
+                @for (n of [1,2,3,4,5,6,7,8]; track n) {
+                <div class="product-skeleton">
+                    <div class="skeleton-img animate-shimmer"></div>
+                    <div class="skeleton-info">
+                        <div class="skeleton-mono animate-shimmer"></div>
+                        <div class="skeleton-line animate-shimmer"></div>
+                        <div class="skeleton-line skeleton-line--short animate-shimmer"></div>
+                    </div>
+                </div>
+                }
+            </div>
+        </div>
+        } @else {
+        <div class="catalog-grid">
+            @for (p of filteredItems(); track p.varianteId) {
+            <div class="card-product relative cursor-pointer group" [class.opacity-50]="p.stockActual <= 0"
+                [class.grayscale]="p.stockActual <= 0" [class.ring-2]="isJustAdded(p.varianteId)"
+                [class.ring-primary]="isJustAdded(p.varianteId)" (click)="addToCart(p)"
+                [attr.title]="p.stockActual <= 0 ? 'Sin stock' : p.nombreProducto">
+                <!-- Accent bar de color en el tope -->
+                <div class="h-1 w-full shrink-0" [class]="bgColor(p.varianteId)"></div>
+
+                <div class="p-3">
+                    <!-- Círculo monograma con inicial -->
+                    <div class="relative w-12 h-12 rounded-xl flex items-center justify-center text-xl font-bold text-white mb-2 uppercase"
+                        [class]="bgColor(p.varianteId)">
+                        {{ p.nombre[0] }}
+                        <!-- Badge de stock -->
+                        @if (p.stockActual <= 0) { <span
+                            class="absolute -bottom-1 -right-1 text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-[var(--color-border)] text-on border-[1.5px] border-surface">
+                            Ag.</span>
+                            } @else if (p.stockActual <= p.stockMinimo) { <span
+                                class="absolute -bottom-1 -right-1 text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-[var(--color-warning)] text-white border-[1.5px] border-surface">
+                                {{
+                                p.stockActual }}u</span>
+                                } @else {
+                                <span
+                                    class="absolute -bottom-1 -right-1 text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-[var(--color-success)] text-white border-[1.5px] border-surface">{{
+                                    p.stockActual }}u</span>
+                                }
+                    </div>
+
+                    <!-- Info del producto -->
+                    <div class="flex flex-col gap-0.5">
+                        <p class="text-[13px] font-semibold text-on leading-tight line-clamp-2">{{ p.nombre }}</p>
+                        <p class="text-[10px] text-muted font-mono">{{ p.sku }}</p>
+                        <div class="flex items-center justify-between mt-2">
+                            <span class="text-lg font-bold text-on leading-none">
+                                <span class="text-[11px] font-semibold text-subtle align-super mr-[1px]">S/</span>{{
+                                fmt(p.precioFinal) }}
+                            </span>
+                            <button
+                                class="icon-btn-sm !w-7 !h-7 bg-primary text-white hover:brightness-110 active:brightness-90 disabled:bg-[var(--color-border)] hover:bg-primary"
+                                [class.ring-2]="isJustAdded(p.varianteId)"
+                                [class.ring-offset-1]="isJustAdded(p.varianteId)"
+                                [class.ring-primary]="isJustAdded(p.varianteId)" [disabled]="p.stockActual <= 0"
+                                (click)="$event.stopPropagation(); addToCart(p)"
+                                [attr.aria-label]="'Agregar ' + p.nombre">
+                                @if (isJustAdded(p.varianteId)) {
+                                <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14">
+                                    <path fill-rule="evenodd"
+                                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                        clip-rule="evenodd" />
+                                </svg>
+                                } @else {
+                                <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14">
+                                    <path fill-rule="evenodd"
+                                        d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
+                                        clip-rule="evenodd" />
+                                </svg>
+                                }
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            }
+
+            @empty {
+            <div class="catalog-empty-msg col-span-full">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="40" height="40"
+                    class="opacity-30">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+                </svg>
+                <p>Sin resultados para <strong>{{ searchQuery() }}</strong></p>
+            </div>
+            }
+        </div>
+        }
+    </div>
+
+</section>

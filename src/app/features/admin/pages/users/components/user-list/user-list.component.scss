@@ -1,0 +1,84 @@
+/* user-list.component.scss
+ * La tabla de usuarios delega la mayor parte del estilo a admin-utilities.css.
+ * Solo se definen estilos específicos que no caben en las clases compartidas.
+ */
+
+/* Badge de rol — usa paleta naranja/amber */
+.badge-rol {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.2rem 0.625rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    background: color-mix(in oklch, var(--color-accent) 15%, var(--color-surface));
+    color: var(--color-accent);
+}
+
+/* Tabla de usuarios */
+.users-table {
+    width: 100%;
+    border-collapse: collapse;
+
+    th,
+    td {
+        padding: 0.875rem 1rem;
+        text-align: left;
+        border-bottom: 1px solid var(--color-border);
+    }
+
+    th {
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--color-text-muted);
+        background: var(--color-surface-raised);
+    }
+
+    tbody tr:hover {
+        background: var(--color-surface-raised);
+    }
+
+    tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    .username {
+        font-weight: 600;
+        color: var(--color-primary);
+    }
+
+    .email {
+        color: var(--color-text-muted);
+        font-size: 0.875rem;
+    }
+
+    .documento {
+        font-family: 'JetBrains Mono', 'Courier New', monospace;
+        font-size: 0.8125rem;
+        color: var(--color-text-muted);
+    }
+
+    .actions {
+        display: flex;
+        gap: 0.25rem;
+    }
+}
+
+/* Table container */
+.table-container {
+    background: var(--color-surface);
+    border-radius: 12px;
+    border: 1px solid var(--color-border);
+    overflow: hidden;
+    margin-bottom: 0;
+}
+
+/* Empty state */
+.empty-state {
+    padding: 4rem 2rem;
+    text-align: center;
+    color: var(--color-text-muted);
+    font-size: 0.9375rem;
+}

@@ -1,0 +1,228 @@
+@if (isOpen) {
+<div class="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+    (click)="closeModal()">
+    <!-- Modal Container -->
+    <div class="bg-[var(--color-surface)] rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto relative w-[min(768px,calc(100vw-2rem))]"
+        (click)="$event.stopPropagation()">
+
+        <!-- Back / Close buttons -->
+        <div class="flex items-center justify-between px-6 pt-5">
+            @if (step() !== 'select') {
+            <button (click)="goBack()"
+                class="flex items-center gap-1 text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+                Atrás
+            </button>
+            } @else {
+            <span></span>
+            }
+            <button (click)="closeModal()"
+                class="text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors p-1 ml-auto">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+
+        <div class="px-8 pb-8 pt-2">
+            <!-- Header -->
+            <div class="text-center mb-5">
+                <h2 class="text-2xl font-bold text-[var(--color-text-primary)] mb-1">
+                    @if (step() === 'otp') {
+                    Verificar código
+                    } @else if (step() === 'register') {
+                    Completar registro
+                    } @else {
+                    Iniciar sesión/Registrarse
+                    }
+                </h2>
+                <div class="flex items-center justify-center gap-1 text-[var(--color-success)] text-sm font-medium">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                    </svg>
+                    <span>Todos los datos están protegidos</span>
+                </div>
+            </div>
+
+            <!-- Benefits Banner -->
+            <div
+                class="grid grid-cols-4 gap-2 bg-[color-mix(in_oklch,var(--color-success)_10%,var(--color-surface))] rounded-xl p-4 mb-7 text-center text-xs">
+                <div class="flex flex-col items-center gap-1">
+                    <span class="text-[var(--color-success)] font-semibold">⊕ Ajuste de precios</span>
+                    <span class="text-[var(--color-success)]">En un plazo de 30 días</span>
+                </div>
+                <div class="flex flex-col items-center gap-1">
+                    <span class="text-[var(--color-success)] font-semibold">🚚 Envío gratis</span>
+                    <span class="text-[var(--color-success)]">¡Solo para ti!</span>
+                </div>
+                <div class="flex flex-col items-center gap-1">
+                    <span class="text-[var(--color-success)] font-semibold">📦 Devoluciones gratis</span>
+                    <span class="text-[var(--color-success)]">Hasta 90 días</span>
+                </div>
+                <div class="flex flex-col items-center gap-1">
+                    <span class="text-[var(--color-success)] font-semibold">✅ Entrega garantizada</span>
+                    <span class="text-[var(--color-success)]">Reembolso por cualquier problema</span>
+                </div>
+            </div>
+
+            @if (errorMsg()) {
+            <div
+                class="mb-6 p-3 bg-[color-mix(in_oklch,var(--color-error)_10%,var(--color-surface))] border border-[color-mix(in_oklch,var(--color-error)_30%,transparent)] rounded-lg text-[var(--color-error)] text-xs text-center animate-in fade-in slide-in-from-top-1 font-medium">
+                {{ errorMsg() }}
+            </div>
+            }
+
+            <!-- ───── Step: SELECT ───── -->
+            @if (step() === 'select') {
+            <div class="flex flex-col md:flex-row gap-8">
+
+                <!-- Left: Email/Phone -->
+                <div class="flex-1 flex flex-col min-w-0">
+                    <p class="text-sm text-[var(--color-text-muted)] mb-3">Email o número de teléfono</p>
+                    <input type="email" [value]="email()" (input)="email.set($any($event.target).value)"
+                        placeholder="Ingresa tu email"
+                        class="w-full border border-[var(--color-border)] bg-[var(--color-surface-raised)] text-[var(--color-text-primary)] rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] mb-3 placeholder:text-[var(--color-text-muted)]"
+                        (keydown.enter)="isValidEmailOrPhone(email()) ? goToEmail() : null" />
+                    <button (click)="goToEmail()" [disabled]="!isValidEmailOrPhone(email())"
+                        class="w-full bg-accent hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-full py-3 transition-all text-sm">
+                        Continuar
+                    </button>
+                    <div class="mt-6 text-center text-xs text-[var(--color-text-muted)]">
+                        <a href="#" class="hover:underline text-[var(--color-primary)]">¿Problemas al iniciar
+                            sesión?</a>
+                    </div>
+                </div>
+
+                <!-- Divider -->
+                <div class="hidden md:flex flex-col items-center justify-center relative w-8 shrink-0">
+                    <div class="absolute w-[1px] bg-[var(--color-border)] h-full top-0"></div>
+                    <div class="bg-[var(--color-surface)] z-10 py-2 text-[var(--color-text-muted)] text-sm">O</div>
+                </div>
+
+                <!-- Right: Social -->
+                <div class="flex-1 flex flex-col gap-3 min-w-0">
+                    <div class="relative w-full">
+                        <button
+                            class="w-full border border-[var(--color-border)] rounded-full py-3 px-4 flex items-center justify-center gap-3 hover:bg-[var(--color-surface-raised)] hover:border-[var(--color-text-muted)] hover:shadow-sm active:scale-[0.98] transition-all cursor-pointer text-sm text-[var(--color-text-primary)]">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 48 48"
+                                class="shrink-0">
+                                <path fill="#EA4335"
+                                    d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z" />
+                                <path fill="#4285F4"
+                                    d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z" />
+                                <path fill="#FBBC05"
+                                    d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z" />
+                                <path fill="#34A853"
+                                    d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z" />
+                                <path fill="none" d="M0 0h48v48H0z" />
+                            </svg>
+                            <span class="font-medium whitespace-nowrap">Continuar con Google</span>
+                        </button>
+                        <!-- Overlay for actual Google click: must be transparent but clickable -->
+                        <div
+                            class="absolute inset-0 opacity-0 overflow-hidden rounded-full flex justify-center items-center [&_div]:w-full pointer-events-auto">
+                            <asl-google-signin-button type="standard" size="large" [width]="400" text="continue_with"
+                                theme="outline"></asl-google-signin-button>
+                        </div>
+                    </div>
+                    <button (click)="signInWithFacebook()"
+                        class="w-full border border-[var(--color-border)] rounded-full py-3 px-4 flex items-center justify-center gap-3 hover:bg-[var(--color-surface-raised)] hover:border-[var(--color-text-muted)] hover:shadow-sm active:scale-[0.98] transition-all cursor-pointer text-sm text-[var(--color-text-primary)]">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                            class="shrink-0" fill="#1877F2">
+                            <path
+                                d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.469h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.469h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                        </svg>
+                        <span class="font-medium whitespace-nowrap">Continuar con Facebook</span>
+                    </button>
+                    <button (click)="signInWithApple()"
+                        class="w-full border border-[var(--color-border)] rounded-full py-3 px-4 flex items-center justify-center gap-3 hover:bg-[var(--color-surface-raised)] hover:border-[var(--color-text-muted)] hover:shadow-sm active:scale-[0.98] transition-all cursor-pointer text-sm text-[var(--color-text-primary)]">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                            class="shrink-0" fill="currentColor">
+                            <path
+                                d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.689.827-1.33 2.272-1.144 3.649 1.34.104 2.61-.714 3.431-1.636z" />
+                        </svg>
+                        <span class="font-medium whitespace-nowrap">Continuar con Apple</span>
+                    </button>
+                </div>
+            </div>
+            }
+
+            <!-- ───── Step: EMAIL ───── -->
+            @if (step() === 'email') {
+            <div class="max-w-md mx-auto flex flex-col gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">Email o número de
+                        teléfono</label>
+                    <input type="email" [value]="email()" (input)="email.set($any($event.target).value)"
+                        placeholder="tucorreo@ejemplo.com"
+                        class="w-full border border-[var(--color-border)] bg-[var(--color-surface-raised)] text-[var(--color-text-primary)] rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] placeholder:text-[var(--color-text-muted)]"
+                        (keydown.enter)="onEmailSubmit()" />
+                </div>
+
+                <button (click)="onEmailSubmit()" [disabled]="loading()"
+                    class="w-full bg-accent hover:brightness-110 disabled:opacity-60 text-white font-semibold rounded-full py-3 transition-all text-sm flex items-center justify-center gap-2">
+                    @if (loading()) {
+                    <svg class="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                    </svg>
+                    }
+                    Continuar
+                </button>
+            </div>
+            }
+
+            <!-- ───── Step: OTP ───── -->
+            @if (step() === 'otp') {
+            <div class="max-w-md mx-auto flex flex-col gap-4">
+                <p class="text-sm text-[var(--color-text-muted)] text-center">
+                    Ingresa el código de 6 dígitos enviado a
+                    <span class="font-semibold text-[var(--color-text-primary)]">{{ maskedEmail() }}</span>
+                </p>
+
+                <input type="text" inputmode="numeric" maxlength="6" [value]="otp()"
+                    (input)="otp.set($any($event.target).value)" placeholder="000000"
+                    class="w-full border-2 border-[var(--color-border)] bg-[var(--color-surface-raised)] text-[var(--color-text-primary)] rounded-xl px-4 py-4 text-center text-2xl font-bold tracking-[0.5em] focus:outline-none focus:border-[var(--color-accent)] placeholder:text-[var(--color-text-muted)]"
+                    (keydown.enter)="onOtpSubmit()" />
+
+                <button (click)="onOtpSubmit()" [disabled]="loading()"
+                    class="w-full bg-accent hover:brightness-110 disabled:opacity-60 text-white font-semibold rounded-full py-3 transition-all text-sm flex items-center justify-center gap-2">
+                    @if (loading()) {
+                    <svg class="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                    </svg>
+                    }
+                    Verificar código
+                </button>
+
+                <button (click)="resendOtp()" [disabled]="loading()"
+                    class="text-[var(--color-accent)] hover:underline text-xs text-center disabled:opacity-50">
+                    ¿No lo recibiste? Reenviar código
+                </button>
+            </div>
+            }
+
+            <!-- ───── Step: REGISTER ───── -->
+            @if (step() === 'register') {
+            <app-register-form [email]="email()" (register)="onRegisterSubmit($event)"
+                (back)="goBack()"></app-register-form>
+            }
+
+            <!-- Footer -->
+            <div class="mt-8 text-center text-xs text-[var(--color-text-muted)]">
+                Al continuar, aceptas nuestros
+                <a href="#" class="text-[var(--color-primary)] hover:underline">Términos de uso</a> y
+                <a href="#" class="text-[var(--color-primary)] hover:underline">Política de privacidad</a>.
+            </div>
+        </div>
+    </div>
+</div>
+}

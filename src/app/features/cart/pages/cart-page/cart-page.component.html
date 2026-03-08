@@ -1,0 +1,278 @@
+<div
+    class="container max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col lg:flex-row gap-8 min-h-screen text-[var(--color-text-primary)] bg-[var(--color-background)]">
+
+    <!-- Left Column: Cart Items and Recommendations -->
+    <div class="flex-1 space-y-6">
+        <!-- Free Shipping Banner -->
+        <div
+            class="bg-[color-mix(in_oklch,var(--color-success)_12%,var(--color-surface))] border border-[color-mix(in_oklch,var(--color-success)_30%,transparent)] text-[var(--color-success)] px-4 py-3 rounded-md flex items-center justify-between font-medium">
+            <div class="flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd"
+                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                        clip-rule="evenodd" />
+                </svg>
+                <span>Envío gratis especial para ti</span>
+            </div>
+            <span class="text-xs font-semibold bg-[color-mix(in_oklch,var(--color-success)_20%,var(--color-surface))] px-2 py-1 rounded">Oferta exclusiva</span>
+        </div>
+
+        <!-- Select All / Item Count -->
+        <div class="flex items-center justify-between pb-2 border-b border-[var(--color-border)]">
+            <label class="flex items-center gap-3 cursor-pointer">
+                <input type="checkbox"
+                    class="w-5 h-5 accent-[var(--color-text-primary)] rounded focus:ring-0 cursor-pointer"
+                    [checked]="cartService.allSelected()" (change)="toggleAll($event)">
+                <span class="font-bold text-lg">Seleccionar todo ({{ cartService.cartCount() }})</span>
+            </label>
+            <button class="text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+            </button>
+        </div>
+
+        <!-- Cart Items List -->
+        <div class="space-y-6">
+            <ng-container *ngFor="let item of cartItems()">
+                <div class="flex flex-col sm:flex-row gap-4 pt-4 relative group">
+                    <!-- Selection Checkbox -->
+                    <div class="pt-2 sm:pt-14 absolute left-0 z-10">
+                        <input type="checkbox"
+                            class="w-5 h-5 accent-[var(--color-text-primary)] rounded focus:ring-0 cursor-pointer"
+                            [checked]="item.selected" (change)="toggleSelection(item.productId)">
+                    </div>
+
+                    <!-- Product Image -->
+                    <div
+                        class="relative w-32 h-32 ml-8 flex-shrink-0 bg-[var(--color-surface-raised)] rounded-md overflow-hidden border border-[var(--color-border)]">
+                        <img [src]="item.image" [alt]="item.name" class="w-full h-full object-cover">
+                        <div *ngIf="item.stock !== undefined && item.stock < 10"
+                            class="absolute bottom-0 left-0 right-0 bg-black/70 text-white text-[10px] font-bold text-center py-1 truncate">
+                            CASI AGOTADO(S)
+                        </div>
+                    </div>
+
+                    <!-- Product Details -->
+                    <div class="flex-1 flex flex-col justify-between ml-8 sm:ml-0">
+                        <div>
+                            <h3 class="text-sm font-medium text-[var(--color-text-primary)] leading-tight">{{ item.name }}</h3>
+                            <p class="text-xs text-[var(--color-text-muted)] mt-1 line-clamp-1 overflow-hidden"
+                                [title]="item.description">{{ item.description }}</p>
+
+                            <button (click)="cartService.removeFromCart(item.productId)"
+                                class="absolute top-4 right-0 text-[var(--color-text-muted)] hover:text-[var(--color-error)] transition-colors"
+                                title="{{ 'cart.remove' | translate }}">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                            </button>
+                        </div>
+
+                        <div class="flex items-end justify-between mt-4">
+                            <div class="flex items-center gap-2">
+                                <span class="text-xl font-bold text-[var(--color-accent)]">S/ {{ item.price | number:'1.2-2'
+                                    }}</span>
+                                <span class="text-xs text-[var(--color-text-muted)] line-through">S/ {{ (item.price * 1.48) |
+                                    number:'1.2-2' }}</span>
+                                <span
+                                    class="text-xs border border-[var(--color-accent)] text-[var(--color-accent)] px-1 py-0.5 rounded leading-none">48%</span>
+                            </div>
+
+                            <div
+                                class="relative border border-[var(--color-border)] rounded overflow-hidden bg-[var(--color-surface-raised)] hover:border-[var(--color-text-muted)] transition-colors h-8">
+                                <select
+                                    class="appearance-none bg-transparent pl-3 pr-8 py-1 text-sm font-medium text-[var(--color-text-primary)] outline-none w-full h-full cursor-pointer"
+                                    [value]="item.quantity" (change)="onQuantityChange(item.productId, $event)">
+                                    <option *ngFor="let qty of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]" [value]="qty">
+                                        Cant. {{ qty }}
+                                    </option>
+                                </select>
+                                <div
+                                    class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-[var(--color-text-muted)]">
+                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                        xmlns="http://www.w3.org/2000/svg">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M19 9l-7 7-7-7"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </ng-container>
+
+            <div *ngIf="cartItems().length === 0" class="text-center py-12 text-[var(--color-text-muted)]">
+                {{ 'cart.empty' | translate }}
+            </div>
+        </div>
+
+        <!-- Recommendations Placeholder -->
+        <div class="pt-8">
+            <h2 class="text-lg font-bold mb-4">Artículos que tal vez quieras agregar</h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="border border-[var(--color-border)] rounded p-2 hover:shadow-md transition-shadow">
+                    <div class="bg-[var(--color-surface-raised)] w-full h-32 rounded mb-2"></div>
+                    <div class="h-4 bg-[var(--color-surface-raised)] rounded w-3/4 mb-1"></div>
+                    <div class="flex justify-between items-center">
+                        <span class="font-bold text-[var(--color-accent)]">S/ 25.60</span>
+                        <button class="border border-[var(--color-border)] rounded-full p-1 hover:border-[var(--color-text-muted)] transition-colors"><svg xmlns="http://www.w3.org/2000/svg"
+                                class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                            </svg></button>
+                    </div>
+                </div>
+                <div class="border border-[var(--color-border)] rounded p-2 hover:shadow-md transition-shadow">
+                    <div class="bg-[var(--color-surface-raised)] w-full h-32 rounded mb-2"></div>
+                    <div class="h-4 bg-[var(--color-surface-raised)] rounded w-3/4 mb-1"></div>
+                    <div class="flex justify-between items-center">
+                        <span class="font-bold text-[var(--color-accent)]">S/ 20.03</span>
+                        <button class="border border-[var(--color-border)] rounded-full p-1 hover:border-[var(--color-text-muted)] transition-colors"><svg xmlns="http://www.w3.org/2000/svg"
+                                class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                            </svg></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Order Summary (Sticky) -->
+    <div class="lg:w-80 flex-shrink-0">
+        <div class="sticky top-6">
+            <h2 class="text-lg font-bold mb-4">Resumen del pedido</h2>
+
+            <div class="space-y-3 text-sm mb-6">
+                <div class="flex justify-between text-[var(--color-text-secondary)]">
+                    <span>Total de artículos:</span>
+                    <span class="line-through">S/ {{ (cartTotal() * 1.48) | number:'1.2-2' }}</span>
+                </div>
+                <div class="flex justify-between text-[var(--color-text-secondary)]">
+                    <span>Descuento de artículo(s):</span>
+                    <span class="text-[var(--color-accent)]">-S/ {{ (cartTotal() * 0.48) | number:'1.2-2' }}</span>
+                </div>
+
+                <div class="flex justify-between items-end pt-4 border-t border-[var(--color-border)]">
+                    <span class="font-bold text-[var(--color-text-primary)]">Total</span>
+                    <span class="font-bold text-2xl text-[var(--color-text-primary)]">S/ {{ cartTotal() | number:'1.2-2' }}</span>
+                </div>
+                <div class="text-[10px] text-[var(--color-text-muted)]">Consulta el monto final de tu pago real.</div>
+            </div>
+
+            <button (click)="checkout()" [disabled]="cartService.selectedCount() === 0"
+                class="w-full bg-accent hover:brightness-110 text-white font-bold py-3 px-4 rounded-full transition-all flex flex-col items-center justify-center leading-tight mb-4 disabled:opacity-50 disabled:cursor-not-allowed">
+                <span class="text-base">Hacer pedido ({{ cartService.selectedCount() }})</span>
+                <span class="text-xs font-normal flex items-center gap-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd"
+                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                            clip-rule="evenodd" />
+                    </svg>
+                    1 casi agotado
+                </span>
+            </button>
+
+            <div class="text-[10px] text-[var(--color-text-muted)] mb-6 flex items-start gap-1">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mt-0.5 flex-shrink-0" fill="none"
+                    viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                La disponibilidad y el precio de los artículos no están garantizados hasta que se finalice el pago.
+            </div>
+
+            <div class="flex items-center gap-2 text-xs text-[var(--color-text-secondary)] mb-6 font-medium">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-[var(--color-success)]" viewBox="0 0 20 20"
+                    fill="currentColor">
+                    <path fill-rule="evenodd"
+                        d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
+                        clip-rule="evenodd" />
+                </svg>
+                No se te cobrará hasta que revises este pedido en la página siguiente
+            </div>
+
+            <div class="bg-[var(--color-surface-raised)] rounded-lg p-4 space-y-6 border border-[var(--color-border)]">
+                <!-- Opciones de pago seguro -->
+                <div>
+                    <div class="flex items-center gap-2 font-bold text-sm text-[var(--color-text-primary)] mb-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-[var(--color-success)]" viewBox="0 0 20 20"
+                            fill="currentColor">
+                            <path fill-rule="evenodd"
+                                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                clip-rule="evenodd" />
+                        </svg>
+                        Opciones de pago seguro
+                    </div>
+                    <p class="text-[11px] text-[var(--color-success)] font-medium mb-2">MyStore se compromete a proteger tu
+                        información de pago.</p>
+                    <p class="text-[11px] text-[var(--color-text-muted)] mb-3 leading-relaxed">Seguimos los estándares PCI DSS,
+                        utilizamos un encriptado sólido y realizamos revisiones periódicas del sistema para proteger tu
+                        privacidad.</p>
+
+                    <p class="text-[11px] font-medium text-[var(--color-text-secondary)] mb-2">1. Métodos de pago</p>
+                    <div class="flex flex-wrap gap-2">
+                        <ng-container *ngFor="let m of mediosPago()">
+                            <div class="h-6 w-10 bg-[var(--color-surface)] border border-[var(--color-border)] rounded overflow-hidden flex items-center justify-center p-0.5"
+                                [title]="m.nombre">
+                                <img *ngIf="m.iconoUrl" [src]="m.iconoUrl" [alt]="m.nombre"
+                                    class="h-full object-contain"
+                                    fallback="https://via.placeholder.com/40x24?text=Method">
+                                <span *ngIf="!m.iconoUrl" class="text-[8px] text-[var(--color-text-primary)] font-bold truncate">{{
+                                    m.codigo }}</span>
+                            </div>
+                        </ng-container>
+                    </div>
+                </div>
+
+                <!-- Certificación de seguridad -->
+                <div>
+                    <p class="text-[11px] font-medium text-[var(--color-text-secondary)] mb-2">2. Certificación de seguridad</p>
+                    <div class="flex flex-wrap gap-2">
+                        <ng-container *ngFor="let c of certificaciones()">
+                            <div class="h-6 bg-[var(--color-surface)] border border-[var(--color-border)] rounded overflow-hidden flex items-center justify-center px-1"
+                                [title]="c.nombre">
+                                <img *ngIf="c.iconoUrl" [src]="c.iconoUrl" [alt]="c.nombre"
+                                    class="h-full object-contain"
+                                    fallback="https://via.placeholder.com/60x24?text=Cert">
+                                <span *ngIf="!c.iconoUrl" class="text-[8px] text-[var(--color-text-primary)] font-bold truncate">{{
+                                    c.codigo }}</span>
+                            </div>
+                        </ng-container>
+                    </div>
+                </div>
+
+                <!-- Privacidad segura -->
+                <div>
+                    <div class="flex items-center gap-2 font-bold text-sm text-[var(--color-text-primary)] mb-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-[var(--color-success)]" viewBox="0 0 20 20"
+                            fill="currentColor">
+                            <path fill-rule="evenodd"
+                                d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
+                                clip-rule="evenodd" />
+                        </svg>
+                        Privacidad segura
+                    </div>
+                    <p class="text-[11px] text-[var(--color-text-muted)] leading-relaxed mb-1">
+                        Proteger tu privacidad es muy importante para nosotros. Ten la seguridad de que tu información
+                        se mantendrá segura y libre de riesgos. No vendemos tu información personal por dinero y solo
+                        utilizaremos tu información de acuerdo con nuestra política de privacidad y cookies para
+                        proporcionar y mejorar nuestros servicios.
+                    </p>
+                    <a href="#" class="text-[11px] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] flex items-center gap-1 group">
+                        Más información
+                        <svg xmlns="http://www.w3.org/2000/svg"
+                            class="h-3 w-3 group-hover:translate-x-0.5 transition-transform" fill="none"
+                            viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                        </svg>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

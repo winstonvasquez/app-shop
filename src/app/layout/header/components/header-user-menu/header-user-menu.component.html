@@ -1,0 +1,35 @@
+<div class="absolute top-full -right-4 mt-2 w-[280px] bg-[var(--color-surface)] rounded-lg shadow-xl border border-[var(--color-border)] py-2 transition-all duration-300 z-50 custom-scrollbar text-[var(--color-text-primary)] before:content-[''] before:absolute before:-top-2 before:right-6 before:border-8 before:border-transparent before:border-b-[var(--color-surface)]"
+    [class.opacity-0]="!isOpen()" [class.invisible]="!isOpen()" [class.opacity-100]="isOpen()"
+    [class.visible]="isOpen()">
+    <!-- Header del Menú -->
+    <div class="flex items-center gap-3 px-4 pt-2 pb-4 border-b border-[var(--color-border)] mb-2">
+        <div class="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 border border-[var(--color-border)] shadow-sm">
+            <img src="https://ui-avatars.com/api/?name=W+V&background=2c3e50&color=fff&size=48" alt="Avatar"
+                class="w-full h-full object-cover" />
+        </div>
+        <div class="flex-1 min-w-0">
+            <div class="font-bold text-base text-[var(--color-text-primary)] truncate">{{ userName() }}</div>
+            <div class="text-xs text-[var(--color-text-muted)] truncate mt-0.5">Cuenta gratis</div>
+        </div>
+    </div>
+
+    <!-- Opciones del Menú -->
+    <div class="max-h-[60vh] overflow-y-auto custom-scrollbar">
+        <app-menu-orders></app-menu-orders>
+        <app-menu-reviews></app-menu-reviews>
+        <app-menu-profile></app-menu-profile>
+        <app-menu-coupons></app-menu-coupons>
+        <app-menu-credit></app-menu-credit>
+        <app-menu-followed-stores></app-menu-followed-stores>
+        <app-menu-browsing-history></app-menu-browsing-history>
+        <app-menu-addresses></app-menu-addresses>
+        <app-menu-security></app-menu-security>
+        <app-menu-permissions></app-menu-permissions>
+        <app-menu-notifications></app-menu-notifications>
+
+        <div class="my-2 border-t border-[var(--color-border)] mx-4"></div>
+
+        <app-menu-switch-account></app-menu-switch-account>
+        <app-menu-logout></app-menu-logout>
+    </div>
+</div>

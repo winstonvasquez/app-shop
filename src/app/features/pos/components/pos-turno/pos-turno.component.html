@@ -1,0 +1,135 @@
+<div class="turno-screen">
+    <div class="turno-card">
+
+        <!-- Header oscuro con gradiente brand -->
+        <div class="turno-card-header">
+            <svg viewBox="0 0 20 20" fill="currentColor" width="20" height="20" class="text-error shrink-0">
+                <path fill-rule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"
+                    clip-rule="evenodd" />
+            </svg>
+            <h2 class="turno-title">Resumen de turno</h2>
+        </div>
+
+        @if (turno(); as t) {
+
+        <!-- Info del turno -->
+        <div class="turno-info-grid">
+            <div class="turno-info-row">
+                <span class="turno-info-label">Cajero</span>
+                <span class="turno-info-val">{{ t.cajeroNombre }}</span>
+            </div>
+            <div class="turno-info-row">
+                <span class="turno-info-label">Monto apertura</span>
+                <span class="turno-info-val mono">S/{{ fmt(t.montoApertura) }}</span>
+            </div>
+            <div class="turno-info-row">
+                <span class="turno-info-label">Inicio del turno</span>
+                <span class="turno-info-val">{{ t.fechaApertura | date:'dd/MM/yyyy HH:mm' }}</span>
+            </div>
+            <div class="turno-info-row">
+                <span class="turno-info-label">Estado</span>
+                <span class="turno-estado" [class.turno-estado--abierto]="t.estado === 'ABIERTO'">
+                    <span class="turno-estado-dot"></span>
+                    {{ t.estado }}
+                </span>
+            </div>
+        </div>
+
+        <!-- Desglose de ventas -->
+        <div class="turno-ventas-section">
+            <p class="turno-section-title">Desglose de ventas</p>
+
+            <div class="turno-ventas-rows">
+                <div class="turno-ventas-row">
+                    <span>Efectivo</span>
+                    <span class="mono fw-bold">S/{{ fmt(t.totalEfectivo) }}</span>
+                </div>
+                <div class="turno-ventas-row">
+                    <span>Tarjeta</span>
+                    <span class="mono fw-bold">S/{{ fmt(t.totalTarjeta) }}</span>
+                </div>
+                <div class="turno-ventas-row">
+                    <span>Yape</span>
+                    <span class="mono fw-bold">S/{{ fmt(t.totalYape) }}</span>
+                </div>
+                <div class="turno-ventas-row">
+                    <span>Plin</span>
+                    <span class="mono fw-bold">S/{{ fmt(t.totalPlin) }}</span>
+                </div>
+                @if (t.totalAnulaciones > 0) {
+                <div class="turno-ventas-row turno-ventas-row--anulacion">
+                    <span>Anulaciones</span>
+                    <span class="mono fw-bold">−S/{{ fmt(t.totalAnulaciones) }}</span>
+                </div>
+                }
+            </div>
+
+            <div class="turno-total-row">
+                <span>Total vendido</span>
+                <span class="turno-total-amount">S/{{ fmt(t.totalVentas) }}</span>
+            </div>
+        </div>
+
+        <!-- CPE emitidos -->
+        <div class="turno-cpe-section">
+            <p class="turno-section-title">Comprobantes SUNAT</p>
+            <div class="turno-cpe-item">
+                <span class="cpe-badge cpe-badge--valid">🇵🇪 Boleta</span>
+                <span class="turno-info-label">Boletas emitidas</span>
+                <span class="fw-bold">{{ t.boletasEmitidas }}</span>
+            </div>
+            <div class="turno-cpe-item">
+                <span class="cpe-badge cpe-badge--valid">🇵🇪 Factura</span>
+                <span class="turno-info-label">Facturas emitidas</span>
+                <span class="fw-bold">{{ t.facturasEmitidas }}</span>
+            </div>
+        </div>
+
+        <!-- Acciones -->
+        <div class="turno-actions flex gap-3 mt-6 pt-6 border-t border-[var(--color-border)]">
+            <button class="btn-secondary flex-1 gap-2 !h-12 !rounded-xl" (click)="volver.emit()">
+                <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14">
+                    <path fill-rule="evenodd"
+                        d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z"
+                        clip-rule="evenodd" />
+                </svg>
+                Volver al POS
+            </button>
+            <button
+                class="btn-primary flex-1 gap-2 !h-12 !rounded-xl !bg-[var(--color-danger)] hover:!bg-[var(--color-danger)]/80"
+                (click)="cerrarTurno.emit()">
+                <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14">
+                    <path fill-rule="evenodd"
+                        d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
+                        clip-rule="evenodd" />
+                </svg>
+                Cerrar turno
+            </button>
+        </div>
+
+        } @else {
+
+        <!-- Sin turno activo -->
+        <div class="turno-empty">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48"
+                class="opacity-20">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+            </svg>
+            <p class="turno-empty-title">Sin turno activo</p>
+            <p class="turno-empty-sub">Abre un turno para comenzar a registrar ventas</p>
+        </div>
+        <button class="btn-primary w-full gap-2 !h-12 !rounded-xl mt-6" (click)="abrirTurno.emit()">
+            <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
+                <path fill-rule="evenodd"
+                    d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z"
+                    clip-rule="evenodd" />
+            </svg>
+            Abrir turno
+        </button>
+
+        }
+
+    </div>
+</div>

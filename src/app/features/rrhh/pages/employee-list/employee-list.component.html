@@ -1,0 +1,62 @@
+<div class="card-erp">
+    <div class="header">
+        <h1>Empleados</h1>
+        <button class="btn btn-primary" routerLink="/rrhh/employees/new">
+            + Nuevo Empleado
+        </button>
+    </div>
+
+    <div class="flex flex-col gap-sm mb-lg">
+        <input type="text" class="input-field" [(ngModel)]="searchTerm" (ngModelChange)="onSearch()"
+            placeholder="Buscar por código, nombre o documento">
+    </div>
+
+    @if (loading()) {
+    <div class="text-subtle text-center py-xl">Cargando empleados...</div>
+    } @else {
+    <div class="table-erp-container">
+        <table class="table-erp">
+            <thead>
+                <tr>
+                    <th>Código</th>
+                    <th>Nombre Completo</th>
+                    <th>Documento</th>
+                    <th>Cargo</th>
+                    <th>Área</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (employee of displayedEmployees(); track employee.id) {
+                <tr>
+                    <td>{{ employee.codigoEmpleado }}</td>
+                    <td>{{ employee.nombres }} {{ employee.apellidos }}</td>
+                    <td>{{ employee.documentoIdentidad }}</td>
+                    <td>{{ employee.cargo || '-' }}</td>
+                    <td>{{ employee.area || '-' }}</td>
+                    <td>
+                        <span
+                            [class]="'badge-erp ' + (employee.estado === 'ACTIVO' ? 'badge-success' : 'badge-danger')">
+                            {{ employee.estado }}
+                        </span>
+                    </td>
+                    <td>
+                        <button class="icon-btn-sm text-primary" [routerLink]="['/rrhh/employees', employee.id]"
+                            title="Editar">
+                            ✏️
+                        </button>
+                        @if (employee.estado === 'ACTIVO') {
+                        <button class="icon-btn-sm text-[var(--color-danger)]" (click)="deactivateEmployee(employee.id)"
+                            title="Desactivar">
+                            🚫
+                        </button>
+                        }
+                    </td>
+                </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    }
+</div>

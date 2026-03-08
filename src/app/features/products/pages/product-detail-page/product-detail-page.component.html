@@ -1,0 +1,53 @@
+<div class="container max-w-[1500px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+  @if (productResource.isLoading()) {
+  <div class="flex justify-center items-center h-64">
+    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--color-primary)]"></div>
+  </div>
+  } @else if (productResource.error()) {
+  <div class="bg-[color-mix(in_oklch,var(--color-error)_12%,var(--color-surface))] text-[var(--color-error)] p-4 rounded-md text-center">
+    {{ 'productDetail.errorLoadingProduct' | translate }}
+  </div>
+  } @else if (productResource.value(); as product) {
+
+  <div class="flex flex-col lg:flex-row gap-8 lg:gap-12">
+    <!-- Left Column: Gallery -->
+    <div class="lg:w-[55%]">
+      <div class="sticky top-24">
+        <app-product-image-gallery [images]="product.images"></app-product-image-gallery>
+      </div>
+    </div>
+
+    <!-- Right Column: Info & Actions -->
+    <div class="lg:w-[45%] flex flex-col">
+      <app-product-main-info [product]="product"></app-product-main-info>
+
+      <app-product-variants [product]="product" [variants]="product.variants" (addToCart)="onAddToCart($event)">
+      </app-product-variants>
+    </div>
+  </div>
+
+  <!-- Bottom Section: Reviews, Attributes, Seller -->
+  <div class="w-full mt-16 flex flex-col lg:flex-row gap-8">
+    <!-- Left Details (Wider) -->
+    <div class="lg:w-2/3 space-y-12">
+      <!-- Deferred Components for Performance -->
+      @defer (on viewport) {
+      <app-product-reviews [reviews]="product.latestReviews" [rating]="product.rating">
+      </app-product-reviews>
+      <app-product-attributes [attributes]="product.attributes"></app-product-attributes>
+      } @placeholder {
+      <div class="h-64 mt-8 bg-surface-raised animate-pulse rounded-md"></div>
+      }
+    </div>
+
+    <!-- Right Details (Narrower) -->
+    <div class="lg:w-1/3 space-y-8">
+      @defer (on viewport) {
+      <app-seller-info [seller]="product.seller"></app-seller-info>
+      } @placeholder {
+      <div class="h-32 mt-8 bg-surface-raised animate-pulse rounded-md"></div>
+      }
+    </div>
+  </div>
+  }
+</div>

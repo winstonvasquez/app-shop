@@ -1,0 +1,231 @@
+<aside class="order-panel">
+
+    <!-- Encabezado -->
+    <div class="order-header">
+        <div class="order-header-left">
+            <svg viewBox="0 0 20 20" fill="currentColor" width="15" height="15" class="text-primary shrink-0">
+                <path
+                    d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 3H6.28l-.31-1.243A1 1 0 005 1H3z" />
+                <path d="M16 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM6.5 18a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" />
+            </svg>
+            <span class="order-title">Pedido actual</span>
+            @if (carrito.itemCount() > 0) {
+            <span class="order-count-badge">{{ carrito.itemCount() }}</span>
+            }
+        </div>
+        <button class="btn-ghost !h-7 !px-2 !text-[11px] !text-muted hover:!bg-[color-mix(in_oklch,var(--color-error)_10%,transparent)] hover:!text-[var(--color-error)]"
+            (click)="carrito.vaciarCarrito()" [disabled]="carrito.isEmpty()">
+            <svg viewBox="0 0 20 20" fill="currentColor" width="12" height="12" class="mr-1">
+                <path fill-rule="evenodd"
+                    d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
+                    clip-rule="evenodd" />
+            </svg>
+            Vaciar
+        </button>
+    </div>
+
+    <!-- Cliente -->
+    <div class="order-customer">
+        <div class="customer-field">
+            <svg viewBox="0 0 20 20" fill="currentColor" width="13" height="13" class="text-muted shrink-0">
+                <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
+            </svg>
+            <input class="customer-input" type="text" placeholder="Cliente (opcional)" [value]="carrito.clienteNombre()"
+                (input)="onClienteChange($any($event.target).value)">
+        </div>
+    </div>
+
+    <!-- Items del pedido -->
+    <div class="order-items">
+        @if (carrito.isEmpty()) {
+        <div class="order-empty">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="42" height="42">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
+            </svg>
+            <p class="order-empty-title">Carrito vacío</p>
+            <p class="order-empty-sub">Selecciona productos del catálogo</p>
+        </div>
+        }
+
+        @for (item of carrito.items(); track item.variante.varianteId) {
+        <div class="order-item">
+            <div class="order-item-thumb" [class]="bgColor(item.variante.varianteId)"></div>
+            <div class="order-item-info">
+                <p class="order-item-name">{{ item.variante.nombre }}</p>
+                <p class="order-item-meta">S/{{ fmt(item.variante.precioFinal) }} c/u · {{ item.variante.sku }}</p>
+                <div class="order-item-qty flex items-center gap-2">
+                    <button class="icon-btn-sm !w-6 !h-6 bg-white/5 hover:bg-white/10"
+                        (click)="carrito.cambiarCantidad(item.variante.varianteId, -1)">
+                        <svg viewBox="0 0 20 20" fill="currentColor" width="11" height="11">
+                            <path fill-rule="evenodd" d="M3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z"
+                                clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                    <span class="qty-value text-[13px] font-bold min-w-[1.25rem] text-center">{{ item.cantidad }}</span>
+                    <button class="icon-btn-sm !w-6 !h-6 bg-white/5 hover:bg-white/10"
+                        (click)="carrito.cambiarCantidad(item.variante.varianteId, 1)">
+                        <svg viewBox="0 0 20 20" fill="currentColor" width="11" height="11">
+                            <path fill-rule="evenodd"
+                                d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
+                                clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div class="order-item-right flex flex-col items-end gap-1">
+                <button class="icon-btn-sm !w-6 !h-6 text-[var(--color-error)] hover:bg-[var(--color-error)]/20"
+                    (click)="carrito.eliminarItem(item.variante.varianteId)" title="Quitar">
+                    <svg viewBox="0 0 20 20" fill="currentColor" width="12" height="12">
+                        <path fill-rule="evenodd"
+                            d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                            clip-rule="evenodd" />
+                    </svg>
+                </button>
+                <span class="order-item-subtotal">S/{{ fmt(item.subtotal) }}</span>
+                <span class="order-item-unit-price">{{ item.cantidad }}×{{ fmt(item.variante.precioFinal) }}</span>
+            </div>
+        </div>
+        }
+    </div>
+
+    <!-- Descuento -->
+    <div class="order-discount">
+        <span class="discount-label">
+            <svg viewBox="0 0 20 20" fill="currentColor" width="12" height="12" class="text-primary">
+                <path fill-rule="evenodd"
+                    d="M17.707 9.293a1 1 0 010 1.414l-7 7a1 1 0 01-1.414 0l-7-7A.997.997 0 012 10V5a3 3 0 013-3h5c.256 0 .512.098.707.293l7 7zM5 6a1 1 0 100-2 1 1 0 000 2z"
+                    clip-rule="evenodd" />
+            </svg>
+            Descuento (S/)
+        </span>
+        <input class="discount-input" type="number" min="0" step="0.50" [value]="carrito.descuento()"
+            (input)="onDescuentoChange($event)">
+    </div>
+
+    <!-- Totales -->
+    <div class="order-totals">
+        <div class="totals-row">
+            <span>Op. gravadas (sin IGV)</span>
+            <span class="totals-val">S/{{ fmt(carrito.baseImponible()) }}</span>
+        </div>
+        <div class="totals-row">
+            <span>IGV 18%</span>
+            <span class="totals-val">S/{{ fmt(carrito.igv()) }}</span>
+        </div>
+        @if (carrito.descuento() > 0) {
+        <div class="totals-row totals-row--discount">
+            <span>Descuento aplicado</span>
+            <span class="totals-val">−S/{{ fmt(carrito.descuento()) }}</span>
+        </div>
+        }
+        <div class="totals-grand">
+            <span class="totals-grand-label">TOTAL</span>
+            <span class="totals-grand-amount">
+                <span class="totals-currency">S/</span>{{ fmt(carrito.totalConDescuento()) }}
+            </span>
+        </div>
+    </div>
+
+    <!-- Pago -->
+    <div class="order-payment">
+
+        <p class="payment-section-label">Método de pago</p>
+
+        <!-- Grid 2×2 de métodos de pago -->
+        <div class="payment-methods grid grid-cols-2 gap-2 mt-2">
+            @for (m of paymentMethods; track m.id) {
+            <button class="btn-secondary flex-col !h-[52px] !rounded-xl !text-[11px] gap-1 relative overflow-hidden"
+                [class.!bg-[var(--color-primary)]]="carrito.metodoPago() === m.id && m.id === 'EFECTIVO'"
+                [class.!text-white]="carrito.metodoPago() === m.id && m.id === 'EFECTIVO'"
+                [class.!border-[var(--color-primary)]]="carrito.metodoPago() === m.id && m.id === 'EFECTIVO'"
+                [class.!bg-[#742284]]="carrito.metodoPago() === m.id && m.id === 'YAPE'"
+                [class.!text-white]="carrito.metodoPago() === m.id && m.id === 'YAPE'"
+                [class.!border-[#742284]]="carrito.metodoPago() === m.id && m.id === 'YAPE'"
+                [class.!bg-[#00D4FF]]="carrito.metodoPago() === m.id && m.id === 'PLIN'"
+                [class.!text-[#002f5c]]="carrito.metodoPago() === m.id && m.id === 'PLIN'"
+                [class.!border-[#00D4FF]]="carrito.metodoPago() === m.id && m.id === 'PLIN'"
+                [class.!bg-[oklch(0.37_0_0)]]="carrito.metodoPago() === m.id && m.id === 'TARJETA'"
+                [class.!text-white]="carrito.metodoPago() === m.id && m.id === 'TARJETA'"
+                [class.!border-[var(--color-border)]]="carrito.metodoPago() === m.id && m.id === 'TARJETA'"
+                (click)="carrito.setMetodoPago(m.id)">
+                @if (m.icon === 'cash') {
+                <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
+                    <path fill-rule="evenodd"
+                        d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z"
+                        clip-rule="evenodd" />
+                </svg>
+                } @else if (m.icon === 'card') {
+                <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
+                    <path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z" />
+                    <path fill-rule="evenodd"
+                        d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z"
+                        clip-rule="evenodd" />
+                </svg>
+                } @else {
+                <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
+                    <path
+                        d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
+                </svg>
+                }
+                {{ m.label }}
+            </button>
+            }
+        </div>
+
+        <div class="payment-amounts">
+            <div class="amount-group">
+                <label class="amount-label">Monto recibido</label>
+                <div class="amount-input-wrap">
+                    <span class="amount-currency">S/</span>
+                    <input class="amount-input" type="number" min="0" step="0.50" [value]="carrito.montoRecibido()"
+                        (input)="onMontoRecibidoChange($event)">
+                </div>
+            </div>
+            <div class="amount-group">
+                <label class="amount-label">Vuelto</label>
+                <div class="vuelto-display" [class.vuelto-display--positive]="carrito.vuelto() > 0">
+                    S/{{ fmt(carrito.vuelto()) }}
+                </div>
+            </div>
+        </div>
+
+        <p class="payment-section-label mt-[2px]">Comprobante</p>
+        <div class="cpe-options grid grid-cols-2 gap-2 mt-2">
+            @for (cpe of cpeOptions; track cpe.id) {
+            <button class="btn-secondary !h-[42px] !rounded-xl !text-[12px]"
+                [class.!bg-[var(--color-primary)]]="carrito.tipoCpe() === cpe.id"
+                [class.!text-white]="carrito.tipoCpe() === cpe.id"
+                [class.!border-[var(--color-primary)]]="carrito.tipoCpe() === cpe.id"
+                (click)="carrito.setTipoCpe(cpe.id)">
+                {{ cpe.label }}
+            </button>
+            }
+        </div>
+
+        <div class="order-actions flex items-center gap-2 mt-4 pt-4 border-t border-[var(--color-border)]">
+            <button class="btn-secondary !h-12 !w-12 !p-0 !rounded-xl shrink-0" (click)="irAlNumpad.emit()"
+                [disabled]="carrito.isEmpty()" title="Teclado numérico">
+                <svg viewBox="0 0 20 20" fill="currentColor" width="15" height="15">
+                    <path fill-rule="evenodd"
+                        d="M5 2a2 2 0 00-2 2v14l3.5-2 3.5 2 3.5-2 3.5 2V4a2 2 0 00-2-2H5zm4.707 3.707a1 1 0 00-1.414-1.414l-3 3a1 1 0 000 1.414l3 3a1 1 0 001.414-1.414L8.414 10l1.293-1.293zm2.586 0a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 01-1.414-1.414L13.586 10l-1.293-1.293a1 1 0 010-1.414z"
+                        clip-rule="evenodd" />
+                </svg>
+            </button>
+            <button class="btn-primary !h-12 flex-1 !text-[15px] !rounded-xl !gap-2" [disabled]="carrito.isEmpty()"
+                (click)="procesarVenta.emit()">
+                <svg viewBox="0 0 20 20" fill="currentColor" width="17" height="17">
+                    <path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z" />
+                    <path fill-rule="evenodd"
+                        d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z"
+                        clip-rule="evenodd" />
+                </svg>
+                Cobrar
+                <span class="ml-2 font-mono text-[16px] bg-black/20 px-2 py-0.5 rounded-md">S/{{
+                    fmt(carrito.totalConDescuento()) }}</span>
+            </button>
+        </div>
+
+    </div>
+
+</aside>

@@ -1,0 +1,142 @@
+<div class="data-table-container">
+    <!-- Loading State -->
+    @if (loading()) {
+        <div class="loading-overlay">
+            <div class="spinner"></div>
+            <p>Cargando...</p>
+        </div>
+    }
+
+    <!-- Table -->
+    <div class="table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    @if (selectable()) {
+                        <th class="select-column">
+                            <input type="checkbox" />
+                        </th>
+                    }
+                    
+                    @for (column of columns(); track column.key) {
+                        <th 
+                            [style.width]="column.width"
+                            [style.text-align]="column.align || 'left'"
+                            [class.sortable]="column.sortable"
+                            (click)="onSort(column)">
+                            <div class="th-content">
+                                <span>{{ column.label }}</span>
+                                @if (column.sortable) {
+                                    <span class="sort-icon">{{ getSortIcon(column) }}</span>
+                                }
+                            </div>
+                        </th>
+                    }
+                    
+                    @if (hasActions()) {
+                        <th class="actions-column">Acciones</th>
+                    }
+                </tr>
+            </thead>
+            
+            <tbody>
+                @if (isEmpty()) {
+                    <tr>
+                        <td [attr.colspan]="columns().length + (selectable() ? 1 : 0) + (hasActions() ? 1 : 0)" class="empty-state">
+                            <div class="empty-message">
+                                <p>No hay datos disponibles</p>
+                            </div>
+                        </td>
+                    </tr>
+                } @else {
+                    @for (row of data(); track $index) {
+                        <tr 
+                            [class.selected]="isRowSelected(row)"
+                            [class.clickable]="selectable()"
+                            (click)="onRowClick(row)">
+                            
+                            @if (selectable()) {
+                                <td class="select-column">
+                                    <input 
+                                        type="checkbox" 
+                                        [checked]="isRowSelected(row)"
+                                        (click)="$event.stopPropagation()"
+                                        (change)="toggleRowSelection(row)" />
+                                </td>
+                            }
+                            
+                            @for (column of columns(); track column.key) {
+                                <td [style.text-align]="column.align || 'left'">
+                                    {{ getCellValue(row, column) }}
+                                </td>
+                            }
+                            
+                            @if (hasActions()) {
+                                <td class="actions-column">
+                                    <div class="action-buttons">
+                                        @for (action of actions(); track action.label) {
+                                            @if (shouldShowAction(action, row)) {
+                                                <button 
+                                                    type="button"
+                                                    [class]="'action-btn ' + (action.class || '')"
+                                                    (click)="$event.stopPropagation(); action.onClick(row)">
+                                                    @if (action.icon) {
+                                                        <span class="icon">{{ action.icon }}</span>
+                                                    }
+                                                    {{ action.label }}
+                                                </button>
+                                            }
+                                        }
+                                    </div>
+                                </td>
+                            }
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    @if (totalPages() > 1) {
+        <div class="pagination">
+            <div class="pagination-info">
+                Mostrando {{ (currentPage() * pageSize()) + 1 }} - 
+                {{ Math.min((currentPage() + 1) * pageSize(), totalElements()) }} 
+                de {{ totalElements() }} registros
+            </div>
+            
+            <div class="pagination-controls">
+                <button 
+                    type="button"
+                    class="pagination-btn"
+                    [disabled]="currentPage() === 0"
+                    (click)="onPageChange(currentPage() - 1)">
+                    Anterior
+                </button>
+                
+                @for (page of pages(); track page) {
+                    @if (page < 3 || page >= totalPages() - 3 || Math.abs(page - currentPage()) <= 1) {
+                        <button 
+                            type="button"
+                            class="pagination-btn"
+                            [class.active]="page === currentPage()"
+                            (click)="onPageChange(page)">
+                            {{ page + 1 }}
+                        </button>
+                    } @else if (page === 3 || page === totalPages() - 4) {
+                        <span class="pagination-ellipsis">...</span>
+                    }
+                }
+                
+                <button 
+                    type="button"
+                    class="pagination-btn"
+                    [disabled]="currentPage() === totalPages() - 1"
+                    (click)="onPageChange(currentPage() + 1)">
+                    Siguiente
+                </button>
+            </div>
+        </div>
+    }
+</div>

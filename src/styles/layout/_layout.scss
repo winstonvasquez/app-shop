@@ -1,0 +1,69 @@
+/* ============================================
+ * LAYER 3: LAYOUT CONTEXTS
+ * ============================================
+ * Structural definitions for the application frame.
+ * ============================================ */
+
+@layer base {
+
+    /* --- HARMONIC TYPOGRAPHY SPACING --- */
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+        @apply mt-xl mb-sm font-bold leading-tight text-on tracking-tight;
+    }
+
+    h1:first-child,
+    h2:first-child,
+    h3:first-child,
+    h4:first-child,
+    h5:first-child,
+    h6:first-child {
+        @apply mt-0;
+    }
+
+    p {
+        @apply mb-md leading-relaxed text-subtle;
+    }
+
+    p:last-child {
+        @apply mb-0;
+    }
+
+    /* --- HARMONIC STRUCTURAL SPACING --- */
+    section,
+    article {
+        @apply mb-2xl;
+    }
+}
+
+@layer components {
+
+    .layout-main {
+        @apply min-h-screen bg-background text-on flex flex-col antialiased;
+    }
+
+    .layout-container {
+        @apply max-w-7xl mx-auto w-full px-lg sm:px-xl xl:px-2xl;
+    }
+
+    .layout-content-area {
+        @apply flex-1 w-full py-xl;
+    }
+
+    .navbar-erp {
+        @apply w-full bg-surface border-b border-[var(--color-border)] sticky top-0 z-50;
+    }
+
+    .sidebar-erp {
+        @apply w-64 bg-surface border-r border-[var(--color-border)] h-screen overflow-y-auto hidden md:block;
+    }
+
+    .footer-erp {
+        @apply w-full bg-surface border-t border-[var(--color-border)] py-xl mt-auto;
+    }
+
+}

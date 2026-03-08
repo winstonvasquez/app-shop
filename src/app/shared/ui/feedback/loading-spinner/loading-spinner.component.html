@@ -1,0 +1,17 @@
+@if (overlay()) {
+    <div class="spinner-overlay">
+        <div class="spinner-content">
+            <div [class]="'spinner spinner-' + size() + ' spinner-' + color()"></div>
+            @if (text()) {
+                <p class="spinner-text">{{ text() }}</p>
+            }
+        </div>
+    </div>
+} @else {
+    <div class="spinner-inline">
+        <div [class]="'spinner spinner-' + size() + ' spinner-' + color()"></div>
+        @if (text()) {
+            <p class="spinner-text">{{ text() }}</p>
+        }
+    </div>
+}

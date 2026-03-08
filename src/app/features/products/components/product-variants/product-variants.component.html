@@ -1,0 +1,170 @@
+<div class="mt-4 flex flex-col font-sans">
+
+    <!-- Variant Selection Box -->
+    <div class="border border-[var(--color-accent)] rounded-sm mb-5 relative">
+        <!-- Mega oferta banner -->
+        @if(product()?.timerEndTime) {
+        <div
+            class="bg-accent text-white px-3 py-1.5 flex items-center justify-between text-sm font-bold">
+            <div class="flex items-center gap-2">
+                <span class="italic drop-shadow-sm">{{ 'productDetail.megaOffer' | translate }}</span>
+                <span class="font-normal text-white/50">|</span>
+                <div class="flex items-center gap-1 text-[13px] font-normal">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    {{ 'productDetail.endsInTime' | translate }} {{ product()?.timerEndTime }}
+                </div>
+            </div>
+            <svg class="w-4 h-4 cursor-pointer" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+            </svg>
+        </div>
+        }
+
+        <div class="p-4 bg-[var(--color-surface)]">
+            <!-- Color Info -->
+            <div class="mb-4">
+                <p class="text-[13px] text-[var(--color-text-primary)]"><span class="font-bold">{{ 'productDetail.color' | translate
+                        }}</span> {{ selectedVariant().nombre
+                    || ('productDetail.mixedColors' | translate) }}</p>
+            </div>
+
+            <!-- Size Selection -->
+            <div>
+                <div class="flex justify-between items-end mb-2">
+                    <div class="flex items-center gap-1">
+                        <span class="text-[13px] font-bold text-[var(--color-text-primary)]">{{ 'productDetail.size' | translate }}</span>
+                        <div
+                            class="flex bg-[var(--color-surface-raised)] rounded-full text-[11px] font-bold ml-1 border border-[var(--color-border)] overflow-hidden">
+                            <span class="bg-[var(--color-text-primary)] text-[var(--color-surface)] px-2.5 py-0.5">{{ 'productDetail.age' | translate }}</span>
+                            <span class="text-[var(--color-text-secondary)] px-2.5 py-0.5">{{ 'productDetail.height' | translate }}</span>
+                        </div>
+                    </div>
+                    <span class="text-[var(--color-text-muted)] text-xs flex items-center gap-1 cursor-pointer hover:text-[var(--color-text-primary)]">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z">
+                            </path>
+                        </svg>
+                        {{ 'productDetail.sizeGuide' | translate }}
+                    </span>
+                </div>
+
+                <div class="flex flex-wrap gap-2">
+                    @for (variant of variants(); track variant.id; let i = $index) {
+                    <button type="button"
+                        class="px-4 py-1.5 text-sm border font-medium rounded-full transition-colors focus:outline-none min-w-[3rem]"
+                        [disabled]="variant.stockActual === 0" [ngClass]="{
+                      'border-[var(--color-text-primary)] text-[var(--color-text-primary)] bg-[var(--color-surface)] ring-1 ring-[var(--color-text-primary)]': selectedVariantIndex() === i,
+                      'border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-text-muted)] bg-[var(--color-surface)]': selectedVariantIndex() !== i && variant.stockActual > 0,
+                      'border-[var(--color-border)] text-[var(--color-text-muted)] bg-[var(--color-surface-raised)] cursor-not-allowed': variant.stockActual === 0
+                    }" (click)="selectVariant(i)">
+                        {{ variant.nombre }}
+                    </button>
+                    }
+                </div>
+
+                <p class="text-xs text-[var(--color-text-muted)] mt-3 flex items-center gap-1">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    {{ product()?.sizingFitPercentage || 0 }}{{ 'productDetail.customersThinkSizeRight' | translate }}
+                </p>
+            </div>
+
+            <!-- Quantity Selection -->
+            <div class="flex items-center mt-5 mb-1 relative w-max">
+                <span class="text-[13px] text-[var(--color-text-primary)] mr-2">{{ 'productDetail.qty' | translate }}</span>
+                <div class="relative">
+                    <select
+                        class="appearance-none bg-[var(--color-surface-raised)] border border-[var(--color-border)] text-[var(--color-text-primary)] py-1 pl-3 pr-8 rounded-sm leading-tight focus:outline-none focus:border-[var(--color-primary)] text-sm cursor-pointer"
+                        (change)="onQtyChange($event)">
+                        @for (qty of [1,2,3,4,5]; track $index) {
+                        <option [value]="qty">{{ qty }}</option>
+                        }
+                    </select>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-[var(--color-text-muted)]">
+                        <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                            <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add to Cart Button -->
+    <button type="button"
+        class="w-full bg-accent hover:brightness-110 active:brightness-90 text-white font-bold py-3 px-4 rounded-full transition-all shadow-sm text-[15px] lg:text-base flex items-center justify-center"
+        (click)="onAddToCart()">
+        {{ 'productDetail.fewLeftAddToCart' | translate }}
+    </button>
+
+    <!-- Free Shipping Info -->
+    <div class="mt-5 text-sm">
+        <div class="flex items-center gap-1 cursor-pointer group w-max">
+            <svg class="w-5 h-5 text-[var(--color-success)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path>
+            </svg>
+            <span class="font-bold text-[var(--color-success)]">{{ 'productDetail.freeShippingForThisItem'
+                | translate }}</span>
+            <svg class="w-4 h-4 text-[var(--color-success)]" fill="none" stroke="currentColor"
+                viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+            </svg>
+        </div>
+        <div class="ml-6 mt-1 text-[13px] flex flex-col gap-1">
+            <p class="text-[var(--color-text-primary)]">{{ 'productDetail.estimatedDelivery' | translate }} <span class="font-bold">{{
+                    product()?.deliveryTimeframe }}</span></p>
+            <p class="text-[var(--color-text-muted)] flex items-center gap-1">
+                {{ 'productDetail.carrier' | translate }}
+                <span class="text-[var(--color-primary)] font-medium">{{ product()?.carriers }}</span>
+            </p>
+        </div>
+    </div>
+
+    <!-- Trust Badges Section -->
+    <div class="mt-4 border-t border-[var(--color-border)] pt-4 cursor-pointer group">
+        <div class="flex items-center gap-1 mb-2">
+            <svg class="w-5 h-5 text-[var(--color-success)]" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd"
+                    d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                    clip-rule="evenodd"></path>
+            </svg>
+            <span class="font-bold text-[var(--color-success)]">{{ 'productDetail.whyChooseUs' | translate
+                }}</span>
+            <svg class="w-4 h-4 text-[var(--color-success)]" fill="none" stroke="currentColor"
+                viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+            </svg>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4 text-[11px] text-[var(--color-text-muted)] pl-6 relative">
+            <div>
+                <h4 class="text-[var(--color-success)] font-medium mb-1 drop-shadow-sm">{{ 'productDetail.securityAndPrivacy' |
+                    translate }}</h4>
+                <ul class="space-y-1">
+                    <li class="flex items-center gap-1"><span class="text-[var(--color-success)] font-bold">✓</span> {{
+                        'productDetail.securePayments' | translate }}
+                    </li>
+                    <li class="flex items-center gap-1"><span class="text-[var(--color-success)] font-bold">✓</span> {{
+                        'productDetail.securePrivacy' | translate }}</li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="text-[var(--color-success)] font-medium mb-1 drop-shadow-sm">{{ 'productDetail.guaranteedDelivery' |
+                    translate }}</h4>
+                <ul class="space-y-1">
+                    <li class="flex items-center gap-1"><span class="text-[var(--color-success)] font-bold">✓</span> {{
+                        product()?.returnPolicyText }}</li>
+                    <li class="flex items-center gap-1"><span class="text-[var(--color-success)] font-bold">✓</span> {{
+                        'productDetail.refund30Days' | translate }}</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>

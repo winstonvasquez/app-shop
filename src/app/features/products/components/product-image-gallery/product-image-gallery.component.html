@@ -1,0 +1,19 @@
+<div class="flex flex-col-reverse md:flex-row gap-4 h-full">
+    <div class="flex flex-row md:flex-col gap-2 overflow-auto md:w-20 md:shrink-0">
+        @for (img of images(); track img.url; let i = $index) {
+        <div class="relative w-16 h-16 md:w-full md:h-20 rounded-md border-2 overflow-hidden cursor-pointer flex-shrink-0 transition-all"
+            [ngClass]="selectedImageIndex() === i ? 'border-primary' : 'border-transparent hover:border-border'"
+            (click)="selectImage(i)">
+            <img [ngSrc]="img.url" fill class="object-cover" alt="Thumbnail">
+        </div>
+        }
+    </div>
+    <div
+        class="flex-grow aspect-square relative bg-surface-raised rounded-lg overflow-hidden flex items-center justify-center">
+        @if (selectedImage()) {
+        <img [ngSrc]="selectedImage()!.url" fill class="object-contain" alt="Main Product Image" priority>
+        } @else {
+        <div class="text-muted">{{ 'productDetail.noImage' | translate }}</div>
+        }
+    </div>
+</div>

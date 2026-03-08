@@ -1,0 +1,52 @@
+<div class="card-erp">
+    <div class="header">
+        <h1>Solicitudes de Vacaciones</h1>
+    </div>
+
+    @if (loading()) {
+    <div class="text-subtle text-center py-xl">Cargando solicitudes...</div>
+    } @else {
+    <div class="table-erp-container">
+        <table class="table-erp">
+            <thead>
+                <tr>
+                    <th>Empleado</th>
+                    <th>Fecha Inicio</th>
+                    <th>Fecha Fin</th>
+                    <th>Días</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (vacation of vacations(); track vacation.id) {
+                <tr>
+                    <td>{{ getEmployeeName(vacation.employeeId) }}</td>
+                    <td>{{ vacation.fechaInicio | date:'dd/MM/yyyy' }}</td>
+                    <td>{{ vacation.fechaFin | date:'dd/MM/yyyy' }}</td>
+                    <td>{{ vacation.dias }}</td>
+                    <td>
+                        <span
+                            [class]="'badge-erp ' + (vacation.estado === 'SOLICITADO' ? 'badge-warning' : vacation.estado === 'APROBADO' ? 'badge-success' : 'badge-danger')">
+                            {{ vacation.estado }}
+                        </span>
+                    </td>
+                    <td>
+                        @if (vacation.estado === 'SOLICITADO') {
+                        <button class="icon-btn-sm text-[var(--color-success)]" (click)="approveVacation(vacation.id)"
+                            title="Aprobar">
+                            ✓
+                        </button>
+                        <button class="icon-btn-sm text-[var(--color-danger)]" (click)="rejectVacation(vacation.id)"
+                            title="Rechazar">
+                            ✗
+                        </button>
+                        }
+                    </td>
+                </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    }
+</div>

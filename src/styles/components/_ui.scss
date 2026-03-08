@@ -1,0 +1,191 @@
+/* ============================================
+ * LAYER 2: UI COMPONENTS
+ * ============================================
+ * Reusable classes mapping Tailwind/Tokens to semantic components.
+ * ============================================ */
+
+@layer components {
+
+    /* --- BUTTONS --- */
+    .btn-base {
+        @apply inline-flex items-center justify-center font-sans font-bold text-[14px] rounded-md transition-colors duration-200 px-lg py-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed;
+    }
+
+    .btn {
+        &-primary {
+            @extend .btn-base;
+            @apply bg-primary text-white hover:brightness-110 active:brightness-90;
+        }
+
+        &-secondary {
+            @extend .btn-base;
+            @apply bg-transparent border border-gray-600 text-on hover:bg-white/5 active:bg-white/10;
+        }
+
+        &-ghost {
+            @extend .btn-base;
+            @apply bg-transparent text-on hover:bg-white/10 active:bg-white/20;
+        }
+
+        &-danger {
+            @extend .btn-base;
+            @apply bg-[var(--color-danger)] text-white hover:brightness-110 active:brightness-90;
+        }
+
+        &-success {
+            @extend .btn-base;
+            @apply bg-[var(--color-success)] text-white hover:brightness-110 active:brightness-90;
+        }
+    }
+
+    /* --- CIRCULAR ICON BUTTONS --- */
+    .icon-btn-base {
+        @apply inline-flex items-center justify-center rounded-full transition-colors duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0;
+    }
+
+    .icon-btn {
+        @extend .icon-btn-base;
+        /* Default 40x40px */
+        @apply w-[40px] h-[40px] text-on bg-transparent hover:bg-white/10 active:bg-white/20;
+
+        &-sm {
+            @extend .icon-btn-base;
+            /* Small 32x32px */
+            @apply w-[32px] h-[32px] text-on bg-transparent hover:bg-white/10 active:bg-white/20;
+        }
+
+        /* Icon Button Variations */
+        &-danger {
+            @apply text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10 active:bg-[var(--color-danger)]/20;
+        }
+
+        &-primary {
+            @apply text-[var(--color-primary)] hover:bg-[var(--color-primary)]/10 active:bg-[var(--color-primary)]/20;
+        }
+    }
+
+    /* --- CARDS --- */
+    .card {
+        &-erp {
+            @apply bg-surface rounded-lg shadow-md border border-[var(--color-border)] p-xl overflow-hidden flex flex-col gap-md;
+        }
+
+        &-product {
+            @apply bg-surface rounded-xl shadow-sm border border-[var(--color-border)] overflow-hidden flex flex-col transition-all duration-300 hover:shadow-xl hover:shadow-primary/5 hover:-translate-y-1 gap-sm;
+
+            /* Glossy effect */
+            background: linear-gradient(145deg, var(--color-surface), color-mix(in oklch, var(--color-surface) 95%, white));
+            position: relative;
+
+            &::before {
+                content: '';
+                position: absolute;
+                inset: 0;
+                background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, transparent 50%);
+                pointer-events: none;
+            }
+        }
+    }
+
+    /* --- GLASSMORPHISM / GLOSSY UTILITIES --- */
+    .glass-effect {
+        @apply backdrop-blur-md bg-white/5 border border-white/10 shadow-lg;
+    }
+
+    .glass-effect-dark {
+        @apply backdrop-blur-md bg-black/20 border border-white/5 shadow-xl;
+    }
+
+    .glossy-panel {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%);
+        @apply backdrop-blur-lg border border-white/10 shadow-2xl;
+    }
+
+    /* --- TABLES --- */
+    .table-erp-container {
+        @apply w-full overflow-x-auto rounded-lg border border-[var(--color-border)];
+    }
+
+    .table-erp {
+        @apply w-full text-left border-collapse;
+
+        th {
+            @apply bg-background/50 text-subtle text-xs font-bold uppercase tracking-wider py-md px-lg border-b border-[var(--color-border)];
+        }
+
+        td {
+            @apply py-md px-lg border-b border-[var(--color-border)] text-sm text-on;
+        }
+
+        tbody tr {
+            @apply hover:bg-white/5 transition-colors;
+        }
+    }
+
+    /* --- INPUTS --- */
+    .input {
+        &-label {
+            @apply block text-xs font-bold text-on mb-sm;
+        }
+
+        &-field {
+            @apply w-full bg-background border border-gray-600 rounded-md text-sm text-on px-md py-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed placeholder:text-muted;
+
+            &-error {
+                @apply border-[var(--color-danger)] focus:border-[var(--color-danger)] focus:ring-[var(--color-danger)];
+            }
+        }
+
+        &-error-msg {
+            @apply text-[var(--color-danger)] text-xs mt-xs block;
+        }
+    }
+
+    /* --- BADGES --- */
+    .badge {
+        &-erp {
+            @apply inline-flex items-center px-sm py-xs rounded-full text-xs font-bold;
+        }
+
+        &-success {
+            @extend .badge-erp;
+            @apply bg-[var(--color-success)]/10 text-[var(--color-success)];
+        }
+
+        &-warning {
+            @extend .badge-erp;
+            @apply bg-[var(--color-warning)]/10 text-[var(--color-warning)];
+        }
+
+        &-danger {
+            @extend .badge-erp;
+            @apply bg-[var(--color-danger)]/10 text-[var(--color-danger)];
+        }
+
+        &-info {
+            @extend .badge-erp;
+            @apply bg-[var(--color-info)]/10 text-[var(--color-info)];
+        }
+    }
+
+    /* --- SPECIFIC BADGES / PILLS --- */
+    .label-primary {
+        background: color-mix(in oklch, var(--color-primary) 10%, var(--color-surface));
+        color: var(--color-primary);
+        border: 1px solid color-mix(in oklch, var(--color-primary) 22%, transparent);
+    }
+
+    .category-pill {
+        border: 1px solid var(--color-border);
+        background: var(--color-surface);
+        color: var(--color-text-secondary);
+        transition: background 200ms, color 200ms, border-color 200ms;
+
+        &:hover {
+            background: var(--color-primary);
+            color: white;
+            border-color: var(--color-primary);
+        }
+    }
+
+}

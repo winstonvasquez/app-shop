@@ -1,0 +1,35 @@
+<!-- Language Selector -->
+<div class="language-selector">
+
+    <!-- Trigger Button -->
+    <button type="button" (click)="toggleDropdown()" class="language-button" [attr.aria-expanded]="isOpen()"
+        [attr.aria-label]="'header.language' | translate">
+        <span class="flag" role="img" [attr.aria-label]="currentLanguageData()?.name">
+            {{ currentLanguageData()?.flag }}
+        </span>
+        <svg class="chevron" [class.rotate]="isOpen()" width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M4 6L8 10L12 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round" />
+        </svg>
+    </button>
+
+    <!-- Dropdown Menu -->
+    @if (isOpen()) {
+    <div class="dropdown" role="menu">
+        @for (lang of languages; track lang.code) {
+        <button type="button" (click)="selectLanguage(lang.code)" class="dropdown-item"
+            [class.active]="lang.code === currentLanguage" role="menuitem" [attr.aria-label]="lang.name">
+            <span class="flag" role="img" [attr.aria-label]="lang.name">{{ lang.flag }}</span>
+            <span class="name">{{ lang.name }}</span>
+            @if (lang.code === currentLanguage) {
+            <svg class="check" width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M3 8L6 11L13 4" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round" />
+            </svg>
+            }
+        </button>
+        }
+    </div>
+    }
+
+</div>

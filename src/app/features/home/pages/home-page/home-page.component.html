@@ -1,0 +1,41 @@
+<div class="max-w-[1400px] mx-auto w-full">
+    <!-- ════════════════════════════════════════════════
+    HERO SLIDER
+    - Side margins: 12px (matches design)
+    - Rounded corners
+    - NOT full width
+    ════════════════════════════════════════════════ -->
+    @if (carouselBanners().length > 0) {
+    <div class="px-3 pt-3">
+        <app-promo-banner [banners]="carouselBanners()" />
+    </div>
+    }
+
+    <!-- ════════════════════════════════════════════════
+    PRODUCT STRIP — overlaps slider bottom
+    -mt-12 = Significant overlap into the slider bottom for depth
+    z-20 ensures cards sit ON TOP of slider
+    ════════════════════════════════════════════════ -->
+    <div class="relative z-20 -mt-12 px-3">
+        <app-flash-deals-section />
+    </div>
+
+    <!-- ════════════════════════════════════════════════
+    CATEGORY PILLS
+    ════════════════════════════════════════════════ -->
+    <section class="px-3 py-10 text-center">
+        <div
+            class="label-primary inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.15em] px-4 py-1.5 rounded-full mb-5">
+            <span>{{ 'home.valentines' | translate }}</span>
+        </div>
+
+        <div class="flex flex-wrap justify-center gap-2 max-w-3xl mx-auto">
+            @for (cat of categories(); track cat.id) {
+            <button
+                class="category-pill px-4 py-1.5 rounded-full text-[12px] font-medium transition-all active:scale-95">
+                {{ cat.nombre }}
+            </button>
+            }
+        </div>
+    </section>
+</div>

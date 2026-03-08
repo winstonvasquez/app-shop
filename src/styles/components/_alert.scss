@@ -1,0 +1,74 @@
+.alert {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 16px;
+    border-radius: 8px;
+    border: 1px solid;
+    margin-bottom: 16px;
+}
+
+.alert-info {
+    background: color-mix(in oklch, var(--color-primary) 10%, var(--color-surface));
+    border-color: color-mix(in oklch, var(--color-primary) 30%, var(--color-border));
+    color: var(--color-primary);
+}
+
+.alert-success {
+    background: color-mix(in oklch, var(--color-success) 10%, var(--color-surface));
+    border-color: color-mix(in oklch, var(--color-success) 30%, var(--color-border));
+    color: var(--color-success);
+}
+
+.alert-warning {
+    background: color-mix(in oklch, var(--color-warning) 10%, var(--color-surface));
+    border-color: color-mix(in oklch, var(--color-warning) 30%, var(--color-border));
+    color: var(--color-warning);
+}
+
+.alert-error {
+    background: color-mix(in oklch, var(--color-error) 10%, var(--color-surface));
+    border-color: color-mix(in oklch, var(--color-error) 30%, var(--color-border));
+    color: var(--color-error);
+}
+
+.alert-icon {
+    font-size: 20px;
+    flex-shrink: 0;
+}
+
+.alert-content {
+    flex: 1;
+}
+
+.alert-title {
+    font-size: 15px;
+    font-weight: 600;
+    margin: 0 0 4px 0;
+}
+
+.alert-message {
+    font-size: 14px;
+    margin: 0;
+    line-height: 1.5;
+}
+
+.alert-close {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: transparent;
+    color: currentColor;
+    font-size: 16px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background-color 0.15s;
+    flex-shrink: 0;
+}
+
+.alert-close:hover {
+    background: color-mix(in oklch, currentColor 12%, transparent);
+}

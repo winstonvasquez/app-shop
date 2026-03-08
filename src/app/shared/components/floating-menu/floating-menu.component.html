@@ -1,0 +1,35 @@
+<div class="fixed bottom-8 right-8 z-50 flex flex-col items-end gap-4">
+
+    <!-- Speed Dial Options (Expandable) -->
+    <div class="flex flex-col gap-3 transition-all duration-300 ease-out origin-bottom" [class.opacity-0]="!isOpen()"
+        [class.scale-75]="!isOpen()" [class.pointer-events-none]="!isOpen()" [class.translate-y-4]="!isOpen()">
+        @for (item of menuItems; track item.label) {
+        <button type="button"
+            class="relative w-12 h-12 rounded-full bg-surface text-on shadow-lg border border-border flex items-center justify-center hover:bg-surface-raised hover:scale-110 transition-all duration-200 group"
+            [attr.aria-label]="item.label" (click)="item.action()">
+            <span class="text-xl">{{ item.icon }}</span>
+            @if (item.badge) {
+            <span
+                class="absolute -top-1 -right-1 bg-error text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow-sm">{{
+                item.badge }}</span>
+            }
+            <!-- Tooltip -->
+            <span
+                class="absolute right-14 bg-text-primary text-surface text-xs py-1 px-3 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                {{ item.label }}
+            </span>
+        </button>
+        }
+    </div>
+
+    <!-- Main Trigger Button -->
+    <button type="button" (click)="toggleMenu()"
+        class="w-16 h-16 rounded-full bg-primary text-white shadow-xl flex items-center justify-center hover:bg-primary/90 hover:scale-105 active:scale-95 transition-all duration-300 z-50 focus:outline-none focus:ring-4 focus:ring-primary/30"
+        [class.rotate-45]="isOpen()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 5v14M5 12h14" />
+        </svg>
+    </button>
+
+</div>

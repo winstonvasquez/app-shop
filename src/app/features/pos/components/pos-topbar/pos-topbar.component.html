@@ -1,0 +1,93 @@
+<header class="pos-topbar">
+
+    <!-- Logo -->
+    <div class="pos-logo">
+        <div class="pos-logo-icon">
+            <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
+                <path
+                    d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 3H6.28l-.31-1.243A1 1 0 005 1H3z" />
+                <path d="M16 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM6.5 18a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" />
+            </svg>
+        </div>
+        <span class="pos-logo-name">MicroShop</span>
+        <span class="pos-logo-badge">POS</span>
+    </div>
+
+    <div class="pos-divider"></div>
+
+    <!-- Sesión de cajero -->
+    <div class="pos-session flex items-center gap-2 text-white/80 text-[13px] font-medium">
+        <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14" class="text-white/40 shrink-0">
+            <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
+        </svg>
+        <span>{{ turno()?.cajeroNombre ?? 'Sin sesión' }}</span>
+        @if (turno()) {
+        <span class="badge-success">
+            <span class="pos-badge-dot"></span>
+            Turno Activo
+        </span>
+        } @else {
+        <span class="badge-erp opacity-50 bg-surface/10 text-white/50 border border-border">
+            <span class="pos-badge-dot pos-badge-dot--inactive"></span>
+            Sin turno
+        </span>
+        }
+    </div>
+
+    <div class="pos-topbar-spacer"></div>
+
+    <!-- Reloj -->
+    <div class="pos-clock">
+        <span class="pos-clock-time">{{ clockTime() }}</span>
+        <span class="pos-clock-date">{{ clockDate() }}</span>
+    </div>
+
+    <div class="pos-divider"></div>
+
+    <!-- Acciones -->
+    <nav class="pos-topbar-actions flex items-center gap-1">
+        <a routerLink="/admin/dashboard" class="btn-ghost !h-8 !px-3 !text-xs !font-medium">
+            <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14" class="mr-1">
+                <path
+                    d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
+            </svg>
+            Dashboard
+        </a>
+        <button class="btn-ghost !h-8 !px-3 !text-xs !font-medium" (click)="navigate.emit('historial')">
+            <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14" class="mr-1">
+                <path fill-rule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"
+                    clip-rule="evenodd" />
+            </svg>
+            Historial
+        </button>
+        <button class="btn-ghost !h-8 !px-3 !text-xs !font-medium" (click)="navigate.emit('turno')">
+            <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14" class="mr-1">
+                <path fill-rule="evenodd"
+                    d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z"
+                    clip-rule="evenodd" />
+            </svg>
+            Mi Turno
+        </button>
+        @if (!turno()) {
+        <button class="btn-success !h-8 !px-3 !text-xs !font-medium" (click)="abrirTurno.emit()">
+            <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14" class="mr-1">
+                <path fill-rule="evenodd"
+                    d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
+                    clip-rule="evenodd" />
+            </svg>
+            Abrir Turno
+        </button>
+        } @else {
+        <button class="btn-danger !h-8 !px-3 !text-xs !font-medium" (click)="cerrarTurno.emit()">
+            <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14" class="mr-1">
+                <path fill-rule="evenodd"
+                    d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
+                    clip-rule="evenodd" />
+            </svg>
+            Cerrar Turno
+        </button>
+        }
+    </nav>
+
+</header>

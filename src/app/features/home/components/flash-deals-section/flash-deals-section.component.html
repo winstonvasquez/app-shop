@@ -1,0 +1,88 @@
+<!-- ════════════════════════════════════════════
+     FEATURED HORIZONTAL STRIP
+     — positioned to overlap the slider bottom
+     — dark elevated card, rounded, with shadow
+     ════════════════════════════════════════════ -->
+<div class="px-3">
+
+    <!-- ── Elevated product strip card ── -->
+    <div class="rounded-2xl overflow-hidden bg-surface border border-border shadow-[0_4px_24px_rgba(0,0,0,0.4)]">
+
+        <!-- Strip header -->
+        <div class="flex items-center justify-between px-4 pt-4 pb-3 border-b border-border">
+            <div class="flex items-center gap-2">
+                <svg class="w-3.5 h-3.5 flex-shrink-0 text-primary" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+                </svg>
+                <span class="text-[13px] font-bold text-on">
+                    {{ 'home.flashDeals' | translate }}
+                </span>
+                <span class="text-[10px] font-semibold px-2 py-0.5 rounded bg-primary/15 text-primary">
+                    {{ 'home.limitedTime' | translate }}
+                </span>
+            </div>
+            <a href="#" class="text-[12px] font-semibold text-primary hover:underline">
+                {{ 'home.viewAll' | translate }} →
+            </a>
+        </div>
+
+        <!-- Horizontal scroll row — no scrollbar visible (design) -->
+        <div
+            class="flex gap-2.5 overflow-x-auto p-3 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+
+            @for (product of featuredProducts(); track product.id) {
+            <!-- Fixed-width card wrapper to match design proportions -->
+            <div class="flex-shrink-0 snap-start w-[148px]">
+                <app-product-card [product]="product" />
+            </div>
+            }
+
+            <!-- Loading skeletons in place of cards -->
+            @if (loading() && featuredProducts().length === 0) {
+            @for (n of [1,2,3,4,5,6]; track n) {
+            <div class="flex-shrink-0 rounded-xl animate-pulse bg-surface-raised w-[148px] h-[210px]">
+            </div>
+            }
+            }
+        </div>
+    </div>
+
+    <!-- ────────────────────────────────────────
+         FULL PRODUCT GRID (below the overlap)
+         ──────────────────────────────────────── -->
+    @if (remainingProducts().length > 0 || (loading() && products().length > 0)) {
+    <div class="mt-6">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-base font-semibold text-on">
+                Más productos
+            </h2>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+            @for (product of remainingProducts(); track product.id) {
+            <app-product-card [product]="product" />
+            }
+        </div>
+    </div>
+    }
+
+    <!-- Load more / spinner -->
+    <div class="flex justify-center mt-8 min-h-[48px]">
+        @if (loading()) {
+        <div class="flex items-center gap-2 text-[13px] text-muted">
+            <svg class="animate-spin w-4 h-4 flex-shrink-0 text-primary" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                <path class="opacity-75" fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+            </svg>
+            Cargando productos...
+        </div>
+        } @else if (hasMore()) {
+        <button (click)="loadProducts()"
+            class="btn btn-primary rounded-full px-10 text-[13px] uppercase tracking-wide hover:-translate-y-0.5 active:scale-95 shadow-lg">
+            Ver más productos
+        </button>
+        }
+    </div>
+
+</div>

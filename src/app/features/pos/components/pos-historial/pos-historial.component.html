@@ -1,0 +1,92 @@
+<div class="historial-screen">
+
+    <!-- KPI cards del turno con gradiente -->
+    @if (turno(); as t) {
+    <div class="kpi-grid">
+        <div class="kpi-card kpi-card--primary">
+            <p class="kpi-label">Ventas del turno</p>
+            <p class="kpi-value">S/{{ fmt(t.totalVentas) }}</p>
+            <p class="kpi-sub">{{ t.totalTransacciones }} transacciones</p>
+        </div>
+        <div class="kpi-card">
+            <p class="kpi-label">Ticket promedio</p>
+            <p class="kpi-value">S/{{ ticketPromedio(t) }}</p>
+            <p class="kpi-sub">Por transacción</p>
+        </div>
+        <div class="kpi-card">
+            <p class="kpi-label">CPE emitidos</p>
+            <p class="kpi-value">{{ t.boletasEmitidas + t.facturasEmitidas }}</p>
+            <p class="kpi-sub">Boletas: {{ t.boletasEmitidas }} · Facturas: {{ t.facturasEmitidas }}</p>
+        </div>
+        <div class="kpi-card">
+            <p class="kpi-label">Efectivo en caja</p>
+            <p class="kpi-value">S/{{ fmt(t.totalEfectivo) }}</p>
+            <p class="kpi-sub">Yape/Plin: S/{{ fmt(t.totalYape + t.totalPlin) }}</p>
+        </div>
+    </div>
+    }
+
+    <!-- Tabla de historial -->
+    <div class="historial-card">
+        <div class="historial-table-wrap">
+            <table class="historial-table">
+                <thead>
+                    <tr>
+                        <th>Ticket</th>
+                        <th>CPE</th>
+                        <th>Hora</th>
+                        <th>Cliente</th>
+                        <th>Ítems</th>
+                        <th>Pago</th>
+                        <th class="text-right">Total</th>
+                        <th>Estado</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (v of items(); track v.id) {
+                    <tr>
+                        <td class="mono fw-bold">{{ v.numeroTicket }}</td>
+                        <td>
+                            @if (v.numeroCpe) {
+                            <span class="cpe-badge cpe-badge--valid">🇵🇪 {{ v.numeroCpe }}</span>
+                            } @else {
+                            <span class="cpe-badge">— Sin CPE</span>
+                            }
+                        </td>
+                        <td class="text-muted">{{ v.fechaCreacion | date:'HH:mm' }}</td>
+                        <td class="text-muted">{{ v.clienteNombre ?? '—' }}</td>
+                        <td class="text-center">{{ v.detalles.length }}</td>
+                        <td><span [class]="pagoBadgeClass(v.metodoPago)">{{ v.metodoPago }}</span></td>
+                        <td class="text-right mono fw-bold text-brand">S/{{ fmt(v.total) }}</td>
+                        <td>
+                            <span class="status-badge" [class.status-badge--ok]="v.estado === 'COMPLETADA'"
+                                [class.status-badge--warn]="v.estado !== 'COMPLETADA'">
+                                {{ v.estado }}
+                            </span>
+                        </td>
+                        <td>
+                            <button class="icon-btn-sm !w-7 !h-7 bg-white/5 hover:bg-white/10"
+                                (click)="verRecibo.emit(v)" title="Ver comprobante">
+                                <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14">
+                                    <path fill-rule="evenodd"
+                                        d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z"
+                                        clip-rule="evenodd" />
+                                </svg>
+                            </button>
+                        </td>
+                    </tr>
+                    }
+                    @empty {
+                    <tr>
+                        <td colspan="9" class="historial-empty-row">
+                            No hay ventas registradas en este turno
+                        </td>
+                    </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>

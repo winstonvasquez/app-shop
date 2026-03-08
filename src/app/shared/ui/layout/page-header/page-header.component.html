@@ -1,0 +1,40 @@
+<div class="page-header">
+    <!-- Breadcrumbs -->
+    @if (breadcrumbs().length > 0) {
+        <nav class="breadcrumbs">
+            @for (crumb of breadcrumbs(); track $index) {
+                @if ($index > 0) {
+                    <span class="breadcrumb-separator">/</span>
+                }
+                @if (crumb.url) {
+                    <a [href]="crumb.url" class="breadcrumb-link">{{ crumb.label }}</a>
+                } @else {
+                    <span class="breadcrumb-current">{{ crumb.label }}</span>
+                }
+            }
+        </nav>
+    }
+    
+    <!-- Title Section -->
+    <div class="title-section">
+        <div class="title-content">
+            @if (showBackButton()) {
+                <button type="button" class="back-button" onclick="history.back()">
+                    ← Volver
+                </button>
+            }
+            
+            <div>
+                <h1 class="page-title">{{ title() }}</h1>
+                @if (subtitle()) {
+                    <p class="page-subtitle">{{ subtitle() }}</p>
+                }
+            </div>
+        </div>
+        
+        <!-- Actions Slot -->
+        <div class="actions-slot">
+            <ng-content select="[actions]"></ng-content>
+        </div>
+    </div>
+</div>

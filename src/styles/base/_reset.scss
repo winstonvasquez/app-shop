@@ -1,0 +1,35 @@
+/* Global Styles - Angular Specific Only */
+/* Tailwind's base layer handles most resets */
+
+/* Angular Root - Critical for correct layout */
+app-root {
+    display: block;
+    width: 100%;
+    min-height: 100vh;
+}
+
+/* Body defaults using theme tokens */
+body {
+    font-family: var(--font-sans);
+    background-color: var(--color-background);
+    color: var(--color-text-primary);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Display font utility */
+.font-display {
+    font-family: var(--font-display);
+}
+
+/* Dark-first color scheme */
+html {
+    scroll-behavior: smooth;
+    color-scheme: dark;
+}
+
+/* Focus visible for accessibility */
+:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
