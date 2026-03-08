@@ -1,0 +1,147 @@
+/* ============================================
+   ORANGE THEME (opt-in via data-theme="orange")
+   Overrides semantic tokens with a vibrant, high-contrast Orange/Green palette.
+   ============================================ */
+
+[data-theme="orange"] {
+
+    /* --- PRIMITIVE TOKENS (Orange Theme scales) --- */
+    /* Orange Scale */
+    --color-orange-50: #fff8ec;
+    --color-orange-100: #ffefd3;
+    --color-orange-200: #ffdca7;
+    --color-orange-300: #ffc26f;
+    --color-orange-400: #ff9c35;
+    --color-orange-500: #ff7e0d;
+    --color-orange-600: #f36203;
+    --color-orange-700: #c94805;
+    --color-orange-800: #97360c;
+    --color-orange-900: #80310e;
+    --color-orange-950: #451605;
+
+    /* Green Scale (Success) */
+    --color-green-50: #f2fde8;
+    --color-green-100: #e0fbcc;
+    --color-green-200: #c2f6a0;
+    --color-green-300: #9bee68;
+    --color-green-400: #78e13a;
+    --color-green-500: #5dd31d;
+    --color-green-600: #409f11;
+    --color-green-700: #337912;
+    --color-green-800: #2c6014;
+    --color-green-900: #275116;
+    --color-green-950: #102d06;
+
+    /* Base Neutrals specific to this Theme (softer darks for better orange contrast) */
+    --color-theme-surface: oklch(0.18 0.01 40);
+    /* Slightly warm dark surface */
+    --color-theme-surface-raised: oklch(0.24 0.02 40);
+    /* Elevated warm surface */
+    --color-theme-bg: oklch(0.13 0.01 40);
+    /* Warm deep background */
+    --color-theme-border: oklch(0.30 0.02 40);
+
+    /* --- SEMANTIC TOKENS --- */
+
+    /* Primary Colors */
+    --color-primary: var(--color-orange-500);
+    --color-primary-dark: var(--color-orange-600);
+    --color-accent: var(--color-orange-400);
+    --color-accent-dark: var(--color-orange-500);
+    --color-secondary: var(--color-orange-950);
+
+    /* Surface & Background */
+    --color-surface: var(--color-theme-surface);
+    --color-surface-raised: var(--color-theme-surface-raised);
+    --color-background: var(--color-theme-bg);
+    --color-border: var(--color-theme-border);
+
+    /* Text Colors */
+    --color-text-primary: var(--color-orange-50);
+    --color-text-secondary: var(--color-orange-200);
+    --color-text-muted: var(--color-orange-300);
+
+    /* State Colors */
+    --color-success: var(--color-green-500);
+    --color-warning: #facc15;
+    /* Keeping standard warning */
+    --color-error: #ef4444;
+    /* Keeping standard error */
+    --color-info: #3b82f6;
+    /* Keeping standard info */
+
+    /* --- TYPOGRAPHY HIERARCHY OVERRIDES --- */
+    /* Adjusting to feel sturdier and more structural for the new graphic line */
+    --text-xs: 0.70rem;
+    --text-sm: 0.85rem;
+    --text-base: 1.05rem;
+    /* Slightly larger base */
+    --text-lg: 1.20rem;
+    --text-xl: 1.35rem;
+    /* H6 */
+    --text-2xl: 1.7rem;
+    /* H5 */
+    --text-3xl: 2.1rem;
+    /* H4 */
+    --text-4xl: 2.6rem;
+    /* H3 */
+    --text-5xl: 3.2rem;
+    /* H2 */
+
+    --font-normal: 400;
+    --font-medium: 500;
+    --font-semibold: 600;
+    --font-bold: 700;
+    --font-extrabold: 900;
+    /* Pushing H1/H2 slightly heavier */
+
+    --leading-tight: 1.15;
+    --leading-normal: 1.6;
+    --leading-relaxed: 1.8;
+
+    /* --- SPACING SYSTEM OVERRIDES --- */
+    /* More compact padding to emulate complex ERP dashboards */
+    --spacing-xs: 0.2rem;
+    --spacing-sm: 0.4rem;
+    --spacing-md: 0.8rem;
+    --spacing-lg: 1.2rem;
+    --spacing-xl: 1.8rem;
+    --spacing-2xl: 2.5rem;
+    --spacing-3xl: 3.5rem;
+
+    /* --- BORDER & RADIUS OVERRIDES --- */
+    /* A more chiseled, professional feel (slightly less rounded than default) */
+    --radius-sm: 0.15rem;
+    --radius-md: 0.3rem;
+    --radius-lg: 0.5rem;
+    --radius-xl: 0.8rem;
+    --radius-full: 9999px;
+
+    --border-width: 1px;
+    --border-width-2: 2px;
+
+    /* --- SHADOW SYSTEM OVERRIDES --- */
+    /* Deeper, warmer orange-tinted shadows */
+    --shadow-sm: 0 1px 3px 0 color-mix(in srgb, var(--color-orange-950) 40%, transparent);
+    --shadow-md: 0 4px 6px -1px color-mix(in srgb, var(--color-orange-950) 50%, transparent), 0 2px 4px -2px color-mix(in srgb, var(--color-orange-950) 40%, transparent);
+    --shadow-lg: 0 10px 15px -3px color-mix(in srgb, var(--color-orange-950) 60%, transparent), 0 4px 6px -4px color-mix(in srgb, var(--color-orange-950) 50%, transparent);
+    --shadow-xl: 0 20px 25px -5px color-mix(in srgb, var(--color-orange-950) 70%, transparent), 0 8px 10px -6px color-mix(in srgb, var(--color-orange-950) 60%, transparent);
+}
+
+/* ============================================
+   COMPONENT SPECIFIC VARS / OVERRIDES 
+   (If elements need specific adjustments only under orange theme)
+   ============================================ */
+
+[data-theme="orange"] {
+    .btn-primary-gradient {
+        /* Example: If you have hardcoded gradients in ui.scss, you can override them safely here */
+        background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+    }
+
+    /* Force UI cards to adopt the new chiseled borders */
+    .ui-card {
+        border-radius: var(--radius-md);
+        box-shadow: var(--shadow-md);
+    }
+}

@@ -1,29 +1,37 @@
+@layer base {
+
+    /* Neutraliza los márgenes globales de _layout.scss sin anular utilidades de Tailwind.
+       Al estar en @layer base, las clases utilitarias (font-bold, mb-6, text-*) siempre ganan. */
+    .login-layout {
+
+        section,
+        article {
+            margin-bottom: 0;
+        }
+
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6 {
+            margin-top: 0;
+            margin-bottom: 0;
+        }
+
+        p {
+            margin-bottom: 0;
+        }
+    }
+}
+
 .login-layout {
     background-color: var(--color-background);
 
     .bg-pattern {
-        background-color: var(--color-surface);
-        background-image: radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--color-primary) 5%, transparent), transparent);
-
-        &::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background-image:
-                radial-gradient(var(--color-border) 1px, transparent 1px);
-            background-size: 32px 32px;
-            opacity: 0.15;
-            mask-image: linear-gradient(to bottom, black, transparent);
-        }
-    }
-
-    .glass-panel {
-        background: color-mix(in srgb, var(--color-surface-raised) 60%, transparent);
-        backdrop-filter: blur(12px);
-        border: 1px solid color-mix(in srgb, var(--color-white) 5%, transparent);
-        box-shadow:
-            0 25px 50px -12px rgba(0, 0, 0, 0.5),
-            inset 0 1px 1px color-mix(in srgb, var(--color-white) 10%, transparent);
+        background-color: transparent;
+        background-image: radial-gradient(var(--color-surface-raised) 1px, transparent 0);
+        background-size: 40px 40px;
     }
 
     .form-container {
@@ -32,11 +40,10 @@
 
     .btn-primary-gradient {
         background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
-        border: 1px solid color-mix(in srgb, var(--color-white) 10%, transparent);
+        border: 1px solid color-mix(in srgb, white 10%, transparent);
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
         &:hover:not(:disabled) {
-            transform: translateY(-2px);
             filter: brightness(1.1);
             box-shadow:
                 0 20px 25px -5px color-mix(in srgb, var(--color-primary) 30%, transparent),
@@ -59,18 +66,4 @@
         opacity: 1;
         transform: translateY(0);
     }
-}
-
-/* Custom spacing utility for input fields if needed */
-.py-4\.5 {
-    padding-top: 1.125rem;
-    padding-bottom: 1.125rem;
-}
-
-.pl-12 {
-    padding-left: 3rem;
-}
-
-.pr-4 {
-    padding-right: 1rem;
 }

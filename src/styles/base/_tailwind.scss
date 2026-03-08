@@ -3,8 +3,4 @@
 
 /* Tailwind v4 engine */
 @import "tailwindcss";
-
-/* Required by User Prompt */
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@source "../../";

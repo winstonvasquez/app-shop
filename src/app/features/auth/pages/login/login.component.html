@@ -1,194 +1,163 @@
-<main class="login-layout min-h-screen flex items-stretch overflow-hidden">
-    <!-- Brand Hero Section -->
+<main class="login-layout min-h-screen grid grid-cols-1 lg:grid-cols-2">
+
+    <!-- Left: Hero Branding -->
     <section data-purpose="hero-branding"
-        class="hidden lg:flex w-1/2 relative bg-pattern items-center justify-center p-16 border-r border-[var(--color-border)] overflow-hidden">
-        <div class="hero-content w-full max-w-lg z-10">
-            <div class="flex items-center justify-center gap-3 mb-12">
-                <div class="flex flex-col items-center">
-                    <div class="flex items-baseline gap-1">
-                        <span
-                            class="text-5xl font-extrabold tracking-tighter text-[var(--color-text-primary)]">APP</span>
-                        <span class="text-5xl font-extrabold tracking-tighter text-[var(--color-primary)]">SHOP</span>
-                    </div>
-                    <span
-                        class="mt-2 px-4 py-1.5 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-full text-[11px] font-bold tracking-[0.2em] text-[var(--color-text-muted)] uppercase">
-                        {{ 'auth.erpBadge' | translate }}
-                    </span>
-                </div>
-            </div>
+        class="hidden lg:relative lg:flex lg:flex-col lg:items-center lg:justify-center p-12 text-center border-r border-[var(--color-border)] overflow-hidden bg-[var(--color-background)]">
 
-            <div class="space-y-8 text-center">
-                <h2 class="text-6xl font-black text-[var(--color-text-primary)] leading-[1.1] tracking-tight">
-                    {{ 'auth.welcomeHeroPremium' | translate }}
-                </h2>
-                <p class="text-[var(--color-text-muted)] text-lg leading-relaxed font-medium">
-                    {{ 'auth.heroDescriptionDesc' | translate }}
-                </p>
-            </div>
+        <!-- Background grid pattern -->
+        <div class="absolute inset-0 bg-pattern z-0 opacity-50"></div>
 
-            <!-- Enhanced Glass Decorative Element -->
-            <div class="mt-20 relative p-8 glass-panel rounded-3xl group border border-[var(--color-white-10)]">
-                <div
-                    class="absolute -top-3 -left-3 w-12 h-12 bg-[var(--color-primary)] opacity-20 blur-2xl rounded-full group-hover:opacity-40 transition-opacity">
-                </div>
-                <div class="flex items-center gap-6">
-                    <div class="relative">
-                        <div
-                            class="w-16 h-16 rounded-2xl bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-dark)] flex items-center justify-center shadow-lg shadow-[var(--color-primary-20)]">
-                            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                            </svg>
-                        </div>
-                        <div
-                            class="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 border-2 border-[var(--color-surface)] rounded-full animate-pulse">
-                        </div>
-                    </div>
-                    <div>
-                        <div class="text-[var(--color-text-primary)] font-bold text-lg">System Active</div>
-                        <div class="text-[var(--color-text-muted)] text-sm font-medium">Enterprise Security Layer v4.2
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Dynamic Background Orbs -->
+        <!-- Central colored glow -->
         <div
-            class="absolute top-0 right-0 w-[500px] h-[500px] bg-[var(--color-primary)] opacity-[0.03] blur-[120px] -mr-48 -mt-48">
+            class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[var(--color-primary)]/10 rounded-full blur-[100px] pointer-events-none z-0">
         </div>
-        <div
-            class="absolute bottom-0 left-0 w-[400px] h-[400px] bg-[var(--color-primary)] opacity-[0.02] blur-[100px] -ml-32 -mb-32">
+
+        <!-- Foreground Content Wrapper -->
+        <div class="relative z-10 flex flex-col items-center max-w-[520px]">
+
+            <!-- Brand logo -->
+            <div class="flex items-center justify-center gap-2 mb-10">
+                <span class="text-4xl font-black tracking-tighter text-[var(--color-text-primary)]">APP</span>
+                <span class="text-4xl font-black tracking-tighter text-[var(--color-primary)]">SHOP</span>
+                <span
+                    class="ml-4 px-3 py-1.5 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-xs font-bold tracking-widest text-[var(--color-text-muted)] uppercase shadow-sm">
+                    {{ 'auth.erpBadge' | translate }}
+                </span>
+            </div>
+
+            <h2 class="text-5xl font-bold text-[var(--color-text-primary)] mb-6 leading-[1.15] tracking-tight">
+                {{ 'auth.welcomeHeroPremium' | translate }}
+            </h2>
+
+            <p class="text-[var(--color-text-muted)] text-lg mb-12 leading-relaxed">
+                {{ 'auth.heroDescriptionDesc' | translate }}
+            </p>
+
+            <!-- Decorative animated UI placeholder -->
+            <div
+                class="w-full p-8 bg-[var(--color-surface)]/60 rounded-[2rem] border border-[var(--color-border)] backdrop-blur-md shadow-2xl">
+                <div class="grid grid-cols-3 gap-5 opacity-40">
+                    <div class="h-28 bg-[var(--color-surface-raised)] rounded-2xl animate-pulse"></div>
+                    <div class="h-28 bg-[var(--color-surface-raised)] rounded-2xl animate-pulse delay-75"></div>
+                    <div class="h-28 bg-[var(--color-surface-raised)] rounded-2xl animate-pulse delay-150"></div>
+                </div>
+            </div>
+
         </div>
+
     </section>
 
-    <!-- Login Form Section -->
-    <section class="w-full lg:w-1/2 flex items-center justify-center p-8 lg:p-12 relative overflow-y-auto">
-        <div class="w-full max-w-md">
-            <!-- Mobile Header -->
-            <div class="lg:hidden flex flex-col items-center mb-10">
-                <div class="flex items-baseline gap-1">
-                    <span class="text-3xl font-extrabold tracking-tighter text-[var(--color-text-primary)]">APP</span>
-                    <span class="text-3xl font-extrabold tracking-tighter text-[var(--color-primary)]">SHOP</span>
-                </div>
-                <div class="h-1 w-12 bg-[var(--color-primary)] rounded-full mt-2"></div>
-            </div>
+    <!-- Right: Login Form -->
+    <section data-purpose="login-form-container"
+        class="flex items-center justify-center p-6 sm:p-12 lg:p-16 bg-[var(--color-background)] lg:bg-[var(--color-surface)]">
 
-            <div class="mb-12">
-                <h1 class="text-4xl font-black text-[var(--color-text-primary)] mb-3 tracking-tight">
+        <div class="w-full sm:w-[420px] form-container">
+            <!-- Header -->
+            <header class="mb-10 text-center lg:text-left">
+                <h1 class="text-4xl font-extrabold text-[var(--color-text-primary)] tracking-tight">
                     {{ 'auth.signIn' | translate }}
                 </h1>
-                <p class="text-[var(--color-text-muted)] font-medium">
+                <p class="mt-3 text-[var(--color-text-muted)]">
                     {{ 'auth.signInSubtitleShort' | translate }}
                 </p>
-            </div>
+            </header>
 
             <!-- Error Message -->
             @if (errorMessage()) {
             <div
-                class="mb-8 p-4 bg-[var(--color-error)]/10 border-l-4 border-[var(--color-error)] text-[var(--color-error)] rounded-xl animate-in fade-in slide-in-from-top-4 duration-300">
+                class="mb-6 p-4 bg-[var(--color-error)]/10 border border-[var(--color-error)]/20 text-[var(--color-error)] rounded-xl text-sm font-medium flex items-center gap-3">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
                 {{ errorMessage() | translate }}
             </div>
             }
 
-            <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="form-container space-y-10" novalidate>
-                <div class="space-y-6">
-                    <!-- Username Field -->
-                    <div class="space-y-2 group">
-                        <label for="username"
-                            class="text-sm font-bold text-[var(--color-text-muted)] uppercase tracking-wider ml-1 group-focus-within:text-[var(--color-primary)] transition-colors">
-                            {{ 'auth.usernameLabel' | translate }}
-                        </label>
-                        <div class="relative">
-                            <span
-                                class="absolute inset-y-0 left-0 pl-4.5 flex items-center pointer-events-none text-[var(--color-text-muted)] group-focus-within:text-[var(--color-primary)] transition-colors">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                </svg>
-                            </span>
-                            <input id="username" type="text" formControlName="username"
-                                class="w-full bg-[var(--color-surface-raised)] border border-[var(--color-border)] text-[var(--color-text-primary)] rounded-2xl py-4.5 pl-12 pr-4 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary-20)] focus:border-[var(--color-primary)] transition-all font-medium placeholder:text-[var(--color-text-muted)]/40"
-                                [placeholder]="'auth.usernamePlaceholder' | translate" />
-                        </div>
-                    </div>
+            <!-- Form -->
+            <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" novalidate>
 
-                    <!-- Password Field -->
-                    <div class="space-y-2 group">
-                        <div class="flex items-center justify-between ml-1">
-                            <label for="password"
-                                class="text-sm font-bold text-[var(--color-text-muted)] uppercase tracking-wider group-focus-within:text-[var(--color-primary)] transition-colors">
-                                {{ 'auth.password' | translate }}
-                            </label>
-                            <a href="#"
-                                class="text-xs font-bold text-[var(--color-primary)] hover:text-[var(--color-primary-hover)] transition-colors">
-                                {{ 'auth.forgotPassword' | translate }}
-                            </a>
-                        </div>
-                        <div class="relative">
-                            <span
-                                class="absolute inset-y-0 left-0 pl-4.5 flex items-center pointer-events-none text-[var(--color-text-muted)] group-focus-within:text-[var(--color-primary)] transition-colors">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                                </svg>
-                            </span>
-                            <input id="password" type="password" formControlName="password"
-                                class="w-full bg-[var(--color-surface-raised)] border border-[var(--color-border)] text-[var(--color-text-primary)] rounded-2xl py-4.5 pl-12 pr-4 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary-20)] focus:border-[var(--color-primary)] transition-all font-medium placeholder:text-[var(--color-text-muted)]/40"
-                                placeholder="••••••••" />
-                        </div>
-                    </div>
+                <!-- Username -->
+                <div class="mb-5">
+                    <label for="username" class="block mb-2 text-sm font-medium text-[var(--color-text-secondary)]">
+                        {{ 'auth.usernameLabel' | translate }}
+                    </label>
+                    <input id="username" type="text" formControlName="username"
+                        class="block w-full rounded-xl bg-[var(--color-surface-raised)] py-3.5 px-4 text-[var(--color-text-primary)] ring-1 ring-inset ring-[var(--color-border)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[var(--color-primary)] transition-shadow text-base"
+                        [placeholder]="'auth.usernamePlaceholder' | translate" />
                 </div>
 
-                <div class="flex items-center ml-1">
+                <!-- Password -->
+                <div class="mb-6">
+                    <div class="flex items-center justify-between mb-2">
+                        <label for="password" class="block text-sm font-medium text-[var(--color-text-secondary)]">
+                            {{ 'auth.password' | translate }}
+                        </label>
+                        <a href="#"
+                            class="text-sm font-semibold text-[var(--color-primary)] hover:text-[var(--color-primary-dark)] transition-colors">
+                            {{ 'auth.forgotPassword' | translate }}
+                        </a>
+                    </div>
+                    <input id="password" type="password" formControlName="password"
+                        class="block w-full rounded-xl bg-[var(--color-surface-raised)] py-3.5 px-4 text-[var(--color-text-primary)] ring-1 ring-inset ring-[var(--color-border)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[var(--color-primary)] transition-shadow text-base"
+                        placeholder="••••••••" />
+                </div>
+
+                <!-- Remember me -->
+                <div class="flex items-center mb-8">
                     <input id="remember" type="checkbox"
-                        class="w-5 h-5 rounded border-[var(--color-border)] text-[var(--color-primary)] focus:ring-[var(--color-primary)] bg-[var(--color-surface-raised)] cursor-pointer" />
+                        class="h-4 w-4 rounded border-[var(--color-border)] bg-[var(--color-surface-raised)] text-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)] transition-all cursor-pointer" />
                     <label for="remember"
-                        class="ml-3 text-sm font-bold text-[var(--color-text-muted)] cursor-pointer select-none">
+                        class="ml-3 block text-sm text-[var(--color-text-muted)] cursor-pointer select-none">
                         {{ 'auth.rememberMe' | translate }}
                     </label>
                 </div>
 
-                <!-- Submit Button -->
+                <!-- Submit -->
                 <button type="submit" [disabled]="loginForm.invalid || loading()"
-                    class="w-full btn-primary-gradient text-white font-black py-4.5 rounded-2xl shadow-xl shadow-[var(--color-primary-20)] flex items-center justify-center gap-3 active:scale-[0.98] transition-all disabled:opacity-50 disabled:scale-100 disabled:shadow-none">
+                    class="flex w-full justify-center items-center gap-3 btn-primary-gradient rounded-xl px-4 py-4 text-sm font-bold text-white shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 transition-all uppercase tracking-wider disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0">
                     @if (loading()) {
                     <div class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                     <span>{{ 'auth.signingIn' | translate }}</span>
                     } @else {
                     <span>{{ 'auth.signIn' | translate }}</span>
-                    <svg class="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none"
-                        stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                    </svg>
                     }
                 </button>
 
-                <!-- Footer Links -->
-                <div class="text-center pt-8">
-                    <p class="text-sm font-bold text-[var(--color-text-muted)]">
-                        {{ 'auth.newHere' | translate }}
-                        <a href="#" class="text-[var(--color-primary)] ml-1 hover:underline underline-offset-4">
-                            {{ 'auth.createAccount' | translate }}
-                        </a>
-                    </p>
-                </div>
             </form>
+
+            <!-- Footer -->
+            <footer class="mt-8 text-center text-sm">
+                <p class="text-[var(--color-text-muted)]">
+                    {{ 'auth.newHere' | translate }}
+                    <a href="#"
+                        class="font-semibold text-[var(--color-primary)] hover:text-[var(--color-primary-dark)] transition-colors ml-1">
+                        {{ 'auth.createAccount' | translate }}
+                    </a>
+                </p>
+
+                <!-- System status -->
+                <div class="mt-12 pt-8 border-t border-[var(--color-border)] flex items-center justify-center gap-6">
+                    <div class="flex items-center gap-2">
+                        <span class="relative flex h-2.5 w-2.5">
+                            <span
+                                class="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--color-success)] opacity-75"></span>
+                            <span
+                                class="relative inline-flex rounded-full h-2.5 w-2.5 bg-[var(--color-success)]"></span>
+                        </span>
+                        <span
+                            class="text-[10px] uppercase font-bold text-[var(--color-text-muted)] tracking-widest">System
+                            Online</span>
+                    </div>
+                    <div>
+                        <span
+                            class="text-[10px] uppercase font-bold text-[var(--color-text-muted)] tracking-widest">v21.0.4-LTS</span>
+                    </div>
+                </div>
+            </footer>
         </div>
 
-        <!-- System Status Footer -->
-        <div
-            class="absolute bottom-10 left-0 right-0 px-12 hidden lg:flex items-center justify-between text-[11px] font-black uppercase tracking-[0.2em] text-[var(--color-text-muted)]">
-            <div class="flex items-center gap-4">
-                <span class="flex items-center gap-2">
-                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-lg shadow-emerald-500/50"></span>
-                    System Online
-                </span>
-                <span class="w-px h-3 bg-[var(--color-border)]"></span>
-                <span>Version 4.2.0-stable</span>
-            </div>
-            <span>&copy; 2026 AppShop Enterprise</span>
-        </div>
     </section>
+
 </main>

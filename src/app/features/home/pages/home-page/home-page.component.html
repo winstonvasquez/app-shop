@@ -29,13 +29,12 @@
             <span>{{ 'home.valentines' | translate }}</span>
         </div>
 
-        <div class="flex flex-wrap justify-center gap-2 max-w-3xl mx-auto">
-            @for (cat of categories(); track cat.id) {
-            <button
-                class="category-pill px-4 py-1.5 rounded-full text-[12px] font-medium transition-all active:scale-95">
-                {{ cat.nombre }}
-            </button>
-            }
-        </div>
+
+        @for (cat of categories(); track cat.id) {
+        <button class="category-pill px-4 py-1.5 rounded-full text-[12px] font-medium transition-all active:scale-95">
+            {{ cat.nombre }}
+        </button>
+        }
+
     </section>
 </div>
