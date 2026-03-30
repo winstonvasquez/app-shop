@@ -1,11 +1,13 @@
-import { Component, inject, signal, computed, OnInit } from '@angular/core';
-import { DecimalPipe, DatePipe } from '@angular/common';
+import { Component, inject, signal, computed, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import { DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { AuthService } from '@core/auth/auth.service';
+import { DrawerComponent } from '@shared/components/drawer/drawer.component';
+import { DataTableComponent, TableColumn, TableAction, PaginationEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { AsientoService } from '../../services/asiento.service';
 import { CuentaService, CuentaContable } from '../../services/cuenta.service';
 import { PeriodoService, PeriodoContable } from '../../services/periodo.service';
 import { Asiento, AsientoRequest, MovimientoRequest } from '../../models/asiento.model';
-import { AuthService } from '@core/auth/auth.service';
 
 interface LineaForm {
     cuentaId: string;
@@ -19,7 +21,8 @@ interface LineaForm {
 @Component({
     selector: 'app-asientos',
     standalone: true,
-    imports: [DecimalPipe, DatePipe, FormsModule],
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    imports: [DecimalPipe, FormsModule, DrawerComponent, DataTableComponent],
     template: `
         <div class="page-header">
             <div>
@@ -27,171 +30,171 @@ interface LineaForm {
                 <p class="page-subtitle">PCGE 2020 · Partida doble</p>
             </div>
             <div class="page-actions">
-                @if (!mostrarForm()) {
-                    <button class="btn btn-primary" (click)="abrirForm()" [disabled]="!periodoSeleccionado()">
-                        + Nuevo Asiento
-                    </button>
-                }
+                <button class="btn btn-primary" (click)="abrirForm()" [disabled]="!periodoSeleccionado()">
+                    + Nuevo Asiento
+                </button>
             </div>
         </div>
 
-        <!-- ── FORMULARIO NUEVO ASIENTO ─────────────────────────────────────── -->
-        @if (mostrarForm()) {
-        <div class="card mb-6">
-            <div class="card-header">
-                <h3 class="card-title">Nuevo Asiento Contable</h3>
-                <button class="btn btn-secondary" (click)="cerrarForm()">Cancelar</button>
-            </div>
-            <div class="card-body">
+        <!-- ── DRAWER FORMULARIO NUEVO ASIENTO ──────────────────────────────── -->
+        <app-drawer
+            [isOpen]="mostrarForm()"
+            title="Nuevo Asiento Contable"
+            size="lg"
+            side="right"
+            [hasFooter]="true"
+            (closed)="cerrarForm()">
 
-                <!-- Cabecera -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                    <div>
-                        <label class="input-label">Fecha *</label>
-                        <input type="date" class="input-field" [(ngModel)]="form.fecha" required>
-                    </div>
-                    <div>
-                        <label class="input-label">Tipo *</label>
-                        <select class="input-field" [(ngModel)]="form.tipo">
-                            <option value="MANUAL">Manual</option>
-                            <option value="CIERRE">Cierre</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="input-label">Glosa *</label>
-                        <input type="text" class="input-field" [(ngModel)]="form.glosa"
-                               placeholder="Descripción del asiento" maxlength="250">
-                    </div>
+            <!-- Cabecera del asiento -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div>
+                    <label class="input-label">Fecha *</label>
+                    <input type="date" class="input-field" [(ngModel)]="form.fecha" required>
                 </div>
+                <div>
+                    <label class="input-label">Tipo *</label>
+                    <select class="input-field" [(ngModel)]="form.tipo">
+                        <option value="MANUAL">Manual</option>
+                        <option value="CIERRE">Cierre</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="input-label">Glosa *</label>
+                    <input type="text" class="input-field" [(ngModel)]="form.glosa"
+                           placeholder="Descripción del asiento" maxlength="250">
+                </div>
+            </div>
 
-                <!-- Líneas de movimiento -->
-                <div class="overflow-x-auto mb-4">
-                    <table class="table w-full">
-                        <thead>
-                            <tr>
-                                <th class="table-header-cell w-36">Cuenta</th>
-                                <th class="table-header-cell">Descripción</th>
-                                <th class="table-header-cell">Glosa línea</th>
-                                <th class="table-header-cell text-right w-32">Debe (S/)</th>
-                                <th class="table-header-cell text-right w-32">Haber (S/)</th>
-                                <th class="table-header-cell w-12"></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @for (l of lineas(); track $index; let i = $index) {
-                            <tr class="table-row">
-                                <!-- Selector cuenta con autocompletado -->
-                                <td class="table-cell p-1">
-                                    <div class="relative">
-                                        <input type="text" class="input-field font-mono text-sm py-1"
-                                               [(ngModel)]="l.codigoCuenta"
-                                               (ngModelChange)="onCodigoCuentaChange(i, $event)"
-                                               (blur)="buscarCuenta(i)"
-                                               placeholder="ej. 121"
-                                               autocomplete="off">
-                                        @if (sugerencias()[i]?.length) {
-                                        <div class="absolute z-50 left-0 top-full w-64 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-lg shadow-lg max-h-40 overflow-y-auto">
-                                            @for (c of sugerencias()[i]; track c.id) {
-                                            <div class="px-3 py-2 text-sm cursor-pointer hover:bg-[var(--color-surface)] flex gap-2"
-                                                 (mousedown)="seleccionarCuenta(i, c)">
-                                                <span class="font-mono text-[var(--color-primary)]">{{ c.codigo }}</span>
-                                                <span class="text-subtle truncate">{{ c.nombre }}</span>
-                                            </div>
-                                            }
+            <!-- Líneas de movimiento -->
+            <div class="overflow-x-auto mb-4">
+                <table class="table w-full">
+                    <thead>
+                        <tr>
+                            <th class="table-header-cell w-36">Cuenta</th>
+                            <th class="table-header-cell">Descripción</th>
+                            <th class="table-header-cell">Glosa línea</th>
+                            <th class="table-header-cell text-right w-32">Debe (S/)</th>
+                            <th class="table-header-cell text-right w-32">Haber (S/)</th>
+                            <th class="table-header-cell w-12"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (l of lineas(); track $index; let i = $index) {
+                        <tr class="table-row">
+                            <!-- Selector cuenta con autocompletado -->
+                            <td class="table-cell p-1">
+                                <div class="relative">
+                                    <input type="text" class="input-field font-mono text-sm py-1"
+                                           [(ngModel)]="l.codigoCuenta"
+                                           (ngModelChange)="onCodigoCuentaChange(i, $event)"
+                                           (blur)="buscarCuenta(i)"
+                                           placeholder="ej. 121"
+                                           autocomplete="off">
+                                    @if (sugerencias()[i]?.length) {
+                                    <div class="absolute z-50 left-0 top-full w-64 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-lg shadow-lg max-h-40 overflow-y-auto">
+                                        @for (c of sugerencias()[i]; track c.id) {
+                                        <div class="px-3 py-2 text-sm cursor-pointer hover:bg-[var(--color-surface)] flex gap-2"
+                                             (mousedown)="seleccionarCuenta(i, c)">
+                                            <span class="font-mono text-[var(--color-primary)]">{{ c.codigo }}</span>
+                                            <span class="text-subtle truncate">{{ c.nombre }}</span>
                                         </div>
                                         }
                                     </div>
-                                </td>
-                                <td class="table-cell p-1">
-                                    <input type="text" class="input-field text-sm py-1" [(ngModel)]="l.nombreCuenta"
-                                           placeholder="Nombre cuenta" readonly>
-                                </td>
-                                <td class="table-cell p-1">
-                                    <input type="text" class="input-field text-sm py-1" [(ngModel)]="l.glosa"
-                                           placeholder="Detalle...">
-                                </td>
-                                <td class="table-cell p-1">
-                                    <input type="number" class="input-field text-sm py-1 text-right font-mono"
-                                           [(ngModel)]="l.debe" min="0" step="0.01"
-                                           (ngModelChange)="onDebeChange(i)">
-                                </td>
-                                <td class="table-cell p-1">
-                                    <input type="number" class="input-field text-sm py-1 text-right font-mono"
-                                           [(ngModel)]="l.haber" min="0" step="0.01"
-                                           (ngModelChange)="onHaberChange(i)">
-                                </td>
-                                <td class="table-cell p-1 text-center">
-                                    @if (lineas().length > 2) {
-                                        <button class="btn-icon btn-icon-delete" (click)="eliminarLinea(i)" title="Eliminar">✕</button>
                                     }
-                                </td>
-                            </tr>
-                            }
-                        </tbody>
-                        <tfoot>
-                            <tr class="border-t-2 border-[var(--color-border)]">
-                                <td colspan="3" class="table-cell">
-                                    <button class="btn btn-secondary text-sm py-1" (click)="agregarLinea()">
-                                        + Agregar línea
-                                    </button>
-                                </td>
-                                <td class="table-cell text-right font-mono font-bold">
-                                    {{ totalDebe() | number:'1.2-2' }}
-                                </td>
-                                <td class="table-cell text-right font-mono font-bold">
-                                    {{ totalHaber() | number:'1.2-2' }}
-                                </td>
-                                <td></td>
-                            </tr>
-                            <!-- Verificación partida doble -->
-                            <tr>
-                                <td colspan="6" class="table-cell pt-2">
-                                    @if (totalDebe() === 0 && totalHaber() === 0) {
-                                        <span class="text-subtle text-sm">Ingresa montos en las líneas de debe y haber</span>
-                                    } @else if (cuadra()) {
-                                        <span class="text-sm font-semibold" style="color:var(--color-success)">
-                                            ✓ Partida doble balanceada — DEBE = HABER = S/ {{ totalDebe() | number:'1.2-2' }}
-                                        </span>
-                                    } @else {
-                                        <span class="text-sm font-semibold" style="color:var(--color-error)">
-                                            ⚠ Diferencia: S/ {{ diferencia() | number:'1.2-2' }} — el asiento no cuadra
-                                        </span>
-                                    }
-                                </td>
-                            </tr>
-                        </tfoot>
-                    </table>
-                </div>
+                                </div>
+                            </td>
+                            <td class="table-cell p-1">
+                                <input type="text" class="input-field text-sm py-1" [(ngModel)]="l.nombreCuenta"
+                                       placeholder="Nombre cuenta" readonly>
+                            </td>
+                            <td class="table-cell p-1">
+                                <input type="text" class="input-field text-sm py-1" [(ngModel)]="l.glosa"
+                                       placeholder="Detalle...">
+                            </td>
+                            <td class="table-cell p-1">
+                                <input type="number" class="input-field text-sm py-1 text-right font-mono"
+                                       [(ngModel)]="l.debe" min="0" step="0.01"
+                                       (ngModelChange)="onDebeChange(i)">
+                            </td>
+                            <td class="table-cell p-1">
+                                <input type="number" class="input-field text-sm py-1 text-right font-mono"
+                                       [(ngModel)]="l.haber" min="0" step="0.01"
+                                       (ngModelChange)="onHaberChange(i)">
+                            </td>
+                            <td class="table-cell p-1 text-center">
+                                @if (lineas().length > 2) {
+                                    <button class="btn-icon btn-icon-delete" (click)="eliminarLinea(i)" title="Eliminar">✕</button>
+                                }
+                            </td>
+                        </tr>
+                        }
+                    </tbody>
+                    <tfoot>
+                        <tr class="border-t-2 border-[var(--color-border)]">
+                            <td colspan="3" class="table-cell">
+                                <button class="btn btn-secondary text-sm py-1" (click)="agregarLinea()">
+                                    + Agregar línea
+                                </button>
+                            </td>
+                            <td class="table-cell text-right font-mono font-bold">
+                                {{ totalDebe() | number:'1.2-2' }}
+                            </td>
+                            <td class="table-cell text-right font-mono font-bold">
+                                {{ totalHaber() | number:'1.2-2' }}
+                            </td>
+                            <td></td>
+                        </tr>
+                        <!-- Verificación partida doble -->
+                        <tr>
+                            <td colspan="6" class="table-cell pt-2">
+                                @if (totalDebe() === 0 && totalHaber() === 0) {
+                                    <span class="text-subtle text-sm">Ingresa montos en las líneas de debe y haber</span>
+                                } @else if (cuadra()) {
+                                    <span class="text-sm font-semibold" style="color:var(--color-success)">
+                                        ✓ Partida doble balanceada — DEBE = HABER = S/ {{ totalDebe() | number:'1.2-2' }}
+                                    </span>
+                                } @else {
+                                    <span class="text-sm font-semibold" style="color:var(--color-error)">
+                                        ⚠ Diferencia: S/ {{ diferencia() | number:'1.2-2' }} — el asiento no cuadra
+                                    </span>
+                                }
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
 
-                <!-- Acciones -->
-                <div class="flex justify-end gap-3 pt-4 border-t border-[var(--color-border)]">
-                    @if (guardando()) {
-                        <span class="text-subtle text-sm flex items-center gap-2"><div class="spinner spinner-sm"></div> Guardando...</span>
-                    } @else {
-                        <button class="btn btn-secondary" (click)="guardar('BORRADOR')"
-                                [disabled]="!formularioValido()">
-                            Guardar Borrador
-                        </button>
-                        <button class="btn btn-primary" (click)="guardar('DEFINITIVO')"
-                                [disabled]="!formularioValido() || !cuadra()">
-                            Aprobar y Contabilizar
-                        </button>
-                    }
-                </div>
+            @if (errorForm()) {
+                <p class="mt-3 text-sm" style="color:var(--color-error)">{{ errorForm() }}</p>
+            }
 
-                @if (errorForm()) {
-                    <p class="mt-3 text-sm" style="color:var(--color-error)">{{ errorForm() }}</p>
+            <!-- Footer del drawer -->
+            <div slot="footer">
+                @if (guardando()) {
+                    <span class="text-subtle text-sm flex items-center gap-2">
+                        <div class="spinner spinner-sm"></div> Guardando...
+                    </span>
+                } @else {
+                    <button class="btn btn-secondary" (click)="cerrarForm()">Cancelar</button>
+                    <button class="btn btn-secondary" (click)="guardar('BORRADOR')"
+                            [disabled]="!formularioValido()">
+                        Guardar Borrador
+                    </button>
+                    <button class="btn btn-primary" (click)="guardar('DEFINITIVO')"
+                            [disabled]="!formularioValido() || !cuadra()">
+                        Aprobar y Contabilizar
+                    </button>
                 }
             </div>
-        </div>
-        }
+        </app-drawer>
 
         <!-- ── LISTA DE ASIENTOS ─────────────────────────────────────────────── -->
         <div class="card">
             <div class="card-header">
                 <div class="filters-bar">
                     <select class="select-filter" [value]="periodoSeleccionado()"
-                            (change)="cambiarPeriodo($any($event.target).value)">
+                            (change)="cambiarPeriodo(periodoSelect.value)"
+                            #periodoSelect>
                         <option value="">— Seleccionar periodo —</option>
                         @for (p of periodos(); track p.id) {
                             <option [value]="p.id">{{ p.nombre }} ({{ p.estado }})</option>
@@ -206,52 +209,17 @@ interface LineaForm {
                 </div>
             </div>
 
-            @if (cargando()) {
-                <div class="loading-container"><div class="spinner"></div></div>
-            } @else if (error()) {
-                <div class="p-4 text-center text-sm" style="color:var(--color-error)">{{ error() }}</div>
-            } @else {
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th class="table-header-cell">Código</th>
-                            <th class="table-header-cell">Fecha</th>
-                            <th class="table-header-cell">Glosa</th>
-                            <th class="table-header-cell">Tipo</th>
-                            <th class="table-header-cell">Origen</th>
-                            <th class="table-header-cell text-right">Debe</th>
-                            <th class="table-header-cell text-right">Haber</th>
-                            <th class="table-header-cell">Estado</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @for (a of asientos(); track a.id) {
-                            <tr class="table-row">
-                                <td class="table-cell font-mono font-bold">{{ a.codigo }}</td>
-                                <td class="table-cell">{{ a.fecha | date:'dd/MM/yyyy' }}</td>
-                                <td class="table-cell">{{ a.glosa }}</td>
-                                <td class="table-cell"><span class="badge badge-neutral">{{ a.tipo }}</span></td>
-                                <td class="table-cell text-subtle text-sm">{{ a.origen }}</td>
-                                <td class="table-cell text-right font-mono">{{ a.totalDebe | number:'1.2-2' }}</td>
-                                <td class="table-cell text-right font-mono">{{ a.totalHaber | number:'1.2-2' }}</td>
-                                <td class="table-cell">
-                                    <span class="badge" [class]="estadoBadge(a.estado)">{{ a.estado }}</span>
-                                </td>
-                            </tr>
-                        } @empty {
-                            <tr>
-                                <td colspan="8" class="table-cell text-center text-sm text-subtle py-8">
-                                    @if (periodoSeleccionado()) {
-                                        No hay asientos en este periodo
-                                    } @else {
-                                        Selecciona un periodo para ver los asientos
-                                    }
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            }
+            <app-data-table
+                [data]="asientos()"
+                [columns]="columns"
+                [actions]="tableActions"
+                [loading]="cargando()"
+                [currentPage]="currentPage()"
+                [pageSize]="pageSize()"
+                [totalElements]="asientos().length"
+                [totalPages]="totalPagesLocal()"
+                (pageChange)="onPaginationChange($event)">
+            </app-data-table>
         </div>
     `
 })
@@ -268,6 +236,11 @@ export class AsientosComponent implements OnInit {
     readonly cargando = signal(false);
     readonly error = signal<string | null>(null);
     tipoFiltro = '';
+
+    // ── Paginación local ───────────────────────────────────────────────────
+    readonly currentPage = signal(0);
+    readonly pageSize = signal(10);
+    readonly totalPagesLocal = computed(() => Math.ceil(this.asientos().length / this.pageSize()) || 1);
 
     // ── Formulario ─────────────────────────────────────────────────────────
     readonly mostrarForm = signal(false);
@@ -292,6 +265,68 @@ export class AsientosComponent implements OnInit {
         this.lineas().some(l => (Number(l.debe) || 0) > 0 || (Number(l.haber) || 0) > 0)
     );
 
+    // ── Columnas DataTable ─────────────────────────────────────────────────
+    readonly columns: TableColumn<Asiento>[] = [
+        {
+            key: 'codigo',
+            label: 'Código',
+            sortable: true,
+            width: '150px',
+            render: (r) => `<span class="font-mono font-bold">${r.codigo}</span>`,
+            html: true
+        },
+        {
+            key: 'fecha',
+            label: 'Fecha',
+            sortable: true,
+            width: '110px',
+            render: (r) => new Date(r.fecha + 'T00:00:00').toLocaleDateString('es-PE')
+        },
+        { key: 'glosa', label: 'Descripción' },
+        {
+            key: 'tipo',
+            label: 'Tipo',
+            html: true,
+            render: (r) => `<span class="badge badge-neutral">${r.tipo}</span>`
+        },
+        {
+            key: 'origen',
+            label: 'Origen',
+            html: true,
+            render: (r) => `<span class="badge badge-neutral text-xs">${r.origen}</span>`
+        },
+        {
+            key: 'totalDebe',
+            label: 'Debe (S/)',
+            align: 'right',
+            render: (r) => `<span class="font-mono">S/ ${r.totalDebe.toFixed(2)}</span>`,
+            html: true
+        },
+        {
+            key: 'totalHaber',
+            label: 'Haber (S/)',
+            align: 'right',
+            render: (r) => `<span class="font-mono">S/ ${r.totalHaber.toFixed(2)}</span>`,
+            html: true
+        },
+        {
+            key: 'estado',
+            label: 'Estado',
+            html: true,
+            render: (r) => `<span class="${this.estadoBadge(r.estado)}">${r.estado}</span>`
+        },
+    ];
+
+    // ── Acciones DataTable ─────────────────────────────────────────────────
+    readonly tableActions: TableAction<Asiento>[] = [
+        {
+            label: 'Cerrar',
+            class: 'btn-icon btn-icon-delete',
+            show: (r) => r.estado !== 'CERRADO' && r.estado !== 'DEFINITIVO',
+            onClick: (r) => this.cerrarAsiento(r)
+        }
+    ];
+
     ngOnInit() { this.cargarPeriodos(); }
 
     private cargarPeriodos() {
@@ -309,7 +344,7 @@ export class AsientosComponent implements OnInit {
         // Pre-cargar cuentas para el autocompletado
         this.cuentaService.listarTodas().subscribe({
             next: (c) => this.todasCuentas.set(c),
-            error: () => {}
+            error: () => this.error.set('No se pudieron cargar las cuentas contables')
         });
     }
 
@@ -464,11 +499,23 @@ export class AsientosComponent implements OnInit {
                 this.cerrarForm();
                 this.cargarAsientos();
             },
-            error: (err) => {
+            error: (err: { error?: { detail?: string } }) => {
                 this.guardando.set(false);
                 this.errorForm.set(err?.error?.detail ?? 'Error al guardar el asiento');
             }
         });
+    }
+
+    cerrarAsiento(asiento: Asiento) {
+        this.asientoService.cerrarAsiento(asiento.id).subscribe({
+            next: () => this.cargarAsientos(),
+            error: () => this.error.set('No se pudo cerrar el asiento')
+        });
+    }
+
+    onPaginationChange(event: PaginationEvent): void {
+        this.currentPage.set(event.page);
+        this.pageSize.set(event.size);
     }
 
     estadoBadge(estado: string): string {
