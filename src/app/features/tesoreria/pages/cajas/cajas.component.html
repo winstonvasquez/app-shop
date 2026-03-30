@@ -1,0 +1,115 @@
+<div class="page-container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Control de Cajas</h1>
+      <p class="page-subtitle">Apertura y cierre de cajas registradoras</p>
+    </div>
+    <div class="page-actions">
+      <button class="btn btn-primary" (click)="showModal.set(true)">+ Nueva Caja</button>
+    </div>
+  </div>
+
+  <!-- KPIs -->
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:var(--space-md);margin-bottom:var(--space-lg)">
+    <div class="card">
+      <div class="card-body">
+        <div style="color:var(--color-text-muted);font-size:0.875rem">Cajas abiertas</div>
+        <div style="font-size:2.5rem;font-weight:700"
+             [style.color]="cajasAbiertas() > 0 ? 'var(--color-success)' : 'var(--color-text-muted)'">
+          {{ cajasAbiertas() }}
+        </div>
+        <div style="color:var(--color-text-muted);font-size:0.875rem">de {{ cajas().length }} registradas</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-body">
+        <div style="color:var(--color-text-muted);font-size:0.875rem">Saldo total abierto</div>
+        <div style="font-size:1.75rem;font-weight:700;color:var(--color-primary)">
+          S/ {{ saldoTotal() | number:'1.2-2' }}
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-body">
+        <div style="color:var(--color-text-muted);font-size:0.875rem">Cajas cerradas</div>
+        <div style="font-size:2.5rem;font-weight:700;color:var(--color-text-muted)">{{ cajasCerradas() }}</div>
+      </div>
+    </div>
+  </div>
+
+  @if (cargando()) {
+    <div class="loading-container"><div class="spinner"></div></div>
+  } @else {
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:var(--space-md)">
+      @for (c of cajas(); track c.id) {
+        <div class="card"
+             [style.borderLeft]="c.estado === 'ABIERTA' ? '4px solid var(--color-success)' : '4px solid var(--color-border)'">
+          <div class="card-header">
+            <span class="card-title">{{ c.nombre }}</span>
+            <span [class]="c.estado === 'ABIERTA' ? 'badge badge-success' : 'badge badge-neutral'">
+              {{ c.estado }}
+            </span>
+          </div>
+          <div class="card-body">
+            <div style="color:var(--color-text-muted);font-size:0.875rem">Saldo actual</div>
+            <div style="font-size:2rem;font-weight:700">S/ {{ c.saldoActual | number:'1.2-2' }}</div>
+            @if (c.fechaApertura) {
+              <div style="color:var(--color-text-muted);font-size:0.75rem;margin-top:8px">
+                Abierta: {{ c.fechaApertura | date:'dd/MM/yyyy HH:mm' }}
+              </div>
+            }
+            @if (c.fechaCierre) {
+              <div style="color:var(--color-text-muted);font-size:0.75rem">
+                Cerrada: {{ c.fechaCierre | date:'dd/MM/yyyy HH:mm' }}
+              </div>
+            }
+          </div>
+          <div class="card-footer" style="display:flex;justify-content:flex-end">
+            @if (c.estado === 'CERRADA') {
+              <button class="btn btn-primary" (click)="openRegister(c)">Abrir Caja</button>
+            } @else {
+              <button class="btn btn-danger" (click)="closeRegister(c)">Cerrar Caja</button>
+            }
+          </div>
+        </div>
+      }
+      @if (cajas().length === 0) {
+        <div class="card">
+          <div class="card-body" style="text-align:center;color:var(--color-text-muted);padding:var(--space-xl)">
+            No hay cajas registradas.
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+</div>
+
+<app-drawer
+  [isOpen]="showModal()"
+  title="Nueva Caja Registradora"
+  size="md"
+  side="right"
+  [hasFooter]="true"
+  (closed)="showModal.set(false)">
+
+  <div style="display:flex;flex-direction:column;gap:14px">
+    <div>
+      <label class="input-label">Nombre *</label>
+      <input class="input-field" [(ngModel)]="formNombre" placeholder="Ej: Caja Principal">
+    </div>
+    <div>
+      <label class="input-label">Saldo Inicial (S/)</label>
+      <input class="input-field" type="number" [(ngModel)]="formSaldoInicial"
+             min="0" step="0.01" placeholder="0.00">
+    </div>
+  </div>
+
+  <div slot="footer">
+    <button class="btn btn-secondary" (click)="showModal.set(false)">Cancelar</button>
+    <button class="btn btn-primary" (click)="crearCaja()"
+            [disabled]="guardando() || !formNombre">
+      {{ guardando() ? 'Guardando...' : 'Crear Caja' }}
+    </button>
+  </div>
+</app-drawer>

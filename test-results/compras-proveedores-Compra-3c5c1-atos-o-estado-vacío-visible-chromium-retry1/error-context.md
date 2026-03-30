@@ -1,0 +1,417 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - generic [ref=e4]:
+    - complementary [ref=e5]:
+      - generic [ref=e7]:
+        - generic [ref=e8]: S
+        - generic [ref=e9]: ShopAdmin
+      - navigation [ref=e10]:
+        - generic [ref=e11]:
+          - generic [ref=e12]: Dashboard
+          - link "Resumen General" [ref=e13] [cursor=pointer]:
+            - /url: /admin/dashboard
+            - img [ref=e14]
+            - generic [ref=e16]: Resumen General
+        - generic [ref=e17]:
+          - generic [ref=e18]: Ventas
+          - link "Dashboard Ventas" [ref=e19] [cursor=pointer]:
+            - /url: /admin/ventas/dashboard
+            - img [ref=e20]
+            - generic [ref=e22]: Dashboard Ventas
+          - link "Pedidos" [ref=e23] [cursor=pointer]:
+            - /url: /admin/orders
+            - img [ref=e24]
+            - generic [ref=e26]: Pedidos
+          - link "Devoluciones" [ref=e27] [cursor=pointer]:
+            - /url: /admin/returns
+            - img [ref=e28]
+            - generic [ref=e30]: Devoluciones
+          - link "Promociones" [ref=e31] [cursor=pointer]:
+            - /url: /admin/promotions
+            - img [ref=e32]
+            - generic [ref=e34]: Promociones
+        - generic [ref=e35]:
+          - generic [ref=e36]: Compras
+          - link "Dashboard Compras" [ref=e37] [cursor=pointer]:
+            - /url: /admin/compras/dashboard
+            - img [ref=e38]
+            - generic [ref=e40]: Dashboard Compras
+          - link "Proveedores" [ref=e41] [cursor=pointer]:
+            - /url: /admin/compras/proveedores
+            - img [ref=e42]
+            - generic [ref=e44]: Proveedores
+          - link "Órdenes de Compra" [ref=e45] [cursor=pointer]:
+            - /url: /admin/compras/ordenes
+            - img [ref=e46]
+            - generic [ref=e48]: Órdenes de Compra
+          - link "Recepción Mercadería" [ref=e49] [cursor=pointer]:
+            - /url: /admin/compras/recepcion
+            - img [ref=e50]
+            - generic [ref=e52]: Recepción Mercadería
+        - generic [ref=e53]:
+          - generic [ref=e54]: Logística
+          - link "Dashboard Logístico" [ref=e55] [cursor=pointer]:
+            - /url: /logistica/dashboard
+            - img [ref=e56]
+            - generic [ref=e58]: Dashboard Logístico
+          - link "Almacenes" [ref=e59] [cursor=pointer]:
+            - /url: /logistica/almacenes
+            - img [ref=e60]
+            - generic [ref=e62]: Almacenes
+          - link "Inventario" [ref=e63] [cursor=pointer]:
+            - /url: /logistica/inventario
+            - img [ref=e64]
+            - generic [ref=e66]: Inventario
+          - link "Movimientos Stock" [ref=e67] [cursor=pointer]:
+            - /url: /logistica/movimientos
+            - img [ref=e68]
+            - generic [ref=e70]: Movimientos Stock
+          - link "Guías de Remisión" [ref=e71] [cursor=pointer]:
+            - /url: /logistica/guias
+            - img [ref=e72]
+            - generic [ref=e74]: Guías de Remisión
+          - link "Transportistas" [ref=e75] [cursor=pointer]:
+            - /url: /logistica/transportistas
+            - img [ref=e76]
+            - generic [ref=e78]: Transportistas
+          - link "Envíos" [ref=e79] [cursor=pointer]:
+            - /url: /logistica/envios
+            - img [ref=e80]
+            - generic [ref=e82]: Envíos
+          - link "Devoluciones" [ref=e83] [cursor=pointer]:
+            - /url: /logistica/devoluciones
+            - img [ref=e84]
+            - generic [ref=e86]: Devoluciones
+          - link "Tracking" [ref=e87] [cursor=pointer]:
+            - /url: /logistica/tracking
+            - img [ref=e88]
+            - generic [ref=e90]: Tracking
+        - generic [ref=e91]:
+          - generic [ref=e92]: Inventario
+          - link "Dashboard" [ref=e93] [cursor=pointer]:
+            - /url: /admin/inventario/dashboard
+            - img [ref=e94]
+            - generic [ref=e96]: Dashboard
+          - link "Almacenes" [ref=e97] [cursor=pointer]:
+            - /url: /admin/inventario/almacenes
+            - img [ref=e98]
+            - generic [ref=e100]: Almacenes
+          - link "Ubicaciones" [ref=e101] [cursor=pointer]:
+            - /url: /admin/inventario/ubicaciones
+            - img [ref=e102]
+            - generic [ref=e104]: Ubicaciones
+          - link "Stock" [ref=e105] [cursor=pointer]:
+            - /url: /admin/inventario/stock
+            - img [ref=e106]
+            - generic [ref=e108]: Stock
+          - link "Movimientos" [ref=e109] [cursor=pointer]:
+            - /url: /admin/inventario/movimientos
+            - img [ref=e110]
+            - generic [ref=e112]: Movimientos
+          - link "Transferencias" [ref=e113] [cursor=pointer]:
+            - /url: /admin/inventario/transferencias
+            - img [ref=e114]
+            - generic [ref=e116]: Transferencias
+          - link "Inventarios Físicos" [ref=e117] [cursor=pointer]:
+            - /url: /admin/inventario/conteos
+            - img [ref=e118]
+            - generic [ref=e120]: Inventarios Físicos
+          - link "Kardex Valorizado" [ref=e121] [cursor=pointer]:
+            - /url: /admin/inventario/kardex
+            - img [ref=e122]
+            - generic [ref=e124]: Kardex Valorizado
+        - generic [ref=e125]:
+          - generic [ref=e126]: Tesorería
+          - link "Dashboard" [ref=e127] [cursor=pointer]:
+            - /url: /tesoreria/dashboard
+            - img [ref=e128]
+            - generic [ref=e130]: Dashboard
+          - link "Control de Cajas" [ref=e131] [cursor=pointer]:
+            - /url: /tesoreria/cajas
+            - img [ref=e132]
+            - generic [ref=e134]: Control de Cajas
+          - link "Cuentas Bancarias" [ref=e135] [cursor=pointer]:
+            - /url: /tesoreria/cuentas-bancarias
+            - img [ref=e136]
+            - generic [ref=e138]: Cuentas Bancarias
+          - link "Pagos / Workflow" [ref=e139] [cursor=pointer]:
+            - /url: /tesoreria/pagos
+            - img [ref=e140]
+            - generic [ref=e142]: Pagos / Workflow
+          - link "Flujo de Caja" [ref=e143] [cursor=pointer]:
+            - /url: /tesoreria/flujo-caja
+            - img [ref=e144]
+            - generic [ref=e146]: Flujo de Caja
+        - generic [ref=e147]:
+          - generic [ref=e148]: Contabilidad
+          - link "Dashboard Contable" [ref=e149] [cursor=pointer]:
+            - /url: /admin/contabilidad/dashboard
+            - img [ref=e150]
+            - generic [ref=e152]: Dashboard Contable
+          - link "Registro Ventas" [ref=e153] [cursor=pointer]:
+            - /url: /admin/contabilidad/ventas
+            - img [ref=e154]
+            - generic [ref=e156]: Registro Ventas
+          - link "Registro Compras" [ref=e157] [cursor=pointer]:
+            - /url: /admin/contabilidad/compras
+            - img [ref=e158]
+            - generic [ref=e160]: Registro Compras
+          - link "Libro Diario" [ref=e161] [cursor=pointer]:
+            - /url: /admin/contabilidad/diario
+            - img [ref=e162]
+            - generic [ref=e164]: Libro Diario
+          - link "Declaración IGV" [ref=e165] [cursor=pointer]:
+            - /url: /admin/contabilidad/igv
+            - img [ref=e166]
+            - generic [ref=e168]: Declaración IGV
+          - link "Plan de Cuentas PCGE" [ref=e169] [cursor=pointer]:
+            - /url: /admin/contabilidad/plan-cuentas
+            - img [ref=e170]
+            - generic [ref=e172]: Plan de Cuentas PCGE
+        - generic [ref=e173]:
+          - generic [ref=e174]: RRHH
+          - link "Empleados" [ref=e175] [cursor=pointer]:
+            - /url: /rrhh/employees
+            - img [ref=e176]
+            - generic [ref=e178]: Empleados
+          - link "Asistencia" [ref=e179] [cursor=pointer]:
+            - /url: /rrhh/attendance
+            - img [ref=e180]
+            - generic [ref=e182]: Asistencia
+          - link "Nómina" [ref=e183] [cursor=pointer]:
+            - /url: /rrhh/payroll
+            - img [ref=e184]
+            - generic [ref=e186]: Nómina
+        - generic [ref=e187]:
+          - generic [ref=e188]: Punto de Venta
+          - link "Abrir POS" [ref=e189] [cursor=pointer]:
+            - /url: /pos
+            - img [ref=e190]
+            - generic [ref=e192]: Abrir POS
+          - link "Devoluciones" [ref=e193] [cursor=pointer]:
+            - /url: /pos/devoluciones
+            - img [ref=e194]
+            - generic [ref=e196]: Devoluciones
+        - generic [ref=e197]:
+          - generic [ref=e198]: Clientes
+          - link "Lista de Clientes" [ref=e199] [cursor=pointer]:
+            - /url: /admin/customers
+            - img [ref=e200]
+            - generic [ref=e202]: Lista de Clientes
+          - link "Segmentos" [ref=e203] [cursor=pointer]:
+            - /url: /admin/segments
+            - img [ref=e204]
+            - generic [ref=e206]: Segmentos
+        - generic [ref=e207]:
+          - generic [ref=e208]: Empresas
+          - link "Gestión de Empresas" [ref=e209] [cursor=pointer]:
+            - /url: /admin/companies
+            - img [ref=e210]
+            - generic [ref=e212]: Gestión de Empresas
+          - link "Configuración" [ref=e213] [cursor=pointer]:
+            - /url: /admin/company-settings
+            - img [ref=e214]
+            - generic [ref=e216]: Configuración
+        - generic [ref=e217]:
+          - generic [ref=e218]: Configuración Tienda
+          - link "Tema de Tienda" [ref=e219] [cursor=pointer]:
+            - /url: /admin/store-theme
+            - img [ref=e220]
+            - generic [ref=e222]: Tema de Tienda
+          - link "Parámetros Sistema" [ref=e223] [cursor=pointer]:
+            - /url: /admin/general-config
+            - img [ref=e224]
+            - generic [ref=e226]: Parámetros Sistema
+        - generic [ref=e227]:
+          - generic [ref=e228]: Reportes
+          - link "Dashboard Ejecutivo" [ref=e229] [cursor=pointer]:
+            - /url: /admin/reports/ejecutivo
+            - img [ref=e230]
+            - generic [ref=e232]: Dashboard Ejecutivo
+          - link "Reporte de Inventario" [ref=e233] [cursor=pointer]:
+            - /url: /admin/reports/inventory
+            - img [ref=e234]
+            - generic [ref=e236]: Reporte de Inventario
+          - link "Reporte de Clientes" [ref=e237] [cursor=pointer]:
+            - /url: /admin/reports/customers
+            - img [ref=e238]
+            - generic [ref=e240]: Reporte de Clientes
+          - link "Reporte de Ventas" [ref=e241] [cursor=pointer]:
+            - /url: /admin/reports/ventas
+            - img [ref=e242]
+            - generic [ref=e244]: Reporte de Ventas
+          - link "Reporte RRHH" [ref=e245] [cursor=pointer]:
+            - /url: /admin/reports/rrhh
+            - img [ref=e246]
+            - generic [ref=e248]: Reporte RRHH
+    - generic [ref=e249]:
+      - banner [ref=e251]:
+        - generic [ref=e253]:
+          - generic:
+            - img
+          - searchbox "Buscar en el sistema..." [ref=e254]
+        - generic [ref=e255]:
+          - button "Notificaciones" [ref=e256] [cursor=pointer]:
+            - img [ref=e257]
+          - generic [ref=e261] [cursor=pointer]:
+            - generic [ref=e262]: A
+            - generic [ref=e263]:
+              - generic [ref=e264]: Admin
+              - generic [ref=e265]: Administrador
+            - img [ref=e266]
+      - main [ref=e268]:
+        - generic [ref=e269]:
+          - generic [ref=e271]:
+            - heading "Dashboard" [level=1] [ref=e272]
+            - paragraph [ref=e273]: Bienvenido de vuelta. Aquí está el resumen de tu tienda.
+          - generic [ref=e274]:
+            - generic [ref=e275]:
+              - generic [ref=e276]:
+                - generic [ref=e277]: Ventas totales
+                - img [ref=e279]
+              - generic [ref=e281]: S/ 45,230
+              - generic [ref=e282]:
+                - img [ref=e283]
+                - generic [ref=e285]: +12.5% vs mes anterior
+            - generic [ref=e286]:
+              - generic [ref=e287]:
+                - generic [ref=e288]: Pedidos activos
+                - img [ref=e290]
+              - generic [ref=e292]: 1,234
+              - generic [ref=e293]:
+                - img [ref=e294]
+                - generic [ref=e296]: +8.2% vs mes anterior
+            - generic [ref=e297]:
+              - generic [ref=e298]:
+                - generic [ref=e299]: Productos en stock
+                - img [ref=e301]
+              - generic [ref=e303]: "567"
+              - generic [ref=e304]:
+                - img [ref=e305]
+                - generic [ref=e307]: +15 nuevos productos
+            - generic [ref=e308]:
+              - generic [ref=e309]:
+                - generic [ref=e310]: Clientes activos
+                - img [ref=e312]
+              - generic [ref=e314]: "890"
+              - generic [ref=e315]:
+                - img [ref=e316]
+                - generic [ref=e318]: +23 nuevos clientes
+          - generic [ref=e319]:
+            - generic [ref=e320]:
+              - generic [ref=e321]:
+                - heading "Ventas del Mes" [level=2] [ref=e322]
+                - link "Ver detalles →" [ref=e323] [cursor=pointer]:
+                  - /url: "#"
+              - generic [ref=e325]: Gráfico de ventas (integrar Chart.js)
+            - generic [ref=e326]:
+              - generic [ref=e327]:
+                - heading "Más Vendidos" [level=2] [ref=e328]
+                - link "Ver todos →" [ref=e329] [cursor=pointer]:
+                  - /url: "#"
+              - generic [ref=e330]:
+                - generic [ref=e331]:
+                  - generic [ref=e333]:
+                    - generic [ref=e334]: Smartphone XYZ
+                    - generic [ref=e335]: Electrónica
+                  - generic [ref=e336]: $12,450
+                - generic [ref=e337]:
+                  - generic [ref=e339]:
+                    - generic [ref=e340]: Laptop Pro 15"
+                    - generic [ref=e341]: Computadoras
+                  - generic [ref=e342]: $9,800
+                - generic [ref=e343]:
+                  - generic [ref=e345]:
+                    - generic [ref=e346]: Auriculares BT
+                    - generic [ref=e347]: Audio
+                  - generic [ref=e348]: $7,230
+                - generic [ref=e349]:
+                  - generic [ref=e351]:
+                    - generic [ref=e352]: Smartwatch Pro
+                    - generic [ref=e353]: Wearables
+                  - generic [ref=e354]: $5,670
+          - generic [ref=e355]:
+            - generic [ref=e356]:
+              - heading "Pedidos Recientes" [level=2] [ref=e357]
+              - link "Ver todos →" [ref=e358] [cursor=pointer]:
+                - /url: "#"
+            - table [ref=e360]:
+              - rowgroup [ref=e361]:
+                - row "ID Pedido Cliente Producto Fecha Total Estado" [ref=e362]:
+                  - columnheader "ID Pedido" [ref=e363]
+                  - columnheader "Cliente" [ref=e364]
+                  - columnheader "Producto" [ref=e365]
+                  - columnheader "Fecha" [ref=e366]
+                  - columnheader "Total" [ref=e367]
+                  - columnheader "Estado" [ref=e368]
+              - rowgroup [ref=e369]:
+                - row "#ORD-1234 Juan Pérez Smartphone XYZ 12 Feb 2026 $899.00 Completado" [ref=e370]:
+                  - cell "#ORD-1234" [ref=e371]
+                  - cell "Juan Pérez" [ref=e372]
+                  - cell "Smartphone XYZ" [ref=e373]
+                  - cell "12 Feb 2026" [ref=e374]
+                  - cell "$899.00" [ref=e375]
+                  - cell "Completado" [ref=e376]:
+                    - generic [ref=e377]: Completado
+                - row "#ORD-1233 María García Laptop Pro 15\" 12 Feb 2026 $1,299.00 Pendiente" [ref=e378]:
+                  - cell "#ORD-1233" [ref=e379]
+                  - cell "María García" [ref=e380]
+                  - cell "Laptop Pro 15\"" [ref=e381]
+                  - cell "12 Feb 2026" [ref=e382]
+                  - cell "$1,299.00" [ref=e383]
+                  - cell "Pendiente" [ref=e384]:
+                    - generic [ref=e385]: Pendiente
+                - row "#ORD-1232 Carlos López Auriculares BT 11 Feb 2026 $199.00 Completado" [ref=e386]:
+                  - cell "#ORD-1232" [ref=e387]
+                  - cell "Carlos López" [ref=e388]
+                  - cell "Auriculares BT" [ref=e389]
+                  - cell "11 Feb 2026" [ref=e390]
+                  - cell "$199.00" [ref=e391]
+                  - cell "Completado" [ref=e392]:
+                    - generic [ref=e393]: Completado
+                - row "#ORD-1231 Ana Martínez Smartwatch Pro 11 Feb 2026 $349.00 Cancelado" [ref=e394]:
+                  - cell "#ORD-1231" [ref=e395]
+                  - cell "Ana Martínez" [ref=e396]
+                  - cell "Smartwatch Pro" [ref=e397]
+                  - cell "11 Feb 2026" [ref=e398]
+                  - cell "$349.00" [ref=e399]
+                  - cell "Cancelado" [ref=e400]:
+                    - generic [ref=e401]: Cancelado
+                - row "#ORD-1230 Pedro Sánchez Tablet 10\" 10 Feb 2026 $499.00 Completado" [ref=e402]:
+                  - cell "#ORD-1230" [ref=e403]
+                  - cell "Pedro Sánchez" [ref=e404]
+                  - cell "Tablet 10\"" [ref=e405]
+                  - cell "10 Feb 2026" [ref=e406]
+                  - cell "$499.00" [ref=e407]
+                  - cell "Completado" [ref=e408]:
+                    - generic [ref=e409]: Completado
+  - generic:
+    - button "Toggle Theme Menu" [ref=e410]:
+      - img [ref=e411]
+    - generic [ref=e413]:
+      - generic [ref=e414]:
+        - heading "Theme Options" [level=3] [ref=e415]
+        - button [ref=e416]:
+          - img [ref=e417]
+      - generic [ref=e419]:
+        - paragraph [ref=e420]: Choose your preferred workspace look and feel.
+        - button "Obsidian ⭐" [ref=e421]:
+          - generic [ref=e425]: Obsidian ⭐
+        - button "Dark" [ref=e426]:
+          - generic [ref=e430]: Dark
+          - img [ref=e432]
+        - button "Orange Black" [ref=e434]:
+          - generic [ref=e438]: Orange Black
+        - button "Orange Light" [ref=e439]:
+          - generic [ref=e443]: Orange Light
+        - button "Verano 🏖️" [ref=e444]:
+          - generic [ref=e448]: Verano 🏖️
+        - button "Invierno ❄️" [ref=e449]:
+          - generic [ref=e453]: Invierno ❄️
+        - button "Primavera 🌸" [ref=e454]:
+          - generic [ref=e458]: Primavera 🌸
+        - button "Otoño 🍂" [ref=e459]:
+          - generic [ref=e463]: Otoño 🍂
+```

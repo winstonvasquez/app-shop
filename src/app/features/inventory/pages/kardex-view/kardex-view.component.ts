@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { InventoryApiService } from '../../services/inventory-api.service';
 import { KardexEntry } from '../../models/inventory.models';
@@ -7,7 +7,7 @@ import { KardexEntry } from '../../models/inventory.models';
 @Component({
     selector: 'app-kardex-view',
     standalone: true,
-    imports: [CommonModule, ReactiveFormsModule],
+    imports: [DatePipe, ReactiveFormsModule],
     changeDetection: ChangeDetectionStrategy.OnPush,
     template: `
         <section class="space-y-6">
@@ -21,9 +21,12 @@ import { KardexEntry } from '../../models/inventory.models';
                     <label class="text-xs font-semibold uppercase text-subtle">Producto ID</label>
                     <input class="mt-2 w-full rounded-lg border border-border px-3 py-2 text-sm" type="number" formControlName="productId" placeholder="123">
                 </div>
-                <div class="flex items-end">
+                <div class="flex items-end gap-2">
                     <button type="submit" class="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90" [disabled]="kardexForm.invalid || loading()">
                         {{ loading() ? 'Buscando...' : 'Consultar' }}
+                    </button>
+                    <button type="button" class="rounded-full border border-border px-4 py-2 text-sm font-semibold hover:bg-surface" (click)="exportarCsv()" [disabled]="entries().length === 0">
+                        Exportar CSV
                     </button>
                 </div>
             </form>
@@ -96,5 +99,32 @@ export class KardexViewComponent {
                 this.loading.set(false);
             }
         });
+    }
+
+    exportarCsv(): void {
+        if (this.entries().length === 0) return;
+        const bom = '\uFEFF';
+        const headers = ['Fecha', 'Tipo Movimiento', 'N° Movimiento', 'Cantidad', 'Costo Unitario', 'Costo Total', 'Saldo Posterior', 'Tipo Referencia', 'N° Referencia', 'Razón', 'Realizado por'];
+        const filas = [headers, ...this.entries().map(e => [
+            e.movementDate ?? '',
+            e.movementType ?? '',
+            e.movementNumber ?? '',
+            String(e.quantity ?? ''),
+            String(e.unitCost ?? ''),
+            String(e.totalCost ?? ''),
+            String(e.balanceAfter ?? ''),
+            e.referenceType ?? '',
+            e.referenceNumber ?? '',
+            e.reason ?? '',
+            e.performedBy ?? ''
+        ])];
+        const csv = bom + filas.map(f => f.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\r\n');
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `kardex-${new Date().toISOString().split('T')[0]}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
     }
 }

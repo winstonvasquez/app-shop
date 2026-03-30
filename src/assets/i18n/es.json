@@ -11,7 +11,10 @@
         "bestSellers": "Artículos más vendidos",
         "fiveStars": "5 estrellas",
         "whatsNew": "Lo nuevo",
-        "categories": "Categorías"
+        "categories": "Categorías",
+        "freeShipping": "Envío gratis >",
+        "guaranteedDelivery": "Entrega garantizada",
+        "downloadApp": "Descarga la app de {{storeName}}"
     },
     "auth": {
         "signIn": "Iniciar Sesión",
@@ -95,6 +98,25 @@
             "accessibility": "Accesibilidad"
         }
     },
+    "info": {
+        "backToHome": "Volver a la tienda",
+        "configuredByStore": "Este contenido es configurado por cada tienda en el panel de administración.",
+        "envios":        { "title": "Envíos y entregas",           "subtitle": "Conoce nuestras opciones de envío" },
+        "devoluciones":  { "title": "Devoluciones y reembolsos",   "subtitle": "Proceso fácil, sin complicaciones" },
+        "nosotros":      { "title": "Acerca de nosotros",          "subtitle": "Nuestra historia y misión" },
+        "afiliados":     { "title": "Programa de afiliados",       "subtitle": "Gana comisiones compartiendo" },
+        "vender":        { "title": "Vende en nuestra plataforma", "subtitle": "Llega a miles de clientes" },
+        "prensa":        { "title": "Prensa y medios",             "subtitle": "Noticias y comunicados oficiales" },
+        "ayuda":         { "title": "Centro de ayuda",             "subtitle": "Estamos aquí para apoyarte" },
+        "pedidos":       { "title": "Estado de pedido",            "subtitle": "Consulta el estado de tu compra" },
+        "reporte":       { "title": "Reportar un problema",        "subtitle": "Ayúdanos a mejorar" },
+        "terminos":      { "title": "Términos y condiciones",      "subtitle": "Condiciones de uso del servicio" },
+        "privacidad":    { "title": "Política de privacidad",      "subtitle": "Cómo protegemos tus datos" },
+        "datos":         { "title": "Protección de datos",         "subtitle": "Tu privacidad es nuestra prioridad" },
+        "accesibilidad": { "title": "Accesibilidad",               "subtitle": "Comprometidos con la inclusión" },
+        "descarga-app":  { "title": "Descarga nuestra App",        "subtitle": "Compra desde tu celular, cuando quieras" },
+        "notFound":      { "title": "Página no encontrada",        "subtitle": "Esta página no existe" }
+    },
     "common": {
         "loading": "Cargando...",
         "error": "Error",
@@ -104,7 +126,199 @@
         "save": "Guardar",
         "delete": "Eliminar",
         "edit": "Editar",
-        "close": "Cerrar"
+        "close": "Cerrar",
+        "update": "Actualizar",
+        "create": "Crear",
+        "search": "Buscar",
+        "filter": "Filtrar",
+        "export": "Exportar",
+        "noResults": "Sin resultados",
+        "actions": "Acciones",
+        "status": "Estado",
+        "date": "Fecha",
+        "amount": "Monto",
+        "total": "Total",
+        "subtotal": "Subtotal"
+    },
+    "erp": {
+        "modules": {
+            "dashboard": "Dashboard",
+            "ventas": "Ventas",
+            "compras": "Compras",
+            "inventario": "Inventario",
+            "logistica": "Logística",
+            "contabilidad": "Contabilidad",
+            "tesoreria": "Tesorería",
+            "rrhh": "Recursos Humanos",
+            "reportes": "Reportes",
+            "admin": "Administración"
+        },
+        "status": {
+            "operativo": "Operativo",
+            "inactivo": "Inactivo",
+            "pendiente": "Pendiente",
+            "aprobado": "Aprobado",
+            "rechazado": "Rechazado",
+            "anulado": "Anulado"
+        }
+    },
+    "contabilidad": {
+        "title": "Contabilidad",
+        "asientos": {
+            "title": "Asientos Contables",
+            "nuevo": "Nuevo Asiento",
+            "glosa": "Glosa / Descripción",
+            "fecha": "Fecha del Asiento",
+            "periodo": "Período Contable",
+            "tipo": "Tipo de Asiento",
+            "estado": {
+                "borrador": "Borrador",
+                "definitivo": "Definitivo",
+                "anulado": "Anulado"
+            },
+            "tipo_values": {
+                "manual": "Manual",
+                "automatico": "Automático",
+                "ajuste": "Ajuste",
+                "cierre": "Cierre"
+            },
+            "partida_doble": "Partida Doble",
+            "debe": "Debe",
+            "haber": "Haber",
+            "diferencia": "Diferencia",
+            "cuadra": "Cuadra",
+            "no_cuadra": "No cuadra",
+            "guardar_borrador": "Guardar Borrador",
+            "aprobar": "Aprobar y Contabilizar",
+            "agregar_linea": "Agregar línea",
+            "cuenta": "Cuenta Contable",
+            "buscar_cuenta": "Buscar cuenta...",
+            "error_cuadra": "El asiento no cuadra — DEBE debe ser igual a HABER"
+        },
+        "cuentas": {
+            "title": "Plan de Cuentas (PCGE 2020)",
+            "codigo": "Código",
+            "nombre": "Nombre",
+            "tipo": "Tipo",
+            "nivel": "Nivel",
+            "acepta_movimiento": "Acepta Movimiento",
+            "saldo_deudor": "Saldo Deudor",
+            "saldo_acreedor": "Saldo Acreedor"
+        },
+        "balance": {
+            "title": "Balance General",
+            "activo": "Activo",
+            "pasivo": "Pasivo",
+            "patrimonio": "Patrimonio Neto",
+            "ecuacion": "A = P + PN",
+            "cuadra": "El balance cuadra",
+            "no_cuadra": "El balance no cuadra"
+        },
+        "estado_resultados": {
+            "title": "Estado de Resultados",
+            "ingresos": "Ingresos",
+            "costo_ventas": "Costo de Ventas",
+            "utilidad_bruta": "Utilidad Bruta",
+            "gastos_operativos": "Gastos Operativos",
+            "utilidad_operativa": "Utilidad Operativa",
+            "margen_bruto": "Margen Bruto",
+            "margen_operativo": "Margen Operativo"
+        },
+        "periodos": {
+            "title": "Períodos Contables",
+            "anio": "Año",
+            "mes": "Mes",
+            "estado": "Estado",
+            "abierto": "Abierto",
+            "cerrado": "Cerrado"
+        }
+    },
+    "logistica": {
+        "title": "Logística",
+        "gre": {
+            "title": "Guías de Remisión Electrónica",
+            "nueva": "Nueva GRE",
+            "serie": "Serie",
+            "numero": "N° Correlativo",
+            "fecha_emision": "Fecha de Emisión",
+            "fecha_traslado": "Inicio de Traslado",
+            "motivo": {
+                "label": "Motivo de Traslado",
+                "01": "Venta",
+                "02": "Compra",
+                "04": "Traslado entre establecimientos",
+                "08": "Importación",
+                "09": "Exportación",
+                "13": "Otros",
+                "14": "Venta sujeta a confirmación",
+                "18": "Traslado emisor itinerante CP",
+                "19": "Traslado a zona primaria"
+            },
+            "modalidad": {
+                "label": "Modalidad de Traslado",
+                "01": "Transporte Público",
+                "02": "Transporte Privado"
+            },
+            "peso_bruto": "Peso Bruto Total (kg)",
+            "origen": {
+                "label": "Punto de Partida",
+                "direccion": "Dirección de Origen",
+                "ubigeo": "Ubigeo Origen"
+            },
+            "destino": {
+                "label": "Punto de Llegada",
+                "ruc": "RUC Destinatario",
+                "razon_social": "Razón Social Destinatario",
+                "direccion": "Dirección Destinatario",
+                "ubigeo": "Ubigeo Destino"
+            },
+            "transportista": {
+                "label": "Transportista",
+                "ruc": "RUC Transportista",
+                "razon_social": "Razón Social",
+                "mtc": "N° Autorización MTC"
+            },
+            "vehiculo": {
+                "placa": "Placa del Vehículo",
+                "conductor": "Conductor",
+                "licencia": "N° Licencia",
+                "dni": "DNI Conductor",
+                "nombre": "Nombre Conductor"
+            },
+            "items": {
+                "label": "Bienes Trasladados",
+                "agregar": "Agregar ítem",
+                "sku": "SKU",
+                "descripcion": "Descripción del bien",
+                "cantidad": "Cantidad",
+                "unidad": "Unidad"
+            },
+            "estados": {
+                "EMITIDA": "Emitida",
+                "ACEPTADA": "Aceptada",
+                "RECHAZADA": "Rechazada",
+                "ANULADA": "Anulada"
+            },
+            "acciones": {
+                "aceptar": "Aceptar",
+                "anular": "Anular",
+                "emitir": "Emitir GRE"
+            }
+        }
+    },
+    "analytics": {
+        "dashboard": {
+            "title": "Dashboard Ejecutivo",
+            "periodo": "Período",
+            "ventas_periodo": "Ventas del período",
+            "compras_periodo": "Compras del período",
+            "empleados_activos": "Empleados activos",
+            "saldo_cajas": "Saldo en cajas",
+            "productos_stock": "Productos con stock",
+            "top_productos": "Top Productos Vendidos",
+            "tendencia": "Tendencia de Ventas",
+            "modulos": "Estado de Módulos"
+        }
     },
     "product": {
         "sold": "ventas",
@@ -136,7 +350,15 @@
         "processing": "Procesando...",
         "placeOrder": "Realizar pedido",
         "orderSuccess": "¡Pedido realizado con éxito! ID: ",
-        "orderError": "Error al realizar el pedido. Por favor, inténtelo de nuevo."
+        "orderError": "Error al realizar el pedido. Por favor, inténtelo de nuevo.",
+        "finalizarCompra": "Finalizar compra",
+        "carritoVacio": "Tu carrito está vacío",
+        "volverTienda": "Volver a la tienda",
+        "envioGratis": "Envío gratis",
+        "elegibleAhorro": "Eres elegible para ahorro adicional",
+        "metodoPago": "Método de pago",
+        "resumenPedido": "Resumen del pedido",
+        "confirmarPedido": "Confirmar pedido"
     },
     "productDetail": {
         "errorLoadingProduct": "Ocurrió un error al cargar el producto.",
@@ -188,5 +410,84 @@
         "itemsSold": "Vendidos",
         "follow": "Seguir",
         "viewAll": "Ver todos"
+    },
+    "pos": {
+        "receipt": {
+            "title": "Comprobante",
+            "ticketTitle": "Ticket interno",
+            "dateTime": "Fecha y hora",
+            "customer": "Cliente",
+            "cashier": "Cajero",
+            "description": "Descripción",
+            "amount": "Importe",
+            "subtotal": "Op. gravadas",
+            "igv": "IGV 18%",
+            "discount": "Descuento",
+            "total": "TOTAL",
+            "received": "Recibido",
+            "change": "Vuelto",
+            "thanks": "¡Gracias por su compra!",
+            "noReceipt": "Sin comprobante",
+            "empty": "Realiza una venta",
+            "newSale": "Nueva venta",
+            "printSend": "Imprimir / Enviar"
+        },
+        "turno": {
+            "title": "Resumen de turno",
+            "cashier": "Cajero",
+            "openingAmount": "Monto apertura",
+            "startTime": "Inicio del turno",
+            "status": "Estado",
+            "salesBreakdown": "Desglose de ventas",
+            "cash": "Efectivo",
+            "card": "Tarjeta",
+            "yape": "Yape",
+            "plin": "Plin",
+            "cancellations": "Anulaciones",
+            "totalSold": "Total vendido",
+            "sunatDocuments": "Comprobantes SUNAT",
+            "boletasIssued": "Boletas emitidas",
+            "facturasIssued": "Facturas emitidas",
+            "backToPos": "Volver al POS",
+            "closeTurn": "Cerrar turno",
+            "openTurn": "Abrir turno"
+        },
+        "panel": {
+            "currentOrder": "Pedido actual",
+            "clear": "Vaciar",
+            "optionalCustomer": "Cliente (opcional)",
+            "emptyCart": "Carrito vacío",
+            "selectProducts": "Selecciona productos del catálogo",
+            "boleta": "Boleta",
+            "factura": "Factura",
+            "sinCpe": "Sin CPE",
+            "cash": "Efectivo",
+            "card": "Tarjeta",
+            "yape": "Yape",
+            "plin": "Plin"
+        }
+    },
+    "admin": {
+        "orders": {
+            "title": "Pedidos",
+            "colId": "ID",
+            "colFecha": "Fecha",
+            "colCliente": "Cliente",
+            "colTotal": "Total",
+            "colEstado": "Estado",
+            "verDetalles": "Ver detalles"
+        },
+        "dashboard": {
+            "title": "Dashboard",
+            "ventasTotales": "Ventas totales",
+            "pedidosActivos": "Pedidos activos",
+            "productosStock": "Productos en stock",
+            "clientesActivos": "Clientes activos",
+            "estadoPedido": {
+                "success": "Completado",
+                "pending": "Pendiente",
+                "cancelled": "Cancelado"
+            }
+        }
     }
 }

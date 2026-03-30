@@ -11,7 +11,10 @@
         "bestSellers": "Best Sellers",
         "fiveStars": "5 Stars",
         "whatsNew": "What's New",
-        "categories": "Categories"
+        "categories": "Categories",
+        "freeShipping": "Free shipping >",
+        "guaranteedDelivery": "Guaranteed delivery",
+        "downloadApp": "Download the {{storeName}} app"
     },
     "auth": {
         "signIn": "Sign In",
@@ -30,6 +33,8 @@
         "forgotPassword": "Forgot password?",
         "newHere": "New here?",
         "createAccount": "Create an Account",
+        "errorInvalidCredentials": "Invalid username or password",
+        "errorConnection": "Connection error. Please try again.",
         "signingIn": "Signing in...",
         "guest": "Guest"
     },
@@ -93,6 +98,25 @@
             "accessibility": "Accessibility"
         }
     },
+    "info": {
+        "backToHome": "Back to store",
+        "configuredByStore": "This content is configured per store in the administration panel.",
+        "envios":        { "title": "Shipping & Delivery",         "subtitle": "Learn about our shipping options" },
+        "devoluciones":  { "title": "Returns & Refunds",           "subtitle": "Easy process, no hassle" },
+        "nosotros":      { "title": "About Us",                    "subtitle": "Our story and mission" },
+        "afiliados":     { "title": "Affiliate Program",           "subtitle": "Earn commissions by sharing" },
+        "vender":        { "title": "Sell on our platform",        "subtitle": "Reach thousands of customers" },
+        "prensa":        { "title": "Press & Media",               "subtitle": "News and official press releases" },
+        "ayuda":         { "title": "Help Center",                 "subtitle": "We're here to support you" },
+        "pedidos":       { "title": "Order Status",                "subtitle": "Check your purchase status" },
+        "reporte":       { "title": "Report an Issue",             "subtitle": "Help us improve" },
+        "terminos":      { "title": "Terms & Conditions",          "subtitle": "Service usage conditions" },
+        "privacidad":    { "title": "Privacy Policy",              "subtitle": "How we protect your data" },
+        "datos":         { "title": "Data Protection",             "subtitle": "Your privacy is our priority" },
+        "accesibilidad": { "title": "Accessibility",               "subtitle": "Committed to inclusion" },
+        "descarga-app":  { "title": "Download our App",            "subtitle": "Shop from your phone, anytime" },
+        "notFound":      { "title": "Page not found",              "subtitle": "This page does not exist" }
+    },
     "common": {
         "loading": "Loading...",
         "error": "Error",
@@ -102,7 +126,199 @@
         "save": "Save",
         "delete": "Delete",
         "edit": "Edit",
-        "close": "Close"
+        "close": "Close",
+        "update": "Update",
+        "create": "Create",
+        "search": "Search",
+        "filter": "Filter",
+        "export": "Export",
+        "noResults": "No results",
+        "actions": "Actions",
+        "status": "Status",
+        "date": "Date",
+        "amount": "Amount",
+        "total": "Total",
+        "subtotal": "Subtotal"
+    },
+    "erp": {
+        "modules": {
+            "dashboard": "Dashboard",
+            "ventas": "Sales",
+            "compras": "Purchasing",
+            "inventario": "Inventory",
+            "logistica": "Logistics",
+            "contabilidad": "Accounting",
+            "tesoreria": "Treasury",
+            "rrhh": "Human Resources",
+            "reportes": "Reports",
+            "admin": "Administration"
+        },
+        "status": {
+            "operativo": "Operative",
+            "inactivo": "Inactive",
+            "pendiente": "Pending",
+            "aprobado": "Approved",
+            "rechazado": "Rejected",
+            "anulado": "Cancelled"
+        }
+    },
+    "contabilidad": {
+        "title": "Accounting",
+        "asientos": {
+            "title": "Journal Entries",
+            "nuevo": "New Entry",
+            "glosa": "Description / Memo",
+            "fecha": "Entry Date",
+            "periodo": "Accounting Period",
+            "tipo": "Entry Type",
+            "estado": {
+                "borrador": "Draft",
+                "definitivo": "Posted",
+                "anulado": "Voided"
+            },
+            "tipo_values": {
+                "manual": "Manual",
+                "automatico": "Automatic",
+                "ajuste": "Adjustment",
+                "cierre": "Closing"
+            },
+            "partida_doble": "Double Entry",
+            "debe": "Debit",
+            "haber": "Credit",
+            "diferencia": "Difference",
+            "cuadra": "Balanced",
+            "no_cuadra": "Out of balance",
+            "guardar_borrador": "Save Draft",
+            "aprobar": "Post Entry",
+            "agregar_linea": "Add line",
+            "cuenta": "Account",
+            "buscar_cuenta": "Search account...",
+            "error_cuadra": "Entry is out of balance — Debit must equal Credit"
+        },
+        "cuentas": {
+            "title": "Chart of Accounts (PCGE 2020)",
+            "codigo": "Code",
+            "nombre": "Name",
+            "tipo": "Type",
+            "nivel": "Level",
+            "acepta_movimiento": "Accepts Transactions",
+            "saldo_deudor": "Debit Balance",
+            "saldo_acreedor": "Credit Balance"
+        },
+        "balance": {
+            "title": "Balance Sheet",
+            "activo": "Assets",
+            "pasivo": "Liabilities",
+            "patrimonio": "Equity",
+            "ecuacion": "A = L + E",
+            "cuadra": "Balance sheet is balanced",
+            "no_cuadra": "Balance sheet does not balance"
+        },
+        "estado_resultados": {
+            "title": "Income Statement",
+            "ingresos": "Revenue",
+            "costo_ventas": "Cost of Goods Sold",
+            "utilidad_bruta": "Gross Profit",
+            "gastos_operativos": "Operating Expenses",
+            "utilidad_operativa": "Operating Income",
+            "margen_bruto": "Gross Margin",
+            "margen_operativo": "Operating Margin"
+        },
+        "periodos": {
+            "title": "Accounting Periods",
+            "anio": "Year",
+            "mes": "Month",
+            "estado": "Status",
+            "abierto": "Open",
+            "cerrado": "Closed"
+        }
+    },
+    "logistica": {
+        "title": "Logistics",
+        "gre": {
+            "title": "Electronic Dispatch Notes",
+            "nueva": "New Dispatch Note",
+            "serie": "Series",
+            "numero": "Sequential Number",
+            "fecha_emision": "Issue Date",
+            "fecha_traslado": "Transfer Start",
+            "motivo": {
+                "label": "Transfer Reason",
+                "01": "Sale",
+                "02": "Purchase",
+                "04": "Transfer between establishments",
+                "08": "Import",
+                "09": "Export",
+                "13": "Other",
+                "14": "Sale subject to buyer confirmation",
+                "18": "Itinerant issuer transfer",
+                "19": "Transfer to primary zone"
+            },
+            "modalidad": {
+                "label": "Transfer Mode",
+                "01": "Public Transport",
+                "02": "Private Transport"
+            },
+            "peso_bruto": "Total Gross Weight (kg)",
+            "origen": {
+                "label": "Departure Point",
+                "direccion": "Origin Address",
+                "ubigeo": "Origin Ubigeo"
+            },
+            "destino": {
+                "label": "Arrival Point",
+                "ruc": "Recipient Tax ID",
+                "razon_social": "Recipient Company Name",
+                "direccion": "Recipient Address",
+                "ubigeo": "Destination Ubigeo"
+            },
+            "transportista": {
+                "label": "Carrier",
+                "ruc": "Carrier Tax ID",
+                "razon_social": "Company Name",
+                "mtc": "MTC Authorization N°"
+            },
+            "vehiculo": {
+                "placa": "License Plate",
+                "conductor": "Driver",
+                "licencia": "License N°",
+                "dni": "Driver ID",
+                "nombre": "Driver Name"
+            },
+            "items": {
+                "label": "Goods Being Transferred",
+                "agregar": "Add item",
+                "sku": "SKU",
+                "descripcion": "Item description",
+                "cantidad": "Quantity",
+                "unidad": "Unit"
+            },
+            "estados": {
+                "EMITIDA": "Issued",
+                "ACEPTADA": "Accepted",
+                "RECHAZADA": "Rejected",
+                "ANULADA": "Voided"
+            },
+            "acciones": {
+                "aceptar": "Accept",
+                "anular": "Void",
+                "emitir": "Issue GRE"
+            }
+        }
+    },
+    "analytics": {
+        "dashboard": {
+            "title": "Executive Dashboard",
+            "periodo": "Period",
+            "ventas_periodo": "Sales for period",
+            "compras_periodo": "Purchases for period",
+            "empleados_activos": "Active employees",
+            "saldo_cajas": "Cash register balance",
+            "productos_stock": "Products in stock",
+            "top_productos": "Top Selling Products",
+            "tendencia": "Sales Trend",
+            "modulos": "Module Status"
+        }
     },
     "product": {
         "sold": "sold",
@@ -134,7 +350,15 @@
         "processing": "Processing...",
         "placeOrder": "Place Order",
         "orderSuccess": "Order placed successfully! ID: ",
-        "orderError": "Failed to place order. Please try again."
+        "orderError": "Failed to place order. Please try again.",
+        "finalizarCompra": "Checkout",
+        "carritoVacio": "Your cart is empty",
+        "volverTienda": "Back to store",
+        "envioGratis": "Free shipping",
+        "elegibleAhorro": "You are eligible for additional savings",
+        "metodoPago": "Payment method",
+        "resumenPedido": "Order summary",
+        "confirmarPedido": "Confirm order"
     },
     "productDetail": {
         "errorLoadingProduct": "An error occurred while loading the product.",
@@ -186,5 +410,84 @@
         "itemsSold": "Sold",
         "follow": "Follow",
         "viewAll": "View all"
+    },
+    "pos": {
+        "receipt": {
+            "title": "Receipt",
+            "ticketTitle": "Internal Ticket",
+            "dateTime": "Date & Time",
+            "customer": "Customer",
+            "cashier": "Cashier",
+            "description": "Description",
+            "amount": "Amount",
+            "subtotal": "Taxable sales",
+            "igv": "IGV 18%",
+            "discount": "Discount",
+            "total": "TOTAL",
+            "received": "Received",
+            "change": "Change",
+            "thanks": "Thank you for your purchase!",
+            "noReceipt": "No receipt",
+            "empty": "Make a sale",
+            "newSale": "New sale",
+            "printSend": "Print / Send"
+        },
+        "turno": {
+            "title": "Shift Summary",
+            "cashier": "Cashier",
+            "openingAmount": "Opening amount",
+            "startTime": "Shift start",
+            "status": "Status",
+            "salesBreakdown": "Sales breakdown",
+            "cash": "Cash",
+            "card": "Card",
+            "yape": "Yape",
+            "plin": "Plin",
+            "cancellations": "Cancellations",
+            "totalSold": "Total sold",
+            "sunatDocuments": "SUNAT documents",
+            "boletasIssued": "Boletas issued",
+            "facturasIssued": "Facturas issued",
+            "backToPos": "Back to POS",
+            "closeTurn": "Close shift",
+            "openTurn": "Open shift"
+        },
+        "panel": {
+            "currentOrder": "Current order",
+            "clear": "Clear",
+            "optionalCustomer": "Customer (optional)",
+            "emptyCart": "Empty cart",
+            "selectProducts": "Select products from the catalog",
+            "boleta": "Boleta",
+            "factura": "Factura",
+            "sinCpe": "No receipt",
+            "cash": "Cash",
+            "card": "Card",
+            "yape": "Yape",
+            "plin": "Plin"
+        }
+    },
+    "admin": {
+        "orders": {
+            "title": "Orders",
+            "colId": "ID",
+            "colFecha": "Date",
+            "colCliente": "Customer",
+            "colTotal": "Total",
+            "colEstado": "Status",
+            "verDetalles": "View details"
+        },
+        "dashboard": {
+            "title": "Dashboard",
+            "ventasTotales": "Total sales",
+            "pedidosActivos": "Active orders",
+            "productosStock": "Products in stock",
+            "clientesActivos": "Active customers",
+            "estadoPedido": {
+                "success": "Completed",
+                "pending": "Pending",
+                "cancelled": "Cancelled"
+            }
+        }
     }
 }

@@ -1,14 +1,14 @@
 import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 import { AuthService } from '@core/auth/auth.service';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, TranslateModule],
+  imports: [CommonModule, ReactiveFormsModule, TranslateModule, RouterLink],
   templateUrl: './login.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block w-full min-h-screen' }
@@ -17,6 +17,7 @@ export class LoginComponent {
   private fb = inject(FormBuilder);
   private authService = inject(AuthService);
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
 
   loginForm = this.fb.group({
     username: ['', [Validators.required]],
@@ -38,7 +39,8 @@ export class LoginComponent {
 
     this.authService.login({ username: username!, password: password! }).subscribe({
       next: () => {
-        this.router.navigate(['/admin']);
+        this.loading.set(false);
+        this.navigateAfterLogin();
       },
       error: (error) => {
         this.loading.set(false);
@@ -47,10 +49,32 @@ export class LoginComponent {
             ? 'auth.errorInvalidCredentials'
             : 'auth.errorConnection'
         );
-      },
-      complete: () => {
-        this.loading.set(false);
       }
     });
+  }
+
+  /**
+   * Redirige según rol y returnUrl:
+   * 1. returnUrl en queryParams → navegar ahí
+   * 2. returnUrl en sessionStorage (puesto por customerGuard) → navegar ahí
+   * 3. CUSTOMER → /home
+   * 4. ADMIN/EMPLOYEE → /admin/dashboard
+   */
+  private navigateAfterLogin(): void {
+    const returnUrlParam = this.route.snapshot.queryParams['returnUrl'];
+    const returnUrlSession = sessionStorage.getItem('returnUrl');
+    const returnUrl = returnUrlParam || returnUrlSession;
+
+    if (returnUrl) {
+      sessionStorage.removeItem('returnUrl');
+      this.router.navigateByUrl(returnUrl);
+      return;
+    }
+
+    if (this.authService.isCustomer()) {
+      this.router.navigate(['/home']);
+    } else {
+      this.router.navigate(['/admin/dashboard']);
+    }
   }
 }

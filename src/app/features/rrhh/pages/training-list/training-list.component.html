@@ -1,0 +1,123 @@
+<div class="page-container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Capacitaciones</h1>
+      <p class="page-subtitle">Plan anual de formación y desarrollo del personal</p>
+    </div>
+    <div class="page-actions">
+      <button class="btn btn-primary" (click)="showModal.set(true)">+ Nueva Capacitación</button>
+    </div>
+  </div>
+
+  <!-- KPIs -->
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:var(--space-md);margin-bottom:var(--space-lg)">
+    <div class="card">
+      <div class="card-body">
+        <div style="color:var(--color-text-muted);font-size:0.875rem">Planificadas</div>
+        <div style="font-size:2.5rem;font-weight:700;color:var(--color-warning)">{{ planificadas() }}</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-body">
+        <div style="color:var(--color-text-muted);font-size:0.875rem">En Curso</div>
+        <div style="font-size:2.5rem;font-weight:700;color:var(--color-primary)">{{ enCurso() }}</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-body">
+        <div style="color:var(--color-text-muted);font-size:0.875rem">Completadas</div>
+        <div style="font-size:2.5rem;font-weight:700;color:var(--color-success)">{{ completadas() }}</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-body">
+        <div style="color:var(--color-text-muted);font-size:0.875rem">Horas Ejecutadas</div>
+        <div style="font-size:2.5rem;font-weight:700;color:var(--color-primary)">{{ totalHoras() }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filtros -->
+  <div class="filters-bar" style="margin-bottom:var(--space-md)">
+    <select class="input-field" style="width:200px"
+            [value]="filtroEstado()"
+            (change)="filtroEstado.set($any($event.target).value)">
+      <option value="">Todos los estados</option>
+      @for (opt of estadoOptions; track opt.value) {
+        <option [value]="opt.value">{{ opt.label }}</option>
+      }
+    </select>
+  </div>
+
+  <app-data-table
+    [data]="capacitacionesFiltradas()"
+    [columns]="columns"
+    [actions]="actions"
+    [totalPages]="1"
+    [totalElements]="capacitacionesFiltradas().length"
+    [currentPage]="0"
+    [pageSize]="100"
+    [searchable]="true"
+    searchPlaceholder="Buscar capacitación..."
+    [exportable]="true"
+    exportFileName="capacitaciones">
+  </app-data-table>
+
+</div>
+
+<app-drawer
+  [isOpen]="showModal()"
+  title="Nueva Capacitación"
+  size="lg"
+  side="right"
+  [hasFooter]="true"
+  (closed)="showModal.set(false)">
+
+  <div style="display:flex;flex-direction:column;gap:14px">
+    <div>
+      <label class="input-label">Nombre del Curso *</label>
+      <input class="input-field" [(ngModel)]="formNombre" placeholder="Nombre de la capacitación">
+    </div>
+    <div>
+      <label class="input-label">Descripción</label>
+      <input class="input-field" [(ngModel)]="formDescripcion" placeholder="Descripción breve">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div>
+        <label class="input-label">Modalidad</label>
+        <select class="input-field" [(ngModel)]="formModalidad">
+          @for (opt of modalidadOptions; track opt.value) {
+            <option [value]="opt.value">{{ opt.label }}</option>
+          }
+        </select>
+      </div>
+      <div>
+        <label class="input-label">Área</label>
+        <input class="input-field" [(ngModel)]="formArea" placeholder="Área o departamento">
+      </div>
+    </div>
+    <div>
+      <label class="input-label">Instructor</label>
+      <input class="input-field" [(ngModel)]="formInstructor" placeholder="Nombre del instructor">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 80px;gap:12px">
+      <div>
+        <label class="input-label">Fecha Inicio *</label>
+        <input class="input-field" type="date" [(ngModel)]="formFechaInicio">
+      </div>
+      <div>
+        <label class="input-label">Fecha Fin</label>
+        <input class="input-field" type="date" [(ngModel)]="formFechaFin">
+      </div>
+      <div>
+        <label class="input-label">Horas</label>
+        <input class="input-field" type="number" [(ngModel)]="formHoras" min="1" placeholder="0">
+      </div>
+    </div>
+  </div>
+
+  <div slot="footer">
+    <button class="btn btn-secondary" (click)="showModal.set(false)">Cancelar</button>
+    <button class="btn btn-primary" (click)="guardar()">Crear Capacitación</button>
+  </div>
+</app-drawer>

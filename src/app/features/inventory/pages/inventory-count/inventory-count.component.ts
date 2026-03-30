@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { InventoryApiService } from '../../services/inventory-api.service';
 import { InventoryCount, InventoryCountDetailRequest, Warehouse } from '../../models/inventory.models';
@@ -9,7 +9,7 @@ import type { ProductResponse } from '@core/models/product.model';
 @Component({
     selector: 'app-inventory-count',
     standalone: true,
-    imports: [CommonModule, ReactiveFormsModule, ProductLookupComponent],
+    imports: [DatePipe, ReactiveFormsModule, ProductLookupComponent],
     changeDetection: ChangeDetectionStrategy.OnPush,
     template: `
         <section class="space-y-6">

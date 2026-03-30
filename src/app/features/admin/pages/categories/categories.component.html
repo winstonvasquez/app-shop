@@ -148,15 +148,16 @@
     </div>
     }
 
-    <!-- Modal for Create/Edit Category -->
-    <app-modal
+    <!-- Drawer for Create/Edit Category -->
+    <app-drawer
         [isOpen]="showModal()"
         [title]="editMode() ? 'Editar Categoría' : 'Nueva Categoría'"
-        size="md"
-        (close)="closeModal()">
-        
-        <form [formGroup]="categoryForm" (ngSubmit)="onSubmit()" body>
-            <!-- Submit Error -->
+        size="lg"
+        side="right"
+        [hasFooter]="true"
+        (closed)="closeModal()">
+
+        <form [formGroup]="categoryForm" (ngSubmit)="onSubmit()">
             @if (submitError()) {
                 <app-alert
                     type="error"
@@ -166,7 +167,6 @@
                 </app-alert>
             }
 
-            <!-- Nombre -->
             <app-form-field
                 label="Nombre"
                 [control]="getControl('nombre')"
@@ -175,19 +175,17 @@
                 [required]="true">
             </app-form-field>
 
-            <!-- Descripción -->
             <div class="form-group">
                 <label for="descripcion">Descripción</label>
-                <textarea 
-                    id="descripcion" 
-                    formControlName="descripcion" 
-                    class="form-control" 
+                <textarea
+                    id="descripcion"
+                    formControlName="descripcion"
+                    class="form-control"
                     rows="3"
                     placeholder="Descripción de la categoría">
                 </textarea>
             </div>
 
-            <!-- Imagen URL -->
             <app-form-field
                 label="URL de Imagen"
                 [control]="getControl('imagenUrl')"
@@ -196,7 +194,6 @@
                 hint="URL completa de la imagen (http:// o https://)">
             </app-form-field>
 
-            <!-- Nivel -->
             <div class="form-group">
                 <label for="nivel">Nivel Jerárquico <span class="required">*</span></label>
                 <select id="nivel" formControlName="nivel" class="form-control">
@@ -208,17 +205,17 @@
             </div>
         </form>
 
-        <div footer>
-            <button 
-                type="button" 
-                class="btn btn-secondary" 
-                (click)="closeModal()" 
+        <div slot="footer">
+            <button
+                type="button"
+                class="btn btn-secondary"
+                (click)="closeModal()"
                 [disabled]="submitting()">
                 Cancelar
             </button>
-            <button 
-                type="submit" 
-                class="btn btn-primary" 
+            <button
+                type="button"
+                class="btn btn-primary"
                 (click)="onSubmit()"
                 [disabled]="submitting() || categoryForm.invalid">
                 @if (submitting()) {
@@ -228,5 +225,5 @@
                 }
             </button>
         </div>
-    </app-modal>
+    </app-drawer>
 </div>

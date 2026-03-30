@@ -167,18 +167,30 @@ export class PosPageComponent implements OnInit, OnDestroy {
             return;
         }
 
+        // En pago dividido: validar que los montos cubran el total
+        if (this.carrito.pagoDividido() && this.carrito.faltaPorCubrir() > 0.01) {
+            this.showToast(`Faltan S/${this.carrito.faltaPorCubrir().toFixed(2)} por cubrir`, 'error');
+            return;
+        }
+
+        const pagoDividido = this.carrito.pagoDividido();
+        const montoTotalPagos = pagoDividido
+            ? this.carrito.pagos().reduce((s, p) => s + p.monto, 0)
+            : undefined;
+
         const request = {
             turnoCajaId: turno.id,
             items: this.carrito.items().map(i => ({
                 varianteId: i.variante.varianteId,
                 cantidad: i.cantidad,
             })),
-            metodoPago: this.carrito.metodoPago(),
+            metodoPago: this.carrito.metodoPagoPrimario(),
             tipoCpe: this.carrito.tipoCpe(),
             clienteId: this.carrito.clienteId() ?? undefined,
             clienteNombre: this.carrito.clienteNombre() || undefined,
             descuento: this.carrito.descuento() || undefined,
-            montoRecibido: this.carrito.montoRecibido() || undefined,
+            montoRecibido: pagoDividido ? montoTotalPagos : (this.carrito.montoRecibido() || undefined),
+            pagos: pagoDividido ? this.carrito.pagos().filter(p => p.monto > 0) : undefined,
         };
 
         this.isLoading.set(true);

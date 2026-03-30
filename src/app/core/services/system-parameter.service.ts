@@ -33,6 +33,34 @@ export class SystemParameterService {
     public posEnabled = computed(() => this.get('POS_ENABLED', 'true') === 'true');
     public ecommerceEnabled = computed(() => this.get('ECOMMERCE_ENABLED', 'true') === 'true');
 
+    // Tienda online — contacto y ubicación
+    public contactEmail   = computed(() => this.get('CONTACT_EMAIL', ''));
+    public contactPhone   = computed(() => this.get('CONTACT_PHONE', ''));
+    public storeAddress   = computed(() => this.get('STORE_ADDRESS', ''));
+    public storeSlogan    = computed(() => this.get('STORE_SLOGAN', ''));
+
+    // Tienda online — apps móviles
+    public appStoreUrl  = computed(() => this.get('APP_STORE_URL', '#'));
+    public playStoreUrl = computed(() => this.get('PLAY_STORE_URL', '#'));
+
+    // Tienda online — redes sociales
+    public facebookUrl  = computed(() => this.get('SOCIAL_FACEBOOK', '#'));
+    public instagramUrl = computed(() => this.get('SOCIAL_INSTAGRAM', '#'));
+    public twitterUrl   = computed(() => this.get('SOCIAL_TWITTER', '#'));
+
+    // Envíos
+    public freeShippingMin = computed(() => {
+        const v = this.get('FREE_SHIPPING_MIN', '0');
+        return parseFloat(v);
+    });
+
+    // Parámetros financieros peruanos
+    public igvRate = computed(() => parseFloat(this.get('IGV_RATE', '0.18')));
+    public uitAnio = computed(() => parseFloat(this.get('UIT_ANIO', '5150')));
+    public serieBoletaDefault = computed(() => this.get('SERIE_BOLETA', 'B001'));
+    public serieFacturaDefault = computed(() => this.get('SERIE_FACTURA', 'F001'));
+    public rmv = computed(() => parseFloat(this.get('RMV', '1025')));
+
     /**
      * Loads parameters from the backend. Typically called at AppInit.
      */

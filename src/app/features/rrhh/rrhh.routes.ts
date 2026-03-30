@@ -35,6 +35,11 @@ export const RRHH_ROUTES: Routes = [
         loadComponent: () => import('./pages/payroll/payroll.component').then(m => m.PayrollComponent)
     },
     {
+        path: 'boleta',
+        loadComponent: () => import('./pages/boleta-pago/boleta-pago.component').then(m => m.BoletaPagoComponent),
+        title: 'Boleta de Pago | ERP'
+    },
+    {
         path: 'evaluations',
         loadComponent: () => import('./pages/evaluation-list/evaluation-list.component').then(m => m.EvaluationListComponent)
     },

@@ -1,5 +1,6 @@
-import { Component, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, signal, ChangeDetectionStrategy, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
 interface MetricCard {
   label: string;
@@ -37,48 +38,16 @@ const ICONS: Record<string, string> = {
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, TranslateModule],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DashboardComponent {
+export class DashboardComponent implements OnInit {
+  private readonly translate = inject(TranslateService);
   readonly arrowUpIcon = ICONS['arrow-up'];
 
-  metrics = signal<MetricCard[]>([
-    {
-      label: 'Ventas Totales',
-      value: 'S/ 45,230',
-      change: '+12.5% vs mes anterior',
-      isPositive: true,
-      iconPath: ICONS['dollar'],
-      iconColor: 'red'
-    },
-    {
-      label: 'Pedidos',
-      value: '1,234',
-      change: '+8.2% vs mes anterior',
-      isPositive: true,
-      iconPath: ICONS['cart'],
-      iconColor: 'orange'
-    },
-    {
-      label: 'Productos',
-      value: '567',
-      change: '+15 nuevos productos',
-      isPositive: true,
-      iconPath: ICONS['box'],
-      iconColor: 'amber'
-    },
-    {
-      label: 'Clientes',
-      value: '890',
-      change: '+23 nuevos clientes',
-      isPositive: true,
-      iconPath: ICONS['users'],
-      iconColor: 'gray'
-    }
-  ]);
+  metrics = signal<MetricCard[]>([]);
 
   recentOrders = signal<Order[]>([
     {
@@ -88,7 +57,7 @@ export class DashboardComponent {
       date: '12 Feb 2026',
       total: '$899.00',
       status: 'success',
-      statusLabel: 'Completado'
+      statusLabel: ''
     },
     {
       id: '#ORD-1233',
@@ -97,7 +66,7 @@ export class DashboardComponent {
       date: '12 Feb 2026',
       total: '$1,299.00',
       status: 'pending',
-      statusLabel: 'Procesando'
+      statusLabel: ''
     },
     {
       id: '#ORD-1232',
@@ -106,7 +75,7 @@ export class DashboardComponent {
       date: '11 Feb 2026',
       total: '$199.00',
       status: 'success',
-      statusLabel: 'Completado'
+      statusLabel: ''
     },
     {
       id: '#ORD-1231',
@@ -115,7 +84,7 @@ export class DashboardComponent {
       date: '11 Feb 2026',
       total: '$349.00',
       status: 'cancelled',
-      statusLabel: 'Cancelado'
+      statusLabel: ''
     },
     {
       id: '#ORD-1230',
@@ -124,9 +93,50 @@ export class DashboardComponent {
       date: '10 Feb 2026',
       total: '$499.00',
       status: 'success',
-      statusLabel: 'Completado'
+      statusLabel: ''
     }
   ]);
+
+  ngOnInit(): void {
+    this.metrics.set([
+      {
+        label: this.translate.instant('admin.dashboard.ventasTotales'),
+        value: 'S/ 45,230',
+        change: '+12.5% vs mes anterior',
+        isPositive: true,
+        iconPath: ICONS['dollar'],
+        iconColor: 'red'
+      },
+      {
+        label: this.translate.instant('admin.dashboard.pedidosActivos'),
+        value: '1,234',
+        change: '+8.2% vs mes anterior',
+        isPositive: true,
+        iconPath: ICONS['cart'],
+        iconColor: 'orange'
+      },
+      {
+        label: this.translate.instant('admin.dashboard.productosStock'),
+        value: '567',
+        change: '+15 nuevos productos',
+        isPositive: true,
+        iconPath: ICONS['box'],
+        iconColor: 'amber'
+      },
+      {
+        label: this.translate.instant('admin.dashboard.clientesActivos'),
+        value: '890',
+        change: '+23 nuevos clientes',
+        isPositive: true,
+        iconPath: ICONS['users'],
+        iconColor: 'gray'
+      }
+    ]);
+    this.recentOrders.update(orders => orders.map(o => ({
+      ...o,
+      statusLabel: this.translate.instant(`admin.dashboard.estadoPedido.${o.status}`)
+    })));
+  }
 
   topProducts = signal<Product[]>([
     { name: 'Smartphone XYZ', category: 'Electrónica', sales: '$12,450' },

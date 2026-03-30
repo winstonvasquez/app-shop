@@ -19,12 +19,19 @@
 
         &-secondary {
             @extend .btn-base;
-            @apply bg-transparent border border-gray-600 text-on hover:bg-white/5 active:bg-white/10;
+            @apply bg-transparent text-on;
+            border: var(--border-width) solid var(--color-border-strong);
+
+            &:hover:not(:disabled)  { background: var(--color-hover-overlay); }
+            &:active:not(:disabled) { background: var(--color-active-overlay); }
         }
 
         &-ghost {
             @extend .btn-base;
-            @apply bg-transparent text-on hover:bg-white/10 active:bg-white/20;
+            @apply bg-transparent text-on;
+
+            &:hover:not(:disabled)  { background: var(--color-hover-overlay); }
+            &:active:not(:disabled) { background: var(--color-active-overlay); }
         }
 
         &-danger {
@@ -46,12 +53,18 @@
     .icon-btn {
         @extend .icon-btn-base;
         /* Default 40x40px */
-        @apply w-[40px] h-[40px] text-on bg-transparent hover:bg-white/10 active:bg-white/20;
+        @apply w-[40px] h-[40px] text-on bg-transparent;
+
+        &:hover:not(:disabled)  { background: var(--color-hover-overlay); }
+        &:active:not(:disabled) { background: var(--color-active-overlay); }
 
         &-sm {
             @extend .icon-btn-base;
             /* Small 32x32px */
-            @apply w-[32px] h-[32px] text-on bg-transparent hover:bg-white/10 active:bg-white/20;
+            @apply w-[32px] h-[32px] text-on bg-transparent;
+
+            &:hover:not(:disabled)  { background: var(--color-hover-overlay); }
+            &:active:not(:disabled) { background: var(--color-active-overlay); }
         }
 
         /* Icon Button Variations */
@@ -118,7 +131,8 @@
         }
 
         tbody tr {
-            @apply hover:bg-white/5 transition-colors;
+            @apply transition-colors;
+            &:hover { background: var(--color-hover-overlay); }
         }
     }
 
@@ -129,7 +143,8 @@
         }
 
         &-field {
-            @apply w-full bg-background border border-gray-600 rounded-md text-sm text-on px-md py-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed placeholder:text-muted;
+            @apply w-full bg-background rounded-md text-sm text-on px-md py-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed placeholder:text-muted;
+            border: var(--border-width) solid var(--color-border-strong);
 
             &-error {
                 @apply border-[var(--color-danger)] focus:border-[var(--color-danger)] focus:ring-[var(--color-danger)];

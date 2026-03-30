@@ -21,6 +21,8 @@
 
 /* 5. Themes */
 @use 'styles/themes/default';
+@use 'styles/themes/orange-theme';
+@use 'styles/themes/seasonal-themes';
 
 /* 6. Components */
 @use 'styles/components/ui';

@@ -1,11 +1,11 @@
 import { Component, ChangeDetectionStrategy, computed, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import { InventoryApiService, DashboardSummary } from '../../services/inventory-api.service';
 
 @Component({
     selector: 'app-inventory-dashboard',
     standalone: true,
-    imports: [CommonModule],
+    imports: [DatePipe],
     changeDetection: ChangeDetectionStrategy.OnPush,
     template: `
         <section class="space-y-6">

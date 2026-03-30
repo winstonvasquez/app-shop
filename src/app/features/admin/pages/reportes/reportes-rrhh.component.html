@@ -1,0 +1,119 @@
+<div class="page-container">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Reporte de RRHH</h1>
+            <p class="page-subtitle">Estado del personal registrado en el sistema</p>
+        </div>
+        <div class="page-actions no-print" style="display:flex;gap:8px">
+            <button class="btn btn-secondary" (click)="onExportarCsv()" [disabled]="cargando() || empleados().length === 0">
+                Exportar CSV
+            </button>
+            <button class="btn btn-secondary" (click)="exportarExcel()" [disabled]="cargando() || empleados().length === 0">
+                Exportar Excel
+            </button>
+            <button class="btn btn-secondary" (click)="imprimir()" [disabled]="cargando()">
+                Imprimir / PDF
+            </button>
+            <button class="btn btn-primary" (click)="cargar()" [disabled]="cargando()">
+                {{ cargando() ? 'Cargando...' : 'Actualizar' }}
+            </button>
+        </div>
+    </div>
+
+    @if (error()) {
+        <div class="card" style="border-left:3px solid var(--color-warning);padding:var(--space-md);margin-bottom:var(--space-lg)">
+            <p style="color:var(--color-text-muted);font-size:0.875rem">
+                Servicio RRHH no disponible. Verifique que microshoprrhh esté corriendo en puerto 8088.
+            </p>
+        </div>
+    }
+
+    <!-- KPIs -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:var(--space-md);margin-bottom:var(--space-lg)">
+        <div class="card">
+            <div class="card-body">
+                <p style="font-size:0.75rem;color:var(--color-text-muted)">EMPLEADOS ACTIVOS</p>
+                <p style="font-size:2rem;font-weight:700;color:var(--color-success)">{{ totalActivos() }}</p>
+                <p style="font-size:0.75rem;color:var(--color-text-muted)">en planilla</p>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-body">
+                <p style="font-size:0.75rem;color:var(--color-text-muted)">EMPLEADOS INACTIVOS</p>
+                <p style="font-size:2rem;font-weight:700">{{ totalInactivos() }}</p>
+                <p style="font-size:0.75rem;color:var(--color-text-muted)">desvinculados</p>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-body">
+                <p style="font-size:0.75rem;color:var(--color-text-muted)">AREAS DISTINTAS</p>
+                <p style="font-size:2rem;font-weight:700;color:var(--color-primary)">{{ areasDistintas() }}</p>
+                <p style="font-size:0.75rem;color:var(--color-text-muted)">departamentos</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Personal</h3>
+        </div>
+        <div class="filters-bar no-print">
+            <div class="search-box">
+                <span class="search-box-icon">&#128269;</span>
+                <input type="text" class="input-field" placeholder="Buscar por nombre, código o área..."
+                       [(ngModel)]="busqueda" style="padding-left:2rem">
+            </div>
+            <select class="input-field" [(ngModel)]="filtroArea" style="width:auto">
+                <option value="">Todas las áreas</option>
+                @for (area of areasUnicas(); track area) {
+                    <option [value]="area">{{ area }}</option>
+                }
+            </select>
+        </div>
+
+        @if (cargando()) {
+            <div class="loading-container"><div class="spinner"></div></div>
+        } @else {
+            <table class="table">
+                <thead class="table-header">
+                    <tr>
+                        <th class="table-header-cell">Código</th>
+                        <th class="table-header-cell">Nombres y Apellidos</th>
+                        <th class="table-header-cell">DNI</th>
+                        <th class="table-header-cell">Cargo</th>
+                        <th class="table-header-cell">Área</th>
+                        <th class="table-header-cell">Estado</th>
+                        <th class="table-header-cell">Fecha Ingreso</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (e of empleadosFiltrados(); track e.id) {
+                        <tr class="table-row">
+                            <td class="table-cell" style="font-family:monospace;font-size:0.875rem">{{ e.codigoEmpleado }}</td>
+                            <td class="table-cell" style="font-weight:700">{{ e.nombres }} {{ e.apellidos }}</td>
+                            <td class="table-cell" style="font-family:monospace;font-size:0.875rem">{{ e.documentoIdentidad }}</td>
+                            <td class="table-cell" style="color:var(--color-text-muted)">{{ e.cargo ?? '—' }}</td>
+                            <td class="table-cell">
+                                @if (e.area) {
+                                    <span class="badge badge-neutral">{{ e.area }}</span>
+                                } @else {
+                                    <span style="color:var(--color-text-muted)">—</span>
+                                }
+                            </td>
+                            <td class="table-cell">
+                                <span [class]="e.estado === 'ACTIVO' ? 'badge badge-success' : 'badge badge-error'">
+                                    {{ e.estado }}
+                                </span>
+                            </td>
+                            <td class="table-cell" style="font-size:0.875rem;color:var(--color-text-muted)">
+                                {{ e.fechaIngreso | date:'dd/MM/yyyy' }}
+                            </td>
+                        </tr>
+                    } @empty {
+                        <tr><td colspan="7" style="text-align:center;padding:24px;color:var(--color-text-muted)">Sin resultados</td></tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+</div>

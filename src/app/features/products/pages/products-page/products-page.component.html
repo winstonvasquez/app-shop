@@ -1,0 +1,93 @@
+<!-- ════════════════════════════════════════════
+     PRODUCTS PAGE — Catálogo completo
+     Ruta: /products
+     ════════════════════════════════════════════ -->
+<div class="max-w-[1400px] mx-auto px-4 sm:px-6 py-8">
+
+    <app-breadcrumb [items]="breadcrumbItems" />
+
+    <!-- Page header -->
+    <div class="mb-8">
+        <h1 class="text-2xl font-extrabold text-on mb-1">
+            {{ 'home.title' | translate }}
+        </h1>
+        @if (searchService.categoryId() !== null) {
+        <div class="flex items-center gap-2 mt-2">
+            <span class="text-sm text-subtle">Filtrando por categoría</span>
+            <button (click)="clearCategory()"
+                class="text-xs text-primary hover:underline flex items-center gap-1 cursor-pointer">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                Limpiar filtro
+            </button>
+        </div>
+        }
+    </div>
+
+    <!-- Category pills -->
+    @if (categories().length > 0) {
+    <div class="flex flex-wrap gap-2 mb-8">
+        <button (click)="clearCategory()"
+            class="px-4 py-1.5 rounded-full text-[12px] font-semibold transition-all duration-200
+                   active:scale-95 cursor-pointer border"
+            [attr.aria-pressed]="searchService.categoryId() === null ? 'true' : 'false'"
+            [class.bg-primary]="searchService.categoryId() === null"
+            [class.text-white]="searchService.categoryId() === null"
+            [class.border-primary]="searchService.categoryId() === null"
+            [class.bg-surface]="searchService.categoryId() !== null"
+            [class.text-on]="searchService.categoryId() !== null"
+            [class.border-border]="searchService.categoryId() !== null">
+            {{ 'categories.recommended' | translate }}
+        </button>
+        @for (cat of categories(); track cat.id) {
+        <button (click)="selectCategory(cat.id)"
+            class="px-4 py-1.5 rounded-full text-[12px] font-semibold transition-all duration-200
+                   active:scale-95 cursor-pointer border"
+            [attr.aria-pressed]="searchService.categoryId() === cat.id ? 'true' : 'false'"
+            [class.bg-primary]="searchService.categoryId() === cat.id"
+            [class.text-white]="searchService.categoryId() === cat.id"
+            [class.border-primary]="searchService.categoryId() === cat.id"
+            [class.bg-surface]="searchService.categoryId() !== cat.id"
+            [class.text-on]="searchService.categoryId() !== cat.id"
+            [class.border-border]="searchService.categoryId() !== cat.id">
+            {{ cat.nombre }}
+        </button>
+        }
+    </div>
+    }
+
+    <!-- Loading skeleton -->
+    @if (loading()) {
+    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+        @for (n of [1,2,3,4,5,6,8,9,10,11,12]; track n) {
+        <div class="rounded-xl animate-pulse bg-surface-raised h-[210px]"></div>
+        }
+    </div>
+    } @else {
+    <!-- Product grid -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+        @for (product of products(); track product.id) {
+        <app-product-card [product]="product" />
+        }
+        @if (products().length === 0) {
+        <div class="col-span-full flex flex-col items-center gap-6 py-16">
+            <div class="text-6xl opacity-30">🔍</div>
+            <h3 class="text-on font-medium">No encontramos productos con esos criterios</h3>
+            <p class="text-muted">Intenta con otros filtros o busca algo diferente</p>
+            <button class="btn btn-primary" (click)="clearFilters()">Ver todos los productos</button>
+        </div>
+        }
+    </div>
+    }
+
+    <!-- Pagination -->
+    @if (totalPages() > 1) {
+    <div class="flex items-center justify-center gap-4 mt-8">
+        <button class="btn btn-secondary" [disabled]="currentPage() === 1" (click)="prevPage()">Anterior</button>
+        <span class="text-muted">Página {{ currentPage() }} de {{ totalPages() }}</span>
+        <button class="btn btn-secondary" [disabled]="currentPage() === totalPages()" (click)="nextPage()">Siguiente</button>
+    </div>
+    }
+
+</div>

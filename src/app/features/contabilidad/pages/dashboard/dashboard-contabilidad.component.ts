@@ -1,6 +1,7 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AsientoService } from '../../services/asiento.service';
+import { PeriodoService } from '../../services/periodo.service';
 
 interface DashboardData {
     ingresosMes: number;
@@ -116,8 +117,9 @@ interface DashboardData {
 })
 export class DashboardContabilidadComponent implements OnInit {
     private asientoService = inject(AsientoService);
+    private periodoService = inject(PeriodoService);
 
-    periodoActual = signal('Marzo 2026');
+    periodoActual = signal('Cargando...');
     ingresos = signal(147999);
     gastos = signal(82400);
     utilidad = signal(65599);
@@ -140,6 +142,15 @@ export class DashboardContabilidadComponent implements OnInit {
     }
 
     private cargarDatos() {
-        // TODO: Cargar datos reales desde el backend
+        this.periodoService.actual().subscribe({
+            next: (periodo) => this.periodoActual.set(periodo.nombre),
+            error: () => this.periodoService.listar().subscribe({
+                next: (lista) => {
+                    const abierto = lista.find(p => p.estado === 'ABIERTO');
+                    if (abierto) this.periodoActual.set(abierto.nombre);
+                },
+                error: () => this.periodoActual.set('Sin periodo activo')
+            })
+        });
     }
 }

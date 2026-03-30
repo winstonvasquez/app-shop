@@ -1,0 +1,4 @@
+@media print {
+    :host { display: block; }
+    .no-print { display: none !important; }
+}

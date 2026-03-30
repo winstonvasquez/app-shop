@@ -1,15 +1,14 @@
 <div class="orders-page">
-    <app-page-header title="Pedidos" subtitle="Gestiona las órdenes de tus clientes" [breadcrumbs]="breadcrumbs">
+    <app-page-header [title]="'admin.orders.title' | translate" subtitle="Gestiona las órdenes de tus clientes" [breadcrumbs]="breadcrumbs">
     </app-page-header>
 
     <div class="mb-lg">
-        <div class="relative w-full max-w-md">
-            <svg class="absolute left-3 top-1/2 -translate-y-1/2 text-subtle" width="20" height="20" fill="none"
-                stroke="currentColor" viewBox="0 0 24 24">
+        <div class="search-box" style="max-width:380px">
+            <svg class="search-box-icon" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                     d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
-            <input type="text" class="input-field pl-10" placeholder="Buscar por ID..." (input)="loadOrders()" />
+            <input type="text" placeholder="Buscar por ID, cliente o estado..." (input)="loadOrders()" />
         </div>
     </div>
 
@@ -38,111 +37,120 @@
     }
 
     @if (hasOrders() && !loading()) {
-    <app-data-table [data]="orders()" [columns]="columns" [actions]="actions" [loading]="loading()"
-        [currentPage]="currentPage()" [pageSize]="pageSize()" [totalElements]="totalElements()"
-        [totalPages]="totalPages()" [sortField]="sortField()" [sortDirection]="sortDirection()"
-        (pageChange)="onPageChange($event)" (sortChange)="onSort($event)">
+    <app-data-table
+        [data]="orders()"
+        [columns]="columns"
+        [actions]="actions"
+        [loading]="loading()"
+        [currentPage]="currentPage()"
+        [pageSize]="pageSize()"
+        [totalElements]="totalElements()"
+        [totalPages]="totalPages()"
+        [sortField]="sortField()"
+        [sortDirection]="sortDirection()"
+        [hidePagination]="true"
+        (pageChange)="onPageChange($event)"
+        (sortChange)="onSort($event)">
     </app-data-table>
-
-    <div class="flex items-center justify-between mt-xl text-sm">
-        <div class="text-subtle">
-            Mostrando {{ orders().length }} de {{ totalElements() }} pedidos
-        </div>
-        <div class="flex gap-sm items-center">
-            <button class="btn-secondary" [disabled]="currentPage() === 0"
-                (click)="onPageChange(currentPage() - 1)">Anterior</button>
-            <span class="text-on font-medium">Página {{ currentPage() + 1 }} de {{ totalPages() }}</span>
-            <button class="btn-secondary" [disabled]="currentPage() === totalPages() - 1"
-                (click)="onPageChange(currentPage() + 1)">Siguiente</button>
-        </div>
-    </div>
     }
 
-    @if (showModal()) {
-    <app-modal [isOpen]="showModal()" [title]="'Detalle del Pedido #' + (selectedOrder()?.id || '')" size="lg"
-        (close)="closeModal()">
+    <!-- Paginación standalone — componente compartido desde @shared/ui/pagination -->
+    @if (!loading() && totalPages() > 0) {
+    <app-pagination
+        [currentPage]="currentPage()"
+        [totalPages]="totalPages()"
+        [totalElements]="totalElements()"
+        [pageSize]="pageSize()"
+        (pageChange)="onPaginationChange($event)">
+    </app-pagination>
+    }
 
-        <div body>
-            @if (loadingDetails()) {
-            <app-loading-spinner size="md" message="Cargando detalles...">
-            </app-loading-spinner>
-            } @else if (selectedOrder()) {
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-md mb-xl">
-                <div class="p-md bg-surface/5 border border-[var(--color-border)] rounded-md">
-                    <h3 class="text-lg font-bold text-on mb-sm">Información General</h3>
-                    <p class="text-sm text-subtle mb-xs"><strong class="text-on">Fecha:</strong> {{
-                        selectedOrder()?.fechaPedido | date:'medium' }}</p>
-                    <p class="text-sm text-subtle mb-xs"><strong class="text-on">Cliente:</strong> User #{{
-                        selectedOrder()?.usuarioId }}</p>
-                    <p class="text-sm text-subtle"><strong class="text-on">Total:</strong> {{ selectedOrder()?.total |
-                        currency }}</p>
-                </div>
-                <div class="p-md bg-surface/5 border border-[var(--color-border)] rounded-md">
-                    <h3 class="text-lg font-bold text-on mb-sm">Estado</h3>
-                    <div class="flex flex-col gap-sm">
-                        <div>
-                            <span class="badge-erp" [class]="'badge-' + selectedOrder()?.estado?.toLowerCase()">
-                                {{ selectedOrder()?.estado }}
-                            </span>
-                        </div>
-                        <div class="flex gap-sm mt-sm">
-                            @if (selectedOrder()?.estado === 'PENDIENTE') {
-                            <button class="btn-primary py-xs px-sm text-xs" (click)="updateStatus('PAGADO')">Marcar
-                                Pagado</button>
-                            <button class="btn-danger py-xs px-sm text-xs"
-                                (click)="updateStatus('CANCELADO')">Cancelar</button>
-                            }
-                            @if (selectedOrder()?.estado === 'PAGADO') {
-                            <button class="btn-primary py-xs px-sm text-xs"
-                                (click)="updateStatus('ENVIADO')">Enviar</button>
-                            }
-                            @if (selectedOrder()?.estado === 'ENVIADO') {
-                            <button class="btn-success py-xs px-sm text-xs"
-                                (click)="updateStatus('ENTREGADO')">Entregar</button>
-                            }
-                        </div>
+    <app-drawer
+        [isOpen]="showModal()"
+        [title]="'Detalle del Pedido #' + (selectedOrder()?.id || '')"
+        size="lg"
+        side="right"
+        [hasFooter]="true"
+        (closed)="closeModal()">
+
+        @if (loadingDetails()) {
+        <app-loading-spinner size="md" message="Cargando detalles...">
+        </app-loading-spinner>
+        } @else if (selectedOrder()) {
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-md mb-xl">
+            <div class="p-md bg-surface/5 border border-[var(--color-border)] rounded-md">
+                <h3 class="text-lg font-bold text-on mb-sm">Información General</h3>
+                <p class="text-sm text-subtle mb-xs"><strong class="text-on">Fecha:</strong> {{
+                    selectedOrder()?.fechaPedido | date:'medium' }}</p>
+                <p class="text-sm text-subtle mb-xs"><strong class="text-on">Cliente:</strong> User #{{
+                    selectedOrder()?.usuarioId }}</p>
+                <p class="text-sm text-subtle"><strong class="text-on">Total:</strong> {{ selectedOrder()?.total |
+                    currency }}</p>
+            </div>
+            <div class="p-md bg-surface/5 border border-[var(--color-border)] rounded-md">
+                <h3 class="text-lg font-bold text-on mb-sm">Estado</h3>
+                <div class="flex flex-col gap-sm">
+                    <div>
+                        <span class="badge-erp" [class]="'badge-' + selectedOrder()?.estado?.toLowerCase()">
+                            {{ selectedOrder()?.estado }}
+                        </span>
+                    </div>
+                    <div class="flex gap-sm mt-sm">
+                        @if (selectedOrder()?.estado === 'PENDIENTE') {
+                        <button class="btn-primary py-xs px-sm text-xs" (click)="updateStatus('PAGADO')">Marcar
+                            Pagado</button>
+                        <button class="btn-danger py-xs px-sm text-xs"
+                            (click)="updateStatus('CANCELADO')">Cancelar</button>
+                        }
+                        @if (selectedOrder()?.estado === 'PAGADO') {
+                        <button class="btn-primary py-xs px-sm text-xs"
+                            (click)="updateStatus('ENVIADO')">Enviar</button>
+                        }
+                        @if (selectedOrder()?.estado === 'ENVIADO') {
+                        <button class="btn-success py-xs px-sm text-xs"
+                            (click)="updateStatus('ENTREGADO')">Entregar</button>
+                        }
                     </div>
                 </div>
             </div>
-
-            <h3 class="text-lg font-bold text-on mb-md">Productos</h3>
-            <div class="table-erp-container">
-                <table class="table-erp">
-                    <thead>
-                        <tr>
-                            <th>Producto</th>
-                            <th>Variante</th>
-                            <th>Cant.</th>
-                            <th>Precio Unit.</th>
-                            <th>Subtotal</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @for (detalle of selectedOrder()?.detalles; track detalle.id) {
-                        <tr>
-                            <td>{{ detalle.productoNombre }}</td>
-                            <td>{{ detalle.varianteNombre }} ({{ detalle.sku }})</td>
-                            <td>{{ detalle.cantidad }}</td>
-                            <td>{{ detalle.precioUnitario | currency }}</td>
-                            <td>{{ detalle.subtotal | currency }}</td>
-                        </tr>
-                        }
-                    </tbody>
-                    <tfoot>
-                        <tr>
-                            <td colspan="4" class="text-right py-md px-lg text-on"><strong>Total:</strong></td>
-                            <td class="py-md px-lg text-primary text-lg"><strong>{{ selectedOrder()?.total | currency
-                                    }}</strong></td>
-                        </tr>
-                    </tfoot>
-                </table>
-            </div>
-            }
         </div>
 
-        <div footer class="flex justify-end gap-md">
-            <button type="button" class="btn-secondary" (click)="closeModal()">Cerrar</button>
+        <h3 class="text-lg font-bold text-on mb-md">Productos</h3>
+        <div class="table-erp-container">
+            <table class="table-erp">
+                <thead>
+                    <tr>
+                        <th>Producto</th>
+                        <th>Variante</th>
+                        <th>Cant.</th>
+                        <th>Precio Unit.</th>
+                        <th>Subtotal</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (detalle of selectedOrder()?.detalles; track detalle.id) {
+                    <tr>
+                        <td>{{ detalle.productoNombre }}</td>
+                        <td>{{ detalle.varianteNombre }} ({{ detalle.sku }})</td>
+                        <td>{{ detalle.cantidad }}</td>
+                        <td>{{ detalle.precioUnitario | currency }}</td>
+                        <td>{{ detalle.subtotal | currency }}</td>
+                    </tr>
+                    }
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="4" class="text-right py-md px-lg text-on"><strong>Total:</strong></td>
+                        <td class="py-md px-lg text-primary text-lg"><strong>{{ selectedOrder()?.total | currency
+                                }}</strong></td>
+                    </tr>
+                </tfoot>
+            </table>
         </div>
-    </app-modal>
-    }
+        }
+
+        <div slot="footer">
+            <button type="button" class="btn btn-secondary" (click)="closeModal()">Cerrar</button>
+        </div>
+    </app-drawer>
 </div>

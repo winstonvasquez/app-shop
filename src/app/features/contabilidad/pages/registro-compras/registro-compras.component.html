@@ -1,0 +1,77 @@
+<div class="page-container">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Registro de Compras</h1>
+            <p class="page-subtitle">PLE — Libro 8 · SUNAT</p>
+        </div>
+        <div class="page-actions">
+            <button class="btn btn-secondary" (click)="exportarPLE()" [disabled]="ordenes().length === 0">
+                Exportar PLE TXT
+            </button>
+            <button class="btn btn-secondary" (click)="exportarCSV()" [disabled]="ordenes().length === 0">
+                Exportar CSV
+            </button>
+        </div>
+    </div>
+
+    <div class="card mb-lg">
+        <div class="filters-bar">
+            <select class="input-field"
+                    [value]="periodoSeleccionado()"
+                    (change)="cambiarPeriodo($any($event.target).value)">
+                <option value="">— Seleccionar periodo —</option>
+                @for (p of periodos(); track p.id) {
+                    <option [value]="p.id">{{ p.nombre }} ({{ p.estado }})</option>
+                }
+            </select>
+            <select class="input-field" [(ngModel)]="estadoFiltro" (change)="cargar()">
+                <option value="">Todos los estados</option>
+                @for (opt of estadoOptions; track opt.value) {
+                    <option [value]="opt.value">{{ opt.label }}</option>
+                }
+            </select>
+            <button class="btn btn-primary" (click)="cargar()">Buscar</button>
+        </div>
+    </div>
+
+    @if (ordenes().length > 0) {
+        <div class="card mb-lg">
+            <div class="card-body">
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:var(--space-md)">
+                    <div>
+                        <div class="input-label">Comprobantes</div>
+                        <div class="font-bold text-2xl">{{ ordenesActivas().length }}</div>
+                    </div>
+                    <div>
+                        <div class="input-label">Base Imponible</div>
+                        <div class="font-bold text-xl">S/ {{ totalBase() | number:'1.2-2' }}</div>
+                    </div>
+                    <div>
+                        <div class="input-label">IGV Crédito Fiscal</div>
+                        <div class="font-bold text-xl" style="color:var(--color-success)">S/ {{ totalIgv() | number:'1.2-2' }}</div>
+                    </div>
+                    <div>
+                        <div class="input-label">Total Compras</div>
+                        <div class="font-bold text-xl">S/ {{ totalCompras() | number:'1.2-2' }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (error()) {
+        <div class="card mb-lg">
+            <div class="card-body" style="color:var(--color-error);text-align:center">{{ error() }}</div>
+        </div>
+    }
+
+    <app-data-table
+        [data]="ordenes()"
+        [columns]="columns"
+        [loading]="cargando()"
+        [totalPages]="1"
+        [totalElements]="ordenes().length"
+        [currentPage]="0"
+        [pageSize]="200">
+    </app-data-table>
+</div>

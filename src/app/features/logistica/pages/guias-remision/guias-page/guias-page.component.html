@@ -1,0 +1,279 @@
+<div class="page-container">
+  <app-page-header
+    title="Guías de Remisión Electrónica"
+    subtitle="GRE-SUNAT — {{ totalElements() }} registros"
+    [breadcrumbs]="breadcrumbs">
+    <div actions>
+      <button class="btn btn-primary" (click)="showModal.set(true)">+ Nueva GRE</button>
+    </div>
+  </app-page-header>
+
+  <!-- Filtro -->
+  <div class="filters-bar">
+    <select class="input-field" style="width:200px"
+            [(ngModel)]="filtroEstado" (ngModelChange)="aplicarFiltro()">
+      <option value="">Todos los estados</option>
+      @for (opt of estadoGuiaOptions; track opt.value) {
+        <option [value]="opt.value">{{ opt.label }}</option>
+      }
+    </select>
+  </div>
+
+  <app-data-table
+    [data]="guiasFiltradas()"
+    [columns]="columns"
+    [actions]="actions"
+    [loading]="loading()"
+    [totalPages]="1"
+    [totalElements]="totalElements()"
+    [currentPage]="0"
+    [pageSize]="100"
+    [searchable]="true"
+    searchPlaceholder="Buscar por serie, N° o destinatario..."
+    [exportable]="true"
+    exportFileName="guias-remision">
+  </app-data-table>
+</div>
+
+<!-- Drawer GRE -->
+<app-drawer
+  [isOpen]="showModal()"
+  title="Nueva Guía de Remisión Electrónica"
+  size="full"
+  side="right"
+  [hasFooter]="true"
+  (closed)="cerrarModal()">
+
+  <div style="display:flex;flex-direction:column;gap:var(--space-md)">
+
+    <!-- Sección: Identificación -->
+    <fieldset class="gre-section">
+      <legend class="gre-legend">IDENTIFICACIÓN DEL DOCUMENTO</legend>
+      <div class="form-grid form-grid-4">
+        <div class="form-field-wrapper">
+          <label class="input-label">Serie *</label>
+          <input class="input-field" [(ngModel)]="form.serie" placeholder="T001">
+        </div>
+        <div class="form-field-wrapper">
+          <label class="input-label">N° Correlativo *</label>
+          <input class="input-field" [(ngModel)]="form.numeroDocumento" placeholder="00000001">
+        </div>
+        <app-date-input label="Fecha Emisión" [(ngModel)]="form.fechaEmision" />
+        <app-date-input label="Inicio Traslado" [(ngModel)]="form.fechaInicioTraslado" />
+      </div>
+    </fieldset>
+
+    <!-- Sección: Traslado -->
+    <fieldset class="gre-section">
+      <legend class="gre-legend">DATOS DEL TRASLADO</legend>
+      <div class="form-grid form-grid-3">
+        <div class="form-field-wrapper">
+          <label class="input-label">Motivo de Traslado *</label>
+          <select class="input-field" [(ngModel)]="form.motivoTraslado">
+            <option value="">Seleccionar...</option>
+            @for (m of motivos; track m.codigo) {
+              <option [value]="m.codigo">{{ m.descripcion }}</option>
+            }
+          </select>
+        </div>
+        <div class="form-field-wrapper">
+          <label class="input-label">Modalidad *</label>
+          <select class="input-field" [(ngModel)]="form.modalidadTraslado">
+            <option value="01">01 — Transporte Público</option>
+            <option value="02">02 — Transporte Privado</option>
+          </select>
+        </div>
+        <div class="form-field-wrapper">
+          <label class="input-label">Peso Bruto Total (kg)</label>
+          <input class="input-field" type="number" [(ngModel)]="form.pesoBrutoTotal"
+                 placeholder="0.00" min="0" step="0.01">
+        </div>
+      </div>
+      <div class="form-field-wrapper" style="margin-top:var(--space-md)">
+        <label class="input-label">Descripción del Traslado</label>
+        <input class="input-field" [(ngModel)]="form.descripcionTraslado"
+               placeholder="Ej: Traslado de mercadería por venta">
+      </div>
+    </fieldset>
+
+    <!-- Sección: Punto de Partida -->
+    <fieldset class="gre-section">
+      <legend class="gre-legend">PUNTO DE PARTIDA</legend>
+      <div class="form-grid">
+        <div class="form-field-wrapper">
+          <label class="input-label">Dirección de Origen *</label>
+          <input class="input-field" [(ngModel)]="form.direccionOrigen"
+                 placeholder="Av. Principal 123, Lima">
+        </div>
+        <div class="form-field-wrapper">
+          <label class="input-label">Ubigeo</label>
+          <input class="input-field" [(ngModel)]="form.ubigeoOrigen"
+                 placeholder="150101" maxlength="6" style="font-family:monospace">
+        </div>
+      </div>
+    </fieldset>
+
+    <!-- Sección: Destinatario -->
+    <fieldset class="gre-section">
+      <legend class="gre-legend">DESTINATARIO Y PUNTO DE LLEGADA</legend>
+      <div class="form-grid">
+        <div class="form-field-wrapper">
+          <label class="input-label">RUC Destinatario</label>
+          <input class="input-field" [(ngModel)]="form.destinatarioRuc"
+                 placeholder="20123456789" maxlength="11" style="font-family:monospace">
+        </div>
+        <div class="form-field-wrapper">
+          <label class="input-label">Razón Social Destinatario</label>
+          <input class="input-field" [(ngModel)]="form.destinatarioRazonSocial"
+                 placeholder="Empresa SAC">
+        </div>
+        <div class="form-field-wrapper">
+          <label class="input-label">Dirección Destinatario</label>
+          <input class="input-field" [(ngModel)]="form.destinatarioDireccion"
+                 placeholder="Jr. Comercio 456, Callao">
+        </div>
+        <div class="form-field-wrapper">
+          <label class="input-label">Ubigeo Destino</label>
+          <input class="input-field" [(ngModel)]="form.ubigeoDestino"
+                 placeholder="070101" maxlength="6" style="font-family:monospace">
+        </div>
+      </div>
+    </fieldset>
+
+    <!-- Sección: Transportista (solo si público) -->
+    @if (form.modalidadTraslado === '01') {
+      <fieldset class="gre-section">
+        <legend class="gre-legend">TRANSPORTISTA (Transporte Público)</legend>
+        <div class="form-grid form-grid-3">
+          <div class="form-field-wrapper">
+            <label class="input-label">RUC Transportista</label>
+            <input class="input-field" [(ngModel)]="form.transportistaRuc"
+                   placeholder="20987654321" maxlength="11" style="font-family:monospace">
+          </div>
+          <div class="form-field-wrapper">
+            <label class="input-label">Razón Social</label>
+            <input class="input-field" [(ngModel)]="form.transportistaRazonSocial"
+                   placeholder="Transportes XYZ SAC">
+          </div>
+          <div class="form-field-wrapper">
+            <label class="input-label">N° Autorización MTC</label>
+            <input class="input-field" [(ngModel)]="form.transportistaMtc"
+                   placeholder="0000-00000" style="font-family:monospace">
+          </div>
+        </div>
+      </fieldset>
+    }
+
+    <!-- Sección: Vehículo y Conductor -->
+    <fieldset class="gre-section">
+      <legend class="gre-legend">VEHÍCULO Y CONDUCTOR</legend>
+      <div class="form-grid form-grid-4">
+        <div class="form-field-wrapper">
+          <label class="input-label">Placa del Vehículo</label>
+          <input class="input-field" [(ngModel)]="form.vehiculoPlaca"
+                 placeholder="ABC-123" style="font-family:monospace;text-transform:uppercase">
+        </div>
+        <div class="form-field-wrapper">
+          <label class="input-label">N° Licencia</label>
+          <input class="input-field" [(ngModel)]="form.conductorLicencia"
+                 placeholder="Q12345678" style="font-family:monospace">
+        </div>
+        <div class="form-field-wrapper">
+          <label class="input-label">DNI Conductor</label>
+          <input class="input-field" [(ngModel)]="form.conductorDocumento"
+                 placeholder="12345678" maxlength="8" style="font-family:monospace">
+        </div>
+        <div class="form-field-wrapper">
+          <label class="input-label">Nombre Conductor</label>
+          <input class="input-field" [(ngModel)]="form.conductorNombre"
+                 placeholder="Juan Pérez López">
+        </div>
+      </div>
+    </fieldset>
+
+    <!-- Sección: Bienes Trasladados -->
+    <fieldset class="gre-section">
+      <legend class="gre-legend">BIENES TRASLADADOS</legend>
+      <div style="display:flex;justify-content:flex-end;margin-bottom:var(--space-sm)">
+        <button type="button" class="btn btn-secondary" (click)="agregarItem()">+ Agregar ítem</button>
+      </div>
+      <table class="table" style="font-size:0.85rem">
+        <thead>
+          <tr>
+            <th class="table-header-cell">SKU</th>
+            <th class="table-header-cell">Descripción del bien</th>
+            <th class="table-header-cell" style="width:80px">Cant.</th>
+            <th class="table-header-cell" style="width:80px">Unidad</th>
+            <th class="table-header-cell" style="width:36px"></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of itemForms(); track $index; let i = $index) {
+            <tr>
+              <td class="table-cell" style="padding:4px">
+                <input class="input-field" [(ngModel)]="item.sku"
+                       placeholder="SKU001" style="font-family:monospace;font-size:0.8rem">
+              </td>
+              <td class="table-cell" style="padding:4px">
+                <input class="input-field" [(ngModel)]="item.productoNombre"
+                       placeholder="Descripción" style="font-size:0.8rem">
+              </td>
+              <td class="table-cell" style="padding:4px">
+                <input class="input-field" type="number" [(ngModel)]="item.cantidad"
+                       min="0.01" step="0.01" style="font-size:0.8rem">
+              </td>
+              <td class="table-cell" style="padding:4px">
+                <input class="input-field" [(ngModel)]="item.unidad"
+                       placeholder="NIU" style="font-size:0.8rem">
+              </td>
+              <td class="table-cell" style="padding:4px;text-align:center">
+                <button type="button" class="btn-icon btn-icon-delete"
+                        (click)="eliminarItem(i)">✕</button>
+              </td>
+            </tr>
+          }
+          @if (itemForms().length === 0) {
+            <tr>
+              <td colspan="5" style="text-align:center;padding:var(--space-md);color:var(--color-text-muted);font-size:0.85rem">
+                Agrega al menos un bien trasladado
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </fieldset>
+
+    @if (errorMsg()) {
+      <app-alert type="error" [message]="errorMsg()!" />
+    }
+
+  </div>
+
+  <div slot="footer">
+    <button class="btn btn-secondary" (click)="cerrarModal()">Cancelar</button>
+    <button class="btn btn-primary" (click)="crearGuia()"
+            [disabled]="guardando() || !formularioValido()">
+      {{ guardando() ? 'Guardando...' : 'Emitir GRE' }}
+    </button>
+  </div>
+</app-drawer>
+
+<style>
+.gre-section {
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: var(--space-md);
+}
+.gre-legend {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  padding: 0 6px;
+  letter-spacing: 0.04em;
+}
+.form-grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+.form-grid-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+@media (max-width: 768px) {
+  .form-grid-3, .form-grid-4 { grid-template-columns: 1fr 1fr; }
+}
+</style>

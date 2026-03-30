@@ -94,7 +94,7 @@
                         <label for="password" class="block text-sm font-medium text-[var(--color-text-secondary)]">
                             {{ 'auth.password' | translate }}
                         </label>
-                        <a href="#"
+                        <a [routerLink]="['/auth/forgot-password']"
                             class="text-sm font-semibold text-[var(--color-primary)] hover:text-[var(--color-primary-dark)] transition-colors">
                             {{ 'auth.forgotPassword' | translate }}
                         </a>
@@ -131,7 +131,7 @@
             <footer class="mt-8 text-center text-sm">
                 <p class="text-[var(--color-text-muted)]">
                     {{ 'auth.newHere' | translate }}
-                    <a href="#"
+                    <a [routerLink]="['/auth/register']"
                         class="font-semibold text-[var(--color-primary)] hover:text-[var(--color-primary-dark)] transition-colors ml-1">
                         {{ 'auth.createAccount' | translate }}
                     </a>

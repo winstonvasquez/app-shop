@@ -1,0 +1,140 @@
+<div class="page-container">
+
+    <!-- Header -->
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Devoluciones</h1>
+            <p class="page-subtitle">Gestión de solicitudes de devolución y notas de crédito</p>
+        </div>
+        <button class="btn btn-primary" (click)="abrirNueva()">+ Nueva Devolución</button>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="grid grid-cols-2 gap-[var(--card-gap)] md:grid-cols-4 mb-[var(--section-gap)]">
+        <div class="card-metric">
+            <span class="card-metric-label">Total Devoluciones</span>
+            <span class="card-metric-value">{{ totalDevoluciones() }}</span>
+        </div>
+        <div class="card-metric">
+            <span class="card-metric-label">Pendientes Revisión</span>
+            <span class="card-metric-value">{{ devPendientes() }}</span>
+        </div>
+        <div class="card-metric">
+            <span class="card-metric-label">Aprobadas</span>
+            <span class="card-metric-value">{{ devAprobadas() }}</span>
+        </div>
+        <div class="card-metric">
+            <span class="card-metric-label">Monto Reembolsado</span>
+            <span class="card-metric-value">S/ {{ montoReembolsado().toFixed(2) }}</span>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="filters-bar mb-[var(--form-gap)]">
+        <select class="input-field" [(ngModel)]="filtroEstado">
+            @for (opt of estadoOptions(); track opt.value) {
+                <option [value]="opt.value">{{ opt.label }}</option>
+            }
+        </select>
+    </div>
+
+    <!-- Tabla -->
+    <div class="card">
+        <div class="card-body" style="padding:0">
+            <app-data-table
+                [data]="devolucionesFiltradas()"
+                [columns]="columns"
+                [actions]="actions"
+                [totalElements]="devolucionesFiltradas().length"
+                [pageSize]="20">
+            </app-data-table>
+        </div>
+    </div>
+
+</div>
+
+<!-- Drawer: Registrar / Ver Devolución -->
+<app-drawer
+    [isOpen]="showModal()"
+    [title]="editMode() ? 'Detalle de Devolución' : 'Nueva Devolución'"
+    size="lg"
+    side="right"
+    [hasFooter]="true"
+    (closed)="cerrarModal()">
+
+    <div class="flex flex-col gap-[var(--form-gap)]">
+
+        <!-- Pedido referencia -->
+        <div>
+            <label class="input-label">N° de Pedido / Orden <span class="text-[var(--color-error)]">*</span></label>
+            <input type="text" class="input-field"
+                   placeholder="Ej: #1234 o OC-001"
+                   [(ngModel)]="formNumeroOrden" />
+        </div>
+
+        <!-- Cliente -->
+        <div>
+            <label class="input-label">Nombre del Cliente</label>
+            <input type="text" class="input-field"
+                   placeholder="Nombre del cliente"
+                   [(ngModel)]="formCliente" />
+        </div>
+
+        <!-- Grid 2 cols: Motivo | Tipo resolución -->
+        <div class="grid grid-cols-1 gap-[var(--form-gap)] sm:grid-cols-2">
+            <div>
+                <label class="input-label">Motivo <span class="text-[var(--color-error)]">*</span></label>
+                <select class="input-field" [(ngModel)]="formMotivo">
+                    @for (opt of motivoOptions(); track opt.value) {
+                        <option [value]="opt.value">{{ opt.label }}</option>
+                    }
+                </select>
+            </div>
+            <div>
+                <label class="input-label">Tipo de Resolución</label>
+                <select class="input-field" [(ngModel)]="formResolucion">
+                    @for (opt of resolucionOptions(); track opt.value) {
+                        <option [value]="opt.value">{{ opt.label }}</option>
+                    }
+                </select>
+            </div>
+        </div>
+
+        <!-- Grid 2 cols: Monto | Fecha solicitud -->
+        <div class="grid grid-cols-1 gap-[var(--form-gap)] sm:grid-cols-2">
+            <div>
+                <label class="input-label">Monto (S/) <span class="text-[var(--color-error)]">*</span></label>
+                <input type="number" class="input-field" min="0" step="0.01"
+                       placeholder="0.00"
+                       [(ngModel)]="formMonto" />
+            </div>
+            <div>
+                <app-date-input
+                    label="Fecha Solicitud"
+                    [required]="true"
+                    [(ngModel)]="formFecha">
+                </app-date-input>
+            </div>
+        </div>
+
+        <!-- Observaciones -->
+        <div>
+            <label class="input-label">Observaciones</label>
+            <textarea class="input-field" rows="3"
+                      placeholder="Detalles adicionales sobre la devolución..."
+                      [(ngModel)]="formObservaciones"></textarea>
+        </div>
+
+    </div>
+
+    <div slot="footer">
+        <button class="btn btn-secondary" (click)="cerrarModal()">Cancelar</button>
+        @if (!editMode()) {
+            <button class="btn btn-primary" (click)="guardar()"
+                    [disabled]="!formNumeroOrden.trim() || formMonto <= 0">
+                Registrar Devolución
+            </button>
+        }
+    </div>
+
+</app-drawer>

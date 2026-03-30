@@ -61,18 +61,39 @@
     --color-text-muted: var(--color-gray-500);
     /* Muted gray */
 
+    /* Payment Method Colors — YAPE, PLIN, Visa, OAuth */
+    --color-yape: #742284;
+    --color-yape-light: #9c27b0;
+    --color-plin: #00D4FF;
+    --color-plin-text: #002f5c;
+    --color-visa: #1a1f71;
+    --color-oauth-google: #EA4335;
+    --color-oauth-facebook: #1877F2;
+
     /* State Colors */
     --color-success: oklch(0.72 0.22 150);
     --color-warning: oklch(0.80 0.18 86);
     --color-error: oklch(0.64 0.24 25);
     --color-info: oklch(0.65 0.20 250);
+    --color-danger: oklch(0.59 0.24 25);
+
+    /* Interaction State Overlays (theme-adaptive) */
+    --color-hover-overlay:  oklch(1 0 0 / 0.05);  /* white/5  — for dark surfaces */
+    --color-active-overlay: oklch(1 0 0 / 0.10);  /* white/10 — for dark surfaces */
+    --color-border-strong:  oklch(0.45 0 0);       /* stronger border — gray-600 equiv */
+    --color-focus-ring:     color-mix(in srgb, var(--color-primary) 30%, transparent);
+
+    /* Text on dark header/secondary backgrounds — always light */
+    --color-on-secondary:    oklch(1 0 0);          /* white — secondary bg is always dark */
+    /* Text ON primary-colored elements (buttons, badges) */
+    --color-primary-contrast: oklch(1 0 0);         /* white — contrasts with dark/red primary */
 
     /* ============================================
      TYPOGRAPHY SYSTEM
      ============================================ */
 
     /* Font Families */
-    --font-sans: "Outfit", "Segoe UI", system-ui, sans-serif;
+    --font-sans: "Inter", "Outfit", "Segoe UI", system-ui, sans-serif;
     --font-display: "Baloo 2", "Outfit", "Segoe UI", sans-serif;
     --font-mono: "JetBrains Mono", "Fira Code", monospace;
 
@@ -127,6 +148,14 @@
     --spacing-3xl: 4rem;
     /* 64px */
 
+    /* ERP Layout Spacing */
+    --card-gap: 1.5rem;
+    /* gap entre cards en grids */
+    --form-gap: 1rem;
+    /* gap entre campos de formulario */
+    --section-gap: 2rem;
+    /* gap entre secciones de página */
+
     /* ============================================
      BORDER & RADIUS
      ============================================ */
@@ -165,6 +194,55 @@
 }
 
 /* ============================================
+   OBSIDIAN THEME — Nuevo default premium
+   Azul-carbón profundo + Crimson vívido + Ámbar dorado
+   ============================================ */
+
+[data-theme="obsidian"] {
+    /* Fondos — azul-carbón profundo */
+    --color-background:     oklch(0.09 0.018 245);   /* #070C15 — fondo página */
+    --color-surface:        oklch(0.13 0.015 245);   /* #0E1520 — cards */
+    --color-surface-raised: oklch(0.18 0.013 245);   /* #151D2A — hover / modales */
+
+    /* Bordes */
+    --color-border:         oklch(0.26 0.010 245);   /* #1E2B3C — borde sutil */
+    --color-border-focus:   oklch(0.60 0.27 22);     /* crimson — focus ring */
+
+    /* Primario: Crimson vívido */
+    --color-primary:        oklch(0.60 0.27 22);     /* #E8152D */
+    --color-primary-dark:   oklch(0.53 0.27 22);     /* más oscuro */
+    --color-primary-contrast: oklch(0.99 0 0);       /* blanco sobre primario */
+
+    /* Acento: Ámbar dorado */
+    --color-accent:         oklch(0.78 0.19 72);     /* #E8A820 */
+    --color-accent-dark:    oklch(0.71 0.19 72);     /* más profundo */
+    --color-on-secondary:   oklch(0.15 0.010 245);   /* texto oscuro sobre acento */
+
+    /* Textos */
+    --color-text-primary:   oklch(0.97 0.007 260);   /* casi blanco frío */
+    --color-text-secondary: oklch(0.68 0.008 250);   /* gris medio azulado */
+    --color-text-muted:     oklch(0.50 0.007 250);   /* gris muted */
+
+    /* Estados semánticos */
+    --color-success:        oklch(0.70 0.21 150);    /* verde esmeralda */
+    --color-warning:        oklch(0.79 0.18 86);     /* ámbar advertencia */
+    --color-error:          oklch(0.63 0.24 22);     /* rojo error */
+    --color-info:           oklch(0.65 0.20 250);    /* azul información */
+
+    /* Interaction overlays */
+    --color-hover-overlay:  oklch(1 0 0 / 0.05);
+    --color-active-overlay: oklch(1 0 0 / 0.10);
+    --color-border-strong:  oklch(0.40 0.012 245);
+    --color-focus-ring:     color-mix(in srgb, oklch(0.60 0.27 22) 30%, transparent);
+
+    /* Sombras — tintadas con el fondo azul-carbón */
+    --shadow-sm:   0 1px 3px oklch(0.05 0.02 245 / 0.60);
+    --shadow-md:   0 4px 12px oklch(0.05 0.02 245 / 0.70);
+    --shadow-lg:   0 8px 24px oklch(0.05 0.02 245 / 0.75);
+    --shadow-xl:   0 16px 48px oklch(0.05 0.02 245 / 0.80);
+}
+
+/* ============================================
    LIGHT MODE OVERRIDE (opt-in via data-theme="light")
    ============================================ */
 
@@ -191,6 +269,11 @@
     --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
     --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
     --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+
+    /* Light mode interaction overlays */
+    --color-hover-overlay:  oklch(0 0 0 / 0.05);  /* black/5  — for light surfaces */
+    --color-active-overlay: oklch(0 0 0 / 0.08);  /* black/8  — for light surfaces */
+    --color-border-strong:  oklch(0.75 0 0);       /* softer but visible on white */
 }
 
 /* ============================================
@@ -282,6 +365,16 @@
     color: var(--color-text-primary);
 }
 
+/* Text on dark secondary/header backgrounds */
+@utility text-on-secondary {
+    color: var(--color-on-secondary);
+}
+
+/* Text on primary-colored elements (badges, buttons) */
+@utility text-on-primary {
+    color: var(--color-primary-contrast);
+}
+
 /* Secondary text — labels, metadata */
 @utility text-subtle {
     color: var(--color-text-secondary);
@@ -308,4 +401,14 @@
 /* Border alias */
 @utility border-token {
     border-color: var(--color-border);
+}
+
+/* Text on light backgrounds (e.g. inside colored payment buttons) */
+@utility text-on-light {
+    color: white;
+}
+
+/* Text on dark backgrounds */
+@utility text-on-dark {
+    color: var(--color-text-primary);
 }

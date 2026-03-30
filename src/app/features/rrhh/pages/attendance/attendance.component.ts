@@ -1,140 +1,18 @@
 import { Component, OnInit, inject, signal, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AttendanceService } from '../../services/attendance.service';
 import { EmployeeService } from '../../services/employee.service';
+import { Attendance } from '../../models/attendance.model';
+import { DataTableComponent, TableColumn } from '@shared/ui/tables/data-table/data-table.component';
+
+type TipoRegistro = 'NORMAL' | 'TARDANZA' | 'FALTA' | 'PERMISO' | 'LICENCIA' | 'VACACIONES';
 
 @Component({
     selector: 'app-attendance',
     standalone: true,
-    imports: [
-        CommonModule,
-        ReactiveFormsModule
-    ],
-    template: `
-        <div class="attendance-container">
-            <div class="card">
-                <div class="card-header">
-                    <h2 class="card-title">Registro de Asistencia</h2>
-                </div>
-
-                <div class="card-content">
-                    @if (message()) {
-                        <div class="alert alert-info">
-                            {{ message() }}
-                        </div>
-                    }
-
-                    <form [formGroup]="attendanceForm" (ngSubmit)="onSubmit()">
-                        <div class="form-group">
-                            <label for="employeeId">Empleado *</label>
-                            <select id="employeeId" class="form-control" formControlName="employeeId">
-                                <option value="">Seleccione un empleado</option>
-                                @for (employee of employees(); track employee.id) {
-                                    <option [value]="employee.id">
-                                        {{ employee.codigoEmpleado }} - {{ employee.nombres }} {{ employee.apellidos }}
-                                    </option>
-                                }
-                            </select>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="fecha">Fecha *</label>
-                            <input 
-                                id="fecha"
-                                type="date" 
-                                class="form-control" 
-                                formControlName="fecha">
-                        </div>
-
-                        <div class="time-row">
-                            <div class="form-group">
-                                <label for="horaEntrada">Hora Entrada</label>
-                                <input 
-                                    id="horaEntrada"
-                                    type="time" 
-                                    class="form-control" 
-                                    formControlName="horaEntrada">
-                            </div>
-
-                            <div class="form-group">
-                                <label for="horaSalida">Hora Salida</label>
-                                <input 
-                                    id="horaSalida"
-                                    type="time" 
-                                    class="form-control" 
-                                    formControlName="horaSalida">
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="tipoRegistro">Tipo de Registro *</label>
-                            <select id="tipoRegistro" class="form-control" formControlName="tipoRegistro">
-                                <option value="NORMAL">Normal</option>
-                                <option value="TARDANZA">Tardanza</option>
-                                <option value="FALTA">Falta</option>
-                                <option value="PERMISO">Permiso</option>
-                                <option value="LICENCIA">Licencia</option>
-                                <option value="VACACIONES">Vacaciones</option>
-                            </select>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="observaciones">Observaciones</label>
-                            <textarea 
-                                id="observaciones"
-                                class="form-control" 
-                                formControlName="observaciones" 
-                                rows="3"></textarea>
-                        </div>
-
-                        <div class="form-actions">
-                            <button 
-                                class="btn btn-primary" 
-                                type="submit" 
-                                [disabled]="attendanceForm.invalid || loading()">
-                                @if (loading()) {
-                                    Registrando...
-                                } @else {
-                                    Registrar Asistencia
-                                }
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    `,
-    styles: [`
-        .attendance-container {
-            padding: 24px;
-            max-width: 600px;
-            margin: 0 auto;
-        }
-
-        form {
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-        }
-
-        .time-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 16px;
-        }
-
-        mat-form-field {
-            width: 100%;
-        }
-
-        .form-actions {
-            display: flex;
-            justify-content: flex-end;
-            margin-top: 16px;
-        }
-    `],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    imports: [ReactiveFormsModule, DataTableComponent],
+    templateUrl: './attendance.component.html'
 })
 export class AttendanceComponent implements OnInit {
     private readonly fb = inject(FormBuilder);
@@ -142,14 +20,34 @@ export class AttendanceComponent implements OnInit {
     private readonly employeeService = inject(EmployeeService);
 
     readonly message = signal<string | null>(null);
-
+    readonly messageType = signal<'success' | 'error'>('success');
     readonly loading = this.attendanceService.loading;
     readonly employees = this.employeeService.activeEmployees;
-    readonly trackByEmployeeId = (index: number, employee: any) => employee.id;
+    readonly attendances = signal<Attendance[]>([]);
+
+    readonly tipoRegistroOptions = [
+        { value: 'NORMAL',     label: 'Normal' },
+        { value: 'TARDANZA',   label: 'Tardanza' },
+        { value: 'FALTA',      label: 'Falta' },
+        { value: 'PERMISO',    label: 'Permiso' },
+        { value: 'LICENCIA',   label: 'Licencia' },
+        { value: 'VACACIONES', label: 'Vacaciones' },
+    ];
+
+    columns: TableColumn<Attendance>[] = [
+        { key: 'employeeId', label: 'Empleado', render: (row) => this.getEmployeeName(row.employeeId) },
+        { key: 'horaEntrada', label: 'Entrada', render: (row) => row.horaEntrada ?? '—' },
+        { key: 'horaSalida',  label: 'Salida',  render: (row) => row.horaSalida  ?? '—' },
+        {
+            key: 'tipoRegistro', label: 'Tipo', html: true,
+            render: (row) => `<span class="${this.badgeAsistencia(row.tipoRegistro)}">${row.tipoRegistro}</span>`
+        },
+        { key: 'observaciones', label: 'Observaciones', render: (row) => row.observaciones ?? '—' },
+    ];
 
     attendanceForm: FormGroup = this.fb.group({
         employeeId: ['', Validators.required],
-        fecha: [new Date(), Validators.required],
+        fecha: [new Date().toISOString().split('T')[0], Validators.required],
         horaEntrada: [''],
         horaSalida: [''],
         tipoRegistro: ['NORMAL', Validators.required],
@@ -157,7 +55,30 @@ export class AttendanceComponent implements OnInit {
     });
 
     async ngOnInit(): Promise<void> {
-        await this.employeeService.loadEmployees();
+        try {
+            await this.employeeService.loadEmployees();
+        } catch {
+            // servicio no disponible
+        }
+        // Mostrar registros locales del servicio
+        this.attendances.set(this.attendanceService.attendances());
+    }
+
+    getEmployeeName(id: number): string {
+        const emp = this.employees().find(e => e.id === id);
+        return emp ? `${emp.nombres} ${emp.apellidos}` : `Empleado #${id}`;
+    }
+
+    badgeAsistencia(tipo: TipoRegistro): string {
+        const map: Record<TipoRegistro, string> = {
+            NORMAL: 'badge badge-success',
+            TARDANZA: 'badge badge-warning',
+            FALTA: 'badge badge-error',
+            PERMISO: 'badge badge-neutral',
+            LICENCIA: 'badge badge-neutral',
+            VACACIONES: 'badge badge-neutral'
+        };
+        return map[tipo] ?? 'badge';
     }
 
     async onSubmit(): Promise<void> {
@@ -167,23 +88,24 @@ export class AttendanceComponent implements OnInit {
             const formValue = this.attendanceForm.value;
             const request = {
                 ...formValue,
-                fecha: formValue.fecha instanceof Date 
+                fecha: formValue.fecha instanceof Date
                     ? formValue.fecha.toISOString().split('T')[0]
                     : formValue.fecha
             };
 
-            await this.attendanceService.registerAttendance(request);
-            
+            const registered = await this.attendanceService.registerAttendance(request);
+            this.attendances.update(list => [...list, registered]);
+            this.messageType.set('success');
             this.message.set('Asistencia registrada correctamente');
             setTimeout(() => this.message.set(null), 3000);
             this.attendanceForm.reset({
-                fecha: new Date(),
+                fecha: new Date().toISOString().split('T')[0],
                 tipoRegistro: 'NORMAL'
             });
-        } catch (error) {
+        } catch {
+            this.messageType.set('error');
             this.message.set('Error al registrar asistencia');
             setTimeout(() => this.message.set(null), 3000);
-            console.error('Error al registrar asistencia', error);
         }
     }
 }

@@ -1,0 +1,156 @@
+<div class="page-container">
+  <app-page-header
+    title="Movimientos de Stock"
+    subtitle="Kardex de entradas, salidas y traslados"
+    [breadcrumbs]="breadcrumbs">
+    <div actions>
+      <button class="btn btn-primary" (click)="openCreateForm()">+ Movimiento</button>
+    </div>
+  </app-page-header>
+
+  @if (error()) {
+    <app-alert type="error" [message]="error()!" (dismiss)="error.set(null)" [dismissible]="true" />
+  }
+
+  <!-- Filtros -->
+  <div class="filters-bar">
+    <select class="input-field" style="width:200px" [(ngModel)]="tipoFilter">
+      <option value="">Todos los tipos</option>
+      @for (opt of tipoOptions; track opt.value) {
+        <option [value]="opt.value">{{ opt.label }}</option>
+      }
+    </select>
+
+    <app-date-input label="Desde" [(ngModel)]="dateFrom" />
+    <app-date-input label="Hasta"  [(ngModel)]="dateTo" />
+
+    <button class="btn btn-secondary" (click)="buscar()">Buscar</button>
+  </div>
+
+  <!-- Tabla -->
+  <app-data-table
+    [data]="movimientos()"
+    [columns]="columns"
+    [actions]="actions"
+    [loading]="loading()"
+    [searchable]="true"
+    searchPlaceholder="Buscar por código o referencia..."
+    [exportable]="true"
+    exportFileName="movimientos-stock"
+    [currentPage]="currentPage()"
+    [pageSize]="pageSize()"
+    [totalElements]="totalElements()"
+    [totalPages]="totalPages()"
+    (pageChange)="onPaginationChange($event)">
+  </app-data-table>
+</div>
+
+<!-- Drawer Crear Movimiento -->
+<app-drawer
+  [isOpen]="showForm()"
+  title="Nuevo Movimiento de Stock"
+  size="lg"
+  side="right"
+  [hasFooter]="true"
+  (closed)="closeForm()">
+
+  <form [formGroup]="form">
+    <!-- Sección 1: Tipo y almacenes -->
+    <div class="form-grid">
+      <div class="form-field-wrapper" style="grid-column:1/-1">
+        <label class="input-label">Tipo de movimiento *</label>
+        <select class="input-field" formControlName="tipo">
+          <option value="">-- Seleccione tipo --</option>
+          @for (opt of tipoOptions; track opt.value) {
+            <option [value]="opt.value">{{ opt.label }}</option>
+          }
+        </select>
+        @if (form.get('tipo')?.invalid && form.get('tipo')?.touched) {
+          <span class="input-error-message">Seleccione el tipo de movimiento</span>
+        }
+      </div>
+
+      <div class="form-field-wrapper">
+        <label class="input-label">Almacén Origen</label>
+        <select class="input-field" formControlName="almacenOrigenId">
+          <option value="">-- Sin origen --</option>
+          @for (alm of almacenes(); track alm.id) {
+            <option [value]="alm.id">{{ alm.nombre }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="form-field-wrapper">
+        <label class="input-label">Almacén Destino</label>
+        <select class="input-field" formControlName="almacenDestinoId">
+          <option value="">-- Sin destino --</option>
+          @for (alm of almacenes(); track alm.id) {
+            <option [value]="alm.id">{{ alm.nombre }}</option>
+          }
+        </select>
+      </div>
+    </div>
+
+    <!-- Sección 2: Motivo -->
+    <div class="form-section">
+      <div class="form-field-wrapper">
+        <label class="input-label">Motivo</label>
+        <input class="input-field" type="text" formControlName="motivo"
+               placeholder="Motivo del movimiento">
+      </div>
+      <div class="form-field-wrapper" style="margin-top:var(--space-md)">
+        <label class="input-label">Observaciones</label>
+        <textarea class="input-field" formControlName="observaciones" rows="2"
+                  placeholder="Observaciones adicionales" style="resize:vertical"></textarea>
+      </div>
+    </div>
+
+    <!-- Sección 3: Ítems -->
+    <div class="form-section">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-md)">
+        <h4 class="form-section-title" style="margin:0">Productos</h4>
+        <button type="button" class="btn btn-secondary" (click)="addItem()">+ Agregar</button>
+      </div>
+
+      @for (item of formItems(); track $index; let i = $index) {
+        <div style="display:grid;grid-template-columns:1fr 120px 80px 36px;gap:var(--space-sm);align-items:end;margin-bottom:var(--space-sm)">
+          <div>
+            <label class="input-label" [for]="'prod-' + i">Producto *</label>
+            <input [id]="'prod-' + i" class="input-field" type="text"
+                   [value]="item.productoNombre"
+                   (input)="updateItem(i, 'productoNombre', $any($event.target).value)"
+                   placeholder="Nombre del producto">
+          </div>
+          <div>
+            <label class="input-label" [for]="'sku-' + i">SKU</label>
+            <input [id]="'sku-' + i" class="input-field" type="text"
+                   [value]="item.sku"
+                   (input)="updateItem(i, 'sku', $any($event.target).value)"
+                   placeholder="SKU">
+          </div>
+          <div>
+            <label class="input-label" [for]="'qty-' + i">Cantidad *</label>
+            <input [id]="'qty-' + i" class="input-field" type="number" min="1"
+                   [value]="item.cantidad"
+                   (input)="updateItem(i, 'cantidad', +$any($event.target).value)"
+                   placeholder="1">
+          </div>
+          <button type="button" class="btn btn-icon btn-icon-delete" style="margin-bottom:0"
+                  (click)="removeItem(i)" [disabled]="formItems().length === 1"
+                  title="Eliminar ítem">✕</button>
+        </div>
+      }
+    </div>
+  </form>
+
+  @if (submitError()) {
+    <app-alert type="error" [message]="submitError()!" />
+  }
+
+  <div slot="footer">
+    <button class="btn btn-secondary" (click)="closeForm()">Cancelar</button>
+    <button class="btn btn-primary" (click)="onSubmit()" [disabled]="submitting()">
+      {{ submitting() ? 'Registrando...' : 'Registrar Movimiento' }}
+    </button>
+  </div>
+</app-drawer>

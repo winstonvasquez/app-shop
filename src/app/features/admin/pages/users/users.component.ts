@@ -109,9 +109,9 @@ export class UsersComponent implements OnInit {
 
     this.userService.getAll(pagination).subscribe({
       next: (response: PageResponse<UserResponse>) => {
-        this.users.set(response.content);
-        this.totalElements.set(response.page.totalElements);
-        this.totalPages.set(response.page.totalPages);
+        this.users.set(response?.content ?? []);
+        this.totalElements.set(response?.page?.totalElements ?? 0);
+        this.totalPages.set(response?.page?.totalPages ?? 0);
         this.loading.set(false);
       },
       error: (err: Error) => {

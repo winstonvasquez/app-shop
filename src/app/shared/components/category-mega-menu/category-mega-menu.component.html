@@ -1,0 +1,101 @@
+<div class="relative">
+
+    <!-- Trigger -->
+    <div (click)="toggle()"
+         class="flex items-center gap-1 cursor-pointer select-none hover:opacity-80">
+        Categorías
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+             fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round"
+             class="transition-transform duration-200" [class.rotate-180]="isOpen()">
+            <path d="m6 9 6 6 6-6"/>
+        </svg>
+    </div>
+
+    @if (isOpen()) {
+
+    <!-- Backdrop -->
+    <div class="fixed inset-0 z-[190]" (click)="close()"></div>
+
+    <!-- Panel -->
+    <div class="mm-panel absolute top-[calc(100%+10px)] left-1/2 -translate-x-1/2
+                z-[200] w-[780px] max-h-[520px] flex rounded-2xl overflow-hidden">
+
+        <!-- Izquierda: lista categorías -->
+        <div class="mm-sidebar w-[210px] flex-shrink-0 overflow-y-auto">
+
+            @if (isLoading()) {
+                <div class="p-3 space-y-1.5">
+                    @for (_ of [1,2,3,4,5,6,7]; track $index) {
+                        <div class="mm-skeleton h-9 w-full"></div>
+                    }
+                </div>
+            } @else {
+                @for (cat of categories(); track cat.id) {
+                    <div class="mm-category-item"
+                         [class.active]="activeCategory()?.id === cat.id"
+                         (mouseenter)="selectCategory(cat)"
+                         (click)="goToCategory(cat)">
+                        <span class="truncate">{{ cat.nombre }}</span>
+                        <svg class="mm-chevron" xmlns="http://www.w3.org/2000/svg"
+                             width="11" height="11" viewBox="0 0 24 24"
+                             fill="none" stroke="currentColor" stroke-width="2.5">
+                            <path d="m9 18 6-6-6-6"/>
+                        </svg>
+                    </div>
+                }
+            }
+
+        </div>
+
+        <!-- Derecha: productos -->
+        <div class="mm-content flex-1 overflow-y-auto p-4">
+
+            @if (activeCategory()) {
+                <div class="flex items-center justify-between mb-4">
+                    <span class="mm-section-title text-sm">{{ activeCategory()!.nombre }}</span>
+                    <button class="mm-ver-todos" (click)="goToCategory(activeCategory()!)">
+                        Ver todos →
+                    </button>
+                </div>
+            }
+
+            @if (isLoading()) {
+                <div class="grid grid-cols-4 gap-3">
+                    @for (_ of [1,2,3,4,5,6,7,8]; track $index) {
+                        <div class="flex flex-col items-center gap-2">
+                            <div class="mm-skeleton-circle"></div>
+                            <div class="mm-skeleton h-3 w-14"></div>
+                        </div>
+                    }
+                </div>
+
+            } @else if (activeProducts().length === 0) {
+                <div class="mm-empty flex items-center justify-center h-40">
+                    Sin productos en esta categoría
+                </div>
+
+            } @else {
+                <div class="grid grid-cols-4 gap-x-3 gap-y-5">
+                    @for (product of activeProducts(); track product.id) {
+                        <div class="mm-product-card" (click)="goToProduct(product)">
+                            <div class="mm-product-thumb">
+                                <img [src]="getProductImage(product)"
+                                     [alt]="product.nombre"
+                                     loading="lazy"
+                                     (error)="$any($event.target).src='https://picsum.photos/seed/default/300/300'">
+                                @if (product.badge) {
+                                    <span class="mm-product-badge">{{ product.badge }}</span>
+                                }
+                            </div>
+                            <p class="mm-product-name">{{ product.nombre }}</p>
+                        </div>
+                    }
+                </div>
+            }
+
+        </div>
+    </div>
+    }
+
+</div>

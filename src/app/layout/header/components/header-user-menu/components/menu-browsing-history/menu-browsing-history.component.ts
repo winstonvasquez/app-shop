@@ -1,4 +1,5 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-menu-browsing-history',
@@ -7,5 +8,9 @@ import { Component } from '@angular/core';
   styleUrl: './menu-browsing-history.component.scss',
 })
 export class MenuBrowsingHistory {
+  private router = inject(Router);
 
+  navigate(): void {
+    this.router.navigate(['/account/history']);
+  }
 }

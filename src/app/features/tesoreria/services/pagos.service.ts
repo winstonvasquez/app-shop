@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
+import { AuthService } from '../../../core/auth/auth.service';
 import { Payment, PaymentRequest } from '../models/tesoreria.model';
 
 @Injectable({
@@ -9,10 +10,16 @@ import { Payment, PaymentRequest } from '../models/tesoreria.model';
 })
 export class PagosService {
     private http = inject(HttpClient);
+    private auth = inject(AuthService);
     private apiUrl = `${environment.apiUrl}${environment.apiUrls.treasury}/api/tesoreria/pagos`;
+
+    private get tenantId(): string {
+        return String(this.auth.currentUser()?.activeCompanyId ?? 1);
+    }
 
     getAll(page: number = 0, size: number = 20): Observable<any> {
         const params = new HttpParams()
+            .set('tenantId', this.tenantId)
             .set('page', page.toString())
             .set('size', size.toString());
         return this.http.get<any>(this.apiUrl, { params });

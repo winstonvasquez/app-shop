@@ -1,95 +1,182 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { RecepcionService, Recepcion, RecepcionPage } from '../../services/recepcion.service';
+import { RecepcionService, RecepcionPage } from '../../services/recepcion.service';
+import { Recepcion, RecepcionItem } from '../../models/orden-compra.model';
+import { DataTableComponent, TableColumn, TableAction } from '@shared/ui/tables/data-table/data-table.component';
+import { PaginationComponent, PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
+import { DrawerComponent } from '@shared/components/drawer/drawer.component';
+import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
+import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
+import { LoadingSpinnerComponent } from '@shared/ui/feedback/loading-spinner/loading-spinner.component';
 
 @Component({
     selector: 'app-recepcion',
     standalone: true,
-    imports: [CommonModule, FormsModule],
-    template: `
-        <div class="page-header">
-            <div>
-                <h1 class="page-title">📥 Recepción de Mercadería</h1>
-                <p class="page-subtitle">Recepciones registradas</p>
-            </div>
-        </div>
-
-        <div class="table-container">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Recepción</th>
-                        <th>OC Referencia</th>
-                        <th>Fecha</th>
-                        <th>Proveedor</th>
-                        <th>Guía</th>
-                        <th>Estado</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @for (recepcion of recepciones(); track recepcion.id) {
-                        <tr>
-                            <td class="font-mono">REC-{{ recepcion.id?.slice(0,8) }}</td>
-                            <td class="font-mono">{{ recepcion.ordenCompraCodigo || '—' }}</td>
-                            <td class="text-muted">{{ recepcion.fechaRecepcion | date:'dd/MM/yyyy' }}</td>
-                            <td>—</td>
-                            <td>{{ recepcion.numeroGuia || '—' }}</td>
-                            <td>
-                                <span class="badge"
-                                      [class.badge-warning]="recepcion.estado === 'PENDIENTE'"
-                                      [class.badge-success]="recepcion.estado === 'CONFORME'"
-                                      [class.badge-danger]="recepcion.estado === 'DIFERENCIA'">
-                                    {{ recepcion.estado }}
-                                </span>
-                            </td>
-                            <td>
-                                <div class="actions-cell">
-                                    <button class="icon-btn">👁</button>
-                                    @if (recepcion.estado === 'PENDIENTE') {
-                                        <button class="icon-btn" (click)="confirmarRecepcion(recepcion.id!)">✅</button>
-                                    }
-                                </div>
-                            </td>
-                        </tr>
-                    }
-                    @empty {
-                        <tr>
-                            <td colspan="7" class="text-center text-muted">No hay recepciones registradas</td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
-    `,
-    styles: [`
-        :host { display: block; }
-    `]
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    imports: [
+        CommonModule,
+        FormsModule,
+        DataTableComponent,
+        PaginationComponent,
+        DrawerComponent,
+        PageHeaderComponent,
+        AlertComponent,
+        LoadingSpinnerComponent
+    ],
+    templateUrl: './recepcion.component.html'
 })
 export class RecepcionComponent implements OnInit {
-    private recepcionService = inject(RecepcionService);
+    private readonly recepcionService = inject(RecepcionService);
 
     recepciones = signal<Recepcion[]>([]);
+    selectedRecepcion = signal<Recepcion | null>(null);
+
+    cargando = signal(false);
+    loadingDetail = signal(false);
+    error = signal<string | null>(null);
+
+    estadoFiltro = signal('');
+    showDetail = signal(false);
+
+    // Pagination
+    currentPage = signal(0);
+    pageSize = signal(10);
+    totalElements = signal(0);
+    totalPages = signal(0);
+
+    hasRecepciones = computed(() => this.recepciones().length > 0);
+    isEmpty = computed(() => !this.cargando() && !this.hasRecepciones());
+
+    readonly estadoOptions = [
+        { value: 'PENDIENTE', label: 'Pendiente' },
+        { value: 'CONFORME', label: 'Conforme' },
+        { value: 'DIFERENCIA', label: 'Con Diferencia' }
+    ];
+
+    breadcrumbs: Breadcrumb[] = [
+        { label: 'Admin', url: '/admin' },
+        { label: 'Compras', url: '/admin/compras/dashboard' },
+        { label: 'Recepción Mercadería' }
+    ];
+
+    columns: TableColumn<Recepcion>[] = [
+        {
+            key: 'id', label: 'Recepción', width: '130px',
+            render: (row) => `REC-${(row.id ?? '').toString().slice(0, 8).toUpperCase()}`
+        },
+        {
+            key: 'ordenCompraCodigo', label: 'OC Referencia',
+            render: (row) => row.ordenCompraCodigo ?? '—'
+        },
+        {
+            key: 'fechaRecepcion', label: 'Fecha',
+            render: (row) => row.fechaRecepcion
+                ? new Date(row.fechaRecepcion).toLocaleDateString('es-PE') : '—'
+        },
+        {
+            key: 'numeroGuia', label: 'Guía Remisión',
+            render: (row) => row.numeroGuia ?? '—'
+        },
+        {
+            key: 'estado', label: 'Estado', html: true,
+            render: (row) => `<span class="badge badge-${this.badgeEstado(row.estado)}">${row.estado}</span>`
+        }
+    ];
+
+    actions: TableAction<Recepcion>[] = [
+        {
+            label: 'Ver', icon: '👁️', class: 'btn-view',
+            onClick: (row) => this.openDetail(row.id!)
+        }
+    ];
 
     ngOnInit(): void {
         this.loadRecepciones();
     }
 
     loadRecepciones(): void {
-        this.recepcionService.getRecepciones(0, 20).subscribe({
-            next: (response: RecepcionPage) => {
-                this.recepciones.set(response.content);
+        this.cargando.set(true);
+        this.error.set(null);
+        this.recepcionService.getRecepciones(
+            this.currentPage(),
+            this.pageSize(),
+            this.estadoFiltro() || undefined
+        ).subscribe({
+            next: (res: RecepcionPage) => {
+                this.recepciones.set(res.content);
+                this.totalElements.set(res.totalElements);
+                this.totalPages.set(res.totalPages);
+                this.cargando.set(false);
+            },
+            error: () => {
+                this.error.set('No se pudieron cargar las recepciones.');
+                this.cargando.set(false);
             }
         });
     }
 
-    confirmarRecepcion(id: string): void {
-        if (confirm('¿Confirmar la recepción de mercadería?')) {
-            this.recepcionService.confirmarRecepcion(id).subscribe({
-                next: () => this.loadRecepciones()
-            });
-        }
+    onFilterEstado(event: Event): void {
+        this.estadoFiltro.set((event.target as HTMLSelectElement).value);
+        this.currentPage.set(0);
+        this.loadRecepciones();
+    }
+
+    onPaginationChange(event: PaginationChangeEvent): void {
+        this.currentPage.set(event.page);
+        this.pageSize.set(event.size);
+        this.loadRecepciones();
+    }
+
+    openDetail(id: string): void {
+        this.loadingDetail.set(true);
+        this.showDetail.set(true);
+        this.selectedRecepcion.set(null);
+        this.recepcionService.getRecepcionById(id).subscribe({
+            next: (rec) => {
+                this.selectedRecepcion.set(rec);
+                this.loadingDetail.set(false);
+            },
+            error: (err: Error) => {
+                this.error.set(err.message);
+                this.loadingDetail.set(false);
+                this.showDetail.set(false);
+            }
+        });
+    }
+
+    closeDetail(): void {
+        this.showDetail.set(false);
+        this.selectedRecepcion.set(null);
+    }
+
+    confirmarRecepcion(): void {
+        const rec = this.selectedRecepcion();
+        if (!rec) return;
+        this.loadingDetail.set(true);
+        this.recepcionService.confirmarRecepcion(rec.id!).subscribe({
+            next: (updated) => {
+                this.selectedRecepcion.set(updated);
+                this.recepciones.update(list =>
+                    list.map(r => r.id === updated.id ? { ...r, estado: updated.estado } : r)
+                );
+                this.loadingDetail.set(false);
+            },
+            error: (err: Error) => {
+                this.error.set(err.message);
+                this.loadingDetail.set(false);
+            }
+        });
+    }
+
+    badgeEstado(estado: string): string {
+        const map: Record<string, string> = {
+            PENDIENTE: 'warning',
+            CONFORME: 'success',
+            CON_DIFERENCIAS: 'error',
+            DIFERENCIA: 'error',
+            COMPLETADA: 'success'
+        };
+        return map[estado] ?? 'neutral';
     }
 }

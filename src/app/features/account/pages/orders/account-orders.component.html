@@ -1,0 +1,81 @@
+<div class="page-container">
+    <app-breadcrumb [items]="breadcrumbItems" />
+    <div class="page-header">
+        <h1 class="page-title">Mis Pedidos</h1>
+        <p class="page-subtitle">Historial de tus compras</p>
+    </div>
+
+    @if (loading()) {
+        <div class="loading-container">
+            <div class="spinner"></div>
+        </div>
+    } @else if (error()) {
+        <div class="card">
+            <div class="card-body text-center text-[var(--color-error)]">
+                <p>{{ error() }}</p>
+                <button class="btn btn-secondary mt-4" (click)="loadOrders(0)">Reintentar</button>
+            </div>
+        </div>
+    } @else if (orders().length === 0) {
+        <div class="card">
+            <div class="card-body text-center py-12">
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="1.5" class="mx-auto mb-4 text-[var(--color-text-muted)]">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                </svg>
+                <p class="text-[var(--color-text-muted)]">No tienes pedidos aún.</p>
+                <a routerLink="/products" class="btn btn-primary mt-4">Explorar productos</a>
+            </div>
+        </div>
+    } @else {
+        <div class="card">
+            <div class="card-body p-0">
+                <table class="table w-full">
+                    <thead>
+                        <tr class="table-header">
+                            <th class="table-header-cell">N° Pedido</th>
+                            <th class="table-header-cell">Fecha</th>
+                            <th class="table-header-cell">Estado</th>
+                            <th class="table-header-cell text-right">Total</th>
+                            <th class="table-header-cell"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (order of orders(); track order.id) {
+                            <tr class="table-row">
+                                <td class="table-cell font-mono text-sm">#{{ order.id }}</td>
+                                <td class="table-cell text-sm text-[var(--color-text-muted)]">
+                                    {{ order.fechaPedido | date:'dd/MM/yyyy' }}
+                                </td>
+                                <td class="table-cell">
+                                    <span [class]="getEstadoBadgeClass(order.estado)">{{ order.estado }}</span>
+                                </td>
+                                <td class="table-cell text-right font-bold">S/ {{ order.total | number:'1.2-2' }}</td>
+                                <td class="table-cell text-right">
+                                    <a [routerLink]="['/account/orders', order.id]"
+                                       class="text-[var(--color-primary)] text-sm hover:brightness-110 font-medium">
+                                        Ver
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Paginación -->
+        @if (totalPages() > 1) {
+            <div class="pagination mt-4">
+                <span class="pagination-info">Página {{ currentPage() + 1 }} de {{ totalPages() }}</span>
+                <div class="pagination-controls">
+                    <button class="btn-page" [disabled]="currentPage() === 0" (click)="prevPage()">Anterior</button>
+                    <button class="btn-page" [disabled]="currentPage() >= totalPages() - 1" (click)="nextPage()">Siguiente</button>
+                </div>
+            </div>
+        }
+    }
+</div>

@@ -28,18 +28,38 @@
     },
     "/accounting": {
         "target": "http://127.0.0.1:8084",
+        "pathRewrite": { "^/accounting": "/finance" },
+        "secure": false,
+        "changeOrigin": true,
+        "logLevel": "debug"
+    },
+    "/hr": {
+        "target": "http://127.0.0.1:8088",
         "secure": false,
         "changeOrigin": true,
         "logLevel": "debug"
     },
     "/inventory": {
-        "target": "http://127.0.0.1:8082",
+        "target": "http://127.0.0.1:8085",
         "secure": false,
         "changeOrigin": true,
         "logLevel": "debug"
     },
     "/treasury": {
-        "target": "http://127.0.0.1:8085",
+        "target": "http://127.0.0.1:8089",
+        "pathRewrite": { "^/treasury": "" },
+        "secure": false,
+        "changeOrigin": true,
+        "logLevel": "debug"
+    },
+    "/logistics": {
+        "target": "http://127.0.0.1:8090",
+        "secure": false,
+        "changeOrigin": true,
+        "logLevel": "debug"
+    },
+    "/analytics": {
+        "target": "http://127.0.0.1:8087",
         "secure": false,
         "changeOrigin": true,
         "logLevel": "debug"

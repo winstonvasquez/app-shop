@@ -1,0 +1,65 @@
+<div class="page-container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Flujo de Caja y Movimientos</h1>
+      <p class="page-subtitle">Ingresos, egresos y saldo neto del periodo</p>
+    </div>
+  </div>
+
+  <!-- Filtros -->
+  <div class="filters-bar" style="margin-bottom:var(--space-lg)">
+    <div style="display:flex;gap:var(--space-md);align-items:flex-end;flex-wrap:wrap">
+      <div>
+        <label class="input-label">Fecha Inicio</label>
+        <input class="input-field" type="date" [(ngModel)]="fechaInicio">
+      </div>
+      <div>
+        <label class="input-label">Fecha Fin</label>
+        <input class="input-field" type="date" [(ngModel)]="fechaFin">
+      </div>
+      <button class="btn btn-primary" (click)="loadData()">Consultar</button>
+    </div>
+  </div>
+
+  <!-- KPIs -->
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:var(--space-md);margin-bottom:var(--space-lg)">
+    <div class="card">
+      <div class="card-body">
+        <div style="color:var(--color-text-muted);font-size:0.875rem">Ingresos del periodo</div>
+        <div style="font-size:1.75rem;font-weight:700;color:var(--color-success)">
+          S/ {{ ingresos() | number:'1.2-2' }}
+        </div>
+        <div style="color:var(--color-text-muted);font-size:0.75rem">movimientos INGRESO</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-body">
+        <div style="color:var(--color-text-muted);font-size:0.875rem">Egresos del periodo</div>
+        <div style="font-size:1.75rem;font-weight:700;color:var(--color-warning)">
+          S/ {{ egresos() | number:'1.2-2' }}
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-body">
+        <div style="color:var(--color-text-muted);font-size:0.875rem">Flujo de Caja Neto</div>
+        <div style="font-size:1.75rem;font-weight:700"
+             [style.color]="flujoCajaNeto() >= 0 ? 'var(--color-success)' : 'var(--color-error)'">
+          S/ {{ flujoCajaNeto() | number:'1.2-2' }}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <app-data-table
+    [data]="movimientos()"
+    [columns]="columns"
+    [loading]="cargando()"
+    [totalPages]="1"
+    [totalElements]="movimientos().length"
+    [currentPage]="0"
+    [pageSize]="100"
+    [exportable]="true"
+    exportFileName="flujo-caja">
+  </app-data-table>
+</div>

@@ -1,0 +1,164 @@
+<div class="page-container">
+
+    <!-- Header -->
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Promociones</h1>
+            <p class="page-subtitle">Campañas, descuentos y cupones para tus clientes</p>
+        </div>
+        <button class="btn btn-primary" (click)="abrirNueva()">+ Nueva Promoción</button>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="grid grid-cols-1 gap-[var(--card-gap)] sm:grid-cols-3 mb-[var(--section-gap)]">
+        <div class="card-metric">
+            <span class="card-metric-label">Activas</span>
+            <span class="card-metric-value text-[var(--color-success)]">{{ totalActivas() }}</span>
+        </div>
+        <div class="card-metric">
+            <span class="card-metric-label">Próximas a Vencer (7d)</span>
+            <span class="card-metric-value text-[var(--color-warning)]">{{ proximasAVencer() }}</span>
+        </div>
+        <div class="card-metric">
+            <span class="card-metric-label">Vencidas</span>
+            <span class="card-metric-value text-[var(--color-text-muted)]">{{ totalVencidas() }}</span>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="filters-bar mb-[var(--form-gap)]">
+        <select class="input-field" [(ngModel)]="filtroEstado">
+            @for (opt of estadoOptions; track opt.value) {
+                <option [value]="opt.value">{{ opt.label }}</option>
+            }
+        </select>
+    </div>
+
+    <!-- Tabla -->
+    <div class="card">
+        <div class="card-body" style="padding:0">
+            <app-data-table
+                [data]="promocionesVm()"
+                [columns]="columns"
+                [actions]="actions"
+                [loading]="cargando()"
+                [totalElements]="promocionesVm().length"
+                [pageSize]="20">
+            </app-data-table>
+        </div>
+    </div>
+
+</div>
+
+<!-- Drawer: Crear / Editar Promoción -->
+<app-drawer
+    [isOpen]="showModal()"
+    [title]="editMode() ? 'Editar Promoción' : 'Nueva Promoción'"
+    size="lg"
+    side="right"
+    [hasFooter]="true"
+    (closed)="cerrarModal()">
+
+    <div class="flex flex-col gap-[var(--form-gap)]">
+
+        <!-- Nombre -->
+        <div>
+            <label class="input-label">Nombre <span class="text-[var(--color-error)]">*</span></label>
+            <input type="text" class="input-field"
+                   placeholder="Ej: Descuento verano 20%"
+                   [(ngModel)]="formNombre" />
+        </div>
+
+        <!-- Descripción -->
+        <div>
+            <label class="input-label">Descripción</label>
+            <textarea class="input-field" rows="2"
+                      placeholder="Descripción breve de la promoción..."
+                      [(ngModel)]="formDescripcion"></textarea>
+        </div>
+
+        <!-- Grid: Tipo | Alcance -->
+        <div class="grid grid-cols-1 gap-[var(--form-gap)] sm:grid-cols-2">
+            <div>
+                <label class="input-label">Tipo de Descuento <span class="text-[var(--color-error)]">*</span></label>
+                <select class="input-field" [(ngModel)]="formTipo">
+                    @for (opt of tipoOptions(); track opt.value) {
+                        <option [value]="opt.value">{{ opt.label }}</option>
+                    }
+                </select>
+            </div>
+            <div>
+                <label class="input-label">Alcance</label>
+                <select class="input-field" [(ngModel)]="formAlcance">
+                    @for (opt of alcanceOptions(); track opt.value) {
+                        <option [value]="opt.value">{{ opt.label }}</option>
+                    }
+                </select>
+            </div>
+        </div>
+
+        <!-- Valor descuento -->
+        <div>
+            <label class="input-label">
+                Valor
+                @if (formTipo === 'PORCENTAJE') { (%) } @else { (S/) }
+                <span class="text-[var(--color-error)]">*</span>
+            </label>
+            <input type="number" class="input-field" min="0"
+                   [step]="formTipo === 'PORCENTAJE' ? 1 : 0.01"
+                   [max]="formTipo === 'PORCENTAJE' ? 100 : null"
+                   placeholder="0"
+                   [(ngModel)]="formValor" />
+        </div>
+
+        <!-- Grid: Fecha Inicio | Fecha Fin -->
+        <div class="grid grid-cols-1 gap-[var(--form-gap)] sm:grid-cols-2">
+            <app-date-input
+                label="Fecha Inicio"
+                [required]="true"
+                [(ngModel)]="formFechaInicio">
+            </app-date-input>
+            <app-date-input
+                label="Fecha Fin"
+                [required]="true"
+                [minDate]="formFechaInicio"
+                [(ngModel)]="formFechaFin">
+            </app-date-input>
+        </div>
+
+        <!-- Grid: Cupón | Límite usos -->
+        <div class="grid grid-cols-1 gap-[var(--form-gap)] sm:grid-cols-2">
+            <div>
+                <label class="input-label">Código Cupón</label>
+                <input type="text" class="input-field"
+                       placeholder="Ej: VERANO25"
+                       [(ngModel)]="formCupon" />
+            </div>
+            <div>
+                <label class="input-label">Límite de Usos</label>
+                <input type="number" class="input-field" min="1"
+                       placeholder="Sin límite"
+                       [(ngModel)]="formLimite" />
+            </div>
+        </div>
+
+        <!-- Toggle activo -->
+        <div class="flex items-center gap-3">
+            <input type="checkbox" id="promoActivo" [(ngModel)]="formActivo"
+                   class="w-4 h-4 accent-[var(--color-primary)]" />
+            <label for="promoActivo" class="input-label" style="margin:0">
+                Promoción activa al guardar
+            </label>
+        </div>
+
+    </div>
+
+    <div slot="footer">
+        <button class="btn btn-secondary" (click)="cerrarModal()">Cancelar</button>
+        <button class="btn btn-primary" (click)="guardar()"
+                [disabled]="guardando() || !formNombre.trim() || formValor <= 0 || !formFechaFin">
+            @if (guardando()) { Guardando... } @else { Guardar Promoción }
+        </button>
+    </div>
+
+</app-drawer>

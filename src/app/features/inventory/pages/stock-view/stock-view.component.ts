@@ -1,12 +1,11 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { InventoryApiService } from '../../services/inventory-api.service';
 import { InventoryStock, Warehouse } from '../../models/inventory.models';
 
 @Component({
     selector: 'app-stock-view',
     standalone: true,
-    imports: [CommonModule],
+    imports: [],
     changeDetection: ChangeDetectionStrategy.OnPush,
     template: `
         <section class="space-y-6">
@@ -39,7 +38,10 @@ import { InventoryStock, Warehouse } from '../../models/inventory.models';
             <div class="rounded-xl border border-border-subtle bg-surface p-5 shadow-sm">
                 <div class="flex items-center justify-between">
                     <h2 class="text-sm font-semibold text-on">Stock disponible</h2>
-                    <span class="text-xs text-subtle">{{ stock().length }} registros</span>
+                    <div class="flex items-center gap-3">
+                        <span class="text-xs text-subtle">{{ stock().length }} registros</span>
+                        <button class="rounded-full border border-border px-3 py-1 text-xs" type="button" (click)="exportarCsv()" [disabled]="stock().length === 0">Exportar CSV</button>
+                    </div>
                 </div>
                 <div class="mt-4 overflow-x-auto">
                     <table class="min-w-full text-sm">
@@ -116,5 +118,36 @@ export class StockViewComponent {
             next: (response) => this.stock.set(response),
             error: (err: Error) => this.error.set(err.message)
         });
+    }
+
+    exportarCsv(): void {
+        if (this.stock().length === 0) return;
+        const bom = '\uFEFF';
+        const headers = ['Producto ID', 'Almacén ID', 'Almacén', 'Ubicación ID', 'Ubicación', 'Stock Actual', 'Stock Reservado', 'Stock Disponible', 'Stock Mínimo', 'Stock Máximo', 'Punto de Reorden', 'Costo Promedio', 'Último Costo', 'Valor Total', 'Estado'];
+        const filas = [headers, ...this.stock().map(item => [
+            String(item.productId ?? ''),
+            String(item.warehouseId ?? ''),
+            item.warehouseName ?? '',
+            String(item.locationId ?? ''),
+            item.locationName ?? '',
+            String(item.quantity ?? ''),
+            String(item.reservedQuantity ?? ''),
+            String(item.availableQuantity ?? ''),
+            String(item.minimumStock ?? ''),
+            String(item.maximumStock ?? ''),
+            String(item.reorderPoint ?? ''),
+            String(item.averageCost ?? ''),
+            String(item.lastCost ?? ''),
+            String(item.totalValue ?? ''),
+            item.belowMinimum ? 'Bajo mínimo' : 'OK'
+        ])];
+        const csv = bom + filas.map(f => f.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\r\n');
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `stock-${new Date().toISOString().split('T')[0]}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
     }
 }

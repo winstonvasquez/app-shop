@@ -1,0 +1,102 @@
+<div class="page-container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Evaluaciones de Desempeño</h1>
+      <p class="page-subtitle">Seguimiento por período y competencias</p>
+    </div>
+    <div class="page-actions">
+      <button class="btn btn-primary" (click)="showModal.set(true)">+ Nueva Evaluación</button>
+    </div>
+  </div>
+
+  <!-- KPIs -->
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:var(--space-md);margin-bottom:var(--space-lg)">
+    <div class="card">
+      <div class="card-body">
+        <div style="color:var(--color-text-muted);font-size:0.875rem">Pendientes / En Proceso</div>
+        <div style="font-size:2.5rem;font-weight:700"
+             [style.color]="pendientes() > 0 ? 'var(--color-warning)' : 'var(--color-text-muted)'">
+          {{ pendientes() }}
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-body">
+        <div style="color:var(--color-text-muted);font-size:0.875rem">Completadas</div>
+        <div style="font-size:2.5rem;font-weight:700;color:var(--color-success)">{{ completadas() }}</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-body">
+        <div style="color:var(--color-text-muted);font-size:0.875rem">Total</div>
+        <div style="font-size:2.5rem;font-weight:700;color:var(--color-primary)">{{ evaluaciones().length }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filtros -->
+  <div class="filters-bar" style="margin-bottom:var(--space-md)">
+    <select class="input-field" style="width:200px"
+            [value]="filtroEstado()"
+            (change)="filtroEstado.set($any($event.target).value)">
+      <option value="">Todos los estados</option>
+      @for (opt of estadoOptions; track opt.value) {
+        <option [value]="opt.value">{{ opt.label }}</option>
+      }
+    </select>
+  </div>
+
+  <app-data-table
+    [data]="evaluacionesFiltradas()"
+    [columns]="columns"
+    [actions]="actions"
+    [totalPages]="1"
+    [totalElements]="evaluacionesFiltradas().length"
+    [currentPage]="0"
+    [pageSize]="100"
+    [searchable]="true"
+    searchPlaceholder="Buscar evaluación..."
+    [exportable]="true"
+    exportFileName="evaluaciones">
+  </app-data-table>
+
+</div>
+
+<app-drawer
+  [isOpen]="showModal()"
+  title="Nueva Evaluación de Desempeño"
+  size="md"
+  side="right"
+  [hasFooter]="true"
+  (closed)="showModal.set(false)">
+
+  <div style="display:flex;flex-direction:column;gap:14px">
+    <div>
+      <label class="input-label">Empleado *</label>
+      <input class="input-field" [(ngModel)]="formNombre" placeholder="Nombre completo">
+    </div>
+    <div>
+      <label class="input-label">Evaluador</label>
+      <input class="input-field" [(ngModel)]="formEvaluador" placeholder="Nombre del evaluador">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div>
+        <label class="input-label">Período *</label>
+        <input class="input-field" [(ngModel)]="formPeriodo" placeholder="2026-Q1">
+      </div>
+      <div>
+        <label class="input-label">Fecha Programada</label>
+        <input class="input-field" type="date" [(ngModel)]="formFecha">
+      </div>
+    </div>
+    <div>
+      <label class="input-label">Competencias</label>
+      <input class="input-field" [(ngModel)]="formCompetencias" placeholder="Liderazgo, Comunicación...">
+    </div>
+  </div>
+
+  <div slot="footer">
+    <button class="btn btn-secondary" (click)="showModal.set(false)">Cancelar</button>
+    <button class="btn btn-primary" (click)="guardar()">Crear Evaluación</button>
+  </div>
+</app-drawer>

@@ -1,0 +1,58 @@
+<div class="page-container">
+
+    <!-- Header -->
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Dashboard Ventas</h1>
+            <p class="page-subtitle">Resumen de rendimiento del módulo de ventas</p>
+        </div>
+        <button class="btn btn-primary" (click)="cargar()">Actualizar</button>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="grid grid-cols-2 gap-[var(--card-gap)] md:grid-cols-3 xl:grid-cols-5 mb-[var(--section-gap)]">
+
+        <div class="card-metric">
+            <span class="card-metric-label">Ventas Hoy</span>
+            <span class="card-metric-value">S/ {{ ventasHoy().toFixed(2) }}</span>
+        </div>
+
+        <div class="card-metric">
+            <span class="card-metric-label">Pedidos Pendientes</span>
+            <span class="card-metric-value">{{ pedidosPendientes() }}</span>
+        </div>
+
+        <div class="card-metric">
+            <span class="card-metric-label">Monto Total (cargados)</span>
+            <span class="card-metric-value">S/ {{ montoTotalMes().toFixed(2) }}</span>
+        </div>
+
+        <div class="card-metric">
+            <span class="card-metric-label">Total Pedidos</span>
+            <span class="card-metric-value">{{ totalPedidos() }}</span>
+        </div>
+
+        <div class="card-metric">
+            <span class="card-metric-label">Ticket Promedio</span>
+            <span class="card-metric-value">S/ {{ ticketPromedio().toFixed(2) }}</span>
+        </div>
+
+    </div>
+
+    <!-- Últimos Pedidos -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Últimos Pedidos</h2>
+        </div>
+        <div class="card-body" style="padding:0">
+            <app-data-table
+                [data]="pedidos()"
+                [columns]="columns"
+                [loading]="cargando()"
+                [totalElements]="pedidos().length"
+                [pageSize]="20">
+            </app-data-table>
+        </div>
+    </div>
+
+</div>

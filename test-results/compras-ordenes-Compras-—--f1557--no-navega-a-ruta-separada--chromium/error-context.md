@@ -1,0 +1,41 @@
+# Page snapshot
+
+```yaml
+- main [ref=e6]:
+  - generic [ref=e9]:
+    - generic [ref=e10]:
+      - generic [ref=e11]: APP
+      - generic [ref=e12]: SHOP
+      - generic [ref=e13]: Enterprise Resource Planning
+    - heading "Bienvenido al ERP Corporativo" [level=2] [ref=e14]
+    - paragraph [ref=e15]: Gestione sus recursos empresariales, rastree inventario y optimice flujos de trabajo con nuestra plataforma administrativa de alto rendimiento.
+  - generic [ref=e22]:
+    - generic [ref=e23]:
+      - heading "Iniciar Sesión" [level=1] [ref=e24]
+      - paragraph [ref=e25]: Ingrese sus credenciales para acceder a la plataforma
+    - generic [ref=e26]:
+      - generic [ref=e27]:
+        - generic [ref=e28]: Usuario o correo
+        - textbox "Usuario o correo" [ref=e29]:
+          - /placeholder: admin@appshop.com
+      - generic [ref=e30]:
+        - generic [ref=e31]:
+          - generic [ref=e32]: Contraseña
+          - link "¿Olvidaste tu contraseña?" [ref=e33] [cursor=pointer]:
+            - /url: /auth/forgot-password
+        - textbox "Contraseña" [ref=e34]:
+          - /placeholder: ••••••••
+      - generic [ref=e35]:
+        - checkbox "Recordarme" [ref=e36] [cursor=pointer]
+        - generic [ref=e37] [cursor=pointer]: Recordarme
+      - button "Iniciar Sesión" [disabled] [ref=e38]:
+        - generic [ref=e39]: Iniciar Sesión
+    - generic [ref=e40]:
+      - paragraph [ref=e41]:
+        - text: ¿Nuevo aquí?
+        - link "Crear una cuenta" [ref=e42] [cursor=pointer]:
+          - /url: /auth/register
+      - generic [ref=e43]:
+        - generic [ref=e48]: System Online
+        - generic [ref=e49]: v21.0.4-LTS
+```

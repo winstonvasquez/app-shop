@@ -1,0 +1,135 @@
+<div class="page-container">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Estado de Resultados</h1>
+            <p class="page-subtitle">Pérdidas y Ganancias · PCGE 2020</p>
+        </div>
+        <div class="page-actions">
+            <select class="input-field" (change)="onPeriodoChange($event)">
+                @for (p of periodos(); track p.id) {
+                    <option [value]="p.id" [selected]="p.id === periodoId()">{{ p.nombre }}</option>
+                }
+            </select>
+        </div>
+    </div>
+
+    @if (isLoading()) {
+        <div class="loading-container"><div class="spinner"></div></div>
+    } @else if (error()) {
+        <div class="card mb-lg">
+            <div class="card-body" style="color:var(--color-error)">{{ error() }}</div>
+        </div>
+    } @else {
+        <div class="max-w-3xl mx-auto">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Estado de Resultados por Función</h2>
+                    <span class="badge badge-neutral">Periodo: {{ periodoNombre() }}</span>
+                </div>
+                <div class="card-body">
+
+                    <!-- INGRESOS -->
+                    <div class="mb-6">
+                        <h3 class="text-sm font-bold text-subtle uppercase tracking-wider mb-2">Ingresos de Actividades Ordinarias (Grupo 7)</h3>
+                        @if (ingresos().length === 0) {
+                            <p class="text-muted text-sm">Sin ingresos registrados</p>
+                        } @else {
+                            @for (l of ingresos(); track l.codigo) {
+                                <div class="flex justify-between items-center py-2 border-b border-border/50">
+                                    <span class="text-sm">
+                                        <span class="font-mono text-xs text-muted mr-2">{{ l.codigo }}</span>
+                                        {{ l.nombre }}
+                                    </span>
+                                    <span class="font-semibold text-success-hover">S/ {{ l.monto | number:'1.2-2' }}</span>
+                                </div>
+                            }
+                        }
+                        <div class="flex justify-between items-center py-2 mt-1 bg-success/5 rounded px-2">
+                            <span class="font-bold text-on">TOTAL INGRESOS</span>
+                            <span class="font-bold text-success-hover text-lg">S/ {{ totalIngresos() | number:'1.2-2' }}</span>
+                        </div>
+                    </div>
+
+                    <!-- COSTO DE VENTAS -->
+                    <div class="mb-6">
+                        <h3 class="text-sm font-bold text-subtle uppercase tracking-wider mb-2">Costo de Ventas (Grupo 6x)</h3>
+                        @if (costoVentas().length === 0) {
+                            <p class="text-muted text-sm">Sin costo de ventas registrado</p>
+                        } @else {
+                            @for (l of costoVentas(); track l.codigo) {
+                                <div class="flex justify-between items-center py-2 border-b border-border/50">
+                                    <span class="text-sm">
+                                        <span class="font-mono text-xs text-muted mr-2">{{ l.codigo }}</span>
+                                        {{ l.nombre }}
+                                    </span>
+                                    <span class="font-semibold text-error-hover">( S/ {{ l.monto | number:'1.2-2' }} )</span>
+                                </div>
+                            }
+                        }
+                        <div class="flex justify-between items-center py-2 mt-1 bg-error/5 rounded px-2">
+                            <span class="font-bold text-on">TOTAL COSTO DE VENTAS</span>
+                            <span class="font-bold text-error-hover text-lg">( S/ {{ totalCostoVentas() | number:'1.2-2' }} )</span>
+                        </div>
+                    </div>
+
+                    <!-- UTILIDAD BRUTA -->
+                    <div class="flex justify-between items-center py-3 border-y-2 border-border mb-6">
+                        <span class="font-bold text-on text-lg">UTILIDAD BRUTA</span>
+                        <span class="font-bold text-xl" [class]="utilidadBruta() >= 0 ? 'text-success-hover' : 'text-error-hover'">
+                            S/ {{ utilidadBruta() | number:'1.2-2' }}
+                        </span>
+                    </div>
+
+                    <!-- GASTOS OPERATIVOS -->
+                    <div class="mb-6">
+                        <h3 class="text-sm font-bold text-subtle uppercase tracking-wider mb-2">Gastos Operativos (Grupos 9x)</h3>
+                        @if (gastosOperativos().length === 0) {
+                            <p class="text-muted text-sm">Sin gastos operativos registrados</p>
+                        } @else {
+                            @for (l of gastosOperativos(); track l.codigo) {
+                                <div class="flex justify-between items-center py-2 border-b border-border/50">
+                                    <span class="text-sm">
+                                        <span class="font-mono text-xs text-muted mr-2">{{ l.codigo }}</span>
+                                        {{ l.nombre }}
+                                    </span>
+                                    <span class="font-semibold text-error-hover">( S/ {{ l.monto | number:'1.2-2' }} )</span>
+                                </div>
+                            }
+                        }
+                    </div>
+
+                    <!-- UTILIDAD OPERATIVA -->
+                    <div class="flex justify-between items-center py-3 border-y-2 border-border mb-6">
+                        <span class="font-bold text-on text-lg">UTILIDAD OPERATIVA</span>
+                        <span class="font-bold text-xl" [class]="utilidadOperativa() >= 0 ? 'text-success-hover' : 'text-error-hover'">
+                            S/ {{ utilidadOperativa() | number:'1.2-2' }}
+                        </span>
+                    </div>
+
+                    <!-- KPIs -->
+                    <div class="grid grid-cols-3 gap-4 mt-4">
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="input-label">Margen Bruto</div>
+                                <div class="font-bold text-2xl">{{ margenBruto() }}%</div>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="input-label">Margen Operativo</div>
+                                <div class="font-bold text-2xl">{{ margenOperativo() }}%</div>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="input-label">Total Ingresos</div>
+                                <div class="font-bold text-2xl">S/ {{ totalIngresos() | number:'1.0-0' }}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    }
+</div>
