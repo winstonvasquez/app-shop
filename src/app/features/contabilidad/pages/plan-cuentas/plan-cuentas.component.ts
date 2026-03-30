@@ -1,7 +1,7 @@
 import { Component, inject, signal, computed, OnInit, ChangeDetectionStrategy } from '@angular/core';
-import { DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CuentaService } from '../../services/cuenta.service';
+import { PaginationComponent, PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
 
 interface CuentaPCGE {
     id?: string | number;
@@ -67,7 +67,7 @@ const PCGE_DEMO: CuentaPCGE[] = [
     selector: 'app-plan-cuentas',
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [FormsModule],
+    imports: [FormsModule, PaginationComponent],
     template: `
         <div class="page-header">
             <div>
@@ -98,10 +98,15 @@ const PCGE_DEMO: CuentaPCGE[] = [
                         class="input-field"
                         type="text"
                         placeholder="Buscar por código o nombre..."
-                        [(ngModel)]="busqueda"
+                        [value]="busqueda()"
+                        (input)="onBusquedaChange($any($event.target).value)"
                         style="padding-left: 36px" />
                 </div>
-                <select class="input-field" [(ngModel)]="tipoFiltro" style="width: auto; min-width: 180px">
+                <select
+                    class="input-field"
+                    [value]="tipoFiltro()"
+                    (change)="onTipoFiltroChange($any($event.target).value)"
+                    style="width: auto; min-width: 180px">
                     <option value="TODOS">Todos los tipos</option>
                     <option value="ACTIVO">Activo</option>
                     <option value="PASIVO">Pasivo</option>
@@ -126,14 +131,14 @@ const PCGE_DEMO: CuentaPCGE[] = [
                                 <th class="table-header-cell" style="width: 120px">Código</th>
                                 <th class="table-header-cell">Nombre</th>
                                 <th class="table-header-cell" style="width: 130px">Tipo</th>
-                                <th class="table-header-cell" style="width: 80px; text-align: center">Nivel</th>
-                                <th class="table-header-cell" style="width: 150px; text-align: center">Acepta Movimiento</th>
+                                <th class="table-header-cell text-center" style="width: 80px">Nivel</th>
+                                <th class="table-header-cell text-center" style="width: 150px">Acepta Movimiento</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @for (cuenta of cuentasFiltradas(); track cuenta.codigo) {
+                            @for (cuenta of cuentasPaginadas(); track cuenta.codigo) {
                                 <tr class="table-row" [class.cuenta-nivel2]="cuenta.nivel === 2">
-                                    <td class="table-cell" style="font-family: monospace; font-size: 0.9rem">
+                                    <td class="table-cell font-mono" style="font-size: 0.9rem">
                                         {{ cuenta.codigo }}
                                     </td>
                                     <td class="table-cell"
@@ -143,21 +148,21 @@ const PCGE_DEMO: CuentaPCGE[] = [
                                     <td class="table-cell">
                                         <span [class]="badgeTipo(cuenta.tipo)">{{ cuenta.tipo }}</span>
                                     </td>
-                                    <td class="table-cell" style="text-align: center">
+                                    <td class="table-cell text-center">
                                         {{ cuenta.nivel }}
                                     </td>
-                                    <td class="table-cell" style="text-align: center">
+                                    <td class="table-cell text-center">
                                         @if (cuenta.aceptaMovimiento) {
                                             <span style="color: var(--color-success); font-size: 1.1rem">&#10003;</span>
                                         } @else {
-                                            <span style="color: var(--color-text-muted)">—</span>
+                                            <span class="text-[var(--color-text-muted)]">—</span>
                                         }
                                     </td>
                                 </tr>
                             }
                             @if (cuentasFiltradas().length === 0) {
                                 <tr>
-                                    <td colspan="5" style="padding: 48px; text-align: center; color: var(--color-text-muted)">
+                                    <td colspan="5" class="text-center text-[var(--color-text-muted)]" style="padding: 48px">
                                         No se encontraron cuentas con los filtros aplicados.
                                     </td>
                                 </tr>
@@ -166,6 +171,14 @@ const PCGE_DEMO: CuentaPCGE[] = [
                     </table>
                 </div>
             </div>
+
+            <app-pagination
+                [currentPage]="currentPage()"
+                [totalPages]="totalPages()"
+                [totalElements]="cuentasFiltradas().length"
+                [pageSize]="pageSize()"
+                (pageChange)="onPageChange($event)">
+            </app-pagination>
         }
     `,
     styles: [`
@@ -183,23 +196,38 @@ const PCGE_DEMO: CuentaPCGE[] = [
 export class PlanCuentasComponent implements OnInit {
     private cuentaService = inject(CuentaService);
 
-    cargando = signal(true);
-    modoDemo = signal(false);
-    cuentas = signal<CuentaPCGE[]>([]);
-    busqueda = '';
-    tipoFiltro: TipoFiltro = 'TODOS';
+    readonly cargando = signal(true);
+    readonly modoDemo = signal(false);
+    readonly cuentas = signal<CuentaPCGE[]>([]);
+    readonly busqueda = signal('');
+    readonly tipoFiltro = signal<TipoFiltro>('TODOS');
 
-    cuentasFiltradas = computed(() => {
+    // Paginación
+    readonly currentPage = signal(0);
+    readonly pageSize = signal(20);
+
+    readonly cuentasFiltradas = computed(() => {
         const lista = this.cuentas();
-        const q = this.busqueda.toLowerCase().trim();
+        const q = this.busqueda().toLowerCase().trim();
+        const tipo = this.tipoFiltro();
         return lista.filter(c => {
             const coincideBusqueda = !q
                 || c.codigo.toLowerCase().includes(q)
                 || c.nombre.toLowerCase().includes(q);
-            const coincideTipo = this.tipoFiltro === 'TODOS' || c.tipo === this.tipoFiltro;
+            const coincideTipo = tipo === 'TODOS' || c.tipo === tipo;
             return coincideBusqueda && coincideTipo;
         });
     });
+
+    readonly cuentasPaginadas = computed(() => {
+        const todas = this.cuentasFiltradas();
+        const inicio = this.currentPage() * this.pageSize();
+        return todas.slice(inicio, inicio + this.pageSize());
+    });
+
+    readonly totalPages = computed(() =>
+        Math.ceil(this.cuentasFiltradas().length / this.pageSize()) || 1
+    );
 
     ngOnInit(): void {
         this.cuentaService.listarTodas().subscribe({
@@ -213,6 +241,21 @@ export class PlanCuentasComponent implements OnInit {
                 this.cargando.set(false);
             }
         });
+    }
+
+    onBusquedaChange(value: string): void {
+        this.busqueda.set(value);
+        this.currentPage.set(0);
+    }
+
+    onTipoFiltroChange(value: string): void {
+        this.tipoFiltro.set(value as TipoFiltro);
+        this.currentPage.set(0);
+    }
+
+    onPageChange(event: PaginationChangeEvent): void {
+        this.currentPage.set(event.page);
+        this.pageSize.set(event.size);
     }
 
     indentacion(nivel: number): string {
