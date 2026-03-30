@@ -1,6 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive } from '@angular/router';
+import { AuthService } from '@core/auth/auth.service';
 
 interface NavItem {
   label: string;
@@ -10,8 +11,147 @@ interface NavItem {
 
 interface NavGroup {
   title: string;
+  moduleCode: string | null; // null = always visible (no module restriction)
   items: NavItem[];
 }
+
+const ALL_NAV_GROUPS: NavGroup[] = [
+  {
+    title: 'Dashboard',
+    moduleCode: null,
+    items: [
+      { label: 'Resumen General', route: '/admin/dashboard', icon: 'chart' }
+    ]
+  },
+  {
+    title: 'Ventas',
+    moduleCode: 'VENTAS',
+    items: [
+      { label: 'Dashboard Ventas', route: '/admin/ventas/dashboard', icon: 'chart-line' },
+      { label: 'Pedidos', route: '/admin/orders', icon: 'cart' },
+      { label: 'Devoluciones', route: '/admin/returns', icon: 'return' },
+      { label: 'Promociones', route: '/admin/promotions', icon: 'tag' }
+    ]
+  },
+  {
+    title: 'Compras',
+    moduleCode: 'COMPRAS',
+    items: [
+      { label: 'Dashboard Compras', route: '/admin/compras/dashboard', icon: 'shopping-cart' },
+      { label: 'Proveedores', route: '/admin/compras/proveedores', icon: 'factory' },
+      { label: 'Órdenes de Compra', route: '/admin/compras/ordenes', icon: 'document' },
+      { label: 'Recepción Mercadería', route: '/admin/compras/recepcion', icon: 'truck' }
+    ]
+  },
+  {
+    title: 'Logística',
+    moduleCode: 'LOGISTICA',
+    items: [
+      { label: 'Dashboard Logístico',  route: '/admin/logistica/dashboard',      icon: 'truck' },
+      { label: 'Almacenes',            route: '/admin/logistica/almacenes',      icon: 'warehouse' },
+      { label: 'Inventario',           route: '/admin/logistica/inventario',     icon: 'box' },
+      { label: 'Movimientos Stock',    route: '/admin/logistica/movimientos',    icon: 'clipboard' },
+      { label: 'Guías de Remisión',    route: '/admin/logistica/guias',          icon: 'document-text' },
+      { label: 'Transportistas',       route: '/admin/logistica/transportistas', icon: 'truck' },
+      { label: 'Envíos',              route: '/admin/logistica/envios',         icon: 'location' },
+      { label: 'Devoluciones',         route: '/admin/logistica/devoluciones',   icon: 'return' },
+      { label: 'Tracking',             route: '/admin/logistica/tracking',       icon: 'location' }
+    ]
+  },
+  {
+    title: 'Inventario',
+    moduleCode: 'INVENTARIO',
+    items: [
+      { label: 'Dashboard', route: '/admin/inventario/dashboard', icon: 'chart' },
+      { label: 'Almacenes', route: '/admin/inventario/almacenes', icon: 'warehouse' },
+      { label: 'Ubicaciones', route: '/admin/inventario/ubicaciones', icon: 'location' },
+      { label: 'Stock', route: '/admin/inventario/stock', icon: 'box' },
+      { label: 'Movimientos',         route: '/admin/inventario/movimientos',    icon: 'clipboard' },
+      { label: 'Transferencias',      route: '/admin/inventario/transferencias', icon: 'truck' },
+      { label: 'Inventarios Físicos', route: '/admin/inventario/conteos',        icon: 'list' },
+      { label: 'Kardex Valorizado',   route: '/admin/inventario/kardex',         icon: 'document' }
+    ]
+  },
+  {
+    title: 'Tesorería',
+    moduleCode: 'TESORERIA',
+    items: [
+      { label: 'Dashboard', route: '/admin/tesoreria/dashboard', icon: 'chart' },
+      { label: 'Control de Cajas', route: '/admin/tesoreria/cajas', icon: 'credit-card' },
+      { label: 'Cuentas Bancarias', route: '/admin/tesoreria/cuentas-bancarias', icon: 'bank' },
+      { label: 'Pagos / Workflow', route: '/admin/tesoreria/pagos', icon: 'document' },
+      { label: 'Flujo de Caja', route: '/admin/tesoreria/flujo-caja', icon: 'chart-line' }
+    ]
+  },
+  {
+    title: 'Contabilidad',
+    moduleCode: 'CONTABILIDAD',
+    items: [
+      { label: 'Dashboard Contable',   route: '/admin/contabilidad/dashboard',         icon: 'book' },
+      { label: 'Asientos Contables',   route: '/admin/contabilidad/asientos',          icon: 'document-text' },
+      { label: 'Plan de Cuentas PCGE', route: '/admin/contabilidad/plan-cuentas',      icon: 'list' },
+      { label: 'Libro Diario',         route: '/admin/contabilidad/diario',            icon: 'book-open' },
+      { label: 'Libro Mayor',          route: '/admin/contabilidad/libro-mayor',       icon: 'book-open' },
+      { label: 'Balance General',      route: '/admin/contabilidad/balance',           icon: 'chart' },
+      { label: 'Estado de Resultados', route: '/admin/contabilidad/estado-resultados', icon: 'chart-line' },
+      { label: 'Registro Ventas',      route: '/admin/contabilidad/ventas',            icon: 'table' },
+      { label: 'Registro Compras',     route: '/admin/contabilidad/compras',           icon: 'table' },
+      { label: 'Declaración IGV',      route: '/admin/contabilidad/igv',               icon: 'calculator' }
+    ]
+  },
+  {
+    title: 'RRHH',
+    moduleCode: 'RRHH',
+    items: [
+      { label: 'Empleados', route: '/admin/rrhh/employees', icon: 'users' },
+      { label: 'Asistencia', route: '/admin/rrhh/attendance', icon: 'calendar' },
+      { label: 'Nómina', route: '/admin/rrhh/payroll', icon: 'document' }
+    ]
+  },
+  {
+    title: 'Punto de Venta',
+    moduleCode: 'POS',
+    items: [
+      { label: 'Abrir POS', route: '/pos', icon: 'cash-register' },
+      { label: 'Devoluciones', route: '/pos/devoluciones', icon: 'return' }
+    ]
+  },
+  {
+    title: 'Clientes',
+    moduleCode: null,
+    items: [
+      { label: 'Lista de Clientes', route: '/admin/customers', icon: 'users' },
+      { label: 'Segmentos', route: '/admin/segments', icon: 'user-group' }
+    ]
+  },
+  {
+    title: 'Empresas',
+    moduleCode: null,
+    items: [
+      { label: 'Gestión de Empresas', route: '/admin/companies', icon: 'building' },
+      { label: 'Configuración', route: '/admin/company-settings', icon: 'settings' }
+    ]
+  },
+  {
+    title: 'Configuración Tienda',
+    moduleCode: null,
+    items: [
+      { label: 'Tema de Tienda', route: '/admin/store-theme', icon: 'sliders' },
+      { label: 'Parámetros Sistema', route: '/admin/general-config', icon: 'database' }
+    ]
+  },
+  {
+    title: 'Reportes',
+    moduleCode: null,
+    items: [
+      { label: 'Dashboard Ejecutivo', route: '/admin/reports/ejecutivo', icon: 'chart-bar' },
+      { label: 'Reporte de Inventario', route: '/admin/reports/inventory', icon: 'document' },
+      { label: 'Reporte de Clientes', route: '/admin/reports/customers', icon: 'user-chart' },
+      { label: 'Reporte de Ventas', route: '/admin/reports/ventas', icon: 'chart-line' },
+      { label: 'Reporte RRHH', route: '/admin/reports/rrhh', icon: 'users' }
+    ]
+  }
+];
 
 @Component({
   selector: 'app-admin-sidebar',
@@ -21,91 +161,23 @@ interface NavGroup {
   styleUrl: './admin-sidebar.component.scss'
 })
 export class AdminSidebarComponent {
-  navGroups: NavGroup[] = [
-    {
-      title: 'Dashboard',
-      items: [
-        { label: 'Resumen General', route: '/admin/dashboard', icon: 'chart' }
-      ]
-    },
-    {
-      title: 'Ventas',
-      items: [
-        { label: 'Dashboard Ventas', route: '/admin/ventas/dashboard', icon: 'chart-line' },
-        { label: 'Pedidos', route: '/admin/orders', icon: 'cart' },
-        { label: 'Devoluciones', route: '/admin/returns', icon: 'return' },
-        { label: 'Promociones', route: '/admin/promotions', icon: 'tag' }
-      ]
-    },
-    {
-      title: 'Compras',
-      items: [
-        { label: 'Dashboard Compras', route: '/admin/compras/dashboard', icon: 'shopping-cart' },
-        { label: 'Proveedores', route: '/admin/compras/proveedores', icon: 'factory' },
-        { label: 'Órdenes de Compra', route: '/admin/compras/ordenes', icon: 'document' },
-        { label: 'Recepción Mercadería', route: '/admin/compras/recepcion', icon: 'truck' }
-      ]
-    },
-    {
-      title: 'Logística',
-      items: [
-        { label: 'Dashboard Logístico', route: '/admin/logistica/dashboard', icon: 'truck' },
-        { label: 'Guías de Remisión', route: '/admin/logistica/guias', icon: 'document-text' },
-        { label: 'Seguimiento Envíos', route: '/admin/logistica/seguimiento', icon: 'location' }
-      ]
-    },
-    {
-      title: 'Inventario',
-      items: [
-        { label: 'Dashboard', route: '/admin/inventario/dashboard', icon: 'chart' },
-        { label: 'Almacenes', route: '/admin/inventario/almacenes', icon: 'warehouse' },
-        { label: 'Ubicaciones', route: '/admin/inventario/ubicaciones', icon: 'location' },
-        { label: 'Stock', route: '/inventario/stock', icon: 'box' },
-        { label: 'Movimientos', route: '/inventario/movimientos', icon: 'clipboard' },
-        { label: 'Kardex Valorizado', route: '/inventario/kardex', icon: 'document' }
-      ]
-    },
-    {
-      title: 'Tesorería',
-      items: [
-        { label: 'Control de Cajas', route: '/tesoreria/cajas', icon: 'credit-card' },
-        { label: 'Pagos / Workflow', route: '/tesoreria/pagos', icon: 'document' },
-        { label: 'Flujo de Caja', route: '/tesoreria/flujo-caja', icon: 'chart-line' }
-      ]
-    },
-    {
-      title: 'Contabilidad',
-      items: [
-        { label: 'Dashboard Contable', route: '/admin/contabilidad/dashboard', icon: 'book' },
-        { label: 'Registro Ventas', route: '/admin/contabilidad/ventas', icon: 'table' },
-        { label: 'Registro Compras', route: '/admin/contabilidad/compras', icon: 'table' },
-        { label: 'Libro Diario', route: '/admin/contabilidad/diario', icon: 'book-open' },
-        { label: 'Declaración IGV', route: '/admin/contabilidad/igv', icon: 'calculator' }
-      ]
-    },
-    {
-      title: 'Clientes',
-      items: [
-        { label: 'Lista de Clientes', route: '/admin/customers', icon: 'users' },
-        { label: 'Segmentos', route: '/admin/segments', icon: 'user-group' }
-      ]
-    },
-    {
-      title: 'Empresas',
-      items: [
-        { label: 'Gestión de Empresas', route: '/admin/companies', icon: 'building' },
-        { label: 'Configuración', route: '/admin/company-settings', icon: 'settings' }
-      ]
-    },
-    {
-      title: 'Reportes',
-      items: [
-        { label: 'Reporte de Ventas', route: '/admin/reports/sales', icon: 'chart-bar' },
-        { label: 'Reporte de Inventario', route: '/admin/reports/inventory', icon: 'document' },
-        { label: 'Reporte de Clientes', route: '/admin/reports/customers', icon: 'user-chart' }
-      ]
+  private readonly authService = inject(AuthService);
+
+  readonly activeNavGroups = computed(() => {
+    const modules = this.authService.enabledModules();
+    // Backward compatibility: if no modules configured, show all groups
+    if (modules.length === 0) {
+      return ALL_NAV_GROUPS;
     }
-  ];
+    return ALL_NAV_GROUPS.filter(group =>
+      group.moduleCode === null || modules.includes(group.moduleCode)
+    );
+  });
+
+  // Keep navGroups for backward compatibility with any template references
+  get navGroups(): NavGroup[] {
+    return this.activeNavGroups();
+  }
 
   getIconPath(icon: string): string {
     const icons: Record<string, string> = {
@@ -136,7 +208,8 @@ export class AdminSidebarComponent {
       'sliders': 'M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4',
       'chart-bar': 'M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
       'file': 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
-      'user-chart': 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z'
+      'user-chart': 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z',
+      'list': 'M4 6h16M4 10h16M4 14h16M4 18h16'
     };
     return icons[icon] || icons['chart'];
   }
