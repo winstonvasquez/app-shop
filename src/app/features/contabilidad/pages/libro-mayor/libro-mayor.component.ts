@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { AsientoService } from '../../services/asiento.service';
 import { CuentaService, CuentaContable } from '../../services/cuenta.service';
 import { PeriodoService, PeriodoContable } from '../../services/periodo.service';
+import { PaginationComponent, PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
 
 interface MayorMovimiento {
     fecha: string;
@@ -18,7 +19,7 @@ interface MayorMovimiento {
     selector: 'app-libro-mayor',
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [DatePipe, DecimalPipe, FormsModule],
+    imports: [DatePipe, DecimalPipe, FormsModule, PaginationComponent],
     templateUrl: './libro-mayor.component.html'
 })
 export class LibroMayorComponent implements OnInit {
@@ -34,6 +35,14 @@ export class LibroMayorComponent implements OnInit {
     movimientos = signal<MayorMovimiento[]>([]);
     cargando = signal(false);
     error = signal<string | null>(null);
+
+    readonly currentPage = signal(0);
+    readonly pageSize = signal(20);
+    readonly movimientosPaginados = computed(() => {
+        const inicio = this.currentPage() * this.pageSize();
+        return this.movimientos().slice(inicio, inicio + this.pageSize());
+    });
+    readonly totalPagesLocal = computed(() => Math.ceil(this.movimientos().length / this.pageSize()) || 1);
 
     readonly totalDebe = computed(() => this.movimientos().reduce((s, m) => s + m.debe, 0));
     readonly totalHaber = computed(() => this.movimientos().reduce((s, m) => s + m.haber, 0));
@@ -64,10 +73,16 @@ export class LibroMayorComponent implements OnInit {
         this.movimientos.set([]);
     }
 
+    onPageChange(event: PaginationChangeEvent) {
+        this.currentPage.set(event.page);
+        this.pageSize.set(event.size);
+    }
+
     cargarMayor() {
         const periodoId = this.periodoSeleccionado();
         const cuentaId = this.cuentaSeleccionada();
         if (!periodoId || !cuentaId) return;
+        this.currentPage.set(0);
         this.cargando.set(true);
         this.error.set(null);
         this.asientoService.obtenerLibroMayor(periodoId, cuentaId).subscribe({

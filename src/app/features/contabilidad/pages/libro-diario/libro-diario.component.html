@@ -24,9 +24,9 @@
                 }
             </select>
             <input type="date" class="input-field" style="width:160px"
-                   [(ngModel)]="fechaDesde" />
+                   [value]="fechaDesde()" (input)="fechaDesde.set($any($event.target).value)" />
             <input type="date" class="input-field" style="width:160px"
-                   [(ngModel)]="fechaHasta" />
+                   [value]="fechaHasta()" (input)="fechaHasta.set($any($event.target).value)" />
             <button class="btn btn-primary" (click)="cargarLibro()">Consultar</button>
         </div>
     </div>
@@ -53,7 +53,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @for (linea of lineas(); track $index) {
+                    @for (linea of lineasPaginadas(); track $index) {
                         <tr class="table-row">
                             <td class="table-cell font-mono">{{ linea.fecha | date:'dd/MM/yyyy' }}</td>
                             <td class="table-cell font-mono font-bold">{{ linea.codigoAsiento }}</td>
@@ -71,7 +71,7 @@
                         </tr>
                     } @empty {
                         <tr>
-                            <td colspan="6" class="table-cell text-center text-sm" style="color:var(--color-text-muted)">
+                            <td colspan="6" class="table-cell text-center text-sm text-[var(--color-text-muted)]">
                                 @if (periodoSeleccionado()) {
                                     No hay movimientos en este periodo
                                 } @else {
@@ -83,7 +83,7 @@
                 </tbody>
                 @if (lineas().length > 0) {
                     <tfoot>
-                        <tr style="background:var(--color-surface-raised);font-weight:bold">
+                        <tr class="bg-[var(--color-surface-raised)] font-bold">
                             <td colspan="4" class="table-cell text-right">TOTALES</td>
                             <td class="table-cell text-right font-mono">{{ totalDebe() | number:'1.2-2' }}</td>
                             <td class="table-cell text-right font-mono">{{ totalHaber() | number:'1.2-2' }}</td>
@@ -100,6 +100,15 @@
                     </tfoot>
                 }
             </table>
+        </div>
+        <div class="mt-4">
+            <app-pagination
+                [currentPage]="currentPage()"
+                [totalPages]="totalPagesLocal()"
+                [totalElements]="lineas().length"
+                [pageSize]="pageSize()"
+                (pageChange)="onPageChange($event)">
+            </app-pagination>
         </div>
     }
 </div>

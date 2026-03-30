@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { AsientoService } from '../../services/asiento.service';
 import { PeriodoService, PeriodoContable } from '../../services/periodo.service';
 import { ExportService } from '@shared/services/export.service';
+import { PaginationComponent, PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
 
 interface LibroDiarioLinea {
     fecha: string;
@@ -19,7 +20,7 @@ interface LibroDiarioLinea {
     selector: 'app-libro-diario',
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [DatePipe, DecimalPipe, FormsModule],
+    imports: [DatePipe, DecimalPipe, FormsModule, PaginationComponent],
     templateUrl: './libro-diario.component.html'
 })
 export class LibroDiarioComponent implements OnInit {
@@ -32,8 +33,16 @@ export class LibroDiarioComponent implements OnInit {
     lineas = signal<LibroDiarioLinea[]>([]);
     cargando = signal(false);
     error = signal<string | null>(null);
-    fechaDesde = '';
-    fechaHasta = '';
+    readonly fechaDesde = signal('');
+    readonly fechaHasta = signal('');
+
+    readonly currentPage = signal(0);
+    readonly pageSize = signal(20);
+    readonly lineasPaginadas = computed(() => {
+        const inicio = this.currentPage() * this.pageSize();
+        return this.lineas().slice(inicio, inicio + this.pageSize());
+    });
+    readonly totalPagesLocal = computed(() => Math.ceil(this.lineas().length / this.pageSize()) || 1);
 
     readonly totalDebe = computed(() => this.lineas().reduce((s, l) => s + l.debe, 0));
     readonly totalHaber = computed(() => this.lineas().reduce((s, l) => s + l.haber, 0));
@@ -63,12 +72,18 @@ export class LibroDiarioComponent implements OnInit {
         else this.lineas.set([]);
     }
 
+    onPageChange(event: PaginationChangeEvent) {
+        this.currentPage.set(event.page);
+        this.pageSize.set(event.size);
+    }
+
     cargarLibro() {
         const periodoId = this.periodoSeleccionado();
         if (!periodoId) return;
+        this.currentPage.set(0);
         this.cargando.set(true);
         this.error.set(null);
-        this.asientoService.obtenerLibroDiario(periodoId, this.fechaDesde, this.fechaHasta).subscribe({
+        this.asientoService.obtenerLibroDiario(periodoId, this.fechaDesde(), this.fechaHasta()).subscribe({
             next: (data: unknown) => {
                 const lista = Array.isArray(data) ? data as LibroDiarioLinea[] : [];
                 this.lineas.set(lista);

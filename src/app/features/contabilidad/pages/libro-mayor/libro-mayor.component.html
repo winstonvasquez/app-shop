@@ -80,7 +80,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @for (m of movimientos(); track $index) {
+                    @for (m of movimientosPaginados(); track $index) {
                         <tr class="table-row">
                             <td class="table-cell font-mono">{{ m.fecha | date:'dd/MM/yyyy' }}</td>
                             <td class="table-cell font-mono font-bold">{{ m.codigoAsiento }}</td>
@@ -98,7 +98,7 @@
                         </tr>
                     } @empty {
                         <tr>
-                            <td colspan="6" class="table-cell text-center text-sm" style="color:var(--color-text-muted)">
+                            <td colspan="6" class="table-cell text-center text-sm text-[var(--color-text-muted)]">
                                 @if (cuentaSeleccionada() && periodoSeleccionado()) {
                                     No hay movimientos para esta cuenta en el periodo
                                 } @else {
@@ -109,6 +109,15 @@
                     }
                 </tbody>
             </table>
+            <div class="mt-4">
+                <app-pagination
+                    [currentPage]="currentPage()"
+                    [totalPages]="totalPagesLocal()"
+                    [totalElements]="movimientos().length"
+                    [pageSize]="pageSize()"
+                    (pageChange)="onPageChange($event)">
+                </app-pagination>
+            </div>
         }
     </div>
 </div>
