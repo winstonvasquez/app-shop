@@ -1,174 +1,168 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import {
+    ChangeDetectionStrategy, Component, inject, signal, OnInit
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule, Validators, FormGroup, FormControl } from '@angular/forms';
 import { InventoryApiService } from '../../services/inventory-api.service';
 import { Location, Warehouse } from '../../models/inventory.models';
+import { DataTableComponent, TableColumn, TableAction, PaginationEvent } from '@shared/ui/tables/data-table/data-table.component';
+import { DrawerComponent } from '@shared/components/drawer/drawer.component';
+import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
+import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
+import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
 
 @Component({
     selector: 'app-location-management',
     standalone: true,
-    imports: [CommonModule, ReactiveFormsModule],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    template: `
-        <section class="space-y-6">
-            <header>
-                <h1 class="text-2xl font-bold text-on">Ubicaciones</h1>
-                <p class="text-sm text-subtle">Organiza ubicaciones físicas dentro de cada almacén.</p>
-            </header>
-
-            <div class="rounded-xl border border-border-subtle bg-surface p-5 shadow-sm space-y-4">
-                <div>
-                    <label class="text-xs font-semibold uppercase text-subtle">Almacén</label>
-                    <select class="mt-2 w-full rounded-lg border border-border px-3 py-2 text-sm" (change)="onWarehouseSelectChange($event)">
-                        <option value="">Selecciona un almacén</option>
-                        @for (warehouse of warehouses(); track warehouse.id) {
-                            <option [value]="warehouse.id">{{ warehouse.name }}</option>
-                        }
-                    </select>
-                </div>
-
-                <form class="grid gap-4 md:grid-cols-2" [formGroup]="locationForm" (ngSubmit)="onSubmit()">
-                    <div>
-                        <label class="text-xs font-semibold uppercase text-subtle">Código</label>
-                        <input class="mt-2 w-full rounded-lg border border-border px-3 py-2 text-sm" formControlName="code" placeholder="UBI-001">
-                    </div>
-                    <div>
-                        <label class="text-xs font-semibold uppercase text-subtle">Nombre</label>
-                        <input class="mt-2 w-full rounded-lg border border-border px-3 py-2 text-sm" formControlName="name" placeholder="Zona A">
-                    </div>
-                    <div>
-                        <label class="text-xs font-semibold uppercase text-subtle">Descripción</label>
-                        <input class="mt-2 w-full rounded-lg border border-border px-3 py-2 text-sm" formControlName="description" placeholder="Opcional">
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <input type="checkbox" class="h-4 w-4" formControlName="active">
-                        <span class="text-sm text-muted">Activo</span>
-                    </div>
-                    <div class="flex items-center justify-end md:col-span-2">
-                        <button type="submit" class="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90" [disabled]="locationForm.invalid || submitting() || !selectedWarehouseId()">
-                            {{ submitting() ? 'Guardando...' : 'Crear ubicación' }}
-                        </button>
-                    </div>
-                </form>
-            </div>
-
-            @if (error()) {
-                <div class="rounded-lg border border-red-200 bg-error/10 p-4 text-sm text-error-hover">{{ error() }}</div>
-            }
-
-            <div class="rounded-xl border border-border-subtle bg-surface p-5 shadow-sm">
-                <div class="flex items-center justify-between">
-                    <h2 class="text-sm font-semibold text-on">Ubicaciones registradas</h2>
-                    <span class="text-xs text-subtle">{{ locations().length }} ubicaciones</span>
-                </div>
-                <div class="mt-4 overflow-x-auto">
-                    <table class="min-w-full text-sm">
-                        <thead class="text-left text-xs uppercase text-gray-400">
-                            <tr>
-                                <th class="py-2">Código</th>
-                                <th class="py-2">Nombre</th>
-                                <th class="py-2">Estado</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-border-subtle">
-                            @for (location of locations(); track location.id) {
-                                <tr>
-                                    <td class="py-3 font-medium text-on">{{ location.code }}</td>
-                                    <td class="py-3 text-muted">{{ location.name || '-' }}</td>
-                                    <td class="py-3">
-                                        <span class="rounded-full px-2 py-1 text-xs" [class.bg-success/10]="location.active" [class.text-success-hover]="location.active" [class.bg-surface-sunken]="!location.active" [class.text-subtle]="!location.active">
-                                            {{ location.active ? 'Activo' : 'Inactivo' }}
-                                        </span>
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </section>
-    `
+    imports: [
+        CommonModule, ReactiveFormsModule,
+        DataTableComponent, DrawerComponent,
+        PageHeaderComponent, AlertComponent, FormFieldComponent
+    ],
+    templateUrl: './location-management.component.html',
+    styleUrl: './location-management.component.scss'
 })
-export class LocationManagementComponent {
+export class LocationManagementComponent implements OnInit {
     private readonly api = inject(InventoryApiService);
     private readonly fb = inject(FormBuilder);
 
     warehouses = signal<Warehouse[]>([]);
     locations = signal<Location[]>([]);
-    selectedWarehouseId = signal<number | null>(null);
-    submitting = signal(false);
+    loading = signal(false);
     error = signal<string | null>(null);
+    selectedWarehouseId = signal<number | null>(null);
 
-    locationForm = this.fb.nonNullable.group({
-        code: ['', [Validators.required, Validators.maxLength(20)]],
-        name: ['', [Validators.required, Validators.maxLength(200)]],
-        description: [''],
-        active: true
+    currentPage = signal(0);
+    pageSize = signal(10);
+    totalElements = signal(0);
+    totalPages = signal(0);
+
+    showDrawer = signal(false);
+    editMode = signal(false);
+    selectedId = signal<number | null>(null);
+    submitting = signal(false);
+    submitError = signal<string | null>(null);
+
+    breadcrumbs: Breadcrumb[] = [
+        { label: 'Admin', url: '/admin' },
+        { label: 'Inventario', url: '/admin/inventario/dashboard' },
+        { label: 'Ubicaciones' }
+    ];
+
+    columns: TableColumn<Location>[] = [
+        { key: 'code',  label: 'Código',   sortable: true, width: '110px' },
+        { key: 'name',  label: 'Nombre',   sortable: true, render: (r) => r.name ?? '—' },
+        { key: 'aisle', label: 'Pasillo',  render: (r) => r.aisle ?? '—' },
+        { key: 'rack',  label: 'Estante',  render: (r) => r.rack  ?? '—' },
+        { key: 'shelf', label: 'Nivel',    render: (r) => r.shelf ?? '—' },
+        { key: 'bin',   label: 'Posición', render: (r) => r.bin   ?? '—' },
+        {
+            key: 'active', label: 'Estado', html: true,
+            render: (r) => r.active
+                ? '<span class="badge badge-success">Activo</span>'
+                : '<span class="badge badge-error">Inactivo</span>'
+        }
+    ];
+
+    actions: TableAction<Location>[] = [
+        { label: 'Editar',   icon: 'edit',  class: 'btn-icon-edit',   onClick: (r) => this.openEdit(r) },
+        { label: 'Eliminar', icon: 'trash', class: 'btn-icon-delete', onClick: (r) => this.onDelete(r.id) }
+    ];
+
+    form: FormGroup = this.fb.nonNullable.group({
+        warehouseId:  [null as number | null, Validators.required],
+        code:         ['', [Validators.required, Validators.maxLength(20)]],
+        name:         ['', Validators.maxLength(200)],
+        description:  [''],
+        aisle:        [''],
+        rack:         [''],
+        shelf:        [''],
+        bin:          [''],
+        locationType: [''],
+        capacity:     [null as number | null],
+        active:       [true]
     });
 
-    constructor() {
+    ngOnInit(): void {
         this.loadWarehouses();
     }
 
     loadWarehouses(): void {
         this.api.getWarehouses().subscribe({
-            next: (response) => this.warehouses.set(response),
+            next: (data) => this.warehouses.set(data),
             error: (err: Error) => this.error.set(err.message)
         });
     }
 
-    onWarehouseChange(warehouseId: string): void {
-        this.selectedWarehouseId.set(warehouseId ? Number(warehouseId) : null);
-        this.loadLocations();
+    onWarehouseChange(event: Event): void {
+        const id = Number((event.target as HTMLSelectElement).value);
+        this.selectedWarehouseId.set(id || null);
+        if (id) this.loadLocations(id);
+        else { this.locations.set([]); this.totalElements.set(0); this.totalPages.set(0); }
     }
 
-    onWarehouseSelectChange(event: Event): void {
-        const value = (event.target as HTMLSelectElement).value;
-        this.onWarehouseChange(value);
-    }
-
-    loadLocations(): void {
-        const warehouseId = this.selectedWarehouseId();
-        if (warehouseId) {
-            this.api.getLocationsByWarehouse(warehouseId).subscribe({
-                next: (response) => this.locations.set(response),
-                error: (err: Error) => this.error.set(err.message)
-            });
-        } else {
-            this.locations.set([]);
-        }
-    }
-
-    onSubmit(): void {
-        if (!this.selectedWarehouseId()) {
-            return;
-        }
-
-        if (this.locationForm.invalid) {
-            this.locationForm.markAllAsTouched();
-            return;
-        }
-
-        this.submitting.set(true);
-        this.error.set(null);
-        const payload = {
-            warehouseId: this.selectedWarehouseId() ?? 0,
-            code: this.locationForm.value.code ?? '',
-            name: this.locationForm.value.name ?? '',
-            description: this.locationForm.value.description ?? '',
-            active: this.locationForm.value.active ?? true
-        };
-
-        this.api.createLocation(payload).subscribe({
-            next: () => {
-                this.submitting.set(false);
-                this.locationForm.reset({ active: true });
-                this.onWarehouseChange(String(this.selectedWarehouseId()));
+    loadLocations(warehouseId: number): void {
+        this.loading.set(true);
+        this.api.getLocationsByWarehouse(warehouseId).subscribe({
+            next: (data) => {
+                this.locations.set(data);
+                this.totalElements.set(data.length);
+                this.totalPages.set(Math.ceil(data.length / this.pageSize()) || 1);
+                this.loading.set(false);
             },
-            error: (err: Error) => {
-                this.submitting.set(false);
-                this.error.set(err.message);
-            }
+            error: (err: Error) => { this.error.set(err.message); this.loading.set(false); }
         });
     }
+
+    openCreate(): void {
+        this.editMode.set(false);
+        this.selectedId.set(null);
+        this.form.reset({ active: true, warehouseId: this.selectedWarehouseId() });
+        this.submitError.set(null);
+        this.showDrawer.set(true);
+    }
+
+    openEdit(loc: Location): void {
+        this.editMode.set(true);
+        this.selectedId.set(loc.id);
+        this.form.patchValue({ ...loc });
+        this.submitError.set(null);
+        this.showDrawer.set(true);
+    }
+
+    closeDrawer(): void { this.showDrawer.set(false); }
+
+    onSubmit(): void {
+        if (this.form.invalid) { this.form.markAllAsTouched(); return; }
+        this.submitting.set(true);
+        const v = this.form.getRawValue();
+        const payload = { ...v, warehouseId: Number(v.warehouseId) };
+        const op = this.editMode()
+            ? this.api.updateLocation(this.selectedId()!, payload)
+            : this.api.createLocation(payload);
+        op.subscribe({
+            next: () => {
+                this.submitting.set(false);
+                this.closeDrawer();
+                if (this.selectedWarehouseId()) this.loadLocations(this.selectedWarehouseId()!);
+            },
+            error: (err: Error) => { this.submitting.set(false); this.submitError.set(err.message); }
+        });
+    }
+
+    onDelete(id: number): void {
+        if (!confirm('¿Eliminar esta ubicación?')) return;
+        this.api.deleteLocation(id).subscribe({
+            next: () => { if (this.selectedWarehouseId()) this.loadLocations(this.selectedWarehouseId()!); },
+            error: (err: Error) => this.error.set(err.message)
+        });
+    }
+
+    onPageChange(e: PaginationEvent): void {
+        this.currentPage.set(e.page);
+        this.pageSize.set(e.size);
+    }
+
+    getCtrl(name: string): FormControl { return this.form.get(name) as FormControl; }
 }

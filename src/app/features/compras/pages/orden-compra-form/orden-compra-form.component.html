@@ -1,0 +1,159 @@
+<app-page-header
+    [title]="editMode() ? 'Editar Orden de Compra' : 'Nueva Orden de Compra'"
+    [breadcrumbs]="breadcrumbs"
+/>
+
+<div class="page-container">
+    @if (loading()) {
+        <app-loading-spinner />
+    } @else {
+        @if (error()) {
+            <app-alert type="error" [message]="error()!" />
+        }
+
+        <form [formGroup]="ocForm" (ngSubmit)="onSubmit()" novalidate>
+
+            @if (submitError()) {
+                <app-alert type="error" [message]="submitError()!" class="mb-4" />
+            }
+
+            <!-- Datos generales -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h3 class="card-title">Datos Generales</h3>
+                </div>
+                <div class="card-body">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <app-form-field label="Proveedor" [required]="true" [control]="getControl('proveedorId')">
+                            <select class="input-field" formControlName="proveedorId">
+                                <option value="">Seleccionar proveedor...</option>
+                                @for (p of proveedores(); track p.id) {
+                                    <option [value]="p.id">{{ p.razonSocial }} ({{ p.ruc }})</option>
+                                }
+                            </select>
+                        </app-form-field>
+
+                        <app-form-field label="Condición de Pago" [required]="true" [control]="getControl('condicionPago')">
+                            <select class="input-field" formControlName="condicionPago">
+                                @for (opt of condicionPagoOptions; track opt.value) {
+                                    <option [value]="opt.value">{{ opt.label }}</option>
+                                }
+                            </select>
+                        </app-form-field>
+
+                        <app-form-field label="Fecha de Emisión" [required]="true" [control]="getControl('fechaEmision')">
+                            <input class="input-field" type="date" formControlName="fechaEmision" />
+                        </app-form-field>
+
+                        <app-form-field label="Fecha Entrega Estimada" [control]="getControl('fechaEntregaEstimada')">
+                            <input class="input-field" type="date" formControlName="fechaEntregaEstimada" />
+                        </app-form-field>
+
+                        <app-form-field label="Almacén Destino" [required]="true" [control]="getControl('almacenDestino')">
+                            <select class="input-field" formControlName="almacenDestino">
+                                @for (opt of almacenOptions; track opt.value) {
+                                    <option [value]="opt.value">{{ opt.label }}</option>
+                                }
+                            </select>
+                        </app-form-field>
+
+                        <app-form-field label="Observaciones" [control]="getControl('observaciones')" class="md:col-span-2">
+                            <textarea class="input-field" formControlName="observaciones" rows="2"></textarea>
+                        </app-form-field>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Productos -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h3 class="card-title">Productos</h3>
+                    <button type="button" class="btn btn-secondary" (click)="addItem()">+ Agregar</button>
+                </div>
+                <div class="card-body">
+                    <table class="table w-full">
+                        <thead>
+                            <tr>
+                                <th class="table-header-cell">Producto</th>
+                                <th class="table-header-cell">SKU</th>
+                                <th class="table-header-cell text-right">Cantidad</th>
+                                <th class="table-header-cell text-right">Precio Unit.</th>
+                                <th class="table-header-cell text-right">Subtotal</th>
+                                <th class="table-header-cell w-12"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (item of formItems(); track $index) {
+                                <tr class="table-row">
+                                    <td class="table-cell">
+                                        <input class="input-field"
+                                            [value]="item.productoNombre"
+                                            (input)="updateItem($index, 'productoNombre', $any($event.target).value)"
+                                            placeholder="Nombre del producto" />
+                                    </td>
+                                    <td class="table-cell">
+                                        <input class="input-field"
+                                            [value]="item.sku"
+                                            (input)="updateItem($index, 'sku', $any($event.target).value)"
+                                            placeholder="SKU" />
+                                    </td>
+                                    <td class="table-cell text-right">
+                                        <input class="input-field text-right w-24"
+                                            type="number" min="1"
+                                            [value]="item.cantidad"
+                                            (input)="updateItem($index, 'cantidad', +$any($event.target).value)" />
+                                    </td>
+                                    <td class="table-cell text-right">
+                                        <input class="input-field text-right w-28"
+                                            type="number" min="0" step="0.01"
+                                            [value]="item.precioUnitario"
+                                            (input)="updateItem($index, 'precioUnitario', +$any($event.target).value)" />
+                                    </td>
+                                    <td class="table-cell text-right font-mono">
+                                        S/ {{ (item.cantidad * item.precioUnitario) | number: '1.2-2' }}
+                                    </td>
+                                    <td class="table-cell">
+                                        <button type="button" class="btn-icon btn-icon-delete"
+                                            (click)="removeItem($index)"
+                                            [disabled]="formItems().length === 1">✕</button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+
+                    <!-- Totales -->
+                    <div class="flex justify-end mt-4">
+                        <div class="w-64 space-y-1 text-sm">
+                            <div class="flex justify-between">
+                                <span class="text-subtle">Subtotal</span>
+                                <span class="font-mono">S/ {{ totales().subtotal | number: '1.2-2' }}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-subtle">IGV (18%)</span>
+                                <span class="font-mono">S/ {{ totales().igv | number: '1.2-2' }}</span>
+                            </div>
+                            <div class="flex justify-between font-semibold border-t border-[var(--color-border)] pt-1">
+                                <span>Total</span>
+                                <span class="font-mono">S/ {{ totales().total | number: '1.2-2' }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex gap-3 justify-end">
+                <button type="button" class="btn btn-secondary" (click)="onCancel()" [disabled]="submitting()">
+                    Cancelar
+                </button>
+                <button type="submit" class="btn btn-primary" [disabled]="submitting()">
+                    @if (submitting()) {
+                        Guardando...
+                    } @else {
+                        {{ editMode() ? 'Actualizar Orden' : 'Crear Orden' }}
+                    }
+                </button>
+            </div>
+        </form>
+    }
+</div>

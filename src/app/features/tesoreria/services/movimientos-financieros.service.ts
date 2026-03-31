@@ -3,7 +3,18 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { AuthService } from '../../../core/auth/auth.service';
-import { FinancialMovement } from '../models/tesoreria.model';
+import { FinancialMovement, Page } from '../models/tesoreria.model';
+
+export interface FinancialMovementRequest {
+    tenantId: number;
+    tipoMovimiento: string;
+    origen: string;
+    monto: number;
+    moneda: string;
+    fecha: string;
+    descripcion: string;
+    cajaId?: number;
+}
 
 @Injectable({
     providedIn: 'root'
@@ -17,7 +28,7 @@ export class MovimientosFinancierosService {
         return String(this.auth.currentUser()?.activeCompanyId ?? 1);
     }
 
-    getAll(fechaInicio?: string, fechaFin?: string, page: number = 0, size: number = 20): Observable<any> {
+    getAll(fechaInicio?: string, fechaFin?: string, page: number = 0, size: number = 20): Observable<Page<FinancialMovement> | FinancialMovement[]> {
         let params = new HttpParams()
             .set('tenantId', this.tenantId)
             .set('page', page.toString())
@@ -26,7 +37,7 @@ export class MovimientosFinancierosService {
         if (fechaInicio) params = params.set('fechaInicio', fechaInicio);
         if (fechaFin) params = params.set('fechaFin', fechaFin);
 
-        return this.http.get<any>(this.apiUrl, { params });
+        return this.http.get<Page<FinancialMovement> | FinancialMovement[]>(this.apiUrl, { params });
     }
 
     getFlujoCaja(fechaInicio: string, fechaFin: string): Observable<number> {
@@ -37,7 +48,7 @@ export class MovimientosFinancierosService {
         return this.http.get<number>(`${this.apiUrl}/flujo-caja`, { params });
     }
 
-    registerMovement(movement: any): Observable<FinancialMovement> {
+    registerMovement(movement: FinancialMovementRequest): Observable<FinancialMovement> {
         return this.http.post<FinancialMovement>(this.apiUrl, movement);
     }
 }

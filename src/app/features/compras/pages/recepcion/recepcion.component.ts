@@ -35,6 +35,7 @@ export class RecepcionComponent implements OnInit {
     cargando = signal(false);
     loadingDetail = signal(false);
     error = signal<string | null>(null);
+    detailError = signal<string | null>(null);
 
     estadoFiltro = signal('');
     showDetail = signal(false);
@@ -132,15 +133,15 @@ export class RecepcionComponent implements OnInit {
         this.loadingDetail.set(true);
         this.showDetail.set(true);
         this.selectedRecepcion.set(null);
+        this.detailError.set(null);
         this.recepcionService.getRecepcionById(id).subscribe({
             next: (rec) => {
                 this.selectedRecepcion.set(rec);
                 this.loadingDetail.set(false);
             },
             error: (err: Error) => {
-                this.error.set(err.message);
+                this.detailError.set(err.message ?? 'Error al cargar el detalle.');
                 this.loadingDetail.set(false);
-                this.showDetail.set(false);
             }
         });
     }
@@ -148,6 +149,7 @@ export class RecepcionComponent implements OnInit {
     closeDetail(): void {
         this.showDetail.set(false);
         this.selectedRecepcion.set(null);
+        this.detailError.set(null);
     }
 
     confirmarRecepcion(): void {

@@ -1,0 +1,118 @@
+<app-page-header
+    title="Detalle de Recepción"
+    [breadcrumbs]="breadcrumbs"
+/>
+
+<div class="page-container">
+    @if (loading()) {
+        <app-loading-spinner />
+    } @else if (error()) {
+        <app-alert type="error" [message]="error()!" />
+    } @else if (recepcion(); as rec) {
+
+        @if (confirmError()) {
+            <app-alert type="error" [message]="confirmError()!" class="mb-4" />
+        }
+
+        <!-- Header card -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <div>
+                    <h3 class="card-title">
+                        REC-{{ (rec.id ?? '').slice(0, 8).toUpperCase() }}
+                    </h3>
+                    <p class="text-subtle text-sm mt-1">OC Ref: {{ rec.ordenCompraCodigo ?? '—' }}</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span class="badge badge-{{ badgeEstado(rec.estado) }}">{{ rec.estado }}</span>
+                    @if (rec.estado === 'PENDIENTE') {
+                        <button class="btn btn-primary" (click)="confirmarRecepcion()" [disabled]="confirming()">
+                            {{ confirming() ? 'Confirmando...' : 'Confirmar Recepción' }}
+                        </button>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Info general -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h3 class="card-title">Información General</h3>
+            </div>
+            <div class="card-body">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div>
+                        <p class="input-label">Fecha Recepción</p>
+                        <p>{{ rec.fechaRecepcion ? (rec.fechaRecepcion | date: 'dd/MM/yyyy') : '—' }}</p>
+                    </div>
+                    <div>
+                        <p class="input-label">N° Guía</p>
+                        <p>{{ rec.numeroGuia ?? '—' }}</p>
+                    </div>
+                    <div>
+                        <p class="input-label">Transportista</p>
+                        <p>{{ rec.transportista ?? '—' }}</p>
+                    </div>
+                    <div>
+                        <p class="input-label">Almacén Destino</p>
+                        <p>{{ rec.almacenDestino }}</p>
+                    </div>
+                    <div>
+                        <p class="input-label">Responsable</p>
+                        <p>{{ rec.responsable ?? '—' }}</p>
+                    </div>
+                    @if (rec.observaciones) {
+                        <div class="col-span-2 md:col-span-3">
+                            <p class="input-label">Observaciones</p>
+                            <p>{{ rec.observaciones }}</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Items -->
+        @if (rec.items && rec.items.length > 0) {
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h3 class="card-title">Ítems Recibidos</h3>
+                </div>
+                <div class="card-body p-0">
+                    <table class="table w-full">
+                        <thead>
+                            <tr>
+                                <th class="table-header-cell">Producto</th>
+                                <th class="table-header-cell text-right">Cant. Pedida</th>
+                                <th class="table-header-cell text-right">Cant. Recibida</th>
+                                <th class="table-header-cell text-right">Diferencia</th>
+                                <th class="table-header-cell">Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (item of rec.items; track item.id) {
+                                <tr class="table-row">
+                                    <td class="table-cell">{{ item.productoNombre ?? '—' }}</td>
+                                    <td class="table-cell text-right font-mono">{{ item.cantidadPedida }}</td>
+                                    <td class="table-cell text-right font-mono">{{ item.cantidadRecibida }}</td>
+                                    <td class="table-cell text-right font-mono"
+                                        [class.text-error]="item.diferencia !== 0">
+                                        {{ item.diferencia > 0 ? '+' : '' }}{{ item.diferencia }}
+                                    </td>
+                                    <td class="table-cell">
+                                        <span class="badge badge-{{ badgeEstado(item.estado) }}">{{ item.estado }}</span>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
+
+        <div class="flex justify-end">
+            <button type="button" class="btn btn-secondary" (click)="onVolver()">
+                ← Volver a Recepciones
+            </button>
+        </div>
+    }
+</div>

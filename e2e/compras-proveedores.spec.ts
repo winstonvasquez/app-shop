@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { loginAs } from './helpers/auth.helper';
+import { loginAsAdmin } from './helpers/auth.helper';
 
 /**
  * Compras — Proveedores
@@ -11,7 +11,7 @@ import { loginAs } from './helpers/auth.helper';
 test.describe('Compras — Proveedores', () => {
 
     test.beforeEach(async ({ page }) => {
-        await loginAs(page);
+        await loginAsAdmin(page);
     });
 
     test('CP-1 — Página carga con PageHeader correcto', async ({ page }) => {

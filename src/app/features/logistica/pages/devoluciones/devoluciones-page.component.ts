@@ -7,7 +7,6 @@ import { AuthService } from '../../../../core/auth/auth.service';
 import { DataTableComponent, TableColumn, TableAction } from '@shared/ui/tables/data-table/data-table.component';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
-import { LoadingSpinnerComponent } from '@shared/ui/feedback/loading-spinner/loading-spinner.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
 
@@ -30,7 +29,6 @@ const STATUS_LABELS: Record<DevolucionStatus, string> = {
         DataTableComponent,
         DrawerComponent,
         AlertComponent,
-        LoadingSpinnerComponent,
         PageHeaderComponent
     ],
     templateUrl: './devoluciones-page.component.html'

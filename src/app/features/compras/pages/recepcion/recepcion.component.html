@@ -72,6 +72,8 @@
 
         @if (loadingDetail()) {
             <app-loading-spinner size="md" message="Cargando detalle..."></app-loading-spinner>
+        } @else if (detailError()) {
+            <app-alert type="error" [message]="detailError()!" [dismissible]="true" (dismiss)="detailError.set(null)"></app-alert>
         } @else if (selectedRecepcion()) {
             <!-- Info cards -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-md mb-xl">

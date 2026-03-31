@@ -1,5 +1,5 @@
 import { test, expect, Page } from '@playwright/test';
-import { loginAs } from './helpers/auth.helper';
+import { loginAsAdmin } from './helpers/auth.helper';
 
 /**
  * FLUJO LOGÍSTICA — Tests completos del módulo
@@ -13,18 +13,12 @@ import { loginAs } from './helpers/auth.helper';
 // ──────────────────────────────────────────────────────────
 
 async function waitForPageReady(page: Page) {
-    await page.waitForLoadState('networkidle');
-    // Esperar que posibles spinners desaparezcan
-    const spinner = page.locator('.spinner, .loading-container, [class*="spinner"]');
-    if (await spinner.count() > 0) {
-        await expect(spinner.first()).toBeHidden({ timeout: 10_000 });
-    }
+    await page.waitForLoadState('domcontentloaded');
+    await expect(page.locator('app-page-header, .page-container, .page-header')).toBeVisible({ timeout: 15_000 });
 }
 
 async function expectDrawerOpen(page: Page) {
-    // El drawer se abre desde la derecha — buscar overlay o panel con clase drawer
-    const drawer = page.locator('.drawer, [class*="drawer-right"]');
-    await expect(drawer.first()).toBeVisible({ timeout: 5_000 });
+    await expect(page.locator('.drawer-overlay')).toBeVisible({ timeout: 5_000 });
 }
 
 // ──────────────────────────────────────────────────────────
@@ -33,7 +27,7 @@ async function expectDrawerOpen(page: Page) {
 
 test.describe('Logística — Navegación de Menú', () => {
     test.beforeEach(async ({ page }) => {
-        await loginAs(page);
+        await loginAsAdmin(page);
     });
 
     test('L0.1 — Dashboard de logística carga sin errores', async ({ page }) => {
@@ -81,8 +75,6 @@ test.describe('Logística — Navegación de Menú', () => {
         await waitForPageReady(page);
         await expect(page.locator('body')).toBeVisible();
         // No debe ser 404 ni blank
-        const errorPage = page.locator('text=/404|not found|error/i').first();
-        // Si hay texto de error de ruta, el test falla
         const notFound = await page.locator('text=404').count();
         expect(notFound).toBe(0);
     });
@@ -117,7 +109,7 @@ test.describe('Logística — Navegación de Menú', () => {
 
 test.describe('Logística — Almacenes', () => {
     test.beforeEach(async ({ page }) => {
-        await loginAs(page);
+        await loginAsAdmin(page);
         await page.goto('/logistica/almacenes');
         await waitForPageReady(page);
     });
@@ -155,8 +147,7 @@ test.describe('Logística — Almacenes', () => {
         await page.getByRole('button', { name: /nuevo almac/i }).click();
         await expectDrawerOpen(page);
         await page.getByRole('button', { name: /cancelar/i }).click();
-        const drawer = page.locator('.drawer-overlay, [class*="drawer"]');
-        await expect(drawer.first()).toBeHidden({ timeout: 3_000 });
+        await expect(page.locator('.drawer-overlay')).toBeHidden({ timeout: 3_000 });
     });
 
     test('L1.6 — Tabla tiene columnas: Código, Nombre, Estado', async ({ page }) => {
@@ -175,7 +166,7 @@ test.describe('Logística — Almacenes', () => {
 
 test.describe('Logística — Inventario', () => {
     test.beforeEach(async ({ page }) => {
-        await loginAs(page);
+        await loginAsAdmin(page);
         await page.goto('/logistica/inventario');
         await waitForPageReady(page);
     });
@@ -206,7 +197,7 @@ test.describe('Logística — Inventario', () => {
 
 test.describe('Logística — Movimientos de Stock', () => {
     test.beforeEach(async ({ page }) => {
-        await loginAs(page);
+        await loginAsAdmin(page);
         await page.goto('/logistica/movimientos');
         await waitForPageReady(page);
     });
@@ -255,7 +246,7 @@ test.describe('Logística — Movimientos de Stock', () => {
 
 test.describe('Logística — Guías de Remisión', () => {
     test.beforeEach(async ({ page }) => {
-        await loginAs(page);
+        await loginAsAdmin(page);
         await page.goto('/logistica/guias');
         await waitForPageReady(page);
     });
@@ -276,7 +267,7 @@ test.describe('Logística — Guías de Remisión', () => {
     test('L4.3 — Drawer tiene secciones: Identificación, Traslado, Origen, Destinatario', async ({ page }) => {
         await page.getByRole('button', { name: /nueva gre/i }).click();
         await expectDrawerOpen(page);
-        const content = await page.locator('.drawer, [class*="drawer-right"]').textContent();
+        const content = await page.locator('app-drawer').textContent();
         expect(content?.toUpperCase()).toContain('IDENTIFICACIÓN');
         expect(content?.toUpperCase()).toContain('TRASLADO');
         expect(content?.toUpperCase()).toContain('PARTIDA');
@@ -313,7 +304,7 @@ test.describe('Logística — Guías de Remisión', () => {
 
 test.describe('Logística — Transportistas', () => {
     test.beforeEach(async ({ page }) => {
-        await loginAs(page);
+        await loginAsAdmin(page);
         await page.goto('/logistica/transportistas');
         await waitForPageReady(page);
     });
@@ -362,7 +353,7 @@ test.describe('Logística — Transportistas', () => {
 
 test.describe('Logística — Envíos', () => {
     test.beforeEach(async ({ page }) => {
-        await loginAs(page);
+        await loginAsAdmin(page);
         await page.goto('/logistica/envios');
         await waitForPageReady(page);
     });
@@ -382,7 +373,7 @@ test.describe('Logística — Envíos', () => {
     test('L6.3 — Formulario tiene secciones: Transportista, Destinatario, Datos del envío', async ({ page }) => {
         await page.getByRole('button', { name: /nuevo envío/i }).click();
         await expectDrawerOpen(page);
-        const content = await page.locator('.drawer, [class*="drawer"]').first().textContent();
+        const content = await page.locator('app-drawer').first().textContent();
         expect(content?.toLowerCase()).toContain('transportista');
         expect(content?.toLowerCase()).toContain('destinatario');
     });
@@ -410,7 +401,7 @@ test.describe('Logística — Envíos', () => {
 
 test.describe('Logística — Devoluciones', () => {
     test.beforeEach(async ({ page }) => {
-        await loginAs(page);
+        await loginAsAdmin(page);
         await page.goto('/logistica/devoluciones');
         await waitForPageReady(page);
     });
@@ -451,7 +442,7 @@ test.describe('Logística — Devoluciones', () => {
 
 test.describe('Logística — Tracking', () => {
     test.beforeEach(async ({ page }) => {
-        await loginAs(page);
+        await loginAsAdmin(page);
         await page.goto('/logistica/tracking');
         await waitForPageReady(page);
     });
@@ -491,7 +482,7 @@ test.describe('Logística — Tracking', () => {
 
 test.describe('Logística — Verificación Estándar UI', () => {
     test.beforeEach(async ({ page }) => {
-        await loginAs(page);
+        await loginAsAdmin(page);
     });
 
     const rutas = [
@@ -520,7 +511,6 @@ test.describe('Logística — Verificación Estándar UI', () => {
         await btn.click();
         await expectDrawerOpen(page);
         await page.keyboard.press('Escape');
-        const overlay = page.locator('.drawer-overlay');
-        await expect(overlay.first()).toBeHidden({ timeout: 3_000 });
+        await expect(page.locator('.drawer-overlay')).toBeHidden({ timeout: 3_000 });
     });
 });
