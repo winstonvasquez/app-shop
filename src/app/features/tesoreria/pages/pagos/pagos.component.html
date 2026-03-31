@@ -1,149 +1,126 @@
 <div class="page-container">
-
-  <app-page-header
-    title="Gestión de Pagos"
-    subtitle="Flujo de aprobación: Pendiente → Aprobado → Pagado">
-    <div actions>
-      <button class="btn btn-primary" (click)="openCreateDrawer()">+ Nuevo Pago</button>
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Gestión de Pagos</h1>
+      <p class="page-subtitle">Aprobación y seguimiento de pagos a beneficiarios</p>
     </div>
-  </app-page-header>
+    <div class="page-actions">
+      <button class="btn btn-primary" (click)="showModal.set(true)">+ Registrar Pago</button>
+    </div>
+  </div>
 
   <!-- KPIs -->
   <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:var(--space-md);margin-bottom:var(--space-lg)">
     <div class="card">
       <div class="card-body">
-        <div class="text-sm" style="color:var(--color-text-muted)">Pendientes</div>
-        <div class="font-bold" style="font-size:2rem;color:var(--color-warning)">{{ countPendientes() }}</div>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-body">
-        <div class="text-sm" style="color:var(--color-text-muted)">Aprobados</div>
-        <div class="font-bold" style="font-size:2rem;color:var(--color-accent)">{{ countAprobados() }}</div>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-body">
-        <div class="text-sm" style="color:var(--color-text-muted)">Pagados</div>
-        <div class="font-bold" style="font-size:2rem;color:var(--color-success)">{{ countPagados() }}</div>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-body">
-        <div class="text-sm" style="color:var(--color-text-muted)">Total Comprometido</div>
-        <div class="font-bold" style="font-size:1.5rem;color:var(--color-primary)">
-          S/ {{ totalComprometido() | number:'1.2-2' }}
+        <div style="color:var(--color-text-muted);font-size:0.875rem">Pendientes</div>
+        <div style="font-size:2.5rem;font-weight:700"
+             [style.color]="countPendientes() > 0 ? 'var(--color-warning)' : 'var(--color-text-muted)'">
+          {{ countPendientes() }}
         </div>
+        <div style="color:var(--color-text-muted);font-size:0.75rem">por aprobar</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-body">
+        <div style="color:var(--color-text-muted);font-size:0.875rem">Aprobados</div>
+        <div style="font-size:2.5rem;font-weight:700;color:var(--color-accent)">{{ countAprobados() }}</div>
+        <div style="color:var(--color-text-muted);font-size:0.75rem">listos para pagar</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-body">
+        <div style="color:var(--color-text-muted);font-size:0.875rem">Pagados</div>
+        <div style="font-size:2.5rem;font-weight:700;color:var(--color-success)">{{ countPagados() }}</div>
+        <div style="color:var(--color-text-muted);font-size:0.75rem">completados</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-body">
+        <div style="color:var(--color-text-muted);font-size:0.875rem">Total comprometido</div>
+        <div style="font-size:1.5rem;font-weight:700;color:var(--color-primary)">
+          S/ {{ totalPendiente() | number:'1.2-2' }}
+        </div>
+        <div style="color:var(--color-text-muted);font-size:0.75rem">pendientes + aprobados</div>
       </div>
     </div>
   </div>
 
-  <!-- Tabla -->
-  <div class="card">
-    <app-data-table
-      [data]="pagos()"
-      [columns]="columns"
-      [actions]="actions"
-      [loading]="cargando()"
-      [currentPage]="currentPage()"
-      [pageSize]="pageSize()"
-      [totalElements]="totalElements()"
-      [totalPages]="totalPages()"
-      (pageChange)="onPageChange($event)">
-    </app-data-table>
+  <!-- Filtros -->
+  <div class="filters-bar" style="margin-bottom:var(--space-md)">
+    <div class="search-box" style="flex:unset">
+      <select class="input-field" [value]="filtroEstado()" (change)="filtroEstado.set($any($event.target).value)"
+              style="min-width:160px">
+        <option value="">Todos los estados</option>
+        @for (opt of estadoOptions; track opt.value) {
+          <option [value]="opt.value">{{ opt.label }}</option>
+        }
+      </select>
+    </div>
+    <div class="search-box" style="flex:unset">
+      <select class="input-field" [value]="filtroTipo()" (change)="filtroTipo.set($any($event.target).value)"
+              style="min-width:160px">
+        <option value="">Todos los tipos</option>
+        @for (opt of tipoPagoOptions; track opt.value) {
+          <option [value]="opt.value">{{ opt.label }}</option>
+        }
+      </select>
+    </div>
   </div>
+
+  <app-data-table
+    [data]="pagosFiltrados()"
+    [columns]="columns"
+    [actions]="actions"
+    [loading]="cargando()"
+    [totalPages]="1"
+    [totalElements]="pagosFiltrados().length"
+    [currentPage]="0"
+    [pageSize]="100"
+    [exportable]="true"
+    exportFileName="pagos">
+  </app-data-table>
 
 </div>
 
-<!-- Drawer: Nuevo Pago -->
 <app-drawer
-  [isOpen]="showCreateDrawer()"
+  [isOpen]="showModal()"
   title="Registrar Nuevo Pago"
-  size="lg"
+  size="md"
   side="right"
   [hasFooter]="true"
-  (closed)="showCreateDrawer.set(false)">
+  (closed)="showModal.set(false)">
 
-  @if (errorMsg()) {
-    <div style="background:var(--color-error-subtle,rgba(215,19,42,0.1));border:1px solid var(--color-error);border-radius:8px;padding:var(--space-sm);margin-bottom:var(--space-md);color:var(--color-error);font-size:0.875rem">
-      {{ errorMsg() }}
-    </div>
-  }
-
-  <form [formGroup]="pagoForm" style="display:flex;flex-direction:column;gap:16px">
-
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-sm)">
-      <div>
-        <label class="input-label">Tipo de Pago <span style="color:var(--color-error)">*</span></label>
-        <select class="input-field" formControlName="tipoPago">
-          @for (opt of tipoPagoOptions; track opt.value) {
-            <option [value]="opt.value">{{ opt.label }}</option>
-          }
-        </select>
-        @if (getControl('tipoPago').invalid && getControl('tipoPago').touched) {
-          <span class="input-error-message">Campo requerido</span>
+  <div style="display:flex;flex-direction:column;gap:14px">
+    <div>
+      <label class="input-label">Tipo de Pago *</label>
+      <select class="input-field" [(ngModel)]="formTipo">
+        @for (opt of tipoPagoOptions; track opt.value) {
+          <option [value]="opt.value">{{ opt.label }}</option>
         }
-      </div>
-      <div>
-        <label class="input-label">Método de Pago <span style="color:var(--color-error)">*</span></label>
-        <select class="input-field" formControlName="metodoPago">
-          @for (opt of metodoPagoOptions; track opt.value) {
-            <option [value]="opt.value">{{ opt.label }}</option>
-          }
-        </select>
-        @if (getControl('metodoPago').invalid && getControl('metodoPago').touched) {
-          <span class="input-error-message">Campo requerido</span>
-        }
-      </div>
+      </select>
     </div>
-
-    <app-form-field
-      label="Beneficiario"
-      [control]="getControl('beneficiarioNombre')"
-      type="text"
-      placeholder="Nombre del proveedor o empleado"
-      [required]="true">
-    </app-form-field>
-
-    <app-form-field
-      label="RUC / DNI del Beneficiario"
-      [control]="getControl('beneficiarioDocumento')"
-      type="text"
-      placeholder="20123456789"
-      hint="Opcional">
-    </app-form-field>
-
-    <app-form-field
-      label="Concepto / Descripción"
-      [control]="getControl('concepto')"
-      type="text"
-      placeholder="Ej: Pago factura 001-001234"
-      [required]="true">
-    </app-form-field>
-
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-sm)">
-      <app-form-field
-        label="Monto (S/)"
-        [control]="getControl('monto')"
-        type="number"
-        placeholder="0.00"
-        [required]="true">
-      </app-form-field>
-
-      <app-date-picker
-        label="Fecha de Solicitud"
-        [control]="getControl('fechaSolicitud')"
-        [required]="true">
-      </app-date-picker>
+    <div>
+      <label class="input-label">Beneficiario *</label>
+      <input class="input-field" [(ngModel)]="formBeneficiario"
+             placeholder="Nombre del beneficiario">
     </div>
-
-  </form>
+    <div>
+      <label class="input-label">Concepto *</label>
+      <input class="input-field" [(ngModel)]="formConcepto"
+             placeholder="Descripción del pago">
+    </div>
+    <div>
+      <label class="input-label">Monto (S/) *</label>
+      <input class="input-field" type="number" [(ngModel)]="formMonto"
+             min="0.01" step="0.01" placeholder="0.00">
+    </div>
+  </div>
 
   <div slot="footer">
-    <button class="btn btn-secondary" (click)="showCreateDrawer.set(false)" [disabled]="guardando()">
-      Cancelar
-    </button>
-    <button class="btn btn-primary" (click)="registrarPago()" [disabled]="guardando() || pagoForm.invalid">
+    <button class="btn btn-secondary" (click)="showModal.set(false)">Cancelar</button>
+    <button class="btn btn-primary" (click)="registrarPago()"
+            [disabled]="guardando() || !formBeneficiario || formMonto <= 0">
       {{ guardando() ? 'Guardando...' : 'Registrar Pago' }}
     </button>
   </div>

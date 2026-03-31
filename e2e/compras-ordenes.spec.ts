@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { loginAsAdmin } from './helpers/auth.helper';
+import { loginAs } from './helpers/auth.helper';
 
 /**
  * Compras — Órdenes de Compra
@@ -11,7 +11,7 @@ import { loginAsAdmin } from './helpers/auth.helper';
 test.describe('Compras — Órdenes de Compra', () => {
 
     test.beforeEach(async ({ page }) => {
-        await loginAsAdmin(page);
+        await loginAs(page);
     });
 
     test('CO-1 — Página carga con encabezado', async ({ page }) => {

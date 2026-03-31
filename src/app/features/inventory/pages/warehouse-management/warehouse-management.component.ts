@@ -1,184 +1,169 @@
-import {
-    ChangeDetectionStrategy, Component, inject, signal, OnInit
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, ReactiveFormsModule, Validators, FormGroup, FormControl } from '@angular/forms';
-import { DataTableComponent, TableColumn, TableAction, PaginationEvent } from '@shared/ui/tables/data-table/data-table.component';
-import { DrawerComponent } from '@shared/components/drawer/drawer.component';
-import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
-import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
-import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
-import { ModalComponent } from '@shared/components/modal/modal.component';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { InventoryApiService } from '../../services/inventory-api.service';
 import { Warehouse } from '../../models/inventory.models';
 
 @Component({
     selector: 'app-warehouse-management',
     standalone: true,
+    imports: [CommonModule, ReactiveFormsModule],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [
-        CommonModule, ReactiveFormsModule,
-        DataTableComponent, DrawerComponent, ModalComponent,
-        PageHeaderComponent, AlertComponent, FormFieldComponent
-    ],
-    templateUrl: './warehouse-management.component.html',
-    styleUrl: './warehouse-management.component.scss'
+    template: `
+        <section class="space-y-6">
+            <header>
+                <h1 class="text-2xl font-bold text-on">Almacenes</h1>
+                <p class="text-sm text-subtle">Gestiona almacenes y su disponibilidad.</p>
+            </header>
+
+            <form class="grid gap-4 rounded-xl border border-border-subtle bg-surface p-5 shadow-sm md:grid-cols-2" [formGroup]="warehouseForm" (ngSubmit)="onSubmit()">
+                <div>
+                    <label class="text-xs font-semibold uppercase text-subtle">Código</label>
+                    <input class="mt-2 w-full rounded-lg border border-border px-3 py-2 text-sm" formControlName="code" placeholder="ALM-001">
+                </div>
+                <div>
+                    <label class="text-xs font-semibold uppercase text-subtle">Nombre</label>
+                    <input class="mt-2 w-full rounded-lg border border-border px-3 py-2 text-sm" formControlName="name" placeholder="Almacén Principal">
+                </div>
+                <div class="md:col-span-2">
+                    <label class="text-xs font-semibold uppercase text-subtle">Descripción</label>
+                    <input class="mt-2 w-full rounded-lg border border-border px-3 py-2 text-sm" formControlName="description" placeholder="Opcional">
+                </div>
+                <div>
+                    <label class="text-xs font-semibold uppercase text-subtle">Dirección</label>
+                    <input class="mt-2 w-full rounded-lg border border-border px-3 py-2 text-sm" formControlName="address" placeholder="Av. Principal 123">
+                </div>
+                <div>
+                    <label class="text-xs font-semibold uppercase text-subtle">Ciudad</label>
+                    <input class="mt-2 w-full rounded-lg border border-border px-3 py-2 text-sm" formControlName="city" placeholder="Lima">
+                </div>
+                <div>
+                    <label class="text-xs font-semibold uppercase text-subtle">País</label>
+                    <input class="mt-2 w-full rounded-lg border border-border px-3 py-2 text-sm" formControlName="country" placeholder="Perú">
+                </div>
+                <div>
+                    <label class="text-xs font-semibold uppercase text-subtle">Teléfono</label>
+                    <input class="mt-2 w-full rounded-lg border border-border px-3 py-2 text-sm" formControlName="phone" placeholder="+51 999 999 999">
+                </div>
+                <div>
+                    <label class="text-xs font-semibold uppercase text-subtle">Responsable</label>
+                    <input class="mt-2 w-full rounded-lg border border-border px-3 py-2 text-sm" formControlName="responsiblePerson" placeholder="Nombre completo">
+                </div>
+                <div class="flex items-center gap-2">
+                    <input type="checkbox" class="h-4 w-4" formControlName="active">
+                    <span class="text-sm text-muted">Activo</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <input type="checkbox" class="h-4 w-4" formControlName="isPrincipal">
+                    <span class="text-sm text-muted">Principal</span>
+                </div>
+                <div class="flex items-center justify-end md:col-span-2">
+                    <button type="submit" class="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90" [disabled]="warehouseForm.invalid || submitting()">
+                        {{ submitting() ? 'Guardando...' : 'Crear almacén' }}
+                    </button>
+                </div>
+            </form>
+
+            @if (error()) {
+                <div class="rounded-lg border border-red-200 bg-error/10 p-4 text-sm text-error-hover">{{ error() }}</div>
+            }
+
+            <div class="rounded-xl border border-border-subtle bg-surface p-5 shadow-sm">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-sm font-semibold text-on">Listado</h2>
+                    <span class="text-xs text-subtle">{{ warehouses().length }} almacenes</span>
+                </div>
+                <div class="mt-4 overflow-x-auto">
+                    <table class="min-w-full text-sm">
+                        <thead class="text-left text-xs uppercase text-gray-400">
+                            <tr>
+                                <th class="py-2">Código</th>
+                                <th class="py-2">Nombre</th>
+                                <th class="py-2">Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-border-subtle">
+                            @for (warehouse of warehouses(); track warehouse.id) {
+                                <tr>
+                                    <td class="py-3 font-medium text-on">{{ warehouse.code }}</td>
+                                    <td class="py-3 text-muted">{{ warehouse.name }}</td>
+                                    <td class="py-3">
+                                        <span class="rounded-full px-2 py-1 text-xs" [class.bg-success/10]="warehouse.active" [class.text-success-hover]="warehouse.active" [class.bg-surface-sunken]="!warehouse.active" [class.text-subtle]="!warehouse.active">
+                                            {{ warehouse.active ? 'Activo' : 'Inactivo' }}
+                                        </span>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    `
 })
-export class WarehouseManagementComponent implements OnInit {
+export class WarehouseManagementComponent {
     private readonly api = inject(InventoryApiService);
     private readonly fb = inject(FormBuilder);
 
     warehouses = signal<Warehouse[]>([]);
-    loading = signal(false);
+    submitting = signal(false);
     error = signal<string | null>(null);
 
-    currentPage = signal(0);
-    pageSize = signal(10);
-    totalElements = signal(0);
-    totalPages = signal(0);
-
-    showDrawer = signal(false);
-    editMode = signal(false);
-    selectedId = signal<number | null>(null);
-    submitting = signal(false);
-    submitError = signal<string | null>(null);
-
-    showConfirmDelete = signal(false);
-    pendingDeleteId = signal<number | null>(null);
-
-    breadcrumbs: Breadcrumb[] = [
-        { label: 'Admin', url: '/admin' },
-        { label: 'Inventario', url: '/admin/inventario/dashboard' },
-        { label: 'Almacenes' }
-    ];
-
-    columns: TableColumn<Warehouse>[] = [
-        { key: 'code',              label: 'Código',      sortable: true, width: '110px' },
-        { key: 'name',              label: 'Nombre',      sortable: true },
-        { key: 'city',              label: 'Ciudad',      render: (r) => r.city ?? '—' },
-        { key: 'responsiblePerson', label: 'Responsable', render: (r) => r.responsiblePerson ?? '—' },
-        {
-            key: 'isPrincipal', label: 'Principal',
-            render: (r) => r.isPrincipal
-                ? '<span class="badge badge-accent">Principal</span>'
-                : '<span class="badge badge-neutral">—</span>',
-            html: true
-        },
-        {
-            key: 'active', label: 'Estado',
-            render: (r) => r.active
-                ? '<span class="badge badge-success">Activo</span>'
-                : '<span class="badge badge-error">Inactivo</span>',
-            html: true
-        }
-    ];
-
-    actions: TableAction<Warehouse>[] = [
-        {
-            label: 'Editar',
-            icon: 'edit',
-            class: 'btn-icon-edit',
-            onClick: (row) => this.openEdit(row)
-        },
-        {
-            label: 'Eliminar',
-            icon: 'trash',
-            class: 'btn-icon-delete',
-            onClick: (row) => this.confirmDelete(row.id)
-        }
-    ];
-
-    form: FormGroup = this.fb.nonNullable.group({
-        code:              ['', [Validators.required, Validators.maxLength(20)]],
-        name:              ['', [Validators.required, Validators.maxLength(200)]],
-        description:       [''],
-        address:           [''],
-        city:              [''],
-        country:           ['', Validators.maxLength(100)],
-        phone:             [''],
+    warehouseForm = this.fb.nonNullable.group({
+        code: ['', [Validators.required, Validators.maxLength(20)]],
+        name: ['', [Validators.required, Validators.maxLength(200)]],
+        description: [''],
+        address: [''],
+        city: [''],
+        country: [''],
+        phone: [''],
         responsiblePerson: [''],
-        active:            [true],
-        isPrincipal:       [false]
+        active: true,
+        isPrincipal: false
     });
 
-    ngOnInit(): void {
+    constructor() {
         this.loadWarehouses();
     }
 
     loadWarehouses(): void {
-        this.loading.set(true);
         this.api.getWarehouses().subscribe({
-            next: (data) => {
-                this.warehouses.set(data);
-                this.totalElements.set(data.length);
-                this.totalPages.set(Math.ceil(data.length / this.pageSize()));
-                this.loading.set(false);
-            },
-            error: (err: Error) => { this.error.set(err.message); this.loading.set(false); }
+            next: (response) => this.warehouses.set(response),
+            error: (err: Error) => this.error.set(err.message)
         });
-    }
-
-    openCreate(): void {
-        this.editMode.set(false);
-        this.selectedId.set(null);
-        this.form.reset({ active: true, isPrincipal: false });
-        this.submitError.set(null);
-        this.showDrawer.set(true);
-    }
-
-    openEdit(w: Warehouse): void {
-        this.editMode.set(true);
-        this.selectedId.set(w.id);
-        this.form.patchValue(w);
-        this.submitError.set(null);
-        this.showDrawer.set(true);
-    }
-
-    closeDrawer(): void {
-        this.showDrawer.set(false);
-        this.form.reset({ active: true, isPrincipal: false });
     }
 
     onSubmit(): void {
-        if (this.form.invalid) { this.form.markAllAsTouched(); return; }
+        if (this.warehouseForm.invalid) {
+            this.warehouseForm.markAllAsTouched();
+            return;
+        }
+
         this.submitting.set(true);
-        const payload = this.form.getRawValue();
-        const op = this.editMode()
-            ? this.api.updateWarehouse(this.selectedId()!, payload)
-            : this.api.createWarehouse(payload);
-        op.subscribe({
-            next: () => { this.submitting.set(false); this.closeDrawer(); this.loadWarehouses(); },
-            error: (err: Error) => { this.submitting.set(false); this.submitError.set(err.message); }
+        this.error.set(null);
+        const payload = {
+            code: this.warehouseForm.value.code ?? '',
+            name: this.warehouseForm.value.name ?? '',
+            description: this.warehouseForm.value.description ?? '',
+            address: this.warehouseForm.value.address ?? '',
+            city: this.warehouseForm.value.city ?? '',
+            country: this.warehouseForm.value.country ?? '',
+            phone: this.warehouseForm.value.phone ?? '',
+            responsiblePerson: this.warehouseForm.value.responsiblePerson ?? '',
+            active: this.warehouseForm.value.active ?? true,
+            isPrincipal: this.warehouseForm.value.isPrincipal ?? false
+        };
+
+        this.api.createWarehouse(payload).subscribe({
+            next: () => {
+                this.submitting.set(false);
+                this.warehouseForm.reset({ active: true, isPrincipal: false });
+                this.loadWarehouses();
+            },
+            error: (err: Error) => {
+                this.submitting.set(false);
+                this.error.set(err.message);
+            }
         });
-    }
-
-    confirmDelete(id: number): void {
-        this.pendingDeleteId.set(id);
-        this.showConfirmDelete.set(true);
-    }
-
-    cancelDelete(): void {
-        this.pendingDeleteId.set(null);
-        this.showConfirmDelete.set(false);
-    }
-
-    executeDelete(): void {
-        const id = this.pendingDeleteId();
-        if (id === null) return;
-        this.showConfirmDelete.set(false);
-        this.api.deleteWarehouse(id).subscribe({
-            next: () => { this.pendingDeleteId.set(null); this.loadWarehouses(); },
-            error: (err: Error) => { this.pendingDeleteId.set(null); this.error.set(err.message); }
-        });
-    }
-
-    onPageChange(e: PaginationEvent): void {
-        this.currentPage.set(e.page);
-        this.pageSize.set(e.size);
-        this.totalPages.set(Math.ceil(this.totalElements() / e.size));
-    }
-
-    getCtrl(name: string): FormControl {
-        return this.form.get(name) as FormControl;
     }
 }

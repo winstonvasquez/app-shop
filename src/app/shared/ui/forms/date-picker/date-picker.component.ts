@@ -1,5 +1,5 @@
 import {
-    Component, DoCheck, Input, forwardRef, signal, ChangeDetectionStrategy
+    Component, Input, forwardRef, signal, ChangeDetectionStrategy
 } from '@angular/core';
 import {
     ControlValueAccessor, NG_VALUE_ACCESSOR, AbstractControl
@@ -17,13 +17,12 @@ import {
     template: `
         <div class="date-picker-root">
             @if (label) {
-                <label [for]="inputId" class="input-label">
+                <label class="input-label">
                     {{ label }}
                     @if (required) { <span style="color:var(--color-error)">*</span> }
                 </label>
             }
             <input
-                [id]="inputId"
                 type="date"
                 class="input-field"
                 [class.input-error]="showError()"
@@ -51,17 +50,13 @@ import {
         .input-error { border-color: var(--color-error) !important; }
     `]
 })
-export class DatePickerComponent implements ControlValueAccessor, DoCheck {
-    private static idCounter = 0;
-
+export class DatePickerComponent implements ControlValueAccessor {
     @Input() label = '';
     @Input() required = false;
     @Input() hint = '';
     @Input() min = '';
     @Input() max = '';
     @Input() control: AbstractControl | null = null;
-
-    protected readonly inputId = `date-picker-${++DatePickerComponent.idCounter}`;
 
     value = signal('');
     isDisabled = signal(false);
@@ -75,18 +70,13 @@ export class DatePickerComponent implements ControlValueAccessor, DoCheck {
     registerOnTouched(fn: () => void): void { this.touchedCallback = fn; }
     setDisabledState(isDisabled: boolean): void { this.isDisabled.set(isDisabled); }
 
-    ngDoCheck(): void {
-        const next = !!(this.control?.invalid && this.control?.touched);
-        if (next !== this.showError()) { this.showError.set(next); }
-    }
-
     onDateChange(event: Event): void {
         const val = (event.target as HTMLInputElement).value;
         this.value.set(val);
         this.changeCallback(val);
+        this.showError.set(!!(this.control?.invalid && this.control?.touched));
     }
 
     onBlur(): void {
         this.touchedCallback();
-    }
-}
+        this.showError.set(!!(this.control?.invalid && this.con

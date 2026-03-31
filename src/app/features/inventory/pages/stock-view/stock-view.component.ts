@@ -1,128 +1,153 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { InventoryApiService } from '../../services/inventory-api.service';
 import { InventoryStock, Warehouse } from '../../models/inventory.models';
-import { DataTableComponent, TableColumn, PaginationEvent } from '@shared/ui/tables/data-table/data-table.component';
-import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
-import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 
 @Component({
     selector: 'app-stock-view',
     standalone: true,
+    imports: [],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [CommonModule, DataTableComponent, PageHeaderComponent, AlertComponent],
-    templateUrl: './stock-view.component.html'
+    template: `
+        <section class="space-y-6">
+            <header>
+                <h1 class="text-2xl font-bold text-on">Stock por almacén</h1>
+                <p class="text-sm text-subtle">Consulta el stock disponible y los productos bajo mínimo.</p>
+            </header>
+
+            <div class="rounded-xl border border-border-subtle bg-surface p-5 shadow-sm space-y-4">
+                <div>
+                    <label class="text-xs font-semibold uppercase text-subtle">Almacén</label>
+                    <select class="mt-2 w-full rounded-lg border border-border px-3 py-2 text-sm" (change)="onWarehouseSelectChange($event)">
+                        <option value="">Selecciona un almacén</option>
+                        @for (warehouse of warehouses(); track warehouse.id) {
+                            <option [value]="warehouse.id">{{ warehouse.name }}</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="flex flex-wrap gap-3 text-xs">
+                    <button class="rounded-full border border-border px-3 py-1.5" (click)="loadLowStock()">Bajo stock</button>
+                    <button class="rounded-full border border-border px-3 py-1.5" (click)="reloadWarehouseStock()">Ver almacén</button>
+                </div>
+            </div>
+
+            @if (error()) {
+                <div class="rounded-lg border border-red-200 bg-error/10 p-4 text-sm text-error-hover">{{ error() }}</div>
+            }
+
+            <div class="rounded-xl border border-border-subtle bg-surface p-5 shadow-sm">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-sm font-semibold text-on">Stock disponible</h2>
+                    <div class="flex items-center gap-3">
+                        <span class="text-xs text-subtle">{{ stock().length }} registros</span>
+                        <button class="rounded-full border border-border px-3 py-1 text-xs" type="button" (click)="exportarCsv()" [disabled]="stock().length === 0">Exportar CSV</button>
+                    </div>
+                </div>
+                <div class="mt-4 overflow-x-auto">
+                    <table class="min-w-full text-sm">
+                        <thead class="text-left text-xs uppercase text-gray-400">
+                            <tr>
+                                <th class="py-2">Producto ID</th>
+                                <th class="py-2">Stock</th>
+                                <th class="py-2">Disponible</th>
+                                <th class="py-2">Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-border-subtle">
+                            @for (item of stock(); track item.id) {
+                                <tr>
+                                    <td class="py-3 font-medium text-on">{{ item.productId }}</td>
+                                    <td class="py-3 text-on">{{ item.quantity }}</td>
+                                    <td class="py-3 text-subtle">{{ item.availableQuantity ?? '-' }}</td>
+                                    <td class="py-3">
+                                        <span class="rounded-full px-2 py-1 text-xs" [class.bg-warning/10]="item.belowMinimum" [class.text-warning-hover]="item.belowMinimum" [class.bg-surface-sunken]="!item.belowMinimum" [class.text-subtle]="!item.belowMinimum">
+                                            {{ item.belowMinimum ? 'Bajo mínimo' : 'OK' }}
+                                        </span>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    `
 })
 export class StockViewComponent {
     private readonly api = inject(InventoryApiService);
 
     warehouses = signal<Warehouse[]>([]);
-    allStock = signal<InventoryStock[]>([]);
     stock = signal<InventoryStock[]>([]);
-    loading = signal(false);
-    error = signal<string | null>(null);
-    showLowStockOnly = signal(false);
     selectedWarehouseId = signal<number | null>(null);
+    error = signal<string | null>(null);
 
-    currentPage = signal(0);
-    pageSize = signal(20);
-    totalElements = signal(0);
-    totalPages = signal(0);
-
-    breadcrumbs: Breadcrumb[] = [
-        { label: 'Admin', url: '/admin' },
-        { label: 'Inventario', url: '/admin/inventario/dashboard' },
-        { label: 'Stock' }
-    ];
-
-    columns: TableColumn<InventoryStock>[] = [
-        { key: 'productId',         label: 'Producto ID',  sortable: true, width: '110px',
-          render: (r) => `#${r.productId}` },
-        { key: 'warehouseName',     label: 'Almacén',
-          render: (r) => r.warehouseName ?? String(r.warehouseId) },
-        { key: 'quantity',          label: 'Stock',        sortable: true, align: 'right',
-          render: (r) => r.quantity.toLocaleString('es-PE') },
-        { key: 'reservedQuantity',  label: 'Reservado',    align: 'right',
-          render: (r) => (r.reservedQuantity ?? 0).toLocaleString('es-PE') },
-        { key: 'availableQuantity', label: 'Disponible',   sortable: true, align: 'right',
-          render: (r) => (r.availableQuantity ?? 0).toLocaleString('es-PE') },
-        { key: 'minimumStock',      label: 'Mín.',         align: 'right',
-          render: (r) => r.minimumStock != null ? r.minimumStock.toLocaleString('es-PE') : '—' },
-        { key: 'averageCost',       label: 'Costo Prom.',  align: 'right',
-          render: (r) => r.averageCost != null ? `S/ ${r.averageCost.toFixed(2)}` : '—' },
-        {
-            key: 'belowMinimum', label: 'Estado', html: true,
-            render: (r) => r.belowMinimum
-                ? '<span class="badge badge-error">Stock bajo</span>'
-                : '<span class="badge badge-success">OK</span>'
-        }
-    ];
-
-    constructor() { this.loadWarehouses(); }
+    constructor() {
+        this.loadWarehouses();
+    }
 
     loadWarehouses(): void {
         this.api.getWarehouses().subscribe({
-            next: (data) => this.warehouses.set(data),
+            next: (response) => this.warehouses.set(response),
             error: (err: Error) => this.error.set(err.message)
         });
     }
 
-    onWarehouseChange(event: Event): void {
-        const id = Number((event.target as HTMLSelectElement).value);
-        this.selectedWarehouseId.set(id || null);
-        if (!id) { this.allStock.set([]); this.applyFilter(); return; }
-        this.loadStock(id);
+    onWarehouseChange(warehouseId: string): void {
+        this.selectedWarehouseId.set(warehouseId ? Number(warehouseId) : null);
+        this.reloadWarehouseStock();
     }
 
-    loadStock(warehouseId: number): void {
-        this.loading.set(true);
-        this.api.getStockByWarehouse(warehouseId).subscribe({
-            next: (data) => {
-                this.allStock.set(data);
-                this.applyFilter();
-                this.loading.set(false);
-            },
-            error: (err: Error) => { this.error.set(err.message); this.loading.set(false); }
+    onWarehouseSelectChange(event: Event): void {
+        const value = (event.target as HTMLSelectElement).value;
+        this.onWarehouseChange(value);
+    }
+
+    reloadWarehouseStock(): void {
+        if (!this.selectedWarehouseId()) {
+            this.stock.set([]);
+            return;
+        }
+        this.api.getStockByWarehouse(this.selectedWarehouseId()!).subscribe({
+            next: (response) => this.stock.set(response),
+            error: (err: Error) => this.error.set(err.message)
         });
     }
 
-    toggleLowStock(): void {
-        this.showLowStockOnly.set(!this.showLowStockOnly());
-        this.applyFilter();
+    loadLowStock(): void {
+        this.api.getLowStock().subscribe({
+            next: (response) => this.stock.set(response),
+            error: (err: Error) => this.error.set(err.message)
+        });
     }
 
-    private applyFilter(): void {
-        const filtered = this.showLowStockOnly()
-            ? this.allStock().filter(s => s.belowMinimum)
-            : this.allStock();
-        this.stock.set(filtered);
-        this.totalElements.set(filtered.length);
-        this.totalPages.set(Math.ceil(filtered.length / this.pageSize()) || 1);
-    }
-
-    exportCsv(): void {
+    exportarCsv(): void {
+        if (this.stock().length === 0) return;
         const bom = '\uFEFF';
-        const headers = ['Producto ID', 'Almacén', 'Stock', 'Reservado', 'Disponible', 'Mínimo', 'Bajo mínimo'];
-        const rows = this.stock().map(s => [
-            s.productId,
-            s.warehouseName ?? s.warehouseId,
-            s.quantity,
-            s.reservedQuantity ?? 0,
-            s.availableQuantity ?? 0,
-            s.minimumStock ?? '',
-            s.belowMinimum ? 'Sí' : 'No'
-        ]);
-        const csv = bom + [headers, ...rows]
-            .map(r => r.map(c => `"${String(c)}"`).join(','))
-            .join('\r\n');
+        const headers = ['Producto ID', 'Almacén ID', 'Almacén', 'Ubicación ID', 'Ubicación', 'Stock Actual', 'Stock Reservado', 'Stock Disponible', 'Stock Mínimo', 'Stock Máximo', 'Punto de Reorden', 'Costo Promedio', 'Último Costo', 'Valor Total', 'Estado'];
+        const filas = [headers, ...this.stock().map(item => [
+            String(item.productId ?? ''),
+            String(item.warehouseId ?? ''),
+            item.warehouseName ?? '',
+            String(item.locationId ?? ''),
+            item.locationName ?? '',
+            String(item.quantity ?? ''),
+            String(item.reservedQuantity ?? ''),
+            String(item.availableQuantity ?? ''),
+            String(item.minimumStock ?? ''),
+            String(item.maximumStock ?? ''),
+            String(item.reorderPoint ?? ''),
+            String(item.averageCost ?? ''),
+            String(item.lastCost ?? ''),
+            String(item.totalValue ?? ''),
+            item.belowMinimum ? 'Bajo mínimo' : 'OK'
+        ])];
+        const csv = bom + filas.map(f => f.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\r\n');
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
-        a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
+        a.href = url;
         a.download = `stock-${new Date().toISOString().split('T')[0]}.csv`;
         a.click();
-    }
-
-    onPageChange(e: PaginationEvent): void {
-        this.currentPage.set(e.page);
-        this.pageSize.set(e.size);
+        URL.revokeObjectURL(url);
     }
 }
