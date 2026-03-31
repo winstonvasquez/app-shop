@@ -1,0 +1,57 @@
+<div class="page-container">
+
+  <app-page-header
+    title="Kardex Valorizado"
+    subtitle="Historial de movimientos y valorización por producto"
+    [breadcrumbs]="breadcrumbs">
+    <div actions>
+      <button class="btn btn-secondary" (click)="exportCsv()"
+              [disabled]="!entries().length">
+        Exportar CSV
+      </button>
+    </div>
+  </app-page-header>
+
+  <!-- Barra de búsqueda -->
+  <div class="filters-bar" [formGroup]="searchForm" (keydown.enter)="onSearch()">
+    <div class="filter-field">
+      <label class="input-label">Producto ID</label>
+      <input class="input-field" type="number" formControlName="productId"
+             style="min-width:220px"
+             placeholder="Ingresa el ID del producto" />
+    </div>
+    <div class="filter-action">
+      <button class="btn btn-primary" type="button" (click)="onSearch()"
+              [disabled]="loading()">
+        Buscar Kardex
+      </button>
+    </div>
+  </div>
+
+  @if (error()) {
+    <app-alert type="error" [message]="error()!" [dismissible]="true" (dismiss)="error.set(null)" />
+  }
+
+  @if (!currentProductId() && !loading()) {
+    <div class="card card-body" style="text-align:center; color:var(--color-text-secondary); padding:3rem 1rem">
+      Ingresa un ID de producto y haz clic en "Buscar Kardex" para ver el historial.
+    </div>
+  } @else {
+    <app-data-table
+      [data]="entries()"
+      [columns]="columns"
+      [loading]="loading()"
+      [currentPage]="currentPage()"
+      [pageSize]="pageSize()"
+      [totalElements]="totalElements()"
+      [totalPages]="totalPages()"
+      (pageChange)="onPageChange($event)">
+    </app-data-table>
+  }
+
+</div>
+
+<style>
+.filter-field { display: flex; flex-direction: column; gap: 4px; }
+.filter-action { display: flex; align-items: flex-end; }
+</style>

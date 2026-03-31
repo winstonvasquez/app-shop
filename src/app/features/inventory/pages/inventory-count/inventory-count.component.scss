@@ -1,0 +1,44 @@
+.drawer-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+
+  .col-span-2 { grid-column: span 2; }
+}
+
+.filter-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.items-section {
+  margin-top: 1.5rem;
+  border-top: 1px solid var(--color-border);
+  padding-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.items-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.item-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr auto;
+  gap: 0.75rem;
+  align-items: end;
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border);
+  border-radius: 0.75rem;
+  padding: 0.75rem;
+}
+
+.remove-btn {
+  align-self: end;
+  height: 40px;
+}

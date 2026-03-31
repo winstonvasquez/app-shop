@@ -1,0 +1,107 @@
+<div class="page-container">
+
+  <app-page-header
+    title="Inventarios Físicos"
+    subtitle="Registra conteos físicos de stock por almacén"
+    [breadcrumbs]="breadcrumbs">
+    <div actions>
+      <button class="btn btn-primary" (click)="openCreate()">+ Nuevo Conteo</button>
+    </div>
+  </app-page-header>
+
+  <div class="filters-bar">
+    <div class="filter-field">
+      <label class="input-label">Estado</label>
+      <select class="input-field" style="min-width:180px" (change)="onFilterStatus($event)">
+        <option value="">Todos</option>
+        <option value="EN_PROCESO">En proceso</option>
+        <option value="CERRADO">Cerrado</option>
+        <option value="AJUSTADO">Ajustado</option>
+      </select>
+    </div>
+  </div>
+
+  @if (error()) {
+    <app-alert type="error" [message]="error()!" [dismissible]="true" (dismiss)="error.set(null)" />
+  }
+
+  <app-data-table
+    [data]="counts()"
+    [columns]="columns"
+    [loading]="loading()"
+    [currentPage]="currentPage()"
+    [pageSize]="pageSize()"
+    [totalElements]="totalElements()"
+    [totalPages]="totalPages()"
+    (pageChange)="onPageChange($event)">
+  </app-data-table>
+
+</div>
+
+<!-- Drawer: Nuevo Conteo -->
+<app-drawer
+  [isOpen]="showDrawer()"
+  title="Nuevo Conteo de Inventario"
+  size="lg" side="right" [hasFooter]="true"
+  (closed)="closeDrawer()">
+
+  <form [formGroup]="form">
+    @if (submitError()) {
+      <app-alert type="error" [message]="submitError()!" [dismissible]="true"
+                 (dismiss)="submitError.set(null)" />
+    }
+
+    <div class="drawer-form-grid">
+      <div>
+        <label class="input-label">Almacén <span class="text-error">*</span></label>
+        <select class="input-field" formControlName="warehouseId">
+          <option [value]="null">Seleccionar...</option>
+          @for (w of warehouses(); track w.id) {
+            <option [value]="w.id">{{ w.name }}</option>
+          }
+        </select>
+      </div>
+
+      <div>
+        <app-date-input label="Fecha Conteo" formControlName="countDate" [required]="true" />
+      </div>
+
+      <div class="col-span-2">
+        <app-form-field label="Observaciones" [control]="getCtrl('notes')"
+          type="text" placeholder="Notas del conteo" />
+      </div>
+    </div>
+
+    <!-- Detalle de conteo -->
+    <div class="items-section">
+      <div class="items-header">
+        <span class="input-label">Productos contados</span>
+        <button class="btn btn-secondary" type="button" (click)="addDetail()">+ Agregar</button>
+      </div>
+
+      <div formArrayName="details">
+        @for (detail of details.controls; track $index; let i = $index) {
+          <div class="item-row" [formGroupName]="i">
+            <app-form-field label="Producto ID" [control]="getDetailCtrl(i, 'productId')"
+              type="number" placeholder="ID" [required]="true" />
+            <app-form-field label="Cantidad Contada" [control]="getDetailCtrl(i, 'countedQuantity')"
+              type="number" placeholder="0" [required]="true" />
+            <app-form-field label="Notas" [control]="getDetailCtrl(i, 'notes')"
+              type="text" placeholder="Observación" />
+            @if (details.length > 1) {
+              <button class="btn btn-danger remove-btn" type="button" (click)="removeDetail(i)">✕</button>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  </form>
+
+  <div slot="footer">
+    <button class="btn btn-secondary" type="button" (click)="closeDrawer()">Cancelar</button>
+    <button class="btn btn-primary" type="button" (click)="onSubmit()"
+            [disabled]="submitting() || form.invalid">
+      {{ submitting() ? 'Guardando...' : 'Crear Conteo' }}
+    </button>
+  </div>
+</app-drawer>
