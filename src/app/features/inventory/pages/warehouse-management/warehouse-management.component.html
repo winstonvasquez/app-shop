@@ -1,0 +1,98 @@
+<div class="page-container">
+
+  <app-page-header
+    title="Almacenes"
+    subtitle="Gestiona almacenes, sus direcciones y responsables"
+    [breadcrumbs]="breadcrumbs">
+    <div actions>
+      <button class="btn btn-primary" (click)="openCreate()">+ Nuevo Almacén</button>
+    </div>
+  </app-page-header>
+
+  @if (error()) {
+    <app-alert type="error" [message]="error()!" [dismissible]="true" (dismiss)="error.set(null)" />
+  }
+
+  <app-data-table
+    [data]="warehouses()"
+    [columns]="columns"
+    [actions]="actions"
+    [loading]="loading()"
+    [currentPage]="currentPage()"
+    [pageSize]="pageSize()"
+    [totalElements]="totalElements()"
+    [totalPages]="totalPages()"
+    (pageChange)="onPageChange($event)">
+  </app-data-table>
+
+</div>
+
+<!-- Drawer: crear / editar -->
+<app-drawer
+  [isOpen]="showDrawer()"
+  [title]="editMode() ? 'Editar Almacén' : 'Nuevo Almacén'"
+  size="lg" side="right" [hasFooter]="true"
+  (closed)="closeDrawer()">
+
+  <form [formGroup]="form" (ngSubmit)="onSubmit()">
+    @if (submitError()) {
+      <app-alert type="error" [message]="submitError()!" [dismissible]="true"
+                 (dismiss)="submitError.set(null)" />
+    }
+
+    <div class="drawer-form-grid">
+      <app-form-field label="Código" [control]="getCtrl('code')"
+        type="text" placeholder="ALM-001" [required]="true" />
+      <app-form-field label="Nombre" [control]="getCtrl('name')"
+        type="text" placeholder="Almacén Principal" [required]="true" />
+      <div class="col-span-2">
+        <app-form-field label="Descripción" [control]="getCtrl('description')"
+          type="text" placeholder="Descripción opcional" />
+      </div>
+      <app-form-field label="Dirección" [control]="getCtrl('address')"
+        type="text" placeholder="Av. Principal 123" />
+      <app-form-field label="Ciudad" [control]="getCtrl('city')"
+        type="text" placeholder="Lima" />
+      <app-form-field label="País" [control]="getCtrl('country')"
+        type="text" placeholder="Perú" />
+      <app-form-field label="Teléfono" [control]="getCtrl('phone')"
+        type="text" placeholder="+51 999 999 999" />
+      <app-form-field label="Responsable" [control]="getCtrl('responsiblePerson')"
+        type="text" placeholder="Nombre completo" />
+
+      <div class="col-span-2 flex gap-6 pt-1">
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input type="checkbox" class="toggle-input" formControlName="active" />
+          <span class="input-label">Activo</span>
+        </label>
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input type="checkbox" class="toggle-input" formControlName="isPrincipal" />
+          <span class="input-label">Principal</span>
+        </label>
+      </div>
+    </div>
+  </form>
+
+  <div slot="footer">
+    <button class="btn btn-secondary" type="button" (click)="closeDrawer()">Cancelar</button>
+    <button class="btn btn-primary" type="button" (click)="onSubmit()"
+            [disabled]="submitting() || form.invalid">
+      {{ submitting() ? 'Guardando...' : (editMode() ? 'Actualizar' : 'Crear Almacén') }}
+    </button>
+  </div>
+</app-drawer>
+
+<!-- Modal: confirmar eliminación -->
+<app-modal
+  [isOpen]="showConfirmDelete()"
+  title="Eliminar almacén"
+  size="sm"
+  (closed)="cancelDelete()">
+  <p class="text-sm" style="color: var(--color-text-secondary)">
+    ¿Estás seguro de que deseas eliminar este almacén? Esta acción no se puede deshacer.
+  </p>
+  <div class="flex justify-end gap-3 pt-4">
+    <button class="btn btn-secondary" type="button" (click)="cancelDelete()">Cancelar</button>
+    <button class="btn btn-danger" type="button" (click)="executeDelete()">Eliminar</button>
+  </div>
+</app-modal>
