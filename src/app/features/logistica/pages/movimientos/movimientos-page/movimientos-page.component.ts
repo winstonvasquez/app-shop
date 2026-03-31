@@ -1,113 +1,245 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import {
+    Component, inject, signal, OnInit, ChangeDetectionStrategy
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { FormBuilder, FormsModule, ReactiveFormsModule, Validators, FormGroup } from '@angular/forms';
 import { MovimientoService, Movimiento } from '../../../services/movimiento.service';
+import { AlmacenService } from '../../../services/almacen.service';
+import { Almacen } from '../../../models/almacen.model';
+import { MovimientoItem, CreateMovimientoDto } from '../../../models/movimiento.model';
+import { AuthService } from '../../../../../core/auth/auth.service';
+import { DataTableComponent, TableColumn, TableAction } from '@shared/ui/tables/data-table/data-table.component';
+import { DrawerComponent } from '@shared/components/drawer/drawer.component';
+import { DateInputComponent } from '@shared/ui/forms/date-input/date-input.component';
+import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
+import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
+import { PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
+
+interface ItemForm {
+    productoNombre: string;
+    sku: string;
+    cantidad: number;
+}
 
 @Component({
-  selector: 'app-movimientos-page',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  template: `
-    <div class="page-header">
-      <div>
-        <h1 class="page-title">Movimientos de Stock</h1>
-        <p class="page-subtitle">Kardex de entradas, salidas y traslados</p>
-      </div>
-      <div class="page-actions">
-        <button class="btn btn-secondary">📥 Exportar</button>
-        <button class="btn btn-primary">+ Movimiento</button>
-      </div>
-    </div>
-
-    <div class="card mb-lg">
-      <div class="flex flex-wrap items-end gap-[var(--space-md)]">
-        <div class="form-group min-w-[200px] m-0">
-          <label class="form-label">Buscar</label>
-          <input class="form-control" placeholder="Código, referencia...">
-        </div>
-        <div class="form-group m-0">
-          <label class="form-label">Tipo</label>
-          <select class="form-control" [(ngModel)]="tipoFilter">
-            <option value="">Todos</option>
-            <option value="ENTRADA_COMPRA">Entrada Compra</option>
-            <option value="SALIDA_VENTA">Salida Venta</option>
-            <option value="TRASLADO">Traslado</option>
-          </select>
-        </div>
-        <button class="btn btn-primary">Buscar</button>
-      </div>
-    </div>
-
-    <div class="table-container">
-      <table>
-        <thead>
-          <tr>
-            <th>Fecha</th>
-            <th>Tipo</th>
-            <th>Código</th>
-            <th>Almacén Origen</th>
-            <th>Almacén Destino</th>
-            <th>Referencia</th>
-            <th>Estado</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (mov of movimientos(); track mov.id) {
-            <tr>
-              <td>{{ formatDate(mov.createdAt) }}</td>
-              <td>
-                <span class="badge" [class.badge-success]="mov.tipo.startsWith('ENTRADA')"
-                      [class.badge-danger]="mov.tipo.startsWith('SALIDA')"
-                      [class.badge-info]="mov.tipo === 'TRASLADO'">
-                  {{ formatTipo(mov.tipo) }}
-                </span>
-              </td>
-              <td class="font-mono">{{ mov.codigo }}</td>
-              <td>{{ mov.almacenOrigen || '-' }}</td>
-              <td>{{ mov.almacenDestino || '-' }}</td>
-              <td class="text-muted">{{ mov.referenciaTipo || '-' }}</td>
-              <td>
-                <span class="badge badge-success">{{ mov.estado }}</span>
-              </td>
-            </tr>
-          } @empty {
-            <tr>
-              <td colspan="7" class="text-center text-muted">
-                No hay movimientos registrados
-              </td>
-            </tr>
-          }
-        </tbody>
-      </table>
-    </div>
-  `
+    selector: 'app-movimientos-page',
+    standalone: true,
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    imports: [
+        CommonModule,
+        FormsModule,
+        ReactiveFormsModule,
+        DataTableComponent,
+        DrawerComponent,
+        DateInputComponent,
+        AlertComponent,
+        PageHeaderComponent
+    ],
+    templateUrl: './movimientos-page.component.html'
 })
 export class MovimientosPageComponent implements OnInit {
-  private movimientoService = inject(MovimientoService);
+    private readonly movimientoService = inject(MovimientoService);
+    private readonly almacenService    = inject(AlmacenService);
+    private readonly authService       = inject(AuthService);
+    private readonly fb                = inject(FormBuilder);
 
-  movimientos = signal<Movimiento[]>([]);
-  tipoFilter = '';
-  companyId = 'demo-company';
+    // Data
+    movimientos = signal<Movimiento[]>([]);
+    almacenes   = signal<Almacen[]>([]);
+    formItems   = signal<ItemForm[]>([]);
 
-  ngOnInit() {
-    this.loadMovimientos();
-  }
+    // UI state
+    loading     = signal(false);
+    error       = signal<string | null>(null);
+    showForm    = signal(false);
+    submitting  = signal(false);
+    submitError = signal<string | null>(null);
 
-  loadMovimientos() {
-    this.movimientoService.getMovimientos(this.companyId, { size: 20 }).subscribe({
-      next: (res: any) => this.movimientos.set(res.content || []),
-      error: () => this.movimientos.set([])
+    // Filters
+    tipoFilter = '';
+    dateFrom   = '';
+    dateTo     = '';
+
+    // Pagination
+    currentPage   = signal(0);
+    pageSize      = signal(10);
+    totalElements = signal(0);
+    totalPages    = signal(1);
+
+    readonly tipoOptions = [
+        { value: 'ENTRADA_COMPRA', label: 'Entrada Compra' },
+        { value: 'SALIDA_VENTA',   label: 'Salida Venta' },
+        { value: 'TRASLADO',       label: 'Traslado' },
+        { value: 'AJUSTE',         label: 'Ajuste de inventario' },
+        { value: 'DEVOLUCION',     label: 'Devolución' }
+    ];
+
+    breadcrumbs: Breadcrumb[] = [
+        { label: 'Inicio',    url: '/admin/dashboard' },
+        { label: 'Logística', url: '/logistica/dashboard' },
+        { label: 'Movimientos de Stock' }
+    ];
+
+    columns: TableColumn<Movimiento>[] = [
+        { key: 'createdAt', label: 'Fecha',
+          render: (r) => r.createdAt
+            ? new Date(r.createdAt).toLocaleString('es-PE', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })
+            : '—' },
+        { key: 'tipo', label: 'Tipo', html: true,
+          render: (r) => `<span class="badge ${this.badgeTipo(r.tipo)}">${r.tipo.replace(/_/g, ' ')}</span>` },
+        { key: 'codigo',         label: 'Código' },
+        { key: 'almacenOrigen',  label: 'Almacén Origen',  render: (r) => r.almacenOrigen  || '—' },
+        { key: 'almacenDestino', label: 'Destino',          render: (r) => r.almacenDestino || '—' },
+        { key: 'referenciaTipo', label: 'Referencia',       render: (r) => r.referenciaTipo || '—' },
+        { key: 'estado', label: 'Estado', html: true,
+          render: () => `<span class="badge badge-success">PROCESADO</span>` }
+    ];
+
+    actions: TableAction<Movimiento>[] = [
+        {
+            label: 'Ver detalle', icon: '👁️', class: 'btn-view',
+            onClick: (_row) => {}
+        }
+    ];
+
+    form: FormGroup = this.fb.group({
+        tipo:              ['', Validators.required],
+        almacenOrigenId:   [''],
+        almacenDestinoId:  [''],
+        motivo:            [''],
+        observaciones:     ['']
     });
-  }
 
-  formatDate(dateStr: string): string {
-    if (!dateStr) return '-';
-    return new Date(dateStr).toLocaleString('es-PE', {
-      day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'
-    });
-  }
+    private get companyId(): string {
+        return String(this.authService.currentUser()?.activeCompanyId ?? 1);
+    }
 
-  formatTipo(tipo: string): string {
-    return tipo?.replace(/_/g, ' ') || '';
-  }
+    ngOnInit() {
+        this.loadAlmacenes();
+        this.loadMovimientos();
+    }
+
+    loadAlmacenes() {
+        this.almacenService.getAlmacenes(this.companyId).subscribe({
+            next: (res) => this.almacenes.set(res.content),
+            error: () => this.almacenes.set([])
+        });
+    }
+
+    loadMovimientos() {
+        this.loading.set(true);
+        this.error.set(null);
+        this.movimientoService.getMovimientos(this.companyId, {
+            tipo:  this.tipoFilter || undefined,
+            desde: this.dateFrom  || undefined,
+            hasta: this.dateTo    || undefined,
+            page:  this.currentPage(),
+            size:  this.pageSize()
+        } as any).subscribe({
+            next: (res: any) => {
+                this.movimientos.set(res.content || []);
+                this.totalElements.set(res.totalElements ?? res.content?.length ?? 0);
+                this.totalPages.set(res.totalPages ?? 1);
+                this.loading.set(false);
+            },
+            error: (err: Error) => {
+                this.error.set(err.message ?? 'Error al cargar movimientos.');
+                this.movimientos.set([]);
+                this.loading.set(false);
+            }
+        });
+    }
+
+    buscar() {
+        this.currentPage.set(0);
+        this.loadMovimientos();
+    }
+
+    onPaginationChange(event: PaginationChangeEvent) {
+        this.currentPage.set(event.page);
+        this.pageSize.set(event.size);
+        this.loadMovimientos();
+    }
+
+    // ── Drawer ──────────────────────────────────────────
+    openCreateForm() {
+        this.form.reset();
+        this.formItems.set([this.emptyItem()]);
+        this.submitError.set(null);
+        this.showForm.set(true);
+    }
+
+    closeForm() {
+        this.showForm.set(false);
+        this.form.reset();
+        this.formItems.set([]);
+    }
+
+    addItem() {
+        this.formItems.update(items => [...items, this.emptyItem()]);
+    }
+
+    removeItem(index: number) {
+        this.formItems.update(items => items.filter((_, i) => i !== index));
+    }
+
+    updateItem(index: number, field: keyof ItemForm, value: string | number) {
+        this.formItems.update(items => {
+            const updated = [...items];
+            updated[index] = { ...updated[index], [field]: value };
+            return updated;
+        });
+    }
+
+    onSubmit() {
+        if (this.form.invalid) { this.form.markAllAsTouched(); return; }
+        if (this.formItems().length === 0) {
+            this.submitError.set('Agregue al menos un producto al movimiento.');
+            return;
+        }
+        const invalidItem = this.formItems().some(i => !i.productoNombre.trim() || i.cantidad < 1);
+        if (invalidItem) {
+            this.submitError.set('Verifique que todos los ítems tengan nombre y cantidad válida.');
+            return;
+        }
+
+        this.submitting.set(true);
+        this.submitError.set(null);
+
+        const items: MovimientoItem[] = this.formItems().map(i => ({
+            productoId:     '00000000-0000-0000-0000-000000000000',
+            productoNombre: i.productoNombre,
+            sku:            i.sku,
+            cantidad:       i.cantidad
+        }));
+
+        const dto: CreateMovimientoDto = {
+            ...this.form.value,
+            items
+        };
+
+        this.movimientoService.createMovimiento(dto, this.companyId).subscribe({
+            next: () => {
+                this.submitting.set(false);
+                this.closeForm();
+                this.loadMovimientos();
+            },
+            error: (err: Error) => {
+                this.submitError.set(err.message ?? 'Error al crear movimiento.');
+                this.submitting.set(false);
+            }
+        });
+    }
+
+    private emptyItem(): ItemForm {
+        return { productoNombre: '', sku: '', cantidad: 1 };
+    }
+
+    badgeTipo(tipo: string): string {
+        if (tipo?.startsWith('ENTRADA')) return 'badge-success';
+        if (tipo?.startsWith('SALIDA'))  return 'badge-error';
+        if (tipo === 'TRASLADO')         return 'badge-accent';
+        if (tipo === 'AJUSTE')           return 'badge-warning';
+        return 'badge-neutral';
+    }
 }

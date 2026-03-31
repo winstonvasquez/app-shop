@@ -1,0 +1,216 @@
+<div class="page-container">
+  <app-page-header
+    title="Envíos"
+    subtitle="Gestión de despachos y seguimiento de entrega"
+    [breadcrumbs]="breadcrumbs">
+    <div actions>
+      <button class="btn btn-primary" (click)="openCreateForm()">+ Nuevo Envío</button>
+    </div>
+  </app-page-header>
+
+  @if (error()) {
+    <app-alert type="error" [message]="error()!" (dismiss)="error.set(null)" [dismissible]="true" />
+  }
+
+  <!-- Filtros -->
+  <div class="filters-bar">
+    <select class="input-field" style="width:220px"
+            (change)="onFilterStatus($event)">
+      <option value="">Todos los estados</option>
+      @for (opt of statusOptions; track opt.value) {
+        <option [value]="opt.value">{{ opt.label }}</option>
+      }
+    </select>
+  </div>
+
+  <!-- Tabla -->
+  <app-data-table
+    [data]="envios()"
+    [columns]="columns"
+    [actions]="actions"
+    [loading]="loading()"
+    [currentPage]="currentPage()"
+    [pageSize]="pageSize()"
+    [totalElements]="totalElements()"
+    [totalPages]="totalPages()"
+    [searchable]="true"
+    searchPlaceholder="Buscar por N° tracking o destinatario..."
+    [exportable]="true"
+    exportFileName="envios-export"
+    (pageChange)="onPaginationChange($event)">
+  </app-data-table>
+</div>
+
+<!-- Drawer Crear Envío -->
+<app-drawer
+  [isOpen]="showForm()"
+  title="Nuevo Envío"
+  size="lg"
+  side="right"
+  [hasFooter]="true"
+  (closed)="closeForm()">
+
+  <form [formGroup]="form">
+    <!-- Sección 1: Transportista -->
+    <div class="form-field-wrapper">
+      <label class="input-label">Transportista *</label>
+      <select class="input-field" formControlName="carrierId">
+        <option value="">-- Seleccione transportista --</option>
+        @for (t of transportistas(); track t.id) {
+          <option [value]="t.id">{{ t.name }} ({{ t.code }})</option>
+        }
+      </select>
+      @if (form.get('carrierId')?.invalid && form.get('carrierId')?.touched) {
+        <span class="input-error-message">Seleccione un transportista</span>
+      }
+    </div>
+
+    <!-- Sección 2: Destinatario -->
+    <div class="form-section">
+      <h4 class="form-section-title">Destinatario</h4>
+      <div class="form-grid">
+        <div class="form-field-wrapper" style="grid-column:1/-1">
+          <label class="input-label">Nombre completo *</label>
+          <input class="input-field" type="text" formControlName="recipientName"
+                 placeholder="Juan Pérez García">
+          @if (form.get('recipientName')?.invalid && form.get('recipientName')?.touched) {
+            <span class="input-error-message">Nombre requerido</span>
+          }
+        </div>
+
+        <div class="form-field-wrapper">
+          <label class="input-label">Teléfono</label>
+          <input class="input-field" type="tel" formControlName="recipientPhone"
+                 placeholder="987 654 321">
+        </div>
+
+        <div class="form-field-wrapper">
+          <label class="input-label">Email</label>
+          <input class="input-field" type="email" formControlName="recipientEmail"
+                 placeholder="destinatario@email.com">
+        </div>
+
+        <div class="form-field-wrapper" style="grid-column:1/-1">
+          <label class="input-label">Dirección de envío *</label>
+          <input class="input-field" type="text" formControlName="shippingAddress"
+                 placeholder="Av. La Marina 2000, San Miguel, Lima">
+          @if (form.get('shippingAddress')?.invalid && form.get('shippingAddress')?.touched) {
+            <span class="input-error-message">Dirección requerida</span>
+          }
+        </div>
+      </div>
+    </div>
+
+    <!-- Sección 3: Logística -->
+    <div class="form-section">
+      <h4 class="form-section-title">Datos del envío</h4>
+      <div class="form-grid">
+        <div class="form-field-wrapper">
+          <label class="input-label">Costo de envío (S/)</label>
+          <input class="input-field" type="number" min="0" step="0.01"
+                 formControlName="shippingCost" placeholder="0.00">
+        </div>
+
+        <app-date-input
+          label="Fecha estimada entrega"
+          formControlName="estimatedDeliveryDate">
+        </app-date-input>
+
+        <div class="form-field-wrapper" style="grid-column:1/-1">
+          <label class="input-label">Notas</label>
+          <textarea class="input-field" formControlName="notes" rows="2"
+                    placeholder="Instrucciones de entrega, referencias, etc."
+                    style="resize:vertical"></textarea>
+        </div>
+      </div>
+    </div>
+  </form>
+
+  @if (submitError()) {
+    <app-alert type="error" [message]="submitError()!" />
+  }
+
+  <div slot="footer">
+    <button class="btn btn-secondary" (click)="closeForm()">Cancelar</button>
+    <button class="btn btn-primary" (click)="onSubmit()" [disabled]="submitting()">
+      {{ submitting() ? 'Creando...' : 'Crear Envío' }}
+    </button>
+  </div>
+</app-drawer>
+
+<!-- Drawer Detalle + Timeline -->
+<app-drawer
+  [isOpen]="showDetail()"
+  title="Detalle del Envío"
+  size="md"
+  side="right"
+  (closed)="closeDetail()">
+
+  @if (loadingDetail()) {
+    <app-loading-spinner />
+  } @else if (selected()) {
+    <div style="display:flex;flex-direction:column;gap:var(--space-lg)">
+
+      <!-- Info general -->
+      <div class="card">
+        <div class="card-body">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-sm)">
+            <div>
+              <p class="input-label">N° Tracking</p>
+              <p style="font-weight:600;font-family:monospace">{{ selected()!.trackingNumber }}</p>
+            </div>
+            <div>
+              <p class="input-label">Estado</p>
+              <span class="badge" [class]="badgeStatus(selected()!.status)">
+                {{ statusMapLabel[selected()!.status] }}
+              </span>
+            </div>
+            <div>
+              <p class="input-label">Destinatario</p>
+              <p>{{ selected()!.recipientName }}</p>
+            </div>
+            <div>
+              <p class="input-label">Entrega estimada</p>
+              <p>{{ selected()!.estimatedDeliveryDate
+                    ? (selected()!.estimatedDeliveryDate! | date:'dd/MM/yyyy':'':'es-PE')
+                    : '—' }}</p>
+            </div>
+            <div style="grid-column:1/-1">
+              <p class="input-label">Dirección</p>
+              <p>{{ selected()!.shippingAddress }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Timeline de eventos -->
+      @if (selected()!.trackingEvents?.length) {
+        <div>
+          <h4 class="card-title" style="margin-bottom:var(--space-md)">Historial de tracking</h4>
+          <div style="display:flex;flex-direction:column;gap:var(--space-md)">
+            @for (ev of selected()!.trackingEvents!; track $index) {
+              <div style="display:flex;gap:var(--space-md)">
+                <div style="display:flex;flex-direction:column;align-items:center">
+                  <div style="width:10px;height:10px;border-radius:50%;background:var(--color-primary);flex-shrink:0;margin-top:4px"></div>
+                  <div style="flex:1;width:2px;background:var(--color-border);margin:4px 0"></div>
+                </div>
+                <div>
+                  <p style="font-size:0.8125rem;color:var(--color-text-muted)">
+                    {{ ev.timestamp | date:'dd/MM/yy HH:mm':'':'es-PE' }}
+                    @if (ev.location) { — {{ ev.location }} }
+                  </p>
+                  <p style="font-size:0.875rem">{{ ev.description }}</p>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      } @else {
+        <p class="text-muted" style="text-align:center;padding:var(--space-lg)">
+          Sin eventos de tracking registrados
+        </p>
+      }
+
+    </div>
+  }
+</app-drawer>

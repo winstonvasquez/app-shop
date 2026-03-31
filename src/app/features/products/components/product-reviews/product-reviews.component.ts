@@ -12,4 +12,6 @@ import { TranslateModule } from '@ngx-translate/core';
 export class ProductReviewsComponent {
   reviews = input<Review[]>([]);
   rating = input<number>(0);
+  /** Datos de distribución de talla provistos por el backend. Si es null/undefined, el bloque se oculta. */
+  sizeFeedback = input<{ small: number; trueToSize: number; large: number } | null>(null);
 }

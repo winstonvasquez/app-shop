@@ -1,0 +1,166 @@
+<div class="page-container">
+
+  <app-page-header
+    title="Flujo de Caja"
+    subtitle="Movimientos financieros del periodo">
+    <div actions>
+      <button class="btn btn-primary" (click)="openCreateDrawer()">+ Nuevo Movimiento</button>
+    </div>
+  </app-page-header>
+
+  <!-- Filtros -->
+  <div class="filters-bar" style="margin-bottom:var(--space-lg)">
+    <div style="display:flex;gap:var(--space-md);align-items:flex-end;flex-wrap:wrap">
+      <div>
+        <label class="input-label">Fecha Inicio</label>
+        <input
+          type="date"
+          class="input-field"
+          [value]="fechaInicio()"
+          (change)="fechaInicio.set($any($event.target).value)">
+      </div>
+      <div>
+        <label class="input-label">Fecha Fin</label>
+        <input
+          type="date"
+          class="input-field"
+          [value]="fechaFin()"
+          (change)="fechaFin.set($any($event.target).value)">
+      </div>
+      <button class="btn btn-primary" (click)="consultar()">Consultar</button>
+    </div>
+  </div>
+
+  <!-- KPIs -->
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:var(--space-md);margin-bottom:var(--space-lg)">
+    <div class="card">
+      <div class="card-body">
+        <div style="color:var(--color-text-muted);font-size:0.875rem">Ingresos del periodo</div>
+        <div style="font-size:1.75rem;font-weight:700;color:var(--color-success)">
+          S/ {{ ingresos() | number:'1.2-2' }}
+        </div>
+        <div style="color:var(--color-text-muted);font-size:0.75rem">movimientos INGRESO</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-body">
+        <div style="color:var(--color-text-muted);font-size:0.875rem">Egresos del periodo</div>
+        <div style="font-size:1.75rem;font-weight:700;color:var(--color-warning)">
+          S/ {{ egresos() | number:'1.2-2' }}
+        </div>
+        <div style="color:var(--color-text-muted);font-size:0.75rem">movimientos EGRESO</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-body">
+        <div style="color:var(--color-text-muted);font-size:0.875rem">Flujo de Caja Neto</div>
+        <div style="font-size:1.75rem;font-weight:700"
+             [style.color]="flujoCajaNeto() >= 0 ? 'var(--color-success)' : 'var(--color-error)'">
+          S/ {{ flujoCajaNeto() | number:'1.2-2' }}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabla -->
+  <div class="card">
+    <app-data-table
+      [data]="movimientos()"
+      [columns]="columns"
+      [loading]="cargando()"
+      [currentPage]="currentPage()"
+      [pageSize]="pageSize()"
+      [totalElements]="totalElements()"
+      [totalPages]="totalPages()"
+      (pageChange)="onPageChange($event)">
+    </app-data-table>
+  </div>
+
+</div>
+
+<!-- Drawer: Nuevo Movimiento -->
+<app-drawer
+  [isOpen]="showCreateDrawer()"
+  title="Registrar Nuevo Movimiento"
+  size="md"
+  side="right"
+  [hasFooter]="true"
+  (closed)="showCreateDrawer.set(false)">
+
+  @if (errorMsg()) {
+    <div style="background:var(--color-error-subtle,rgba(215,19,42,0.1));border:1px solid var(--color-error);border-radius:8px;padding:var(--space-sm);margin-bottom:var(--space-md);color:var(--color-error);font-size:0.875rem">
+      {{ errorMsg() }}
+    </div>
+  }
+
+  <form [formGroup]="movimientoForm" style="display:flex;flex-direction:column;gap:var(--space-md)">
+
+    <!-- Tipo de Movimiento -->
+    <div>
+      <label class="input-label">Tipo de Movimiento <span style="color:var(--color-error)">*</span></label>
+      <select class="input-field" formControlName="tipoMovimiento">
+        @for (opt of tipoOptions; track opt.value) {
+          <option [value]="opt.value">{{ opt.label }}</option>
+        }
+      </select>
+      @if (getControl('tipoMovimiento').invalid && getControl('tipoMovimiento').touched) {
+        <span class="input-error-message">Campo requerido</span>
+      }
+    </div>
+
+    <!-- Origen -->
+    <app-form-field
+      label="Origen"
+      [control]="getControl('origen')"
+      type="text"
+      placeholder="Ej: Venta mostrador, Pago proveedor"
+      [required]="true">
+    </app-form-field>
+
+    <!-- Descripción -->
+    <app-form-field
+      label="Descripción"
+      [control]="getControl('descripcion')"
+      type="text"
+      placeholder="Ej: Cobro factura 001-001234"
+      [required]="true">
+    </app-form-field>
+
+    <!-- Monto y Moneda -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-sm)">
+      <app-form-field
+        label="Monto"
+        [control]="getControl('monto')"
+        type="number"
+        placeholder="0.00"
+        [required]="true">
+      </app-form-field>
+
+      <app-form-field
+        label="Moneda"
+        [control]="getControl('moneda')"
+        type="text"
+        placeholder="PEN"
+        hint="PEN, USD">
+      </app-form-field>
+    </div>
+
+    <!-- Fecha -->
+    <app-date-picker
+      label="Fecha"
+      [control]="getControl('fecha')"
+      [required]="true">
+    </app-date-picker>
+
+  </form>
+
+  <div slot="footer">
+    <button class="btn btn-secondary" (click)="showCreateDrawer.set(false)" [disabled]="guardando()">
+      Cancelar
+    </button>
+    <button class="btn btn-primary" (click)="registrarMovimiento()" [disabled]="guardando() || movimientoForm.invalid">
+      {{ guardando() ? 'Guardando...' : 'Registrar Movimiento' }}
+    </button>
+  </div>
+
+</app-drawer>

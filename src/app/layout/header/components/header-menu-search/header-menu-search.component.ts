@@ -8,6 +8,7 @@ import { CartService } from '@features/cart/services/cart.service';
 import { ModalStateService } from '@core/services/modal-state.service';
 import { HeaderSearchDropdownComponent } from '../header-search-dropdown/header-search-dropdown.component';
 import { HeaderUserMenu } from '../header-user-menu/header-user-menu.component';
+import { CategoryMegaMenuComponent } from '@shared/components/category-mega-menu/category-mega-menu.component';
 
 interface SubNavItem {
     labelKey: string;
@@ -18,7 +19,7 @@ interface SubNavItem {
 @Component({
     selector: 'app-header-menu-search',
     standalone: true,
-    imports: [CommonModule, RouterLink, TranslateModule, HeaderSearchDropdownComponent, HeaderUserMenu],
+    imports: [CommonModule, RouterLink, TranslateModule, HeaderSearchDropdownComponent, HeaderUserMenu, CategoryMegaMenuComponent],
     templateUrl: './header-menu-search.component.html',
   host: { class: 'block w-full' }
 })
@@ -30,6 +31,10 @@ export class HeaderMenuSearchComponent implements OnInit, OnDestroy {
 
     isAuthenticated = this.authService.isAuthenticated;
     isUserMenuOpen = signal(false);
+    mobileMenuOpen = signal(false);
+
+    toggleMobileMenu() { this.mobileMenuOpen.update(v => !v); }
+    closeMobileMenu() { this.mobileMenuOpen.set(false); }
 
     handleUserMenuClick() {
         if (!this.isAuthenticated()) {

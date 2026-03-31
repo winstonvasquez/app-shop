@@ -52,13 +52,15 @@
         [loading]="loading()">
     </app-data-table>
 
-    <app-modal
+    <app-drawer
         [isOpen]="showModal()"
         [title]="editMode() ? 'Editar Empresa' : 'Nueva Empresa'"
-        size="md"
-        (close)="closeModal()">
-        
-        <form [formGroup]="companyForm" (ngSubmit)="onSubmit()" body>
+        size="lg"
+        side="right"
+        [hasFooter]="true"
+        (closed)="closeModal()">
+
+        <form [formGroup]="companyForm" (ngSubmit)="onSubmit()">
             @if (submitError()) {
                 <app-alert
                     type="error"
@@ -94,11 +96,11 @@
             </div>
         </form>
 
-        <div footer>
+        <div slot="footer">
             <button type="button" class="btn btn-secondary" (click)="closeModal()" [disabled]="submitting()">
                 Cancelar
             </button>
-            <button type="submit" class="btn btn-primary" (click)="onSubmit()" [disabled]="submitting() || companyForm.invalid">
+            <button type="button" class="btn btn-primary" (click)="onSubmit()" [disabled]="submitting() || companyForm.invalid">
                 @if (submitting()) {
                     Guardando...
                 } @else {
@@ -106,5 +108,5 @@
                 }
             </button>
         </div>
-    </app-modal>
+    </app-drawer>
 </div>

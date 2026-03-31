@@ -1,0 +1,130 @@
+<div class="dashboard-compras-page">
+    <app-page-header
+        title="Dashboard de Compras"
+        [subtitle]="'Resumen del mes de ' + currentMonth"
+        [breadcrumbs]="breadcrumbs">
+    </app-page-header>
+
+    <!-- KPI Cards -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-md mb-xl">
+        <div class="card p-md">
+            <p class="text-sm text-subtle mb-xs">Total Compras</p>
+            <p class="text-2xl font-bold text-on">S/ {{ (dashboard()?.totalComprasMes ?? 0).toFixed(2) }}</p>
+            <p class="text-xs text-subtle mt-xs">Trimestre: S/ {{ (dashboard()?.comprasTrimestre ?? 0).toFixed(2) }}</p>
+        </div>
+        <div class="card p-md">
+            <p class="text-sm text-subtle mb-xs">OC Emitidas</p>
+            <p class="text-2xl font-bold text-on">{{ dashboard()?.ocEmitidas ?? 0 }}</p>
+            <p class="text-xs text-subtle mt-xs">{{ dashboard()?.ocAprobadas ?? 0 }} aprobadas</p>
+        </div>
+        <div class="card p-md">
+            <p class="text-sm text-subtle mb-xs">OC Pendientes</p>
+            <p class="text-2xl font-bold text-on">{{ dashboard()?.ocPendientes ?? 0 }}</p>
+            <p class="text-xs text-subtle mt-xs">Por aprobar</p>
+        </div>
+        <div class="card p-md">
+            <p class="text-sm text-subtle mb-xs">Proveedores</p>
+            <p class="text-2xl font-bold text-on">{{ dashboard()?.totalProveedores ?? 0 }}</p>
+            <p class="text-xs text-subtle mt-xs">{{ dashboard()?.proveedoresNuevos ?? 0 }} nuevos este mes</p>
+        </div>
+    </div>
+
+    <!-- Charts row -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-md mb-xl">
+        <!-- Top Proveedores -->
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">Top Proveedores por Monto</span>
+            </div>
+            <div class="card-body">
+                @if ((dashboard()?.topProveedores ?? []).length > 0) {
+                    <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:var(--space-sm)">
+                        @for (item of dashboard()?.topProveedores; track item.nombre; let i = $index) {
+                            <li style="display:flex;align-items:center;gap:var(--space-sm)">
+                                <span class="text-sm font-bold text-subtle" style="width:20px">{{ i + 1 }}</span>
+                                <div style="flex:1">
+                                    <div class="text-sm font-medium text-on">{{ item.nombre | slice:0:28 }}</div>
+                                    <div class="text-xs text-subtle">RUC: {{ item.ruc }}</div>
+                                    <div class="mt-xs" style="height:4px;background:var(--color-border);border-radius:2px">
+                                        <div style="height:100%;background:var(--color-primary);border-radius:2px"
+                                            [style.width.%]="item.porcentaje"></div>
+                                    </div>
+                                </div>
+                                <span class="text-sm font-bold text-on">S/ {{ item.monto.toFixed(0) }}</span>
+                            </li>
+                        }
+                    </ul>
+                } @else {
+                    <p class="text-subtle text-sm text-center py-lg">Sin datos disponibles</p>
+                }
+            </div>
+        </div>
+
+        <!-- OC Estado resumen -->
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">Estado de Órdenes</span>
+            </div>
+            <div class="card-body">
+                <div style="display:flex;flex-direction:column;gap:var(--space-sm)">
+                    <div style="display:flex;justify-content:space-between;align-items:center">
+                        <span class="text-sm text-subtle">Borradores</span>
+                        <span class="badge badge-neutral">{{ (dashboard()?.ocEmitidas ?? 0) - (dashboard()?.ocAprobadas ?? 0) - (dashboard()?.ocPendientes ?? 0) }}</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;align-items:center">
+                        <span class="text-sm text-subtle">Pendientes</span>
+                        <span class="badge badge-warning">{{ dashboard()?.ocPendientes ?? 0 }}</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;align-items:center">
+                        <span class="text-sm text-subtle">Aprobadas</span>
+                        <span class="badge badge-success">{{ dashboard()?.ocAprobadas ?? 0 }}</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;align-items:center">
+                        <span class="text-sm text-subtle">Recibidas</span>
+                        <span class="badge badge-success">{{ dashboard()?.ocRecibidas ?? 0 }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Últimas OC -->
+    <div class="card">
+        <div class="card-header">
+            <span class="card-title">Últimas Órdenes de Compra</span>
+            <a routerLink="/admin/compras/ordenes" class="btn btn-secondary" style="padding:4px 12px;font-size:0.8rem">
+                Ver todas →
+            </a>
+        </div>
+        @if ((dashboard()?.ultimasOC ?? []).length > 0) {
+            <div class="table-erp-container">
+                <table class="table-erp">
+                    <thead>
+                        <tr>
+                            <th>OC #</th>
+                            <th>Fecha</th>
+                            <th>Proveedor</th>
+                            <th class="text-right">Total</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (oc of dashboard()?.ultimasOC; track oc.id) {
+                            <tr>
+                                <td class="font-mono text-sm">{{ oc.codigo }}</td>
+                                <td class="text-subtle">{{ oc.fechaEmision | date:'dd/MM/yyyy' }}</td>
+                                <td>{{ oc.proveedorNombre }}</td>
+                                <td class="text-right font-medium">S/ {{ oc.total.toFixed(2) }}</td>
+                                <td>
+                                    <span class="badge badge-{{ badgeEstado(oc.estado) }}">{{ oc.estado }}</span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        } @else {
+            <div class="p-lg text-center text-subtle">No hay órdenes de compra registradas</div>
+        }
+    </div>
+</div>

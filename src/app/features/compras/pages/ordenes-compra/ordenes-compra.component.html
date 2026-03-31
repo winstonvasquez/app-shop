@@ -1,0 +1,332 @@
+<div class="ordenes-page">
+    <app-page-header
+        title="Órdenes de Compra"
+        subtitle="Gestión de órdenes de compra a proveedores"
+        [breadcrumbs]="breadcrumbs">
+        <div actions>
+            <button class="btn btn-primary" (click)="openCreateForm()">+ Nueva OC</button>
+        </div>
+    </app-page-header>
+
+    <!-- Filters -->
+    <div class="mb-lg">
+        <select class="input-field" style="width:200px" [value]="filterEstado()" (change)="onFilterEstado($event)">
+            <option value="">Todos los estados</option>
+            @for (opt of estadoOptions; track opt.value) {
+                <option [value]="opt.value">{{ opt.label }}</option>
+            }
+        </select>
+    </div>
+
+    @if (error()) {
+        <app-alert type="error" [message]="error()!" [dismissible]="true" (dismiss)="error.set(null)"></app-alert>
+    }
+
+    @if (loading() && !hasOrdenes()) {
+        <div class="loading-container">
+            <div class="spinner"></div>
+            <p>Cargando órdenes de compra...</p>
+        </div>
+    }
+
+    @if (isEmpty()) {
+        <div class="text-center py-2xl text-subtle">
+            <svg class="mx-auto text-muted mb-md" width="64" height="64" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+            </svg>
+            <h3 class="text-lg font-bold text-on mb-xs">No hay órdenes de compra</h3>
+            <p>Crea tu primera orden de compra.</p>
+        </div>
+    }
+
+    @if (hasOrdenes()) {
+        <app-data-table
+            [data]="ordenes()"
+            [columns]="columns"
+            [actions]="actions"
+            [loading]="loading()"
+            [currentPage]="currentPage()"
+            [pageSize]="pageSize()"
+            [totalElements]="totalElements()"
+            [totalPages]="totalPages()"
+            [sortField]="sortField()"
+            [sortDirection]="sortDirection()"
+            [hidePagination]="true"
+            (sortChange)="onSort($event)">
+        </app-data-table>
+    }
+
+    @if (!loading() && totalPages() > 0) {
+        <app-pagination
+            [currentPage]="currentPage()"
+            [totalPages]="totalPages()"
+            [totalElements]="totalElements()"
+            [pageSize]="pageSize()"
+            (pageChange)="onPaginationChange($event)">
+        </app-pagination>
+    }
+
+    <!-- ── Drawer: Detalle OC (read-only) ─────────────────── -->
+    <app-drawer
+        [isOpen]="showDetail()"
+        [title]="'Detalle OC #' + (selectedOrden()?.codigo ?? '')"
+        size="lg"
+        side="right"
+        [hasFooter]="true"
+        (closed)="closeDetail()">
+
+        @if (loadingDetail()) {
+            <app-loading-spinner size="md" message="Cargando detalle..."></app-loading-spinner>
+        } @else if (selectedOrden()) {
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-md mb-xl">
+                <div class="p-md bg-surface/5 border border-[var(--color-border)] rounded-md">
+                    <h3 class="text-lg font-bold text-on mb-sm">Información General</h3>
+                    <p class="text-sm text-subtle mb-xs">
+                        <strong class="text-on">Fecha Emisión:</strong>
+                        {{ selectedOrden()?.fechaEmision | date:'mediumDate' }}
+                    </p>
+                    @if (selectedOrden()?.fechaEntregaEstimada) {
+                        <p class="text-sm text-subtle mb-xs">
+                            <strong class="text-on">Entrega Est.:</strong>
+                            {{ selectedOrden()?.fechaEntregaEstimada | date:'mediumDate' }}
+                        </p>
+                    }
+                    <p class="text-sm text-subtle mb-xs">
+                        <strong class="text-on">Proveedor:</strong>
+                        {{ selectedOrden()?.proveedorNombre ?? selectedOrden()?.proveedorRuc }}
+                    </p>
+                    <p class="text-sm text-subtle mb-xs">
+                        <strong class="text-on">Cond. Pago:</strong>
+                        {{ selectedOrden()?.condicionPago?.replace('_', ' ') }}
+                    </p>
+                    <p class="text-sm text-subtle">
+                        <strong class="text-on">Almacén:</strong> {{ selectedOrden()?.almacenDestino }}
+                    </p>
+                </div>
+                <div class="p-md bg-surface/5 border border-[var(--color-border)] rounded-md">
+                    <h3 class="text-lg font-bold text-on mb-sm">Estado</h3>
+                    <span class="badge badge-{{ badgeEstado(selectedOrden()?.estado ?? '') }}">
+                        {{ selectedOrden()?.estado }}
+                    </span>
+                    <div class="flex gap-sm mt-md flex-wrap">
+                        @if (selectedOrden()?.estado === 'BORRADOR' || selectedOrden()?.estado === 'PENDIENTE') {
+                            <button class="btn btn-primary py-xs px-sm text-xs"
+                                (click)="updateEstado('APROBADA')">Aprobar</button>
+                            <button class="btn btn-danger py-xs px-sm text-xs"
+                                (click)="updateEstado('CANCELADA')">Cancelar</button>
+                        }
+                        @if (selectedOrden()?.estado === 'APROBADA') {
+                            <button class="btn btn-primary py-xs px-sm text-xs"
+                                (click)="updateEstado('ENVIADA')">Marcar Enviada</button>
+                        }
+                    </div>
+                    @if (selectedOrden()?.observaciones) {
+                        <p class="text-sm text-subtle mt-md">
+                            <strong class="text-on">Obs.:</strong> {{ selectedOrden()?.observaciones }}
+                        </p>
+                    }
+                </div>
+            </div>
+
+            <h3 class="text-lg font-bold text-on mb-md">Productos</h3>
+            <div class="table-erp-container">
+                <table class="table-erp">
+                    <thead>
+                        <tr>
+                            <th>Producto</th>
+                            <th>SKU</th>
+                            <th>Cant.</th>
+                            <th>Precio Unit.</th>
+                            <th>Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (item of selectedOrden()?.items; track item.id) {
+                            <tr>
+                                <td>{{ item.productoNombre }}</td>
+                                <td>{{ item.sku ?? '—' }}</td>
+                                <td>{{ item.cantidad }}</td>
+                                <td class="text-right">S/ {{ item.precioUnitario.toFixed(2) }}</td>
+                                <td class="text-right">S/ {{ (item.subtotal ?? item.cantidad * item.precioUnitario).toFixed(2) }}</td>
+                            </tr>
+                        }
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="4" class="text-right py-xs px-md text-subtle">Base Imponible:</td>
+                            <td class="text-right py-xs px-md">S/ {{ (selectedOrden()?.subtotal ?? 0).toFixed(2) }}</td>
+                        </tr>
+                        <tr>
+                            <td colspan="4" class="text-right py-xs px-md text-subtle">IGV (18%):</td>
+                            <td class="text-right py-xs px-md">S/ {{ (selectedOrden()?.igv ?? 0).toFixed(2) }}</td>
+                        </tr>
+                        <tr>
+                            <td colspan="4" class="text-right py-md px-md text-on font-bold">Total:</td>
+                            <td class="py-md px-md text-primary text-lg font-bold text-right">
+                                S/ {{ (selectedOrden()?.total ?? 0).toFixed(2) }}
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        }
+
+        <div slot="footer">
+            <button type="button" class="btn btn-secondary" (click)="closeDetail()">Cerrar</button>
+        </div>
+    </app-drawer>
+
+    <!-- ── Drawer: Form OC (create/edit) ──────────────────── -->
+    <app-drawer
+        [isOpen]="showForm()"
+        [title]="editMode() ? 'Editar Orden de Compra' : 'Nueva Orden de Compra'"
+        size="lg"
+        side="right"
+        [hasFooter]="true"
+        (closed)="closeForm()">
+
+        <form [formGroup]="ocForm" (ngSubmit)="onSubmit()">
+            @if (submitError()) {
+                <app-alert type="error" [message]="submitError()!" [dismissible]="true"
+                    (dismiss)="submitError.set(null)"></app-alert>
+            }
+
+            <!-- Encabezado -->
+            <h3 class="text-sm font-bold text-subtle uppercase tracking-wide mb-sm mt-xs">Encabezado</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-sm mb-md">
+                <div class="md:col-span-2">
+                    <label class="input-label">Proveedor <span class="text-error">*</span></label>
+                    <select class="input-field" formControlName="proveedorId">
+                        <option value="">Seleccione un proveedor</option>
+                        @for (p of proveedores(); track p.id) {
+                            <option [value]="p.id">{{ p.razonSocial }} — {{ p.ruc }}</option>
+                        }
+                    </select>
+                </div>
+                <div>
+                    <label class="input-label">Fecha Emisión <span class="text-error">*</span></label>
+                    <app-date-input formControlName="fechaEmision" [required]="true"></app-date-input>
+                </div>
+                <div>
+                    <label class="input-label">Fecha Entrega Est.</label>
+                    <app-date-input formControlName="fechaEntregaEstimada"
+                        [minDate]="ocForm.get('fechaEmision')?.value || ''"></app-date-input>
+                </div>
+                <div>
+                    <label class="input-label">Condición de Pago <span class="text-error">*</span></label>
+                    <select class="input-field" formControlName="condicionPago">
+                        @for (opt of condicionPagoOptions; track opt.value) {
+                            <option [value]="opt.value">{{ opt.label }}</option>
+                        }
+                    </select>
+                </div>
+                <div>
+                    <label class="input-label">Almacén Destino <span class="text-error">*</span></label>
+                    <select class="input-field" formControlName="almacenDestino">
+                        @for (opt of almacenOptions; track opt.value) {
+                            <option [value]="opt.value">{{ opt.label }}</option>
+                        }
+                    </select>
+                </div>
+            </div>
+
+            <!-- Items -->
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-sm)">
+                <h3 class="text-sm font-bold text-subtle uppercase tracking-wide">Productos</h3>
+                <button type="button" class="btn btn-secondary" style="padding:4px 12px;font-size:0.8rem"
+                    (click)="addItem()">+ Agregar</button>
+            </div>
+
+            <div class="table-erp-container mb-md">
+                <table class="table-erp">
+                    <thead>
+                        <tr>
+                            <th>Producto</th>
+                            <th style="width:90px">SKU</th>
+                            <th style="width:70px">Cant.</th>
+                            <th style="width:110px">Precio</th>
+                            <th style="width:110px">Subtotal</th>
+                            <th style="width:40px"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (item of formItems(); track $index; let i = $index) {
+                            <tr>
+                                <td>
+                                    <input type="text" class="input-field" placeholder="Nombre del producto"
+                                        [value]="item.productoNombre"
+                                        (input)="updateItem(i, 'productoNombre', $any($event.target).value)" />
+                                </td>
+                                <td>
+                                    <input type="text" class="input-field" placeholder="SKU"
+                                        [value]="item.sku"
+                                        (input)="updateItem(i, 'sku', $any($event.target).value)" />
+                                </td>
+                                <td>
+                                    <input type="number" class="input-field text-right" min="1"
+                                        [value]="item.cantidad"
+                                        (input)="updateItem(i, 'cantidad', +$any($event.target).value)" />
+                                </td>
+                                <td>
+                                    <input type="number" class="input-field text-right" min="0" step="0.01"
+                                        [value]="item.precioUnitario"
+                                        (input)="updateItem(i, 'precioUnitario', +$any($event.target).value)" />
+                                </td>
+                                <td class="text-right text-sm">
+                                    S/ {{ (item.cantidad * item.precioUnitario).toFixed(2) }}
+                                </td>
+                                <td>
+                                    <button type="button" class="btn btn-danger" style="padding:4px 8px;font-size:0.75rem"
+                                        (click)="removeItem(i)">✕</button>
+                                </td>
+                            </tr>
+                        }
+                        @empty {
+                            <tr>
+                                <td colspan="6" class="text-center text-subtle py-md">
+                                    Sin productos. Haz clic en "+ Agregar".
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="4" class="text-right py-xs px-md text-subtle">Base Imponible:</td>
+                            <td class="text-right py-xs px-md text-sm">S/ {{ totales().subtotal.toFixed(2) }}</td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td colspan="4" class="text-right py-xs px-md text-subtle">IGV (18%):</td>
+                            <td class="text-right py-xs px-md text-sm">S/ {{ totales().igv.toFixed(2) }}</td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td colspan="4" class="text-right py-sm px-md text-on font-bold">Total:</td>
+                            <td class="text-right py-sm px-md text-primary font-bold">
+                                S/ {{ totales().total.toFixed(2) }}
+                            </td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+
+            <!-- Observaciones -->
+            <div>
+                <label class="input-label">Observaciones</label>
+                <textarea class="input-field" rows="2" placeholder="Notas adicionales..."
+                    formControlName="observaciones"></textarea>
+            </div>
+        </form>
+
+        <div slot="footer">
+            <button type="button" class="btn btn-secondary" (click)="closeForm()" [disabled]="submitting()">
+                Cancelar
+            </button>
+            <button type="button" class="btn btn-primary" (click)="onSubmit()" [disabled]="submitting() || ocForm.invalid">
+                @if (submitting()) { Guardando... } @else { {{ editMode() ? 'Actualizar OC' : 'Guardar Borrador' }} }
+            </button>
+        </div>
+    </app-drawer>
+</div>

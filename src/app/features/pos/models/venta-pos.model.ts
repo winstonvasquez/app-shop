@@ -1,6 +1,11 @@
 // models/venta-pos.model.ts
 
-export type MetodoPagoPos = 'EFECTIVO' | 'TARJETA' | 'YAPE' | 'PLIN';
+export type MetodoPagoPos = 'EFECTIVO' | 'TARJETA' | 'YAPE' | 'PLIN' | 'MIXTO';
+
+export interface PagoMixto {
+    metodo: Exclude<MetodoPagoPos, 'MIXTO'>;
+    monto: number;
+}
 export type TipoCpe = 'BOLETA' | 'FACTURA' | 'SIN_CPE';
 export type EstadoVentaPos = 'COMPLETADA' | 'ANULADA';
 
@@ -50,6 +55,7 @@ export interface VentaPosRequest {
     clienteNombre?: string;
     descuento?: number;
     montoRecibido?: number;
+    pagos?: PagoMixto[];
 }
 
 export interface PageResponse<T> {

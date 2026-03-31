@@ -8,7 +8,7 @@
                     d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"
                     clip-rule="evenodd" />
             </svg>
-            <h2 class="turno-title">Resumen de turno</h2>
+            <h2 class="turno-title">{{ 'pos.turno.title' | translate }}</h2>
         </div>
 
         @if (turno(); as t) {
@@ -16,19 +16,19 @@
         <!-- Info del turno -->
         <div class="turno-info-grid">
             <div class="turno-info-row">
-                <span class="turno-info-label">Cajero</span>
+                <span class="turno-info-label">{{ 'pos.turno.cashier' | translate }}</span>
                 <span class="turno-info-val">{{ t.cajeroNombre }}</span>
             </div>
             <div class="turno-info-row">
-                <span class="turno-info-label">Monto apertura</span>
+                <span class="turno-info-label">{{ 'pos.turno.openingAmount' | translate }}</span>
                 <span class="turno-info-val mono">S/{{ fmt(t.montoApertura) }}</span>
             </div>
             <div class="turno-info-row">
-                <span class="turno-info-label">Inicio del turno</span>
+                <span class="turno-info-label">{{ 'pos.turno.startTime' | translate }}</span>
                 <span class="turno-info-val">{{ t.fechaApertura | date:'dd/MM/yyyy HH:mm' }}</span>
             </div>
             <div class="turno-info-row">
-                <span class="turno-info-label">Estado</span>
+                <span class="turno-info-label">{{ 'pos.turno.status' | translate }}</span>
                 <span class="turno-estado" [class.turno-estado--abierto]="t.estado === 'ABIERTO'">
                     <span class="turno-estado-dot"></span>
                     {{ t.estado }}
@@ -38,50 +38,50 @@
 
         <!-- Desglose de ventas -->
         <div class="turno-ventas-section">
-            <p class="turno-section-title">Desglose de ventas</p>
+            <p class="turno-section-title">{{ 'pos.turno.salesBreakdown' | translate }}</p>
 
             <div class="turno-ventas-rows">
                 <div class="turno-ventas-row">
-                    <span>Efectivo</span>
+                    <span>{{ 'pos.turno.cash' | translate }}</span>
                     <span class="mono fw-bold">S/{{ fmt(t.totalEfectivo) }}</span>
                 </div>
                 <div class="turno-ventas-row">
-                    <span>Tarjeta</span>
+                    <span>{{ 'pos.turno.card' | translate }}</span>
                     <span class="mono fw-bold">S/{{ fmt(t.totalTarjeta) }}</span>
                 </div>
                 <div class="turno-ventas-row">
-                    <span>Yape</span>
+                    <span>{{ 'pos.turno.yape' | translate }}</span>
                     <span class="mono fw-bold">S/{{ fmt(t.totalYape) }}</span>
                 </div>
                 <div class="turno-ventas-row">
-                    <span>Plin</span>
+                    <span>{{ 'pos.turno.plin' | translate }}</span>
                     <span class="mono fw-bold">S/{{ fmt(t.totalPlin) }}</span>
                 </div>
                 @if (t.totalAnulaciones > 0) {
                 <div class="turno-ventas-row turno-ventas-row--anulacion">
-                    <span>Anulaciones</span>
+                    <span>{{ 'pos.turno.cancellations' | translate }}</span>
                     <span class="mono fw-bold">−S/{{ fmt(t.totalAnulaciones) }}</span>
                 </div>
                 }
             </div>
 
             <div class="turno-total-row">
-                <span>Total vendido</span>
+                <span>{{ 'pos.turno.totalSold' | translate }}</span>
                 <span class="turno-total-amount">S/{{ fmt(t.totalVentas) }}</span>
             </div>
         </div>
 
         <!-- CPE emitidos -->
         <div class="turno-cpe-section">
-            <p class="turno-section-title">Comprobantes SUNAT</p>
+            <p class="turno-section-title">{{ 'pos.turno.sunatDocuments' | translate }}</p>
             <div class="turno-cpe-item">
                 <span class="cpe-badge cpe-badge--valid">🇵🇪 Boleta</span>
-                <span class="turno-info-label">Boletas emitidas</span>
+                <span class="turno-info-label">{{ 'pos.turno.boletasIssued' | translate }}</span>
                 <span class="fw-bold">{{ t.boletasEmitidas }}</span>
             </div>
             <div class="turno-cpe-item">
                 <span class="cpe-badge cpe-badge--valid">🇵🇪 Factura</span>
-                <span class="turno-info-label">Facturas emitidas</span>
+                <span class="turno-info-label">{{ 'pos.turno.facturasIssued' | translate }}</span>
                 <span class="fw-bold">{{ t.facturasEmitidas }}</span>
             </div>
         </div>
@@ -94,7 +94,7 @@
                         d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z"
                         clip-rule="evenodd" />
                 </svg>
-                Volver al POS
+                {{ 'pos.turno.backToPos' | translate }}
             </button>
             <button
                 class="btn-primary flex-1 gap-2 !h-12 !rounded-xl !bg-[var(--color-danger)] hover:!bg-[var(--color-danger)]/80"
@@ -104,7 +104,7 @@
                         d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
                         clip-rule="evenodd" />
                 </svg>
-                Cerrar turno
+                {{ 'pos.turno.closeTurn' | translate }}
             </button>
         </div>
 
@@ -126,7 +126,7 @@
                     d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z"
                     clip-rule="evenodd" />
             </svg>
-            Abrir turno
+            {{ 'pos.turno.openTurn' | translate }}
         </button>
 
         }

@@ -6,7 +6,7 @@ import { Asiento, AsientoRequest } from '../models/asiento.model';
 @Injectable({ providedIn: 'root' })
 export class AsientoService {
     private http = inject(HttpClient);
-    private baseUrl = environment.apiUrls.accounting;
+    private baseUrl = `${environment.apiUrls.accounting}/api/v1/contabilidad`;
 
     crearAsiento(asiento: AsientoRequest) {
         return this.http.post<Asiento>(`${this.baseUrl}/asientos`, asiento);

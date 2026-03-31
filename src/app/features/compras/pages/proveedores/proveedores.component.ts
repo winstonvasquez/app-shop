@@ -1,144 +1,249 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
-import { FormsModule } from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule, Validators, FormGroup, FormControl } from '@angular/forms';
 import { ProveedorService } from '../../services/proveedor.service';
-import { Proveedor, ProveedorPage } from '../../models/proveedor.model';
+import { Proveedor } from '../../models/proveedor.model';
+import { DataTableComponent, TableColumn, TableAction, SortEvent } from '@shared/ui/tables/data-table/data-table.component';
+import { PaginationComponent, PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
+import { DrawerComponent } from '@shared/components/drawer/drawer.component';
+import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
+import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
+import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 
 @Component({
     selector: 'app-proveedores',
     standalone: true,
-    imports: [CommonModule, RouterLink, FormsModule],
-    template: `
-        <div class="page-header">
-            <div>
-                <h1 class="page-title">🏭 Proveedores</h1>
-                <p class="page-subtitle">{{ totalProveedores() }} proveedores registrados</p>
-            </div>
-            <div class="page-actions">
-                <a routerLink="/admin/compras/proveedores/nuevo" class="btn btn-primary">+ Nuevo Proveedor</a>
-            </div>
-        </div>
-
-        <div class="table-container">
-            <div class="table-toolbar">
-                <div class="table-filters">
-                    <div class="search-input min-w-[300px]">
-                        <span>🔍</span>
-                        <input type="text" placeholder="Buscar RUC, razón social..." 
-                               [(ngModel)]="searchTerm" (input)="onSearch()">
-                    </div>
-                    <select class="select-filter" [(ngModel)]="filterEstado" (change)="onFilterChange()">
-                        <option value="">Estado SUNAT ▼</option>
-                        <option value="HABIDO">HABIDO</option>
-                        <option value="NO HABIDO">NO HABIDO</option>
-                    </select>
-                </div>
-            </div>
-            <table>
-                <thead>
-                    <tr>
-                        <th>RUC</th>
-                        <th>Razón Social</th>
-                        <th>Condición SUNAT</th>
-                        <th>Estado</th>
-                        <th>Contacto</th>
-                        <th>Última OC</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @for (proveedor of proveedores(); track proveedor.id) {
-                        <tr>
-                            <td class="font-mono">{{ proveedor.ruc }}</td>
-                            <td><strong>{{ proveedor.razonSocial }}</strong></td>
-                            <td>
-                                <span class="badge" 
-                                      [class.badge-success]="proveedor.condicionSunat === 'HABIDO'"
-                                      [class.badge-warning]="proveedor.condicionSunat === 'NO HABIDO'">
-                                    {{ proveedor.condicionSunat }}
-                                </span>
-                            </td>
-                            <td>
-                                <span class="badge"
-                                      [class.badge-success]="proveedor.estado === 'ACTIVO'"
-                                      [class.badge-warning]="proveedor.estado !== 'ACTIVO'">
-                                    {{ proveedor.estado }}
-                                </span>
-                            </td>
-                            <td>{{ proveedor.contactoEmail || '—' }}</td>
-                            <td class="text-muted">—</td>
-                            <td>
-                                <div class="actions-cell">
-                                    <button class="icon-btn">👁</button>
-                                    <a [routerLink]="['/admin/compras/proveedores', proveedor.id]" class="icon-btn">✏️</a>
-                                    <button class="icon-btn" (click)="deleteProveedor(proveedor.id!)">🗑️</button>
-                                </div>
-                            </td>
-                        </tr>
-                    }
-                    @empty {
-                        <tr>
-                            <td colspan="7" class="text-center text-muted">No se encontraron proveedores</td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-            <div class="table-footer">
-                <span>{{ totalProveedores() }} proveedores</span>
-                <div class="pagination">
-                    <button class="page-btn" [class.active]="page() === 0" (click)="goToPage(0)">1</button>
-                    <button class="page-btn" (click)="goToPage(page() + 1)">2</button>
-                </div>
-            </div>
-        </div>
-    `,
-    styles: [`
-        :host { display: block; }
-    `]
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    imports: [
+        CommonModule,
+        ReactiveFormsModule,
+        DataTableComponent,
+        PaginationComponent,
+        DrawerComponent,
+        FormFieldComponent,
+        PageHeaderComponent,
+        AlertComponent
+    ],
+    templateUrl: './proveedores.component.html'
 })
 export class ProveedoresComponent implements OnInit {
-    private proveedorService = inject(ProveedorService);
+    private readonly proveedorService = inject(ProveedorService);
+    private readonly fb = inject(FormBuilder);
 
+    // Data
     proveedores = signal<Proveedor[]>([]);
-    totalProveedores = signal<number>(0);
-    page = signal<number>(0);
-    searchTerm = '';
-    filterEstado = '';
+    selectedProveedor = signal<Proveedor | null>(null);
+
+    // UI state
+    loading = signal(false);
+    error = signal<string | null>(null);
+    showModal = signal(false);
+    editMode = signal(false);
+    submitting = signal(false);
+    submitError = signal<string | null>(null);
+
+    // Filters
+    searchQuery = signal('');
+    filterEstado = signal('');
+
+    // Pagination
+    currentPage = signal(0);
+    pageSize = signal(10);
+    totalElements = signal(0);
+    totalPages = signal(0);
+
+    // Sort
+    sortField = signal('razonSocial');
+    sortDirection = signal<'asc' | 'desc'>('asc');
+
+    // Computed
+    hasProveedores = computed(() => this.proveedores().length > 0);
+    isEmpty = computed(() => !this.loading() && !this.hasProveedores());
+
+    breadcrumbs: Breadcrumb[] = [
+        { label: 'Admin', url: '/admin' },
+        { label: 'Compras', url: '/admin/compras/dashboard' },
+        { label: 'Proveedores' }
+    ];
+
+    columns: TableColumn<Proveedor>[] = [
+        {
+            key: 'ruc', label: 'RUC', sortable: true, width: '130px',
+            html: true, render: (r) => `<span class="font-mono text-sm">${r.ruc}</span>`
+        },
+        { key: 'razonSocial', label: 'Razón Social', sortable: true },
+        {
+            key: 'condicionSunat', label: 'Cond. SUNAT', html: true,
+            render: (r) => `<span class="badge badge-${r.condicionSunat === 'HABIDO' ? 'success' : 'warning'}">${r.condicionSunat ?? '—'}</span>`
+        },
+        {
+            key: 'condicionPago', label: 'Cond. Pago',
+            render: (r) => r.condicionPago?.replace('_', ' ') ?? '—'
+        },
+        {
+            key: 'contactoEmail', label: 'Email',
+            render: (r) => r.contactoEmail ?? '—'
+        },
+        {
+            key: 'estado', label: 'Estado', html: true,
+            render: (r) => `<span class="badge badge-${r.estado === 'ACTIVO' ? 'success' : 'neutral'}">${r.estado ?? '—'}</span>`
+        }
+    ];
+
+    actions: TableAction<Proveedor>[] = [
+        {
+            label: 'Editar', icon: '✏️', class: 'btn-view',
+            onClick: (row) => this.openEditModal(row)
+        },
+        {
+            label: 'Eliminar', icon: '🗑️', class: 'btn-delete',
+            onClick: (row) => this.onDelete(row)
+        }
+    ];
+
+    proveedorForm: FormGroup;
+
+    constructor() {
+        this.proveedorForm = this.fb.group({
+            ruc: ['', [Validators.required, Validators.pattern(/^\d{11}$/)]],
+            razonSocial: ['', [Validators.required, Validators.maxLength(200)]],
+            nombreComercial: ['', [Validators.maxLength(200)]],
+            condicionSunat: ['HABIDO'],
+            domicilioFiscal: [''],
+            contactoNombre: [''],
+            contactoTelefono: [''],
+            contactoEmail: ['', [Validators.email]],
+            banco: [''],
+            cuentaBanco: [''],
+            condicionPago: ['CONTADO'],
+            monedaPreferida: ['PEN']
+        });
+    }
 
     ngOnInit(): void {
         this.loadProveedores();
     }
 
     loadProveedores(): void {
-        this.proveedorService.getProveedores(this.page(), 20, this.filterEstado || undefined).subscribe({
-            next: (response: ProveedorPage) => {
-                this.proveedores.set(response.content);
-                this.totalProveedores.set(response.totalElements);
+        this.loading.set(true);
+        this.error.set(null);
+        this.proveedorService.getProveedores(
+            this.currentPage(),
+            this.pageSize(),
+            this.searchQuery() || undefined,
+            this.filterEstado() || undefined
+        ).subscribe({
+            next: (res) => {
+                this.proveedores.set(res.content);
+                this.totalElements.set(res.totalElements);
+                this.totalPages.set(res.totalPages);
+                this.loading.set(false);
+            },
+            error: (err: Error) => {
+                this.error.set(err.message);
+                this.loading.set(false);
             }
         });
     }
 
-    onSearch(): void {
-        this.page.set(0);
+    onSearch(event: Event): void {
+        this.searchQuery.set((event.target as HTMLInputElement).value);
+        this.currentPage.set(0);
         this.loadProveedores();
     }
 
-    onFilterChange(): void {
-        this.page.set(0);
+    onFilterEstado(event: Event): void {
+        this.filterEstado.set((event.target as HTMLSelectElement).value);
+        this.currentPage.set(0);
         this.loadProveedores();
     }
 
-    goToPage(pageNum: number): void {
-        this.page.set(pageNum);
+    onSort(event: SortEvent): void {
+        this.sortField.set(event.field);
+        this.sortDirection.set(event.direction);
+        this.currentPage.set(0);
         this.loadProveedores();
     }
 
-    deleteProveedor(id: string): void {
-        if (confirm('¿Está seguro de eliminar este proveedor?')) {
-            this.proveedorService.deleteProveedor(id).subscribe({
-                next: () => this.loadProveedores()
-            });
+    onPaginationChange(event: PaginationChangeEvent): void {
+        this.currentPage.set(event.page);
+        this.pageSize.set(event.size);
+        this.loadProveedores();
+    }
+
+    openCreateModal(): void {
+        this.editMode.set(false);
+        this.selectedProveedor.set(null);
+        this.proveedorForm.reset({ condicionSunat: 'HABIDO', condicionPago: 'CONTADO', monedaPreferida: 'PEN' });
+        this.submitError.set(null);
+        this.showModal.set(true);
+    }
+
+    openEditModal(proveedor: Proveedor): void {
+        this.editMode.set(true);
+        this.selectedProveedor.set(proveedor);
+        this.proveedorForm.patchValue({
+            ruc: proveedor.ruc,
+            razonSocial: proveedor.razonSocial,
+            nombreComercial: proveedor.nombreComercial ?? '',
+            condicionSunat: proveedor.condicionSunat ?? 'HABIDO',
+            domicilioFiscal: proveedor.domicilioFiscal ?? '',
+            contactoNombre: proveedor.contactoNombre ?? '',
+            contactoTelefono: proveedor.contactoTelefono ?? '',
+            contactoEmail: proveedor.contactoEmail ?? '',
+            banco: proveedor.banco ?? '',
+            cuentaBanco: proveedor.cuentaBanco ?? '',
+            condicionPago: proveedor.condicionPago ?? 'CONTADO',
+            monedaPreferida: proveedor.monedaPreferida ?? 'PEN'
+        });
+        this.submitError.set(null);
+        this.showModal.set(true);
+    }
+
+    closeModal(): void {
+        this.showModal.set(false);
+        this.proveedorForm.reset();
+    }
+
+    onSubmit(): void {
+        if (this.proveedorForm.invalid) {
+            this.proveedorForm.markAllAsTouched();
+            return;
         }
+        this.submitting.set(true);
+        this.submitError.set(null);
+
+        const val = this.proveedorForm.value as Partial<Proveedor>;
+        const op = this.editMode()
+            ? this.proveedorService.updateProveedor(this.selectedProveedor()!.id!, val)
+            : this.proveedorService.createProveedor(val);
+
+        op.subscribe({
+            next: () => {
+                this.submitting.set(false);
+                this.closeModal();
+                this.loadProveedores();
+            },
+            error: (err: Error) => {
+                this.submitError.set(err.message);
+                this.submitting.set(false);
+            }
+        });
+    }
+
+    onDelete(proveedor: Proveedor): void {
+        if (!confirm(`¿Eliminar proveedor "${proveedor.razonSocial}"?`)) return;
+        this.loading.set(true);
+        this.proveedorService.deleteProveedor(proveedor.id!).subscribe({
+            next: () => this.loadProveedores(),
+            error: (err: Error) => {
+                this.error.set(err.message);
+                this.loading.set(false);
+            }
+        });
+    }
+
+    getControl(name: string): FormControl {
+        return this.proveedorForm.get(name) as FormControl;
     }
 }

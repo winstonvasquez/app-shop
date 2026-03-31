@@ -6,7 +6,7 @@ import { ProductResponse } from '@core/models/product.model';
 import { PaginationConfig, PageResponse } from '@core/models/pagination.model';
 import { DataTableComponent, TableColumn, TableAction, PaginationEvent, SortEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
-import { ModalComponent } from '@shared/ui/modals/modal/modal.component';
+import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 
@@ -18,7 +18,7 @@ import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
     ReactiveFormsModule,
     DataTableComponent,
     FormFieldComponent,
-    ModalComponent,
+    DrawerComponent,
     PageHeaderComponent,
     AlertComponent
   ],

@@ -59,15 +59,16 @@
         (sortChange)="onSort($event)">
     </app-data-table>
 
-    <!-- Modal for Create/Edit Product -->
-    <app-modal
+    <!-- Drawer for Create/Edit Product -->
+    <app-drawer
         [isOpen]="showModal()"
         [title]="editMode() ? 'Editar Producto' : 'Nuevo Producto'"
-        size="md"
-        (close)="closeModal()">
-        
-        <form [formGroup]="productForm" (ngSubmit)="onSubmit()" body>
-            <!-- Submit Error -->
+        size="lg"
+        side="right"
+        [hasFooter]="true"
+        (closed)="closeModal()">
+
+        <form [formGroup]="productForm" (ngSubmit)="onSubmit()">
             @if (submitError()) {
                 <app-alert
                     type="error"
@@ -77,7 +78,6 @@
                 </app-alert>
             }
 
-            <!-- Nombre -->
             <app-form-field
                 label="Nombre"
                 [control]="getControl('nombre')"
@@ -86,19 +86,17 @@
                 [required]="true">
             </app-form-field>
 
-            <!-- Descripción -->
             <div class="form-group">
                 <label for="descripcion">Descripción</label>
-                <textarea 
-                    id="descripcion" 
-                    formControlName="descripcion" 
-                    class="form-control" 
+                <textarea
+                    id="descripcion"
+                    formControlName="descripcion"
+                    class="form-control"
                     rows="3"
                     placeholder="Descripción detallada del producto">
                 </textarea>
             </div>
 
-            <!-- Precio Base -->
             <app-form-field
                 label="Precio Base"
                 [control]="getControl('precioBase')"
@@ -108,7 +106,6 @@
                 [required]="true">
             </app-form-field>
 
-            <!-- Marca -->
             <app-form-field
                 label="Marca"
                 [control]="getControl('marca')"
@@ -116,7 +113,6 @@
                 placeholder="Ej: HP, Dell, Samsung">
             </app-form-field>
 
-            <!-- Company ID -->
             <app-form-field
                 label="ID de Empresa"
                 [control]="getControl('companyId')"
@@ -127,17 +123,17 @@
             </app-form-field>
         </form>
 
-        <div footer>
-            <button 
-                type="button" 
-                class="btn btn-secondary" 
-                (click)="closeModal()" 
+        <div slot="footer">
+            <button
+                type="button"
+                class="btn btn-secondary"
+                (click)="closeModal()"
                 [disabled]="submitting()">
                 Cancelar
             </button>
-            <button 
-                type="submit" 
-                class="btn btn-primary" 
+            <button
+                type="button"
+                class="btn btn-primary"
                 (click)="onSubmit()"
                 [disabled]="submitting() || productForm.invalid">
                 @if (submitting()) {
@@ -147,5 +143,5 @@
                 }
             </button>
         </div>
-    </app-modal>
+    </app-drawer>
 </div>

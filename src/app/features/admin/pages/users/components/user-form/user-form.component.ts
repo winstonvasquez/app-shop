@@ -2,12 +2,13 @@
 import { Component, ChangeDetectionStrategy, input, output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormGroup } from '@angular/forms';
+import { DrawerComponent } from '../../../../../../shared/components/drawer/drawer.component';
 import { RolDto, TIPO_DOCUMENTO_OPTIONS } from '@features/admin/models/user.model';
 
 @Component({
     selector: 'app-user-form',
     standalone: true,
-    imports: [CommonModule, ReactiveFormsModule],
+    imports: [CommonModule, ReactiveFormsModule, DrawerComponent],
     templateUrl: './user-form.component.html',
     styleUrl: './user-form.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush

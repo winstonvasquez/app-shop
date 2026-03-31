@@ -1,6 +1,18 @@
 /* Custom Utilities - Project-Specific Patterns */
 
 /* ============================================
+   FOCUS RING
+   ============================================ */
+
+.focus-ring {
+    &:focus-visible {
+        outline: 2px solid var(--color-primary);
+        outline-offset: 2px;
+        box-shadow: 0 0 0 4px var(--color-focus-ring);
+    }
+}
+
+/* ============================================
    TEMU-STYLE GRADIENTS
    ============================================ */
 
@@ -53,6 +65,20 @@
 
 .animate-fade-in-up {
     animation: fade-in-up 0.5s var(--ease-out);
+}
+
+@keyframes slide-in-left {
+    from {
+        transform: translateX(-100%);
+    }
+
+    to {
+        transform: translateX(0);
+    }
+}
+
+.animate-slide-in-left {
+    animation: slide-in-left 0.25s ease-out;
 }
 
 /* ============================================

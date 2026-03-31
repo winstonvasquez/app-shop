@@ -1,7 +1,6 @@
 import { Injectable, signal, inject, effect } from '@angular/core';
 import { TranslateService } from '@ngx-translate/core';
 import { Observable } from 'rxjs';
-import { tap } from 'rxjs/operators';
 
 export interface Language {
     code: string;
@@ -55,9 +54,7 @@ export class LanguageService {
 
         // Update signal and use the language (async — APP_INITIALIZER awaits completion)
         this.currentLanguage.set(finalLanguage);
-        return this.translate.use(finalLanguage).pipe(
-            tap((res: any) => console.log('initializeTranslations use completion:', res))
-        );
+        return this.translate.use(finalLanguage);
     }
 
     /** Change application language at runtime */

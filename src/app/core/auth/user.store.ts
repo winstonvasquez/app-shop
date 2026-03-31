@@ -1,4 +1,4 @@
-import { Injectable, signal, computed, effect, inject } from '@angular/core';
+import { Injectable, signal, computed } from '@angular/core';
 
 export interface User {
     id: string;
@@ -18,11 +18,7 @@ export class UserStore {
     readonly isAuthenticated = computed(() => this._isAuthenticated());
     readonly isAdmin = computed(() => this._user()?.role === 'admin');
 
-    constructor() {
-        effect(() => {
-            console.log('User state changed:', this._user() ? 'LoggedIn' : 'LoggedOut');
-        });
-    }
+    constructor() {}
 
     login(user: User) {
         this._user.set(user);

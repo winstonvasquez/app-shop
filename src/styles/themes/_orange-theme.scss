@@ -3,9 +3,8 @@
    Overrides semantic tokens with a vibrant, high-contrast Orange/Green palette.
    ============================================ */
 
-[data-theme="orange"] {
-
-    /* --- PRIMITIVE TOKENS (Orange Theme scales) --- */
+/* Inject new primitives into the Tailwind v4 engine */
+@theme {
     /* Orange Scale */
     --color-orange-50: #fff8ec;
     --color-orange-100: #ffefd3;
@@ -32,17 +31,20 @@
     --color-green-900: #275116;
     --color-green-950: #102d06;
 
-    /* Base Neutrals specific to this Theme (softer darks for better orange contrast) */
+    /* Base Neutrals specific to this Theme */
     --color-theme-surface: oklch(0.18 0.01 40);
-    /* Slightly warm dark surface */
     --color-theme-surface-raised: oklch(0.24 0.02 40);
-    /* Elevated warm surface */
     --color-theme-bg: oklch(0.13 0.01 40);
-    /* Warm deep background */
     --color-theme-border: oklch(0.30 0.02 40);
+}
 
-    /* --- SEMANTIC TOKENS --- */
+/* Override existing semantic tokens when these themes are active */
 
+/* -----------------------------------------------------------------
+   1. ORANGE BLACK THEME
+   Inherits dark backgrounds but injects Orange highlights and accents.
+   ----------------------------------------------------------------- */
+[data-theme="orange-black"] {
     /* Primary Colors */
     --color-primary: var(--color-orange-500);
     --color-primary-dark: var(--color-orange-600);
@@ -50,27 +52,112 @@
     --color-accent-dark: var(--color-orange-500);
     --color-secondary: var(--color-orange-950);
 
-    /* Surface & Background */
+    /* Surface & Background (Keeping them Dark but Warm) */
     --color-surface: var(--color-theme-surface);
     --color-surface-raised: var(--color-theme-surface-raised);
     --color-background: var(--color-theme-bg);
     --color-border: var(--color-theme-border);
 
-    /* Text Colors */
+    /* Text Colors (High Contrast for Dark UI) */
     --color-text-primary: var(--color-orange-50);
     --color-text-secondary: var(--color-orange-200);
     --color-text-muted: var(--color-orange-300);
 
     /* State Colors */
     --color-success: var(--color-green-500);
-    --color-warning: #facc15;
-    /* Keeping standard warning */
-    --color-error: #ef4444;
-    /* Keeping standard error */
-    --color-info: #3b82f6;
-    /* Keeping standard info */
 
-    /* --- TYPOGRAPHY HIERARCHY OVERRIDES --- */
+    /* Interaction overlays — dark warm surface */
+    --color-hover-overlay:  oklch(1 0 0 / 0.06);
+    --color-active-overlay: oklch(1 0 0 / 0.12);
+    --color-border-strong:  oklch(0.45 0.04 40);
+    --color-focus-ring:     color-mix(in srgb, var(--color-orange-500) 30%, transparent);
+}
+
+/* -----------------------------------------------------------------
+   2. ORANGE LIGHT THEME — Línea Gráfica Completa
+   ─────────────────────────────────────────────────────────────────
+   PALETA NARANJA  →  Superficies, textos, marca, interacción
+   PALETA VERDE    →  Acento, éxito, confirmación positiva
+   NEUTROS BLANCOS →  Tarjetas (contraste máximo sobre fondo crema)
+
+   Jerarquía de color:
+     Fondo (bg):     orange-50  #fff8ec  — crema suave, cálido
+     Superficie:     #ffffff            — tarjetas blancas puras
+     Sup. elevada:   orange-100 #ffefd3  — hover de filas, dropdown
+     Borde:          orange-200 #ffdca7  — divisores sutiles cálidos
+     Borde fuerte:   orange-300 #ffc26f  — separadores prominentes
+     Primario:       orange-500 #ff7e0d  — CTA, links, acciones
+     Primario dark:  orange-600 #f36203  — hover / pressed
+     Acento:         green-500  #5dd31d  — badge nuevo, progreso +
+     Texto alto:     orange-950 #451605  — headings, body, max contrast
+     Texto medio:    orange-900 #80310e  — labels, metadata
+     Texto bajo:     orange-800 #97360c  — placeholders, disabled
+   ----------------------------------------------------------------- */
+[data-theme="orange-light"] {
+
+    /* ── BRAND COLORS ───────────────────────────────── */
+    --color-primary:        var(--color-orange-500);  /* #ff7e0d */
+    --color-primary-dark:   var(--color-orange-600);  /* #f36203 */
+    --color-accent:         var(--color-green-500);   /* #5dd31d */
+    --color-accent-dark:    var(--color-green-600);   /* #409f11 */
+    --color-secondary:      var(--color-orange-950);  /* #451605 */
+
+    /* ── SUPERFICIES — escala naranja cálida ────────── */
+    --color-background:     var(--color-orange-50);   /* #fff8ec */
+    --color-surface:        #ffffff;
+    --color-surface-raised: var(--color-orange-100);  /* #ffefd3 */
+    --color-border:         var(--color-orange-200);  /* #ffdca7 */
+    --color-border-strong:  var(--color-orange-300);  /* #ffc26f */
+
+    /* ── TEXTO — oscuros del extremo de la paleta ───── */
+    --color-text-primary:   var(--color-orange-950);  /* #451605 — ratio >7:1 */
+    --color-text-secondary: var(--color-orange-900);  /* #80310e */
+    --color-text-muted:     var(--color-orange-800);  /* #97360c */
+
+    /* ── ESTADOS SEMÁNTICOS ─────────────────────────── */
+    --color-success:        var(--color-green-600);   /* #409f11 */
+    --color-success-light:  var(--color-green-50);    /* #f2fde8 */
+    --color-success-dark:   var(--color-green-700);   /* #337912 */
+
+    --color-warning:        var(--color-orange-400);  /* #ff9c35 — ámbar */
+    --color-warning-light:  var(--color-orange-100);  /* #ffefd3 */
+
+    --color-error:          oklch(0.59 0.24 25);      /* Rojo universal — no cambia */
+    --color-error-light:    oklch(0.97 0.01 25);
+
+    --color-info:           oklch(0.58 0.17 248);
+    --color-info-light:     oklch(0.96 0.02 248);
+
+    --color-danger:         var(--color-orange-700);  /* #c94805 — destructivo cálido */
+
+    /* ── INTERACCIÓN ────────────────────────────────── */
+    --color-hover-surface:  var(--color-orange-100);  /* fila/item hover */
+    --color-active-surface: var(--color-orange-200);  /* fila/item active */
+    --color-focus-ring:     color-mix(in srgb, var(--color-orange-500) 30%, transparent);
+    --color-selection-bg:   var(--color-orange-200);
+    --color-selection-text: var(--color-orange-950);
+
+    /* ── SOMBRAS — tinte naranja cálido, intensidad baja ── */
+    --shadow-sm:  0 1px 3px 0
+                  color-mix(in srgb, var(--color-orange-700) 10%, transparent);
+    --shadow-md:  0 4px 6px -1px color-mix(in srgb, var(--color-orange-700) 15%, transparent),
+                  0 2px 4px -2px color-mix(in srgb, var(--color-orange-700) 10%, transparent);
+    --shadow-lg:  0 10px 15px -3px color-mix(in srgb, var(--color-orange-700) 20%, transparent),
+                  0 4px 6px -4px  color-mix(in srgb, var(--color-orange-700) 14%, transparent);
+    --shadow-xl:  0 20px 25px -5px color-mix(in srgb, var(--color-orange-700) 26%, transparent),
+                  0 8px 10px -6px  color-mix(in srgb, var(--color-orange-700) 18%, transparent);
+    --shadow-glow: 0 0 20px color-mix(in srgb, var(--color-orange-500) 35%, transparent);
+
+    /* ── INTERACTION OVERLAYS — base naranja cálido ─── */
+    --color-hover-overlay:   var(--color-orange-100);  /* #ffefd3 — row/item hover */
+    --color-active-overlay:  var(--color-orange-200);  /* #ffdca7 — row/item active */
+    --color-border-strong:   var(--color-orange-300);  /* #ffc26f — prominent border */
+    --color-focus-ring:      color-mix(in srgb, var(--color-orange-500) 30%, transparent);
+    --color-primary-contrast: var(--color-orange-950); /* dark text on orange-500 primary */
+}
+
+/* Base typographic/spacing overrides that apply to BOTH orange themes */
+:is([data-theme="orange-black"], [data-theme="orange-light"]) {
     /* Adjusting to feel sturdier and more structural for the new graphic line */
     --text-xs: 0.70rem;
     --text-sm: 0.85rem;
@@ -121,7 +208,7 @@
     --border-width-2: 2px;
 
     /* --- SHADOW SYSTEM OVERRIDES --- */
-    /* Deeper, warmer orange-tinted shadows */
+    /* Deeper, warmer orange-tinted shadows for dark theme */
     --shadow-sm: 0 1px 3px 0 color-mix(in srgb, var(--color-orange-950) 40%, transparent);
     --shadow-md: 0 4px 6px -1px color-mix(in srgb, var(--color-orange-950) 50%, transparent), 0 2px 4px -2px color-mix(in srgb, var(--color-orange-950) 40%, transparent);
     --shadow-lg: 0 10px 15px -3px color-mix(in srgb, var(--color-orange-950) 60%, transparent), 0 4px 6px -4px color-mix(in srgb, var(--color-orange-950) 50%, transparent);
@@ -129,19 +216,134 @@
 }
 
 /* ============================================
-   COMPONENT SPECIFIC VARS / OVERRIDES 
-   (If elements need specific adjustments only under orange theme)
+   COMPONENT OVERRIDES COMPARTIDOS (ambos orange themes)
    ============================================ */
 
-[data-theme="orange"] {
+:is([data-theme="orange-black"], [data-theme="orange-light"]) {
+    /* Gradiente naranja en botón principal */
+    .btn-primary,
     .btn-primary-gradient {
-        /* Example: If you have hardcoded gradients in ui.scss, you can override them safely here */
         background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+        border-color: color-mix(in srgb, var(--color-orange-950) 12%, transparent);
     }
 
-    /* Force UI cards to adopt the new chiseled borders */
-    .ui-card {
+    /* Cards con radio chiseled */
+    .ui-card,
+    .card {
         border-radius: var(--radius-md);
         box-shadow: var(--shadow-md);
+    }
+
+    /* Focus ring naranja */
+    :focus-visible {
+        outline-color: var(--color-primary);
+        outline-offset: 2px;
+    }
+}
+
+/* ============================================
+   COMPONENT OVERRIDES EXCLUSIVOS — ORANGE LIGHT
+   ============================================ */
+
+[data-theme="orange-light"] {
+
+    /* ── Text selection ─────────────────────────── */
+    ::selection {
+        background-color: var(--color-selection-bg);
+        color: var(--color-selection-text);
+    }
+
+    /* ── Scrollbar — tonos naranja suaves ───────── */
+    * {
+        scrollbar-color: var(--color-orange-300) var(--color-orange-50);
+        scrollbar-width: thin;
+    }
+
+    /* ── Input fields ───────────────────────────── */
+    .input-field {
+        background: #ffffff;
+        border-color: var(--color-orange-200);
+        color: var(--color-orange-950);
+
+        &::placeholder {
+            color: var(--color-orange-300);
+        }
+
+        &:focus {
+            border-color: var(--color-orange-500);
+            box-shadow: 0 0 0 3px var(--color-focus-ring);
+            background: #ffffff;
+        }
+    }
+
+    /* ── Botón primario — glow naranja en hover ── */
+    .btn-primary,
+    .btn-primary-gradient {
+        color: #ffffff;
+
+        &:hover:not(:disabled) {
+            filter: brightness(1.06);
+            box-shadow: var(--shadow-glow);
+        }
+    }
+
+    /* ── Botón secundario — borde cálido ─────────── */
+    .btn-secondary {
+        background: #ffffff;
+        border-color: var(--color-orange-200);
+        color: var(--color-orange-950);
+
+        &:hover:not(:disabled) {
+            background: var(--color-orange-50);
+            border-color: var(--color-orange-400);
+        }
+    }
+
+    /* ── Badges — paleta naranja/verde ──────────── */
+    .badge-success {
+        background: var(--color-green-50);
+        color: var(--color-green-700);
+        border: 1px solid var(--color-green-200);
+    }
+
+    .badge-warning {
+        background: var(--color-orange-100);
+        color: var(--color-orange-800);
+        border: 1px solid var(--color-orange-300);
+    }
+
+    .badge-accent {
+        background: var(--color-orange-100);
+        color: var(--color-orange-700);
+        border: 1px solid var(--color-orange-200);
+    }
+
+    /* ── Tablas — zebra cálida ───────────────────── */
+    .table-row:nth-child(even) {
+        background: var(--color-orange-50);
+    }
+
+    .table-row:hover {
+        background: var(--color-hover-surface);
+    }
+
+    /* ── Cards — sin sombra oscura, borde naranja ─ */
+    .card {
+        background: #ffffff;
+        border-color: var(--color-orange-200);
+    }
+
+    /* ── Navigation items — hover cálido ────────── */
+    .nav-item:hover,
+    .sidebar-item:hover {
+        background: var(--color-hover-surface);
+        color: var(--color-orange-600);
+    }
+
+    .nav-item.active,
+    .sidebar-item.active {
+        background: var(--color-orange-100);
+        color: var(--color-orange-600);
+        border-left-color: var(--color-orange-500);
     }
 }

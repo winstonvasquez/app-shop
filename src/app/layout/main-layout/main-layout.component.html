@@ -5,10 +5,13 @@
     </main>
     <app-footer></app-footer>
     <app-floating-menu></app-floating-menu>
+    <app-floating-chat></app-floating-chat>
     <app-cart-drawer></app-cart-drawer>
     <app-product-quickview></app-product-quickview>
 </div>
 
 <app-auth-modal [isOpen]="modalState.isAuthModalOpen()" (close)="modalState.closeAuthModal()"
-    (loginSuccess)="modalState.closeAuthModal()">
+    (loginSuccess)="onAuthModalLoginSuccess()">
 </app-auth-modal>
+
+<app-toast-container />

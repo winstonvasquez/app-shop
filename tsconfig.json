@@ -27,6 +27,12 @@
       ],
       "@env/*": [
         "src/environments/*"
+      ],
+      "@microshop/auth-lib": [
+        "./projects/auth-lib/src/public-api"
+      ],
+      "@microshop/ui-kit": [
+        "./projects/ui-kit/src/public-api"
       ]
     }
   },
@@ -40,6 +46,54 @@
   "references": [
     {
       "path": "./tsconfig.app.json"
+    },
+    {
+      "path": "./projects/auth-lib/tsconfig.lib.json"
+    },
+    {
+      "path": "./projects/auth-lib/tsconfig.spec.json"
+    },
+    {
+      "path": "./projects/ui-kit/tsconfig.lib.json"
+    },
+    {
+      "path": "./projects/ui-kit/tsconfig.spec.json"
+    },
+    {
+      "path": "./projects/mfe-pos/tsconfig.app.json"
+    },
+    {
+      "path": "./projects/mfe-pos/tsconfig.spec.json"
+    },
+    {
+      "path": "./projects/mfe-rrhh/tsconfig.app.json"
+    },
+    {
+      "path": "./projects/mfe-rrhh/tsconfig.spec.json"
+    },
+    {
+      "path": "./projects/mfe-finanzas/tsconfig.app.json"
+    },
+    {
+      "path": "./projects/mfe-finanzas/tsconfig.spec.json"
+    },
+    {
+      "path": "./projects/mfe-operaciones/tsconfig.app.json"
+    },
+    {
+      "path": "./projects/mfe-operaciones/tsconfig.spec.json"
+    },
+    {
+      "path": "./projects/mfe-platform/tsconfig.app.json"
+    },
+    {
+      "path": "./projects/mfe-platform/tsconfig.spec.json"
+    },
+    {
+      "path": "./projects/mfe-comercial/tsconfig.app.json"
+    },
+    {
+      "path": "./projects/mfe-comercial/tsconfig.spec.json"
     }
   ]
 }

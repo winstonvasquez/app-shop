@@ -1,4 +1,5 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-menu-reviews',
@@ -7,5 +8,9 @@ import { Component } from '@angular/core';
   styleUrl: './menu-reviews.component.scss',
 })
 export class MenuReviews {
+  private router = inject(Router);
 
+  navigate(): void {
+    this.router.navigate(['/account/reviews']);
+  }
 }

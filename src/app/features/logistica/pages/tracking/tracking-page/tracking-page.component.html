@@ -1,0 +1,88 @@
+<div class="page-container">
+<app-page-header
+  title="Seguimiento de Envíos"
+  subtitle="Tracking en tiempo real por número de guía"
+  [breadcrumbs]="breadcrumbs">
+</app-page-header>
+
+<div class="card" style="margin-bottom:24px">
+  <div class="card-body">
+    <div style="display:flex;gap:12px;align-items:flex-end">
+      <div style="flex:1">
+        <label class="input-label">Número de Guía / Tracking</label>
+        <input
+          class="input-field"
+          [(ngModel)]="trackingInput"
+          placeholder="Ej: T001-20240315143022"
+          (keydown.enter)="buscarTracking()"
+        >
+      </div>
+      <button class="btn btn-primary" (click)="buscarTracking()" [disabled]="buscando()">
+        {{ buscando() ? 'Buscando...' : 'Rastrear' }}
+      </button>
+    </div>
+
+    @if (errorMsg()) {
+      <p class="input-error-message" style="margin-top:8px">{{ errorMsg() }}</p>
+    }
+  </div>
+</div>
+
+@if (trackingInfo()) {
+  <div class="card" style="margin-bottom:24px">
+    <div class="card-header">
+      <h3 class="card-title">Resultado — {{ trackingInfo()!.trackingNumber }}</h3>
+      <span [class]="statusBadge(trackingInfo()!.currentStatus)">{{ trackingInfo()!.currentStatus }}</span>
+    </div>
+    <div class="card-body">
+      @if (trackingInfo()!.estimatedDelivery) {
+        <p style="margin-bottom:16px">
+          <strong>Entrega estimada:</strong>
+          {{ trackingInfo()!.estimatedDelivery | date:'dd/MM/yyyy HH:mm' }}
+        </p>
+      }
+
+      <h4 style="margin-bottom:12px;font-size:0.9rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em">
+        Historial de Eventos
+      </h4>
+      <div class="timeline">
+        @for (event of trackingInfo()!.events; track $index) {
+          <div class="timeline-item">
+            <div class="timeline-dot"></div>
+            <div class="timeline-content">
+              <div style="display:flex;justify-content:space-between;align-items:start;gap:16px">
+                <div>
+                  <p style="font-weight:500;margin:0">{{ event.description }}</p>
+                  <p style="color:var(--color-text-muted);font-size:0.8rem;margin:2px 0 0">{{ event.location }}</p>
+                </div>
+                <span style="color:var(--color-text-muted);font-size:0.8rem;white-space:nowrap">
+                  {{ event.timestamp | date:'dd/MM/yyyy HH:mm' }}
+                </span>
+              </div>
+            </div>
+          </div>
+        } @empty {
+          <p style="color:var(--color-text-muted)">Sin eventos registrados</p>
+        }
+      </div>
+    </div>
+  </div>
+}
+
+<div class="card">
+  <div class="card-header">
+    <h3 class="card-title">Envíos Recientes</h3>
+    <button class="btn btn-secondary" (click)="cargarEnvios()">Actualizar</button>
+  </div>
+  <app-data-table
+    [data]="envios()"
+    [columns]="columns"
+    [actions]="envioActions"
+    [loading]="loadingEnvios()"
+    [totalPages]="1"
+    [totalElements]="envios().length"
+    [currentPage]="0"
+    [pageSize]="100">
+  </app-data-table>
+</div>
+</div>

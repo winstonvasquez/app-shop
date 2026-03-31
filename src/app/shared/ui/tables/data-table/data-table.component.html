@@ -1,4 +1,35 @@
 <div class="data-table-container">
+    <!-- Toolbar: búsqueda, filtros combo y exportación -->
+    @if (searchable() || filters().length > 0 || exportable()) {
+        <div class="table-toolbar">
+            @if (searchable()) {
+                <div class="table-search">
+                    <input
+                        type="text"
+                        class="input-field"
+                        [placeholder]="searchPlaceholder()"
+                        (input)="onSearchInput($event)" />
+                </div>
+            }
+            @for (filter of filters(); track filter.field) {
+                <div class="table-filter">
+                    <select class="input-field" (change)="onFilterChange(filter.field, $event)">
+                        <option value="">{{ filter.label }}</option>
+                        @for (opt of filter.options | async; track opt.value) {
+                            <option [value]="opt.value">{{ opt.label }}</option>
+                        }
+                    </select>
+                </div>
+            }
+            @if (exportable()) {
+                <div class="table-export-buttons">
+                    <button type="button" class="btn btn-secondary" (click)="onExportCsv()">CSV</button>
+                    <button type="button" class="btn btn-secondary" (click)="onExportExcel()">Excel</button>
+                </div>
+            }
+        </div>
+    }
+
     <!-- Loading State -->
     @if (loading()) {
         <div class="loading-overlay">
@@ -67,7 +98,11 @@
                             
                             @for (column of columns(); track column.key) {
                                 <td [style.text-align]="column.align || 'left'">
-                                    {{ getCellValue(row, column) }}
+                                    @if (column.html) {
+                                        <span [innerHTML]="getCellValue(row, column)"></span>
+                                    } @else {
+                                        {{ getCellValue(row, column) }}
+                                    }
                                 </td>
                             }
                             
@@ -97,46 +132,14 @@
         </table>
     </div>
 
-    <!-- Pagination -->
-    @if (totalPages() > 1) {
-        <div class="pagination">
-            <div class="pagination-info">
-                Mostrando {{ (currentPage() * pageSize()) + 1 }} - 
-                {{ Math.min((currentPage() + 1) * pageSize(), totalElements()) }} 
-                de {{ totalElements() }} registros
-            </div>
-            
-            <div class="pagination-controls">
-                <button 
-                    type="button"
-                    class="pagination-btn"
-                    [disabled]="currentPage() === 0"
-                    (click)="onPageChange(currentPage() - 1)">
-                    Anterior
-                </button>
-                
-                @for (page of pages(); track page) {
-                    @if (page < 3 || page >= totalPages() - 3 || Math.abs(page - currentPage()) <= 1) {
-                        <button 
-                            type="button"
-                            class="pagination-btn"
-                            [class.active]="page === currentPage()"
-                            (click)="onPageChange(page)">
-                            {{ page + 1 }}
-                        </button>
-                    } @else if (page === 3 || page === totalPages() - 4) {
-                        <span class="pagination-ellipsis">...</span>
-                    }
-                }
-                
-                <button 
-                    type="button"
-                    class="pagination-btn"
-                    [disabled]="currentPage() === totalPages() - 1"
-                    (click)="onPageChange(currentPage() + 1)">
-                    Siguiente
-                </button>
-            </div>
-        </div>
+    <!-- Pagination (se puede desactivar con [hidePagination]="true" para usar app-pagination standalone) -->
+    @if (!hidePagination()) {
+        <app-pagination
+            [currentPage]="currentPage()"
+            [totalPages]="totalPages()"
+            [totalElements]="totalElements()"
+            [pageSize]="pageSize()"
+            (pageChange)="onPaginationChange($event)">
+        </app-pagination>
     }
 </div>

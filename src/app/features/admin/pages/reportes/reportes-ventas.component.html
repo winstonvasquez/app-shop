@@ -1,0 +1,100 @@
+<div class="page-container">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Reporte de Ventas POS</h1>
+            <p class="page-subtitle">Transacciones registradas en el punto de venta</p>
+        </div>
+        <div class="page-actions no-print" style="display:flex;gap:8px">
+            <button class="btn btn-secondary" (click)="onExportarCsv()" [disabled]="cargando() || ventas().length === 0">
+                Exportar CSV
+            </button>
+            <button class="btn btn-secondary" (click)="exportarExcel()" [disabled]="cargando() || ventas().length === 0">
+                Exportar Excel
+            </button>
+            <button class="btn btn-secondary" (click)="imprimir()" [disabled]="cargando()">
+                Imprimir / PDF
+            </button>
+            <button class="btn btn-primary" (click)="cargar()" [disabled]="cargando()">
+                {{ cargando() ? 'Cargando...' : 'Actualizar' }}
+            </button>
+        </div>
+    </div>
+
+    @if (error()) {
+        <div class="card" style="border-left:3px solid var(--color-warning);padding:var(--space-md);margin-bottom:var(--space-lg)">
+            <p style="color:var(--color-text-muted);font-size:0.875rem">
+                Servicio POS no disponible. Verifique que microshopventas esté corriendo.
+            </p>
+        </div>
+    }
+
+    <!-- KPIs -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:var(--space-md);margin-bottom:var(--space-lg)">
+        <div class="card">
+            <div class="card-body">
+                <p style="font-size:0.75rem;color:var(--color-text-muted)">TOTAL VENTAS</p>
+                <p style="font-size:2rem;font-weight:700;color:var(--color-primary)">{{ totalVentas() }}</p>
+                <p style="font-size:0.75rem;color:var(--color-text-muted)">transacciones</p>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-body">
+                <p style="font-size:0.75rem;color:var(--color-text-muted)">MONTO TOTAL</p>
+                <p style="font-size:1.5rem;font-weight:700;color:var(--color-success)">S/ {{ montoTotal() | number:'1.2-2' }}</p>
+                <p style="font-size:0.75rem;color:var(--color-text-muted)">en ventas</p>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-body">
+                <p style="font-size:0.75rem;color:var(--color-text-muted)">TICKET PROMEDIO</p>
+                <p style="font-size:1.5rem;font-weight:700">S/ {{ ticketPromedio() | number:'1.2-2' }}</p>
+                <p style="font-size:0.75rem;color:var(--color-text-muted)">por venta</p>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-body">
+                <p style="font-size:0.75rem;color:var(--color-text-muted)">COMPLETADAS</p>
+                <p style="font-size:2rem;font-weight:700;color:var(--color-success)">{{ ventasCompletadas() }}</p>
+                <p style="font-size:0.75rem;color:var(--color-text-muted)">transacciones</p>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-body">
+                <p style="font-size:0.75rem;color:var(--color-text-muted)">IGV TOTAL</p>
+                <p style="font-size:1.5rem;font-weight:700">S/ {{ igvTotal() | number:'1.2-2' }}</p>
+                <p style="font-size:0.75rem;color:var(--color-text-muted)">18% recaudado</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Transacciones POS</h3>
+        </div>
+        <div class="filters-bar no-print">
+            <div class="search-box">
+                <span class="search-box-icon">&#128269;</span>
+                <input type="text" class="input-field" placeholder="Buscar por ticket o cajero..."
+                       [(ngModel)]="busqueda" style="padding-left:2rem">
+            </div>
+            <select class="input-field" [(ngModel)]="filtroEstado" style="width:auto">
+                <option value="">Todos los estados</option>
+                @for (opt of estadoOptions; track opt.value) {
+                    <option [value]="opt.value">{{ opt.label }}</option>
+                }
+            </select>
+        </div>
+
+        <app-data-table
+            [data]="ventasFiltradas()"
+            [columns]="columns"
+            [actions]="actions"
+            [loading]="cargando()"
+            [currentPage]="pagina()"
+            [pageSize]="100"
+            [totalElements]="totalElements()"
+            [totalPages]="totalPages()"
+            (pageChange)="irPagina($event.page)">
+        </app-data-table>
+    </div>
+</div>

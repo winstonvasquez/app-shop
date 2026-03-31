@@ -1,0 +1,211 @@
+<div class="page-container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Dashboard de Tesorería</h1>
+      <p class="page-subtitle">Resumen financiero del día — {{ hoy | date:'EEEE, d MMMM yyyy' }}</p>
+    </div>
+    <div class="page-actions">
+      <button class="btn btn-primary" (click)="cargar()" [disabled]="cargando()">
+        {{ cargando() ? 'Cargando...' : 'Actualizar' }}
+      </button>
+    </div>
+  </div>
+
+  @if (error()) {
+    <div class="card" style="border-left:3px solid var(--color-warning);padding:var(--space-md);margin-bottom:var(--space-lg)">
+      <p style="color:var(--color-text-muted);font-size:0.875rem">
+        Servicio de tesorería no disponible. Verifique que microshoptesoreria esté corriendo en puerto 8089.
+      </p>
+    </div>
+  }
+
+  <!-- KPIs -->
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:var(--space-md);margin-bottom:var(--space-lg)">
+    <div class="card">
+      <div class="card-body">
+        <div style="color:var(--color-text-muted);font-size:0.875rem">Cajas abiertas</div>
+        <div style="font-size:2rem;font-weight:700;color:var(--color-primary)">{{ cajasAbiertas() }}</div>
+        <div style="color:var(--color-text-muted);font-size:0.875rem">de {{ totalCajas() }} registradas</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-body">
+        <div style="color:var(--color-text-muted);font-size:0.875rem">Saldo total en cajas</div>
+        <div style="font-size:1.75rem;font-weight:700;color:var(--color-success)">
+          S/ {{ saldoTotalCajas() | number:'1.2-2' }}
+        </div>
+        <div style="color:var(--color-text-muted);font-size:0.875rem">saldo acumulado</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-body">
+        <div style="color:var(--color-text-muted);font-size:0.875rem">Ingresos del día</div>
+        <div style="font-size:1.75rem;font-weight:700;color:var(--color-success)">
+          S/ {{ ingresosHoy() | number:'1.2-2' }}
+        </div>
+        <div style="color:var(--color-text-muted);font-size:0.875rem">movimientos INGRESO</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-body">
+        <div style="color:var(--color-text-muted);font-size:0.875rem">Egresos del día</div>
+        <div style="font-size:1.75rem;font-weight:700"
+             [style.color]="egresosHoy() > 0 ? 'var(--color-warning)' : 'var(--color-text-muted)'">
+          S/ {{ egresosHoy() | number:'1.2-2' }}
+        </div>
+        <div style="color:var(--color-text-muted);font-size:0.875rem">movimientos EGRESO</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-body">
+        <div style="color:var(--color-text-muted);font-size:0.875rem">Pagos pendientes</div>
+        <div style="font-size:2rem;font-weight:700"
+             [style.color]="pagosPendientes() > 0 ? 'var(--color-warning)' : 'var(--color-success)'">
+          {{ pagosPendientes() }}
+        </div>
+        <div style="color:var(--color-text-muted);font-size:0.875rem">por aprobar</div>
+      </div>
+    </div>
+  </div>
+
+  @if (cargando()) {
+    <div class="loading-container"><div class="spinner"></div></div>
+  } @else {
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md)">
+
+      <!-- Estado de cajas -->
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">Estado de Cajas</h3>
+          <a routerLink="/tesoreria/cajas" class="btn btn-secondary"
+             style="font-size:0.8rem;padding:4px 10px">Ver todas</a>
+        </div>
+        <table class="table">
+          <thead>
+            <tr>
+              <th class="table-header-cell">Caja</th>
+              <th class="table-header-cell" style="text-align:right">Saldo</th>
+              <th class="table-header-cell">Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (caja of cajas().slice(0, 6); track caja.id ?? $index) {
+              <tr class="table-row">
+                <td class="table-cell" style="font-weight:600">{{ caja.nombre }}</td>
+                <td class="table-cell" style="text-align:right;font-variant-numeric:tabular-nums">
+                  S/ {{ caja.saldoActual | number:'1.2-2' }}
+                </td>
+                <td class="table-cell">
+                  <span [class]="caja.estado === 'ABIERTA' ? 'badge badge-success' : 'badge badge-neutral'">
+                    {{ caja.estado }}
+                  </span>
+                </td>
+              </tr>
+            }
+            @if (cajas().length === 0) {
+              <tr class="table-row">
+                <td colspan="3"
+                    style="text-align:center;color:var(--color-text-muted);padding:var(--space-lg)">
+                  Sin cajas registradas
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagos recientes -->
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">Pagos Recientes</h3>
+          <a routerLink="/tesoreria/pagos" class="btn btn-secondary"
+             style="font-size:0.8rem;padding:4px 10px">Ver todos</a>
+        </div>
+        <table class="table">
+          <thead>
+            <tr>
+              <th class="table-header-cell">Beneficiario</th>
+              <th class="table-header-cell" style="text-align:right">Monto</th>
+              <th class="table-header-cell">Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (pago of pagosRecientes().slice(0, 6); track pago.id ?? $index) {
+              <tr class="table-row">
+                <td class="table-cell">
+                  <div style="font-weight:600;font-size:0.875rem">{{ pago.beneficiarioNombre }}</div>
+                  <div style="color:var(--color-text-muted);font-size:0.75rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px">
+                    {{ pago.concepto }}
+                  </div>
+                </td>
+                <td class="table-cell" style="text-align:right;font-variant-numeric:tabular-nums">
+                  S/ {{ pago.monto | number:'1.2-2' }}
+                </td>
+                <td class="table-cell">
+                  <span [class]="badgePago(pago.estado)">{{ pago.estado }}</span>
+                </td>
+              </tr>
+            }
+            @if (pagosRecientes().length === 0) {
+              <tr class="table-row">
+                <td colspan="3"
+                    style="text-align:center;color:var(--color-text-muted);padding:var(--space-lg)">
+                  Sin pagos registrados
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+
+    <!-- Últimos movimientos -->
+    <div class="card" style="margin-top:var(--space-md)">
+      <div class="card-header">
+        <h3 class="card-title">Últimos Movimientos Financieros</h3>
+        <a routerLink="/tesoreria/flujo-caja" class="btn btn-secondary"
+           style="font-size:0.8rem;padding:4px 10px">Flujo completo</a>
+      </div>
+      <table class="table">
+        <thead>
+          <tr>
+            <th class="table-header-cell">Fecha</th>
+            <th class="table-header-cell">Tipo</th>
+            <th class="table-header-cell">Descripción</th>
+            <th class="table-header-cell">Origen</th>
+            <th class="table-header-cell" style="text-align:right">Monto</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (mov of movimientos().slice(0, 8); track mov.id ?? $index) {
+            <tr class="table-row">
+              <td class="table-cell" style="color:var(--color-text-muted);white-space:nowrap">
+                {{ mov.fecha | date:'dd/MM/yyyy' }}
+              </td>
+              <td class="table-cell">
+                <span [class]="badgeMovimiento(mov.tipoMovimiento)">{{ mov.tipoMovimiento }}</span>
+              </td>
+              <td class="table-cell">{{ mov.descripcion }}</td>
+              <td class="table-cell" style="color:var(--color-text-muted);font-size:0.875rem">
+                {{ mov.origen }}
+              </td>
+              <td class="table-cell" style="text-align:right;font-weight:700;white-space:nowrap;font-variant-numeric:tabular-nums"
+                  [style.color]="mov.tipoMovimiento === 'INGRESO' ? 'var(--color-success)' : 'var(--color-warning)'">
+                {{ mov.tipoMovimiento === 'EGRESO' ? '-' : '+' }}S/ {{ mov.monto | number:'1.2-2' }}
+              </td>
+            </tr>
+          }
+          @if (movimientos().length === 0) {
+            <tr class="table-row">
+              <td colspan="5"
+                  style="text-align:center;color:var(--color-text-muted);padding:var(--space-lg)">
+                Sin movimientos registrados
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>

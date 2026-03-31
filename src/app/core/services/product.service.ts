@@ -67,13 +67,23 @@ export class ProductService extends BaseApiService<ProductRequest, ProductRespon
     }
 
     getAllCached(page: number, size: number, search?: string): Observable<Page<ProductResponse>> {
-        const key = `${page}-${size}-${search ?? ''}`;
+        return this.getAllCachedFiltered(page, size, search);
+    }
+
+    getAllCachedFiltered(
+        page: number,
+        size: number,
+        search?: string,
+        categoriaId?: number | null
+    ): Observable<Page<ProductResponse>> {
+        const key = `${page}-${size}-${search ?? ''}-${categoriaId ?? ''}`;
         if (this.cache.has(key)) {
             return this.cache.get(key)!;
         }
-
         const pagination: PaginationConfig = { page, size };
-        const filter = search ? { search } : undefined;
+        const filter: ProductFilter = {};
+        if (search)      filter.search      = search;
+        if (categoriaId) filter.categoriaId = categoriaId;
         const request$ = this.getAllProductsFiltered(pagination, filter).pipe(shareReplay(1));
         this.cache.set(key, request$);
         return request$;

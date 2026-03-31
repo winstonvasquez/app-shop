@@ -10,7 +10,7 @@ export type { Movimiento, MovimientoItem, CreateMovimientoDto };
 @Injectable({ providedIn: 'root' })
 export class MovimientoService {
   private http = inject(HttpClient);
-  private baseUrl = '/api/movimientos';
+  private baseUrl = '/logistics/api/movimientos';
 
   getMovimientos(companyId: string, params?: { tipo?: string; page?: number; size?: number }): Observable<any> {
     let httpParams = new HttpParams().set('companyId', companyId);
@@ -30,5 +30,12 @@ export class MovimientoService {
 
   crearSalida(data: CreateMovimientoDto, companyId: string): Observable<Movimiento> {
     return this.http.post<Movimiento>(`${this.baseUrl}/salida`, data, { params: { companyId } });
+  }
+
+  createMovimiento(data: CreateMovimientoDto, companyId: string): Observable<Movimiento> {
+    const tipo = data.tipo?.toLowerCase() ?? '';
+    if (tipo.startsWith('entrada')) return this.crearEntrada(data, companyId);
+    if (tipo.startsWith('salida'))  return this.crearSalida(data, companyId);
+    return this.http.post<Movimiento>(this.baseUrl, data, { params: { companyId } });
   }
 }

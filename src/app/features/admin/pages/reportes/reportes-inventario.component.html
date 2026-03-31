@@ -1,0 +1,112 @@
+<div class="page-container">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Reporte de Inventario</h1>
+            <p class="page-subtitle">Estado del stock y almacenes</p>
+        </div>
+        <div class="page-actions no-print" style="display:flex;gap:8px">
+            <button class="btn btn-secondary" (click)="onExportarCsv()" [disabled]="cargando() || stockBajo().length === 0">
+                Exportar CSV
+            </button>
+            <button class="btn btn-secondary" (click)="exportarExcel()" [disabled]="cargando() || stockBajo().length === 0">
+                Exportar Excel
+            </button>
+            <button class="btn btn-secondary" (click)="imprimir()" [disabled]="cargando()">
+                Imprimir / PDF
+            </button>
+            <button class="btn btn-primary" (click)="cargar()" [disabled]="cargando()">
+                {{ cargando() ? 'Cargando...' : 'Actualizar' }}
+            </button>
+        </div>
+    </div>
+
+    @if (error()) {
+        <div class="card" style="border-left:3px solid var(--color-warning);padding:var(--space-md);margin-bottom:var(--space-lg)">
+            <p style="color:var(--color-text-muted);font-size:0.875rem">
+                Servicio de inventario no disponible. Verifique que microshopinvalmacen esté corriendo en puerto 8085.
+            </p>
+        </div>
+    }
+
+    @if (cargando()) {
+        <div class="loading-container"><div class="spinner"></div></div>
+    } @else if (dashboard()) {
+        <!-- KPIs -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:var(--space-md);margin-bottom:var(--space-lg)">
+            <div class="card">
+                <div class="card-body">
+                    <p style="font-size:0.75rem;color:var(--color-text-muted)">ALMACENES ACTIVOS</p>
+                    <p style="font-size:2rem;font-weight:700;color:var(--color-primary)">{{ dashboard()!.almacenesActivos }}</p>
+                    <p style="font-size:0.75rem;color:var(--color-text-muted)">de {{ dashboard()!.totalAlmacenes }} total</p>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-body">
+                    <p style="font-size:0.75rem;color:var(--color-text-muted)">STOCK BAJO</p>
+                    <p style="font-size:2rem;font-weight:700"
+                       [style.color]="dashboard()!.productosStockBajo > 0 ? 'var(--color-warning)' : 'var(--color-success)'">
+                        {{ dashboard()!.productosStockBajo }}
+                    </p>
+                    <p style="font-size:0.75rem;color:var(--color-text-muted)">productos bajo mínimo</p>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-body">
+                    <p style="font-size:0.75rem;color:var(--color-text-muted)">NECESITAN REORDEN</p>
+                    <p style="font-size:2rem;font-weight:700"
+                       [style.color]="dashboard()!.productosNecesitanReorden > 0 ? 'var(--color-warning)' : 'var(--color-success)'">
+                        {{ dashboard()!.productosNecesitanReorden }}
+                    </p>
+                    <p style="font-size:0.75rem;color:var(--color-text-muted)">ítems a reabastecer</p>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-body">
+                    <p style="font-size:0.75rem;color:var(--color-text-muted)">MOVIMIENTOS HOY</p>
+                    <p style="font-size:2rem;font-weight:700">{{ dashboard()!.movimientosHoy }}</p>
+                    <p style="font-size:0.75rem;color:var(--color-text-muted)">entradas / salidas</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stock bajo -->
+        @if (stockBajo().length > 0) {
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Productos con stock bajo</h3>
+                    <span class="badge badge-warning">{{ stockBajo().length }} alertas</span>
+                </div>
+                <table class="table">
+                    <thead class="table-header">
+                        <tr>
+                            <th class="table-header-cell">Producto ID</th>
+                            <th class="table-header-cell">Almacén ID</th>
+                            <th class="table-header-cell" style="text-align:right">Stock actual</th>
+                            <th class="table-header-cell" style="text-align:right">Stock mínimo</th>
+                            <th class="table-header-cell">Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (item of stockBajo(); track item.productoId) {
+                            <tr class="table-row">
+                                <td class="table-cell" style="font-family:monospace">{{ item.productoId }}</td>
+                                <td class="table-cell" style="font-family:monospace">{{ item.almacenId }}</td>
+                                <td class="table-cell" style="text-align:right;font-weight:700;color:var(--color-warning)">{{ item.cantidadActual }}</td>
+                                <td class="table-cell" style="text-align:right">{{ item.stockMinimo }}</td>
+                                <td class="table-cell"><span class="badge badge-warning">STOCK BAJO</span></td>
+                            </tr>
+                        } @empty {
+                            <tr><td colspan="5" style="text-align:center;padding:24px;color:var(--color-text-muted)">Sin datos</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        } @else {
+            <div class="card">
+                <div class="card-body" style="text-align:center;padding:var(--space-lg)">
+                    <p style="color:var(--color-text-muted)">Todos los productos tienen stock suficiente.</p>
+                </div>
+            </div>
+        }
+    }
+</div>

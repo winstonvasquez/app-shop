@@ -1,6 +1,7 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, signal, computed, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AsientoService } from '../../services/asiento.service';
+import { PeriodoService } from '../../services/periodo.service';
 
 interface DashboardData {
     ingresosMes: number;
@@ -8,12 +9,13 @@ interface DashboardData {
     utilidadBruta: number;
     igvPorPagar: number;
     periodoActual: string;
-    asientosRecientes: any[];
+    asientosRecientes: unknown[];
 }
 
 @Component({
     selector: 'app-dashboard-contabilidad',
     standalone: true,
+    changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [CommonModule],
     template: `
         <div class="page-header">
@@ -22,7 +24,7 @@ interface DashboardData {
                 <p class="page-subtitle">PCGE 2020 · Marco Tributario SUNAT</p>
             </div>
             <div class="page-actions">
-                <select class="select-filter">
+                <select class="input-field">
                     <option>{{ periodoActual() }}</option>
                 </select>
             </div>
@@ -83,30 +85,30 @@ interface DashboardData {
             </div>
             <div class="card">
                 <div class="card-title mb-md">📅 Calendario Tributario</div>
-                <table>
+                <table class="table">
                     <thead>
                         <tr>
-                            <th>Obligación</th>
-                            <th>Período</th>
-                            <th>Monto</th>
-                            <th>Vencimiento</th>
-                            <th>Estado</th>
+                            <th class="table-header-cell">Obligación</th>
+                            <th class="table-header-cell">Período</th>
+                            <th class="table-header-cell text-right">Monto</th>
+                            <th class="table-header-cell">Vencimiento</th>
+                            <th class="table-header-cell">Estado</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr>
-                            <td>IGV (PDT 621)</td>
-                            <td>Marzo 2026</td>
-                            <td class="money">{{ formatoMonto(igv()) }}</td>
-                            <td class="text-warning">12/03/2026</td>
-                            <td><span class="badge badge-warning">Pendiente</span></td>
+                        <tr class="table-row">
+                            <td class="table-cell">IGV (PDT 621)</td>
+                            <td class="table-cell">Marzo 2026</td>
+                            <td class="table-cell text-right font-mono">{{ formatoMonto(igv()) }}</td>
+                            <td class="table-cell text-[var(--color-warning)]">12/03/2026</td>
+                            <td class="table-cell"><span class="badge badge-warning">Pendiente</span></td>
                         </tr>
-                        <tr>
-                            <td>Renta — RMT (1.5%)</td>
-                            <td>Marzo 2026</td>
-                            <td class="money">{{ formatoMonto(renta()) }}</td>
-                            <td class="text-warning">12/03/2026</td>
-                            <td><span class="badge badge-warning">Pendiente</span></td>
+                        <tr class="table-row">
+                            <td class="table-cell">Renta — RMT (1.5%)</td>
+                            <td class="table-cell">Marzo 2026</td>
+                            <td class="table-cell text-right font-mono">{{ formatoMonto(renta()) }}</td>
+                            <td class="table-cell text-[var(--color-warning)]">12/03/2026</td>
+                            <td class="table-cell"><span class="badge badge-warning">Pendiente</span></td>
                         </tr>
                     </tbody>
                 </table>
@@ -116,8 +118,9 @@ interface DashboardData {
 })
 export class DashboardContabilidadComponent implements OnInit {
     private asientoService = inject(AsientoService);
+    private periodoService = inject(PeriodoService);
 
-    periodoActual = signal('Marzo 2026');
+    periodoActual = signal('Cargando...');
     ingresos = signal(147999);
     gastos = signal(82400);
     utilidad = signal(65599);
@@ -140,6 +143,15 @@ export class DashboardContabilidadComponent implements OnInit {
     }
 
     private cargarDatos() {
-        // TODO: Cargar datos reales desde el backend
+        this.periodoService.actual().subscribe({
+            next: (periodo) => this.periodoActual.set(periodo.nombre),
+            error: () => this.periodoService.listar().subscribe({
+                next: (lista) => {
+                    const abierto = lista.find(p => p.estado === 'ABIERTO');
+                    if (abierto) this.periodoActual.set(abierto.nombre);
+                },
+                error: () => this.periodoActual.set('Sin periodo activo')
+            })
+        });
     }
 }

@@ -1,6 +1,9 @@
 /* Initial Fonts Import */
-@import url("https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&family=Outfit:wght@400;500;600;700;800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Baloo+2:wght@700;800&family=Outfit:wght@400;500;600;700;800&display=swap");
 
 /* Tailwind v4 engine */
 @import "tailwindcss";
-@source "../../";
+@import "../themes/orange-theme";
+@import "../themes/professional-themes";
+@source "../../app";
+@source "../../../projects";

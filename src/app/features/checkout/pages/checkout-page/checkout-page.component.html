@@ -1,6 +1,31 @@
 <div class="bg-[var(--color-background)] min-h-screen pb-10">
     <div class="container mx-auto px-4 max-w-[1200px] pt-6">
 
+        <app-breadcrumb [items]="breadcrumbItems" />
+
+        <!-- Stepper visual -->
+        <div class="flex items-center justify-center gap-0 mb-8 mt-2">
+            @for (step of [{n:1,label:'Dirección'},{n:2,label:'Pago'},{n:3,label:'Confirmar'}]; track step.n) {
+                <div class="flex items-center">
+                    <div class="flex flex-col items-center gap-1">
+                        <div class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors"
+                             [class.bg-primary]="checkoutStep() >= step.n"
+                             [class.text-white]="checkoutStep() >= step.n"
+                             [class.bg-surface-raised]="checkoutStep() < step.n"
+                             [class.text-muted]="checkoutStep() < step.n">
+                            {{ step.n }}
+                        </div>
+                        <span class="text-xs" [class.text-primary]="checkoutStep() >= step.n" [class.text-muted]="checkoutStep() < step.n">
+                            {{ step.label }}
+                        </span>
+                    </div>
+                    @if (step.n < 3) {
+                        <div class="w-16 h-0.5 mb-5 mx-1" [class.bg-primary]="checkoutStep() > step.n" [class.bg-border]="checkoutStep() <= step.n"></div>
+                    }
+                </div>
+            }
+        </div>
+
         <!-- Header minimal -->
         <div class="flex items-center justify-between mb-6 border-b border-[var(--color-border)] pb-4">
             <h1 class="text-2xl font-bold flex items-center gap-2 text-[var(--color-text-primary)]">
@@ -9,16 +34,16 @@
                         d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z">
                     </path>
                 </svg>
-                Finalizar compra
+                {{ 'checkout.finalizarCompra' | translate }}
             </h1>
         </div>
 
         @if (cartItems().length === 0) {
-        <div class="text-center py-16 bg-[var(--color-surface)] rounded-lg shadow-sm">
-            <p class="text-[var(--color-text-muted)] mb-4 text-lg">Tu carrito está vacío</p>
-            <button (click)="goHome()"
-                class="bg-accent text-white font-bold px-8 py-3 rounded-full hover:brightness-110 transition-all">Volver
-                a la tienda</button>
+        <div class="flex flex-col items-center gap-4 py-16">
+            <div class="text-6xl opacity-30">🛒</div>
+            <h2 class="page-title">Tu carrito está vacío</h2>
+            <p class="text-muted">Agrega productos antes de continuar al checkout</p>
+            <a routerLink="/products" class="btn btn-primary">Volver a la tienda</a>
         </div>
         } @else {
 
@@ -29,31 +54,23 @@
             <div class="w-full lg:w-2/3 flex flex-col gap-4">
 
                 <!-- Green Banners -->
-                <div
-                    class="bg-[color-mix(in_oklch,var(--color-success)_12%,var(--color-surface))] border border-[color-mix(in_oklch,var(--color-success)_30%,transparent)] text-[var(--color-success)] p-3 rounded-lg flex items-center gap-2 font-medium">
-                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd"
-                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                            clip-rule="evenodd"></path>
-                    </svg>
-                    Elegible para un ahorro adicional de S/ {{ discountTotal() | number:'1.2-2' }}
-                </div>
-
                 <div class="bg-[var(--color-success)] text-white p-3 rounded-lg flex items-center gap-2 font-bold shadow-sm">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4">
                         </path>
                     </svg>
-                    ENVÍO GRATIS especial para ti
+                    {{ 'checkout.envioGratis' | translate }}
                 </div>
 
                 <!-- Shipping Address -->
                 <div class="bg-[var(--color-surface)] rounded-lg p-5 shadow-sm border border-[var(--color-border)]">
                     <div class="flex justify-between items-center mb-4">
                         <h2 class="text-lg font-bold text-[var(--color-text-primary)]">Dirección de envío</h2>
-                        <button class="text-[var(--color-primary)] text-sm font-medium hover:brightness-110 transition-all">Editar</button>
+                        <button (click)="openAddressModal()" class="text-[var(--color-primary)] text-sm font-medium hover:brightness-110 transition-all">Editar</button>
                     </div>
+
+                    @if (selectedAddress()) {
                     <div class="flex gap-4">
                         <div class="mt-1">
                             <svg class="w-6 h-6 text-[var(--color-text-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -65,14 +82,26 @@
                             </svg>
                         </div>
                         <div>
-                            <p class="font-bold text-[var(--color-text-primary)]">{{ shippingAddress.name }} <span
-                                    class="font-normal text-[var(--color-text-muted)] ml-2">{{ shippingAddress.phone }}</span></p>
-                            <p class="text-[var(--color-text-secondary)] mt-1">{{ shippingAddress.street }}</p>
-                            <p class="text-[var(--color-text-secondary)]">{{ shippingAddress.district }}, {{ shippingAddress.city }}, {{
-                                shippingAddress.region }}</p>
-                            <p class="text-[var(--color-text-secondary)]">{{ shippingAddress.country }}</p>
+                            <p class="font-bold text-[var(--color-text-primary)]">{{ selectedAddress()!.nombreCompleto }}
+                                <span class="font-normal text-[var(--color-text-muted)] ml-2">{{ selectedAddress()!.telefono }}</span>
+                            </p>
+                            <p class="text-[var(--color-text-secondary)] mt-1">{{ selectedAddress()!.direccionLinea1 }}</p>
+                            @if (selectedAddress()!.referencia) {
+                                <p class="text-xs text-[var(--color-text-muted)]">Ref: {{ selectedAddress()!.referencia }}</p>
+                            }
+                            <p class="text-[var(--color-text-secondary)]">
+                                {{ selectedAddress()!.distrito }}, {{ selectedAddress()!.provincia }}, {{ selectedAddress()!.departamento }}
+                            </p>
                         </div>
                     </div>
+                    } @else {
+                    <div class="flex items-center gap-3 text-[var(--color-text-muted)] cursor-pointer" (click)="openAddressModal()">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                        </svg>
+                        <span class="text-sm">Agregar dirección de envío</span>
+                    </div>
+                    }
 
                     <div class="mt-5 border-t border-[var(--color-border)] pt-4">
                         <div class="flex items-start gap-3">
@@ -91,19 +120,13 @@
                                 <path fill-rule="evenodd"
                                     d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
                                     clip-rule="evenodd"></path>
-                            </svg> S/ 5 de crédito por entrega tardía</div>
-                        <div class="flex items-center gap-1"><svg class="w-4 h-4 text-[var(--color-success)]" fill="currentColor"
-                                viewBox="0 0 20 20">
-                                <path fill-rule="evenodd"
-                                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                                    clip-rule="evenodd"></path>
                             </svg> Reembolso de artículos dañados</div>
                     </div>
                 </div>
 
                 <!-- Payment Methods -->
                 <div class="bg-[var(--color-surface)] rounded-lg p-5 shadow-sm border border-[var(--color-border)]">
-                    <h2 class="text-lg font-bold mb-4 text-[var(--color-text-primary)]">Métodos de pago</h2>
+                    <h2 class="text-lg font-bold mb-4 text-[var(--color-text-primary)]">{{ 'checkout.metodoPago' | translate }}</h2>
                     <p class="text-sm text-[var(--color-text-secondary)] mb-4 text-center">Todas las transacciones son seguras y están
                         encriptadas.</p>
 
@@ -120,48 +143,134 @@
                                 <span class="font-medium text-[var(--color-text-primary)] ml-auto">{{ metodo.nombre }}</span>
                             </div>
 
-                            <!-- Extended details for selected Visa / Cards -->
-                            @if (selectedPaymentMethod() === metodo.codigo && (metodo.codigo === 'VIS' || metodo.codigo
-                            === 'MAS')) {
+                            <!-- Formulario de tarjeta tokenizado (MP Brick) -->
+                            @if (selectedPaymentMethod() === metodo.codigo && (metodo.codigo === 'VIS' || metodo.codigo === 'MAS')) {
                             <div class="px-11 pb-4">
+                                <!-- Cuotas -->
                                 <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-center text-sm mb-4">
-                                    <div
-                                        class="border border-[var(--color-accent)] text-[var(--color-accent)] bg-[var(--color-surface)] py-1 rounded-md font-bold cursor-pointer">
+                                    <div class="border border-[var(--color-accent)] text-[var(--color-accent)] bg-[var(--color-surface)] py-1 rounded-md font-bold cursor-pointer">
                                         1 x S/ {{ finalTotal() | number:'1.2-2' }}</div>
-                                    <div
-                                        class="border border-[var(--color-border)] text-[var(--color-text-secondary)] bg-[var(--color-surface)] py-1 rounded-md cursor-pointer hover:border-[var(--color-text-muted)]">
+                                    <div class="border border-[var(--color-border)] text-[var(--color-text-secondary)] bg-[var(--color-surface)] py-1 rounded-md cursor-pointer hover:border-[var(--color-text-muted)]">
                                         2 x S/ {{ (finalTotal()/2) | number:'1.2-2' }}</div>
-                                    <div
-                                        class="border border-[var(--color-border)] text-[var(--color-text-secondary)] bg-[var(--color-surface)] py-1 rounded-md cursor-pointer hover:border-[var(--color-text-muted)]">
+                                    <div class="border border-[var(--color-border)] text-[var(--color-text-secondary)] bg-[var(--color-surface)] py-1 rounded-md cursor-pointer hover:border-[var(--color-text-muted)]">
                                         3 x S/ {{ (finalTotal()/3) | number:'1.2-2' }}</div>
-                                    <div
-                                        class="border border-[var(--color-border)] text-[var(--color-text-secondary)] bg-[var(--color-surface)] py-1 rounded-md cursor-pointer hover:border-[var(--color-text-muted)]">
+                                    <div class="border border-[var(--color-border)] text-[var(--color-text-secondary)] bg-[var(--color-surface)] py-1 rounded-md cursor-pointer hover:border-[var(--color-text-muted)]">
                                         6 x S/ {{ (finalTotal()/6) | number:'1.2-2' }}</div>
                                 </div>
-                                <div class="flex flex-col gap-3">
+
+                                <!-- Formulario de tarjeta — datos se tokenizan antes de ir al backend -->
+                                <!-- TODO (F4): reemplazar este form por <div id="mp-card-brick"> del SDK real -->
+                                <form (ngSubmit)="payWithCard()" class="flex flex-col gap-3">
                                     <div class="relative">
-                                        <input type="text" placeholder="Número de la tarjeta"
+                                        <input
+                                            type="text"
+                                            placeholder="Número de la tarjeta"
+                                            [value]="cardNumber()"
+                                            (input)="cardNumber.set($any($event.target).value)"
+                                            maxlength="19"
+                                            autocomplete="cc-number"
                                             class="w-full border border-[var(--color-border)] bg-[var(--color-surface-raised)] text-[var(--color-text-primary)] rounded-md py-2.5 px-3 focus:outline-none focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[var(--color-accent)]">
                                         <div class="absolute right-2 top-2 flex gap-1">
-                                            <img src="https://upload.wikimedia.org/wikipedia/commons/4/41/Visa_Logo.png"
-                                                class="h-6">
+                                            <img src="https://upload.wikimedia.org/wikipedia/commons/4/41/Visa_Logo.png" class="h-6" alt="Visa">
                                         </div>
                                     </div>
+                                    <div>
+                                        <input
+                                            type="text"
+                                            placeholder="Nombre del titular"
+                                            [value]="cardholderName()"
+                                            (input)="cardholderName.set($any($event.target).value)"
+                                            autocomplete="cc-name"
+                                            class="w-full border border-[var(--color-border)] bg-[var(--color-surface-raised)] text-[var(--color-text-primary)] rounded-md py-2.5 px-3 focus:outline-none focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[var(--color-accent)]">
+                                    </div>
                                     <div class="flex gap-3">
-                                        <input type="text" placeholder="Fecha de exp. (MM/AA)"
+                                        <input
+                                            type="text"
+                                            placeholder="Fecha exp. MM/AA"
+                                            [value]="expiryDate()"
+                                            (input)="expiryDate.set($any($event.target).value)"
+                                            maxlength="5"
+                                            autocomplete="cc-exp"
                                             class="w-1/2 border border-[var(--color-border)] bg-[var(--color-surface-raised)] text-[var(--color-text-primary)] rounded-md py-2.5 px-3 focus:outline-none focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[var(--color-accent)]">
-                                        <input type="text" placeholder="CVV"
+                                        <input
+                                            type="password"
+                                            placeholder="CVV"
+                                            [value]="cvv()"
+                                            (input)="cvv.set($any($event.target).value)"
+                                            maxlength="4"
+                                            autocomplete="cc-csc"
                                             class="w-1/2 border border-[var(--color-border)] bg-[var(--color-surface-raised)] text-[var(--color-text-primary)] rounded-md py-2.5 px-3 focus:outline-none focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[var(--color-accent)]">
                                     </div>
-                                </div>
 
-                                <div class="mt-4 pt-4 border-t border-[var(--color-border)]">
-                                    <h3 class="font-bold text-[var(--color-text-primary)] mb-2">Dirección de facturación</h3>
-                                    <label class="flex items-center gap-2 cursor-pointer">
-                                        <input type="radio" checked class="w-4 h-4 accent-[var(--color-accent)]">
-                                        <span class="text-sm text-[var(--color-text-secondary)]">Igual a la dirección de envío</span>
-                                    </label>
-                                </div>
+                                    <div class="mt-1 pt-3 border-t border-[var(--color-border)]">
+                                        <label class="flex items-center gap-2 cursor-pointer">
+                                            <input type="radio" checked class="w-4 h-4 accent-[var(--color-accent)]">
+                                            <span class="text-sm text-[var(--color-text-secondary)]">Dirección de facturación igual a la de envío</span>
+                                        </label>
+                                    </div>
+
+                                    <button
+                                        type="submit"
+                                        [disabled]="isLoading()"
+                                        class="w-full bg-accent text-white font-bold py-3 px-4 rounded-xl shadow-lg shadow-accent/30 hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed mt-2">
+                                        @if (isLoading()) {
+                                        <span class="flex items-center justify-center gap-2">
+                                            <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                            Procesando pago...
+                                        </span>
+                                        } @else {
+                                        Pagar S/ {{ finalTotal() | number:'1.2-2' }}
+                                        }
+                                    </button>
+
+                                    <p class="text-center text-[10px] text-[var(--color-text-muted)]">
+                                        Tus datos de tarjeta son tokenizados de forma segura. Nunca se almacenan en nuestros servidores.
+                                    </p>
+                                </form>
+                            </div>
+                            }
+
+                            <!-- Sección Yape -->
+                            @if (selectedPaymentMethod() === metodo.codigo && metodo.codigo === 'YAPE') {
+                            <div class="px-11 pb-4">
+                                @if (!yapeIntent()) {
+                                    <!-- Estado inicial: botón para generar QR -->
+                                    @if (yapeError()) {
+                                    <p class="text-sm text-[var(--color-error)] mb-3">{{ yapeError() }}</p>
+                                    }
+                                    <button
+                                        (click)="initiateYapePayment()"
+                                        [disabled]="yapeLoading()"
+                                        class="w-full bg-[var(--color-yape)] text-white font-bold py-3 px-4 rounded-xl hover:brightness-110 transition-all disabled:opacity-50 flex items-center justify-center gap-2">
+                                        @if (yapeLoading()) {
+                                        <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                        Generando QR...
+                                        } @else {
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 3.5V16M4 4h16v16H4V4z"/>
+                                        </svg>
+                                        Pagar con Yape
+                                        }
+                                    </button>
+                                } @else {
+                                    <!-- QR generado: mostrar para escanear -->
+                                    <div class="flex flex-col items-center gap-3 py-2">
+                                        <p class="text-sm font-medium text-[var(--color-text-primary)]">Escanea el código QR con tu app Yape</p>
+                                        <div class="border-4 border-[var(--color-yape)] rounded-xl p-2 bg-white">
+                                            <img [src]="yapeIntent()!.qrData" alt="QR Yape" class="w-40 h-40">
+                                        </div>
+                                        <p class="text-xs text-[var(--color-text-muted)]">
+                                            Monto: <strong class="text-[var(--color-text-primary)]">S/ {{ finalTotal() | number:'1.2-2' }}</strong>
+                                        </p>
+                                        <p class="text-xs text-[var(--color-text-muted)]">El código expira en 5 minutos</p>
+                                        <p class="text-[10px] text-[var(--color-text-muted)] animate-pulse">Esperando confirmación de pago...</p>
+                                        <button
+                                            (click)="yapeIntent.set(null); stopYapePolling()"
+                                            class="text-xs text-[var(--color-error)] hover:underline mt-1">
+                                            Cancelar y usar otro método
+                                        </button>
+                                    </div>
+                                }
                             </div>
                             }
                         </label>
@@ -193,18 +302,11 @@
                                 <div>
                                     <p class="text-sm text-[var(--color-text-primary)] line-clamp-2 leading-tight">{{ item.name }} {{
                                         item.description }}</p>
-                                    <div class="mt-1">
-                                        <span
-                                            class="bg-[var(--color-text-primary)] text-[var(--color-surface)] text-[10px] font-bold px-1.5 py-0.5 rounded-sm">CASI
-                                            AGOTADO(S)</span>
-                                    </div>
                                 </div>
                                 <div class="flex justify-between items-end mt-2">
                                     <div class="text-xs text-[var(--color-text-muted)]">Cant: <span class="font-bold text-[var(--color-text-primary)]">{{
                                             item.quantity }}</span></div>
                                     <div class="text-right">
-                                        <p class="text-[var(--color-text-muted)] line-through text-xs mb-0.5">S/ {{ (item.price *
-                                            item.quantity * 1.5).toFixed(2) }}</p>
                                         <p class="font-bold text-lg leading-none text-[var(--color-text-primary)]">S/ {{ (item.price *
                                             item.quantity).toFixed(2) }}</p>
                                     </div>
@@ -222,37 +324,38 @@
                 <div class="sticky top-6 flex flex-col gap-4">
 
                     <div class="bg-[var(--color-surface)] rounded-lg p-5 shadow-sm border border-[var(--color-border)]">
-                        <h2 class="text-lg font-bold mb-4 text-[var(--color-text-primary)]">Resumen de tu pedido</h2>
+                        <h2 class="text-lg font-bold mb-4 text-[var(--color-text-primary)]">{{ 'checkout.resumenPedido' | translate }}</h2>
 
                         <!-- Promo Code -->
-                        <div class="flex gap-2 mb-6">
-                            <input type="text" [(ngModel)]="couponCode" placeholder="Introduce cod. cupón"
-                                class="flex-grow border border-[var(--color-border)] bg-[var(--color-surface-raised)] text-[var(--color-text-primary)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[var(--color-accent)] placeholder:text-[var(--color-text-muted)]">
-                            <button (click)="applyCoupon()"
-                                class="bg-[var(--color-text-primary)] text-[var(--color-surface)] font-bold px-4 rounded-lg text-sm hover:opacity-90 transition-opacity">Aplicar</button>
+                        <div class="mb-6">
+                            <div class="flex gap-2">
+                                <input type="text"
+                                    [value]="couponCode()"
+                                    (input)="couponCode.set($any($event.target).value)"
+                                    placeholder="Introduce cod. cupón"
+                                    class="flex-grow border border-[var(--color-border)] bg-[var(--color-surface-raised)] text-[var(--color-text-primary)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[var(--color-accent)] placeholder:text-[var(--color-text-muted)]">
+                                <button (click)="applyCoupon()" [disabled]="couponApplying()"
+                                    class="bg-[var(--color-text-primary)] text-[var(--color-surface)] font-bold px-4 rounded-lg text-sm hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed">
+                                    @if (couponApplying()) { Validando... } @else { Aplicar }
+                                </button>
+                            </div>
+                            @if (couponError()) {
+                            <p class="text-xs text-[var(--color-error)] mt-1">{{ couponError() }}</p>
+                            }
+                            @if (couponDiscount() > 0) {
+                            <p class="text-xs text-[var(--color-success)] mt-1 font-medium">Cupón aplicado: -S/ {{ couponDiscount() | number:'1.2-2' }}</p>
+                            }
                         </div>
 
                         <!-- Totals List -->
                         <div class="flex flex-col gap-2 text-sm text-[var(--color-text-secondary)] border-b border-[var(--color-border)] pb-4 mb-4">
                             <div class="flex justify-between">
-                                <span>Total artículos ({{ cartItems().length }})</span>
-                                <span>S/ {{ (cartTotal() + itemDiscounts()).toFixed(2) }}</span>
-                            </div>
-                            <div class="flex justify-between text-[var(--color-accent)] font-medium">
-                                <span>Total descuento de artículos</span>
-                                <span>-S/ {{ itemDiscounts().toFixed(2) }}</span>
-                            </div>
-                            <div class="flex justify-between text-[var(--color-accent)] font-medium">
-                                <span>Descuento por tiempo limitado</span>
-                                <span>-S/ {{ limitedTimeDiscount().toFixed(2) }}</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span>Total estimado de Envío</span>
-                                <span>S/ 23.50</span>
+                                <span>Subtotal ({{ cartItems().length }} art.)</span>
+                                <span>S/ {{ cartTotal().toFixed(2) }}</span>
                             </div>
                             <div class="flex justify-between text-[var(--color-success)] font-medium">
-                                <span>Descuento de Envío</span>
-                                <span>-S/ 23.50</span>
+                                <span>Envío</span>
+                                <span>Gratis</span>
                             </div>
                         </div>
 
@@ -262,25 +365,16 @@
                             <div class="text-right">
                                 <span class="text-xl font-bold text-[var(--color-accent)] leading-none block">S/ {{ finalTotal() |
                                     number:'1.2-2' }}</span>
-                                <span class="text-xs text-[var(--color-success)] font-medium">Ahorras S/ {{ discountTotal() |
-                                    number:'1.2-2' }} en total</span>
                             </div>
                         </div>
 
-                        <!-- Donation -->
-                        <div class="bg-[color-mix(in_oklch,var(--color-accent)_8%,var(--color-surface))] p-3 rounded-lg border border-[color-mix(in_oklch,var(--color-accent)_20%,transparent)] flex items-start gap-3 mb-6 cursor-pointer"
-                            (click)="toggleDonation()">
-                            <input type="checkbox" [checked]="donatingToStore()"
-                                class="mt-1 w-4 h-4 accent-[var(--color-accent)] rounded">
-                            <div class="flex-grow text-xs text-[var(--color-text-secondary)]">
-                                <span class="text-[var(--color-accent)] font-bold block mb-0.5">Dona con {{
-                                    systemParams.storeName() }} 🎁</span>
-                                <span>Acepto donar S/ 0.38 al Fondo de Supervivencia de Especies y estoy de acuerdo con
-                                    las condiciones.</span>
-                            </div>
+                        @if (errorMessage()) {
+                        <div class="mb-4 p-3 bg-[color-mix(in_oklch,var(--color-error)_10%,var(--color-surface))] border border-[var(--color-error)] rounded-lg text-sm text-[var(--color-error)]">
+                            {{ errorMessage() }}
                         </div>
+                        }
 
-                        <!-- Mock Submit Button -->
+                        <!-- Submit Button -->
                         <div class="mb-5">
                             <button (click)="placeOrder()" [disabled]="isLoading()"
                                 class="w-full bg-accent text-white font-bold text-lg py-3.5 px-4 rounded-full shadow-lg shadow-accent/30 hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed transform active:scale-95">
@@ -290,11 +384,10 @@
                                     Procesando...
                                 </span>
                                 } @else {
-                                Realizar pedido
+                                {{ 'checkout.confirmarPedido' | translate }}
                                 }
                             </button>
-                            <p class="text-center text-[10px] text-[var(--color-text-muted)] mt-2 font-medium">Los artículos casi se han
-                                agotado.</p>
+                            <p class="text-center text-[10px] text-[var(--color-text-muted)] mt-2 font-medium">Transacción segura y encriptada.</p>
                         </div>
 
                         <!-- Trust Badges Under Button -->
@@ -315,8 +408,7 @@
                                             d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
                                             clip-rule="evenodd"></path>
                                     </svg> {{ systemParams.storeName() }} protege tu información</h4>
-                                <p class="text-[var(--color-text-muted)] mb-2 leading-tight">Certificación de Estándar de Seguridad de
-                                    Datos para la Industria de Tarjeta de Pago (PCI DSS)</p>
+                                <p class="text-[var(--color-text-muted)] mb-2 leading-tight">Certificación PCI DSS</p>
                                 <div class="flex gap-1.5 flex-wrap">
                                     @for (cert of certifications(); track cert.id) {
                                     <div class="h-6 w-10 border border-[var(--color-border)] rounded flex items-center justify-center bg-[var(--color-surface)]"
@@ -336,3 +428,106 @@
         }
     </div>
 </div>
+
+<!-- Modal: Selección de dirección -->
+@if (showAddressModal()) {
+<div class="modal-overlay" (click)="closeAddressModal()">
+    <div class="modal-content max-w-lg" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+            <h3 class="modal-title">Seleccionar dirección de envío</h3>
+            <button class="modal-close-btn" (click)="closeAddressModal()" aria-label="Cerrar">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+        <div class="modal-body flex flex-col gap-3">
+
+            @if (!showAddressForm()) {
+                <!-- Lista de direcciones existentes -->
+                @for (addr of addresses(); track addr.id) {
+                <div class="border border-[var(--color-border)] rounded-xl p-4 cursor-pointer hover:border-[var(--color-primary)] transition-colors"
+                    [class.border-[var(--color-primary)]]="selectedAddress()?.id === addr.id"
+                    (click)="selectAddress(addr)">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="font-bold text-[var(--color-text-primary)] text-sm">{{ addr.nombreCompleto }}
+                                @if (addr.esPrincipal) {
+                                    <span class="badge badge-success ml-2 text-xs">Principal</span>
+                                }
+                            </p>
+                            <p class="text-xs text-[var(--color-text-muted)] mt-0.5">{{ addr.telefono }}</p>
+                            <p class="text-sm text-[var(--color-text-secondary)] mt-1">{{ addr.direccionLinea1 }}</p>
+                            <p class="text-xs text-[var(--color-text-muted)]">{{ addr.distrito }}, {{ addr.provincia }}, {{ addr.departamento }}</p>
+                        </div>
+                        @if (selectedAddress()?.id === addr.id) {
+                        <svg class="w-5 h-5 text-[var(--color-primary)] flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                        </svg>
+                        }
+                    </div>
+                </div>
+                }
+
+                <button class="btn btn-secondary w-full flex items-center justify-center gap-2" (click)="openNewAddressForm()">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                    </svg>
+                    Agregar nueva dirección
+                </button>
+            } @else {
+                <!-- Formulario nueva dirección -->
+                <h4 class="font-bold text-[var(--color-text-primary)]">Nueva dirección</h4>
+
+                @if (addressFormError()) {
+                <p class="text-sm text-[var(--color-error)]">{{ addressFormError() }}</p>
+                }
+
+                <form [formGroup]="addressForm" (ngSubmit)="saveNewAddress()" class="flex flex-col gap-3">
+                    <div>
+                        <label class="input-label">Nombre completo *</label>
+                        <input type="text" formControlName="nombreCompleto" class="input-field w-full" placeholder="Ej: Juan Pérez">
+                    </div>
+                    <div>
+                        <label class="input-label">Teléfono *</label>
+                        <input type="tel" formControlName="telefono" class="input-field w-full" placeholder="Ej: 999 888 777">
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="input-label">Departamento *</label>
+                            <input type="text" formControlName="departamento" class="input-field w-full" placeholder="Ej: Lima">
+                        </div>
+                        <div>
+                            <label class="input-label">Provincia *</label>
+                            <input type="text" formControlName="provincia" class="input-field w-full" placeholder="Ej: Lima">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="input-label">Distrito *</label>
+                        <input type="text" formControlName="distrito" class="input-field w-full" placeholder="Ej: Miraflores">
+                    </div>
+                    <div>
+                        <label class="input-label">Dirección *</label>
+                        <input type="text" formControlName="direccionLinea1" class="input-field w-full" placeholder="Calle, número, urbanización">
+                    </div>
+                    <div>
+                        <label class="input-label">Referencia</label>
+                        <input type="text" formControlName="referencia" class="input-field w-full" placeholder="Ej: Frente al parque">
+                    </div>
+                    <label class="flex items-center gap-2 cursor-pointer text-sm text-[var(--color-text-secondary)]">
+                        <input type="checkbox" formControlName="esPrincipal" class="w-4 h-4 accent-[var(--color-primary)]">
+                        Establecer como dirección principal
+                    </label>
+
+                    <div class="flex gap-3 pt-2">
+                        <button type="button" class="btn btn-secondary flex-1" (click)="showAddressForm.set(false)">Cancelar</button>
+                        <button type="submit" class="btn btn-primary flex-1" [disabled]="addressForm.invalid || savingAddress()">
+                            @if (savingAddress()) { Guardando... } @else { Guardar dirección }
+                        </button>
+                    </div>
+                </form>
+            }
+        </div>
+    </div>
+</div>
+}

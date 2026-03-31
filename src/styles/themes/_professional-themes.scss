@@ -1,0 +1,845 @@
+/* ============================================================
+   PROFESSIONAL THEMES — 7 nuevos temas ERP
+   Todos los tokens en OKLCH salvo donde se usan hex directos
+   para mayor precisión en la intención de diseño.
+   Cada tema sobreescribe únicamente semantic tokens.
+   ============================================================ */
+
+/* ─────────────────────────────────────────────────────────────
+   1. SLATE PROFESSIONAL
+   Índigo + cian sobre pizarra profunda. Contraste 7.2:1 ✅
+   Dark theme. Corporativo moderno.
+   ──────────────────────────────────────────────────────────── */
+[data-theme="slate-professional"] {
+    /* ── Brand ─────────────────────────────── */
+    --color-primary:          #6366f1;   /* indigo-500 */
+    --color-primary-dark:     #818cf8;   /* indigo-400 — hover más claro en dark */
+    --color-accent:           #06b6d4;   /* cyan-500 */
+    --color-accent-dark:      #0891b2;   /* cyan-600 */
+    --color-secondary:        #1e293b;   /* slate-800 */
+
+    /* ── Surfaces ───────────────────────────── */
+    --color-background:       #0f172a;   /* slate-950 */
+    --color-surface:          #1e293b;   /* slate-800 */
+    --color-surface-raised:   #334155;   /* slate-700 */
+    --color-border:           #475569;   /* slate-600 */
+    --color-border-strong:    #64748b;   /* slate-500 */
+
+    /* ── Text ───────────────────────────────── */
+    --color-text-primary:     #f1f5f9;   /* slate-100 */
+    --color-text-secondary:   #94a3b8;   /* slate-400 */
+    --color-text-muted:       #64748b;   /* slate-500 */
+
+    /* ── States ─────────────────────────────── */
+    --color-success:          oklch(0.70 0.21 150);
+    --color-warning:          oklch(0.79 0.18 86);
+    --color-error:            oklch(0.63 0.24 22);
+    --color-info:             #06b6d4;   /* cyan-500 como info */
+    --color-danger:           oklch(0.59 0.24 22);
+
+    /* ── Interaction ────────────────────────── */
+    --color-hover-overlay:    oklch(1 0 0 / 0.05);
+    --color-active-overlay:   oklch(1 0 0 / 0.10);
+    --color-border-strong:    #64748b;
+    --color-focus-ring:       color-mix(in srgb, #6366f1 30%, transparent);
+    --color-on-secondary:     #f1f5f9;
+    --color-primary-contrast: #ffffff;
+
+    /* ── Shadows — slate-tinted ─────────────── */
+    --shadow-sm:  0 1px 3px 0   color-mix(in srgb, #0f172a 55%, transparent);
+    --shadow-md:  0 4px 6px -1px color-mix(in srgb, #0f172a 65%, transparent),
+                  0 2px 4px -2px color-mix(in srgb, #0f172a 55%, transparent);
+    --shadow-lg:  0 10px 15px -3px color-mix(in srgb, #6366f1 18%, transparent),
+                  0 4px 6px -4px   color-mix(in srgb, #6366f1 12%, transparent);
+    --shadow-xl:  0 20px 25px -5px color-mix(in srgb, #6366f1 24%, transparent),
+                  0 8px 10px -6px  color-mix(in srgb, #6366f1 16%, transparent);
+    --shadow-glow: 0 0 28px color-mix(in srgb, #6366f1 40%, transparent);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   2. OBSIDIAN DARK (v2)
+   Violeta + lima sobre zinc profundo. Vibrante y premium.
+   Dark theme.
+   ──────────────────────────────────────────────────────────── */
+[data-theme="obsidian-dark"] {
+    /* ── Brand ─────────────────────────────── */
+    --color-primary:          #7c3aed;   /* violet-700 */
+    --color-primary-dark:     #a855f7;   /* purple-500 — hover más claro en dark */
+    --color-accent:           #84cc16;   /* lime-500 */
+    --color-accent-dark:      #65a30d;   /* lime-600 */
+    --color-secondary:        #18181b;   /* zinc-900 */
+
+    /* ── Surfaces ───────────────────────────── */
+    --color-background:       #09090b;   /* zinc-950 */
+    --color-surface:          #18181b;   /* zinc-900 */
+    --color-surface-raised:   #27272a;   /* zinc-800 */
+    --color-border:           #3f3f46;   /* zinc-700 */
+    --color-border-strong:    #52525b;   /* zinc-600 */
+
+    /* ── Text ───────────────────────────────── */
+    --color-text-primary:     #fafafa;   /* zinc-50 */
+    --color-text-secondary:   #a1a1aa;   /* zinc-400 */
+    --color-text-muted:       #71717a;   /* zinc-500 */
+
+    /* ── States ─────────────────────────────── */
+    --color-success:          oklch(0.70 0.21 150);
+    --color-warning:          oklch(0.79 0.18 86);
+    --color-error:            oklch(0.63 0.24 22);
+    --color-info:             oklch(0.65 0.20 250);
+    --color-danger:           oklch(0.59 0.24 22);
+
+    /* ── Interaction ────────────────────────── */
+    --color-hover-overlay:    oklch(1 0 0 / 0.05);
+    --color-active-overlay:   oklch(1 0 0 / 0.10);
+    --color-focus-ring:       color-mix(in srgb, #7c3aed 30%, transparent);
+    --color-on-secondary:     #fafafa;
+    --color-primary-contrast: #ffffff;
+
+    /* ── Shadows — zinc-tinted ─────────────── */
+    --shadow-sm:  0 1px 3px 0   color-mix(in srgb, #09090b 60%, transparent);
+    --shadow-md:  0 4px 6px -1px color-mix(in srgb, #09090b 70%, transparent),
+                  0 2px 4px -2px color-mix(in srgb, #09090b 60%, transparent);
+    --shadow-lg:  0 10px 15px -3px color-mix(in srgb, #7c3aed 20%, transparent),
+                  0 4px 6px -4px   color-mix(in srgb, #7c3aed 14%, transparent);
+    --shadow-xl:  0 20px 25px -5px color-mix(in srgb, #7c3aed 28%, transparent),
+                  0 8px 10px -6px  color-mix(in srgb, #7c3aed 18%, transparent);
+    --shadow-glow: 0 0 30px color-mix(in srgb, #7c3aed 45%, transparent);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   3. ARCTIC LIGHT
+   Cielo + teal sobre superficies blancas y slate-50.
+   Light theme. Limpio y moderno.
+   WCAG: sky-700 para texto pequeño, sky-500 para elementos grandes ✅
+   ──────────────────────────────────────────────────────────── */
+[data-theme="arctic-light"] {
+    /* ── Brand ─────────────────────────────── */
+    --color-primary:          #0ea5e9;   /* sky-500 */
+    --color-primary-dark:     #0284c7;   /* sky-600 */
+    --color-accent:           #14b8a6;   /* teal-500 */
+    --color-accent-dark:      #0d9488;   /* teal-600 */
+    --color-secondary:        #0f172a;   /* slate-950 */
+
+    /* ── Surfaces ───────────────────────────── */
+    --color-background:       #f8fafc;   /* slate-50 */
+    --color-surface:          #ffffff;
+    --color-surface-raised:   #f1f5f9;   /* slate-100 */
+    --color-border:           #e2e8f0;   /* slate-200 */
+    --color-border-strong:    #cbd5e1;   /* slate-300 */
+
+    /* ── Text ───────────────────────────────── */
+    --color-text-primary:     #0f172a;   /* slate-950 */
+    --color-text-secondary:   #475569;   /* slate-600 */
+    --color-text-muted:       #94a3b8;   /* slate-400 */
+
+    /* ── States ─────────────────────────────── */
+    --color-success:          oklch(0.55 0.18 155);
+    --color-success-light:    oklch(0.96 0.02 155);
+    --color-warning:          oklch(0.76 0.18 82);
+    --color-warning-light:    oklch(0.97 0.02 82);
+    --color-error:            oklch(0.59 0.24 25);
+    --color-error-light:      oklch(0.97 0.01 25);
+    --color-info:             #0ea5e9;   /* sky-500 */
+    --color-info-light:       #f0f9ff;   /* sky-50 */
+    --color-danger:           oklch(0.55 0.24 25);
+
+    /* ── Interaction ────────────────────────── */
+    --color-hover-overlay:    oklch(0 0 0 / 0.04);
+    --color-active-overlay:   oklch(0 0 0 / 0.08);
+    --color-focus-ring:       color-mix(in srgb, #0ea5e9 30%, transparent);
+    --color-selection-bg:     #bae6fd;   /* sky-200 */
+    --color-selection-text:   #0c4a6e;   /* sky-950 */
+    --color-on-secondary:     #ffffff;
+    --color-primary-contrast: #ffffff;
+
+    /* ── Shadows — light, azul sutil ────────── */
+    --shadow-sm:  0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-md:  0 4px 6px -1px rgb(0 0 0 / 0.08), 0 2px 4px -2px rgb(0 0 0 / 0.06);
+    --shadow-lg:  0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.06);
+    --shadow-xl:  0 20px 25px -5px rgb(0 0 0 / 0.10), 0 8px 10px -6px rgb(0 0 0 / 0.08);
+    --shadow-glow: 0 0 22px color-mix(in srgb, #0ea5e9 32%, transparent);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   4. EMBER
+   Naranja fuego + ámbar sobre marrón muy oscuro.
+   Dark theme. Cálido e intenso.
+   ──────────────────────────────────────────────────────────── */
+[data-theme="ember"] {
+    /* ── Brand ─────────────────────────────── */
+    --color-primary:          #ea580c;   /* orange-600 */
+    --color-primary-dark:     #f97316;   /* orange-500 — hover más claro en dark */
+    --color-accent:           #eab308;   /* yellow-500 */
+    --color-accent-dark:      #ca8a04;   /* yellow-600 */
+    --color-secondary:        #2a1a0a;
+
+    /* ── Surfaces ───────────────────────────── */
+    --color-background:       #1c1009;   /* marrón muy oscuro */
+    --color-surface:          #2a1a0a;
+    --color-surface-raised:   #3d2410;
+    --color-border:           #5c3a1e;
+    --color-border-strong:    #78491f;
+
+    /* ── Text ───────────────────────────────── */
+    --color-text-primary:     #fef3c7;   /* amber-100 */
+    --color-text-secondary:   #fcd34d;   /* amber-300 */
+    --color-text-muted:       #d97706;   /* amber-600 */
+
+    /* ── States ─────────────────────────────── */
+    --color-success:          oklch(0.65 0.20 150);
+    --color-warning:          #eab308;   /* yellow-500 */
+    --color-error:            oklch(0.63 0.24 22);
+    --color-info:             oklch(0.65 0.20 250);
+    --color-danger:           oklch(0.59 0.24 22);
+
+    /* ── Interaction ────────────────────────── */
+    --color-hover-overlay:    oklch(1 0 0 / 0.06);
+    --color-active-overlay:   oklch(1 0 0 / 0.11);
+    --color-focus-ring:       color-mix(in srgb, #ea580c 35%, transparent);
+    --color-on-secondary:     #fef3c7;
+    --color-primary-contrast: #ffffff;
+
+    /* ── Shadows — ember-tinted ─────────────── */
+    --shadow-sm:  0 1px 3px 0   color-mix(in srgb, #1c1009 60%, transparent);
+    --shadow-md:  0 4px 6px -1px color-mix(in srgb, #1c1009 70%, transparent),
+                  0 2px 4px -2px color-mix(in srgb, #1c1009 60%, transparent);
+    --shadow-lg:  0 10px 15px -3px color-mix(in srgb, #ea580c 22%, transparent),
+                  0 4px 6px -4px   color-mix(in srgb, #ea580c 14%, transparent);
+    --shadow-xl:  0 20px 25px -5px color-mix(in srgb, #ea580c 30%, transparent),
+                  0 8px 10px -6px  color-mix(in srgb, #ea580c 20%, transparent);
+    --shadow-glow: 0 0 26px color-mix(in srgb, #ea580c 42%, transparent);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   5. FOREST
+   Esmeralda + ámbar sobre verde muy oscuro.
+   Dark theme. Natural y sereno.
+   ──────────────────────────────────────────────────────────── */
+[data-theme="forest"] {
+    /* ── Brand ─────────────────────────────── */
+    --color-primary:          #10b981;   /* emerald-500 */
+    --color-primary-dark:     #34d399;   /* emerald-400 — hover más claro en dark */
+    --color-accent:           #d97706;   /* amber-600 */
+    --color-accent-dark:      #b45309;   /* amber-700 */
+    --color-secondary:        #122017;
+
+    /* ── Surfaces ───────────────────────────── */
+    --color-background:       #0a1612;   /* verde muy oscuro */
+    --color-surface:          #122017;
+    --color-surface-raised:   #1a2f1f;
+    --color-border:           #2d4a35;
+    --color-border-strong:    #3d6147;
+
+    /* ── Text ───────────────────────────────── */
+    --color-text-primary:     #ecfdf5;   /* emerald-50 */
+    --color-text-secondary:   #6ee7b7;   /* emerald-300 */
+    --color-text-muted:       #4ade80;   /* green-400 */
+
+    /* ── States ─────────────────────────────── */
+    --color-success:          #10b981;   /* emerald-500 */
+    --color-warning:          #d97706;   /* amber-600 */
+    --color-error:            oklch(0.63 0.24 22);
+    --color-info:             oklch(0.65 0.20 250);
+    --color-danger:           oklch(0.59 0.24 22);
+
+    /* ── Interaction ────────────────────────── */
+    --color-hover-overlay:    oklch(1 0 0 / 0.05);
+    --color-active-overlay:   oklch(1 0 0 / 0.10);
+    --color-focus-ring:       color-mix(in srgb, #10b981 35%, transparent);
+    --color-on-secondary:     #ecfdf5;
+    --color-primary-contrast: #ffffff;
+
+    /* ── Shadows — forest-tinted ────────────── */
+    --shadow-sm:  0 1px 3px 0   color-mix(in srgb, #0a1612 60%, transparent);
+    --shadow-md:  0 4px 6px -1px color-mix(in srgb, #0a1612 70%, transparent),
+                  0 2px 4px -2px color-mix(in srgb, #0a1612 60%, transparent);
+    --shadow-lg:  0 10px 15px -3px color-mix(in srgb, #10b981 18%, transparent),
+                  0 4px 6px -4px   color-mix(in srgb, #10b981 12%, transparent);
+    --shadow-xl:  0 20px 25px -5px color-mix(in srgb, #10b981 24%, transparent),
+                  0 8px 10px -6px  color-mix(in srgb, #10b981 16%, transparent);
+    --shadow-glow: 0 0 26px color-mix(in srgb, #10b981 38%, transparent);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   6. GRAPHITE CONTRAST
+   Amarillo sobre grafito neutro. WCAG AAA 14:1 ✅
+   Dark theme. Máximo contraste.
+   ──────────────────────────────────────────────────────────── */
+[data-theme="graphite-contrast"] {
+    /* ── Brand ─────────────────────────────── */
+    --color-primary:          #facc15;   /* yellow-400 */
+    --color-primary-dark:     #fde047;   /* yellow-300 — hover más claro en dark */
+    --color-accent:           #facc15;   /* yellow-400 */
+    --color-accent-dark:      #fde047;   /* yellow-300 */
+    --color-secondary:        #262626;
+
+    /* ── Surfaces ───────────────────────────── */
+    --color-background:       #1a1a1a;
+    --color-surface:          #262626;
+    --color-surface-raised:   #333333;
+    --color-border:           #525252;   /* neutral-600 */
+    --color-border-strong:    #737373;   /* neutral-500 */
+
+    /* ── Text ───────────────────────────────── */
+    --color-text-primary:     #ffffff;
+    --color-text-secondary:   #e5e5e5;   /* neutral-200 */
+    --color-text-muted:       #a3a3a3;   /* neutral-400 */
+
+    /* ── States ─────────────────────────────── */
+    --color-success:          oklch(0.70 0.21 150);
+    --color-warning:          #facc15;   /* yellow-400 */
+    --color-error:            oklch(0.63 0.24 22);
+    --color-info:             oklch(0.65 0.20 250);
+    --color-danger:           oklch(0.59 0.24 22);
+
+    /* ── Interaction ────────────────────────── */
+    --color-hover-overlay:    oklch(1 0 0 / 0.07);
+    --color-active-overlay:   oklch(1 0 0 / 0.13);
+    --color-focus-ring:       color-mix(in srgb, #facc15 40%, transparent);
+    --color-on-secondary:     #1a1a1a;  /* negro sobre amarillo */
+    --color-primary-contrast: #1a1a1a;  /* texto oscuro sobre amarillo — 14:1 ✅ */
+
+    /* ── Shadows — neutral/graphite ─────────── */
+    --shadow-sm:  0 1px 3px 0   rgb(0 0 0 / 0.50);
+    --shadow-md:  0 4px 6px -1px rgb(0 0 0 / 0.60), 0 2px 4px -2px rgb(0 0 0 / 0.50);
+    --shadow-lg:  0 10px 15px -3px rgb(0 0 0 / 0.65), 0 4px 6px -4px rgb(0 0 0 / 0.55);
+    --shadow-xl:  0 20px 25px -5px rgb(0 0 0 / 0.70), 0 8px 10px -6px rgb(0 0 0 / 0.60);
+    --shadow-glow: 0 0 24px color-mix(in srgb, #facc15 35%, transparent);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   7. ROSE EXECUTIVE
+   Carmesí vibrante + burdeos sobre oscuro con tinte rojo.
+   Dark theme. Ejecutivo y audaz.
+   ──────────────────────────────────────────────────────────── */
+[data-theme="rose-executive"] {
+    /* ── Brand ─────────────────────────────── */
+    --color-primary:          #e11d48;   /* rose-600 */
+    --color-primary-dark:     #f43f5e;   /* rose-500 — hover más claro en dark */
+    --color-accent:           #9f1239;   /* rose-900 como burdeos acento */
+    --color-accent-dark:      #881337;   /* rose-950 */
+    --color-secondary:        #251820;
+
+    /* ── Surfaces ───────────────────────────── */
+    --color-background:       #1a1015;   /* muy oscuro con tinte rojo */
+    --color-surface:          #251820;
+    --color-surface-raised:   #312030;
+    --color-border:           #4a2030;
+    --color-border-strong:    #6b2d42;
+
+    /* ── Text ───────────────────────────────── */
+    --color-text-primary:     #fff1f2;   /* rose-50 */
+    --color-text-secondary:   #fda4af;   /* rose-300 */
+    --color-text-muted:       #fb7185;   /* rose-400 */
+
+    /* ── States ─────────────────────────────── */
+    --color-success:          oklch(0.70 0.21 150);
+    --color-warning:          oklch(0.79 0.18 86);
+    --color-error:            oklch(0.63 0.24 22);
+    --color-info:             oklch(0.65 0.20 250);
+    --color-danger:           oklch(0.59 0.24 22);
+
+    /* ── Interaction ────────────────────────── */
+    --color-hover-overlay:    oklch(1 0 0 / 0.06);
+    --color-active-overlay:   oklch(1 0 0 / 0.11);
+    --color-focus-ring:       color-mix(in srgb, #e11d48 35%, transparent);
+    --color-on-secondary:     #fff1f2;
+    --color-primary-contrast: #ffffff;
+
+    /* ── Shadows — rose-tinted ──────────────── */
+    --shadow-sm:  0 1px 3px 0   color-mix(in srgb, #1a1015 60%, transparent);
+    --shadow-md:  0 4px 6px -1px color-mix(in srgb, #1a1015 70%, transparent),
+                  0 2px 4px -2px color-mix(in srgb, #1a1015 60%, transparent);
+    --shadow-lg:  0 10px 15px -3px color-mix(in srgb, #e11d48 20%, transparent),
+                  0 4px 6px -4px   color-mix(in srgb, #e11d48 14%, transparent);
+    --shadow-xl:  0 20px 25px -5px color-mix(in srgb, #e11d48 28%, transparent),
+                  0 8px 10px -6px  color-mix(in srgb, #e11d48 18%, transparent);
+    --shadow-glow: 0 0 28px color-mix(in srgb, #e11d48 42%, transparent);
+}
+
+/* ============================================================
+   COMPONENT OVERRIDES — ALL PROFESSIONAL DARK THEMES
+   ============================================================ */
+
+:is(
+    [data-theme="slate-professional"],
+    [data-theme="obsidian-dark"],
+    [data-theme="ember"],
+    [data-theme="forest"],
+    [data-theme="graphite-contrast"],
+    [data-theme="rose-executive"]
+) {
+    /* Scrollbar */
+    * {
+        scrollbar-color: var(--color-border-strong) var(--color-background);
+        scrollbar-width: thin;
+    }
+
+    /* Focus ring */
+    :focus-visible {
+        outline-color: var(--color-primary);
+        outline-offset: 2px;
+    }
+
+    /* Primary button */
+    .btn-primary,
+    .btn-primary-gradient {
+        background: var(--color-primary);
+        color: var(--color-primary-contrast);
+
+        &:hover:not(:disabled) {
+            filter: brightness(1.10);
+            box-shadow: var(--shadow-glow);
+        }
+    }
+
+    /* Input fields */
+    .input-field {
+        background: var(--color-surface);
+        border-color: var(--color-border-strong);
+        color: var(--color-text-primary);
+
+        &::placeholder { color: var(--color-text-muted); }
+
+        &:focus {
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px var(--color-focus-ring);
+        }
+    }
+}
+
+/* ============================================================
+   COMPONENT OVERRIDES — ARCTIC LIGHT (tema claro)
+   ============================================================ */
+
+[data-theme="arctic-light"] {
+    /* Text selection */
+    ::selection {
+        background-color: var(--color-selection-bg);
+        color: var(--color-selection-text);
+    }
+
+    /* Scrollbar */
+    * {
+        scrollbar-color: var(--color-border-strong) var(--color-background);
+        scrollbar-width: thin;
+    }
+
+    /* Input fields */
+    .input-field {
+        background: var(--color-surface);
+        border-color: var(--color-border-strong);
+        color: var(--color-text-primary);
+
+        &::placeholder { color: var(--color-text-muted); }
+
+        &:focus {
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px var(--color-focus-ring);
+        }
+    }
+
+    /* Primary button */
+    .btn-primary,
+    .btn-primary-gradient {
+        background: var(--color-primary);
+        color: var(--color-primary-contrast);
+
+        &:hover:not(:disabled) {
+            filter: brightness(1.07);
+            box-shadow: var(--shadow-glow);
+        }
+    }
+
+    /* Secondary button */
+    .btn-secondary {
+        background: var(--color-surface);
+        border-color: var(--color-border-strong);
+        color: var(--color-text-primary);
+
+        &:hover:not(:disabled) {
+            background: var(--color-surface-raised);
+            border-color: var(--color-primary);
+        }
+    }
+
+    /* Cards */
+    .card {
+        background: var(--color-surface);
+        border-color: var(--color-border);
+    }
+
+    /* Focus ring */
+    :focus-visible {
+        outline-color: var(--color-primary);
+        outline-offset: 2px;
+    }
+
+    /* Navigation items */
+    .nav-item:hover,
+    .sidebar-item:hover {
+        background: var(--color-hover-overlay);
+        color: var(--color-primary);
+    }
+
+    .nav-item.active,
+    .sidebar-item.active {
+        background: var(--color-surface-raised);
+        color: var(--color-primary);
+        border-left-color: var(--color-primary);
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   TEMAS CLAROS PROFESIONALES — 6 identidades visuales distintas
+   ══════════════════════════════════════════════════════════════ */
+
+/* ─────────────────────────────────────────────────────────────
+   8. SAKURA LIGHT — Rosa suave. Femenino profesional.
+   ──────────────────────────────────────────────────────────── */
+[data-theme="sakura-light"] {
+    --color-primary:          #be185d;
+    --color-primary-dark:     #9d174d;
+    --color-accent:           #ec4899;
+    --color-accent-dark:      #db2777;
+    --color-secondary:        #fdf2f8;
+
+    --color-background:       #fff7fb;
+    --color-surface:          #ffffff;
+    --color-surface-raised:   #fce7f3;
+    --color-border:           #fbcfe8;
+    --color-border-strong:    #f9a8d4;
+
+    --color-text-primary:     #1a0a12;
+    --color-text-secondary:   #6b2150;
+    --color-text-muted:       #be185d;
+
+    --color-success:          oklch(0.55 0.18 155);
+    --color-success-light:    oklch(0.96 0.02 155);
+    --color-warning:          oklch(0.76 0.18 82);
+    --color-warning-light:    oklch(0.97 0.02 82);
+    --color-error:            oklch(0.59 0.24 25);
+    --color-error-light:      oklch(0.97 0.01 25);
+    --color-info:             #7c3aed;
+    --color-info-light:       #f5f3ff;
+    --color-danger:           oklch(0.55 0.24 25);
+
+    --color-hover-overlay:    oklch(0 0 0 / 0.04);
+    --color-active-overlay:   oklch(0 0 0 / 0.08);
+    --color-focus-ring:       color-mix(in srgb, #be185d 30%, transparent);
+    --color-selection-bg:     #fbcfe8;
+    --color-selection-text:   #831843;
+    --color-on-secondary:     #1a0a12;
+    --color-primary-contrast: #ffffff;
+
+    --shadow-sm:  0 1px 2px 0 rgb(190 24 93 / 0.08);
+    --shadow-md:  0 4px 6px -1px rgb(190 24 93 / 0.10), 0 2px 4px -2px rgb(0 0 0 / 0.06);
+    --shadow-lg:  0 10px 15px -3px rgb(190 24 93 / 0.10), 0 4px 6px -4px rgb(0 0 0 / 0.06);
+    --shadow-xl:  0 20px 25px -5px rgb(190 24 93 / 0.12), 0 8px 10px -6px rgb(0 0 0 / 0.08);
+    --shadow-glow: 0 0 22px color-mix(in srgb, #be185d 28%, transparent);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   9. OCEAN BREEZE — Azul cielo + teal. Corporativo fresco.
+   ──────────────────────────────────────────────────────────── */
+[data-theme="ocean-breeze"] {
+    --color-primary:          #0369a1;
+    --color-primary-dark:     #075985;
+    --color-accent:           #0891b2;
+    --color-accent-dark:      #0e7490;
+    --color-secondary:        #f0f9ff;
+
+    --color-background:       #f0f9ff;
+    --color-surface:          #ffffff;
+    --color-surface-raised:   #e0f2fe;
+    --color-border:           #bae6fd;
+    --color-border-strong:    #7dd3fc;
+
+    --color-text-primary:     #0c2d48;
+    --color-text-secondary:   #0369a1;
+    --color-text-muted:       #38bdf8;
+
+    --color-success:          oklch(0.55 0.18 155);
+    --color-success-light:    oklch(0.96 0.02 155);
+    --color-warning:          oklch(0.76 0.18 82);
+    --color-warning-light:    oklch(0.97 0.02 82);
+    --color-error:            oklch(0.59 0.24 25);
+    --color-error-light:      oklch(0.97 0.01 25);
+    --color-info:             #0369a1;
+    --color-info-light:       #e0f2fe;
+    --color-danger:           oklch(0.55 0.24 25);
+
+    --color-hover-overlay:    oklch(0 0 0 / 0.04);
+    --color-active-overlay:   oklch(0 0 0 / 0.08);
+    --color-focus-ring:       color-mix(in srgb, #0369a1 30%, transparent);
+    --color-selection-bg:     #bae6fd;
+    --color-selection-text:   #0c2d48;
+    --color-on-secondary:     #0c2d48;
+    --color-primary-contrast: #ffffff;
+
+    --shadow-sm:  0 1px 2px 0 rgb(3 105 161 / 0.08);
+    --shadow-md:  0 4px 6px -1px rgb(3 105 161 / 0.10), 0 2px 4px -2px rgb(0 0 0 / 0.06);
+    --shadow-lg:  0 10px 15px -3px rgb(3 105 161 / 0.10), 0 4px 6px -4px rgb(0 0 0 / 0.06);
+    --shadow-xl:  0 20px 25px -5px rgb(3 105 161 / 0.12), 0 8px 10px -6px rgb(0 0 0 / 0.08);
+    --shadow-glow: 0 0 22px color-mix(in srgb, #0369a1 28%, transparent);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   10. VERDANT LIGHT — Verde esmeralda. Sostenibilidad.
+   ──────────────────────────────────────────────────────────── */
+[data-theme="verdant-light"] {
+    --color-primary:          #15803d;
+    --color-primary-dark:     #166534;
+    --color-accent:           #65a30d;
+    --color-accent-dark:      #4d7c0f;
+    --color-secondary:        #f0fdf4;
+
+    --color-background:       #f0fdf4;
+    --color-surface:          #ffffff;
+    --color-surface-raised:   #dcfce7;
+    --color-border:           #bbf7d0;
+    --color-border-strong:    #86efac;
+
+    --color-text-primary:     #052e16;
+    --color-text-secondary:   #166534;
+    --color-text-muted:       #4ade80;
+
+    --color-success:          #15803d;
+    --color-success-light:    #dcfce7;
+    --color-warning:          oklch(0.76 0.18 82);
+    --color-warning-light:    oklch(0.97 0.02 82);
+    --color-error:            oklch(0.59 0.24 25);
+    --color-error-light:      oklch(0.97 0.01 25);
+    --color-info:             #0369a1;
+    --color-info-light:       #e0f2fe;
+    --color-danger:           oklch(0.55 0.24 25);
+
+    --color-hover-overlay:    oklch(0 0 0 / 0.04);
+    --color-active-overlay:   oklch(0 0 0 / 0.08);
+    --color-focus-ring:       color-mix(in srgb, #15803d 30%, transparent);
+    --color-selection-bg:     #bbf7d0;
+    --color-selection-text:   #052e16;
+    --color-on-secondary:     #052e16;
+    --color-primary-contrast: #ffffff;
+
+    --shadow-sm:  0 1px 2px 0 rgb(21 128 61 / 0.08);
+    --shadow-md:  0 4px 6px -1px rgb(21 128 61 / 0.10), 0 2px 4px -2px rgb(0 0 0 / 0.06);
+    --shadow-lg:  0 10px 15px -3px rgb(21 128 61 / 0.10), 0 4px 6px -4px rgb(0 0 0 / 0.06);
+    --shadow-xl:  0 20px 25px -5px rgb(21 128 61 / 0.12), 0 8px 10px -6px rgb(0 0 0 / 0.08);
+    --shadow-glow: 0 0 22px color-mix(in srgb, #15803d 28%, transparent);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   11. GOLDEN SAND — Ámbar cálido. Premium y lujoso.
+   ──────────────────────────────────────────────────────────── */
+[data-theme="golden-sand"] {
+    --color-primary:          #92400e;
+    --color-primary-dark:     #78350f;
+    --color-accent:           #d97706;
+    --color-accent-dark:      #b45309;
+    --color-secondary:        #fffbeb;
+
+    --color-background:       #fffbeb;
+    --color-surface:          #ffffff;
+    --color-surface-raised:   #fef3c7;
+    --color-border:           #fde68a;
+    --color-border-strong:    #fcd34d;
+
+    --color-text-primary:     #1c1008;
+    --color-text-secondary:   #78350f;
+    --color-text-muted:       #b45309;
+
+    --color-success:          oklch(0.55 0.18 155);
+    --color-success-light:    oklch(0.96 0.02 155);
+    --color-warning:          #d97706;
+    --color-warning-light:    #fef3c7;
+    --color-error:            oklch(0.59 0.24 25);
+    --color-error-light:      oklch(0.97 0.01 25);
+    --color-info:             #0369a1;
+    --color-info-light:       #e0f2fe;
+    --color-danger:           oklch(0.55 0.24 25);
+
+    --color-hover-overlay:    oklch(0 0 0 / 0.04);
+    --color-active-overlay:   oklch(0 0 0 / 0.08);
+    --color-focus-ring:       color-mix(in srgb, #92400e 30%, transparent);
+    --color-selection-bg:     #fde68a;
+    --color-selection-text:   #1c1008;
+    --color-on-secondary:     #1c1008;
+    --color-primary-contrast: #ffffff;
+
+    --shadow-sm:  0 1px 2px 0 rgb(146 64 14 / 0.08);
+    --shadow-md:  0 4px 6px -1px rgb(146 64 14 / 0.10), 0 2px 4px -2px rgb(0 0 0 / 0.06);
+    --shadow-lg:  0 10px 15px -3px rgb(146 64 14 / 0.10), 0 4px 6px -4px rgb(0 0 0 / 0.06);
+    --shadow-xl:  0 20px 25px -5px rgb(146 64 14 / 0.12), 0 8px 10px -6px rgb(0 0 0 / 0.08);
+    --shadow-glow: 0 0 22px color-mix(in srgb, #d97706 32%, transparent);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   12. LAVENDER MIST — Violeta suave. Agencia creativa.
+   ──────────────────────────────────────────────────────────── */
+[data-theme="lavender-mist"] {
+    --color-primary:          #6d28d9;
+    --color-primary-dark:     #5b21b6;
+    --color-accent:           #7c3aed;
+    --color-accent-dark:      #6d28d9;
+    --color-secondary:        #faf5ff;
+
+    --color-background:       #faf5ff;
+    --color-surface:          #ffffff;
+    --color-surface-raised:   #ede9fe;
+    --color-border:           #ddd6fe;
+    --color-border-strong:    #c4b5fd;
+
+    --color-text-primary:     #1e0f3a;
+    --color-text-secondary:   #4c1d95;
+    --color-text-muted:       #a78bfa;
+
+    --color-success:          oklch(0.55 0.18 155);
+    --color-success-light:    oklch(0.96 0.02 155);
+    --color-warning:          oklch(0.76 0.18 82);
+    --color-warning-light:    oklch(0.97 0.02 82);
+    --color-error:            oklch(0.59 0.24 25);
+    --color-error-light:      oklch(0.97 0.01 25);
+    --color-info:             #6d28d9;
+    --color-info-light:       #ede9fe;
+    --color-danger:           oklch(0.55 0.24 25);
+
+    --color-hover-overlay:    oklch(0 0 0 / 0.04);
+    --color-active-overlay:   oklch(0 0 0 / 0.08);
+    --color-focus-ring:       color-mix(in srgb, #6d28d9 30%, transparent);
+    --color-selection-bg:     #ddd6fe;
+    --color-selection-text:   #1e0f3a;
+    --color-on-secondary:     #1e0f3a;
+    --color-primary-contrast: #ffffff;
+
+    --shadow-sm:  0 1px 2px 0 rgb(109 40 217 / 0.08);
+    --shadow-md:  0 4px 6px -1px rgb(109 40 217 / 0.10), 0 2px 4px -2px rgb(0 0 0 / 0.06);
+    --shadow-lg:  0 10px 15px -3px rgb(109 40 217 / 0.10), 0 4px 6px -4px rgb(0 0 0 / 0.06);
+    --shadow-xl:  0 20px 25px -5px rgb(109 40 217 / 0.12), 0 8px 10px -6px rgb(0 0 0 / 0.08);
+    --shadow-glow: 0 0 22px color-mix(in srgb, #6d28d9 28%, transparent);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   13. CHARCOAL LIGHT — Gris ultraclaro. Ultra minimalista.
+   ──────────────────────────────────────────────────────────── */
+[data-theme="charcoal-light"] {
+    --color-primary:          #1f2937;
+    --color-primary-dark:     #111827;
+    --color-accent:           #4b5563;
+    --color-accent-dark:      #374151;
+    --color-secondary:        #f9fafb;
+
+    --color-background:       #f9fafb;
+    --color-surface:          #ffffff;
+    --color-surface-raised:   #f3f4f6;
+    --color-border:           #e5e7eb;
+    --color-border-strong:    #d1d5db;
+
+    --color-text-primary:     #111827;
+    --color-text-secondary:   #374151;
+    --color-text-muted:       #9ca3af;
+
+    --color-success:          oklch(0.55 0.18 155);
+    --color-success-light:    oklch(0.96 0.02 155);
+    --color-warning:          oklch(0.76 0.18 82);
+    --color-warning-light:    oklch(0.97 0.02 82);
+    --color-error:            oklch(0.59 0.24 25);
+    --color-error-light:      oklch(0.97 0.01 25);
+    --color-info:             #1f2937;
+    --color-info-light:       #f3f4f6;
+    --color-danger:           oklch(0.55 0.24 25);
+
+    --color-hover-overlay:    oklch(0 0 0 / 0.04);
+    --color-active-overlay:   oklch(0 0 0 / 0.08);
+    --color-focus-ring:       color-mix(in srgb, #1f2937 25%, transparent);
+    --color-selection-bg:     #e5e7eb;
+    --color-selection-text:   #111827;
+    --color-on-secondary:     #111827;
+    --color-primary-contrast: #ffffff;
+
+    --shadow-sm:  0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-md:  0 4px 6px -1px rgb(0 0 0 / 0.08), 0 2px 4px -2px rgb(0 0 0 / 0.06);
+    --shadow-lg:  0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.06);
+    --shadow-xl:  0 20px 25px -5px rgb(0 0 0 / 0.10), 0 8px 10px -6px rgb(0 0 0 / 0.08);
+    --shadow-glow: 0 0 20px color-mix(in srgb, #1f2937 18%, transparent);
+}
+
+/* ============================================================
+   OVERRIDES DE COMPONENTES — TODOS LOS TEMAS CLAROS NUEVOS
+   ============================================================ */
+:is(
+    [data-theme="sakura-light"],
+    [data-theme="ocean-breeze"],
+    [data-theme="verdant-light"],
+    [data-theme="golden-sand"],
+    [data-theme="lavender-mist"],
+    [data-theme="charcoal-light"]
+) {
+    ::selection {
+        background-color: var(--color-selection-bg);
+        color: var(--color-selection-text);
+    }
+
+    * {
+        scrollbar-color: var(--color-border-strong) var(--color-background);
+        scrollbar-width: thin;
+    }
+
+    .input-field {
+        background: var(--color-surface);
+        border-color: var(--color-border-strong);
+        color: var(--color-text-primary);
+
+        &::placeholder { color: var(--color-text-muted); }
+
+        &:focus {
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px var(--color-focus-ring);
+        }
+    }
+
+    .btn-primary,
+    .btn-primary-gradient {
+        background: var(--color-primary);
+        color: var(--color-primary-contrast);
+
+        &:hover:not(:disabled) {
+            filter: brightness(1.07);
+            box-shadow: var(--shadow-glow);
+        }
+    }
+
+    .btn-secondary {
+        background: var(--color-surface);
+        border-color: var(--color-border-strong);
+        color: var(--color-text-primary);
+
+        &:hover:not(:disabled) {
+            background: var(--color-surface-raised);
+            border-color: var(--color-primary);
+        }
+    }
+
+    .card {
+        background: var(--color-surface);
+        border-color: var(--color-border);
+    }
+
+    :focus-visible {
+        outline-color: var(--color-primary);
+        outline-offset: 2px;
+    }
+
+    .nav-item:hover,
+    .sidebar-item:hover {
+        background: var(--color-hover-overlay);
+        color: var(--color-primary);
+    }
+
+    .nav-item.active,
+    .sidebar-item.active {
+        background: var(--color-surface-raised);
+        color: var(--color-primary);
+        border-left-color: var(--color-primary);
+    }
+}

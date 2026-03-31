@@ -8,7 +8,7 @@
                     d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 3H6.28l-.31-1.243A1 1 0 005 1H3z" />
                 <path d="M16 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM6.5 18a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" />
             </svg>
-            <span class="order-title">Pedido actual</span>
+            <span class="order-title">{{ 'pos.panel.currentOrder' | translate }}</span>
             @if (carrito.itemCount() > 0) {
             <span class="order-count-badge">{{ carrito.itemCount() }}</span>
             }
@@ -20,7 +20,7 @@
                     d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
                     clip-rule="evenodd" />
             </svg>
-            Vaciar
+            {{ 'pos.panel.clear' | translate }}
         </button>
     </div>
 
@@ -30,7 +30,7 @@
             <svg viewBox="0 0 20 20" fill="currentColor" width="13" height="13" class="text-muted shrink-0">
                 <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
             </svg>
-            <input class="customer-input" type="text" placeholder="Cliente (opcional)" [value]="carrito.clienteNombre()"
+            <input class="customer-input" type="text" [placeholder]="'pos.panel.optionalCustomer' | translate" [value]="carrito.clienteNombre()"
                 (input)="onClienteChange($any($event.target).value)">
         </div>
     </div>
@@ -43,8 +43,8 @@
                 <path stroke-linecap="round" stroke-linejoin="round"
                     d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
             </svg>
-            <p class="order-empty-title">Carrito vacío</p>
-            <p class="order-empty-sub">Selecciona productos del catálogo</p>
+            <p class="order-empty-title">{{ 'pos.panel.emptyCart' | translate }}</p>
+            <p class="order-empty-sub">{{ 'pos.panel.selectProducts' | translate }}</p>
         </div>
         }
 
@@ -130,7 +130,7 @@
     <!-- Pago -->
     <div class="order-payment">
 
-        <p class="payment-section-label">Método de pago</p>
+        <p class="payment-section-label">{{ 'checkout.metodoPago' | translate }}</p>
 
         <!-- Grid 2×2 de métodos de pago -->
         <div class="payment-methods grid grid-cols-2 gap-2 mt-2">
@@ -139,12 +139,12 @@
                 [class.!bg-[var(--color-primary)]]="carrito.metodoPago() === m.id && m.id === 'EFECTIVO'"
                 [class.!text-white]="carrito.metodoPago() === m.id && m.id === 'EFECTIVO'"
                 [class.!border-[var(--color-primary)]]="carrito.metodoPago() === m.id && m.id === 'EFECTIVO'"
-                [class.!bg-[#742284]]="carrito.metodoPago() === m.id && m.id === 'YAPE'"
+                [class.!bg-[var(--color-yape)]]="carrito.metodoPago() === m.id && m.id === 'YAPE'"
                 [class.!text-white]="carrito.metodoPago() === m.id && m.id === 'YAPE'"
-                [class.!border-[#742284]]="carrito.metodoPago() === m.id && m.id === 'YAPE'"
-                [class.!bg-[#00D4FF]]="carrito.metodoPago() === m.id && m.id === 'PLIN'"
-                [class.!text-[#002f5c]]="carrito.metodoPago() === m.id && m.id === 'PLIN'"
-                [class.!border-[#00D4FF]]="carrito.metodoPago() === m.id && m.id === 'PLIN'"
+                [class.!border-[var(--color-yape)]]="carrito.metodoPago() === m.id && m.id === 'YAPE'"
+                [class.!bg-[var(--color-plin)]]="carrito.metodoPago() === m.id && m.id === 'PLIN'"
+                [class.!text-[var(--color-plin-text)]]="carrito.metodoPago() === m.id && m.id === 'PLIN'"
+                [class.!border-[var(--color-plin)]]="carrito.metodoPago() === m.id && m.id === 'PLIN'"
                 [class.!bg-[oklch(0.37_0_0)]]="carrito.metodoPago() === m.id && m.id === 'TARJETA'"
                 [class.!text-white]="carrito.metodoPago() === m.id && m.id === 'TARJETA'"
                 [class.!border-[var(--color-border)]]="carrito.metodoPago() === m.id && m.id === 'TARJETA'"
@@ -168,11 +168,22 @@
                         d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
                 </svg>
                 }
-                {{ m.label }}
+                {{ m.i18nKey | translate }}
             </button>
             }
         </div>
 
+        <!-- Toggle pago dividido -->
+        <button class="btn-secondary !h-8 !text-[11px] !rounded-lg w-full mt-2"
+            [class.!bg-[var(--color-primary)]]="carrito.pagoDividido()"
+            [class.!text-white]="carrito.pagoDividido()"
+            [class.!border-[var(--color-primary)]]="carrito.pagoDividido()"
+            (click)="carrito.togglePagoDividido()" [disabled]="carrito.isEmpty()">
+            {{ carrito.pagoDividido() ? '✓ Pago dividido activo' : '+ Dividir pago en varios métodos' }}
+        </button>
+
+        @if (!carrito.pagoDividido()) {
+        <!-- Modo simple -->
         <div class="payment-amounts">
             <div class="amount-group">
                 <label class="amount-label">Monto recibido</label>
@@ -189,6 +200,44 @@
                 </div>
             </div>
         </div>
+        } @else {
+        <!-- Modo pago dividido -->
+        <div style="margin-top:8px;display:flex;flex-direction:column;gap:6px">
+            @for (pago of carrito.pagos(); track $index) {
+            <div style="display:flex;align-items:center;gap:6px">
+                <select style="flex:0 0 90px;height:34px;border-radius:8px;border:1px solid var(--color-border);background:var(--color-surface-raised);color:var(--color-text-on);font-size:12px;padding:0 6px"
+                    [value]="pago.metodo" (change)="onPagoMetodoChange($index, $event)">
+                    @for (m of splitMethods; track m.id) {
+                    <option [value]="m.id">{{ m.i18nKey | translate }}</option>
+                    }
+                </select>
+                <div class="amount-input-wrap" style="flex:1;min-width:0">
+                    <span class="amount-currency">S/</span>
+                    <input class="amount-input" type="number" min="0" step="0.50" [value]="pago.monto"
+                        (input)="onPagoMontoChange($index, $event)" placeholder="0.00">
+                </div>
+                @if (carrito.pagos().length > 2) {
+                <button style="width:28px;height:28px;border-radius:6px;border:1px solid var(--color-border);background:transparent;color:var(--color-text-muted);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0"
+                    (click)="carrito.quitarPago($index)">✕</button>
+                }
+            </div>
+            }
+            <button class="btn-secondary !h-7 !text-[11px] !rounded-lg"
+                (click)="carrito.agregarPago()" [disabled]="carrito.pagos().length >= 4">
+                + Agregar método
+            </button>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 4px;border-top:1px solid var(--color-border);margin-top:2px">
+                <span style="font-size:12px;color:var(--color-text-muted)">
+                    @if (carrito.faltaPorCubrir() > 0) {
+                        <span style="color:var(--color-warning)">Faltan S/{{ fmt(carrito.faltaPorCubrir()) }}</span>
+                    } @else {
+                        <span style="color:var(--color-success)">Cubierto ✓</span>
+                    }
+                </span>
+                <span style="font-size:12px">Vuelto: <strong>S/{{ fmt(carrito.vuelto()) }}</strong></span>
+            </div>
+        </div>
+        }
 
         <p class="payment-section-label mt-[2px]">Comprobante</p>
         <div class="cpe-options grid grid-cols-2 gap-2 mt-2">
@@ -198,7 +247,7 @@
                 [class.!text-white]="carrito.tipoCpe() === cpe.id"
                 [class.!border-[var(--color-primary)]]="carrito.tipoCpe() === cpe.id"
                 (click)="carrito.setTipoCpe(cpe.id)">
-                {{ cpe.label }}
+                {{ cpe.i18nKey | translate }}
             </button>
             }
         </div>

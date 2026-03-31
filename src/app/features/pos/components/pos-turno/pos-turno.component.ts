@@ -1,11 +1,12 @@
 import { Component, ChangeDetectionStrategy, input, output } from '@angular/core';
 import { DatePipe } from '@angular/common';
+import { TranslateModule } from '@ngx-translate/core';
 import { TurnoCaja } from '../../models/turno-caja.model';
 
 @Component({
     selector: 'app-pos-turno',
     standalone: true,
-    imports: [DatePipe],
+    imports: [DatePipe, TranslateModule],
     templateUrl: './pos-turno.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
 })

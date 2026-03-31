@@ -1,0 +1,118 @@
+<div class="page-container">
+
+  <app-page-header
+    title="Ubicaciones"
+    subtitle="Gestiona la ubicación física de productos dentro de cada almacén"
+    [breadcrumbs]="breadcrumbs">
+    <div actions>
+      <button class="btn btn-primary" (click)="openCreate()"
+              [disabled]="!selectedWarehouseId()">
+        + Nueva Ubicación
+      </button>
+    </div>
+  </app-page-header>
+
+  <div class="filters-bar">
+    <div class="filter-field">
+      <label class="input-label">Almacén</label>
+      <select class="input-field" (change)="onWarehouseChange($event)">
+        <option value="">Seleccionar almacén...</option>
+        @for (w of warehouses(); track w.id) {
+          <option [value]="w.id">{{ w.code }} — {{ w.name }}</option>
+        }
+      </select>
+    </div>
+  </div>
+
+  @if (error()) {
+    <app-alert type="error" [message]="error()!" [dismissible]="true" (dismiss)="error.set(null)" />
+  }
+
+  @if (!selectedWarehouseId()) {
+    <div class="card card-body empty-state">
+      Selecciona un almacén para ver sus ubicaciones.
+    </div>
+  } @else {
+    <app-data-table
+      [data]="locations()"
+      [columns]="columns"
+      [actions]="actions"
+      [loading]="loading()"
+      [currentPage]="currentPage()"
+      [pageSize]="pageSize()"
+      [totalElements]="totalElements()"
+      [totalPages]="totalPages()"
+      (pageChange)="onPageChange($event)">
+    </app-data-table>
+  }
+
+</div>
+
+<!-- Drawer -->
+<app-drawer
+  [isOpen]="showDrawer()"
+  [title]="editMode() ? 'Editar Ubicación' : 'Nueva Ubicación'"
+  size="lg" side="right" [hasFooter]="true"
+  (closed)="closeDrawer()">
+
+  <form [formGroup]="form">
+    @if (submitError()) {
+      <app-alert type="error" [message]="submitError()!" [dismissible]="true"
+                 (dismiss)="submitError.set(null)" />
+    }
+
+    <div class="drawer-form-grid">
+      <div class="col-span-2">
+        <label class="input-label">Almacén <span class="text-error">*</span></label>
+        <select class="input-field" formControlName="warehouseId">
+          <option [value]="null">Seleccionar...</option>
+          @for (w of warehouses(); track w.id) {
+            <option [value]="w.id">{{ w.code }} — {{ w.name }}</option>
+          }
+        </select>
+      </div>
+
+      <app-form-field label="Código" [control]="getCtrl('code')"
+        type="text" placeholder="UB-001" [required]="true" />
+      <app-form-field label="Nombre" [control]="getCtrl('name')"
+        type="text" placeholder="Zona A - Rack 1" />
+      <app-form-field label="Pasillo" [control]="getCtrl('aisle')" type="text" placeholder="A" />
+      <app-form-field label="Estante" [control]="getCtrl('rack')"  type="text" placeholder="R1" />
+      <app-form-field label="Nivel"   [control]="getCtrl('shelf')" type="text" placeholder="N2" />
+      <app-form-field label="Posición / Bin" [control]="getCtrl('bin')" type="text" placeholder="B03" />
+
+      <div>
+        <label class="input-label">Tipo Ubicación</label>
+        <select class="input-field" formControlName="locationType">
+          <option value="">General</option>
+          <option value="PICKING">Picking</option>
+          <option value="ALMACENAMIENTO">Almacenamiento</option>
+          <option value="RECEPCION">Recepción</option>
+          <option value="DESPACHO">Despacho</option>
+        </select>
+      </div>
+      <app-form-field label="Capacidad (unid.)" [control]="getCtrl('capacity')"
+        type="number" placeholder="0" />
+
+      <div class="col-span-2">
+        <app-form-field label="Descripción" [control]="getCtrl('description')"
+          type="text" placeholder="Descripción opcional" />
+      </div>
+
+      <div class="col-span-2">
+        <label class="toggle-row">
+          <input type="checkbox" class="toggle-input" formControlName="active" />
+          <span class="input-label">Activo</span>
+        </label>
+      </div>
+    </div>
+  </form>
+
+  <div slot="footer">
+    <button class="btn btn-secondary" type="button" (click)="closeDrawer()">Cancelar</button>
+    <button class="btn btn-primary" type="button" (click)="onSubmit()"
+            [disabled]="submitting() || form.invalid">
+      {{ submitting() ? 'Guardando...' : (editMode() ? 'Actualizar' : 'Crear Ubicación') }}
+    </button>
+  </div>
+</app-drawer>

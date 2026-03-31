@@ -52,6 +52,15 @@ export class OrderService {
             .pipe(catchError(this.handleError));
     }
 
+    /**
+     * Valida un cupón de descuento contra el backend.
+     * TODO: implementar endpoint POST /api/pedidos/validate-coupon en microshopventas
+     */
+    validateCoupon(_code: string): Observable<{ amount: number }> {
+        // TODO: conectar con POST ${this.baseUrl}/validate-coupon cuando el endpoint exista
+        return throwError(() => new Error('Validación de cupones no implementada aún'));
+    }
+
     private handleError(error: HttpErrorResponse): Observable<never> {
         let errorMessage = 'Ocurrió un error desconocido';
 

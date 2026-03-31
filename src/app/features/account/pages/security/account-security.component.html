@@ -1,0 +1,42 @@
+<div class="page-container">
+    <app-breadcrumb [items]="breadcrumbItems" />
+    <div class="page-header">
+        <h1 class="page-title">Seguridad de la cuenta</h1>
+        <p class="page-subtitle">Cambia tu contraseña</p>
+    </div>
+
+    <div class="card max-w-md">
+        <div class="card-body">
+            @if (successMsg()) {
+                <div class="badge badge-success mb-4 w-full text-sm py-2 px-3">{{ successMsg() }}</div>
+            }
+            @if (errorMsg()) {
+                <div class="badge badge-error mb-4 w-full text-sm py-2 px-3">{{ errorMsg() }}</div>
+            }
+            <form [formGroup]="passwordForm" (ngSubmit)="onSubmit()" class="flex flex-col gap-4">
+                <div>
+                    <label class="input-label">Contraseña actual</label>
+                    <input class="input-field" type="password" formControlName="currentPassword" placeholder="••••••••">
+                </div>
+                <div>
+                    <label class="input-label">Nueva contraseña</label>
+                    <input class="input-field" type="password" formControlName="newPassword" placeholder="Mínimo 8 caracteres">
+                    @if (passwordForm.get('newPassword')?.touched && passwordForm.get('newPassword')?.hasError('minlength')) {
+                        <p class="input-error-message">Mínimo 8 caracteres.</p>
+                    }
+                </div>
+                <div>
+                    <label class="input-label">Confirmar nueva contraseña</label>
+                    <input class="input-field" type="password" formControlName="confirmPassword" placeholder="Repite la contraseña">
+                    @if (passwordForm.get('confirmPassword')?.touched && !passwordsMatch) {
+                        <p class="input-error-message">Las contraseñas no coinciden.</p>
+                    }
+                </div>
+                <button type="submit" class="btn btn-primary"
+                    [disabled]="saving() || passwordForm.invalid || !passwordsMatch">
+                    @if (saving()) { Guardando... } @else { Cambiar contraseña }
+                </button>
+            </form>
+        </div>
+    </div>
+</div>

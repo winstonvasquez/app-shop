@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
@@ -13,6 +13,7 @@ import { Variant } from '@features/products/models/variant.model';
 import { CartService } from '@features/cart/services/cart.service';
 import { ProductDetail } from '@features/products/models/product-detail.model';
 import { UrlEncryptionService } from '@core/services/url-encryption.service';
+import { BreadcrumbComponent, BreadcrumbItem } from '@shared/components/breadcrumb/breadcrumb.component';
 
 @Component({
   selector: 'app-product-detail-page',
@@ -24,7 +25,8 @@ import { UrlEncryptionService } from '@core/services/url-encryption.service';
     ProductReviewsComponent,
     SellerInfoComponent,
     ProductAttributesComponent,
-    TranslateModule
+    TranslateModule,
+    BreadcrumbComponent
   ],
   templateUrl: './product-detail-page.component.html'
 })
@@ -45,6 +47,23 @@ export class ProductDetailPageComponent implements OnInit {
     value: this._product
   };
 
+  breadcrumbItems = computed<BreadcrumbItem[]>(() => {
+    const p = this._product();
+    if (!p) return [
+      { label: 'Inicio', route: ['/home'] },
+      { label: 'Productos', route: ['/products'] }
+    ];
+    const extended = p as ProductDetail & { categoryName?: string; categoryId?: number };
+    return [
+      { label: 'Inicio', route: ['/home'] },
+      { label: 'Productos', route: ['/products'] },
+      ...(extended.categoryName
+        ? [{ label: extended.categoryName, route: ['/products'], queryParams: { categoryId: String(extended.categoryId ?? '') } }]
+        : []),
+      { label: p.nombre }
+    ];
+  });
+
   ngOnInit() {
     this.route.params.subscribe(params => {
       const rawId = params['id'];
@@ -58,6 +77,7 @@ export class ProductDetailPageComponent implements OnInit {
           this._product.set(data);
           this._isLoading.set(false);
           this.titleService.setTitle(`${data.nombre} | App Shop`);
+          this.saveToBrowseHistory(data);
         },
         error: () => {
           this._error.set(true);
@@ -65,6 +85,23 @@ export class ProductDetailPageComponent implements OnInit {
         }
       });
     });
+  }
+
+  private saveToBrowseHistory(product: ProductDetail): void {
+    try {
+      const history = JSON.parse(localStorage.getItem('browse_history') || '[]');
+      const item = {
+        id: product.id,
+        name: product.nombre,
+        image: product.images && product.images.length > 0 ? product.images[0].url : '',
+        price: product.precioBase,
+        slug: (product as unknown as Record<string, unknown>)['slug'] ?? product.id
+      };
+      const filtered = history.filter((h: Record<string, unknown>) => h['id'] !== item.id);
+      localStorage.setItem('browse_history', JSON.stringify([item, ...filtered].slice(0, 20)));
+    } catch {
+      // Ignorar errores de localStorage
+    }
   }
 
   onAddToCart(event: { variant: Variant, quantity: number }) {

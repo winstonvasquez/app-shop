@@ -23,30 +23,32 @@
         </div>
     </div>
 
-    <!-- Distribución Tallas estático para Demo -->
+    <!-- Distribución de Tallas — solo se muestra si el backend provee los datos -->
+    @if (sizeFeedback()) {
     <div class="mb-6 space-y-2 text-sm max-w-sm">
         <div class="flex items-center">
             <span class="w-24 text-subtle">{{ 'productDetail.small' | translate }}</span>
             <div class="flex-grow bg-surface-raised rounded-full h-2 overflow-hidden">
-                <div class="bg-text-muted h-full w-[4%]"></div>
+                <div class="bg-text-muted h-full" [style.width.%]="sizeFeedback()!.small"></div>
             </div>
-            <span class="w-12 text-right text-muted">4%</span>
+            <span class="w-12 text-right text-muted">{{ sizeFeedback()!.small }}%</span>
         </div>
         <div class="flex items-center">
             <span class="w-24 text-on font-medium">{{ 'productDetail.trueToSize' | translate }}</span>
             <div class="flex-grow bg-surface-raised rounded-full h-2 overflow-hidden">
-                <div class="bg-text-primary h-full w-[96%]"></div>
+                <div class="bg-text-primary h-full" [style.width.%]="sizeFeedback()!.trueToSize"></div>
             </div>
-            <span class="w-12 text-right text-on font-medium">96%</span>
+            <span class="w-12 text-right text-on font-medium">{{ sizeFeedback()!.trueToSize }}%</span>
         </div>
         <div class="flex items-center">
             <span class="w-24 text-subtle">{{ 'productDetail.large' | translate }}</span>
             <div class="flex-grow bg-surface-raised rounded-full h-2 overflow-hidden">
-                <div class="bg-text-muted h-full w-0"></div>
+                <div class="bg-text-muted h-full" [style.width.%]="sizeFeedback()!.large"></div>
             </div>
-            <span class="w-12 text-right text-muted">0%</span>
+            <span class="w-12 text-right text-muted">{{ sizeFeedback()!.large }}%</span>
         </div>
     </div>
+    }
 
     <div class="flex flex-col gap-6">
         @for (review of reviews(); track review.id) {

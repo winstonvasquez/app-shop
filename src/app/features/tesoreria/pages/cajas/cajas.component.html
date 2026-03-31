@@ -1,0 +1,131 @@
+<div class="page-container">
+
+  <app-page-header
+    title="Control de Cajas"
+    subtitle="Gestión de cajas registradoras y arqueos">
+    <div actions>
+      <button class="btn btn-primary" (click)="openCreateDrawer()">+ Nueva Caja</button>
+    </div>
+  </app-page-header>
+
+  <!-- KPIs -->
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:var(--space-md);margin-bottom:var(--space-lg)">
+    <div class="card">
+      <div class="card-body">
+        <div class="text-sm" style="color:var(--color-text-muted)">Cajas Abiertas</div>
+        <div class="font-bold" style="font-size:2rem;color:var(--color-success)">{{ cajasAbiertas() }}</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-body">
+        <div class="text-sm" style="color:var(--color-text-muted)">Cajas Cerradas</div>
+        <div class="font-bold" style="font-size:2rem">{{ cajasCerradas() }}</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-body">
+        <div class="text-sm" style="color:var(--color-text-muted)">Saldo Total (abiertas)</div>
+        <div class="font-bold" style="font-size:1.75rem;color:var(--color-primary)">
+          S/ {{ saldoTotal() | number:'1.2-2' }}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabla -->
+  <div class="card">
+    <app-data-table
+      [data]="cajas()"
+      [columns]="columns"
+      [actions]="actions"
+      [loading]="cargando()"
+      [currentPage]="currentPage()"
+      [pageSize]="pageSize()"
+      [totalElements]="totalElements()"
+      [totalPages]="totalPages()"
+      (pageChange)="onPageChange($event)">
+    </app-data-table>
+  </div>
+
+</div>
+
+<!-- Drawer: Nueva Caja -->
+<app-drawer
+  [isOpen]="showCreateDrawer()"
+  title="Nueva Caja Registradora"
+  size="md"
+  side="right"
+  [hasFooter]="true"
+  (closed)="showCreateDrawer.set(false)">
+
+  @if (errorMsg()) {
+    <div style="background:var(--color-error-subtle,rgba(215,19,42,0.1));border:1px solid var(--color-error);border-radius:8px;padding:12px;margin-bottom:16px;color:var(--color-error);font-size:0.875rem">
+      {{ errorMsg() }}
+    </div>
+  }
+
+  <form [formGroup]="createForm" style="display:flex;flex-direction:column;gap:16px">
+    <app-form-field
+      label="Nombre de la Caja"
+      [control]="getControl(createForm, 'nombre')"
+      type="text"
+      placeholder="Ej: Caja Principal"
+      [required]="true">
+    </app-form-field>
+    <app-form-field
+      label="Saldo Inicial (S/)"
+      [control]="getControl(createForm, 'saldoInicial')"
+      type="number"
+      placeholder="0.00"
+      hint="Monto de apertura">
+    </app-form-field>
+  </form>
+
+  <div slot="footer">
+    <button class="btn btn-secondary" (click)="showCreateDrawer.set(false)" [disabled]="guardando()">Cancelar</button>
+    <button class="btn btn-primary" (click)="crearCaja()" [disabled]="guardando() || createForm.invalid">
+      {{ guardando() ? 'Guardando...' : 'Crear Caja' }}
+    </button>
+  </div>
+</app-drawer>
+
+<!-- Drawer: Abrir / Cerrar Caja -->
+<app-drawer
+  [isOpen]="showActionDrawer()"
+  [title]="actionType() === 'abrir' ? 'Abrir Caja' : 'Cerrar Caja'"
+  size="sm"
+  side="right"
+  [hasFooter]="true"
+  (closed)="showActionDrawer.set(false)">
+
+  <div style="margin-bottom:16px;color:var(--color-text-muted);font-size:0.9rem">
+    Caja: <strong>{{ selectedCaja()?.nombre }}</strong>
+  </div>
+
+  @if (actionErrorMsg()) {
+    <div style="background:var(--color-error-subtle,rgba(215,19,42,0.1));border:1px solid var(--color-error);border-radius:8px;padding:12px;margin-bottom:16px;color:var(--color-error);font-size:0.875rem">
+      {{ actionErrorMsg() }}
+    </div>
+  }
+
+  @if (actionType() === 'abrir') {
+    <form [formGroup]="actionForm">
+      <app-form-field
+        label="Saldo Inicial (S/)"
+        [control]="getControl(actionForm, 'saldoInicial')"
+        type="number"
+        placeholder="0.00"
+        [required]="true">
+      </app-form-field>
+    </form>
+  } @else {
+    <p style="color:var(--color-text-muted)">¿Confirmar cierre de esta caja? Se registrará el saldo actual como saldo de cierre.</p>
+  }
+
+  <div slot="footer">
+    <button class="btn btn-secondary" (click)="showActionDrawer.set(false)" [disabled]="guardando()">Cancelar</button>
+    <button class="btn btn-primary" (click)="ejecutarAccion()" [disabled]="guardando()">
+      {{ guardando() ? 'Procesando...' : (actionType() === 'abrir' ? 'Abrir Caja' : 'Confirmar Cierre') }}
+    </button>
+  </div>
+</app-drawer>

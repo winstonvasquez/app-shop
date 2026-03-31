@@ -1,11 +1,12 @@
 import { Component, ChangeDetectionStrategy, input, output } from '@angular/core';
 import { DatePipe } from '@angular/common';
+import { TranslateModule } from '@ngx-translate/core';
 import { VentaPosResponse } from '../../models/venta-pos.model';
 
 @Component({
     selector: 'app-pos-receipt',
     standalone: true,
-    imports: [DatePipe],
+    imports: [DatePipe, TranslateModule],
     templateUrl: './pos-receipt.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
 })

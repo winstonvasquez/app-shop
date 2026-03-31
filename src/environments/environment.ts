@@ -8,7 +8,11 @@ export const environment = {
         accounting: '/accounting',
         pos: '/api/pos',
         inventory: '/inventory',
-        treasury: '/treasury'
+        treasury: '/treasury',
+        hr: '/hr',
+        logistics: '/logistics',
+        analytics: '/analytics',
+        reports: '/reports'
     },
     socialAuth: {
         googleClientId: 'TU_CLIENT_ID_DE_GOOGLE.apps.googleusercontent.com',
