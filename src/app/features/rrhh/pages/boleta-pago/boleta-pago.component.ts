@@ -426,8 +426,8 @@ export class BoletaPagoComponent implements OnInit {
 
     periodo = signal<string>(new Date().toISOString().substring(0, 7));
     empleado = signal<DatosEmpleado>(this.empleadoDemo());
-    linea = signal<LineaBoleta>(this.calcularBoleta(this.empleadoDemo()));
     private config: ConfiguracionRemunerativa = CONFIG_DEFAULT;
+    linea = signal<LineaBoleta>(this.calcularBoleta(this.empleadoDemo()));
 
     periodoLabel() {
         const [anio, mes] = this.periodo().split('-');

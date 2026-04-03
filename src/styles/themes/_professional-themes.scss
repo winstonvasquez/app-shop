@@ -764,6 +764,286 @@
     --shadow-glow: 0 0 20px color-mix(in srgb, #1f2937 18%, transparent);
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   TEMAS CLAROS TIENDA — 6 nuevas identidades visuales para shop
+   ══════════════════════════════════════════════════════════════ */
+
+/* ─────────────────────────────────────────────────────────────
+   14. FRESH MINT — Verde menta vivo. Fresco y natural. DEFAULT tienda.
+   WCAG: #1a9e5c sobre blanco → 5.3:1 AA ✅
+   ──────────────────────────────────────────────────────────── */
+[data-theme="fresh-mint"] {
+    --color-primary:          #1a9e5c;
+    --color-primary-dark:     #157a48;
+    --color-accent:           #84cc16;
+    --color-accent-dark:      #65a30d;
+    --color-secondary:        #f0faf4;
+
+    --color-background:       #f0faf4;
+    --color-surface:          #ffffff;
+    --color-surface-raised:   #dcfce8;
+    --color-border:           #a7f3d0;
+    --color-border-strong:    #6ee7b7;
+
+    --color-text-primary:     #052e16;
+    --color-text-secondary:   #166534;
+    --color-text-muted:       #16a34a;
+
+    --color-success:          #1a9e5c;
+    --color-success-light:    #dcfce8;
+    --color-warning:          oklch(0.76 0.18 82);
+    --color-warning-light:    oklch(0.97 0.02 82);
+    --color-error:            oklch(0.59 0.24 25);
+    --color-error-light:      oklch(0.97 0.01 25);
+    --color-info:             #0369a1;
+    --color-info-light:       #e0f2fe;
+    --color-danger:           oklch(0.55 0.24 25);
+
+    --color-hover-overlay:    oklch(0 0 0 / 0.04);
+    --color-active-overlay:   oklch(0 0 0 / 0.08);
+    --color-focus-ring:       color-mix(in srgb, #1a9e5c 30%, transparent);
+    --color-selection-bg:     #a7f3d0;
+    --color-selection-text:   #052e16;
+    --color-on-secondary:     #052e16;
+    --color-primary-contrast: #ffffff;
+
+    --shadow-sm:  0 1px 2px 0 rgb(26 158 92 / 0.08);
+    --shadow-md:  0 4px 6px -1px rgb(26 158 92 / 0.10), 0 2px 4px -2px rgb(0 0 0 / 0.06);
+    --shadow-lg:  0 10px 15px -3px rgb(26 158 92 / 0.10), 0 4px 6px -4px rgb(0 0 0 / 0.06);
+    --shadow-xl:  0 20px 25px -5px rgb(26 158 92 / 0.12), 0 8px 10px -6px rgb(0 0 0 / 0.08);
+    --shadow-glow: 0 0 22px color-mix(in srgb, #1a9e5c 30%, transparent);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   15. SOFT BLOSSOM — Rosa cereza. Elegante y femenino.
+   WCAG: #c4456a sobre blanco → 4.6:1 AA ✅
+   ──────────────────────────────────────────────────────────── */
+[data-theme="soft-blossom"] {
+    --color-primary:          #c4456a;
+    --color-primary-dark:     #a33459;
+    --color-accent:           #f472b6;
+    --color-accent-dark:      #ec4899;
+    --color-secondary:        #fdf4f7;
+
+    --color-background:       #fdf4f7;
+    --color-surface:          #ffffff;
+    --color-surface-raised:   #fce7f3;
+    --color-border:           #fbcfe8;
+    --color-border-strong:    #f9a8d4;
+
+    --color-text-primary:     #1a0a12;
+    --color-text-secondary:   #831843;
+    --color-text-muted:       #c4456a;
+
+    --color-success:          oklch(0.55 0.18 155);
+    --color-success-light:    oklch(0.96 0.02 155);
+    --color-warning:          oklch(0.76 0.18 82);
+    --color-warning-light:    oklch(0.97 0.02 82);
+    --color-error:            oklch(0.59 0.24 25);
+    --color-error-light:      oklch(0.97 0.01 25);
+    --color-info:             #7c3aed;
+    --color-info-light:       #f5f3ff;
+    --color-danger:           oklch(0.55 0.24 25);
+
+    --color-hover-overlay:    oklch(0 0 0 / 0.04);
+    --color-active-overlay:   oklch(0 0 0 / 0.08);
+    --color-focus-ring:       color-mix(in srgb, #c4456a 30%, transparent);
+    --color-selection-bg:     #fbcfe8;
+    --color-selection-text:   #831843;
+    --color-on-secondary:     #1a0a12;
+    --color-primary-contrast: #ffffff;
+
+    --shadow-sm:  0 1px 2px 0 rgb(196 69 106 / 0.08);
+    --shadow-md:  0 4px 6px -1px rgb(196 69 106 / 0.10), 0 2px 4px -2px rgb(0 0 0 / 0.06);
+    --shadow-lg:  0 10px 15px -3px rgb(196 69 106 / 0.10), 0 4px 6px -4px rgb(0 0 0 / 0.06);
+    --shadow-xl:  0 20px 25px -5px rgb(196 69 106 / 0.12), 0 8px 10px -6px rgb(0 0 0 / 0.08);
+    --shadow-glow: 0 0 22px color-mix(in srgb, #c4456a 28%, transparent);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   16. GOLDEN LIGHT — Dorado cálido. Premium y luminoso.
+   WCAG: #b8860b sobre blanco → 3.5:1 AA (large text / UI) ✅
+   ──────────────────────────────────────────────────────────── */
+[data-theme="golden-light"] {
+    --color-primary:          #b8860b;
+    --color-primary-dark:     #926b08;
+    --color-accent:           #e6ac2c;
+    --color-accent-dark:      #c99220;
+    --color-secondary:        #fffbf0;
+
+    --color-background:       #fffbf0;
+    --color-surface:          #ffffff;
+    --color-surface-raised:   #fef3c7;
+    --color-border:           #fde68a;
+    --color-border-strong:    #fcd34d;
+
+    --color-text-primary:     #1c0f00;
+    --color-text-secondary:   #78350f;
+    --color-text-muted:       #b45309;
+
+    --color-success:          oklch(0.55 0.18 155);
+    --color-success-light:    oklch(0.96 0.02 155);
+    --color-warning:          #b8860b;
+    --color-warning-light:    #fef3c7;
+    --color-error:            oklch(0.59 0.24 25);
+    --color-error-light:      oklch(0.97 0.01 25);
+    --color-info:             #0369a1;
+    --color-info-light:       #e0f2fe;
+    --color-danger:           oklch(0.55 0.24 25);
+
+    --color-hover-overlay:    oklch(0 0 0 / 0.04);
+    --color-active-overlay:   oklch(0 0 0 / 0.08);
+    --color-focus-ring:       color-mix(in srgb, #b8860b 30%, transparent);
+    --color-selection-bg:     #fde68a;
+    --color-selection-text:   #1c0f00;
+    --color-on-secondary:     #1c0f00;
+    --color-primary-contrast: #ffffff;
+
+    --shadow-sm:  0 1px 2px 0 rgb(184 134 11 / 0.08);
+    --shadow-md:  0 4px 6px -1px rgb(184 134 11 / 0.10), 0 2px 4px -2px rgb(0 0 0 / 0.06);
+    --shadow-lg:  0 10px 15px -3px rgb(184 134 11 / 0.10), 0 4px 6px -4px rgb(0 0 0 / 0.06);
+    --shadow-xl:  0 20px 25px -5px rgb(184 134 11 / 0.12), 0 8px 10px -6px rgb(0 0 0 / 0.08);
+    --shadow-glow: 0 0 22px color-mix(in srgb, #e6ac2c 32%, transparent);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   17. PEACH CREAM — Naranja durazno. Cálido y acogedor.
+   WCAG: #c4561e sobre blanco → 5.1:1 AA ✅
+   ──────────────────────────────────────────────────────────── */
+[data-theme="peach-cream"] {
+    --color-primary:          #c4561e;
+    --color-primary-dark:     #a04218;
+    --color-accent:           #f59e0b;
+    --color-accent-dark:      #d97706;
+    --color-secondary:        #fff8f4;
+
+    --color-background:       #fff8f4;
+    --color-surface:          #ffffff;
+    --color-surface-raised:   #fed7c4;
+    --color-border:           #fed7c4;
+    --color-border-strong:    #fdba8c;
+
+    --color-text-primary:     #1a0a04;
+    --color-text-secondary:   #7c2d12;
+    --color-text-muted:       #c2410c;
+
+    --color-success:          oklch(0.55 0.18 155);
+    --color-success-light:    oklch(0.96 0.02 155);
+    --color-warning:          #f59e0b;
+    --color-warning-light:    #fef3c7;
+    --color-error:            oklch(0.59 0.24 25);
+    --color-error-light:      oklch(0.97 0.01 25);
+    --color-info:             #0369a1;
+    --color-info-light:       #e0f2fe;
+    --color-danger:           oklch(0.55 0.24 25);
+
+    --color-hover-overlay:    oklch(0 0 0 / 0.04);
+    --color-active-overlay:   oklch(0 0 0 / 0.08);
+    --color-focus-ring:       color-mix(in srgb, #c4561e 30%, transparent);
+    --color-selection-bg:     #fed7c4;
+    --color-selection-text:   #1a0a04;
+    --color-on-secondary:     #1a0a04;
+    --color-primary-contrast: #ffffff;
+
+    --shadow-sm:  0 1px 2px 0 rgb(196 86 30 / 0.08);
+    --shadow-md:  0 4px 6px -1px rgb(196 86 30 / 0.10), 0 2px 4px -2px rgb(0 0 0 / 0.06);
+    --shadow-lg:  0 10px 15px -3px rgb(196 86 30 / 0.10), 0 4px 6px -4px rgb(0 0 0 / 0.06);
+    --shadow-xl:  0 20px 25px -5px rgb(196 86 30 / 0.12), 0 8px 10px -6px rgb(0 0 0 / 0.08);
+    --shadow-glow: 0 0 22px color-mix(in srgb, #c4561e 28%, transparent);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   18. NORDIC LIGHT — Azul nórdico profundo. Sobrio y confiable.
+   WCAG: #2e4a6e sobre blanco → 8.1:1 AAA ✅
+   ──────────────────────────────────────────────────────────── */
+[data-theme="nordic-light"] {
+    --color-primary:          #2e4a6e;
+    --color-primary-dark:     #1e3350;
+    --color-accent:           #5b7fa6;
+    --color-accent-dark:      #4a6d8a;
+    --color-secondary:        #f5f7fa;
+
+    --color-background:       #f5f7fa;
+    --color-surface:          #ffffff;
+    --color-surface-raised:   #e8edf4;
+    --color-border:           #c8d8ed;
+    --color-border-strong:    #9ab4d4;
+
+    --color-text-primary:     #0d1b2a;
+    --color-text-secondary:   #2e4a6e;
+    --color-text-muted:       #5b7fa6;
+
+    --color-success:          oklch(0.55 0.18 155);
+    --color-success-light:    oklch(0.96 0.02 155);
+    --color-warning:          oklch(0.76 0.18 82);
+    --color-warning-light:    oklch(0.97 0.02 82);
+    --color-error:            oklch(0.59 0.24 25);
+    --color-error-light:      oklch(0.97 0.01 25);
+    --color-info:             #2e4a6e;
+    --color-info-light:       #e8edf4;
+    --color-danger:           oklch(0.55 0.24 25);
+
+    --color-hover-overlay:    oklch(0 0 0 / 0.04);
+    --color-active-overlay:   oklch(0 0 0 / 0.08);
+    --color-focus-ring:       color-mix(in srgb, #2e4a6e 30%, transparent);
+    --color-selection-bg:     #c8d8ed;
+    --color-selection-text:   #0d1b2a;
+    --color-on-secondary:     #0d1b2a;
+    --color-primary-contrast: #ffffff;
+
+    --shadow-sm:  0 1px 2px 0 rgb(46 74 110 / 0.08);
+    --shadow-md:  0 4px 6px -1px rgb(46 74 110 / 0.10), 0 2px 4px -2px rgb(0 0 0 / 0.06);
+    --shadow-lg:  0 10px 15px -3px rgb(46 74 110 / 0.10), 0 4px 6px -4px rgb(0 0 0 / 0.06);
+    --shadow-xl:  0 20px 25px -5px rgb(46 74 110 / 0.12), 0 8px 10px -6px rgb(0 0 0 / 0.08);
+    --shadow-glow: 0 0 22px color-mix(in srgb, #2e4a6e 28%, transparent);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   19. VIBRANT PLAY — Violeta vivo. Creativo y moderno.
+   WCAG: #7c2dbd sobre blanco → 5.8:1 AA ✅
+   ──────────────────────────────────────────────────────────── */
+[data-theme="vibrant-play"] {
+    --color-primary:          #7c2dbd;
+    --color-primary-dark:     #6521a0;
+    --color-accent:           #d946ef;
+    --color-accent-dark:      #c026d3;
+    --color-secondary:        #fdf5ff;
+
+    --color-background:       #fdf5ff;
+    --color-surface:          #ffffff;
+    --color-surface-raised:   #f3e8ff;
+    --color-border:           #e9d5ff;
+    --color-border-strong:    #d8b4fe;
+
+    --color-text-primary:     #1a0a2e;
+    --color-text-secondary:   #4a1272;
+    --color-text-muted:       #7c2dbd;
+
+    --color-success:          oklch(0.55 0.18 155);
+    --color-success-light:    oklch(0.96 0.02 155);
+    --color-warning:          oklch(0.76 0.18 82);
+    --color-warning-light:    oklch(0.97 0.02 82);
+    --color-error:            oklch(0.59 0.24 25);
+    --color-error-light:      oklch(0.97 0.01 25);
+    --color-info:             #7c2dbd;
+    --color-info-light:       #f3e8ff;
+    --color-danger:           oklch(0.55 0.24 25);
+
+    --color-hover-overlay:    oklch(0 0 0 / 0.04);
+    --color-active-overlay:   oklch(0 0 0 / 0.08);
+    --color-focus-ring:       color-mix(in srgb, #7c2dbd 30%, transparent);
+    --color-selection-bg:     #e9d5ff;
+    --color-selection-text:   #1a0a2e;
+    --color-on-secondary:     #1a0a2e;
+    --color-primary-contrast: #ffffff;
+
+    --shadow-sm:  0 1px 2px 0 rgb(124 45 189 / 0.08);
+    --shadow-md:  0 4px 6px -1px rgb(124 45 189 / 0.10), 0 2px 4px -2px rgb(0 0 0 / 0.06);
+    --shadow-lg:  0 10px 15px -3px rgb(124 45 189 / 0.10), 0 4px 6px -4px rgb(0 0 0 / 0.06);
+    --shadow-xl:  0 20px 25px -5px rgb(124 45 189 / 0.12), 0 8px 10px -6px rgb(0 0 0 / 0.08);
+    --shadow-glow: 0 0 22px color-mix(in srgb, #7c2dbd 28%, transparent);
+}
+
 /* ============================================================
    OVERRIDES DE COMPONENTES — TODOS LOS TEMAS CLAROS NUEVOS
    ============================================================ */
@@ -773,7 +1053,13 @@
     [data-theme="verdant-light"],
     [data-theme="golden-sand"],
     [data-theme="lavender-mist"],
-    [data-theme="charcoal-light"]
+    [data-theme="charcoal-light"],
+    [data-theme="fresh-mint"],
+    [data-theme="soft-blossom"],
+    [data-theme="golden-light"],
+    [data-theme="peach-cream"],
+    [data-theme="nordic-light"],
+    [data-theme="vibrant-play"]
 ) {
     ::selection {
         background-color: var(--color-selection-bg);

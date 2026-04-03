@@ -5,99 +5,130 @@
     </div>
 </div>
 
-<!-- Metrics Cards -->
-<div class="metrics-grid">
+<!-- KPI Cards -->
+<div class="kpi-grid kpi-grid-4">
     @for (metric of metrics(); track metric.label) {
-    <div class="metric-card">
-        <div class="metric-header">
-            <span class="metric-label">{{ metric.label }}</span>
-            <div class="metric-icon" [class]="metric.iconColor">
-                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" [attr.d]="metric.iconPath" />
-                </svg>
+        <div class="kpi-card kpi-card-{{ metric.iconColor }}">
+            <div class="kpi-top">
+                <span class="kpi-label">{{ metric.label }}</span>
+                <div class="kpi-icon kpi-icon-{{ metric.iconColor }}">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" [attr.d]="metric.iconSvg" />
+                    </svg>
+                </div>
+            </div>
+            <div class="kpi-value">{{ metric.value }}</div>
+            <div class="kpi-trend" [class.trend-up]="metric.isPositive" [class.trend-down]="!metric.isPositive">
+                {{ metric.isPositive ? '▲' : '▼' }} {{ metric.change }}
             </div>
         </div>
-        <div class="metric-value">{{ metric.value }}</div>
-        <div class="metric-change" [class.positive]="metric.isPositive" [class.negative]="!metric.isPositive">
-            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" [attr.d]="arrowUpIcon" />
-            </svg>
-            <span>{{ metric.change }}</span>
-        </div>
-    </div>
     }
 </div>
 
-<!-- Content Grid -->
-<div class="content-grid">
-    <!-- Sales Chart -->
-    <div class="card">
-        <div class="card-header">
-            <h2 class="card-title">Ventas del Mes</h2>
-            <a href="#" class="card-action">Ver detalles →</a>
+<!-- Charts row -->
+<div class="dash-row dash-row-2-1" style="margin-bottom:1.25rem">
+    <!-- Área: Ventas del mes -->
+    <div class="chart-card">
+        <div class="chart-card-header">
+            <span class="chart-card-title">Ventas del Mes</span>
+            <a href="#" class="card-action" style="font-size:0.8125rem">Ver detalles →</a>
         </div>
-        <div class="card-body">
-            <div class="chart-placeholder">
-                Gráfico de ventas (integrar Chart.js)
-            </div>
+        <div class="chart-card-body">
+            <apx-chart
+                [series]="areaSeries"
+                [chart]="areaChart"
+                [xaxis]="areaXAxis"
+                [yaxis]="areaYAxis"
+                [fill]="areaFill"
+                [stroke]="areaStroke"
+                [grid]="areaGrid"
+                [tooltip]="areaTooltip"
+                [colors]="areaColors"
+                [dataLabels]="{ enabled: false }">
+            </apx-chart>
         </div>
     </div>
 
-    <!-- Top Products -->
+    <!-- Donut: Top Categorías -->
+    <div class="chart-card">
+        <div class="chart-card-header">
+            <span class="chart-card-title">Ventas por Categoría</span>
+        </div>
+        <div class="chart-card-body">
+            <apx-chart
+                [series]="donutSeries"
+                [chart]="donutChart"
+                [labels]="donutLabels"
+                [colors]="donutColors"
+                [plotOptions]="donutPlot"
+                [legend]="donutLegend"
+                [dataLabels]="donutDataLabels"
+                [tooltip]="{ theme: 'dark' }">
+            </apx-chart>
+        </div>
+    </div>
+</div>
+
+<!-- Bottom row: Top Productos + Pedidos recientes -->
+<div class="dash-row dash-row-2-1">
+    <!-- Pedidos Recientes -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Pedidos Recientes</h2>
+            <a href="#" class="card-action">Ver todos →</a>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="table">
+                <thead class="table-header">
+                    <tr>
+                        <th class="table-header-cell">ID Pedido</th>
+                        <th class="table-header-cell">Cliente</th>
+                        <th class="table-header-cell">Producto</th>
+                        <th class="table-header-cell">Fecha</th>
+                        <th class="table-header-cell text-right">Total</th>
+                        <th class="table-header-cell">Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (order of recentOrders(); track order.id) {
+                        <tr class="table-row">
+                            <td class="table-cell font-medium" style="font-variant-numeric:tabular-nums">{{ order.id }}</td>
+                            <td class="table-cell">{{ order.customer }}</td>
+                            <td class="table-cell text-subtle">{{ order.product }}</td>
+                            <td class="table-cell text-subtle" style="white-space:nowrap">{{ order.date }}</td>
+                            <td class="table-cell text-right font-semibold">{{ order.total }}</td>
+                            <td class="table-cell">
+                                <span class="badge"
+                                    [class.badge-success]="order.status === 'success'"
+                                    [class.badge-warning]="order.status === 'pending'"
+                                    [class.badge-error]="order.status === 'cancelled'">
+                                    {{ order.statusLabel || order.status }}
+                                </span>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Top Productos -->
     <div class="card">
         <div class="card-header">
             <h2 class="card-title">Más Vendidos</h2>
             <a href="#" class="card-action">Ver todos →</a>
         </div>
-        <div class="card-body">
-            @for (product of topProducts(); track product.name) {
-            <div class="product-item">
-                <div class="product-image"></div>
-                <div class="product-info">
-                    <div class="product-name">{{ product.name }}</div>
-                    <div class="product-category">{{ product.category }}</div>
+        <div class="card-body" style="padding-top:0.75rem">
+            @for (product of topProducts(); track product.name; let i = $index) {
+                <div class="product-item">
+                    <div class="product-rank" [style.background]="productColors[i]">{{ i + 1 }}</div>
+                    <div class="product-info">
+                        <div class="product-name">{{ product.name }}</div>
+                        <div class="product-category">{{ product.category }}</div>
+                    </div>
+                    <div class="product-sales">{{ product.sales }}</div>
                 </div>
-                <div class="product-sales">{{ product.sales }}</div>
-            </div>
             }
         </div>
-    </div>
-</div>
-
-<!-- Recent Orders -->
-<div class="card">
-    <div class="card-header">
-        <h2 class="card-title">Pedidos Recientes</h2>
-        <a href="#" class="card-action">Ver todos →</a>
-    </div>
-    <div class="overflow-x-auto">
-        <table class="table">
-            <thead class="table-header">
-                <tr>
-                    <th class="table-header-cell">ID Pedido</th>
-                    <th class="table-header-cell">Cliente</th>
-                    <th class="table-header-cell">Producto</th>
-                    <th class="table-header-cell">Fecha</th>
-                    <th class="table-header-cell">Total</th>
-                    <th class="table-header-cell">Estado</th>
-                </tr>
-            </thead>
-            <tbody>
-                @for (order of recentOrders(); track order.id) {
-                <tr class="table-row">
-                    <td class="table-cell font-medium">{{ order.id }}</td>
-                    <td class="table-cell">{{ order.customer }}</td>
-                    <td class="table-cell">{{ order.product }}</td>
-                    <td class="table-cell text-subtle">{{ order.date }}</td>
-                    <td class="table-cell font-semibold">{{ order.total }}</td>
-                    <td class="table-cell">
-                        <span class="status-badge" [class]="order.status">
-                            {{ order.statusLabel }}
-                        </span>
-                    </td>
-                </tr>
-                }
-            </tbody>
-        </table>
     </div>
 </div>

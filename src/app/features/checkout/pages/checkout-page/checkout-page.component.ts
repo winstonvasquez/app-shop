@@ -10,6 +10,7 @@ import { ConfigService, MedioPago, Certificacion } from '@core/services/config.s
 import { AuthService } from '@core/auth/auth.service';
 import { AddressService, Address, AddressInput } from '@core/services/address/address.service';
 import { MercadoPagoService, CardData, YapeIntentResult } from '@core/services/payment/mercadopago.service';
+import { CreditService } from '@core/services/credit.service';
 import { FormsModule, ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { finalize } from 'rxjs/operators';
 
@@ -29,6 +30,7 @@ export class CheckoutPageComponent implements OnInit {
   systemParams = inject(SystemParameterService);
   addressService = inject(AddressService);
   mercadopagoService = inject(MercadoPagoService);
+  creditService = inject(CreditService);
   fb = inject(FormBuilder);
 
   cartItems = this.cartService.cartItems;
@@ -73,7 +75,16 @@ export class CheckoutPageComponent implements OnInit {
   couponApplying = signal(false);
   couponDiscount = signal(0);
 
-  finalTotal = computed(() => this.cartTotal());
+  useCredit = signal(false);
+  creditToApply = signal(0);
+
+  finalTotal = computed(() => {
+    let total = this.cartTotal() - this.couponDiscount();
+    if (this.useCredit()) {
+      total = Math.max(0, total - this.creditToApply());
+    }
+    return total;
+  });
 
   userId = computed(() => this.authService.currentUser()?.userId || 1);
 
@@ -100,6 +111,14 @@ export class CheckoutPageComponent implements OnInit {
     this.configService.getMediosPago().subscribe(data => this.paymentMethods.set(data));
     this.configService.getCertificaciones().subscribe(data => this.certifications.set(data));
     this.loadAddresses();
+    this.creditService.loadBalance();
+  }
+
+  toggleCredit(checked: boolean): void {
+    this.useCredit.set(checked);
+    const balance = this.creditService.balance()?.balance ?? 0;
+    const subtotal = this.cartTotal() - this.couponDiscount();
+    this.creditToApply.set(Math.min(balance, subtotal));
   }
 
   loadAddresses(): void {

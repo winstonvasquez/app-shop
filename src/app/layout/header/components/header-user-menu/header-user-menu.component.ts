@@ -28,4 +28,10 @@ export class HeaderUserMenu {
   isOpen = input(false);
   private authService = inject(AuthService);
   userName = computed(() => this.authService.currentUser()?.username || 'Invitado');
+
+  // Feature flags: módulos opcionales del tenant
+  hasCoupons       = computed(() => this.authService.hasModule('COUPONS'));
+  hasCredit        = computed(() => this.authService.hasModule('CREDIT'));
+  hasStoreFollows  = computed(() => this.authService.hasModule('STORE_FOLLOWS'));
+  hasSwitchAccount = computed(() => this.authService.hasModule('SWITCH_ACCOUNT'));
 }

@@ -6,7 +6,7 @@ import { InventarioPage, InventarioFilter } from '../models/inventario.model';
 @Injectable({ providedIn: 'root' })
 export class InventarioService {
     private readonly http = inject(HttpClient);
-    private readonly baseUrl = '/api/logistica/inventario';
+    private readonly baseUrl = '/logistics/api/inventarios';
 
     getInventario(companyId: string, filter: InventarioFilter = {}): Observable<InventarioPage> {
         let params = new HttpParams()

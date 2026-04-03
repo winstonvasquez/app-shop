@@ -1,11 +1,11 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { RouterLink } from '@angular/router';
 
 @Component({
-  selector: 'app-menu-coupons',
-  imports: [],
-  templateUrl: './menu-coupons.component.html',
-  styleUrl: './menu-coupons.component.scss',
+    selector: 'app-menu-coupons',
+    standalone: true,
+    imports: [RouterLink],
+    templateUrl: './menu-coupons.component.html',
+    changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class MenuCoupons {
-
-}
+export class MenuCoupons {}

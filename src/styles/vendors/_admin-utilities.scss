@@ -162,6 +162,15 @@
     background: color-mix(in oklch, var(--color-error) 12%, var(--color-surface));
 }
 
+.btn-view {
+    @extend .btn-icon;
+}
+
+.btn-view:hover {
+    color: var(--color-text-primary);
+    background: color-mix(in oklch, var(--color-text-secondary) 10%, var(--color-surface));
+}
+
 /* ============================================
    CARD PATTERNS
    ============================================ */

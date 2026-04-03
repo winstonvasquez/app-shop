@@ -6,84 +6,102 @@
     </app-page-header>
 
     <!-- KPI Cards -->
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-md mb-xl">
-        <div class="card p-md">
-            <p class="text-sm text-subtle mb-xs">Total Compras</p>
-            <p class="text-2xl font-bold text-on">S/ {{ (dashboard()?.totalComprasMes ?? 0).toFixed(2) }}</p>
-            <p class="text-xs text-subtle mt-xs">Trimestre: S/ {{ (dashboard()?.comprasTrimestre ?? 0).toFixed(2) }}</p>
+    <div class="kpi-grid kpi-grid-4" style="margin-bottom:1.25rem">
+        <div class="kpi-card kpi-card-red">
+            <div class="kpi-top">
+                <span class="kpi-label">Total Compras</span>
+                <div class="kpi-icon kpi-icon-red">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="kpi-value" style="font-size:1.5rem">S/ {{ (dashboard()?.totalComprasMes ?? 0).toFixed(0) }}</div>
+            <div class="kpi-sub">Trimestre: S/ {{ (dashboard()?.comprasTrimestre ?? 0).toFixed(0) }}</div>
         </div>
-        <div class="card p-md">
-            <p class="text-sm text-subtle mb-xs">OC Emitidas</p>
-            <p class="text-2xl font-bold text-on">{{ dashboard()?.ocEmitidas ?? 0 }}</p>
-            <p class="text-xs text-subtle mt-xs">{{ dashboard()?.ocAprobadas ?? 0 }} aprobadas</p>
+
+        <div class="kpi-card kpi-card-blue">
+            <div class="kpi-top">
+                <span class="kpi-label">OC Emitidas</span>
+                <div class="kpi-icon kpi-icon-blue">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="kpi-value">{{ dashboard()?.ocEmitidas ?? 0 }}</div>
+            <div class="kpi-sub">{{ dashboard()?.ocAprobadas ?? 0 }} aprobadas</div>
         </div>
-        <div class="card p-md">
-            <p class="text-sm text-subtle mb-xs">OC Pendientes</p>
-            <p class="text-2xl font-bold text-on">{{ dashboard()?.ocPendientes ?? 0 }}</p>
-            <p class="text-xs text-subtle mt-xs">Por aprobar</p>
+
+        <div class="kpi-card kpi-card-yellow">
+            <div class="kpi-top">
+                <span class="kpi-label">Pendientes</span>
+                <div class="kpi-icon kpi-icon-yellow">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="kpi-value">{{ dashboard()?.ocPendientes ?? 0 }}</div>
+            <div class="kpi-sub">Por aprobar</div>
         </div>
-        <div class="card p-md">
-            <p class="text-sm text-subtle mb-xs">Proveedores</p>
-            <p class="text-2xl font-bold text-on">{{ dashboard()?.totalProveedores ?? 0 }}</p>
-            <p class="text-xs text-subtle mt-xs">{{ dashboard()?.proveedoresNuevos ?? 0 }} nuevos este mes</p>
+
+        <div class="kpi-card kpi-card-teal">
+            <div class="kpi-top">
+                <span class="kpi-label">Proveedores</span>
+                <div class="kpi-icon kpi-icon-teal">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="kpi-value">{{ dashboard()?.totalProveedores ?? 0 }}</div>
+            <div class="kpi-sub">{{ dashboard()?.proveedoresNuevos ?? 0 }} nuevos este mes</div>
         </div>
     </div>
 
     <!-- Charts row -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-md mb-xl">
-        <!-- Top Proveedores -->
-        <div class="card">
-            <div class="card-header">
-                <span class="card-title">Top Proveedores por Monto</span>
+    <div class="dash-row dash-row-2-1" style="margin-bottom:1.25rem">
+        <!-- Bar: Top Proveedores -->
+        <div class="chart-card">
+            <div class="chart-card-header">
+                <span class="chart-card-title">Top Proveedores por Monto</span>
             </div>
-            <div class="card-body">
-                @if ((dashboard()?.topProveedores ?? []).length > 0) {
-                    <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:var(--space-sm)">
-                        @for (item of dashboard()?.topProveedores; track item.nombre; let i = $index) {
-                            <li style="display:flex;align-items:center;gap:var(--space-sm)">
-                                <span class="text-sm font-bold text-subtle" style="width:20px">{{ i + 1 }}</span>
-                                <div style="flex:1">
-                                    <div class="text-sm font-medium text-on">{{ item.nombre | slice:0:28 }}</div>
-                                    <div class="text-xs text-subtle">RUC: {{ item.ruc }}</div>
-                                    <div class="mt-xs" style="height:4px;background:var(--color-border);border-radius:2px">
-                                        <div style="height:100%;background:var(--color-primary);border-radius:2px"
-                                            [style.width.%]="item.porcentaje"></div>
-                                    </div>
-                                </div>
-                                <span class="text-sm font-bold text-on">S/ {{ item.monto.toFixed(0) }}</span>
-                            </li>
-                        }
-                    </ul>
-                } @else {
-                    <p class="text-subtle text-sm text-center py-lg">Sin datos disponibles</p>
-                }
+            <div class="chart-card-body">
+                <apx-chart
+                    [series]="barSeries"
+                    [chart]="barChart"
+                    [xaxis]="barXAxis"
+                    [yaxis]="barYAxis"
+                    [plotOptions]="barPlot"
+                    [grid]="barGrid"
+                    [colors]="barColors"
+                    [dataLabels]="barDataLabels"
+                    [tooltip]="{ theme: 'dark', y: { formatter: v => 'S/ ' + v.toLocaleString('es-PE') } }">
+                </apx-chart>
             </div>
         </div>
 
-        <!-- OC Estado resumen -->
-        <div class="card">
-            <div class="card-header">
-                <span class="card-title">Estado de Órdenes</span>
+        <!-- Donut: Estado OC -->
+        <div class="chart-card">
+            <div class="chart-card-header">
+                <span class="chart-card-title">Estado de Órdenes</span>
             </div>
-            <div class="card-body">
-                <div style="display:flex;flex-direction:column;gap:var(--space-sm)">
-                    <div style="display:flex;justify-content:space-between;align-items:center">
-                        <span class="text-sm text-subtle">Borradores</span>
-                        <span class="badge badge-neutral">{{ (dashboard()?.ocEmitidas ?? 0) - (dashboard()?.ocAprobadas ?? 0) - (dashboard()?.ocPendientes ?? 0) }}</span>
-                    </div>
-                    <div style="display:flex;justify-content:space-between;align-items:center">
-                        <span class="text-sm text-subtle">Pendientes</span>
-                        <span class="badge badge-warning">{{ dashboard()?.ocPendientes ?? 0 }}</span>
-                    </div>
-                    <div style="display:flex;justify-content:space-between;align-items:center">
-                        <span class="text-sm text-subtle">Aprobadas</span>
-                        <span class="badge badge-success">{{ dashboard()?.ocAprobadas ?? 0 }}</span>
-                    </div>
-                    <div style="display:flex;justify-content:space-between;align-items:center">
-                        <span class="text-sm text-subtle">Recibidas</span>
-                        <span class="badge badge-success">{{ dashboard()?.ocRecibidas ?? 0 }}</span>
-                    </div>
-                </div>
+            <div class="chart-card-body">
+                <apx-chart
+                    [series]="donutSeries"
+                    [chart]="donutChart"
+                    [labels]="donutLabels"
+                    [colors]="donutColors"
+                    [plotOptions]="donutPlot"
+                    [legend]="donutLegend"
+                    [dataLabels]="donutDataLabels"
+                    [tooltip]="donutTooltip">
+                </apx-chart>
             </div>
         </div>
     </div>

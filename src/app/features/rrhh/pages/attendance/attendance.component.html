@@ -1,102 +1,146 @@
-<div class="page-container">
-  <div class="page-header">
-    <div>
-      <h1 class="page-title">Registro de Asistencia</h1>
-      <p class="page-subtitle">Control de marcaciones diarias del personal</p>
+<app-page-header
+    title="Registro de Asistencia"
+    subtitle="Control de marcaciones diarias del personal"
+    [breadcrumbs]="breadcrumbs">
+    <div actions>
+        <button class="btn btn-primary" (click)="openCreateModal()">
+            + Registrar Asistencia
+        </button>
     </div>
-  </div>
+</app-page-header>
 
-  @if (message()) {
-    <div style="padding:12px 16px;border-radius:8px;margin-bottom:var(--space-md);font-size:0.875rem;font-weight:500"
-         [style.background]="messageType() === 'success' ? 'color-mix(in oklch, var(--color-success) 15%, transparent)' : 'color-mix(in oklch, var(--color-error) 15%, transparent)'"
-         [style.color]="messageType() === 'success' ? 'var(--color-success)' : 'var(--color-error)'"
-         [style.border]="messageType() === 'success' ? '1px solid color-mix(in oklch, var(--color-success) 30%, transparent)' : '1px solid color-mix(in oklch, var(--color-error) 30%, transparent)'">
-      {{ message() }}
-    </div>
-  }
+@if (error()) {
+    <app-alert type="error" [message]="error()!" />
+}
 
-  <div style="display:grid;grid-template-columns:360px 1fr;gap:var(--space-md);align-items:start">
-
-    <!-- Formulario -->
-    <div class="card">
-      <div class="card-header">
-        <h3 class="card-title">Nueva Marcación</h3>
-      </div>
-      <div class="card-body">
-        <form [formGroup]="attendanceForm" (ngSubmit)="onSubmit()" style="display:flex;flex-direction:column;gap:14px">
-
-          <div>
-            <label class="input-label" for="employeeId">Empleado *</label>
-            <select id="employeeId" class="input-field" formControlName="employeeId">
-              <option value="">Seleccione un empleado</option>
-              @for (emp of employees(); track emp.id) {
-                <option [value]="emp.id">{{ emp.codigoEmpleado }} - {{ emp.nombres }} {{ emp.apellidos }}</option>
-              }
-            </select>
-          </div>
-
-          <div>
-            <label class="input-label" for="fecha">Fecha *</label>
-            <input id="fecha" type="date" class="input-field" formControlName="fecha">
-          </div>
-
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-            <div>
-              <label class="input-label" for="horaEntrada">Hora Entrada</label>
-              <input id="horaEntrada" type="time" class="input-field" formControlName="horaEntrada">
-            </div>
-            <div>
-              <label class="input-label" for="horaSalida">Hora Salida</label>
-              <input id="horaSalida" type="time" class="input-field" formControlName="horaSalida">
-            </div>
-          </div>
-
-          <div>
-            <label class="input-label" for="tipoRegistro">Tipo de Registro *</label>
-            <select id="tipoRegistro" class="input-field" formControlName="tipoRegistro">
-              @for (opt of tipoRegistroOptions; track opt.value) {
-                <option [value]="opt.value">{{ opt.label }}</option>
-              }
-            </select>
-          </div>
-
-          <div>
-            <label class="input-label" for="observaciones">Observaciones</label>
-            <textarea id="observaciones" class="input-field" formControlName="observaciones"
-                      rows="3" style="resize:vertical"></textarea>
-          </div>
-
-          <button class="btn btn-primary" type="submit"
-                  [disabled]="attendanceForm.invalid || loading()">
-            @if (loading()) {
-              Registrando...
-            } @else {
-              Registrar Asistencia
-            }
-          </button>
-
-        </form>
-      </div>
+<!-- Filtros -->
+<div class="filters-bar">
+    <div style="display: flex; align-items: center; gap: var(--space-sm)">
+        <label class="input-label" style="margin: 0; white-space: nowrap">Fecha:</label>
+        <input
+            type="date"
+            class="input-field"
+            style="width: 180px"
+            [value]="filterFecha()"
+            (change)="onFilterFecha($event)" />
     </div>
 
-    <!-- Tabla registros del día -->
-    <div class="card">
-      <div class="card-header">
-        <h3 class="card-title">Registros de Hoy</h3>
-        <span class="badge badge-neutral">{{ attendances().length }} registros</span>
-      </div>
-      <app-data-table
-        [data]="attendances()"
-        [columns]="columns"
-        [loading]="loading()"
-        [totalPages]="1"
-        [totalElements]="attendances().length"
-        [currentPage]="0"
-        [pageSize]="100"
-        [exportable]="true"
-        exportFileName="asistencia">
-      </app-data-table>
-    </div>
-
-  </div>
+    <select class="input-field" style="width: auto; min-width: 170px"
+            [value]="filterTipo()"
+            (change)="onFilterTipo($event)">
+        <option value="">Todos los tipos</option>
+        @for (opt of tipoRegistroOptions; track opt.value) {
+            <option [value]="opt.value">{{ opt.label }}</option>
+        }
+    </select>
 </div>
+
+<!-- Tabla -->
+<app-data-table
+    [data]="pagedData()"
+    [columns]="columns"
+    [loading]="loading()"
+    [exportable]="true"
+    exportFileName="asistencia"
+    [hidePagination]="true" />
+
+<!-- Paginación -->
+@if (totalElements() > 0) {
+    <app-pagination
+        [currentPage]="currentPage()"
+        [totalPages]="totalPages()"
+        [totalElements]="totalElements()"
+        [pageSize]="pageSize()"
+        (pageChange)="onPaginationChange($event)" />
+}
+
+<!-- ── Drawer: Registrar Asistencia ───────────────────────────────────── -->
+<app-drawer
+    [isOpen]="showModal()"
+    title="Registrar Asistencia"
+    size="md"
+    [hasFooter]="true"
+    (closed)="closeModal()">
+
+    <form [formGroup]="attendanceForm" (ngSubmit)="onSubmit()">
+
+        @if (submitError()) {
+            <app-alert type="error" [message]="submitError()!" />
+        }
+
+        <p class="text-subtle text-sm font-semibold mb-2 mt-1">Datos de la Marcación</p>
+        <hr style="border-color: var(--color-border); margin-bottom: var(--space-md)">
+
+        <!-- Empleado -->
+        <div style="margin-bottom: var(--space-md)">
+            <label class="input-label">
+                Empleado <span style="color: var(--color-error)">*</span>
+            </label>
+            <select class="input-field" formControlName="employeeId">
+                <option [ngValue]="null">— Seleccione un empleado —</option>
+                @for (emp of employees(); track emp.id) {
+                    <option [ngValue]="emp.id">
+                        {{ emp.codigoEmpleado }} — {{ emp.nombres }} {{ emp.apellidos }}
+                    </option>
+                }
+            </select>
+            @if (getControl('employeeId').invalid && getControl('employeeId').touched) {
+                <span class="input-error-message">Seleccione un empleado</span>
+            }
+        </div>
+
+        <!-- Fecha -->
+        <div style="margin-bottom: var(--space-md)">
+            <app-date-input
+                label="Fecha"
+                [required]="true"
+                formControlName="fecha" />
+        </div>
+
+        <!-- Horas -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md); margin-bottom: var(--space-md)">
+            <div>
+                <label class="input-label">Hora Entrada</label>
+                <input type="time" class="input-field" formControlName="horaEntrada" />
+            </div>
+            <div>
+                <label class="input-label">Hora Salida</label>
+                <input type="time" class="input-field" formControlName="horaSalida" />
+            </div>
+        </div>
+
+        <!-- Tipo de registro -->
+        <div style="margin-bottom: var(--space-md)">
+            <label class="input-label">
+                Tipo de Registro <span style="color: var(--color-error)">*</span>
+            </label>
+            <select class="input-field" formControlName="tipoRegistro">
+                @for (opt of tipoRegistroOptions; track opt.value) {
+                    <option [value]="opt.value">{{ opt.label }}</option>
+                }
+            </select>
+        </div>
+
+        <!-- Observaciones -->
+        <div>
+            <label class="input-label">Observaciones</label>
+            <textarea
+                class="input-field"
+                rows="3"
+                placeholder="Observaciones adicionales..."
+                formControlName="observaciones"
+                style="resize: vertical"></textarea>
+        </div>
+
+    </form>
+
+    <div slot="footer" style="display: flex; justify-content: flex-end; gap: var(--space-sm)">
+        <button class="btn btn-secondary" type="button" (click)="closeModal()">Cancelar</button>
+        <button class="btn btn-primary" type="button"
+                [disabled]="submitting()"
+                (click)="onSubmit()">
+            {{ submitting() ? 'Registrando...' : 'Registrar' }}
+        </button>
+    </div>
+
+</app-drawer>

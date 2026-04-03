@@ -1,7 +1,8 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '@core/auth/auth.service';
+import { ThemeService, AppTheme, AVAILABLE_THEMES } from '@core/services/theme/theme';
 
 interface NavItem {
   label: string;
@@ -103,9 +104,13 @@ const ALL_NAV_GROUPS: NavGroup[] = [
     title: 'RRHH',
     moduleCode: 'RRHH',
     items: [
-      { label: 'Empleados', route: '/admin/rrhh/employees', icon: 'users' },
-      { label: 'Asistencia', route: '/admin/rrhh/attendance', icon: 'calendar' },
-      { label: 'Nómina', route: '/admin/rrhh/payroll', icon: 'document' }
+      { label: 'Empleados',       route: '/admin/rrhh/employees',   icon: 'users'     },
+      { label: 'Asistencia',      route: '/admin/rrhh/attendance',  icon: 'calendar'  },
+      { label: 'Vacaciones',      route: '/admin/rrhh/vacations',   icon: 'sun'       },
+      { label: 'Nómina',          route: '/admin/rrhh/payroll',     icon: 'document'  },
+      { label: 'Boleta de Pago',  route: '/admin/rrhh/boleta',      icon: 'file'      },
+      { label: 'Evaluaciones',    route: '/admin/rrhh/evaluations', icon: 'chart-bar' },
+      { label: 'Capacitaciones',  route: '/admin/rrhh/trainings',   icon: 'book'      }
     ]
   },
   {
@@ -133,11 +138,14 @@ const ALL_NAV_GROUPS: NavGroup[] = [
     ]
   },
   {
-    title: 'Configuración Tienda',
+    title: 'Configuración Visual',
     moduleCode: null,
     items: [
-      { label: 'Tema de Tienda', route: '/admin/store-theme', icon: 'sliders' },
-      { label: 'Parámetros Sistema', route: '/admin/general-config', icon: 'database' }
+      { label: 'Temas por Módulo',  route: '/admin/store-theme',     icon: 'sliders'    },
+      { label: 'Apariencia',        route: '/admin/apariencia',      icon: 'paint'      },
+      { label: 'Footer',            route: '/admin/footer-manager',  icon: 'layout'     },
+      { label: 'Slider / Banners',  route: '/admin/slider-manager',  icon: 'image'      },
+      { label: 'Parámetros Sistema', route: '/admin/general-config', icon: 'database'   }
     ]
   },
   {
@@ -162,6 +170,17 @@ const ALL_NAV_GROUPS: NavGroup[] = [
 })
 export class AdminSidebarComponent {
   private readonly authService = inject(AuthService);
+  readonly themeService = inject(ThemeService);
+
+  readonly themePickerOpen = signal(false);
+
+  /** Temas disponibles agrupados por categoría para el picker del sidebar. */
+  readonly themeGroups = [
+      { label: 'Tienda (claros)',    themes: AVAILABLE_THEMES.filter(t => t.category === 'default'   && t.mode === 'light') },
+      { label: 'Estacionales',       themes: AVAILABLE_THEMES.filter(t => t.category === 'seasonal') },
+      { label: 'Profesionales',      themes: AVAILABLE_THEMES.filter(t => t.category === 'professional') },
+      { label: 'Oscuros',            themes: AVAILABLE_THEMES.filter(t => t.category === 'default'   && t.mode === 'dark') },
+  ];
 
   readonly activeNavGroups = computed(() => {
     const modules = this.authService.enabledModules();
@@ -209,7 +228,12 @@ export class AdminSidebarComponent {
       'chart-bar': 'M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
       'file': 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
       'user-chart': 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z',
-      'list': 'M4 6h16M4 10h16M4 14h16M4 18h16'
+      'list': 'M4 6h16M4 10h16M4 14h16M4 18h16',
+      'sun': 'M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M17.657 17.657l-.707-.707M6.343 6.343l-.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z',
+      'cash-register': 'M9 7H6a2 2 0 00-2 2v9a2 2 0 002 2h12a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4',
+      'paint': 'M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01',
+      'layout': 'M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zm0 8a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zm12 0a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z',
+      'image': 'M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z'
     };
     return icons[icon] || icons['chart'];
   }

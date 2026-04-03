@@ -1,0 +1,60 @@
+<div class="page-container">
+    <app-breadcrumb [items]="breadcrumbItems" />
+    <div class="page-header">
+        <h1 class="page-title">Tiendas que sigues</h1>
+        <p class="page-subtitle">Tus tiendas favoritas en un solo lugar</p>
+    </div>
+
+    @if (loading()) {
+        <div class="loading-container"><div class="spinner"></div></div>
+    } @else if (stores().length === 0) {
+        <div class="flex flex-col items-center justify-center py-16 gap-4" style="color: var(--color-text-muted)">
+            <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+                style="opacity: 0.4">
+                <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                <polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
+            <p class="text-base font-medium">Aún no sigues ninguna tienda</p>
+            <a routerLink="/products" class="btn btn-primary text-sm">Explorar tiendas</a>
+        </div>
+    } @else {
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            @for (store of stores(); track store.companyId) {
+                <div class="card">
+                    <div class="card-body flex items-center justify-between gap-3">
+                        <div class="flex items-center gap-3 min-w-0">
+                            <div class="flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center text-lg font-bold"
+                                style="background: var(--color-surface-raised); color: var(--color-primary)">
+                                {{ store.name.charAt(0).toUpperCase() }}
+                            </div>
+                            <div class="min-w-0">
+                                <p class="text-sm font-semibold truncate" style="color: var(--color-text-primary)">
+                                    {{ store.name }}
+                                </p>
+                                @if (store.domain) {
+                                    <p class="text-xs truncate" style="color: var(--color-text-muted)">
+                                        {{ store.domain }}
+                                    </p>
+                                }
+                                <p class="text-xs mt-0.5" style="color: var(--color-text-muted)">
+                                    Desde {{ store.followedAt | date:'dd/MM/yyyy' }}
+                                </p>
+                            </div>
+                        </div>
+                        <button
+                            class="btn btn-secondary text-xs flex-shrink-0"
+                            [disabled]="unfollowing() === store.companyId"
+                            (click)="unfollow(store.companyId)">
+                            @if (unfollowing() === store.companyId) {
+                                <div class="spinner-sm"></div>
+                            } @else {
+                                Dejar de seguir
+                            }
+                        </button>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>

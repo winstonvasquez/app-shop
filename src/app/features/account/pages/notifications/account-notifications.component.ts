@@ -1,31 +1,102 @@
-import { Component, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, inject, signal, computed, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import { DatePipe } from '@angular/common';
+import { Router } from '@angular/router';
+import { NotificationService, Notification } from '@core/services/notification.service';
+import { BreadcrumbComponent, BreadcrumbItem } from '@shared/components/breadcrumb/breadcrumb.component';
 
 @Component({
     selector: 'app-account-notifications',
     standalone: true,
-    imports: [CommonModule],
+    imports: [BreadcrumbComponent, DatePipe],
+    templateUrl: './account-notifications.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    template: `
-        <div class="page-container">
-            <div class="page-header">
-                <h1 class="page-title">Notificaciones</h1>
-                <p class="page-subtitle">Tus alertas y avisos importantes</p>
-            </div>
-
-            <div class="flex flex-col items-center justify-center py-16 text-[var(--color-text-muted)] gap-4">
-                <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
-                    class="opacity-40">
-                    <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/>
-                    <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
-                </svg>
-                <p class="text-base font-medium">No tienes notificaciones</p>
-                <p class="text-sm text-[var(--color-text-muted)] opacity-70">
-                    Te avisaremos aquí cuando haya novedades sobre tus pedidos u ofertas.
-                </p>
-            </div>
-        </div>
-    `,
 })
-export class AccountNotificationsComponent {}
+export class AccountNotificationsComponent implements OnInit {
+    private router = inject(Router);
+    readonly notificationService = inject(NotificationService);
+
+    readonly breadcrumbItems: BreadcrumbItem[] = [
+        { label: 'Inicio', route: ['/home'] },
+        { label: 'Mi Cuenta' },
+        { label: 'Notificaciones' }
+    ];
+
+    notifications = signal<Notification[]>([]);
+    loading = signal(true);
+    markingAll = signal(false);
+    totalElements = signal(0);
+    page = signal(0);
+    readonly pageSize = 20;
+
+    readonly isEmpty = computed(() => !this.loading() && this.notifications().length === 0);
+    readonly hasMore = computed(() => this.notifications().length < this.totalElements());
+
+    ngOnInit(): void {
+        this.load();
+    }
+
+    load(): void {
+        this.loading.set(true);
+        this.notificationService.getPage(this.page(), this.pageSize).subscribe({
+            next: (data) => {
+                this.notifications.update(prev => [...prev, ...data.content]);
+                this.totalElements.set(data.totalElements);
+                this.loading.set(false);
+            },
+            error: () => this.loading.set(false)
+        });
+    }
+
+    loadMore(): void {
+        this.page.update(p => p + 1);
+        this.load();
+    }
+
+    markRead(notification: Notification): void {
+        if (notification.read) return;
+        this.notificationService.markRead(notification.id).subscribe({
+            next: () => {
+                this.notifications.update(list =>
+                    list.map(n => n.id === notification.id ? { ...n, read: true } : n)
+                );
+                this.notificationService.decrementUnread();
+                this.navigate(notification);
+            }
+        });
+    }
+
+    markAllRead(): void {
+        this.markingAll.set(true);
+        this.notificationService.markAllRead().subscribe({
+            next: () => {
+                this.notifications.update(list => list.map(n => ({ ...n, read: true })));
+                this.notificationService.resetUnread();
+                this.markingAll.set(false);
+            },
+            error: () => this.markingAll.set(false)
+        });
+    }
+
+    remove(id: number, event: Event): void {
+        event.stopPropagation();
+        this.notificationService.delete(id).subscribe({
+            next: () => {
+                const was = this.notifications().find(n => n.id === id);
+                this.notifications.update(list => list.filter(n => n.id !== id));
+                this.totalElements.update(t => Math.max(0, t - 1));
+                if (was && !was.read) this.notificationService.decrementUnread();
+            }
+        });
+    }
+
+    navigate(n: Notification): void {
+        if (!n.referenceType) return;
+        if (n.referenceType === 'PEDIDO' || n.referenceType === 'ORDER_STATUS_CHANGE') {
+            this.router.navigate(['/account/orders', n.referenceId]);
+        } else if (n.referenceType === 'REVIEW_REQUEST') {
+            this.router.navigate(['/account/reviews']);
+        } else if (n.referenceType === 'PROMO_OFFER') {
+            this.router.navigate(['/account/coupons']);
+        }
+    }
+}

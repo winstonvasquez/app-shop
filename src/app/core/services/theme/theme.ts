@@ -129,6 +129,9 @@ export class ThemeService {
     private readonly http = inject(HttpClient);
     private readonly authService = inject(AuthService);
 
+    // ── Flag de inicialización — evita PUTs al servidor durante initThemes ──
+    private initializing = true;
+
     // ── Señales por contexto ─────────────────────────────────
     public readonly shopTheme  = signal<AppTheme>(DEFAULT_THEMES.shop);
     public readonly adminTheme = signal<AppTheme>(DEFAULT_THEMES.admin);
@@ -147,6 +150,7 @@ export class ThemeService {
 
     constructor() {
         this.initThemes();
+        this.initializing = false;
 
         // Aplica al documento cuando cambia el tema del contexto activo.
         effect(() => {
@@ -204,6 +208,15 @@ export class ThemeService {
         return this.activeContext();
     }
 
+    /** Devuelve el tema actual de un contexto dado (evita acceso dinámico a propiedades). */
+    public getTheme(ctx: ThemeContext): AppTheme {
+        switch (ctx) {
+            case 'admin': return this.adminTheme();
+            case 'pos':   return this.posTheme();
+            default:      return this.shopTheme();
+        }
+    }
+
     /**
      * Cambia el tema de un contexto dado (o del contexto activo si se omite).
      */
@@ -214,7 +227,7 @@ export class ThemeService {
             case 'admin': this.adminTheme.set(theme); break;
             case 'pos':   this.posTheme.set(theme);   break;
         }
-        if (this.authService.isAuthenticated()) {
+        if (!this.initializing && this.authService.isAuthenticated()) {
             this.saveThemeToServer(theme, target);
         }
     }
@@ -252,7 +265,7 @@ export class ThemeService {
                 .subscribe((response) => {
                     if (!response) return;
                     const serverTheme = response.themeKey as AppTheme;
-                    if (VALID_THEMES.includes(serverTheme) && serverTheme !== this[`${ctx}Theme`]()) {
+                    if (VALID_THEMES.includes(serverTheme) && serverTheme !== this.getTheme(ctx)) {
                         this.setTheme(serverTheme, ctx);
                     }
                 });

@@ -53,12 +53,30 @@ export class OrderService {
     }
 
     /**
-     * Valida un cupón de descuento contra el backend.
-     * TODO: implementar endpoint POST /api/pedidos/validate-coupon en microshopventas
+     * Valida un cupón de descuento contra el endpoint GET /api/cupones/validate.
      */
-    validateCoupon(_code: string): Observable<{ amount: number }> {
-        // TODO: conectar con POST ${this.baseUrl}/validate-coupon cuando el endpoint exista
-        return throwError(() => new Error('Validación de cupones no implementada aún'));
+    validateCoupon(code: string): Observable<{ amount: number }> {
+        const url = `${environment.apiUrls.sales}/api/cupones/validate`;
+        return this.http.get<{ valid: boolean; tipo: string | null; valor: number | null; mensaje: string }>(
+            url, { params: { code } }
+        ).pipe(
+            catchError(this.handleError),
+            // Mapear la respuesta al formato esperado por checkout
+            (source) => new Observable<{ amount: number }>(observer => {
+                source.subscribe({
+                    next: (res) => {
+                        if (res.valid && res.valor != null) {
+                            observer.next({ amount: res.valor });
+                            observer.complete();
+                        } else {
+                            observer.error(new Error(res.mensaje ?? 'Cupón inválido'));
+                        }
+                    },
+                    error: (e: unknown) => observer.error(e),
+                    complete: () => observer.complete(),
+                });
+            })
+        );
     }
 
     private handleError(error: HttpErrorResponse): Observable<never> {

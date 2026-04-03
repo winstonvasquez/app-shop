@@ -1,62 +1,169 @@
-<div class="card-erp">
-    <div class="header">
-        <h1>Empleados</h1>
-        <button class="btn btn-primary" routerLink="/rrhh/employees/new">
+<app-page-header
+    title="Empleados"
+    subtitle="Gestión del personal de la empresa"
+    [breadcrumbs]="breadcrumbs">
+    <div actions>
+        <button class="btn btn-primary" (click)="openCreateModal()">
             + Nuevo Empleado
         </button>
     </div>
+</app-page-header>
 
-    <div class="flex flex-col gap-sm mb-lg">
-        <input type="text" class="input-field" [(ngModel)]="searchTerm" (ngModelChange)="onSearch()"
-            placeholder="Buscar por código, nombre o documento">
+@if (error()) {
+    <app-alert type="error" [message]="error()!" />
+}
+
+<!-- Filtros -->
+<div class="filters-bar">
+    <div class="search-box">
+        <svg class="search-box-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z" clip-rule="evenodd" />
+        </svg>
+        <input
+            type="text"
+            placeholder="Buscar por código, nombre o documento..."
+            [value]="searchQuery()"
+            (input)="onSearch($event)" />
     </div>
 
-    @if (loading()) {
-    <div class="text-subtle text-center py-xl">Cargando empleados...</div>
-    } @else {
-    <div class="table-erp-container">
-        <table class="table-erp">
-            <thead>
-                <tr>
-                    <th>Código</th>
-                    <th>Nombre Completo</th>
-                    <th>Documento</th>
-                    <th>Cargo</th>
-                    <th>Área</th>
-                    <th>Estado</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                @for (employee of displayedEmployees(); track employee.id) {
-                <tr>
-                    <td>{{ employee.codigoEmpleado }}</td>
-                    <td>{{ employee.nombres }} {{ employee.apellidos }}</td>
-                    <td>{{ employee.documentoIdentidad }}</td>
-                    <td>{{ employee.cargo || '-' }}</td>
-                    <td>{{ employee.area || '-' }}</td>
-                    <td>
-                        <span
-                            [class]="'badge-erp ' + (employee.estado === 'ACTIVO' ? 'badge-success' : 'badge-danger')">
-                            {{ employee.estado }}
-                        </span>
-                    </td>
-                    <td>
-                        <button class="icon-btn-sm text-primary" [routerLink]="['/rrhh/employees', employee.id]"
-                            title="Editar">
-                            ✏️
-                        </button>
-                        @if (employee.estado === 'ACTIVO') {
-                        <button class="icon-btn-sm text-[var(--color-danger)]" (click)="deactivateEmployee(employee.id)"
-                            title="Desactivar">
-                            🚫
-                        </button>
-                        }
-                    </td>
-                </tr>
-                }
-            </tbody>
-        </table>
-    </div>
-    }
+    <select class="input-field" style="width: auto; min-width: 160px"
+            [value]="filterEstado()"
+            (change)="onFilterEstado($event)">
+        <option value="">Todos los estados</option>
+        <option value="ACTIVO">Activo</option>
+        <option value="INACTIVO">Inactivo</option>
+        <option value="SUSPENDIDO">Suspendido</option>
+        <option value="CESADO">Cesado</option>
+    </select>
 </div>
+
+<!-- Tabla -->
+<app-data-table
+    [data]="pagedData()"
+    [columns]="columns"
+    [actions]="actions"
+    [loading]="loading()"
+    [exportable]="true"
+    exportFileName="empleados"
+    [hidePagination]="true" />
+
+<!-- Paginación -->
+@if (totalElements() > 0) {
+    <app-pagination
+        [currentPage]="currentPage()"
+        [totalPages]="totalPages()"
+        [totalElements]="totalElements()"
+        [pageSize]="pageSize()"
+        (pageChange)="onPaginationChange($event)" />
+}
+
+<!-- ── Drawer: Crear / Editar Empleado ────────────────────────────────── -->
+<app-drawer
+    [isOpen]="showModal()"
+    [title]="editMode() ? 'Editar Empleado' : 'Nuevo Empleado'"
+    size="lg"
+    [hasFooter]="true"
+    (closed)="closeModal()">
+
+    <form [formGroup]="employeeForm" (ngSubmit)="onSubmit()">
+
+        @if (submitError()) {
+            <app-alert type="error" [message]="submitError()!" />
+        }
+
+        <!-- Sección: Datos Personales -->
+        <p class="text-subtle text-sm font-semibold mb-2 mt-1">Datos Personales</p>
+        <hr style="border-color: var(--color-border); margin-bottom: var(--space-md)">
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md)">
+            <app-form-field
+                label="Código Empleado"
+                [control]="getControl('codigoEmpleado')"
+                placeholder="Ej: E001"
+                [required]="true" />
+
+            <app-form-field
+                label="DNI / Documento"
+                [control]="getControl('documentoIdentidad')"
+                placeholder="Ej: 12345678"
+                [required]="true" />
+
+            <app-form-field
+                label="Nombres"
+                [control]="getControl('nombres')"
+                placeholder="Nombres del empleado"
+                [required]="true" />
+
+            <app-form-field
+                label="Apellidos"
+                [control]="getControl('apellidos')"
+                placeholder="Apellidos del empleado"
+                [required]="true" />
+        </div>
+
+        <div style="margin-top: var(--space-md)">
+            <app-date-input
+                label="Fecha de Ingreso"
+                [required]="true"
+                formControlName="fechaIngreso" />
+        </div>
+
+        <!-- Sección: Información Laboral -->
+        <p class="text-subtle text-sm font-semibold mb-2 mt-4">Información Laboral</p>
+        <hr style="border-color: var(--color-border); margin-bottom: var(--space-md)">
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md)">
+            <app-form-field
+                label="Cargo"
+                [control]="getControl('cargo')"
+                placeholder="Ej: Contador" />
+
+            <app-form-field
+                label="Área"
+                [control]="getControl('area')"
+                placeholder="Ej: Contabilidad" />
+        </div>
+
+        <div style="margin-top: var(--space-md)">
+            <label class="input-label">Estado</label>
+            <select class="input-field" formControlName="estado">
+                <option value="ACTIVO">Activo</option>
+                <option value="INACTIVO">Inactivo</option>
+                <option value="SUSPENDIDO">Suspendido</option>
+                <option value="CESADO">Cesado</option>
+            </select>
+        </div>
+
+        <!-- Sección: Contacto -->
+        <p class="text-subtle text-sm font-semibold mb-2 mt-4">Contacto</p>
+        <hr style="border-color: var(--color-border); margin-bottom: var(--space-md)">
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md)">
+            <app-form-field
+                label="Email"
+                [control]="getControl('email')"
+                type="email"
+                placeholder="correo@empresa.com" />
+
+            <app-form-field
+                label="Teléfono"
+                [control]="getControl('telefono')"
+                type="tel"
+                placeholder="Ej: 987654321" />
+        </div>
+
+    </form>
+
+    <!-- Footer del Drawer -->
+    <div slot="footer" style="display: flex; justify-content: flex-end; gap: var(--space-sm)">
+        <button class="btn btn-secondary" type="button" (click)="closeModal()">
+            Cancelar
+        </button>
+        <button class="btn btn-primary" type="button"
+                [disabled]="submitting()"
+                (click)="onSubmit()">
+            {{ submitting() ? 'Guardando...' : (editMode() ? 'Actualizar' : 'Crear Empleado') }}
+        </button>
+    </div>
+
+</app-drawer>

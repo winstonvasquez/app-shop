@@ -10,6 +10,7 @@ import { AuthModal } from '@shared/components/auth-modal/auth-modal.component';
 import { ToastContainerComponent } from '@shared/components/toast/toast-container.component';
 import { ModalStateService } from '@core/services/modal-state.service';
 import { AuthService } from '@core/auth/auth.service';
+import { ThemeService } from '@core/services/theme/theme';
 import { Subscription, filter } from 'rxjs';
 
 @Component({
@@ -23,9 +24,11 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
   modalState = inject(ModalStateService);
   private authService = inject(AuthService);
   private router = inject(Router);
+  private themeService = inject(ThemeService);
   private navSub?: Subscription;
 
   ngOnInit() {
+    this.themeService.setContext('shop');
     this.navSub = this.router.events.pipe(
       filter(event => event instanceof NavigationEnd)
     ).subscribe(() => {

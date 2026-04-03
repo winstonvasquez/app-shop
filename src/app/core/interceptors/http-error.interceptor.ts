@@ -2,14 +2,22 @@ import { HttpInterceptorFn, HttpErrorResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { catchError, throwError } from 'rxjs';
 import { ToastService } from '@shared/services/toast.service';
+import { AuthService } from '@core/auth/auth.service';
 
 export const httpErrorInterceptor: HttpInterceptorFn = (req, next) => {
     const toast = inject(ToastService);
+    const authService = inject(AuthService);
 
     return next(req).pipe(
         catchError((error: HttpErrorResponse) => {
             // Errores 404 silenciosos en endpoints de parámetros opcionales
             if (error.status === 404 && req.url.includes('/parametros')) {
+                return throwError(() => error);
+            }
+
+            // Si el usuario ya no está autenticado, los 401/403 son esperados
+            // (polling en background, requests en vuelo al cerrar sesión) — no mostrar toast
+            if ((error.status === 401 || error.status === 403) && !authService.isAuthenticated()) {
                 return throwError(() => error);
             }
 

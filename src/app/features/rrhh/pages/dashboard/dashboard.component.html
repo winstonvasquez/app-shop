@@ -1,60 +1,139 @@
 <div class="page-container">
-  <div class="page-header">
-    <div>
-      <h1 class="page-title">Dashboard RRHH</h1>
-      <p class="page-subtitle">Gestión de recursos humanos — Período {{ periodoActual }}</p>
-    </div>
-    <div class="page-actions">
-      <a routerLink="/rrhh/payroll" class="btn btn-primary">Procesar Planilla</a>
-    </div>
-  </div>
-
-  <!-- KPIs -->
-  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:var(--space-md);margin-bottom:var(--space-lg)">
-    <div class="card">
-      <div class="card-body">
-        <div style="color:var(--color-text-muted);font-size:0.875rem">Total empleados</div>
-        <div style="font-size:2.5rem;font-weight:700;color:var(--color-primary)">{{ totalEmployees() }}</div>
-        <div style="color:var(--color-text-muted);font-size:0.875rem">{{ activeEmployees() }} activos</div>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-body">
-        <div style="color:var(--color-text-muted);font-size:0.875rem">Asistencia hoy</div>
-        <div style="font-size:2.5rem;font-weight:700;color:var(--color-success)">{{ attendanceToday() }}</div>
-        <div style="color:var(--color-text-muted);font-size:0.875rem">registros del día</div>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-body">
-        <div style="color:var(--color-text-muted);font-size:0.875rem">Vacaciones pendientes</div>
-        <div style="font-size:2.5rem;font-weight:700"
-             [style.color]="pendingVacations() > 0 ? 'var(--color-warning)' : 'var(--color-success)'">
-          {{ pendingVacations() }}
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Dashboard RRHH</h1>
+            <p class="page-subtitle">Gestión de recursos humanos — Período {{ periodoActual }}</p>
         </div>
-        <div style="color:var(--color-text-muted);font-size:0.875rem">por aprobar</div>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-body">
-        <div style="color:var(--color-text-muted);font-size:0.875rem">Evaluaciones pendientes</div>
-        <div style="font-size:2.5rem;font-weight:700">{{ upcomingEvaluations() }}</div>
-        <div style="color:var(--color-text-muted);font-size:0.875rem">este mes</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Accesos rápidos -->
-  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:var(--space-md)">
-    @for (acceso of accesosRapidos; track acceso.ruta) {
-      <a [routerLink]="acceso.ruta" class="card"
-         style="cursor:pointer;text-decoration:none;display:block">
-        <div style="height:4px;background:var(--color-primary);border-radius:12px 12px 0 0"></div>
-        <div class="card-body">
-          <div style="font-weight:700;margin-bottom:6px">{{ acceso.titulo }}</div>
-          <div style="color:var(--color-text-muted);font-size:0.875rem">{{ acceso.descripcion }}</div>
+        <div class="page-actions">
+            <a routerLink="/rrhh/payroll" class="btn btn-primary">Procesar Planilla</a>
         </div>
-      </a>
-    }
-  </div>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="kpi-grid kpi-grid-4">
+        <div class="kpi-card kpi-card-blue">
+            <div class="kpi-top">
+                <span class="kpi-label">Total Empleados</span>
+                <div class="kpi-icon kpi-icon-blue">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="kpi-value">{{ totalEmployees() }}</div>
+            <div class="kpi-trend trend-up">{{ activeEmployees() }} activos</div>
+        </div>
+
+        <div class="kpi-card kpi-card-green">
+            <div class="kpi-top">
+                <span class="kpi-label">Asistencia Hoy</span>
+                <div class="kpi-icon kpi-icon-green">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="kpi-value">{{ attendanceToday() }}</div>
+            <div class="kpi-trend trend-up">{{ asistenciaPct() }}% del plantel</div>
+        </div>
+
+        <div class="kpi-card" [class.kpi-card-yellow]="pendingVacations() > 0" [class.kpi-card-green]="pendingVacations() === 0">
+            <div class="kpi-top">
+                <span class="kpi-label">Vacaciones Pendientes</span>
+                <div class="kpi-icon" [class.kpi-icon-yellow]="pendingVacations() > 0" [class.kpi-icon-green]="pendingVacations() === 0">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="kpi-value">{{ pendingVacations() }}</div>
+            <div class="kpi-sub">por aprobar</div>
+        </div>
+
+        <div class="kpi-card kpi-card-purple">
+            <div class="kpi-top">
+                <span class="kpi-label">Evaluaciones</span>
+                <div class="kpi-icon kpi-icon-purple">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="kpi-value">{{ upcomingEvaluations() }}</div>
+            <div class="kpi-sub">este mes</div>
+        </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="dash-row dash-row-1-1" style="margin-bottom:1.25rem">
+        <!-- Radial: Tasa asistencia -->
+        <div class="chart-card">
+            <div class="chart-card-header">
+                <span class="chart-card-title">Tasa de Asistencia</span>
+                <span style="font-size:0.75rem;color:var(--color-text-muted)">Hoy</span>
+            </div>
+            <div class="chart-card-body" style="display:flex;flex-direction:column;align-items:center">
+                <apx-chart
+                    [series]="radialSeries"
+                    [chart]="radialChart"
+                    [colors]="radialColors"
+                    [plotOptions]="radialPlot"
+                    [labels]="['Asistencia']"
+                    [dataLabels]="{ enabled: false }">
+                </apx-chart>
+                <div style="display:flex;gap:2rem;margin-top:0.5rem;padding-bottom:1rem">
+                    <div style="text-align:center">
+                        <div style="font-size:1.25rem;font-weight:700;color:var(--color-success)">{{ attendanceToday() }}</div>
+                        <div style="font-size:0.75rem;color:var(--color-text-muted)">Presentes</div>
+                    </div>
+                    <div style="text-align:center">
+                        <div style="font-size:1.25rem;font-weight:700;color:var(--color-warning)">{{ totalEmployees() - attendanceToday() }}</div>
+                        <div style="font-size:0.75rem;color:var(--color-text-muted)">Ausentes</div>
+                    </div>
+                    <div style="text-align:center">
+                        <div style="font-size:1.25rem;font-weight:700;color:var(--color-text-primary)">{{ totalEmployees() }}</div>
+                        <div style="font-size:0.75rem;color:var(--color-text-muted)">Total</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bar: Empleados por área -->
+        <div class="chart-card">
+            <div class="chart-card-header">
+                <span class="chart-card-title">Empleados por Área</span>
+            </div>
+            <div class="chart-card-body">
+                <apx-chart
+                    [series]="barSeries"
+                    [chart]="barChart"
+                    [xaxis]="barXAxis"
+                    [yaxis]="barYAxis"
+                    [plotOptions]="barPlot"
+                    [grid]="barGrid"
+                    [fill]="barFill"
+                    [colors]="barColors"
+                    [dataLabels]="barDataLabels"
+                    [tooltip]="{ theme: 'dark', y: { formatter: v => v + ' personas' } }">
+                </apx-chart>
+            </div>
+        </div>
+    </div>
+
+    <!-- Accesos rápidos -->
+    <div class="kpi-grid kpi-grid-3">
+        @for (acceso of accesosRapidos; track acceso.ruta) {
+            <a [routerLink]="acceso.ruta" class="quick-link-card" [style.--kpi-accent]="acceso.color">
+                <div class="quick-link-accent"></div>
+                <div class="quick-link-body">
+                    <div class="quick-link-title">{{ acceso.titulo }}</div>
+                    <div class="quick-link-desc">{{ acceso.descripcion }}</div>
+                </div>
+            </a>
+        }
+    </div>
 </div>

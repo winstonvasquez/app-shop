@@ -1,133 +1,205 @@
 import { Component, ChangeDetectionStrategy, computed, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
+import { NgApexchartsModule } from 'ng-apexcharts';
 import { InventoryApiService, DashboardSummary } from '../../services/inventory-api.service';
+import { ChartDefaultsService, CHART_COLORS } from '@shared/services/chart-defaults.service';
+import {
+    ApexAxisChartSeries, ApexChart, ApexFill, ApexGrid,
+    ApexNonAxisChartSeries, ApexPlotOptions, ApexLegend,
+    ApexStroke, ApexXAxis, ApexYAxis
+} from 'ng-apexcharts';
 
 @Component({
     selector: 'app-inventory-dashboard',
     standalone: true,
-    imports: [DatePipe],
+    imports: [DatePipe, NgApexchartsModule],
     changeDetection: ChangeDetectionStrategy.OnPush,
     template: `
-        <section class="space-y-6">
-            <header class="flex flex-col gap-1">
-                <h1 class="text-2xl font-bold text-on">Dashboard de Inventario</h1>
-                <p class="text-sm text-subtle">Resumen general de stock y movimientos recientes.</p>
-            </header>
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Dashboard de Inventario</h1>
+                <p class="page-subtitle">Resumen general de stock y movimientos recientes.</p>
+            </div>
+        </div>
 
-            @if (loading()) {
-                <div class="rounded-lg border border-border bg-surface p-6 text-sm text-subtle">Cargando resumen...</div>
-            }
+        @if (loading()) {
+            <div class="loading-container"><div class="spinner"></div></div>
+        }
 
-            @if (error()) {
-                <div class="rounded-lg border border-red-200 bg-error/10 p-4 text-sm text-error-hover">{{ error() }}</div>
-            }
+        @if (error()) {
+            <div class="card" style="border-left:3px solid var(--color-error);padding:1rem;margin-bottom:1.25rem">
+                <p class="text-subtle">{{ error() }}</p>
+            </div>
+        }
 
-            @if (summary()) {
-                <div class="grid gap-4 md:grid-cols-4">
-                    <div class="rounded-xl border border-border-subtle bg-surface p-4 shadow-sm">
-                        <p class="text-xs uppercase tracking-wide text-subtle">Stock total</p>
-                        <p class="mt-2 text-2xl font-bold text-on">{{ summary()?.totalStock }}</p>
+        <!-- KPI Cards -->
+        <div class="kpi-grid kpi-grid-4">
+            <div class="kpi-card kpi-card-blue">
+                <div class="kpi-top">
+                    <span class="kpi-label">Stock Total</span>
+                    <div class="kpi-icon kpi-icon-blue">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                        </svg>
                     </div>
-                    <div class="rounded-xl border border-border-subtle bg-surface p-4 shadow-sm">
-                        <p class="text-xs uppercase tracking-wide text-subtle">Productos bajo stock</p>
-                        <p class="mt-2 text-2xl font-bold text-warning-hover">{{ summary()?.lowStockProducts }}</p>
+                </div>
+                <div class="kpi-value">{{ summary()?.totalStock ?? 0 }}</div>
+                <div class="kpi-sub">unidades totales</div>
+            </div>
+
+            <div class="kpi-card kpi-card-yellow">
+                <div class="kpi-top">
+                    <span class="kpi-label">Bajo Stock</span>
+                    <div class="kpi-icon kpi-icon-yellow">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                        </svg>
                     </div>
-                    <div class="rounded-xl border border-border-subtle bg-surface p-4 shadow-sm">
-                        <p class="text-xs uppercase tracking-wide text-subtle">Transferencias pendientes</p>
-                        <p class="mt-2 text-2xl font-bold text-on">{{ summary()?.pendingTransfers }}</p>
+                </div>
+                <div class="kpi-value">{{ summary()?.lowStockProducts ?? 0 }}</div>
+                <div class="kpi-sub">productos a reponer</div>
+            </div>
+
+            <div class="kpi-card kpi-card-orange">
+                <div class="kpi-top">
+                    <span class="kpi-label">Transferencias</span>
+                    <div class="kpi-icon kpi-icon-orange">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
+                        </svg>
                     </div>
-                    <div class="rounded-xl border border-border-subtle bg-surface p-4 shadow-sm">
-                        <p class="text-xs uppercase tracking-wide text-subtle">Movimientos 7 días</p>
-                        <p class="mt-2 text-2xl font-bold text-primary">{{ recentMovements().length }}</p>
+                </div>
+                <div class="kpi-value">{{ summary()?.pendingTransfers ?? 0 }}</div>
+                <div class="kpi-sub">pendientes</div>
+            </div>
+
+            <div class="kpi-card kpi-card-red">
+                <div class="kpi-top">
+                    <span class="kpi-label">Movimientos 7d</span>
+                    <div class="kpi-icon kpi-icon-red">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4"/>
+                        </svg>
+                    </div>
+                </div>
+                <div class="kpi-value">{{ recentMovements().length }}</div>
+                <div class="kpi-sub">registros</div>
+            </div>
+        </div>
+
+        @if (summary()) {
+            <!-- Charts row -->
+            <div class="dash-row dash-row-2-1">
+                <!-- Área: Tendencia semanal -->
+                <div class="chart-card">
+                    <div class="chart-card-header">
+                        <span class="chart-card-title">Tendencia Semanal de Movimientos</span>
+                        <span style="font-size:0.75rem;color:var(--color-text-muted)">{{ recentMovements().length }} movimientos</span>
+                    </div>
+                    <div class="chart-card-body">
+                        <apx-chart
+                            [series]="areaSeries"
+                            [chart]="areaChart"
+                            [xaxis]="areaXAxis"
+                            [yaxis]="areaYAxis"
+                            [fill]="areaFill"
+                            [stroke]="areaStroke"
+                            [grid]="areaGrid"
+                            [colors]="areaColors"
+                            [dataLabels]="{ enabled: false }"
+                            [tooltip]="{ theme: 'dark', y: { formatter: v => v + ' movimientos' } }">
+                        </apx-chart>
                     </div>
                 </div>
 
-                <div class="grid gap-4 lg:grid-cols-3">
-                    <div class="rounded-xl border border-border-subtle bg-surface p-5 shadow-sm lg:col-span-2">
-                        <div class="flex items-center justify-between">
-                            <h2 class="text-sm font-semibold text-on">Tendencia semanal</h2>
-                            <span class="text-xs text-subtle">{{ recentMovements().length }} movimientos</span>
-                        </div>
-                        <div class="mt-4 grid grid-cols-7 gap-3 items-end">
-                            @for (day of weeklyMovements(); track day.label) {
-                                <div class="flex flex-col items-center gap-2 text-xs text-gray-400">
-                                    <div class="flex h-28 w-full items-end">
-                                        <div class="w-full rounded-lg bg-primary/15" [style.height.%]="day.ratio"></div>
-                                    </div>
-                                    <span>{{ day.label }}</span>
-                                </div>
-                            }
-                        </div>
+                <!-- Últimos movimientos list -->
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">Últimos Movimientos</span>
+                        <span class="text-subtle" style="font-size:0.75rem">{{ recentMovements().length }} registros</span>
                     </div>
-
-                    <div class="rounded-xl border border-border-subtle bg-surface p-5 shadow-sm">
-                        <div class="flex items-center justify-between">
-                            <h2 class="text-sm font-semibold text-on">Últimos movimientos</h2>
-                            <span class="text-xs text-subtle">{{ recentMovements().length }} registros</span>
-                        </div>
-                        <div class="mt-4 space-y-3">
-                            @for (movement of recentMovements(); track movement.id) {
-                                <div class="flex flex-col gap-1 border-b border-border-subtle pb-3 last:border-b-0 last:pb-0">
-                                    <div class="flex items-center justify-between">
-                                        <span class="text-sm font-semibold text-on">{{ movement.productName || movement.productId }}</span>
-                                        <span class="text-[10px] font-semibold uppercase text-primary">{{ movement.movementType }}</span>
-                                    </div>
-                                    <div class="text-xs text-subtle">
-                                        {{ movement.warehouseName }} · {{ movement.quantity }} uds · {{ movement.movementDate || movement.createdAt | date:'short' }}
-                                    </div>
+                    <div class="card-body" style="padding-top:0.5rem">
+                        @for (movement of recentMovements(); track movement.id) {
+                            <div class="mov-item">
+                                <div class="mov-icon"
+                                    [style.background]="movement.movementType === 'ENTRADA' ? 'color-mix(in oklch, var(--color-success) 15%, transparent)' : 'color-mix(in oklch, var(--color-warning) 15%, transparent)'"
+                                    [style.color]="movement.movementType === 'ENTRADA' ? 'var(--color-success)' : 'var(--color-warning)'">
+                                    <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        @if (movement.movementType === 'ENTRADA') {
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 11l5-5m0 0l5 5m-5-5v12"/>
+                                        } @else {
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 13l-5 5m0 0l-5-5m5 5V6"/>
+                                        }
+                                    </svg>
                                 </div>
-                            }
-                        </div>
+                                <div class="mov-info">
+                                    <div class="mov-title">{{ movement.productName || movement.productId }}</div>
+                                    <div class="mov-sub">{{ movement.warehouseName }} · {{ movement.quantity }} uds</div>
+                                </div>
+                                <span class="mov-date">{{ movement.movementDate || movement.createdAt | date:'dd/MM' }}</span>
+                            </div>
+                        } @empty {
+                            <div class="text-center text-subtle" style="padding:var(--space-xl)">Sin movimientos</div>
+                        }
                     </div>
                 </div>
-            }
-        </section>
+            </div>
+        }
     `
 })
 export class InventoryDashboardComponent {
     private readonly api = inject(InventoryApiService);
+    private readonly chartDefaults = inject(ChartDefaultsService);
 
     summary = signal<DashboardSummary | null>(null);
     loading = signal(false);
     error = signal<string | null>(null);
 
     recentMovements = computed(() => this.summary()?.recentMovements ?? []);
-    weeklyMovements = computed(() => {
+
+    /* ── Chart: Área — tendencia semanal ──────────────────────── */
+    areaChart: ApexChart = this.chartDefaults.areaChart(240);
+    areaFill: ApexFill = this.chartDefaults.areaFill(CHART_COLORS[0]);
+    areaStroke: ApexStroke = this.chartDefaults.areaStroke();
+    areaGrid: ApexGrid = this.chartDefaults.grid();
+    areaColors = [CHART_COLORS[0]];
+
+    areaSeries = computed<ApexAxisChartSeries>(() => {
         const now = new Date();
         const movements = this.recentMovements();
-        const days = Array.from({ length: 7 }).map((_, index) => {
-            const date = new Date(now);
-            date.setDate(now.getDate() - (6 - index));
-            const label = date.toLocaleDateString('es-PE', { weekday: 'short' });
-            const count = movements.filter(movement => {
-                const movementDate = new Date(movement.movementDate || movement.createdAt);
-                return movementDate.toDateString() === date.toDateString();
+        const days = Array.from({ length: 7 }, (_, i) => {
+            const d = new Date(now);
+            d.setDate(now.getDate() - (6 - i));
+            return movements.filter(m => {
+                const md = new Date(m.movementDate || m.createdAt);
+                return md.toDateString() === d.toDateString();
             }).length;
-            return { label, count };
         });
-        const maxCount = Math.max(...days.map(day => day.count), 1);
-        return days.map(day => ({
-            ...day,
-            ratio: Math.round((day.count / maxCount) * 100)
-        }));
+        return [{ name: 'Movimientos', data: days }];
     });
 
-    constructor() {
-        this.loadSummary();
-    }
+    areaXAxis = computed<ApexXAxis>(() => ({
+        categories: this.chartDefaults.last7DayLabels(),
+        labels: { style: { colors: this.chartDefaults.textColor, fontSize: '12px' } },
+        axisBorder: { show: false }, axisTicks: { show: false },
+    }));
+
+    areaYAxis: ApexYAxis = {
+        labels: { style: { colors: this.chartDefaults.textColor }, formatter: (v) => String(Math.round(v)) }
+    };
+
+    constructor() { this.loadSummary(); }
 
     private loadSummary(): void {
         this.loading.set(true);
         this.error.set(null);
         this.api.getDashboardSummary().subscribe({
-            next: (response) => {
-                this.summary.set(response);
-                this.loading.set(false);
-            },
-            error: (err: Error) => {
-                this.error.set(err.message);
-                this.loading.set(false);
-            }
+            next: (response) => { this.summary.set(response); this.loading.set(false); },
+            error: (err: Error) => { this.error.set(err.message); this.loading.set(false); }
         });
     }
 }

@@ -347,6 +347,33 @@
                             }
                         </div>
 
+                        <!-- Saldo de crédito -->
+                        @if (creditService.balance(); as bal) {
+                            @if (bal.balance > 0) {
+                                <div class="mb-4 p-3 rounded-lg border" style="border-color: var(--color-border); background: var(--color-surface-raised)">
+                                    <label class="flex items-center justify-between gap-3 cursor-pointer">
+                                        <div class="min-w-0">
+                                            <p class="text-sm font-medium" style="color: var(--color-text-primary)">
+                                                Usar saldo de crédito
+                                            </p>
+                                            <p class="text-xs" style="color: var(--color-text-muted)">
+                                                Disponible: S/ {{ bal.balance | number:'1.2-2' }}
+                                            </p>
+                                        </div>
+                                        <input type="checkbox"
+                                            [checked]="useCredit()"
+                                            (change)="toggleCredit($any($event.target).checked)"
+                                            class="w-4 h-4 flex-shrink-0 accent-[var(--color-primary)]">
+                                    </label>
+                                    @if (useCredit() && creditToApply() > 0) {
+                                        <p class="text-xs mt-1 font-medium" style="color: var(--color-success, #22c55e)">
+                                            Crédito aplicado: -S/ {{ creditToApply() | number:'1.2-2' }}
+                                        </p>
+                                    }
+                                </div>
+                            }
+                        }
+
                         <!-- Totals List -->
                         <div class="flex flex-col gap-2 text-sm text-[var(--color-text-secondary)] border-b border-[var(--color-border)] pb-4 mb-4">
                             <div class="flex justify-between">
@@ -357,6 +384,18 @@
                                 <span>Envío</span>
                                 <span>Gratis</span>
                             </div>
+                            @if (couponDiscount() > 0) {
+                                <div class="flex justify-between text-[var(--color-success)] font-medium">
+                                    <span>Cupón</span>
+                                    <span>-S/ {{ couponDiscount() | number:'1.2-2' }}</span>
+                                </div>
+                            }
+                            @if (useCredit() && creditToApply() > 0) {
+                                <div class="flex justify-between font-medium" style="color: var(--color-success, #22c55e)">
+                                    <span>Saldo de crédito</span>
+                                    <span>-S/ {{ creditToApply() | number:'1.2-2' }}</span>
+                                </div>
+                            }
                         </div>
 
                         <!-- Final Total -->

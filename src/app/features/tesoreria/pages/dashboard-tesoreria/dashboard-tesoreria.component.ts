@@ -2,22 +2,30 @@ import { Component, inject, signal, computed, OnInit, ChangeDetectionStrategy } 
 import { DecimalPipe, DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
+import { NgApexchartsModule } from 'ng-apexcharts';
 import { CajasService } from '../../services/cajas.service';
 import { PagosService } from '../../services/pagos.service';
 import { MovimientosFinancierosService } from '../../services/movimientos-financieros.service';
 import { CashRegister, Payment, FinancialMovement } from '../../models/tesoreria.model';
+import { ChartDefaultsService, CHART_COLORS } from '@shared/services/chart-defaults.service';
+import {
+    ApexAxisChartSeries, ApexChart, ApexFill, ApexGrid,
+    ApexStroke, ApexTooltip, ApexXAxis, ApexYAxis,
+    ApexNonAxisChartSeries, ApexPlotOptions, ApexLegend
+} from 'ng-apexcharts';
 
 @Component({
     selector: 'app-dashboard-tesoreria',
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [DecimalPipe, DatePipe, RouterLink],
+    imports: [DecimalPipe, DatePipe, RouterLink, NgApexchartsModule],
     templateUrl: './dashboard-tesoreria.component.html'
 })
 export class DashboardTesoreriaComponent implements OnInit {
     private cajasService = inject(CajasService);
     private pagosService = inject(PagosService);
     private movimientosService = inject(MovimientosFinancierosService);
+    private readonly chartDefaults = inject(ChartDefaultsService);
 
     cargando = signal(false);
     error = signal<string | null>(null);
@@ -26,8 +34,8 @@ export class DashboardTesoreriaComponent implements OnInit {
     movimientos = signal<FinancialMovement[]>([]);
     readonly hoy = new Date();
 
-    cajasAbiertas = computed(() => this.cajas().filter(c => c.estado === 'ABIERTA').length);
-    totalCajas = computed(() => this.cajas().length);
+    cajasAbiertas  = computed(() => this.cajas().filter(c => c.estado === 'ABIERTA').length);
+    totalCajas     = computed(() => this.cajas().length);
     saldoTotalCajas = computed(() =>
         this.cajas().filter(c => c.estado === 'ABIERTA').reduce((s, c) => s + (c.saldoActual ?? 0), 0)
     );
@@ -45,12 +53,39 @@ export class DashboardTesoreriaComponent implements OnInit {
             .reduce((s, m) => s + (m.monto ?? 0), 0);
     });
 
+    /* ── Chart: Flujo de caja (área doble) ────────────────────── */
+    areaChart: ApexChart = this.chartDefaults.areaChart(240);
+    areaSeries: ApexAxisChartSeries = [
+        { name: 'Ingresos', data: [4200, 5800, 3900, 7200, 6100, 8400, 5700] },
+        { name: 'Egresos',  data: [3100, 4200, 2800, 5100, 4300, 6200, 4100] }
+    ];
+    areaXAxis: ApexXAxis = this.chartDefaults.xAxis(this.chartDefaults.last7DayLabels());
+    areaYAxis: ApexYAxis = this.chartDefaults.yAxis('S/ ');
+    areaFill: ApexFill = {
+        type: 'gradient',
+        gradient: {
+            shade: 'dark', type: 'vertical', shadeIntensity: 0.3,
+            opacityFrom: 0.45, opacityTo: 0.05,
+        }
+    };
+    areaStroke: ApexStroke = this.chartDefaults.areaStroke(2);
+    areaGrid: ApexGrid = this.chartDefaults.grid();
+    areaColors = [CHART_COLORS[2], CHART_COLORS[0]];
+    areaLegend: ApexLegend = { ...this.chartDefaults.legend(), position: 'top' };
+
+    /* ── Chart: Distribución por tipo pago (donut) ────────────── */
+    donutChart: ApexChart = this.chartDefaults.donutChart(200);
+    donutSeries: ApexNonAxisChartSeries = [42, 28, 18, 12];
+    donutLabels = ['Efectivo', 'Transferencia', 'Tarjeta', 'Otros'];
+    donutColors = [CHART_COLORS[0], CHART_COLORS[2], CHART_COLORS[1], CHART_COLORS[5]];
+    donutPlot: ApexPlotOptions = this.chartDefaults.donutPlotOptions('62%');
+    donutLegend: ApexLegend = { ...this.chartDefaults.legend(), position: 'bottom' };
+
     ngOnInit(): void { this.cargar(); }
 
     cargar(): void {
         this.cargando.set(true);
         this.error.set(null);
-
         forkJoin({
             cajas: this.cajasService.getAll(0, 50),
             pagos: this.pagosService.getAll(0, 10),
@@ -62,27 +97,21 @@ export class DashboardTesoreriaComponent implements OnInit {
                 this.movimientos.set(Array.isArray(movimientos) ? movimientos : (movimientos?.content ?? []));
                 this.cargando.set(false);
             },
-            error: () => {
-                this.error.set('No disponible');
-                this.cargando.set(false);
-            }
+            error: () => { this.error.set('No disponible'); this.cargando.set(false); }
         });
     }
 
     badgePago(estado: string): string {
         const map: Record<string, string> = {
-            PENDING: 'badge badge-warning',
-            APPROVED: 'badge badge-accent',
-            PAID: 'badge badge-success',
-            REJECTED: 'badge badge-error'
+            PENDING: 'badge badge-warning', APPROVED: 'badge badge-accent',
+            PAID: 'badge badge-success', REJECTED: 'badge badge-error'
         };
         return map[estado] ?? 'badge badge-neutral';
     }
 
     badgeMovimiento(tipo: string): string {
         const map: Record<string, string> = {
-            INGRESO: 'badge badge-success',
-            EGRESO: 'badge badge-warning',
+            INGRESO: 'badge badge-success', EGRESO: 'badge badge-warning',
             TRANSFERENCIA: 'badge badge-accent'
         };
         return map[tipo] ?? 'badge badge-neutral';

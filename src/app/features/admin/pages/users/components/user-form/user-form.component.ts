@@ -1,6 +1,4 @@
-
-import { Component, ChangeDetectionStrategy, input, output } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, ChangeDetectionStrategy, input, output, computed } from '@angular/core';
 import { ReactiveFormsModule, FormGroup } from '@angular/forms';
 import { DrawerComponent } from '../../../../../../shared/components/drawer/drawer.component';
 import { RolDto, TIPO_DOCUMENTO_OPTIONS } from '@features/admin/models/user.model';
@@ -8,22 +6,26 @@ import { RolDto, TIPO_DOCUMENTO_OPTIONS } from '@features/admin/models/user.mode
 @Component({
     selector: 'app-user-form',
     standalone: true,
-    imports: [CommonModule, ReactiveFormsModule, DrawerComponent],
+    imports: [ReactiveFormsModule, DrawerComponent],
     templateUrl: './user-form.component.html',
     styleUrl: './user-form.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class UserFormComponent {
-    formGroup = input.required<FormGroup>();
-    roles = input.required<RolDto[]>();
-    editMode = input.required<boolean>();
+    isOpen     = input(false);
+    formGroup  = input.required<FormGroup>();
+    roles      = input.required<RolDto[]>();
+    editMode   = input.required<boolean>();
     submitting = input.required<boolean>();
     submitError = input<string | null>(null);
 
-    save = output<void>();
+    save   = output<void>();
     cancel = output<void>();
 
     tipoDocumentoOptions = TIPO_DOCUMENTO_OPTIONS;
+
+    /** Fecha máxima para el campo fechaNacimiento (hoy en formato yyyy-MM-dd) */
+    todayISO = computed(() => new Date().toISOString().split('T')[0]);
 
     getErrorMessage(controlName: string): string {
         const control = this.formGroup().get(controlName);

@@ -1,21 +1,25 @@
 <app-drawer
-    [isOpen]="true"
-    [title]="editMode() ? 'Editar Usuario' : 'Nuevo Usuario'"
+    [isOpen]="isOpen()"
+    [title]="editMode() ? 'Editar Cliente' : 'Nuevo Cliente'"
     size="lg"
     side="right"
     [hasFooter]="true"
     (closed)="cancel.emit()">
 
     <form [formGroup]="formGroup()" (ngSubmit)="save.emit()">
+
         @if (submitError()) {
         <div class="alert alert-error mb-4">{{ submitError() }}</div>
         }
+
+        <!-- SECCIÓN: Credenciales de acceso -->
+        <h3 class="form-section-title">Credenciales de acceso</h3>
 
         <div class="form-row">
             <div class="form-group">
                 <label for="username">Usuario <span class="required">*</span></label>
                 <input type="text" id="username" formControlName="username" class="form-control"
-                    [class.error]="hasError('username')" placeholder="nombre_usuario" />
+                    [class.error]="hasError('username')" placeholder="nombre_usuario" autocomplete="username" />
                 @if (hasError('username')) {
                 <span class="error-message">{{ getErrorMessage('username') }}</span>
                 }
@@ -23,7 +27,7 @@
             <div class="form-group">
                 <label for="email">Email <span class="required">*</span></label>
                 <input type="email" id="email" formControlName="email" class="form-control"
-                    [class.error]="hasError('email')" placeholder="usuario@empresa.com" />
+                    [class.error]="hasError('email')" placeholder="usuario@empresa.com" autocomplete="email" />
                 @if (hasError('email')) {
                 <span class="error-message">{{ getErrorMessage('email') }}</span>
                 }
@@ -31,15 +35,70 @@
         </div>
 
         <div class="form-row">
-            <div class="form-group">
-                <label for="password">Contraseña <span class="required">*</span></label>
+            <div class="form-group form-group--full">
+                <label for="password">
+                    Contraseña
+                    @if (!editMode()) { <span class="required">*</span> }
+                </label>
                 <input type="password" id="password" formControlName="password" class="form-control"
-                    [class.error]="hasError('password')" />
+                    [class.error]="hasError('password')" autocomplete="new-password" />
                 @if (hasError('password')) {
                 <span class="error-message">{{ getErrorMessage('password') }}</span>
                 }
                 @if (editMode()) {
                 <small class="form-hint">Dejar en blanco para mantener la contraseña actual</small>
+                }
+            </div>
+        </div>
+
+        <!-- SECCIÓN: Datos personales -->
+        <h3 class="form-section-title">Datos personales</h3>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="nombres">Nombres <span class="required">*</span></label>
+                <input type="text" id="nombres" formControlName="nombres" class="form-control"
+                    [class.error]="hasError('nombres')" autocomplete="given-name" />
+                @if (hasError('nombres')) {
+                <span class="error-message">{{ getErrorMessage('nombres') }}</span>
+                }
+            </div>
+            <div class="form-group">
+                <label for="apellidos">Apellidos <span class="required">*</span></label>
+                <input type="text" id="apellidos" formControlName="apellidos" class="form-control"
+                    [class.error]="hasError('apellidos')" autocomplete="family-name" />
+                @if (hasError('apellidos')) {
+                <span class="error-message">{{ getErrorMessage('apellidos') }}</span>
+                }
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="tipoDocumento">Tipo Documento <span class="required">*</span></label>
+                <select id="tipoDocumento" formControlName="tipoDocumento" class="form-control">
+                    @for (tipo of tipoDocumentoOptions; track tipo.value) {
+                    <option [value]="tipo.value">{{ tipo.label }}</option>
+                    }
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="numeroDocumento">Nro. Documento <span class="required">*</span></label>
+                <input type="text" id="numeroDocumento" formControlName="numeroDocumento" class="form-control"
+                    [class.error]="hasError('numeroDocumento')" />
+                @if (hasError('numeroDocumento')) {
+                <span class="error-message">{{ getErrorMessage('numeroDocumento') }}</span>
+                }
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="fechaNacimiento">Fecha de Nacimiento <span class="required">*</span></label>
+                <input type="date" id="fechaNacimiento" formControlName="fechaNacimiento" class="form-control"
+                    [class.error]="hasError('fechaNacimiento')" [max]="todayISO()" />
+                @if (hasError('fechaNacimiento')) {
+                <span class="error-message">{{ getErrorMessage('fechaNacimiento') }}</span>
                 }
             </div>
             <div class="form-group">
@@ -57,52 +116,6 @@
             </div>
         </div>
 
-        <div class="form-row">
-            <div class="form-group">
-                <label for="nombres">Nombres <span class="required">*</span></label>
-                <input type="text" id="nombres" formControlName="nombres" class="form-control"
-                    [class.error]="hasError('nombres')" />
-                @if (hasError('nombres')) {
-                <span class="error-message">{{ getErrorMessage('nombres') }}</span>
-                }
-            </div>
-            <div class="form-group">
-                <label for="apellidos">Apellidos <span class="required">*</span></label>
-                <input type="text" id="apellidos" formControlName="apellidos" class="form-control"
-                    [class.error]="hasError('apellidos')" />
-                @if (hasError('apellidos')) {
-                <span class="error-message">{{ getErrorMessage('apellidos') }}</span>
-                }
-            </div>
-        </div>
-
-        <div class="form-row">
-            <div class="form-group">
-                <label for="tipoDocumento">Tipo Documento <span class="required">*</span></label>
-                <select id="tipoDocumento" formControlName="tipoDocumento" class="form-control">
-                    @for (tipo of tipoDocumentoOptions; track tipo.value) {
-                    <option [value]="tipo.value">{{ tipo.label }}</option>
-                    }
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="numeroDocumento">Número Documento <span class="required">*</span></label>
-                <input type="text" id="numeroDocumento" formControlName="numeroDocumento" class="form-control"
-                    [class.error]="hasError('numeroDocumento')" />
-                @if (hasError('numeroDocumento')) {
-                <span class="error-message">{{ getErrorMessage('numeroDocumento') }}</span>
-                }
-            </div>
-        </div>
-
-        <div class="form-group">
-            <label for="fechaNacimiento">Fecha de Nacimiento <span class="required">*</span></label>
-            <input type="date" id="fechaNacimiento" formControlName="fechaNacimiento" class="form-control"
-                [class.error]="hasError('fechaNacimiento')" />
-            @if (hasError('fechaNacimiento')) {
-            <span class="error-message">{{ getErrorMessage('fechaNacimiento') }}</span>
-            }
-        </div>
     </form>
 
     <div slot="footer">
@@ -114,8 +127,9 @@
             <span class="spinner-sm"></span>
             Guardando...
             } @else {
-            {{ editMode() ? 'Actualizar' : 'Crear' }} Usuario
+            {{ editMode() ? 'Actualizar' : 'Crear' }} Cliente
             }
         </button>
     </div>
+
 </app-drawer>

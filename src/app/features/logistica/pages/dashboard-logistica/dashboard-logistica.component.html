@@ -1,148 +1,182 @@
 <div class="page-container">
-  <div class="page-header">
-    <div>
-      <h1 class="page-title">Dashboard de Logística</h1>
-      <p class="page-subtitle">Estado de operaciones logísticas</p>
-    </div>
-  </div>
-
-  <!-- KPIs -->
-  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:var(--space-md);margin-bottom:var(--space-lg)">
-    <div class="card">
-      <div class="card-body">
-        <div style="color:var(--color-text-muted);font-size:0.875rem">Almacenes Activos</div>
-        <div style="font-size:2.5rem;font-weight:700;color:var(--color-primary)">{{ almacenes().length }}</div>
-        <div style="color:var(--color-text-muted);font-size:0.875rem">{{ totalItems() }} items en stock</div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-body">
-        <div style="color:var(--color-text-muted);font-size:0.875rem">Movimientos Hoy</div>
-        <div style="font-size:2.5rem;font-weight:700;color:var(--color-success)">{{ movimientosHoy() }}</div>
-        <div style="color:var(--color-text-muted);font-size:0.875rem">{{ movimientosPendientes() }} pendientes</div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-body">
-        <div style="color:var(--color-text-muted);font-size:0.875rem">Stock Bajo</div>
-        <div style="font-size:2.5rem;font-weight:700;color:var(--color-warning)">{{ stockBajo() }}</div>
-        <div style="color:var(--color-text-muted);font-size:0.875rem">Revisar inventario</div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-body">
-        <div style="color:var(--color-text-muted);font-size:0.875rem">Guías Este Mes</div>
-        <div style="font-size:2.5rem;font-weight:700;color:var(--color-primary)">0</div>
-        <div style="color:var(--color-text-muted);font-size:0.875rem">0 emitidas</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Gráfico de distribución + últimos movimientos -->
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-lg);margin-bottom:var(--space-lg)">
-    <div class="card">
-      <div class="card-header">
-        <span class="card-title">Distribución de Stock por Almacén</span>
-      </div>
-      <div class="card-body">
-        @if (almacenes().length > 0) {
-          @for (almacen of almacenes(); track almacen.id) {
-            <div style="display:flex;align-items:center;gap:var(--space-md);margin-bottom:var(--space-sm)">
-              <span style="width:120px;font-size:0.8125rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ almacen.nombre }}</span>
-              <div style="flex:1;height:20px;background:var(--color-surface-raised);border-radius:10px;overflow:hidden">
-                <div style="height:100%;background:var(--color-primary);border-radius:10px"
-                     [style.width.%]="getStockPercent(almacen)"></div>
-              </div>
-              <span style="width:80px;text-align:right;font-size:0.8125rem;font-weight:500">{{ almacen.totalItems || 0 }} items</span>
-            </div>
-          }
-        } @else {
-          <div style="text-align:center;padding:var(--space-xl);color:var(--color-text-muted)">
-            <p style="margin-bottom:var(--space-md)">No hay almacenes registrados</p>
-            <button class="btn btn-primary" routerLink="/admin/logistica/almacenes">Crear Almacén</button>
-          </div>
-        }
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-header">
-        <span class="card-title">Últimos Movimientos</span>
-      </div>
-      <div class="card-body">
-        <div style="display:flex;flex-direction:column;gap:var(--space-sm)">
-          @for (mov of ultimosMovimientos(); track mov.id) {
-            <div style="display:flex;align-items:center;gap:var(--space-md);padding:var(--space-sm);background:var(--color-surface-raised);border-radius:8px">
-              <div style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:8px;font-size:1rem;background:var(--color-surface)">
-                {{ getTipoIcon(mov.tipo) }}
-              </div>
-              <div style="flex:1;display:flex;flex-direction:column;gap:2px">
-                <span style="font-weight:500;font-size:0.8125rem">{{ mov.codigo }}</span>
-                <span style="font-size:0.75rem;color:var(--color-text-muted)">{{ formatTipo(mov.tipo) }}</span>
-              </div>
-              <span style="font-size:0.75rem;color:var(--color-text-muted)">{{ formatDate(mov.createdAt) }}</span>
-            </div>
-          } @empty {
-            <div style="text-align:center;padding:var(--space-xl);color:var(--color-text-muted)">
-              No hay movimientos recientes
-            </div>
-          }
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Dashboard de Logística</h1>
+            <p class="page-subtitle">Estado de operaciones logísticas</p>
         </div>
-      </div>
     </div>
-  </div>
 
-  <!-- Tabla de almacenes -->
-  <div class="card">
-    <div class="card-header">
-      <span class="card-title">Almacenes Recientes</span>
-      <button class="btn btn-secondary" routerLink="/admin/logistica/almacenes">Ver todos →</button>
+    <!-- KPI Cards -->
+    <div class="kpi-grid kpi-grid-4">
+        <div class="kpi-card kpi-card-blue">
+            <div class="kpi-top">
+                <span class="kpi-label">Almacenes Activos</span>
+                <div class="kpi-icon kpi-icon-blue">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="kpi-value">{{ almacenes().length }}</div>
+            <div class="kpi-sub">{{ totalItems() }} items en stock</div>
+        </div>
+
+        <div class="kpi-card kpi-card-green">
+            <div class="kpi-top">
+                <span class="kpi-label">Movimientos Hoy</span>
+                <div class="kpi-icon kpi-icon-green">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="kpi-value">{{ movimientosHoy() }}</div>
+            <div class="kpi-sub">{{ movimientosPendientes() }} pendientes</div>
+        </div>
+
+        <div class="kpi-card kpi-card-yellow">
+            <div class="kpi-top">
+                <span class="kpi-label">Stock Bajo</span>
+                <div class="kpi-icon kpi-icon-yellow">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="kpi-value">{{ stockBajo() }}</div>
+            <div class="kpi-sub">Revisar inventario</div>
+        </div>
+
+        <div class="kpi-card kpi-card-orange">
+            <div class="kpi-top">
+                <span class="kpi-label">Guías del Mes</span>
+                <div class="kpi-icon kpi-icon-orange">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="kpi-value">0</div>
+            <div class="kpi-sub">0 emitidas</div>
+        </div>
     </div>
-    <div style="overflow-x:auto">
-      <table class="table">
-        <thead class="table-header">
-          <tr>
-            <th class="table-header-cell">Código</th>
-            <th class="table-header-cell">Nombre</th>
-            <th class="table-header-cell">Dirección</th>
-            <th class="table-header-cell">Items</th>
-            <th class="table-header-cell">Estado</th>
-            <th class="table-header-cell">Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (almacen of almacenes(); track almacen.id) {
-            <tr class="table-row">
-              <td class="table-cell font-mono">{{ almacen.codigo }}</td>
-              <td class="table-cell">{{ almacen.nombre }}</td>
-              <td class="table-cell" style="color:var(--color-text-muted)">{{ almacen.direccion || '-' }}</td>
-              <td class="table-cell" style="text-align:right">{{ almacen.totalItems || 0 }}</td>
-              <td class="table-cell">
-                <span class="badge"
-                      [class.badge-success]="almacen.estado === 'ACTIVO'"
-                      [class.badge-warning]="almacen.estado === 'MANTENIMIENTO'"
-                      [class.badge-neutral]="almacen.estado !== 'ACTIVO' && almacen.estado !== 'MANTENIMIENTO'">
-                  {{ almacen.estado }}
-                </span>
-              </td>
-              <td class="table-cell">
-                <button class="btn btn-secondary" [routerLink]="['/admin/logistica/almacenes', almacen.id]">
-                  Ver
-                </button>
-              </td>
-            </tr>
-          } @empty {
-            <tr class="table-row">
-              <td class="table-cell" colspan="6" style="text-align:center;color:var(--color-text-muted)">
-                No hay almacenes registrados
-              </td>
-            </tr>
-          }
-        </tbody>
-      </table>
+
+    <!-- Charts: stock por almacén + estado -->
+    <div class="dash-row dash-row-2-1" style="margin-bottom:1.25rem">
+        <div class="chart-card">
+            <div class="chart-card-header">
+                <span class="chart-card-title">Stock por Almacén</span>
+            </div>
+            <div class="chart-card-body">
+                @if (almacenes().length > 0) {
+                    <apx-chart
+                        [series]="barSeries"
+                        [chart]="barChart"
+                        [xaxis]="barXAxis"
+                        [yaxis]="barYAxis"
+                        [plotOptions]="barPlot"
+                        [grid]="barGrid"
+                        [colors]="barColors"
+                        [dataLabels]="barDataLabels"
+                        [tooltip]="{ theme: 'dark', y: { formatter: v => v + ' items' } }">
+                    </apx-chart>
+                } @else {
+                    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:240px;gap:1rem">
+                        <p class="text-subtle">No hay almacenes registrados</p>
+                        <button class="btn btn-primary" routerLink="/admin/logistica/almacenes">Crear Almacén</button>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Donut estado almacenes + movimientos -->
+        <div style="display:flex;flex-direction:column;gap:1.25rem">
+            <div class="chart-card" style="flex:1">
+                <div class="chart-card-header">
+                    <span class="chart-card-title">Estado Almacenes</span>
+                </div>
+                <div class="chart-card-body">
+                    <apx-chart
+                        [series]="donutSeries"
+                        [chart]="donutChart"
+                        [labels]="donutLabels"
+                        [colors]="donutColors"
+                        [plotOptions]="donutPlot"
+                        [legend]="donutLegend"
+                        [dataLabels]="{ enabled: false }"
+                        [tooltip]="{ theme: 'dark' }">
+                    </apx-chart>
+                </div>
+            </div>
+        </div>
     </div>
-  </div>
+
+    <!-- Últimos movimientos + tabla almacenes -->
+    <div class="dash-row dash-row-1-1">
+        <!-- Últimos movimientos -->
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">Últimos Movimientos</span>
+            </div>
+            <div class="card-body" style="padding-top:0.75rem">
+                @for (mov of ultimosMovimientos(); track mov.id) {
+                    <div class="mov-item">
+                        <div class="mov-icon" style="background:var(--color-surface)">{{ getTipoIcon(mov.tipo) }}</div>
+                        <div class="mov-info">
+                            <div class="mov-title">{{ mov.codigo }}</div>
+                            <div class="mov-sub">{{ formatTipo(mov.tipo) }}</div>
+                        </div>
+                        <span class="mov-date">{{ formatDate(mov.createdAt) }}</span>
+                    </div>
+                } @empty {
+                    <div class="text-center text-subtle" style="padding:var(--space-xl)">No hay movimientos recientes</div>
+                }
+            </div>
+        </div>
+
+        <!-- Tabla almacenes -->
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">Almacenes Registrados</span>
+                <button class="btn btn-secondary" routerLink="/admin/logistica/almacenes">Ver todos →</button>
+            </div>
+            <div style="overflow-x:auto">
+                <table class="table">
+                    <thead class="table-header">
+                        <tr>
+                            <th class="table-header-cell">Nombre</th>
+                            <th class="table-header-cell text-right">Items</th>
+                            <th class="table-header-cell">Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (almacen of almacenes().slice(0,6); track almacen.id) {
+                            <tr class="table-row">
+                                <td class="table-cell font-medium">{{ almacen.nombre }}</td>
+                                <td class="table-cell text-right">{{ almacen.totalItems || 0 }}</td>
+                                <td class="table-cell">
+                                    <span class="badge"
+                                        [class.badge-success]="almacen.estado === 'ACTIVO'"
+                                        [class.badge-warning]="almacen.estado === 'MANTENIMIENTO'"
+                                        [class.badge-neutral]="almacen.estado !== 'ACTIVO' && almacen.estado !== 'MANTENIMIENTO'">
+                                        {{ almacen.estado }}
+                                    </span>
+                                </td>
+                            </tr>
+                        } @empty {
+                            <tr class="table-row">
+                                <td colspan="3" class="table-cell text-center text-subtle" style="padding:var(--space-lg)">
+                                    No hay almacenes registrados
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 </div>

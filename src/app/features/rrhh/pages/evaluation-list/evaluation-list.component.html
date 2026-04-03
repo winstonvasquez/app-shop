@@ -1,102 +1,140 @@
-<div class="page-container">
-  <div class="page-header">
-    <div>
-      <h1 class="page-title">Evaluaciones de Desempeño</h1>
-      <p class="page-subtitle">Seguimiento por período y competencias</p>
+<app-page-header
+    title="Evaluaciones de Desempeño"
+    subtitle="Seguimiento por período y competencias"
+    [breadcrumbs]="breadcrumbs">
+    <div actions>
+        <button class="btn btn-primary" (click)="openCreateModal()">
+            + Nueva Evaluación
+        </button>
     </div>
-    <div class="page-actions">
-      <button class="btn btn-primary" (click)="showModal.set(true)">+ Nueva Evaluación</button>
-    </div>
-  </div>
+</app-page-header>
 
-  <!-- KPIs -->
-  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:var(--space-md);margin-bottom:var(--space-lg)">
+<!-- KPIs -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: var(--space-md); margin-bottom: var(--space-lg)">
     <div class="card">
-      <div class="card-body">
-        <div style="color:var(--color-text-muted);font-size:0.875rem">Pendientes / En Proceso</div>
-        <div style="font-size:2.5rem;font-weight:700"
-             [style.color]="pendientes() > 0 ? 'var(--color-warning)' : 'var(--color-text-muted)'">
-          {{ pendientes() }}
+        <div class="card-body">
+            <div class="text-muted" style="font-size: 0.875rem">Pendientes / En Proceso</div>
+            <div style="font-size: 2.5rem; font-weight: 700"
+                 [style.color]="pendientes() > 0 ? 'var(--color-warning)' : 'var(--color-text-muted)'">
+                {{ pendientes() }}
+            </div>
         </div>
-      </div>
     </div>
     <div class="card">
-      <div class="card-body">
-        <div style="color:var(--color-text-muted);font-size:0.875rem">Completadas</div>
-        <div style="font-size:2.5rem;font-weight:700;color:var(--color-success)">{{ completadas() }}</div>
-      </div>
+        <div class="card-body">
+            <div class="text-muted" style="font-size: 0.875rem">Completadas</div>
+            <div style="font-size: 2.5rem; font-weight: 700; color: var(--color-success)">{{ completadas() }}</div>
+        </div>
     </div>
     <div class="card">
-      <div class="card-body">
-        <div style="color:var(--color-text-muted);font-size:0.875rem">Total</div>
-        <div style="font-size:2.5rem;font-weight:700;color:var(--color-primary)">{{ evaluaciones().length }}</div>
-      </div>
+        <div class="card-body">
+            <div class="text-muted" style="font-size: 0.875rem">Total</div>
+            <div style="font-size: 2.5rem; font-weight: 700; color: var(--color-primary)">{{ evaluaciones().length }}</div>
+        </div>
     </div>
-  </div>
-
-  <!-- Filtros -->
-  <div class="filters-bar" style="margin-bottom:var(--space-md)">
-    <select class="input-field" style="width:200px"
-            [value]="filtroEstado()"
-            (change)="filtroEstado.set($any($event.target).value)">
-      <option value="">Todos los estados</option>
-      @for (opt of estadoOptions; track opt.value) {
-        <option [value]="opt.value">{{ opt.label }}</option>
-      }
-    </select>
-  </div>
-
-  <app-data-table
-    [data]="evaluacionesFiltradas()"
-    [columns]="columns"
-    [actions]="actions"
-    [totalPages]="1"
-    [totalElements]="evaluacionesFiltradas().length"
-    [currentPage]="0"
-    [pageSize]="100"
-    [searchable]="true"
-    searchPlaceholder="Buscar evaluación..."
-    [exportable]="true"
-    exportFileName="evaluaciones">
-  </app-data-table>
-
 </div>
 
+<!-- Filtros -->
+<div class="filters-bar">
+    <select class="input-field" style="width: auto; min-width: 200px"
+            [value]="filtroEstado()"
+            (change)="onFilterEstado($event)">
+        <option value="">Todos los estados</option>
+        @for (opt of estadoOptions; track opt.value) {
+            <option [value]="opt.value">{{ opt.label }}</option>
+        }
+    </select>
+</div>
+
+<!-- Tabla -->
+<app-data-table
+    [data]="pagedData()"
+    [columns]="columns"
+    [actions]="actions"
+    [exportable]="true"
+    exportFileName="evaluaciones"
+    [hidePagination]="true" />
+
+<!-- Paginación -->
+@if (totalElements() > 0) {
+    <app-pagination
+        [currentPage]="currentPage()"
+        [totalPages]="totalPages()"
+        [totalElements]="totalElements()"
+        [pageSize]="pageSize()"
+        (pageChange)="onPaginationChange($event)" />
+}
+
+<!-- ── Drawer: Nueva Evaluación ────────────────────────────────────────── -->
 <app-drawer
-  [isOpen]="showModal()"
-  title="Nueva Evaluación de Desempeño"
-  size="md"
-  side="right"
-  [hasFooter]="true"
-  (closed)="showModal.set(false)">
+    [isOpen]="showModal()"
+    title="Nueva Evaluación de Desempeño"
+    size="md"
+    [hasFooter]="true"
+    (closed)="closeModal()">
 
-  <div style="display:flex;flex-direction:column;gap:14px">
-    <div>
-      <label class="input-label">Empleado *</label>
-      <input class="input-field" [(ngModel)]="formNombre" placeholder="Nombre completo">
-    </div>
-    <div>
-      <label class="input-label">Evaluador</label>
-      <input class="input-field" [(ngModel)]="formEvaluador" placeholder="Nombre del evaluador">
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-      <div>
-        <label class="input-label">Período *</label>
-        <input class="input-field" [(ngModel)]="formPeriodo" placeholder="2026-Q1">
-      </div>
-      <div>
-        <label class="input-label">Fecha Programada</label>
-        <input class="input-field" type="date" [(ngModel)]="formFecha">
-      </div>
-    </div>
-    <div>
-      <label class="input-label">Competencias</label>
-      <input class="input-field" [(ngModel)]="formCompetencias" placeholder="Liderazgo, Comunicación...">
-    </div>
-  </div>
+    <form [formGroup]="evaluacionForm" (ngSubmit)="guardar()">
 
-  <div slot="footer">
-    <button class="btn btn-secondary" (click)="showModal.set(false)">Cancelar</button>
-    <button class="btn btn-primary" (click)="guardar()">Crear Evaluación</button>
-  </div>
+        @if (submitError()) {
+            <app-alert type="error" [message]="submitError()!" />
+        }
+
+        <p class="text-subtle text-sm font-semibold mb-2 mt-1">Datos de la Evaluación</p>
+        <hr style="border-color: var(--color-border); margin-bottom: var(--space-md)">
+
+        <div style="display: flex; flex-direction: column; gap: var(--space-md)">
+
+            <app-form-field
+                label="Empleado"
+                [control]="getControl('empleadoNombre')"
+                placeholder="Nombre completo del empleado"
+                [required]="true" />
+
+            <app-form-field
+                label="Evaluador"
+                [control]="getControl('evaluadorNombre')"
+                placeholder="Nombre del evaluador"
+                [required]="true" />
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md)">
+                <app-form-field
+                    label="Período"
+                    [control]="getControl('periodo')"
+                    placeholder="Ej: 2026-Q2"
+                    [required]="true" />
+
+                <app-date-input
+                    label="Fecha Programada"
+                    [required]="true"
+                    formControlName="fechaProgramada" />
+            </div>
+
+            <app-form-field
+                label="Competencias"
+                [control]="getControl('competencias')"
+                placeholder="Liderazgo, Comunicación, Trabajo en equipo..." />
+
+            <div>
+                <label class="input-label">Comentarios</label>
+                <textarea
+                    class="input-field"
+                    rows="3"
+                    placeholder="Observaciones iniciales..."
+                    formControlName="comentarios"
+                    style="resize: vertical"></textarea>
+            </div>
+
+        </div>
+
+    </form>
+
+    <div slot="footer" style="display: flex; justify-content: flex-end; gap: var(--space-sm)">
+        <button class="btn btn-secondary" type="button" (click)="closeModal()">Cancelar</button>
+        <button class="btn btn-primary" type="button"
+                [disabled]="submitting()"
+                (click)="guardar()">
+            {{ submitting() ? 'Guardando...' : 'Crear Evaluación' }}
+        </button>
+    </div>
+
 </app-drawer>

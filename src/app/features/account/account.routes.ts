@@ -46,4 +46,24 @@ export const ACCOUNT_ROUTES: Routes = [
         loadComponent: () =>
             import('./pages/reviews/account-reviews.component').then(m => m.AccountReviewsComponent),
     },
+    {
+        path: 'permissions',
+        loadComponent: () =>
+            import('./pages/permissions/account-permissions.component').then(m => m.AccountPermissionsComponent),
+    },
+    {
+        path: 'followed-stores',
+        loadComponent: () =>
+            import('./pages/followed-stores/account-followed-stores.component').then(m => m.AccountFollowedStoresComponent),
+    },
+    {
+        path: 'coupons',
+        loadComponent: () =>
+            import('./pages/coupons/account-coupons.component').then(m => m.AccountCouponsComponent),
+    },
+    {
+        path: 'credit',
+        loadComponent: () =>
+            import('./pages/credit/account-credit.component').then(m => m.AccountCreditComponent),
+    },
 ];

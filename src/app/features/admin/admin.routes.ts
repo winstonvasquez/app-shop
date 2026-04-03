@@ -81,12 +81,7 @@ export const adminRoutes: Routes = [
             },
             {
                 path: 'segments',
-                loadComponent: () => import('./pages/proximamente/proximamente.component').then(m => m.ProximamenteComponent),
-                data: {
-                    titulo: 'Segmentos de clientes',
-                    subtitulo: 'Clasificación y análisis de clientes',
-                    descripcion: 'El módulo de segmentos permitirá clasificar clientes por comportamiento de compra, frecuencia, ticket promedio y otras métricas RFM.'
-                }
+                loadComponent: () => import('./pages/segments/segments.component').then(m => m.SegmentsComponent)
             },
             {
                 path: 'companies',
@@ -107,6 +102,18 @@ export const adminRoutes: Routes = [
             {
                 path: 'store-theme',
                 loadComponent: () => import('./pages/store-theme/store-theme.component').then(m => m.StoreThemeComponent)
+            },
+            {
+                path: 'apariencia',
+                loadComponent: () => import('./pages/apariencia/apariencia.component').then(m => m.AparienciaComponent)
+            },
+            {
+                path: 'footer-manager',
+                loadComponent: () => import('./pages/footer-manager/footer-manager.component').then(m => m.FooterManagerComponent)
+            },
+            {
+                path: 'slider-manager',
+                loadComponent: () => import('./pages/slider-manager/slider-manager.component').then(m => m.SliderManagerComponent)
             },
             {
                 path: 'soporte/chat',

@@ -7,6 +7,7 @@ import { PosTurnoService } from '../../services/pos-turno.service';
 import { PosCatalogoService } from '../../services/pos-catalogo.service';
 import { PosVentaService } from '../../services/pos-venta.service';
 import { AuthService } from '@core/auth/auth.service';
+import { ThemeService } from '@core/services/theme/theme';
 import { ProductoCatalogoPOS } from '../../models/catalogo-pos.model';
 import { VentaPosResponse } from '../../models/venta-pos.model';
 import { TurnoCaja } from '../../models/turno-caja.model';
@@ -43,6 +44,7 @@ export class PosPageComponent implements OnInit, OnDestroy {
     // ── DI ────────────────────────────────────────────────────────
     readonly carrito = inject(PosCarritoService);
     private readonly auth = inject(AuthService);
+    private readonly themeService = inject(ThemeService);
     private readonly turnoService = inject(PosTurnoService);
     private readonly catalogoService = inject(PosCatalogoService);
     private readonly ventaService = inject(PosVentaService);
@@ -71,12 +73,14 @@ export class PosPageComponent implements OnInit, OnDestroy {
 
     // ── Lifecycle ─────────────────────────────────────────────────
     ngOnInit(): void {
+        this.themeService.setContext('pos');
         this.startClock();
         this.loadCatalogo();
         this.loadTurnoActivo();
     }
 
     ngOnDestroy(): void {
+        this.themeService.setContext('shop');
         clearInterval(this.clockInterval);
         clearTimeout(this.toastTimeout);
     }

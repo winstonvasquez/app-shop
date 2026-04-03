@@ -38,7 +38,6 @@
     ]
   },
   "private": true,
-  "packageManager": "bun@1.2.8",
   "dependencies": {
     "@abacritt/angularx-social-login": "^2.5.1",
     "@angular/animations": "^21.1.0",
@@ -53,9 +52,11 @@
     "@ngx-translate/http-loader": "^17.0.0",
     "@softarc/native-federation-node": "^3.3.4",
     "@types/crypto-js": "^4.2.2",
+    "apexcharts": "^5.10.4",
     "crypto-js": "^4.2.0",
     "es-module-shims": "^1.5.12",
     "lucide-angular": "^1.0.0",
+    "ng-apexcharts": "^2.3.0",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0"
   },
