@@ -56,8 +56,8 @@ const COLUMNS: FooterColumn[] = [
                 <div class="card">
                     <div class="card-header">
                         <h3 class="card-title">{{ col.label }}</h3>
-                        <button class="btn btn-secondary" style="font-size:.75rem; padding:4px 10px"
-                                (click)="addLink(col.linksKey)">+ Link</button>
+                        <button class="btn btn-secondary" style="font-size:.75rem; padding:4px 10px; width:100%"
+                                (click)="addLink(col.linksKey)">+ Agregar enlace</button>
                     </div>
                     <div class="card-body" style="display:flex; flex-direction:column; gap:.5rem">
                         <div>

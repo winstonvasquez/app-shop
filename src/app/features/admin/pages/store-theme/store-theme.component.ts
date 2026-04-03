@@ -231,11 +231,11 @@ const AVAILABLE_THEMES: ThemeOption[] = [
                 <span class="badge badge-neutral">{{ themes.length }} temas</span>
             </div>
             <div class="card-body" style="padding: var(--space-md)">
-                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: var(--space-md)">
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1.25rem">
                     @for (theme of themes; track theme.key) {
                         <div
-                            style="border: 2px solid var(--color-border); border-radius: 12px; overflow: hidden; transition: border-color 0.2s"
-                            [style.border-color]="currentModuleTheme()?.themeKey === theme.key ? theme.primaryColor : ''"
+                            style="border-radius: 12px; overflow: hidden; transition: border 0.2s"
+                            [style.border]="currentModuleTheme()?.themeKey === theme.key ? '2px solid var(--color-primary)' : '1px solid var(--color-border)'"
                         >
                             <!-- Vista previa -->
                             <div

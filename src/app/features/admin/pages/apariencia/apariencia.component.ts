@@ -66,7 +66,7 @@ const APP_FIELDS: ConfigSection[] = [
             </div>
         }
 
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; align-items:start">
 
             <!-- Identidad de tienda -->
             <div class="card">
@@ -86,7 +86,7 @@ const APP_FIELDS: ConfigSection[] = [
             </div>
 
             <!-- Redes sociales -->
-            <div class="card">
+            <div class="card" style="min-height:320px">
                 <div class="card-header">
                     <h3 class="card-title">Redes sociales</h3>
                 </div>
