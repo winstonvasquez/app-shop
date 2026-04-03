@@ -116,6 +116,9 @@ export class AuthService {
 
     logout(): void {
         localStorage.removeItem(TOKEN_KEY);
+        localStorage.removeItem('shop_theme');
+        localStorage.removeItem('admin_theme');
+        localStorage.removeItem('pos_theme');
         this.currentUserSignal.set(null);
         this.router.navigate(['/']);
     }
