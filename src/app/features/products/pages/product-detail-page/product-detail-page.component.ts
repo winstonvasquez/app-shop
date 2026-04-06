@@ -13,6 +13,7 @@ import { Variant } from '@features/products/models/variant.model';
 import { CartService } from '@features/cart/services/cart.service';
 import { ProductDetail } from '@features/products/models/product-detail.model';
 import { UrlEncryptionService } from '@core/services/url-encryption.service';
+import { AnalyticsService } from '@core/services/analytics.service';
 import { BreadcrumbComponent, BreadcrumbItem } from '@shared/components/breadcrumb/breadcrumb.component';
 
 @Component({
@@ -36,6 +37,7 @@ export class ProductDetailPageComponent implements OnInit {
   private titleService = inject(Title);
   private route = inject(ActivatedRoute);
   private urlEncryption = inject(UrlEncryptionService);
+  private analytics = inject(AnalyticsService);
 
   private _isLoading = signal<boolean>(true);
   private _error = signal<boolean>(false);
@@ -78,6 +80,7 @@ export class ProductDetailPageComponent implements OnInit {
           this._isLoading.set(false);
           this.titleService.setTitle(`${data.nombre} | App Shop`);
           this.saveToBrowseHistory(data);
+          this.analytics.trackProductView(data.id, data.nombre, data.precioBase);
         },
         error: () => {
           this._error.set(true);
@@ -108,10 +111,13 @@ export class ProductDetailPageComponent implements OnInit {
     const product = this._product();
     if (product) {
       this.cartService.addToCart({
-        id: event.variant.id,
+        id: product.id,
+        variantId: event.variant.id,
+        sku: event.variant.sku,
+        variantName: event.variant.nombre,
         name: product.nombre,
         description: event.variant.nombre,
-        price: event.variant.precioAjuste || product.precioBase,
+        price: event.variant.precioAjuste ? product.precioBase + event.variant.precioAjuste : product.precioBase,
         image: product.images && product.images.length > 0 ? product.images[0].url : '',
         quantity: event.quantity,
         stock: event.variant.stockActual

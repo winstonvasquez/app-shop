@@ -17,6 +17,14 @@ export interface DetalleVentaPosResponse {
     cantidad: number;
     precioUnitario: number;
     subtotalLinea: number;
+    descuentoTipo: string;
+    descuentoValor: number;
+    descuentoMonto: number;
+}
+
+export interface PagoMixtoResponse {
+    metodo: string;
+    monto: number;
 }
 
 export interface VentaPosResponse {
@@ -31,6 +39,7 @@ export interface VentaPosResponse {
     igv: number;
     descuento: number;
     total: number;
+    totalIcbper: number;
     montoRecibido?: number;
     vuelto: number;
     estado: EstadoVentaPos;
@@ -39,11 +48,17 @@ export interface VentaPosResponse {
     cajeroNombre: string;
     turnoId: number;
     detalles: DetalleVentaPosResponse[];
+    pagos: PagoMixtoResponse[];
+    qrData?: string;
 }
 
 export interface VentaPosItemRequest {
     varianteId: number;
     cantidad: number;
+    descuentoTipo?: string;
+    descuentoValor?: number;
+    autorizadoPor?: number;
+    bolsas?: number;
 }
 
 export interface VentaPosRequest {
@@ -64,4 +79,45 @@ export interface PageResponse<T> {
     totalPages: number;
     size: number;
     number: number;
+}
+
+// ── Devoluciones ────────────────────────────────────────────────
+
+export interface DevolucionPosRequest {
+    motivo: string;
+    observaciones?: string;
+    lineas: { detalleVentaPosId: number; cantidadDevuelta: number }[];
+}
+
+export interface DevolucionPosResponse {
+    id: number;
+    ventaPosId: number;
+    numeroNc: string;
+    motivo: string;
+    observaciones?: string;
+    totalDevuelto: number;
+    estado: string;
+    fechaCreacion: string;
+    lineas: {
+        detalleVentaPosId: number;
+        sku: string;
+        nombreProducto: string;
+        cantidadDevuelta: number;
+        montoDevuelto: number;
+    }[];
+}
+
+// ── Sucursales ──────────────────────────────────────────────────
+
+export interface Sucursal {
+    id: number;
+    companyId: number;
+    nombre: string;
+    direccion?: string;
+    ubigeo?: string;
+    telefono?: string;
+    serieBoleta?: string;
+    serieFactura?: string;
+    almacenId?: number;
+    activo: boolean;
 }

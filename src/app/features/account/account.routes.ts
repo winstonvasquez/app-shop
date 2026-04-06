@@ -66,4 +66,9 @@ export const ACCOUNT_ROUTES: Routes = [
         loadComponent: () =>
             import('./pages/credit/account-credit.component').then(m => m.AccountCreditComponent),
     },
+    {
+        path: 'wishlist',
+        loadComponent: () =>
+            import('./pages/wishlist/account-wishlist.component').then(m => m.AccountWishlistComponent),
+    },
 ];

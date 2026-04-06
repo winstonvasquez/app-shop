@@ -102,7 +102,10 @@
             @if (activeScreen() === 'main') {
             <div class="pos-main-screen">
                 <app-pos-catalog [items]="catalogoItems()" [isLoading]="isLoading()" [isSearching]="isSearching()"
-                    (productSelected)="carrito.agregarProducto($event)" (searchChanged)="onSearchChanged($event)" />
+                    [favoritos]="favoritoItems()" [favoritosLoading]="favoritosLoading()"
+                    (productSelected)="carrito.agregarProducto($event)" (searchChanged)="onSearchChanged($event)"
+                    (favoritoSelected)="onFavoritoSelected($event)" (favoritoRemoved)="removeFavorito($event)"
+                    (addToFavorites)="addFavorito($event)" />
                 <app-pos-order-panel (procesarVenta)="procesarVenta()" (irAlNumpad)="showScreen('pago')" />
             </div>
             }
@@ -137,10 +140,55 @@
             </div>
             }
 
+            <!-- PANTALLA 7: Órdenes Retenidas -->
+            @if (activeScreen() === 'ordenes-retenidas') {
+            <div class="pos-panel-scroll">
+                <app-pos-held-orders-panel [ordenes]="ordenesRetenidas()"
+                    (restore)="restoreOrder($event)" (discard)="discardOrder($event)" />
+            </div>
+            }
+
+            <!-- PANTALLA 8: Reporte X/Z -->
+            @if (activeScreen() === 'reporte') {
+            <div class="pos-panel-scroll">
+                <app-pos-report-viewer [reporte]="currentReporte()" (close)="showScreen('turno')" />
+            </div>
+            }
+
         </div>
     </div>
 
 </div>
+
+<!-- Denomination Counter Dialog -->
+@if (showDenominationCounter()) {
+<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+    <div class="bg-[var(--color-surface)] rounded-xl border border-[var(--color-border)] shadow-xl overflow-y-auto max-h-[90vh]">
+        <app-pos-denomination-counter
+            (confirmed)="cerrarTurnoConArqueo($event)"
+            (cancel)="showDenominationCounter.set(false)" />
+    </div>
+</div>
+}
+
+<!-- Cash Movement Dialog -->
+@if (showCashMovementDialog()) {
+<app-pos-cash-movement-dialog
+    (confirmed)="registrarMovimiento($event)"
+    (cancel)="showCashMovementDialog.set(false)" />
+}
+
+<!-- Camera Scanner -->
+@if (showCameraScanner()) {
+<app-pos-camera-scanner
+    (scanned)="onBarcodeScanned($event)"
+    (close)="showCameraScanner.set(false)" />
+}
+
+<!-- Shortcuts help overlay -->
+@if (keyboard.showShortcuts()) {
+<app-pos-shortcuts-help (close)="keyboard.toggleShortcutsPanel()" />
+}
 
 <!-- Toast global con tipo visual -->
 @if (toastVisible()) {

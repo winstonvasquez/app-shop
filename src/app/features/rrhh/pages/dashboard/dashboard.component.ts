@@ -1,12 +1,11 @@
 import { Component, OnInit, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { NgApexchartsModule } from 'ng-apexcharts';
-import { EmployeeService } from '../../services/employee.service';
-import { VacationService } from '../../services/vacation.service';
+import { AnalyticsService, HrAnalytics } from '../../services/analytics.service';
 import { ChartDefaultsService, CHART_COLORS } from '@shared/services/chart-defaults.service';
 import {
     ApexAxisChartSeries, ApexChart, ApexDataLabels, ApexGrid,
-    ApexNonAxisChartSeries, ApexPlotOptions, ApexLegend, ApexTooltip, ApexXAxis, ApexYAxis
+    ApexNonAxisChartSeries, ApexPlotOptions, ApexTooltip, ApexXAxis, ApexYAxis
 } from 'ng-apexcharts';
 
 interface AccesoRapido {
@@ -21,8 +20,7 @@ interface AccesoRapido {
     templateUrl: './dashboard.component.html'
 })
 export class DashboardComponent implements OnInit {
-    private readonly employeeService = inject(EmployeeService);
-    private readonly vacationService = inject(VacationService);
+    private readonly analyticsService = inject(AnalyticsService);
     private readonly chartDefaults = inject(ChartDefaultsService);
 
     readonly totalEmployees    = signal(0);
@@ -55,13 +53,10 @@ export class DashboardComponent implements OnInit {
         }
     };
 
-    /* ── Chart: Bar — empleados por área (mock) ───────────────── */
+    /* ── Chart: Bar — empleados por departamento ───────────────── */
     barChart: ApexChart = this.chartDefaults.barChart(false, 200);
-    barSeries: ApexAxisChartSeries = [{
-        name: 'Empleados',
-        data: [12, 8, 15, 6, 9, 4]
-    }];
-    barXAxis: ApexXAxis = this.chartDefaults.xAxis(['Ventas', 'Admin', 'Ops', 'TI', 'RRHH', 'Logística']);
+    barSeries: ApexAxisChartSeries = [{ name: 'Empleados', data: [] }];
+    barXAxis: ApexXAxis = this.chartDefaults.xAxis([]);
     barYAxis: ApexYAxis = { labels: { style: { colors: this.chartDefaults.textColor } } };
     barTooltip: ApexTooltip = { theme: 'dark', y: { formatter: (v: number) => v + ' personas' } };
     barPlot: ApexPlotOptions = this.chartDefaults.barPlotOptions(false, 8, '60%');
@@ -71,29 +66,39 @@ export class DashboardComponent implements OnInit {
     barFill = { colors: this.barColors, type: 'solid' };
 
     readonly accesosRapidos: AccesoRapido[] = [
-        { ruta: '/rrhh/employees',   titulo: 'Empleados',             descripcion: 'Gestionar nómina, contratos y datos personales',      color: CHART_COLORS[0] },
-        { ruta: '/rrhh/attendance',  titulo: 'Asistencia',            descripcion: 'Control de marcaciones, tardanzas y horas extras',    color: CHART_COLORS[2] },
-        { ruta: '/rrhh/vacations',   titulo: 'Vacaciones y Licencias',descripcion: 'Solicitudes, aprobaciones y saldo de días',            color: CHART_COLORS[1] },
-        { ruta: '/rrhh/payroll',     titulo: 'Planilla Remunerativa', descripcion: 'AFP, ONP, renta 5ta, ESSALUD y boletas de pago',      color: CHART_COLORS[5] },
-        { ruta: '/rrhh/evaluations', titulo: 'Evaluaciones',          descripcion: 'Seguimiento por período y competencias',              color: CHART_COLORS[3] },
-        { ruta: '/rrhh/trainings',   titulo: 'Capacitaciones',        descripcion: 'Plan anual de formación y desarrollo',                color: CHART_COLORS[4] },
+        { ruta: '/rrhh/employees',    titulo: 'Empleados',             descripcion: 'Gestionar nómina, contratos y datos personales',      color: CHART_COLORS[0] },
+        { ruta: '/rrhh/departments',  titulo: 'Departamentos',         descripcion: 'Estructura organizacional y jerarquía de áreas',     color: CHART_COLORS[1] },
+        { ruta: '/rrhh/positions',    titulo: 'Puestos',               descripcion: 'Cargos, requisitos y rangos salariales',             color: CHART_COLORS[3] },
+        { ruta: '/rrhh/attendance',   titulo: 'Asistencia',            descripcion: 'Control de marcaciones, tardanzas y horas extras',    color: CHART_COLORS[2] },
+        { ruta: '/rrhh/vacations',    titulo: 'Vacaciones y Licencias',descripcion: 'Solicitudes, aprobaciones y saldo de días',            color: CHART_COLORS[1] },
+        { ruta: '/rrhh/payroll',      titulo: 'Planilla Remunerativa', descripcion: 'AFP, ONP, renta 5ta, ESSALUD y boletas de pago',      color: CHART_COLORS[5] },
+        { ruta: '/rrhh/contracts',    titulo: 'Contratos',             descripcion: 'Gestión de contratos laborales y renovaciones',       color: CHART_COLORS[4] },
+        { ruta: '/rrhh/evaluations',  titulo: 'Evaluaciones',          descripcion: 'Seguimiento por período y competencias',              color: CHART_COLORS[3] },
+        { ruta: '/rrhh/trainings',    titulo: 'Capacitaciones',        descripcion: 'Plan anual de formación y desarrollo',                color: CHART_COLORS[4] },
+        { ruta: '/rrhh/analytics',    titulo: 'Analytics',             descripcion: 'Dashboard analítico con métricas de RRHH',            color: CHART_COLORS[5] },
     ];
 
     async ngOnInit(): Promise<void> {
         try {
-            await Promise.all([
-                this.employeeService.loadEmployees(),
-                this.vacationService.loadVacations()
-            ]);
-            this.totalEmployees.set(this.employeeService.totalEmployees());
-            this.activeEmployees.set(this.employeeService.activeEmployees().length);
-            const vacations = this.vacationService.vacations();
-            this.pendingVacations.set(vacations.filter(v => v.estado === 'SOLICITADO').length);
+            await this.analyticsService.loadDashboard();
+            const data = this.analyticsService.analytics();
+            if (data) {
+                this.totalEmployees.set(data.totalEmployees);
+                this.activeEmployees.set(data.activeEmployees);
+                this.attendanceToday.set(data.todayAttendance);
+                this.pendingVacations.set(data.pendingVacationRequests);
+                this.upcomingEvaluations.set(data.pendingEvaluations);
+                this.radialSeries = [data.attendanceRate];
 
-            /* Actualizar radial con datos reales */
-            this.radialSeries = [this.asistenciaPct()];
+                // Update bar chart with real department data
+                const deptNames = Object.keys(data.headcountByDepartment);
+                const deptValues = Object.values(data.headcountByDepartment);
+                if (deptNames.length > 0) {
+                    this.barSeries = [{ name: 'Empleados', data: deptValues }];
+                    this.barXAxis = this.chartDefaults.xAxis(deptNames);
+                }
+            }
         } catch {
-            /* servicios no disponibles — mock data */
             this.totalEmployees.set(54);
             this.activeEmployees.set(51);
             this.attendanceToday.set(48);

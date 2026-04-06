@@ -12,6 +12,7 @@ import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.compo
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { DateInputComponent } from '@shared/ui/forms/date-input/date-input.component';
+import { Router } from '@angular/router';
 
 @Component({
     selector: 'app-employee-list',
@@ -32,6 +33,7 @@ import { DateInputComponent } from '@shared/ui/forms/date-input/date-input.compo
 export class EmployeeListComponent implements OnInit {
     private readonly employeeService = inject(EmployeeService);
     private readonly fb = inject(FormBuilder);
+    private readonly router = inject(Router);
 
     // ── Data ─────────────────────────────────────────────────────────────────
     readonly loading   = this.employeeService.loading;
@@ -94,8 +96,8 @@ export class EmployeeListComponent implements OnInit {
             render: r => `${r.nombres} ${r.apellidos}`
         },
         { key: 'documentoIdentidad', label: 'DNI/Doc', width: '110px' },
-        { key: 'cargo',  label: 'Cargo',  render: r => r.cargo  ?? '—' },
-        { key: 'area',   label: 'Área',   render: r => r.area   ?? '—' },
+        { key: 'departmentName', label: 'Departamento', render: r => r.departmentName ?? r.area ?? '—' },
+        { key: 'positionName',   label: 'Puesto',       render: r => r.positionName ?? r.cargo ?? '—' },
         {
             key: 'estado', label: 'Estado', html: true,
             render: r => `<span class="badge badge-${this.badgeEstado(r.estado)}">${r.estado}</span>`
@@ -103,6 +105,10 @@ export class EmployeeListComponent implements OnInit {
     ];
 
     actions: TableAction<Employee>[] = [
+        {
+            label: 'Ver', icon: '👁', class: 'btn-view',
+            onClick: row => this.router.navigate(['/admin/rrhh/employees', row.id, 'detail']),
+        },
         {
             label: 'Editar', icon: '✏️', class: 'btn-view',
             onClick: row => this.openEditModal(row),

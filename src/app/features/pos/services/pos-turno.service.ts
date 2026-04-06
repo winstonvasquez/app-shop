@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable, catchError, of } from 'rxjs';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { TurnoCaja, TurnoCajaApertura } from '../models/turno-caja.model';
+import { ReporteXZ } from '../components/pos-report-viewer/pos-report-viewer.component';
 import { environment } from '@env/environment';
 
 @Injectable({ providedIn: 'root' })
@@ -30,5 +31,17 @@ export class PosTurnoService {
 
     getResumenTurno(turnoId: number): Observable<TurnoCaja> {
         return this.http.get<TurnoCaja>(`${this.baseUrl}/${turnoId}/resumen`);
+    }
+
+    cerrarTurnoConArqueo(turnoId: number, data: unknown): Observable<TurnoCaja> {
+        return this.http.post<TurnoCaja>(`${this.baseUrl}/${turnoId}/cerrar-arqueo`, data);
+    }
+
+    getReporteX(turnoId: number): Observable<ReporteXZ> {
+        return this.http.get<ReporteXZ>(`${this.baseUrl}/${turnoId}/reporte-x`);
+    }
+
+    getReporteZ(turnoId: number): Observable<ReporteXZ> {
+        return this.http.get<ReporteXZ>(`${this.baseUrl}/${turnoId}/reporte-z`);
     }
 }

@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, signal, computed, ChangeDetectionStrategy, OnInit } from '@angular/core';
 import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { DataTableComponent, TableColumn, TableAction } from '@shared/ui/tables/data-table/data-table.component';
@@ -7,28 +7,15 @@ import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.compo
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { DateInputComponent } from '@shared/ui/forms/date-input/date-input.component';
-
-type EstadoEval = 'PENDIENTE' | 'EN_PROCESO' | 'COMPLETADA' | 'CANCELADA';
-
-interface Evaluacion {
-    id: number;
-    empleadoNombre: string;
-    evaluadorNombre: string;
-    periodo: string;
-    competencias: string;
-    puntaje?: number;
-    estado: EstadoEval;
-    fechaProgramada: string;
-    comentarios?: string;
-}
-
-const DEMO_EVALUACIONES: Evaluacion[] = [
-    { id: 1, empleadoNombre: 'Ana García López',    evaluadorNombre: 'Roberto Díaz',  periodo: '2026-Q1', competencias: 'Liderazgo, Comunicación, Trabajo en equipo', puntaje: 4, estado: 'COMPLETADA',  fechaProgramada: '2026-03-15' },
-    { id: 2, empleadoNombre: 'Carlos Mendoza Ríos', evaluadorNombre: 'María Torres',  periodo: '2026-Q1', competencias: 'Productividad, Calidad, Iniciativa',           puntaje: 5, estado: 'COMPLETADA',  fechaProgramada: '2026-03-18' },
-    { id: 3, empleadoNombre: 'Luis Vargas Huamán',  evaluadorNombre: 'Roberto Díaz',  periodo: '2026-Q2', competencias: 'Liderazgo, Gestión de proyectos',                           estado: 'EN_PROCESO',  fechaProgramada: '2026-04-10' },
-    { id: 4, empleadoNombre: 'Patricia Soto Flores',evaluadorNombre: 'José Ramírez',  periodo: '2026-Q2', competencias: 'Atención al cliente, Comunicación',                          estado: 'PENDIENTE',   fechaProgramada: '2026-04-20' },
-    { id: 5, empleadoNombre: 'Miguel Herrera Castro',evaluadorNombre:'María Torres',  periodo: '2026-Q2', competencias: 'Productividad, Calidad, Innovación',                         estado: 'PENDIENTE',   fechaProgramada: '2026-04-25' },
-];
+import { EvaluationService } from '../../services/evaluation.service';
+import { EmployeeService } from '../../services/employee.service';
+import {
+    Evaluation,
+    EvaluationStatus,
+    EVALUATION_STATUS_LABELS,
+    EVALUATION_TYPE_LABELS,
+    EvaluationType,
+} from '../../models/evaluation.model';
 
 @Component({
     selector: 'app-evaluation-list',
@@ -46,99 +33,141 @@ const DEMO_EVALUACIONES: Evaluacion[] = [
     ],
     templateUrl: './evaluation-list.component.html',
 })
-export class EvaluationListComponent {
+export class EvaluationListComponent implements OnInit {
     private readonly fb = inject(FormBuilder);
+    private readonly evaluationService = inject(EvaluationService);
+    private readonly employeeService = inject(EmployeeService);
 
-    // ── Data ─────────────────────────────────────────────────────────────────
-    evaluaciones = signal<Evaluacion[]>(DEMO_EVALUACIONES);
+    readonly evaluations = this.evaluationService.evaluations;
+    readonly loading = this.evaluationService.loading;
 
-    // ── UI state ──────────────────────────────────────────────────────────────
-    showModal   = signal(false);
-    submitting  = signal(false);
+    showDrawer = signal(false);
+    editMode = signal(false);
+    selectedId = signal<number | null>(null);
+    submitting = signal(false);
     submitError = signal<string | null>(null);
 
-    // ── Filters ───────────────────────────────────────────────────────────────
     filtroEstado = signal('');
-
-    // ── Pagination ────────────────────────────────────────────────────────────
+    filtroTipo = signal('');
     currentPage = signal(0);
-    pageSize    = signal(10);
+    pageSize = signal(10);
 
-    // ── Computed ──────────────────────────────────────────────────────────────
-    readonly evaluacionesFiltradas = computed(() => {
-        const f = this.filtroEstado();
-        return f ? this.evaluaciones().filter(e => e.estado === f) : this.evaluaciones();
+    readonly filtered = computed(() => {
+        let list = this.evaluations();
+        const estado = this.filtroEstado();
+        const tipo = this.filtroTipo();
+        if (estado) list = list.filter(e => e.estado === estado);
+        if (tipo) list = list.filter(e => e.tipoEvaluacion === tipo);
+        return list;
     });
 
-    readonly totalElements = computed(() => this.evaluacionesFiltradas().length);
-    readonly totalPages    = computed(() => Math.ceil(this.totalElements() / this.pageSize()) || 1);
-
+    readonly totalElements = computed(() => this.filtered().length);
+    readonly totalPages = computed(() => Math.ceil(this.totalElements() / this.pageSize()) || 1);
     readonly pagedData = computed(() => {
         const start = this.currentPage() * this.pageSize();
-        return this.evaluacionesFiltradas().slice(start, start + this.pageSize());
+        return this.filtered().slice(start, start + this.pageSize());
     });
 
-    readonly pendientes   = computed(() => this.evaluaciones().filter(e => e.estado === 'PENDIENTE' || e.estado === 'EN_PROCESO').length);
-    readonly completadas  = computed(() => this.evaluaciones().filter(e => e.estado === 'COMPLETADA').length);
+    readonly borradores = computed(() => this.evaluations().filter(e => e.estado === 'BORRADOR').length);
+    readonly completadas = computed(() => this.evaluations().filter(e => e.estado === 'COMPLETADA' || e.estado === 'APROBADA').length);
 
-    // ── Breadcrumbs ───────────────────────────────────────────────────────────
     breadcrumbs: Breadcrumb[] = [
         { label: 'Admin', url: '/admin' },
-        { label: 'RRHH',  url: '/admin/rrhh/dashboard' },
+        { label: 'RRHH', url: '/admin/rrhh/dashboard' },
         { label: 'Evaluaciones' },
     ];
 
-    // ── Options ───────────────────────────────────────────────────────────────
     readonly estadoOptions = [
-        { value: 'PENDIENTE',  label: 'Pendiente'  },
-        { value: 'EN_PROCESO', label: 'En Proceso' },
+        { value: 'BORRADOR', label: 'Borrador' },
         { value: 'COMPLETADA', label: 'Completada' },
-        { value: 'CANCELADA',  label: 'Cancelada'  },
+        { value: 'APROBADA', label: 'Aprobada' },
+        { value: 'CANCELADA', label: 'Cancelada' },
     ];
 
-    // ── Columns ───────────────────────────────────────────────────────────────
-    columns: TableColumn<Evaluacion>[] = [
-        { key: 'empleadoNombre',  label: 'Empleado'   },
-        { key: 'evaluadorNombre', label: 'Evaluador'  },
-        { key: 'periodo',         label: 'Período'    },
-        { key: 'competencias',    label: 'Competencias' },
+    readonly tipoOptions = [
+        { value: 'ANUAL', label: 'Anual' },
+        { value: 'SEMESTRAL', label: 'Semestral' },
+        { value: 'TRIMESTRAL', label: 'Trimestral' },
+        { value: 'PERIODO_PRUEBA', label: 'Periodo de Prueba' },
+        { value: 'PROMOCION', label: 'Promoción' },
+    ];
+
+    columns: TableColumn<Evaluation>[] = [
         {
-            key: 'fechaProgramada', label: 'Programada',
-            render: row => new Date(row.fechaProgramada + 'T00:00').toLocaleDateString('es-PE')
+            key: 'employeeName', label: 'Empleado',
+            render: row => row.employeeName || `Emp #${row.employeeId}`
+        },
+        {
+            key: 'evaluadorName', label: 'Evaluador',
+            render: row => row.evaluadorName || `Emp #${row.evaluadorId}`
+        },
+        { key: 'periodo', label: 'Período' },
+        {
+            key: 'tipoEvaluacion', label: 'Tipo',
+            render: row => EVALUATION_TYPE_LABELS[row.tipoEvaluacion] || row.tipoEvaluacion
+        },
+        {
+            key: 'fechaEvaluacion', label: 'Fecha',
+            render: row => new Date(row.fechaEvaluacion + 'T00:00').toLocaleDateString('es-PE')
         },
         {
             key: 'puntaje', label: 'Puntaje', align: 'center', html: true,
-            render: row => row.puntaje
-                ? `<span class="badge badge-${this.badgePuntaje(row.puntaje)}">${row.puntaje}/5</span>`
-                : '<span style="color:var(--color-text-muted)">—</span>'
+            render: row => `<span class="badge badge-${this.badgePuntaje(row.puntaje)}">${row.puntaje}/100</span>`
         },
         {
             key: 'estado', label: 'Estado', html: true,
-            render: row => `<span class="badge badge-${this.badgeEval(row.estado)}">${row.estado}</span>`
+            render: row => `<span class="badge badge-${this.badgeEstado(row.estado)}">${EVALUATION_STATUS_LABELS[row.estado]}</span>`
         },
     ];
 
-    actions: TableAction<Evaluacion>[] = [
+    actions: TableAction<Evaluation>[] = [
+        {
+            label: 'Editar', icon: '✎', class: 'btn-view',
+            show: row => row.estado === 'BORRADOR',
+            onClick: row => this.openEdit(row),
+        },
         {
             label: 'Completar', icon: '✓', class: 'btn-view',
-            show: row => row.estado === 'PENDIENTE' || row.estado === 'EN_PROCESO',
-            onClick: row => this.completarEvaluacion(row),
+            show: row => row.estado === 'BORRADOR',
+            onClick: row => this.complete(row),
+        },
+        {
+            label: 'Aprobar', icon: '✓', class: 'btn-view',
+            show: row => row.estado === 'COMPLETADA',
+            onClick: row => this.approve(row),
+        },
+        {
+            label: 'Cancelar', icon: '✕', class: 'btn-icon-delete',
+            show: row => row.estado !== 'CANCELADA' && row.estado !== 'APROBADA',
+            onClick: row => this.cancel(row),
         },
     ];
 
-    // ── Form ──────────────────────────────────────────────────────────────────
-    readonly evaluacionForm = this.fb.group({
-        empleadoNombre:  ['', Validators.required],
-        evaluadorNombre: ['', Validators.required],
-        periodo:         ['', Validators.required],
-        competencias:    [''],
-        fechaProgramada: ['', Validators.required],
-        comentarios:     [''],
+    readonly evaluationForm = this.fb.group({
+        employeeId: [null as number | null, Validators.required],
+        evaluadorId: [null as number | null, Validators.required],
+        periodo: ['', Validators.required],
+        tipoEvaluacion: ['ANUAL'],
+        puntaje: [0, [Validators.required, Validators.min(0), Validators.max(100)]],
+        fechaEvaluacion: ['', Validators.required],
+        comentarios: [''],
+        fortalezas: [''],
+        areasMejora: [''],
+        planMejora: [''],
     });
 
-    // ── Handlers ─────────────────────────────────────────────────────────────
+    ngOnInit(): void {
+        this.evaluationService.loadEvaluations();
+        this.employeeService.loadEmployees();
+    }
+
     onFilterEstado(event: Event): void {
         this.filtroEstado.set((event.target as HTMLSelectElement).value);
+        this.currentPage.set(0);
+    }
+
+    onFilterTipo(event: Event): void {
+        this.filtroTipo.set((event.target as HTMLSelectElement).value);
         this.currentPage.set(0);
     }
 
@@ -147,64 +176,102 @@ export class EvaluationListComponent {
         this.pageSize.set(event.size);
     }
 
-    openCreateModal(): void {
-        this.evaluacionForm.reset();
+    openCreate(): void {
+        this.evaluationForm.reset({ tipoEvaluacion: 'ANUAL', puntaje: 0 });
+        this.editMode.set(false);
+        this.selectedId.set(null);
         this.submitError.set(null);
-        this.showModal.set(true);
+        this.showDrawer.set(true);
     }
 
-    closeModal(): void {
-        this.showModal.set(false);
-        this.evaluacionForm.reset();
+    openEdit(ev: Evaluation): void {
+        this.evaluationForm.patchValue({
+            employeeId: ev.employeeId,
+            evaluadorId: ev.evaluadorId,
+            periodo: ev.periodo,
+            tipoEvaluacion: ev.tipoEvaluacion,
+            puntaje: ev.puntaje,
+            fechaEvaluacion: ev.fechaEvaluacion,
+            comentarios: ev.comentarios || '',
+            fortalezas: ev.fortalezas || '',
+            areasMejora: ev.areasMejora || '',
+            planMejora: ev.planMejora || '',
+        });
+        this.editMode.set(true);
+        this.selectedId.set(ev.id);
+        this.submitError.set(null);
+        this.showDrawer.set(true);
     }
 
-    guardar(): void {
-        if (this.evaluacionForm.invalid) {
-            this.evaluacionForm.markAllAsTouched();
+    closeDrawer(): void {
+        this.showDrawer.set(false);
+        this.evaluationForm.reset();
+    }
+
+    async guardar(): Promise<void> {
+        if (this.evaluationForm.invalid) {
+            this.evaluationForm.markAllAsTouched();
             return;
         }
-        const val = this.evaluacionForm.value;
-        const nueva: Evaluacion = {
-            id:              Date.now(),
-            empleadoNombre:  val.empleadoNombre!,
-            evaluadorNombre: val.evaluadorNombre || 'Sin asignar',
-            periodo:         val.periodo!,
-            competencias:    val.competencias || 'General',
-            estado:          'PENDIENTE',
-            fechaProgramada: val.fechaProgramada!,
-            comentarios:     val.comentarios ?? undefined,
-        };
-        this.evaluaciones.update(list => [...list, nueva]);
-        this.closeModal();
+        this.submitting.set(true);
+        this.submitError.set(null);
+        try {
+            const val = this.evaluationForm.value;
+            const request = {
+                employeeId: val.employeeId!,
+                evaluadorId: val.evaluadorId!,
+                periodo: val.periodo!,
+                tipoEvaluacion: val.tipoEvaluacion || 'ANUAL',
+                puntaje: val.puntaje!,
+                fechaEvaluacion: val.fechaEvaluacion!,
+                comentarios: val.comentarios || undefined,
+                fortalezas: val.fortalezas || undefined,
+                areasMejora: val.areasMejora || undefined,
+                planMejora: val.planMejora || undefined,
+            };
+            if (this.editMode() && this.selectedId()) {
+                await this.evaluationService.updateEvaluation(this.selectedId()!, request);
+            } else {
+                await this.evaluationService.createEvaluation(request);
+            }
+            this.closeDrawer();
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : 'Error al guardar evaluación';
+            this.submitError.set(message);
+        } finally {
+            this.submitting.set(false);
+        }
     }
 
-    completarEvaluacion(ev: Evaluacion): void {
-        const puntaje = prompt(`Puntaje para "${ev.empleadoNombre}" (1-5):`);
-        if (!puntaje) return;
-        const num = parseInt(puntaje, 10);
-        if (isNaN(num) || num < 1 || num > 5) { alert('Puntaje debe ser entre 1 y 5'); return; }
-        this.evaluaciones.update(list =>
-            list.map(e => e.id === ev.id ? { ...e, estado: 'COMPLETADA' as EstadoEval, puntaje: num } : e)
-        );
+    async complete(ev: Evaluation): Promise<void> {
+        await this.evaluationService.completeEvaluation(ev.id);
+    }
+
+    async approve(ev: Evaluation): Promise<void> {
+        await this.evaluationService.approveEvaluation(ev.id);
+    }
+
+    async cancel(ev: Evaluation): Promise<void> {
+        await this.evaluationService.cancelEvaluation(ev.id);
     }
 
     getControl(name: string): FormControl {
-        return this.evaluacionForm.get(name) as FormControl;
+        return this.evaluationForm.get(name) as FormControl;
     }
 
-    badgeEval(estado: EstadoEval): string {
-        const map: Record<EstadoEval, string> = {
-            PENDIENTE:  'warning',
-            EN_PROCESO: 'accent',
-            COMPLETADA: 'success',
-            CANCELADA:  'neutral',
+    badgeEstado(estado: EvaluationStatus): string {
+        const map: Record<EvaluationStatus, string> = {
+            BORRADOR: 'warning',
+            COMPLETADA: 'accent',
+            APROBADA: 'success',
+            CANCELADA: 'neutral',
         };
         return map[estado] ?? 'neutral';
     }
 
     badgePuntaje(p: number): string {
-        if (p >= 4) return 'success';
-        if (p >= 3) return 'warning';
+        if (p >= 80) return 'success';
+        if (p >= 60) return 'warning';
         return 'error';
     }
 }

@@ -1,0 +1,219 @@
+<app-page-header
+    title="Contratos"
+    subtitle="Gestión de contratos laborales"
+    [breadcrumbs]="breadcrumbs">
+    <div actions>
+        <button class="btn btn-primary" (click)="openCreateModal()">
+            + Nuevo Contrato
+        </button>
+    </div>
+</app-page-header>
+
+@if (error()) {
+    <app-alert type="error" [message]="error()!" />
+}
+
+@if (expiringCount() > 0) {
+    <app-alert type="warning"
+        [message]="expiringCount() + ' contrato(s) por vencer en los próximos 30 días'" />
+}
+
+<!-- Filtros -->
+<div class="filters-bar">
+    <div class="search-box">
+        <svg class="search-box-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z" clip-rule="evenodd" />
+        </svg>
+        <input
+            type="text"
+            placeholder="Buscar por empleado..."
+            [value]="searchQuery()"
+            (input)="onSearch($event)" />
+    </div>
+
+    <select class="input-field" style="width: auto; min-width: 160px"
+            [value]="filterStatus()"
+            (change)="onFilterStatus($event)">
+        <option value="">Todos los estados</option>
+        <option value="ACTIVO">Activo</option>
+        <option value="FINALIZADO">Finalizado</option>
+        <option value="SUSPENDIDO">Suspendido</option>
+        <option value="RENOVADO">Renovado</option>
+    </select>
+
+    <select class="input-field" style="width: auto; min-width: 160px"
+            [value]="filterType()"
+            (change)="onFilterType($event)">
+        <option value="">Todos los tipos</option>
+        <option value="INDEFINIDO">Indefinido</option>
+        <option value="PLAZO_FIJO">Plazo Fijo</option>
+        <option value="TEMPORAL">Temporal</option>
+        <option value="PRACTICAS">Prácticas</option>
+        <option value="LOCACION_SERVICIOS">Locación de Servicios</option>
+    </select>
+</div>
+
+<!-- Tabla -->
+<app-data-table
+    [data]="pagedData()"
+    [columns]="columns"
+    [actions]="actions"
+    [loading]="loading()"
+    [exportable]="true"
+    exportFileName="contratos"
+    [hidePagination]="true" />
+
+<!-- Paginación -->
+@if (totalElements() > 0) {
+    <app-pagination
+        [currentPage]="currentPage()"
+        [totalPages]="totalPages()"
+        [totalElements]="totalElements()"
+        [pageSize]="pageSize()"
+        (pageChange)="onPaginationChange($event)" />
+}
+
+<!-- Drawer: Crear / Editar Contrato -->
+<app-drawer
+    [isOpen]="showModal()"
+    [title]="editMode() ? 'Editar Contrato' : 'Nuevo Contrato'"
+    size="lg"
+    [hasFooter]="true"
+    (closed)="closeModal()">
+
+    <form [formGroup]="contractForm" (ngSubmit)="onSubmit()">
+
+        @if (submitError()) {
+            <app-alert type="error" [message]="submitError()!" />
+        }
+
+        <!-- Empleado -->
+        <div style="margin-bottom: var(--space-md)">
+            <label class="input-label">Empleado *</label>
+            <select class="input-field" formControlName="employeeId">
+                <option [ngValue]="null">— Seleccionar empleado —</option>
+                @for (emp of employees(); track emp.id) {
+                    <option [ngValue]="emp.id">{{ emp.nombres }} {{ emp.apellidos }} ({{ emp.codigoEmpleado }})</option>
+                }
+            </select>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md)">
+            <!-- Tipo de contrato -->
+            <div>
+                <label class="input-label">Tipo de Contrato *</label>
+                <select class="input-field" formControlName="tipoContrato">
+                    <option [ngValue]="null">— Seleccionar —</option>
+                    @for (type of contractTypes; track type.value) {
+                        <option [value]="type.value">{{ type.label }}</option>
+                    }
+                </select>
+            </div>
+
+            <!-- Jornada laboral -->
+            <div>
+                <label class="input-label">Jornada Laboral *</label>
+                <select class="input-field" formControlName="jornadaLaboral">
+                    <option [ngValue]="null">— Seleccionar —</option>
+                    @for (wd of workingDays; track wd.value) {
+                        <option [value]="wd.value">{{ wd.label }}</option>
+                    }
+                </select>
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md); margin-top: var(--space-md)">
+            <app-form-field
+                label="Fecha Inicio"
+                type="date"
+                [control]="getControl('fechaInicio')"
+                [required]="true" />
+
+            <app-form-field
+                label="Fecha Fin"
+                type="date"
+                [control]="getControl('fechaFin')" />
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--space-md); margin-top: var(--space-md)">
+            <app-form-field
+                label="Salario Base"
+                type="number"
+                [control]="getControl('salarioBase')"
+                placeholder="0.00"
+                [required]="true" />
+
+            <div>
+                <label class="input-label">Moneda</label>
+                <select class="input-field" formControlName="moneda">
+                    <option value="PEN">S/ Soles</option>
+                    <option value="USD">$ Dólares</option>
+                </select>
+            </div>
+
+            <app-form-field
+                label="Horas Semanales"
+                type="number"
+                [control]="getControl('horasSemanales')"
+                placeholder="48"
+                [required]="true" />
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md); margin-top: var(--space-md)">
+            <app-form-field
+                label="Periodo Prueba (meses)"
+                type="number"
+                [control]="getControl('periodoPruebaMeses')"
+                placeholder="3" />
+
+            <app-form-field
+                label="URL Documento"
+                [control]="getControl('documentoContratoUrl')"
+                placeholder="https://..." />
+        </div>
+
+    </form>
+
+    <div slot="footer" style="display: flex; justify-content: flex-end; gap: var(--space-sm)">
+        <button class="btn btn-secondary" type="button" (click)="closeModal()">
+            Cancelar
+        </button>
+        <button class="btn btn-primary" type="button"
+                [disabled]="submitting()"
+                (click)="onSubmit()">
+            {{ submitting() ? 'Guardando...' : (editMode() ? 'Actualizar' : 'Crear Contrato') }}
+        </button>
+    </div>
+
+</app-drawer>
+
+<!-- Drawer: Finalizar Contrato -->
+<app-drawer
+    [isOpen]="showTerminateModal()"
+    title="Finalizar Contrato"
+    size="sm"
+    [hasFooter]="true"
+    (closed)="closeTerminateModal()">
+
+    <p style="color: var(--color-text-muted); margin-bottom: var(--space-md)">
+        ¿Está seguro de finalizar este contrato? Ingrese el motivo de finalización:
+    </p>
+
+    <app-form-field
+        label="Motivo de Finalización"
+        [control]="terminateMotivo"
+        placeholder="Ej: Renuncia voluntaria, término de contrato..."
+        [required]="true" />
+
+    <div slot="footer" style="display: flex; justify-content: flex-end; gap: var(--space-sm)">
+        <button class="btn btn-secondary" type="button" (click)="closeTerminateModal()">
+            Cancelar
+        </button>
+        <button class="btn btn-danger" type="button"
+                [disabled]="submitting()"
+                (click)="onTerminate()">
+            {{ submitting() ? 'Procesando...' : 'Finalizar Contrato' }}
+        </button>
+    </div>
+
+</app-drawer>

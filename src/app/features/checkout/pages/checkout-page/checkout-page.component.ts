@@ -11,6 +11,7 @@ import { AuthService } from '@core/auth/auth.service';
 import { AddressService, Address, AddressInput } from '@core/services/address/address.service';
 import { MercadoPagoService, CardData, YapeIntentResult } from '@core/services/payment/mercadopago.service';
 import { CreditService } from '@core/services/credit.service';
+import { AnalyticsService } from '@core/services/analytics.service';
 import { FormsModule, ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { finalize } from 'rxjs/operators';
 
@@ -31,6 +32,7 @@ export class CheckoutPageComponent implements OnInit {
   addressService = inject(AddressService);
   mercadopagoService = inject(MercadoPagoService);
   creditService = inject(CreditService);
+  analyticsService = inject(AnalyticsService);
   fb = inject(FormBuilder);
 
   cartItems = this.cartService.cartItems;
@@ -112,6 +114,7 @@ export class CheckoutPageComponent implements OnInit {
     this.configService.getCertificaciones().subscribe(data => this.certifications.set(data));
     this.loadAddresses();
     this.creditService.loadBalance();
+    this.analyticsService.trackBeginCheckout(this.cartTotal(), this.cartItems().length);
   }
 
   toggleCredit(checked: boolean): void {
@@ -349,6 +352,7 @@ export class CheckoutPageComponent implements OnInit {
       usuarioId: this.userId(),
       detalles: this.cartItems().map(item => ({
         productoId: item.productId,
+        varianteId: item.variantId ?? 0,
         cantidad: item.quantity
       })),
       direccionEnvio: {
@@ -369,6 +373,7 @@ export class CheckoutPageComponent implements OnInit {
         this.isLoading.set(false);
         const res = response as { id?: number; orderId?: number };
         const orderId = res.id ?? res.orderId;
+        this.analyticsService.trackPurchase(String(orderId ?? ''), this.finalTotal());
         this.router.navigate(['/orders/confirmation', orderId]);
       },
       error: (err: unknown) => {

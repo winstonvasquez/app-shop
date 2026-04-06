@@ -1,3 +1,4 @@
+export * from './analytics.service';
 export * from './base-api.service';
 export * from './category.service';
 export * from './config.service';

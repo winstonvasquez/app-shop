@@ -1,5 +1,5 @@
 import { Injectable, signal, computed } from '@angular/core';
-import { CartItem, ProductoCatalogoPOS } from '../models/catalogo-pos.model';
+import { CartItem, DescuentoTipo, ProductoCatalogoPOS } from '../models/catalogo-pos.model';
 import { MetodoPagoPos, PagoMixto, TipoCpe } from '../models/venta-pos.model';
 
 @Injectable({ providedIn: 'root' })
@@ -65,6 +65,16 @@ export class PosCarritoService {
         return 'MIXTO';
     });
 
+    /** ICBPER total: bolsas × S/ 0.50 */
+    readonly totalIcbper = computed(() =>
+        this.items().reduce((sum, item) => sum + item.bolsas * 0.50, 0)
+    );
+
+    /** Total final incluyendo ICBPER */
+    readonly totalFinal = computed(() =>
+        this.totalConDescuento() + this.totalIcbper()
+    );
+
     readonly itemCount = computed(() =>
         this.items().reduce((sum, item) => sum + item.cantidad, 0)
     );
@@ -77,13 +87,19 @@ export class PosCarritoService {
         this.items.update(items => {
             const existing = items.find(i => i.variante.varianteId === variante.varianteId);
             if (existing) {
-                return items.map(i =>
-                    i.variante.varianteId === variante.varianteId
-                        ? { ...i, cantidad: i.cantidad + 1, subtotal: (i.cantidad + 1) * i.variante.precioFinal }
-                        : i
-                );
+                return items.map(i => {
+                    if (i.variante.varianteId !== variante.varianteId) return i;
+                    const newQty = i.cantidad + 1;
+                    const bruto = newQty * i.variante.precioFinal;
+                    return { ...i, cantidad: newQty, subtotal: bruto - i.descuentoMonto };
+                });
             }
-            return [...items, { variante, cantidad: 1, subtotal: variante.precioFinal }];
+            return [...items, {
+                variante, cantidad: 1, subtotal: variante.precioFinal,
+                descuentoTipo: 'NINGUNO' as DescuentoTipo,
+                descuentoValor: 0, descuentoMonto: 0, autorizadoPor: null,
+                bolsas: 0,
+            }];
         });
         // Feedback visual: marca el ID y luego lo limpia tras 600ms
         this.lastAddedId.set(variante.varianteId);
@@ -92,12 +108,11 @@ export class PosCarritoService {
 
     cambiarCantidad(varianteId: number, delta: number): void {
         this.items.update(items =>
-            items
-                .map(i => {
-                    if (i.variante.varianteId !== varianteId) return i;
-                    const newQty = Math.max(1, i.cantidad + delta);
-                    return { ...i, cantidad: newQty, subtotal: newQty * i.variante.precioFinal };
-                })
+            items.map(i => {
+                if (i.variante.varianteId !== varianteId) return i;
+                const newQty = Math.max(1, i.cantidad + delta);
+                return this.recalcSubtotal({ ...i, cantidad: newQty });
+            })
         );
     }
 
@@ -106,7 +121,7 @@ export class PosCarritoService {
         this.items.update(items =>
             items.map(i =>
                 i.variante.varianteId === varianteId
-                    ? { ...i, cantidad, subtotal: cantidad * i.variante.precioFinal }
+                    ? this.recalcSubtotal({ ...i, cantidad })
                     : i
             )
         );
@@ -155,6 +170,40 @@ export class PosCarritoService {
     quitarPago(index: number): void {
         if (this.pagos().length <= 2) return;
         this.pagos.update(list => list.filter((_, i) => i !== index));
+    }
+
+    setLineDiscount(varianteId: number, tipo: DescuentoTipo, valor: number, autorizadoPor: number | null = null): void {
+        this.items.update(items =>
+            items.map(i => {
+                if (i.variante.varianteId !== varianteId) return i;
+                return this.recalcSubtotal({ ...i, descuentoTipo: tipo, descuentoValor: valor, autorizadoPor });
+            })
+        );
+    }
+
+    clearLineDiscount(varianteId: number): void {
+        this.setLineDiscount(varianteId, 'NINGUNO', 0);
+    }
+
+    private recalcSubtotal(item: CartItem): CartItem {
+        const bruto = item.cantidad * item.variante.precioFinal;
+        let descMonto = 0;
+        if (item.descuentoTipo === 'PORCENTAJE') {
+            descMonto = Math.round(bruto * item.descuentoValor) / 100;
+        } else if (item.descuentoTipo === 'MONTO') {
+            descMonto = item.descuentoValor;
+        }
+        return { ...item, descuentoMonto: descMonto, subtotal: Math.max(0, bruto - descMonto) };
+    }
+
+    setBolsas(varianteId: number, bolsas: number): void {
+        this.items.update(items =>
+            items.map(i =>
+                i.variante.varianteId === varianteId
+                    ? { ...i, bolsas: Math.max(0, bolsas) }
+                    : i
+            )
+        );
     }
 
     setDescuento(valor: number): void { this.descuento.set(Math.max(0, valor)); }

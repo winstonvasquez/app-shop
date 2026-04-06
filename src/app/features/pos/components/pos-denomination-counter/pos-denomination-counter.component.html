@@ -1,0 +1,36 @@
+<div class="denom-panel">
+    <h3 class="text-base font-bold text-on mb-3">Conteo de Denominaciones</h3>
+    <p class="text-xs text-muted mb-4">Ingrese la cantidad de cada denominación contada</p>
+
+    <div class="denom-grid">
+        <div class="denom-section-label">Billetes</div>
+        @for (d of billetes; track d) {
+        <div class="denom-row">
+            <span class="denom-label">S/ {{ d }}</span>
+            <input type="number" min="0" class="denom-input" [value]="getCantidad(d)"
+                (input)="setCantidad(d, +$any($event.target).value)">
+            <span class="denom-subtotal">S/ {{ getSubtotal(d) }}</span>
+        </div>
+        }
+
+        <div class="denom-section-label">Monedas</div>
+        @for (d of monedas; track d) {
+        <div class="denom-row">
+            <span class="denom-label">S/ {{ d }}</span>
+            <input type="number" min="0" class="denom-input" [value]="getCantidad(d)"
+                (input)="setCantidad(d, +$any($event.target).value)">
+            <span class="denom-subtotal">S/ {{ getSubtotal(d) }}</span>
+        </div>
+        }
+    </div>
+
+    <div class="denom-total">
+        <span class="text-sm font-semibold text-on">Total Contado</span>
+        <span class="text-lg font-bold text-on">S/ {{ totalContado().toFixed(2) }}</span>
+    </div>
+
+    <div class="flex gap-2 mt-4">
+        <button class="btn-secondary flex-1" (click)="cancel.emit()">Cancelar</button>
+        <button class="btn-primary flex-1" (click)="onConfirm()">Confirmar Cierre</button>
+    </div>
+</div>

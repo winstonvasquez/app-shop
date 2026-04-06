@@ -6,6 +6,10 @@ import { PosCarritoService } from '../../services/pos-carrito.service';
 import { PosTurnoService } from '../../services/pos-turno.service';
 import { PosCatalogoService } from '../../services/pos-catalogo.service';
 import { PosVentaService } from '../../services/pos-venta.service';
+import { PosKeyboardService } from '../../services/pos-keyboard.service';
+import { PosFavoritosService, PosFavorito } from '../../services/pos-favoritos.service';
+import { PosOrdenesRetenidasService, OrdenRetenida } from '../../services/pos-ordenes-retenidas.service';
+import { PosMovimientosCajaService, MovimientoCaja, MovimientoCajaRequest } from '../../services/pos-movimientos-caja.service';
 import { AuthService } from '@core/auth/auth.service';
 import { ThemeService } from '@core/services/theme/theme';
 import { ProductoCatalogoPOS } from '../../models/catalogo-pos.model';
@@ -21,6 +25,13 @@ import { PosReceiptComponent } from '../../components/pos-receipt/pos-receipt.co
 import { PosHistorialComponent } from '../../components/pos-historial/pos-historial.component';
 import { PosTurnoComponent } from '../../components/pos-turno/pos-turno.component';
 import { PosDevolucionesComponent } from '../pos-devoluciones/pos-devoluciones.component';
+import { PosShortcutsHelpComponent } from '../../components/pos-shortcuts-help/pos-shortcuts-help.component';
+import { PosHeldOrdersPanelComponent } from '../../components/pos-held-orders-panel/pos-held-orders-panel.component';
+import { PosCashMovementDialogComponent } from '../../components/pos-cash-movement-dialog/pos-cash-movement-dialog.component';
+import { PosDenominationCounterComponent, CierreArqueoData } from '../../components/pos-denomination-counter/pos-denomination-counter.component';
+import { PosReportViewerComponent, ReporteXZ } from '../../components/pos-report-viewer/pos-report-viewer.component';
+import { PosCustomerLookupComponent } from '../../components/pos-customer-lookup/pos-customer-lookup.component';
+import { PosCameraScannerComponent } from '../../components/pos-camera-scanner/pos-camera-scanner.component';
 
 @Component({
     selector: 'app-pos-page',
@@ -34,6 +45,13 @@ import { PosDevolucionesComponent } from '../pos-devoluciones/pos-devoluciones.c
         PosHistorialComponent,
         PosTurnoComponent,
         PosDevolucionesComponent,
+        PosShortcutsHelpComponent,
+        PosHeldOrdersPanelComponent,
+        PosCashMovementDialogComponent,
+        PosDenominationCounterComponent,
+        PosReportViewerComponent,
+        PosCustomerLookupComponent,
+        PosCameraScannerComponent,
     ],
     templateUrl: './pos-page.component.html',
     // ViewEncapsulation.None hace que el CSS del módulo POS sea global,
@@ -45,11 +63,15 @@ export class PosPageComponent implements OnInit, OnDestroy {
 
     // ── DI ────────────────────────────────────────────────────────
     readonly carrito = inject(PosCarritoService);
+    readonly keyboard = inject(PosKeyboardService);
     private readonly auth = inject(AuthService);
     private readonly themeService = inject(ThemeService);
     private readonly turnoService = inject(PosTurnoService);
     private readonly catalogoService = inject(PosCatalogoService);
     private readonly ventaService = inject(PosVentaService);
+    private readonly favoritosService = inject(PosFavoritosService);
+    private readonly ordenesRetenidasService = inject(PosOrdenesRetenidasService);
+    private readonly movimientosCajaService = inject(PosMovimientosCajaService);
 
     // ── UI State ──────────────────────────────────────────────────
     readonly activeScreen = signal<PosScreen>('main');
@@ -63,6 +85,14 @@ export class PosPageComponent implements OnInit, OnDestroy {
     readonly toastMsg = signal('');
     readonly toastVisible = signal(false);
     readonly toastType = signal<'info' | 'error' | 'success'>('info');
+    readonly favoritoItems = signal<PosFavorito[]>([]);
+    readonly favoritosLoading = signal(false);
+    readonly ordenesRetenidas = signal<OrdenRetenida[]>([]);
+    readonly movimientosCaja = signal<MovimientoCaja[]>([]);
+    readonly showCashMovementDialog = signal(false);
+    readonly showDenominationCounter = signal(false);
+    readonly currentReporte = signal<ReporteXZ | null>(null);
+    readonly showCameraScanner = signal(false);
 
     // ── Derivados ─────────────────────────────────────────────────
     readonly sinTurno = computed(() => this.turnoActivo() === null);
@@ -72,19 +102,23 @@ export class PosPageComponent implements OnInit, OnDestroy {
     readonly clockDate = signal('');
     private clockInterval?: ReturnType<typeof setInterval>;
     private toastTimeout?: ReturnType<typeof setTimeout>;
+    private unregisterKeyboard?: () => void;
 
     // ── Lifecycle ─────────────────────────────────────────────────
     ngOnInit(): void {
         this.themeService.setContext('pos');
         this.startClock();
         this.loadCatalogo();
+        this.loadFavoritos();
         this.loadTurnoActivo();
+        this.registerKeyboardShortcuts();
     }
 
     ngOnDestroy(): void {
         this.themeService.setContext('shop');
         clearInterval(this.clockInterval);
         clearTimeout(this.toastTimeout);
+        this.unregisterKeyboard?.();
     }
 
     // ── Helpers privados ──────────────────────────────────────────
@@ -143,6 +177,198 @@ export class PosPageComponent implements OnInit, OnDestroy {
         });
     }
 
+    // ── Favoritos ──────────────────────────────────────────────────
+    private loadFavoritos(): void {
+        this.favoritosLoading.set(true);
+        this.favoritosService.getFavoritos(this.companyId, this.cajeroId).subscribe({
+            next: favs => {
+                this.favoritoItems.set(favs);
+                this.favoritosLoading.set(false);
+            },
+            error: () => this.favoritosLoading.set(false),
+        });
+    }
+
+    addFavorito(p: ProductoCatalogoPOS): void {
+        this.favoritosService.crear({
+            companyId: this.companyId,
+            varianteId: p.varianteId,
+            cajeroId: this.cajeroId,
+        }).subscribe({
+            next: fav => {
+                this.favoritoItems.update(list => [...list, fav]);
+                this.showToast(`${p.nombre} agregado a favoritos`, 'success');
+            },
+            error: () => this.showToast('Error al agregar favorito', 'error'),
+        });
+    }
+
+    removeFavorito(fav: PosFavorito): void {
+        this.favoritosService.eliminar(fav.id).subscribe({
+            next: () => {
+                this.favoritoItems.update(list => list.filter(f => f.id !== fav.id));
+                this.showToast(`${fav.nombre} quitado de favoritos`, 'info');
+            },
+            error: () => this.showToast('Error al quitar favorito', 'error'),
+        });
+    }
+
+    onFavoritoSelected(fav: PosFavorito): void {
+        // Convert favorito to catalog product and add to cart
+        const producto: ProductoCatalogoPOS = {
+            varianteId: fav.varianteId,
+            sku: fav.sku,
+            nombre: fav.nombre,
+            nombreProducto: fav.nombre,
+            categoriaId: '',
+            categoria: '',
+            precioBase: fav.precioFinal,
+            precioAjuste: 0,
+            precioFinal: fav.precioFinal,
+            stockActual: fav.stockActual,
+            stockMinimo: 0,
+            imagenUrl: fav.imagenUrl ?? undefined,
+        };
+        this.carrito.agregarProducto(producto);
+    }
+
+    // ── Órdenes Retenidas (Hold/Park) ──────────────────────────────
+    loadOrdenesRetenidas(): void {
+        const turno = this.turnoActivo();
+        if (!turno) return;
+        this.ordenesRetenidasService.getRetenidas(turno.id).subscribe({
+            next: ordenes => this.ordenesRetenidas.set(ordenes),
+        });
+    }
+
+    holdOrder(nombre?: string): void {
+        const turno = this.turnoActivo();
+        if (!turno || this.carrito.isEmpty()) {
+            this.showToast('No hay items para retener', 'error');
+            return;
+        }
+        const itemsJson = JSON.stringify(this.carrito.items());
+        this.ordenesRetenidasService.retener({
+            turnoCajaId: turno.id,
+            nombre: nombre ?? `Orden ${new Date().toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' })}`,
+            itemsJson,
+            descuento: this.carrito.descuento(),
+            clienteId: this.carrito.clienteId() ?? undefined,
+            clienteNombre: this.carrito.clienteNombre() || undefined,
+            metodoPago: this.carrito.metodoPago(),
+        }).subscribe({
+            next: () => {
+                this.carrito.vaciarCarrito();
+                this.loadOrdenesRetenidas();
+                this.showToast('Orden retenida', 'success');
+            },
+            error: () => this.showToast('Error al retener orden', 'error'),
+        });
+    }
+
+    restoreOrder(orden: OrdenRetenida): void {
+        this.ordenesRetenidasService.recuperar(orden.id).subscribe({
+            next: recovered => {
+                try {
+                    const items = JSON.parse(recovered.itemsJson);
+                    this.carrito.vaciarCarrito();
+                    for (const item of items) {
+                        if (item.variante) {
+                            this.carrito.agregarProducto(item.variante);
+                            if (item.cantidad > 1) {
+                                this.carrito.setCantidad(item.variante.varianteId, item.cantidad);
+                            }
+                        }
+                    }
+                    if (recovered.descuento) this.carrito.setDescuento(recovered.descuento);
+                    if (recovered.clienteNombre) this.carrito.setCliente(recovered.clienteId, recovered.clienteNombre);
+                } catch { /* ignore parse errors */ }
+                this.loadOrdenesRetenidas();
+                this.showScreen('main');
+                this.showToast('Orden recuperada', 'success');
+            },
+            error: () => this.showToast('Error al recuperar orden', 'error'),
+        });
+    }
+
+    discardOrder(orden: OrdenRetenida): void {
+        this.ordenesRetenidasService.descartar(orden.id).subscribe({
+            next: () => {
+                this.ordenesRetenidas.update(list => list.filter(o => o.id !== orden.id));
+                this.showToast('Orden descartada', 'info');
+            },
+            error: () => this.showToast('Error al descartar orden', 'error'),
+        });
+    }
+
+    // ── Movimientos de Caja ──────────────────────────────────────
+    loadMovimientos(): void {
+        const turno = this.turnoActivo();
+        if (!turno) return;
+        this.movimientosCajaService.getMovimientos(turno.id).subscribe({
+            next: movs => this.movimientosCaja.set(movs),
+        });
+    }
+
+    registrarMovimiento(dto: MovimientoCajaRequest): void {
+        const turno = this.turnoActivo();
+        if (!turno) return;
+        this.movimientosCajaService.registrar(turno.id, dto).subscribe({
+            next: () => {
+                this.showCashMovementDialog.set(false);
+                this.loadMovimientos();
+                this.showToast(`${dto.tipo === 'INGRESO' ? 'Ingreso' : 'Retiro'} registrado: S/${dto.monto.toFixed(2)}`, 'success');
+            },
+            error: () => this.showToast('Error al registrar movimiento', 'error'),
+        });
+    }
+
+    // ── Cierre con Arqueo ─────────────────────────────────────────
+    cerrarTurnoConArqueo(data: CierreArqueoData): void {
+        const turno = this.turnoActivo();
+        if (!turno) return;
+        this.turnoService.cerrarTurnoConArqueo(turno.id, data).subscribe({
+            next: t => {
+                this.turnoActivo.set(t);
+                this.showDenominationCounter.set(false);
+                this.showToast('Turno cerrado con arqueo', 'success');
+            },
+            error: () => this.showToast('Error al cerrar turno', 'error'),
+        });
+    }
+
+    // ── Reportes X/Z ─────────────────────────────────────────────
+    loadReporteX(): void {
+        const turno = this.turnoActivo();
+        if (!turno) return;
+        this.turnoService.getReporteX(turno.id).subscribe({
+            next: r => {
+                this.currentReporte.set(r);
+                this.showScreen('reporte');
+            },
+            error: () => this.showToast('Error al generar reporte X', 'error'),
+        });
+    }
+
+    loadReporteZ(): void {
+        const turno = this.turnoActivo();
+        if (!turno) return;
+        this.turnoService.getReporteZ(turno.id).subscribe({
+            next: r => {
+                this.currentReporte.set(r);
+                this.showScreen('reporte');
+            },
+            error: () => this.showToast('Error al generar reporte Z', 'error'),
+        });
+    }
+
+    // ── Camera Scanner ─────────────────────────────────────────────
+    onBarcodeScanned(code: string): void {
+        this.showCameraScanner.set(false);
+        this.loadCatalogo(code);
+        this.showScreen('main');
+    }
+
     // ── Búsqueda reactiva desde catálogo ─────────────────────────
     onSearchChanged(query: string): void {
         this.loadCatalogo(query);
@@ -152,6 +378,7 @@ export class PosPageComponent implements OnInit, OnDestroy {
     showScreen(screen: PosScreen): void {
         this.activeScreen.set(screen);
         if (screen === 'historial') this.loadHistorial();
+        if (screen === 'ordenes-retenidas') this.loadOrdenesRetenidas();
         if (screen === 'turno' && this.turnoActivo()) {
             this.turnoService
                 .getResumenTurno(this.turnoActivo()!.id)
@@ -189,6 +416,10 @@ export class PosPageComponent implements OnInit, OnDestroy {
             items: this.carrito.items().map(i => ({
                 varianteId: i.variante.varianteId,
                 cantidad: i.cantidad,
+                descuentoTipo: i.descuentoTipo !== 'NINGUNO' ? i.descuentoTipo : undefined,
+                descuentoValor: i.descuentoValor > 0 ? i.descuentoValor : undefined,
+                autorizadoPor: i.autorizadoPor ?? undefined,
+                bolsas: i.bolsas > 0 ? i.bolsas : undefined,
             })),
             metodoPago: this.carrito.metodoPagoPrimario(),
             tipoCpe: this.carrito.tipoCpe(),
@@ -239,6 +470,45 @@ export class PosPageComponent implements OnInit, OnDestroy {
                 this.showToast('Turno cerrado', 'info');
             },
             error: err => this.showToast(err.message ?? 'Error al cerrar turno', 'error'),
+        });
+    }
+
+    // ── Keyboard Shortcuts ─────────────────────────────────────────
+    private registerKeyboardShortcuts(): void {
+        this.unregisterKeyboard = this.keyboard.register(action => {
+            if (action.type === 'navigate') {
+                this.showScreen(action.screen);
+            } else {
+                switch (action.name) {
+                    case 'nuevaVenta':
+                        this.carrito.vaciarCarrito();
+                        this.showScreen('main');
+                        break;
+                    case 'cobrar':
+                        this.procesarVenta();
+                        break;
+                    case 'toggleFullscreen':
+                        if (document.fullscreenElement) {
+                            document.exitFullscreen();
+                        } else {
+                            document.documentElement.requestFullscreen();
+                        }
+                        break;
+                    case 'toggleShortcuts':
+                        this.keyboard.toggleShortcutsPanel();
+                        break;
+                    case 'holdOrder':
+                        this.holdOrder();
+                        break;
+                    case 'recallOrder':
+                        this.showScreen('ordenes-retenidas');
+                        break;
+                    case 'customerSearch':
+                        // F02: placeholder — será implementado en F10
+                        this.showToast('Buscar cliente — próximamente');
+                        break;
+                }
+            }
         });
     }
 

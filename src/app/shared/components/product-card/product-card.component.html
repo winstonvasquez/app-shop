@@ -27,6 +27,22 @@
             </span>
         </div>
         }
+
+        <!-- Botón favorito (wishlist) — solo para usuarios autenticados -->
+        @if (isAuthenticated()) {
+        <button (click)="toggleWishlist($event)"
+            class="absolute top-2.5 right-2.5 z-10 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 shadow-md"
+            [class]="isFavorito()
+                ? 'bg-primary text-white'
+                : 'bg-black/30 backdrop-blur-sm text-white/80 hover:bg-primary hover:text-white'"
+            [attr.aria-label]="isFavorito() ? 'Quitar de favoritos' : 'Agregar a favoritos'">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                [attr.fill]="isFavorito() ? 'currentColor' : 'none'"
+                stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+            </svg>
+        </button>
+        }
     </div>
 
     <!-- ─── Product Info ─── -->

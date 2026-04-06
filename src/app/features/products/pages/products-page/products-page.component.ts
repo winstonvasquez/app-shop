@@ -5,6 +5,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { CategoryService } from '@core/services/category.service';
 import { CategoryResponse } from '@core/models/category.model';
 import { SearchService } from '@shared/services/search.service';
+import { AnalyticsService } from '@core/services/analytics.service';
 import { ProductService } from '@core/services/product.service';
 import { ProductCardComponent, Product as UIProduct } from '@shared/components/product-card/product-card.component';
 import { BreadcrumbComponent, BreadcrumbItem } from '@shared/components/breadcrumb/breadcrumb.component';
@@ -22,6 +23,7 @@ export class ProductsPageComponent implements OnInit {
   private route           = inject(ActivatedRoute);
   private router          = inject(Router);
   private productService  = inject(ProductService);
+  private analyticsService = inject(AnalyticsService);
   public  searchService   = inject(SearchService);
 
   readonly breadcrumbItems: BreadcrumbItem[] = [
@@ -75,6 +77,9 @@ export class ProductsPageComponent implements OnInit {
         this.totalPages.set(data.totalPages ?? 1);
         this.totalElements.set(data.totalElements ?? 0);
         this.loading.set(false);
+        if (query) {
+          this.analyticsService.trackSearch(query, data.totalElements ?? 0);
+        }
       },
       error: () => this.loading.set(false)
     });

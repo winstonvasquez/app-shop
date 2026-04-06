@@ -18,6 +18,7 @@ import { routes } from './app.routes';
 
 import { SystemParameterService } from '@core/services/system-parameter.service';
 import { StoreConfigService } from '@core/services/store-config.service';
+import { WishlistService } from '@core/services/wishlist.service';
 
 /**
  * APP_INITIALIZER factory: returns a Promise Angular awaits before rendering.
@@ -37,6 +38,12 @@ export function initStoreConfig(storeConfigService: StoreConfigService) {
   return (): Promise<unknown> => {
     const savedLang = localStorage.getItem('app-language') || 'es';
     return lastValueFrom(storeConfigService.loadConfig(savedLang));
+  };
+}
+
+export function initWishlist(wishlistService: WishlistService) {
+  return (): void => {
+    wishlistService.loadWishlist();
   };
 }
 
@@ -74,6 +81,12 @@ export const appConfig: ApplicationConfig = {
       provide: APP_INITIALIZER,
       useFactory: initStoreConfig,
       deps: [StoreConfigService],
+      multi: true
+    },
+    {
+      provide: APP_INITIALIZER,
+      useFactory: initWishlist,
+      deps: [WishlistService],
       multi: true
     },
     {

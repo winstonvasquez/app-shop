@@ -13,13 +13,15 @@ import { MenuPermissions } from './components/menu-permissions/menu-permissions.
 import { MenuNotifications } from './components/menu-notifications/menu-notifications.component';
 import { MenuSwitchAccount } from './components/menu-switch-account/menu-switch-account.component';
 import { MenuLogout } from './components/menu-logout/menu-logout.component';
+import { MenuWishlist } from './components/menu-wishlist/menu-wishlist.component';
 
 @Component({
   selector: 'app-header-user-menu',
   imports: [
     MenuOrders, MenuReviews, MenuProfile, MenuCoupons, MenuCredit,
     MenuFollowedStores, MenuBrowsingHistory, MenuAddresses, MenuSecurity,
-    MenuPermissions, MenuNotifications, MenuSwitchAccount, MenuLogout
+    MenuPermissions, MenuNotifications, MenuSwitchAccount, MenuLogout,
+    MenuWishlist
   ],
   templateUrl: './header-user-menu.component.html',
   styleUrl: './header-user-menu.component.scss',
