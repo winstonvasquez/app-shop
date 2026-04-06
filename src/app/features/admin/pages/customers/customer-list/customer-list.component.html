@@ -1,0 +1,152 @@
+<app-page-header
+    title="Gestión de Clientes"
+    subtitle="Administra los clientes de tu empresa"
+    [breadcrumbs]="breadcrumbs">
+    <button actions class="btn btn-primary" (click)="openCreate()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+             fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+        Nuevo Cliente
+    </button>
+</app-page-header>
+
+<div class="page-container">
+    <!-- Filtros -->
+    <div class="card">
+        <div class="card-body">
+            <div class="filters-bar">
+                <div class="search-box">
+                    <svg class="search-box-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                         viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                    <input
+                        type="text"
+                        placeholder="Buscar por nombre, documento o email..."
+                        [ngModel]="searchQuery()"
+                        (ngModelChange)="onSearch($event)" />
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Error -->
+    @if (error()) {
+        <div class="card" style="border-left: 3px solid var(--color-error)">
+            <div class="card-body">
+                <p class="text-on">{{ error() }}</p>
+            </div>
+        </div>
+    }
+
+    <!-- Loading -->
+    @if (loading()) {
+        <div class="loading-container">
+            <div class="spinner"></div>
+        </div>
+    }
+
+    <!-- Tabla -->
+    @if (!loading()) {
+        <div class="card">
+            <div class="card-body" style="padding: 0;">
+                <table class="table">
+                    <thead>
+                        <tr class="table-header">
+                            <th class="table-header-cell">Documento</th>
+                            <th class="table-header-cell">Nombre / Razón Social</th>
+                            <th class="table-header-cell">Tipo</th>
+                            <th class="table-header-cell">Email</th>
+                            <th class="table-header-cell">Teléfono</th>
+                            <th class="table-header-cell">Cond. Pago</th>
+                            <th class="table-header-cell" style="text-align: right;">Crédito</th>
+                            <th class="table-header-cell">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (customer of customers(); track customer.id) {
+                            <tr class="table-row">
+                                <td class="table-cell">
+                                    <span class="badge badge-neutral">{{ customer.tipoDocumento }}</span>
+                                    {{ customer.numeroDocumento }}
+                                </td>
+                                <td class="table-cell">
+                                    <a [routerLink]="['/admin/customers', customer.id]"
+                                       class="text-on" style="font-weight: 500; text-decoration: none;"
+                                       onmouseover="this.style.textDecoration='underline'"
+                                       onmouseout="this.style.textDecoration='none'">
+                                        {{ customer.nombreCompleto }}
+                                    </a>
+                                </td>
+                                <td class="table-cell">
+                                    @if (customer.tipoCliente === 'PERSONA_JURIDICA') {
+                                        <span class="badge badge-accent">Empresa</span>
+                                    } @else {
+                                        <span class="badge badge-neutral">Natural</span>
+                                    }
+                                </td>
+                                <td class="table-cell text-subtle">{{ customer.email || '-' }}</td>
+                                <td class="table-cell text-subtle">{{ customer.celular || customer.telefono || '-' }}</td>
+                                <td class="table-cell">
+                                    <span class="badge badge-neutral">{{ customer.condicionPago }}</span>
+                                </td>
+                                <td class="table-cell" style="text-align: right;">
+                                    @if (customer.limiteCredito > 0) {
+                                        <span class="text-subtle">S/ {{ customer.saldoCredito.toFixed(2) }} / {{ customer.limiteCredito.toFixed(2) }}</span>
+                                    } @else {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </td>
+                                <td class="table-cell">
+                                    <div style="display: flex; gap: 4px;">
+                                        <button class="btn-icon btn-icon-edit" (click)="openEdit(customer)" title="Editar">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                                                 fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                            </svg>
+                                        </button>
+                                        <button class="btn-icon btn-icon-delete" (click)="onDeactivate(customer)" title="Desactivar">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                                                 fill="none" stroke="currentColor" stroke-width="2">
+                                                <polyline points="3 6 5 6 21 6"></polyline>
+                                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+
+                @if (isEmpty()) {
+                    <div style="padding: 3rem; text-align: center;">
+                        <p class="text-muted">No se encontraron clientes.</p>
+                    </div>
+                }
+            </div>
+        </div>
+
+        @if (totalPages() > 1) {
+            <app-pagination
+                [currentPage]="currentPage()"
+                [totalPages]="totalPages()"
+                [totalElements]="totalElements()"
+                [pageSize]="pageSize()"
+                (pageChange)="onPageChange($event)">
+            </app-pagination>
+        }
+    }
+</div>
+
+<!-- Drawer de formulario -->
+<app-customer-form
+    [isOpen]="showDrawer()"
+    [customer]="editingCustomer()"
+    (saved)="onSaved()"
+    (cancel)="closeDrawer()">
+</app-customer-form>

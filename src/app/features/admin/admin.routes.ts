@@ -77,7 +77,11 @@ export const adminRoutes: Routes = [
             },
             {
                 path: 'customers',
-                loadComponent: () => import('./pages/users/users.component').then(m => m.UsersComponent)
+                loadComponent: () => import('./pages/customers/customer-list/customer-list.component').then(m => m.CustomerListComponent)
+            },
+            {
+                path: 'customers/:id',
+                loadComponent: () => import('./pages/customers/customer-detail/customer-detail.component').then(m => m.CustomerDetailComponent)
             },
             {
                 path: 'segments',
@@ -88,8 +92,8 @@ export const adminRoutes: Routes = [
                 loadComponent: () => import('./pages/companies/companies.component').then(m => m.CompaniesComponent)
             },
             {
-                path: 'company-settings',
-                loadComponent: () => import('./pages/companies/companies.component').then(m => m.CompaniesComponent)
+                path: 'companies/:id',
+                loadComponent: () => import('./pages/company-detail/company-detail.component').then(m => m.CompanyDetailComponent)
             },
             {
                 path: 'general-config',
