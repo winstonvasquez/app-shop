@@ -104,7 +104,7 @@ import {
                         [colors]="barColors"
                         [legend]="barLegend"
                         [dataLabels]="{ enabled: false }"
-                        [tooltip]="{ theme: 'dark', y: { formatter: v => 'S/ ' + v.toLocaleString('es-PE') } }">
+                        [tooltip]="barTooltip">
                     </apx-chart>
                 </div>
             </div>
@@ -212,6 +212,7 @@ export class DashboardContabilidadComponent implements OnInit {
     barGrid: ApexGrid = this.chartDefaults.grid();
     barColors = [CHART_COLORS[2], CHART_COLORS[0]];
     barLegend: ApexLegend = { ...this.chartDefaults.legend(), position: 'top' };
+    barTooltip: ApexTooltip = { theme: 'dark', y: { formatter: (v: number) => 'S/ ' + v.toLocaleString('es-PE') } };
 
     /* ── Chart: Radial IGV ────────────────────────────────────── */
     radialChart: ApexChart = this.chartDefaults.radialChart(180);

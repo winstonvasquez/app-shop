@@ -70,29 +70,82 @@
                 </app-alert>
             }
 
-            <app-form-field
-                label="Nombre"
-                [control]="getControl('name')"
-                type="text"
-                placeholder="Ej: Empresa ABC S.A.C."
-                [required]="true">
-            </app-form-field>
+            <div class="grid grid-cols-1 gap-4">
+                <h3 class="text-sm font-semibold text-on uppercase tracking-wide mt-2">Datos Principales</h3>
 
-            <app-form-field
-                label="RUC"
-                [control]="getControl('ruc')"
-                type="text"
-                placeholder="Ej: 20123456789"
-                hint="Solo números, máximo 20 dígitos"
-                [required]="true">
-            </app-form-field>
+                <app-form-field
+                    label="Nombre Comercial"
+                    [control]="getControl('name')"
+                    type="text"
+                    placeholder="Ej: Empresa ABC S.A.C."
+                    [required]="true">
+                </app-form-field>
 
-            <div class="form-group">
-                <label class="checkbox-label">
-                    <input type="checkbox" formControlName="active" class="checkbox-input" />
-                    <span>Empresa activa</span>
-                </label>
-                <small class="form-hint">Las empresas inactivas no aparecerán en los selectores</small>
+                <app-form-field
+                    label="Razón Social"
+                    [control]="getControl('legalName')"
+                    type="text"
+                    placeholder="Ej: EMPRESA ABC SOCIEDAD ANÓNIMA CERRADA">
+                </app-form-field>
+
+                <app-form-field
+                    label="RUC"
+                    [control]="getControl('ruc')"
+                    type="text"
+                    placeholder="Ej: 20123456789"
+                    hint="11 dígitos numéricos"
+                    [required]="true">
+                </app-form-field>
+
+                <h3 class="text-sm font-semibold text-on uppercase tracking-wide mt-4">Contacto</h3>
+
+                <app-form-field
+                    label="Dirección Fiscal"
+                    [control]="getControl('address')"
+                    type="text"
+                    placeholder="Ej: Av. Javier Prado 1234, San Isidro, Lima">
+                </app-form-field>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <app-form-field
+                        label="Teléfono"
+                        [control]="getControl('phone')"
+                        type="text"
+                        placeholder="Ej: 01-6123456">
+                    </app-form-field>
+
+                    <app-form-field
+                        label="Email"
+                        [control]="getControl('email')"
+                        type="email"
+                        placeholder="Ej: contacto@empresa.pe">
+                    </app-form-field>
+                </div>
+
+                <h3 class="text-sm font-semibold text-on uppercase tracking-wide mt-4">Configuración</h3>
+
+                <app-form-field
+                    label="Logo URL"
+                    [control]="getControl('logoUrl')"
+                    type="text"
+                    placeholder="Ej: https://cdn.empresa.pe/logo.png">
+                </app-form-field>
+
+                <app-form-field
+                    label="Dominio"
+                    [control]="getControl('domain')"
+                    type="text"
+                    placeholder="Ej: empresa.microshop.pe"
+                    hint="Dominio personalizado del tenant">
+                </app-form-field>
+
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" formControlName="active" class="checkbox-input" />
+                        <span>Empresa activa</span>
+                    </label>
+                    <small class="form-hint">Las empresas inactivas no aparecerán en los selectores</small>
+                </div>
             </div>
         </form>
 

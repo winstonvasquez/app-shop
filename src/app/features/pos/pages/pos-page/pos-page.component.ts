@@ -20,6 +20,7 @@ import { PosNumpadComponent } from '../../components/pos-numpad/pos-numpad.compo
 import { PosReceiptComponent } from '../../components/pos-receipt/pos-receipt.component';
 import { PosHistorialComponent } from '../../components/pos-historial/pos-historial.component';
 import { PosTurnoComponent } from '../../components/pos-turno/pos-turno.component';
+import { PosDevolucionesComponent } from '../pos-devoluciones/pos-devoluciones.component';
 
 @Component({
     selector: 'app-pos-page',
@@ -32,6 +33,7 @@ import { PosTurnoComponent } from '../../components/pos-turno/pos-turno.componen
         PosReceiptComponent,
         PosHistorialComponent,
         PosTurnoComponent,
+        PosDevolucionesComponent,
     ],
     templateUrl: './pos-page.component.html',
     // ViewEncapsulation.None hace que el CSS del módulo POS sea global,

@@ -37,14 +37,14 @@
         @if (!categoriasPlegadas()) {
         <div class="catalog-categories" [class.catalog-categories--expanded]="categoriasExpandidas()">
 
-            <button class="btn-secondary !rounded-full !py-1 !px-4 !h-8 !text-xs !font-semibold transition-colors"
+            <button class="btn-secondary !rounded-full !py-1 !px-4 !h-8 !text-xs !font-semibold !whitespace-nowrap !shrink-0 transition-colors"
                 [class.!bg-primary]="selectedCategoria() === null" [class.!text-white]="selectedCategoria() === null"
                 [class.!border-primary]="selectedCategoria() === null"
                 (click)="selectCategoria(null, $any($event.currentTarget))">
                 Todos
             </button>
             @for (cat of categorias(); track cat) {
-            <button class="btn-secondary !rounded-full !py-1 !px-4 !h-8 !text-xs !font-semibold transition-colors"
+            <button class="btn-secondary !rounded-full !py-1 !px-4 !h-8 !text-xs !font-semibold !whitespace-nowrap !shrink-0 transition-colors"
                 [class.!bg-primary]="selectedCategoria() === cat" [class.!text-white]="selectedCategoria() === cat"
                 [class.!border-primary]="selectedCategoria() === cat"
                 (click)="selectCategoria(cat, $any($event.currentTarget))">

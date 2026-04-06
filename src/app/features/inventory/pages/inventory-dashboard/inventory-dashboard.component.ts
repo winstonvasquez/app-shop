@@ -6,7 +6,7 @@ import { ChartDefaultsService, CHART_COLORS } from '@shared/services/chart-defau
 import {
     ApexAxisChartSeries, ApexChart, ApexFill, ApexGrid,
     ApexNonAxisChartSeries, ApexPlotOptions, ApexLegend,
-    ApexStroke, ApexXAxis, ApexYAxis
+    ApexStroke, ApexTooltip, ApexXAxis, ApexYAxis
 } from 'ng-apexcharts';
 
 @Component({
@@ -102,16 +102,16 @@ import {
                     </div>
                     <div class="chart-card-body">
                         <apx-chart
-                            [series]="areaSeries"
+                            [series]="areaSeries()"
                             [chart]="areaChart"
-                            [xaxis]="areaXAxis"
+                            [xaxis]="areaXAxis()"
                             [yaxis]="areaYAxis"
                             [fill]="areaFill"
                             [stroke]="areaStroke"
                             [grid]="areaGrid"
                             [colors]="areaColors"
                             [dataLabels]="{ enabled: false }"
-                            [tooltip]="{ theme: 'dark', y: { formatter: v => v + ' movimientos' } }">
+                            [tooltip]="areaTooltip">
                         </apx-chart>
                     </div>
                 </div>
@@ -126,10 +126,10 @@ import {
                         @for (movement of recentMovements(); track movement.id) {
                             <div class="mov-item">
                                 <div class="mov-icon"
-                                    [style.background]="movement.movementType === 'ENTRADA' ? 'color-mix(in oklch, var(--color-success) 15%, transparent)' : 'color-mix(in oklch, var(--color-warning) 15%, transparent)'"
-                                    [style.color]="movement.movementType === 'ENTRADA' ? 'var(--color-success)' : 'var(--color-warning)'">
+                                    [style.background]="movement.movementType.startsWith('ENTRADA') ? 'color-mix(in oklch, var(--color-success) 15%, transparent)' : 'color-mix(in oklch, var(--color-warning) 15%, transparent)'"
+                                    [style.color]="movement.movementType.startsWith('ENTRADA') ? 'var(--color-success)' : 'var(--color-warning)'">
                                     <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        @if (movement.movementType === 'ENTRADA') {
+                                        @if (movement.movementType.startsWith('ENTRADA')) {
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 11l5-5m0 0l5 5m-5-5v12"/>
                                         } @else {
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 13l-5 5m0 0l-5-5m5 5V6"/>
@@ -167,6 +167,7 @@ export class InventoryDashboardComponent {
     areaStroke: ApexStroke = this.chartDefaults.areaStroke();
     areaGrid: ApexGrid = this.chartDefaults.grid();
     areaColors = [CHART_COLORS[0]];
+    areaTooltip: ApexTooltip = { theme: 'dark', y: { formatter: (v: number) => v + ' movimientos' } };
 
     areaSeries = computed<ApexAxisChartSeries>(() => {
         const now = new Date();

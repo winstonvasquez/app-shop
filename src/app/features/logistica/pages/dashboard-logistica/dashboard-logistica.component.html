@@ -82,7 +82,7 @@
                         [grid]="barGrid"
                         [colors]="barColors"
                         [dataLabels]="barDataLabels"
-                        [tooltip]="{ theme: 'dark', y: { formatter: v => v + ' items' } }">
+                        [tooltip]="barTooltip">
                     </apx-chart>
                 } @else {
                     <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:240px;gap:1rem">

@@ -64,6 +64,7 @@ export class DashboardComprasComponent implements OnInit {
     donutLegend: ApexLegend = { ...this.chartDefaults.legend(), position: 'bottom' };
     donutDataLabels: ApexDataLabels = { enabled: false };
     donutTooltip: ApexTooltip = { theme: 'dark' };
+    barTooltip: ApexTooltip = { theme: 'dark', y: { formatter: (v: number) => 'S/ ' + v.toLocaleString('es-PE') } };
 
     ngOnInit(): void { this.loadDashboard(); }
 

@@ -111,3 +111,11 @@ export const TIPO_DIRECCION_OPTIONS = [
     { value: 'ENVIO', label: 'Envío' },
     { value: 'AMBAS', label: 'Fiscal y Envío' },
 ] as const;
+
+export interface CustomerDashboard {
+    totalActivos: number;
+    nuevosEsteMes: number;
+    creditoPendienteTotal: number;
+    porSegmento: { segmentoId: number; cantidad: number }[];
+    topClientes: { id: number; nombreCompleto: string; numeroDocumento: string; totalCompras: number }[];
+}

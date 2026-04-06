@@ -8,7 +8,7 @@ import { AuthService } from '../../../../core/auth/auth.service';
 import { ChartDefaultsService, CHART_COLORS } from '@shared/services/chart-defaults.service';
 import {
     ApexAxisChartSeries, ApexChart, ApexDataLabels, ApexGrid,
-    ApexNonAxisChartSeries, ApexPlotOptions, ApexLegend, ApexXAxis, ApexYAxis
+    ApexNonAxisChartSeries, ApexPlotOptions, ApexLegend, ApexTooltip, ApexXAxis, ApexYAxis
 } from 'ng-apexcharts';
 
 @Component({
@@ -44,6 +44,7 @@ export class DashboardLogisticaComponent implements OnInit {
         axisBorder: { show: false }, axisTicks: { show: false },
     };
     barYAxis: ApexYAxis = { labels: { style: { colors: this.chartDefaults.textColor } } };
+    barTooltip: ApexTooltip = { theme: 'dark', y: { formatter: (v: number) => v + ' items' } };
     barPlot: ApexPlotOptions = this.chartDefaults.barPlotOptions(true, 6);
     barGrid: ApexGrid = this.chartDefaults.grid(3);
     barColors = [CHART_COLORS[0]];

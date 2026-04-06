@@ -72,6 +72,7 @@ export class DashboardTesoreriaComponent implements OnInit {
     areaGrid: ApexGrid = this.chartDefaults.grid();
     areaColors = [CHART_COLORS[2], CHART_COLORS[0]];
     areaLegend: ApexLegend = { ...this.chartDefaults.legend(), position: 'top' };
+    areaTooltip: ApexTooltip = { theme: 'dark', y: { formatter: (v: number) => 'S/ ' + v.toLocaleString('es-PE') } };
 
     /* ── Chart: Distribución por tipo pago (donut) ────────────── */
     donutChart: ApexChart = this.chartDefaults.donutChart(200);

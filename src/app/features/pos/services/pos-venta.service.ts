@@ -21,6 +21,12 @@ export class PosVentaService {
         return this.http.get<VentaPosResponse>(`${this.baseUrl}/ventas/${ventaId}/recibo`);
     }
 
+    buscarPorTicket(ticket: string): Observable<VentaPosResponse> {
+        return this.http.get<VentaPosResponse>(`${this.baseUrl}/ventas/buscar`, {
+            params: { ticket }
+        });
+    }
+
     getHistorial(turnoId: number, page = 0, size = 20): Observable<PageResponse<VentaPosResponse>> {
         const params = new HttpParams()
             .set('page', page.toString())

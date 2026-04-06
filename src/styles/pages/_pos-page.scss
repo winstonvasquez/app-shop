@@ -320,6 +320,14 @@
         background: var(--surface);
     }
 
+    /* Pantalla genérica scrolleable (devoluciones, reportes, etc.) */
+    .pos-panel-scroll {
+        flex: 1;
+        overflow-y: auto;
+        padding: var(--sp4) var(--sp4);
+        background: var(--surface);
+    }
+
     /* ── Sidenav ── */
     .pos-sidenav {
         width: 64px;
@@ -329,7 +337,7 @@
         padding: var(--sp3) 0;
         gap: var(--sp1);
         background: var(--nav2);
-        border-right: 1px solid rgba(255, 255, 255, .05);
+        border-right: 1px solid var(--border);
         flex-shrink: 0;
     }
 
@@ -343,14 +351,14 @@
         border-radius: 10px;
         border: none;
         background: transparent;
-        color: rgba(255, 255, 255, .4);
+        color: var(--text3);
         cursor: pointer;
         transition: all var(--dur) var(--ease);
     }
 
     .pos-sidenav-btn:hover {
-        background: rgba(255, 255, 255, .07);
-        color: rgba(255, 255, 255, .8);
+        background: color-mix(in oklch, var(--text) 8%, transparent);
+        color: var(--text);
     }
 
     .pos-sidenav-btn--active {
@@ -366,7 +374,7 @@
         height: 16px;
         border-radius: 50%;
         background: var(--brand);
-        color: var(--color-text-primary);
+        color: #fff;
         font-size: 9px;
         font-weight: 700;
         display: flex;
@@ -377,7 +385,7 @@
     .sidenav-divider {
         width: 32px;
         height: 1px;
-        background: rgba(255, 255, 255, .08);
+        background: var(--border);
         margin: var(--sp2) 0;
     }
 

@@ -133,8 +133,7 @@ const ALL_NAV_GROUPS: NavGroup[] = [
     title: 'Empresas',
     moduleCode: null,
     items: [
-      { label: 'Gestión de Empresas', route: '/admin/companies', icon: 'building' },
-      { label: 'Configuración', route: '/admin/company-settings', icon: 'settings' }
+      { label: 'Empresas', route: '/admin/companies', icon: 'building' }
     ]
   },
   {

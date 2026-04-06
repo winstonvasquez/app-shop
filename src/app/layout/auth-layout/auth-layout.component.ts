@@ -1,5 +1,6 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+import { ThemeService } from '@core/services/theme/theme';
 
 @Component({
   selector: 'app-auth-layout',
@@ -8,4 +9,8 @@ import { RouterOutlet } from '@angular/router';
   templateUrl: './auth-layout.component.html',
   host: { class: 'block w-full min-h-screen' }
 })
-export class AuthLayoutComponent { }
+export class AuthLayoutComponent {
+    constructor() {
+        inject(ThemeService).setContext('admin');
+    }
+}

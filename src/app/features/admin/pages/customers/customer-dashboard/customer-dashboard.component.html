@@ -1,0 +1,58 @@
+<app-page-header title="Dashboard de Clientes" [breadcrumbs]="breadcrumbs"></app-page-header>
+
+<div class="page-container">
+    @if (loading()) {
+        <div class="loading-container"><div class="spinner"></div></div>
+    }
+
+    @if (dashboard(); as d) {
+        <div class="grid grid-cols-3 gap-6 mb-6">
+            <div class="card">
+                <div class="card-body text-center" style="padding: 1.5rem;">
+                    <p class="text-muted text-xs mb-2">Clientes Activos</p>
+                    <p class="text-on text-4xl font-bold">{{ d.totalActivos }}</p>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-body text-center" style="padding: 1.5rem;">
+                    <p class="text-muted text-xs mb-2">Nuevos Este Mes</p>
+                    <p class="text-4xl font-bold" style="color: var(--color-success);">{{ d.nuevosEsteMes }}</p>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-body text-center" style="padding: 1.5rem;">
+                    <p class="text-muted text-xs mb-2">Crédito Pendiente</p>
+                    <p class="text-4xl font-bold" style="color: var(--color-warning);">S/ {{ d.creditoPendienteTotal.toFixed(2) }}</p>
+                </div>
+            </div>
+        </div>
+
+        @if (d.topClientes.length > 0) {
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Top Clientes por Compras</h3>
+                </div>
+                <div class="card-body" style="padding: 0;">
+                    <table class="table">
+                        <thead>
+                            <tr class="table-header">
+                                <th class="table-header-cell">Cliente</th>
+                                <th class="table-header-cell">Documento</th>
+                                <th class="table-header-cell text-right">Total Compras</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (c of d.topClientes; track c.id) {
+                                <tr class="table-row">
+                                    <td class="table-cell text-on">{{ c.nombreCompleto }}</td>
+                                    <td class="table-cell text-subtle">{{ c.numeroDocumento }}</td>
+                                    <td class="table-cell text-right">S/ {{ c.totalCompras.toFixed(2) }}</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
+    }
+</div>

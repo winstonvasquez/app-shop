@@ -1,5 +1,6 @@
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule, Validators, FormGroup, FormControl } from '@angular/forms';
 import { CompanyService } from '@features/admin/services/company.service';
 import {
@@ -31,6 +32,7 @@ import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 export class CompaniesComponent implements OnInit {
   private readonly companyService = inject(CompanyService);
   private readonly fb = inject(FormBuilder);
+  private readonly router = inject(Router);
 
   // Signals for reactive state
   allCompanies = signal<CompanyResponse[]>([]);
@@ -88,14 +90,15 @@ export class CompaniesComponent implements OnInit {
 
   // Table columns configuration
   columns: TableColumn<CompanyResponse>[] = [
-    { key: 'id', label: 'ID', sortable: true, width: '80px' },
     { key: 'name', label: 'Nombre', sortable: true },
-    { key: 'ruc', label: 'RUC', sortable: true, width: '150px' },
+    { key: 'ruc', label: 'RUC', sortable: true, width: '140px' },
+    { key: 'legalName', label: 'Razón Social', sortable: true, render: (row) => row.legalName ?? '—' },
+    { key: 'email', label: 'Email', sortable: false, render: (row) => row.email ?? '—' },
     {
       key: 'isActive',
       label: 'Estado',
       sortable: true,
-      width: '120px',
+      width: '100px',
       align: 'center',
       render: (row) => row.isActive ? 'Activo' : 'Inactivo'
     }
@@ -103,6 +106,12 @@ export class CompaniesComponent implements OnInit {
 
   // Table actions configuration
   actions: TableAction<CompanyResponse>[] = [
+    {
+      label: 'Ver',
+      icon: '👁',
+      onClick: (row) => this.router.navigate(['/admin/companies', row.id]),
+      class: 'btn-icon'
+    },
     {
       label: 'Editar',
       icon: '✏️',
@@ -119,18 +128,15 @@ export class CompaniesComponent implements OnInit {
 
   constructor() {
     this.companyForm = this.fb.group({
-      name: ['', [
-        Validators.required,
-        Validators.maxLength(100)
-      ]],
-      ruc: ['', [
-        Validators.required,
-        Validators.maxLength(20),
-        Validators.pattern(/^[0-9]+$/)
-      ]],
-      active: [true, [
-        Validators.required
-      ]]
+      name: ['', [Validators.required, Validators.maxLength(100)]],
+      ruc: ['', [Validators.required, Validators.pattern(/^[0-9]{11}$/)]],
+      active: [true, [Validators.required]],
+      legalName: ['', [Validators.maxLength(200)]],
+      address: ['', [Validators.maxLength(300)]],
+      phone: ['', [Validators.maxLength(20)]],
+      email: ['', [Validators.email, Validators.maxLength(100)]],
+      logoUrl: ['', [Validators.maxLength(500)]],
+      domain: ['', [Validators.maxLength(100)]]
     });
   }
 
@@ -204,7 +210,13 @@ export class CompaniesComponent implements OnInit {
     this.companyForm.patchValue({
       name: company.name,
       ruc: company.ruc,
-      active: company.isActive
+      active: company.isActive,
+      legalName: company.legalName ?? '',
+      address: company.address ?? '',
+      phone: company.phone ?? '',
+      email: company.email ?? '',
+      logoUrl: company.logoUrl ?? '',
+      domain: company.domain ?? ''
     });
 
     this.showModal.set(true);
@@ -235,7 +247,13 @@ export class CompaniesComponent implements OnInit {
     const companyRequest: CompanyRequest = {
       name: formValue.name,
       ruc: formValue.ruc,
-      active: formValue.active
+      active: formValue.active,
+      legalName: formValue.legalName || undefined,
+      address: formValue.address || undefined,
+      phone: formValue.phone || undefined,
+      email: formValue.email || undefined,
+      logoUrl: formValue.logoUrl || undefined,
+      domain: formValue.domain || undefined
     };
 
     const operation = this.editMode()
@@ -282,7 +300,13 @@ export class CompaniesComponent implements OnInit {
     const updatedCompany: CompanyRequest = {
       name: company.name,
       ruc: company.ruc,
-      active: !company.isActive
+      active: !company.isActive,
+      legalName: company.legalName ?? undefined,
+      address: company.address ?? undefined,
+      phone: company.phone ?? undefined,
+      email: company.email ?? undefined,
+      logoUrl: company.logoUrl ?? undefined,
+      domain: company.domain ?? undefined
     };
 
     this.companyService.update(company.id, updatedCompany).subscribe({
@@ -311,7 +335,10 @@ export class CompaniesComponent implements OnInit {
       return `Máximo ${control.errors['maxlength'].requiredLength} caracteres`;
     }
     if (control.errors['pattern']) {
-      return 'Solo se permiten números';
+      return 'El RUC debe tener exactamente 11 dígitos';
+    }
+    if (control.errors['email']) {
+      return 'Formato de email inválido';
     }
 
     return 'Campo inválido';

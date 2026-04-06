@@ -49,6 +49,27 @@
         </div>
     }
 
+    <!-- Barra de acciones en lote -->
+    @if (selectedIds().size > 0) {
+        <div class="card" style="margin-bottom: 1rem;">
+            <div class="card-body" style="display: flex; align-items: center; gap: 1rem; padding: 0.75rem 1rem;">
+                <span class="text-on">{{ selectedIds().size }} seleccionados</span>
+                <button class="btn btn-secondary btn-sm" (click)="showBulkSegment.set(!showBulkSegment())">
+                    Asignar Segmento
+                </button>
+                @if (showBulkSegment()) {
+                    <select class="input-field" style="width: auto;" (change)="assignSegment(+$any($event.target).value)">
+                        <option value="">Seleccionar...</option>
+                        <option value="1">VIP</option>
+                        <option value="2">Regular</option>
+                        <option value="3">Ocasional</option>
+                        <option value="4">Mayorista</option>
+                    </select>
+                }
+            </div>
+        </div>
+    }
+
     <!-- Tabla -->
     @if (!loading()) {
         <div class="card">
@@ -56,6 +77,11 @@
                 <table class="table">
                     <thead>
                         <tr class="table-header">
+                            <th class="table-header-cell" style="width: 2.5rem;">
+                                <input type="checkbox"
+                                       (change)="toggleSelectAll()"
+                                       [checked]="selectedIds().size === customers().length && customers().length > 0">
+                            </th>
                             <th class="table-header-cell">Documento</th>
                             <th class="table-header-cell">Nombre / Razón Social</th>
                             <th class="table-header-cell">Tipo</th>
@@ -69,6 +95,11 @@
                     <tbody>
                         @for (customer of customers(); track customer.id) {
                             <tr class="table-row">
+                                <td class="table-cell">
+                                    <input type="checkbox"
+                                           [checked]="selectedIds().has(customer.id)"
+                                           (change)="toggleSelect(customer.id)">
+                                </td>
                                 <td class="table-cell">
                                     <span class="badge badge-neutral">{{ customer.tipoDocumento }}</span>
                                     {{ customer.numeroDocumento }}

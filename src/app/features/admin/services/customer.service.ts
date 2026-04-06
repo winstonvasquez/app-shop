@@ -10,6 +10,7 @@ import {
     CustomerDireccionRequest,
     CustomerContactoResponse,
     CustomerContactoRequest,
+    CustomerDashboard,
 } from '@features/admin/models/customer.model';
 
 interface PageResponse<T> {
@@ -76,6 +77,28 @@ export class CustomerService {
     update(id: number, dto: CustomerRequest): Observable<CustomerResponse> {
         return this.http
             .put<CustomerResponse>(`${this.baseUrl}/${id}`, dto)
+            .pipe(catchError(this.handleError));
+    }
+
+    /**
+     * Obtiene métricas del dashboard de clientes por empresa
+     */
+    getDashboard(companyId: number): Observable<CustomerDashboard> {
+        return this.http
+            .get<CustomerDashboard>(`${this.baseUrl}/dashboard`, {
+                params: new HttpParams().set('companyId', companyId.toString())
+            })
+            .pipe(catchError(this.handleError));
+    }
+
+    /**
+     * Asigna un segmento a múltiples clientes en lote
+     */
+    bulkAssignSegment(clienteIds: number[], segmentoId: number): Observable<void> {
+        let params = new HttpParams().set('segmentoId', segmentoId.toString());
+        clienteIds.forEach(id => { params = params.append('clienteIds', id.toString()); });
+        return this.http
+            .put<void>(`${this.baseUrl}/bulk-segment`, null, { params })
             .pipe(catchError(this.handleError));
     }
 

@@ -80,6 +80,10 @@ export const adminRoutes: Routes = [
                 loadComponent: () => import('./pages/customers/customer-list/customer-list.component').then(m => m.CustomerListComponent)
             },
             {
+                path: 'customers/dashboard',
+                loadComponent: () => import('./pages/customers/customer-dashboard/customer-dashboard.component').then(m => m.CustomerDashboardComponent)
+            },
+            {
                 path: 'customers/:id',
                 loadComponent: () => import('./pages/customers/customer-detail/customer-detail.component').then(m => m.CustomerDetailComponent)
             },

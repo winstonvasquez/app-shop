@@ -2,7 +2,7 @@ import { Component, ChangeDetectionStrategy, input, output } from '@angular/core
 import { RouterLink } from '@angular/router';
 import { TurnoCaja } from '../../models/turno-caja.model';
 
-export type PosScreen = 'main' | 'pago' | 'recibo' | 'historial' | 'turno';
+export type PosScreen = 'main' | 'pago' | 'recibo' | 'historial' | 'turno' | 'devoluciones';
 
 @Component({
     selector: 'app-pos-topbar',

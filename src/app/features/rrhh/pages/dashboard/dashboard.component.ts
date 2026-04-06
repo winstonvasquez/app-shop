@@ -6,7 +6,7 @@ import { VacationService } from '../../services/vacation.service';
 import { ChartDefaultsService, CHART_COLORS } from '@shared/services/chart-defaults.service';
 import {
     ApexAxisChartSeries, ApexChart, ApexDataLabels, ApexGrid,
-    ApexNonAxisChartSeries, ApexPlotOptions, ApexLegend, ApexXAxis, ApexYAxis
+    ApexNonAxisChartSeries, ApexPlotOptions, ApexLegend, ApexTooltip, ApexXAxis, ApexYAxis
 } from 'ng-apexcharts';
 
 interface AccesoRapido {
@@ -63,6 +63,7 @@ export class DashboardComponent implements OnInit {
     }];
     barXAxis: ApexXAxis = this.chartDefaults.xAxis(['Ventas', 'Admin', 'Ops', 'TI', 'RRHH', 'Logística']);
     barYAxis: ApexYAxis = { labels: { style: { colors: this.chartDefaults.textColor } } };
+    barTooltip: ApexTooltip = { theme: 'dark', y: { formatter: (v: number) => v + ' personas' } };
     barPlot: ApexPlotOptions = this.chartDefaults.barPlotOptions(false, 8, '60%');
     barGrid: ApexGrid = this.chartDefaults.grid(3);
     barColors = [CHART_COLORS[0], CHART_COLORS[1], CHART_COLORS[2], CHART_COLORS[3], CHART_COLORS[4], CHART_COLORS[5]];

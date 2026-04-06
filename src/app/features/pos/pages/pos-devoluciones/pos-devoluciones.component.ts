@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { DecimalPipe, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { PosVentaService } from '../../services/pos-venta.service';
@@ -9,7 +9,7 @@ type MotivoDevolucion = 'PRODUCTO_DEFECTUOSO' | 'PRODUCTO_INCORRECTO' | 'CAMBIO_
 const MOTIVOS: { valor: MotivoDevolucion; etiqueta: string }[] = [
     { valor: 'PRODUCTO_DEFECTUOSO',  etiqueta: 'Producto defectuoso' },
     { valor: 'PRODUCTO_INCORRECTO',  etiqueta: 'Producto incorrecto / no solicitado' },
-    { valor: 'CAMBIO_OPINION',       etiqueta: 'Cambio de opinión del cliente' },
+    { valor: 'CAMBIO_OPINION',       etiqueta: 'Cambio de opinion del cliente' },
     { valor: 'ERROR_COBRO',          etiqueta: 'Error en el cobro' },
     { valor: 'OTRO',                 etiqueta: 'Otro motivo' }
 ];
@@ -20,133 +20,147 @@ const MOTIVOS: { valor: MotivoDevolucion; etiqueta: string }[] = [
     imports: [DecimalPipe, DatePipe, FormsModule],
     changeDetection: ChangeDetectionStrategy.OnPush,
     template: `
-    <div class="page-header">
-      <div>
-        <h1 class="page-title">Devoluciones / Anulaciones POS</h1>
-        <p class="page-subtitle">Busque la venta por N° ticket para iniciar la devolución</p>
-      </div>
+    <!-- Header -->
+    <div class="mb-5">
+      <h2 class="text-lg font-bold text-on">Devoluciones / Anulaciones</h2>
+      <p class="text-sm text-muted mt-0.5">Busque la venta por N° ticket o ID para iniciar la devolucion</p>
     </div>
 
     <!-- Buscador -->
-    <div class="card" style="margin-bottom:var(--space-md)">
-      <div class="card-body" style="display:flex;gap:12px;align-items:flex-end">
-        <div style="flex:1">
-          <label class="input-label">N° Ticket / ID de Venta</label>
-          <input class="input-field" [(ngModel)]="busqueda"
-                 placeholder="Ej: T-20240315-001 ó ID numérico"
-                 (keydown.enter)="buscarVenta()">
-        </div>
-        <div style="width:160px">
-          <label class="input-label">Buscar por</label>
-          <select class="input-field" [(ngModel)]="tipoBusqueda">
-            <option value="ticket">N° Ticket</option>
-            <option value="id">ID de Venta</option>
-          </select>
-        </div>
-        <button class="btn btn-primary" (click)="buscarVenta()" [disabled]="buscando() || !busqueda.trim()">
-          {{ buscando() ? 'Buscando...' : 'Buscar' }}
-        </button>
+    <div class="flex gap-3 items-end mb-4">
+      <div class="flex-1">
+        <label class="text-xs font-semibold text-subtle uppercase tracking-wide mb-1 block">N° Ticket / ID de Venta</label>
+        <input class="input-field !h-10" [(ngModel)]="busqueda"
+               placeholder="Ej: TICK-001000 o ID numerico"
+               (keydown.enter)="buscarVenta()">
       </div>
+      <div class="w-36">
+        <label class="text-xs font-semibold text-subtle uppercase tracking-wide mb-1 block">Buscar por</label>
+        <select class="input-field !h-10" [(ngModel)]="tipoBusqueda">
+          <option value="ticket">N° Ticket</option>
+          <option value="id">ID de Venta</option>
+        </select>
+      </div>
+      <button class="btn-primary !h-10 !px-5 shrink-0" (click)="buscarVenta()" [disabled]="buscando() || !busqueda.trim()">
+        @if (buscando()) {
+          <svg class="animate-spin" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+            <path d="M10 3a7 7 0 017 7" stroke-linecap="round" />
+          </svg>
+        } @else {
+          Buscar
+        }
+      </button>
     </div>
 
+    <!-- Error -->
     @if (errorBusqueda()) {
-      <div class="card mb-lg" style="border-left:3px solid var(--color-error);padding:var(--space-md)">
-        <p style="color:var(--color-error);font-size:0.875rem">{{ errorBusqueda() }}</p>
+      <div class="flex items-center gap-2 px-4 py-3 mb-4 rounded-xl bg-[var(--color-error)]/10 border border-[var(--color-error)]/20 text-sm text-[var(--color-error)]">
+        <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16" class="shrink-0">
+          <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+        </svg>
+        {{ errorBusqueda() }}
       </div>
     }
 
     <!-- Venta encontrada -->
-    @if (ventaSeleccionada()) {
-      <div class="card" style="margin-bottom:var(--space-md)">
-        <div class="card-header">
-          <h3 class="card-title">Venta {{ ventaSeleccionada()!.numeroTicket }}</h3>
-          <span [class]="ventaSeleccionada()!.estado === 'COMPLETADA' ? 'badge badge-success' : 'badge badge-error'">
-            {{ ventaSeleccionada()!.estado }}
+    @if (ventaSeleccionada(); as venta) {
+      <div class="rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] overflow-hidden mb-4">
+        <!-- Header de la venta -->
+        <div class="flex items-center justify-between px-4 py-3 border-b border-[var(--color-border)]">
+          <div class="flex items-center gap-3">
+            <span class="font-bold text-on">{{ venta.numeroTicket }}</span>
+            <span class="text-xs font-mono text-muted">ID: {{ venta.id }}</span>
+          </div>
+          <span class="text-xs font-bold px-2.5 py-1 rounded-full"
+              [class]="venta.estado === 'COMPLETADA'
+                ? 'bg-[var(--color-success)]/15 text-[var(--color-success)]'
+                : 'bg-[var(--color-error)]/15 text-[var(--color-error)]'">
+            {{ venta.estado }}
           </span>
         </div>
-        <div class="card-body" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px">
+
+        <!-- Info grid -->
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 px-4 py-3">
           <div>
-            <div class="text-sm" style="color:var(--color-text-muted)">Fecha</div>
-            <div class="font-bold">{{ ventaSeleccionada()!.fechaCreacion | date:'dd/MM/yyyy HH:mm' }}</div>
+            <p class="text-[10px] text-muted uppercase tracking-wide">Fecha</p>
+            <p class="text-sm font-medium text-on">{{ venta.fechaCreacion | date:'dd/MM/yyyy HH:mm' }}</p>
           </div>
           <div>
-            <div class="text-sm" style="color:var(--color-text-muted)">Cajero</div>
-            <div class="font-bold">{{ ventaSeleccionada()!.cajeroNombre }}</div>
+            <p class="text-[10px] text-muted uppercase tracking-wide">Cajero</p>
+            <p class="text-sm font-medium text-on">{{ venta.cajeroNombre }}</p>
           </div>
           <div>
-            <div class="text-sm" style="color:var(--color-text-muted)">Método de pago</div>
-            <div class="font-bold">{{ ventaSeleccionada()!.metodoPago }}</div>
+            <p class="text-[10px] text-muted uppercase tracking-wide">Metodo de pago</p>
+            <p class="text-sm font-medium text-on">{{ venta.metodoPago }}</p>
           </div>
           <div>
-            <div class="text-sm" style="color:var(--color-text-muted)">Comprobante</div>
-            <div class="font-bold">{{ ventaSeleccionada()!.tipoCpe }} {{ ventaSeleccionada()!.numeroCpe || '' }}</div>
+            <p class="text-[10px] text-muted uppercase tracking-wide">Comprobante</p>
+            <p class="text-sm font-medium text-on">{{ venta.tipoCpe }} {{ venta.numeroCpe || '' }}</p>
           </div>
           <div>
-            <div class="text-sm" style="color:var(--color-text-muted)">Cliente</div>
-            <div class="font-bold">{{ ventaSeleccionada()!.clienteNombre || 'Consumidor Final' }}</div>
+            <p class="text-[10px] text-muted uppercase tracking-wide">Cliente</p>
+            <p class="text-sm font-medium text-on">{{ venta.clienteNombre || 'Consumidor Final' }}</p>
           </div>
           <div>
-            <div class="text-sm" style="color:var(--color-text-muted)">Total</div>
-            <div class="font-bold" style="font-size:1.25rem;color:var(--color-primary)">
-              S/ {{ ventaSeleccionada()!.total | number:'1.2-2' }}
+            <p class="text-[10px] text-muted uppercase tracking-wide">Total</p>
+            <p class="text-lg font-bold text-[var(--color-primary)]">
+              <span class="text-xs align-super mr-px">S/</span>{{ venta.total | number:'1.2-2' }}
+            </p>
+          </div>
+        </div>
+
+        <!-- Items table -->
+        <div class="border-t border-[var(--color-border)]">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="bg-[var(--color-background)]">
+                <th class="px-4 py-2 text-left text-[10px] font-semibold text-muted uppercase">SKU</th>
+                <th class="px-4 py-2 text-left text-[10px] font-semibold text-muted uppercase">Producto</th>
+                <th class="px-4 py-2 text-right text-[10px] font-semibold text-muted uppercase">Cant.</th>
+                <th class="px-4 py-2 text-right text-[10px] font-semibold text-muted uppercase">P.Unit.</th>
+                <th class="px-4 py-2 text-right text-[10px] font-semibold text-muted uppercase">Subtotal</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (d of venta.detalles; track d.id) {
+                <tr class="border-t border-[var(--color-border)]/50">
+                  <td class="px-4 py-2 font-mono text-xs text-muted">{{ d.varianteSku }}</td>
+                  <td class="px-4 py-2 text-on">{{ d.varianteNombre }}</td>
+                  <td class="px-4 py-2 text-right text-on">{{ d.cantidad }}</td>
+                  <td class="px-4 py-2 text-right font-mono text-subtle">S/ {{ d.precioUnitario | number:'1.2-2' }}</td>
+                  <td class="px-4 py-2 text-right font-mono font-semibold text-on">S/ {{ d.subtotalLinea | number:'1.2-2' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+          <!-- Totals -->
+          <div class="flex flex-col items-end gap-1 px-4 py-3 border-t border-[var(--color-border)]">
+            <div class="flex gap-8 text-sm">
+              <span class="text-muted">Subtotal</span>
+              <span class="font-mono text-on">S/ {{ venta.subtotal | number:'1.2-2' }}</span>
+            </div>
+            <div class="flex gap-8 text-sm">
+              <span class="text-muted">IGV 18%</span>
+              <span class="font-mono text-on">S/ {{ venta.igv | number:'1.2-2' }}</span>
+            </div>
+            <div class="flex gap-8 text-base font-bold">
+              <span class="text-on">TOTAL</span>
+              <span class="font-mono text-[var(--color-primary)]">S/ {{ venta.total | number:'1.2-2' }}</span>
             </div>
           </div>
         </div>
-
-        <!-- Detalle de ítems -->
-        <table class="table">
-          <thead>
-            <tr>
-              <th class="table-header-cell">SKU</th>
-              <th class="table-header-cell">Producto</th>
-              <th class="table-header-cell text-right">Cant.</th>
-              <th class="table-header-cell text-right">P. Unit.</th>
-              <th class="table-header-cell text-right">Subtotal</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (d of ventaSeleccionada()!.detalles; track d.id) {
-              <tr class="table-row">
-                <td class="table-cell font-mono text-sm">{{ d.varianteSku }}</td>
-                <td class="table-cell">{{ d.varianteNombre }}</td>
-                <td class="table-cell text-right">{{ d.cantidad }}</td>
-                <td class="table-cell text-right font-mono">S/ {{ d.precioUnitario | number:'1.2-2' }}</td>
-                <td class="table-cell text-right font-mono font-bold">S/ {{ d.subtotalLinea | number:'1.2-2' }}</td>
-              </tr>
-            }
-          </tbody>
-          <tfoot>
-            <tr>
-              <td colspan="3"></td>
-              <td class="table-cell text-right" style="color:var(--color-text-muted)">Subtotal</td>
-              <td class="table-cell text-right font-mono">S/ {{ ventaSeleccionada()!.subtotal | number:'1.2-2' }}</td>
-            </tr>
-            <tr>
-              <td colspan="3"></td>
-              <td class="table-cell text-right" style="color:var(--color-text-muted)">IGV 18%</td>
-              <td class="table-cell text-right font-mono">S/ {{ ventaSeleccionada()!.igv | number:'1.2-2' }}</td>
-            </tr>
-            <tr>
-              <td colspan="3"></td>
-              <td class="table-cell text-right font-bold">TOTAL</td>
-              <td class="table-cell text-right font-mono font-bold" style="color:var(--color-primary)">
-                S/ {{ ventaSeleccionada()!.total | number:'1.2-2' }}
-              </td>
-            </tr>
-          </tfoot>
-        </table>
       </div>
 
-      <!-- Formulario de devolución -->
-      @if (ventaSeleccionada()!.estado === 'COMPLETADA') {
-        <div class="card">
-          <div class="card-header">
-            <h3 class="card-title">Solicitud de Devolución / Anulación</h3>
+      <!-- Formulario de devolucion -->
+      @if (venta.estado === 'COMPLETADA') {
+        <div class="rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] overflow-hidden">
+          <div class="px-4 py-3 border-b border-[var(--color-border)]">
+            <h3 class="font-bold text-on text-sm">Solicitud de Devolucion</h3>
           </div>
-          <div class="card-body" style="display:flex;flex-direction:column;gap:14px">
+          <div class="p-4 flex flex-col gap-4">
             <div>
-              <label class="input-label">Motivo de la devolución *</label>
-              <select class="input-field" [(ngModel)]="motivo">
+              <label class="text-xs font-semibold text-subtle uppercase tracking-wide mb-1 block">Motivo *</label>
+              <select class="input-field !h-10" [(ngModel)]="motivo">
                 <option value="">Seleccionar motivo...</option>
                 @for (m of motivos; track m.valor) {
                   <option [value]="m.valor">{{ m.etiqueta }}</option>
@@ -154,69 +168,93 @@ const MOTIVOS: { valor: MotivoDevolucion; etiqueta: string }[] = [
               </select>
             </div>
             <div>
-              <label class="input-label">Observaciones</label>
-              <textarea class="input-field" [(ngModel)]="observaciones" rows="3"
-                        placeholder="Descripción adicional del motivo de devolución..."></textarea>
-            </div>
-            <div style="padding:12px;background:color-mix(in srgb,var(--color-warning) 12%,transparent);border-radius:8px;border:1px solid color-mix(in srgb,var(--color-warning) 30%,transparent)">
-              <div class="font-bold" style="color:var(--color-warning);margin-bottom:4px">Información importante</div>
-              <ul style="color:var(--color-text-muted);font-size:0.85rem;margin:0;padding-left:16px;line-height:1.8">
-                <li>Esta operación anulará la venta completa y revertirá el stock.</li>
-                <li>Si el comprobante es BOLETA o FACTURA electrónica, se generará una Nota de Crédito en SUNAT.</li>
-                <li>El monto a devolver es: <strong style="color:var(--color-primary)">S/ {{ ventaSeleccionada()!.total | number:'1.2-2' }}</strong></li>
-                <li>Esta acción <strong>no puede revertirse</strong>.</li>
-              </ul>
+              <label class="text-xs font-semibold text-subtle uppercase tracking-wide mb-1 block">Observaciones</label>
+              <textarea class="input-field" [(ngModel)]="observaciones" rows="2"
+                        placeholder="Descripcion adicional..."></textarea>
             </div>
 
+            <!-- Warning box -->
+            <div class="flex gap-3 p-3 rounded-lg bg-[var(--color-warning)]/10 border border-[var(--color-warning)]/20">
+              <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18" class="text-[var(--color-warning)] shrink-0 mt-0.5">
+                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+              </svg>
+              <div class="text-xs text-subtle leading-relaxed">
+                <p class="font-bold text-[var(--color-warning)] mb-1">Informacion importante</p>
+                <ul class="list-disc pl-4 space-y-0.5">
+                  <li>Se anulara la venta completa y se revertira el stock.</li>
+                  <li>Si es BOLETA o FACTURA, se generara Nota de Credito SUNAT.</li>
+                  <li>Monto a devolver: <strong class="text-[var(--color-primary)]">S/ {{ venta.total | number:'1.2-2' }}</strong></li>
+                  <li>Esta accion <strong>no puede revertirse</strong>.</li>
+                </ul>
+              </div>
+            </div>
+
+            <!-- Success message -->
             @if (procesado()) {
-              <div style="padding:12px;background:color-mix(in srgb,var(--color-success) 12%,transparent);border-radius:8px;border:1px solid color-mix(in srgb,var(--color-success) 30%,transparent)">
-                <div class="font-bold" style="color:var(--color-success)">Devolución procesada exitosamente</div>
-                <div style="color:var(--color-text-muted);font-size:0.85rem;margin-top:4px">
-                  La venta ha sido anulada. Entregue S/ {{ ventaSeleccionada()!.total | number:'1.2-2' }} al cliente.
+              <div class="flex items-center gap-2 p-3 rounded-lg bg-[var(--color-success)]/10 border border-[var(--color-success)]/20">
+                <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16" class="text-[var(--color-success)] shrink-0">
+                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                </svg>
+                <div class="text-sm">
+                  <p class="font-bold text-[var(--color-success)]">Devolucion procesada</p>
+                  <p class="text-subtle text-xs mt-0.5">Entregue S/ {{ venta.total | number:'1.2-2' }} al cliente.</p>
                 </div>
               </div>
             }
           </div>
-          <div class="modal-footer">
-            <button class="btn btn-secondary" (click)="limpiar()">Cancelar</button>
-            <button class="btn btn-danger" (click)="confirmarDevolucion()"
-                    [disabled]="!motivo || procesando() || procesado()">
-              {{ procesando() ? 'Procesando...' : 'Confirmar Devolución' }}
+
+          <!-- Actions -->
+          <div class="flex justify-end gap-3 px-4 py-3 border-t border-[var(--color-border)]">
+            <button class="btn-secondary !h-9 !px-4" (click)="limpiar()">Cancelar</button>
+            <button class="!h-9 !px-5 rounded-xl text-sm font-semibold text-white transition-colors"
+                [class]="!motivo || procesando() || procesado()
+                  ? 'bg-[var(--color-border)] cursor-not-allowed'
+                  : 'bg-[var(--color-error)] hover:brightness-110 active:brightness-90'"
+                [disabled]="!motivo || procesando() || procesado()"
+                (click)="confirmarDevolucion()">
+              @if (procesando()) {
+                <svg class="animate-spin inline mr-1" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                  <path d="M10 3a7 7 0 017 7" stroke-linecap="round" />
+                </svg>
+                Procesando...
+              } @else {
+                Confirmar Devolucion
+              }
             </button>
           </div>
         </div>
       } @else {
-        <div class="card">
-          <div class="card-body" style="text-align:center;padding:var(--space-lg)">
-            <p style="color:var(--color-text-muted)">Esta venta ya ha sido anulada previamente.</p>
-          </div>
+        <div class="rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] p-6 text-center">
+          <p class="text-muted text-sm">Esta venta ya fue anulada previamente.</p>
         </div>
       }
     }
 
-    <!-- Historial de devoluciones del día -->
+    <!-- Historial de sesion -->
     @if (devolucionesProcesadas().length > 0) {
-      <div class="card" style="margin-top:var(--space-md)">
-        <div class="card-header">
-          <h3 class="card-title">Devoluciones procesadas esta sesión</h3>
-          <span class="badge badge-neutral">{{ devolucionesProcesadas().length }}</span>
+      <div class="rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] overflow-hidden mt-4">
+        <div class="flex items-center justify-between px-4 py-3 border-b border-[var(--color-border)]">
+          <h3 class="font-bold text-on text-sm">Devoluciones esta sesion</h3>
+          <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--color-border)] text-on">
+            {{ devolucionesProcesadas().length }}
+          </span>
         </div>
-        <table class="table">
+        <table class="w-full text-sm">
           <thead>
-            <tr>
-              <th class="table-header-cell">Ticket</th>
-              <th class="table-header-cell text-right">Total devuelto</th>
-              <th class="table-header-cell">Motivo</th>
+            <tr class="bg-[var(--color-background)]">
+              <th class="px-4 py-2 text-left text-[10px] font-semibold text-muted uppercase">Ticket</th>
+              <th class="px-4 py-2 text-right text-[10px] font-semibold text-muted uppercase">Total devuelto</th>
+              <th class="px-4 py-2 text-left text-[10px] font-semibold text-muted uppercase">Motivo</th>
             </tr>
           </thead>
           <tbody>
             @for (d of devolucionesProcesadas(); track d.ticket) {
-              <tr class="table-row">
-                <td class="table-cell font-mono">{{ d.ticket }}</td>
-                <td class="table-cell text-right font-mono font-bold" style="color:var(--color-warning)">
+              <tr class="border-t border-[var(--color-border)]/50">
+                <td class="px-4 py-2 font-mono text-on">{{ d.ticket }}</td>
+                <td class="px-4 py-2 text-right font-mono font-bold text-[var(--color-warning)]">
                   S/ {{ d.total | number:'1.2-2' }}
                 </td>
-                <td class="table-cell text-sm" style="color:var(--color-text-muted)">{{ d.motivo }}</td>
+                <td class="px-4 py-2 text-xs text-muted">{{ d.motivo }}</td>
               </tr>
             }
           </tbody>
@@ -241,32 +279,39 @@ export class PosDevolucionesComponent {
     ventaSeleccionada = signal<VentaPosResponse | null>(null);
     devolucionesProcesadas = signal<{ ticket: string; total: number; motivo: string }[]>([]);
 
-    buscarVenta() {
+    buscarVenta(): void {
         if (!this.busqueda.trim()) return;
         this.buscando.set(true);
         this.errorBusqueda.set(null);
         this.ventaSeleccionada.set(null);
         this.procesado.set(false);
 
-        const id = this.tipoBusqueda === 'id' ? parseInt(this.busqueda, 10) : NaN;
-        if (this.tipoBusqueda === 'id' && !isNaN(id)) {
+        if (this.tipoBusqueda === 'id') {
+            const id = parseInt(this.busqueda, 10);
+            if (isNaN(id)) {
+                this.errorBusqueda.set('Ingrese un ID numerico valido.');
+                this.buscando.set(false);
+                return;
+            }
             this.ventaService.getRecibo(id).subscribe({
                 next: (v) => { this.ventaSeleccionada.set(v); this.buscando.set(false); },
                 error: () => {
-                    this.errorBusqueda.set('No se encontró ninguna venta con ese ID. Verifique el número e intente nuevamente.');
+                    this.errorBusqueda.set('No se encontro ninguna venta con ID ' + id);
                     this.buscando.set(false);
                 }
             });
         } else {
-            // Por N° ticket no está soportado en el servicio actual — error informativo
-            this.errorBusqueda.set(
-                'Búsqueda por N° ticket no disponible. Use "ID de Venta" e ingrese el número ID de la venta.'
-            );
-            this.buscando.set(false);
+            this.ventaService.buscarPorTicket(this.busqueda.trim()).subscribe({
+                next: (v) => { this.ventaSeleccionada.set(v); this.buscando.set(false); },
+                error: () => {
+                    this.errorBusqueda.set('No se encontro ninguna venta con ticket "' + this.busqueda.trim() + '"');
+                    this.buscando.set(false);
+                }
+            });
         }
     }
 
-    confirmarDevolucion() {
+    confirmarDevolucion(): void {
         const venta = this.ventaSeleccionada();
         if (!venta || !this.motivo) return;
         this.procesando.set(true);
@@ -279,17 +324,16 @@ export class PosDevolucionesComponent {
                 ]);
                 this.procesado.set(true);
                 this.procesando.set(false);
-                // Actualizar estado en la vista
                 this.ventaSeleccionada.set({ ...venta, estado: 'ANULADA' });
             },
             error: () => {
                 this.procesando.set(false);
-                this.errorBusqueda.set('Error al procesar la devolución. Intente nuevamente.');
+                this.errorBusqueda.set('Error al procesar la devolucion. Intente nuevamente.');
             }
         });
     }
 
-    limpiar() {
+    limpiar(): void {
         this.busqueda = '';
         this.motivo = '';
         this.observaciones = '';

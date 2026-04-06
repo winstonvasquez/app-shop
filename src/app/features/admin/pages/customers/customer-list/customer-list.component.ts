@@ -41,6 +41,9 @@ export class CustomerListComponent implements OnInit {
     showDrawer = signal(false);
     editingCustomer = signal<CustomerResponse | null>(null);
 
+    selectedIds = signal<Set<number>>(new Set());
+    showBulkSegment = signal(false);
+
     isEmpty = computed(() => !this.loading() && this.customers().length === 0);
 
     tipoClienteOptions = TIPO_CLIENTE_OPTIONS;
@@ -112,6 +115,32 @@ export class CustomerListComponent implements OnInit {
     onSaved(): void {
         this.closeDrawer();
         this.loadCustomers();
+    }
+
+    toggleSelect(id: number): void {
+        const current = new Set(this.selectedIds());
+        if (current.has(id)) current.delete(id); else current.add(id);
+        this.selectedIds.set(current);
+    }
+
+    toggleSelectAll(): void {
+        if (this.selectedIds().size === this.customers().length) {
+            this.selectedIds.set(new Set());
+        } else {
+            this.selectedIds.set(new Set(this.customers().map(c => c.id)));
+        }
+    }
+
+    assignSegment(segmentoId: number): void {
+        const ids = Array.from(this.selectedIds());
+        if (ids.length === 0) return;
+        this.customerService.bulkAssignSegment(ids, segmentoId).subscribe({
+            next: () => {
+                this.selectedIds.set(new Set());
+                this.showBulkSegment.set(false);
+                this.loadCustomers();
+            },
+        });
     }
 
     onDeactivate(customer: CustomerResponse): void {
