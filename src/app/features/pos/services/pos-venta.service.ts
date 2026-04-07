@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { VentaPosRequest, VentaPosResponse, PageResponse, DevolucionPosRequest, DevolucionPosResponse } from '../models/venta-pos.model';
+import { VentaPosRequest, VentaPosResponse, PageResponse, DevolucionPosRequest, DevolucionPosResponse, TipoCambio } from '../models/venta-pos.model';
 import { environment } from '@env/environment';
 
 @Injectable({ providedIn: 'root' })
@@ -50,5 +50,15 @@ export class PosVentaService {
             null,
             { params: { email } }
         );
+    }
+
+    getTipoCambioVigente(companyId: number, moneda = 'USD'): Observable<TipoCambio> {
+        return this.http.get<TipoCambio>(`${this.baseUrl}/tipo-cambio/vigente`, {
+            params: { companyId: companyId.toString(), moneda }
+        });
+    }
+
+    registrarTipoCambio(dto: Partial<TipoCambio>): Observable<TipoCambio> {
+        return this.http.post<TipoCambio>(`${this.baseUrl}/tipo-cambio`, dto);
     }
 }

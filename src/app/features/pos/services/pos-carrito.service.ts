@@ -21,6 +21,10 @@ export class PosCarritoService {
         { metodo: 'YAPE',     monto: 0 },
     ]);
 
+    /** Gift card aplicada al carrito */
+    readonly giftCardCodigo = signal<string>('');
+    readonly giftCardMonto = signal<number>(0);
+
     /** Signal para feedback visual: ID de la última variante añadida. Se resetea a null tras 600ms. */
     readonly lastAddedId = signal<number | null>(null);
 
@@ -70,9 +74,9 @@ export class PosCarritoService {
         this.items().reduce((sum, item) => sum + item.bolsas * 0.50, 0)
     );
 
-    /** Total final incluyendo ICBPER */
+    /** Total final incluyendo ICBPER y descontando gift card */
     readonly totalFinal = computed(() =>
-        this.totalConDescuento() + this.totalIcbper()
+        Math.max(0, this.totalConDescuento() + this.totalIcbper() - this.giftCardMonto())
     );
 
     readonly itemCount = computed(() =>
@@ -141,6 +145,8 @@ export class PosCarritoService {
         this.clienteId.set(null);
         this.pagoDividido.set(false);
         this.pagos.set([{ metodo: 'EFECTIVO', monto: 0 }, { metodo: 'YAPE', monto: 0 }]);
+        this.giftCardCodigo.set('');
+        this.giftCardMonto.set(0);
     }
 
     togglePagoDividido(): void {
@@ -204,6 +210,16 @@ export class PosCarritoService {
                     : i
             )
         );
+    }
+
+    setGiftCard(codigo: string, monto: number): void {
+        this.giftCardCodigo.set(codigo);
+        this.giftCardMonto.set(Math.max(0, monto));
+    }
+
+    clearGiftCard(): void {
+        this.giftCardCodigo.set('');
+        this.giftCardMonto.set(0);
     }
 
     setDescuento(valor: number): void { this.descuento.set(Math.max(0, valor)); }

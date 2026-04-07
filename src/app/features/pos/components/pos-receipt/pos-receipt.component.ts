@@ -1,5 +1,5 @@
 import { Component, ChangeDetectionStrategy, input, output, signal, inject } from '@angular/core';
-import { DatePipe } from '@angular/common';
+import { DatePipe, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
 import { VentaPosResponse } from '../../models/venta-pos.model';
@@ -8,7 +8,7 @@ import { PosVentaService } from '../../services/pos-venta.service';
 @Component({
     selector: 'app-pos-receipt',
     standalone: true,
-    imports: [DatePipe, FormsModule, TranslateModule],
+    imports: [DatePipe, DecimalPipe, FormsModule, TranslateModule],
     templateUrl: './pos-receipt.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
 })

@@ -6,7 +6,7 @@ import { CategoryService } from '@core/services/category.service';
 import { CategoryResponse } from '@core/models/category.model';
 import { SearchService } from '@shared/services/search.service';
 import { AnalyticsService } from '@core/services/analytics.service';
-import { ProductService } from '@core/services/product.service';
+import { ProductService, FiltrosDisponibles } from '@core/services/product.service';
 import { ProductCardComponent, Product as UIProduct } from '@shared/components/product-card/product-card.component';
 import { BreadcrumbComponent, BreadcrumbItem } from '@shared/components/breadcrumb/breadcrumb.component';
 
@@ -36,6 +36,13 @@ export class ProductsPageComponent implements OnInit {
   minRating   = signal<number | null>(null);
   showNew     = signal<boolean>(false);
 
+  // Filtros avanzados (F2.2)
+  precioMin         = signal<number | null>(null);
+  precioMax         = signal<number | null>(null);
+  marcasSeleccionadas = signal<string[]>([]);
+  filtrosDisponibles  = signal<FiltrosDisponibles | null>(null);
+  showFilterPanel   = signal<boolean>(false);
+
   currentPage  = signal(1);
   readonly pageSize = PAGE_SIZE;
 
@@ -58,10 +65,54 @@ export class ProductsPageComponent implements OnInit {
     });
   }
 
+  loadFiltrosDisponibles(): void {
+    const catId = this.searchService.categoryId();
+    this.productService.getFiltrosDisponibles(catId ?? undefined).subscribe({
+      next: (f) => this.filtrosDisponibles.set(f),
+      error: () => { /* no crítico */ }
+    });
+  }
+
+  toggleMarca(marca: string): void {
+    const current = this.marcasSeleccionadas();
+    this.marcasSeleccionadas.set(
+      current.includes(marca) ? current.filter(m => m !== marca) : [...current, marca]
+    );
+    this.goToPage(1);
+  }
+
+  applyPriceFilter(): void { this.goToPage(1); }
+
   loadProducts(page: number = this.currentPage()) {
     this.loading.set(true);
     const catId = this.searchService.categoryId();
     const query = this.searchService.searchQuery();
+    const marcas = this.marcasSeleccionadas();
+    const pMin = this.precioMin();
+    const pMax = this.precioMax();
+
+    // Usar filtrado avanzado si hay parámetros extra
+    if (marcas.length || pMin != null || pMax != null) {
+      this.productService.getAllProductsFiltered(
+        { page: page - 1, size: this.pageSize },
+        { search: query || undefined, categoriaId: catId ?? undefined, marcas, minPrice: pMin ?? undefined, maxPrice: pMax ?? undefined }
+      ).subscribe({
+      next: (data) => {
+        this.products.set(data.content.map(p => ({
+          id: p.id, name: p.nombre, price: p.precioBase,
+          image: p.imagenes?.find(img => img.esPrincipal)?.url || p.imagenes?.[0]?.url
+                 || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&h=400&fit=crop',
+          badge: p.stock !== undefined && p.stock <= 5 ? 'CASI_AGOTADO' : undefined
+        })));
+        this.totalPages.set(data.totalPages ?? 1);
+        this.totalElements.set(data.totalElements ?? 0);
+        this.loading.set(false);
+      },
+      error: () => this.loading.set(false)
+      });
+      return;
+    }
+
     this.productService.getAllCachedFiltered(page - 1, this.pageSize, query || undefined, catId).subscribe({
       next: (data) => {
         const mapped: UIProduct[] = data.content.map(p => ({
@@ -106,6 +157,8 @@ export class ProductsPageComponent implements OnInit {
   selectCategory(id: number): void {
     const current = this.searchService.categoryId();
     this.searchService.setCategoryId(current === id ? null : id);
+    this.marcasSeleccionadas.set([]);
+    this.loadFiltrosDisponibles();
     this.goToPage(1);
   }
 
@@ -120,6 +173,9 @@ export class ProductsPageComponent implements OnInit {
     this.sortBy.set(null);
     this.minRating.set(null);
     this.showNew.set(false);
+    this.precioMin.set(null);
+    this.precioMax.set(null);
+    this.marcasSeleccionadas.set([]);
     this.router.navigate([], {
       relativeTo: this.route,
       queryParams: { page: 1 },

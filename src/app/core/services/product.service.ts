@@ -23,6 +23,14 @@ export interface ProductFilter {
     categoriaId?: number;
     minPrice?: number;
     maxPrice?: number;
+    marcas?: string[];
+}
+
+export interface FiltrosDisponibles {
+    marcas: string[];
+    precioMin: number;
+    precioMax: number;
+    atributos: { nombre: string; valores: string[] }[];
 }
 
 @Injectable({
@@ -61,6 +69,9 @@ export class ProductService extends BaseApiService<ProductRequest, ProductRespon
         }
         if (filter?.maxPrice !== undefined) {
             params = params.set('maxPrice', filter.maxPrice.toString());
+        }
+        if (filter?.marcas?.length) {
+            filter.marcas.forEach(m => { params = params.append('marca', m); });
         }
 
         return this.getPaginated<PageResponse<ProductResponse>>(params);
@@ -102,6 +113,12 @@ export class ProductService extends BaseApiService<ProductRequest, ProductRespon
     override delete(id: number): Observable<void> {
         this.invalidateCache();
         return super.delete(id);
+    }
+
+    getFiltrosDisponibles(categoriaId?: number): Observable<FiltrosDisponibles> {
+        let params = new HttpParams();
+        if (categoriaId) params = params.set('categoriaId', categoriaId.toString());
+        return this.http.get<FiltrosDisponibles>(`${this.baseUrl}/filtros-disponibles`, { params });
     }
 
     search(query: string, pagination: PaginationConfig): Observable<PageResponse<ProductResponse>> {

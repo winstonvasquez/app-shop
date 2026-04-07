@@ -1,6 +1,20 @@
 // models/venta-pos.model.ts
 
-export type MetodoPagoPos = 'EFECTIVO' | 'TARJETA' | 'YAPE' | 'PLIN' | 'MIXTO';
+export type MetodoPagoPos = 'EFECTIVO' | 'TARJETA' | 'YAPE' | 'PLIN' | 'MIXTO' | 'GIFT_CARD';
+
+export interface GiftCard {
+    id: number;
+    companyId: number;
+    codigo: string;
+    saldoInicial: number;
+    saldoActual: number;
+    moneda: string;
+    estado: string;
+    fechaExpiracion?: string;
+    clienteId?: number;
+    clienteNombre?: string;
+    fechaCreacion: string;
+}
 
 export interface PagoMixto {
     metodo: Exclude<MetodoPagoPos, 'MIXTO'>;
@@ -50,6 +64,9 @@ export interface VentaPosResponse {
     detalles: DetalleVentaPosResponse[];
     pagos: PagoMixtoResponse[];
     qrData?: string;
+    moneda?: string;
+    tipoCambio?: number;
+    totalMonedaExtranjera?: number;
 }
 
 export interface VentaPosItemRequest {
@@ -71,6 +88,21 @@ export interface VentaPosRequest {
     descuento?: number;
     montoRecibido?: number;
     pagos?: PagoMixto[];
+    moneda?: string;
+    puntosACanjear?: number;
+}
+
+// ── Tipo de Cambio ─────────────────────────────────────────────
+
+export interface TipoCambio {
+    id: number;
+    companyId: number;
+    monedaOrigen: string;
+    monedaDestino: string;
+    tasaCompra: number;
+    tasaVenta: number;
+    fechaVigencia: string;
+    fuente: string;
 }
 
 export interface PageResponse<T> {

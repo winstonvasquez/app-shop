@@ -99,6 +99,22 @@
                 <span class="receipt-grand-amount">S/{{ fmt(v.total) }}</span>
             </div>
 
+            <!-- Dual currency (multi-moneda) -->
+            @if (v.moneda && v.moneda !== 'PEN' && v.totalMonedaExtranjera) {
+            <div class="receipt-dual-currency">
+                <div class="receipt-total-row">
+                    <span>Total en {{ v.moneda }}</span>
+                    <span class="mono">{{ v.moneda === 'USD' ? 'US$' : v.moneda }} {{ fmt(v.totalMonedaExtranjera) }}</span>
+                </div>
+                @if (v.tipoCambio) {
+                <div class="receipt-total-row text-muted" style="font-size: 11px;">
+                    <span>T.C. {{ v.moneda }}/PEN</span>
+                    <span class="mono">{{ v.tipoCambio | number:'1.4-4' }}</span>
+                </div>
+                }
+            </div>
+            }
+
             <!-- Forma de pago -->
             <div class="receipt-payment-detail">
                 @if (v.metodoPago === 'MIXTO' && v.pagos.length > 0) {

@@ -1,6 +1,7 @@
 import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
+import { SeoService } from '@core/services/seo.service';
 import { TranslateModule } from '@ngx-translate/core';
 import { ProductDetailService } from '@features/products/services/product-detail.service';
 import { ProductImageGalleryComponent } from '@features/products/components/product-image-gallery/product-image-gallery.component';
@@ -38,6 +39,7 @@ export class ProductDetailPageComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private urlEncryption = inject(UrlEncryptionService);
   private analytics = inject(AnalyticsService);
+  private seo = inject(SeoService);
 
   private _isLoading = signal<boolean>(true);
   private _error = signal<boolean>(false);
@@ -78,7 +80,14 @@ export class ProductDetailPageComponent implements OnInit {
         next: (data) => {
           this._product.set(data);
           this._isLoading.set(false);
-          this.titleService.setTitle(`${data.nombre} | App Shop`);
+          this.seo.setProductPage({
+              nombre: data.nombre,
+              descripcion: (data as unknown as Record<string, unknown>)['descripcion'] as string | undefined,
+              imagen: data.images?.[0]?.url,
+              precio: data.precioBase,
+              marca: (data as unknown as Record<string, unknown>)['marca'] as string | undefined,
+              rating: data.rating,
+          });
           this.saveToBrowseHistory(data);
           this.analytics.trackProductView(data.id, data.nombre, data.precioBase);
         },
