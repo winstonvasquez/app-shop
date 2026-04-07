@@ -63,6 +63,11 @@ export const CONTABILIDAD_ROUTES: Routes = [
                 path: 'plan-cuentas',
                 loadComponent: () => import('./pages/plan-cuentas/plan-cuentas.component')
                     .then(m => m.PlanCuentasComponent)
+            },
+            {
+                path: 'asientos-recurrentes',
+                loadComponent: () => import('./pages/asientos-recurrentes/asientos-recurrentes.component')
+                    .then(m => m.AsientosRecurrentesComponent)
             }
         ]
     }
