@@ -33,7 +33,8 @@ export interface DireccionEnvio {
 }
 
 export interface OrderRequest {
-    usuarioId: number;
+    usuarioId: number | null;
+    guestEmail?: string;
     detalles: OrderDetailRequest[];
     direccionEnvio: DireccionEnvio;
     metodoPago: string;

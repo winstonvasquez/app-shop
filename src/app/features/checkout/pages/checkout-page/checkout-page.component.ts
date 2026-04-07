@@ -13,6 +13,8 @@ import { MercadoPagoService, CardData, YapeIntentResult } from '@core/services/p
 import { CreditService } from '@core/services/credit.service';
 import { AnalyticsService } from '@core/services/analytics.service';
 import { ZonaEnvioService, ZonaEnvio } from '@core/services/zona-envio.service';
+import { GuestSessionService } from '@core/services/guest-session.service';
+import { CartSyncService } from '@core/services/cart-sync.service';
 import { FormsModule, ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { finalize } from 'rxjs/operators';
 
@@ -27,6 +29,8 @@ export class CheckoutPageComponent implements OnInit {
   orderService = inject(OrderService);
   configService = inject(ConfigService);
   authService = inject(AuthService);
+  guestSession = inject(GuestSessionService);
+  cartSync = inject(CartSyncService);
   router = inject(Router);
   translate = inject(TranslateService);
   systemParams = inject(SystemParameterService);
@@ -36,6 +40,14 @@ export class CheckoutPageComponent implements OnInit {
   analyticsService = inject(AnalyticsService);
   zonaEnvioService = inject(ZonaEnvioService);
   fb = inject(FormBuilder);
+
+  isGuest = computed(() => !this.authService.currentUser());
+
+  guestForm = this.fb.group({
+    guestEmail: ['', [Validators.required, Validators.email]],
+    guestName:  ['', Validators.required],
+    guestPhone: [''],
+  });
 
   cartItems = this.cartService.cartItems;
   cartTotal = this.cartService.cartTotal;
@@ -95,7 +107,7 @@ export class CheckoutPageComponent implements OnInit {
     return total;
   });
 
-  userId = computed(() => this.authService.currentUser()?.userId || 1);
+  userId = computed(() => this.authService.currentUser()?.userId ?? null);
 
   isLoading = signal(false);
   errorMessage = signal('');
@@ -119,10 +131,22 @@ export class CheckoutPageComponent implements OnInit {
   ngOnInit() {
     this.configService.getMediosPago().subscribe(data => this.paymentMethods.set(data));
     this.configService.getCertificaciones().subscribe(data => this.certifications.set(data));
-    this.loadAddresses();
-    this.creditService.loadBalance();
     this.analyticsService.trackBeginCheckout(this.cartTotal(), this.cartItems().length);
     this.zonaEnvioService.getZonas().subscribe({ next: zonas => this.zonas.set(zonas), error: () => {} });
+
+    if (this.isGuest()) {
+      // Pre-llenar formulario de invitado con datos guardados si existen
+      this.guestForm.patchValue({
+        guestEmail: this.guestSession.email(),
+        guestName:  this.guestSession.name(),
+        guestPhone: this.guestSession.phone(),
+      });
+      // Crear dirección de envío manual para invitados
+      this.showAddressForm.set(true);
+    } else {
+      this.loadAddresses();
+      this.creditService.loadBalance();
+    }
   }
 
   toggleCredit(checked: boolean): void {
@@ -352,6 +376,10 @@ export class CheckoutPageComponent implements OnInit {
 
   placeOrder() {
     if (this.cartItems().length === 0) return;
+    if (this.isGuest() && this.guestForm.invalid) {
+      this.errorMessage.set('Por favor completa tu nombre y email para continuar como invitado');
+      return;
+    }
     if (!this.selectedAddress()) {
       this.errorMessage.set('Por favor selecciona una dirección de envío');
       return;
@@ -361,8 +389,18 @@ export class CheckoutPageComponent implements OnInit {
     this.errorMessage.set('');
 
     const addr = this.selectedAddress()!;
+    const guestEmail = this.isGuest() ? (this.guestForm.value.guestEmail ?? undefined) : undefined;
+
+    // Guardar datos de invitado en sesión para reutilizar
+    if (this.isGuest() && guestEmail) {
+      this.guestSession.setEmail(this.guestForm.value.guestEmail ?? '');
+      this.guestSession.setName(this.guestForm.value.guestName ?? '');
+      this.guestSession.setPhone(this.guestForm.value.guestPhone ?? '');
+    }
+
     const orderRequest = {
       usuarioId: this.userId(),
+      guestEmail,
       detalles: this.cartItems().map(item => ({
         productoId: item.productId,
         varianteId: item.variantId ?? 0,
@@ -385,6 +423,8 @@ export class CheckoutPageComponent implements OnInit {
     this.orderService.createOrder(orderRequest).subscribe({
       next: (response: unknown) => {
         this.cartService.clearCart();
+        this.cartSync.markRecovered();
+        if (this.isGuest()) this.guestSession.clear();
         this.isLoading.set(false);
         const res = response as { id?: number; orderId?: number };
         const orderId = res.id ?? res.orderId;

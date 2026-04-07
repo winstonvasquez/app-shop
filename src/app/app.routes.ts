@@ -26,7 +26,6 @@ export const routes: Routes = [
             },
             {
                 path: 'checkout',
-                canActivate: [customerGuard],
                 loadComponent: () =>
                     import('./features/checkout/pages/checkout-page/checkout-page.component')
                         .then(m => m.CheckoutPageComponent),
@@ -61,10 +60,9 @@ export const routes: Routes = [
                 canActivate: [customerGuard],
                 loadChildren: () => import('./features/account/account.routes').then(m => m.ACCOUNT_ROUTES),
             },
-            // Confirmación de pedido post-checkout
+            // Confirmación de pedido post-checkout — accesible para invitados
             {
                 path: 'orders/confirmation/:orderId',
-                canActivate: [customerGuard],
                 loadComponent: () =>
                     import('./features/orders/pages/order-confirmation/order-confirmation.component')
                         .then(m => m.OrderConfirmationComponent),
