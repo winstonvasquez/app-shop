@@ -16,6 +16,8 @@ import { ProductDetail } from '@features/products/models/product-detail.model';
 import { UrlEncryptionService } from '@core/services/url-encryption.service';
 import { AnalyticsService } from '@core/services/analytics.service';
 import { BreadcrumbComponent, BreadcrumbItem } from '@shared/components/breadcrumb/breadcrumb.component';
+import { RecommendationsService } from '@core/services/recommendations.service';
+import { ProductCardComponent, Product as UIProduct } from '@shared/components/product-card/product-card.component';
 
 @Component({
   selector: 'app-product-detail-page',
@@ -28,13 +30,15 @@ import { BreadcrumbComponent, BreadcrumbItem } from '@shared/components/breadcru
     SellerInfoComponent,
     ProductAttributesComponent,
     TranslateModule,
-    BreadcrumbComponent
+    BreadcrumbComponent,
+    ProductCardComponent
   ],
   templateUrl: './product-detail-page.component.html'
 })
 export class ProductDetailPageComponent implements OnInit {
   private productDetailService = inject(ProductDetailService);
   private cartService = inject(CartService);
+  private recommendationsService = inject(RecommendationsService);
   private titleService = inject(Title);
   private route = inject(ActivatedRoute);
   private urlEncryption = inject(UrlEncryptionService);
@@ -44,6 +48,7 @@ export class ProductDetailPageComponent implements OnInit {
   private _isLoading = signal<boolean>(true);
   private _error = signal<boolean>(false);
   private _product = signal<ProductDetail | null>(null);
+  similarProducts = signal<UIProduct[]>([]);
 
   productResource = {
     isLoading: this._isLoading,
@@ -90,6 +95,15 @@ export class ProductDetailPageComponent implements OnInit {
           });
           this.saveToBrowseHistory(data);
           this.analytics.trackProductView(data.id, data.nombre, data.precioBase);
+          this.recommendationsService.trackVisualizacion(data.id);
+          this.recommendationsService.getSimilares(data.id).subscribe(similares => {
+            this.similarProducts.set(similares.map(p => ({
+              id: p.id, name: p.nombre, price: p.precioBase,
+              image: p.imagenes?.find((img: { esPrincipal: boolean; url: string }) => img.esPrincipal)?.url
+                     || p.imagenes?.[0]?.url
+                     || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&h=400&fit=crop'
+            })));
+          });
         },
         error: () => {
           this._error.set(true);
