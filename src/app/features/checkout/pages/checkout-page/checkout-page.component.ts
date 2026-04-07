@@ -12,6 +12,7 @@ import { AddressService, Address, AddressInput } from '@core/services/address/ad
 import { MercadoPagoService, CardData, YapeIntentResult } from '@core/services/payment/mercadopago.service';
 import { CreditService } from '@core/services/credit.service';
 import { AnalyticsService } from '@core/services/analytics.service';
+import { ZonaEnvioService, ZonaEnvio } from '@core/services/zona-envio.service';
 import { FormsModule, ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { finalize } from 'rxjs/operators';
 
@@ -33,6 +34,7 @@ export class CheckoutPageComponent implements OnInit {
   mercadopagoService = inject(MercadoPagoService);
   creditService = inject(CreditService);
   analyticsService = inject(AnalyticsService);
+  zonaEnvioService = inject(ZonaEnvioService);
   fb = inject(FormBuilder);
 
   cartItems = this.cartService.cartItems;
@@ -76,12 +78,17 @@ export class CheckoutPageComponent implements OnInit {
   couponError = signal<string | null>(null);
   couponApplying = signal(false);
   couponDiscount = signal(0);
+  appliedCouponCode = signal<string | null>(null);
+
+  zonas = signal<ZonaEnvio[]>([]);
+  selectedZona = signal<ZonaEnvio | null>(null);
+  shippingCost = computed(() => this.selectedZona()?.costoEnvio ?? 0);
 
   useCredit = signal(false);
   creditToApply = signal(0);
 
   finalTotal = computed(() => {
-    let total = this.cartTotal() - this.couponDiscount();
+    let total = this.cartTotal() - this.couponDiscount() + this.shippingCost();
     if (this.useCredit()) {
       total = Math.max(0, total - this.creditToApply());
     }
@@ -115,6 +122,7 @@ export class CheckoutPageComponent implements OnInit {
     this.loadAddresses();
     this.creditService.loadBalance();
     this.analyticsService.trackBeginCheckout(this.cartTotal(), this.cartItems().length);
+    this.zonaEnvioService.getZonas().subscribe({ next: zonas => this.zonas.set(zonas), error: () => {} });
   }
 
   toggleCredit(checked: boolean): void {
@@ -189,16 +197,21 @@ export class CheckoutPageComponent implements OnInit {
     });
   }
 
+  selectZona(zona: ZonaEnvio): void {
+    this.selectedZona.set(zona);
+  }
+
   applyCoupon(): void {
     const code = this.couponCode();
     if (!code.trim()) return;
     this.couponError.set(null);
     this.couponApplying.set(true);
-    this.orderService.validateCoupon(code).pipe(
+    this.orderService.validateCoupon(code, this.cartTotal()).pipe(
       finalize(() => this.couponApplying.set(false))
     ).subscribe({
       next: (discount) => {
         this.couponDiscount.set(discount.amount);
+        this.appliedCouponCode.set(code.trim().toUpperCase());
         this.couponError.set(null);
       },
       error: () => this.couponError.set('Cupón inválido o expirado')
@@ -364,7 +377,9 @@ export class CheckoutPageComponent implements OnInit {
         nombreDestinatario: addr.nombreCompleto,
         telefono: addr.telefono
       },
-      metodoPago: this.selectedPaymentMethod()
+      metodoPago: this.selectedPaymentMethod(),
+      codigoCupon: this.appliedCouponCode() ?? undefined,
+      zonaEnvioId: this.selectedZona()?.id ?? undefined
     };
 
     this.orderService.createOrder(orderRequest).subscribe({

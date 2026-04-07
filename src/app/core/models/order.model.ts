@@ -37,10 +37,13 @@ export interface OrderRequest {
     detalles: OrderDetailRequest[];
     direccionEnvio: DireccionEnvio;
     metodoPago: string;
+    codigoCupon?: string;
+    zonaEnvioId?: number;
 }
 
 export interface OrderDetailRequest {
     productoId: number;
+    varianteId: number;
     cantidad: number;
 }
 

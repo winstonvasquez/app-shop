@@ -53,19 +53,18 @@ export class OrderService {
     }
 
     /**
-     * Valida un cupón de descuento contra el endpoint GET /api/cupones/validate.
+     * Valida un cupón de descuento contra POST /api/v1/cupones/validate.
      */
-    validateCoupon(code: string): Observable<{ amount: number }> {
-        const url = `${environment.apiUrls.sales}/api/cupones/validate`;
-        return this.http.get<{ valid: boolean; tipo: string | null; valor: number | null; mensaje: string }>(
-            url, { params: { code } }
+    validateCoupon(code: string, subtotal: number = 0): Observable<{ amount: number }> {
+        const url = `${environment.apiUrls.sales}/api/v1/cupones/validate`;
+        return this.http.post<{ valido: boolean; tipo: string; valor: number; mensaje: string }>(
+            url, { codigo: code, subtotal }
         ).pipe(
             catchError(this.handleError),
-            // Mapear la respuesta al formato esperado por checkout
             (source) => new Observable<{ amount: number }>(observer => {
                 source.subscribe({
                     next: (res) => {
-                        if (res.valid && res.valor != null) {
+                        if (res.valido && res.valor != null) {
                             observer.next({ amount: res.valor });
                             observer.complete();
                         } else {

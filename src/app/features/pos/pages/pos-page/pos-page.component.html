@@ -1,8 +1,42 @@
+<!-- PIN Login Guard -->
+@if (!pinAuthenticated()) {
+<app-pos-pin-login
+    (authenticated)="onPinAuthenticated($event)"
+    (skip)="onPinSkipped()" />
+}
+
+@if (pinAuthenticated()) {
 <div class="pos-layout">
 
     <!-- ══ TOPBAR OSCURO ══ -->
     <app-pos-topbar [turno]="turnoActivo()" [clockTime]="clockTime()" [clockDate]="clockDate()"
         (abrirTurno)="abrirTurno()" (cerrarTurno)="cerrarTurno()" (navigate)="showScreen($event)" />
+
+    <!-- Offline indicator -->
+    @if (offlineSync.isOffline() || offlineSync.hasPending()) {
+    <div class="flex items-center gap-2 px-4 py-1.5 text-xs font-medium"
+        [class]="offlineSync.isOffline()
+            ? 'bg-[var(--color-warning)]/15 text-[var(--color-warning)]'
+            : 'bg-[var(--color-primary)]/10 text-[var(--color-primary)]'">
+        @if (offlineSync.isOffline()) {
+        <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14">
+            <path fill-rule="evenodd" d="M3.707 2.293a1 1 0 00-1.414 1.414l14 14a1 1 0 001.414-1.414l-1.473-1.473A10.014 10.014 0 0019.542 10a9.997 9.997 0 00-4.956-6.583l-1.378 1.378A8.003 8.003 0 0117.54 10a8.029 8.029 0 01-2.69 4.14l-1.417-1.417A5.994 5.994 0 0015.54 10a5.989 5.989 0 00-1.586-4.04L12.54 7.374A3.998 3.998 0 0114 10c0 .406-.061.801-.175 1.173l-1.451-1.451A1.993 1.993 0 0010 8c-.078 0-.155.005-.231.014L7.083 5.328A8.003 8.003 0 0110 2a7.976 7.976 0 015.372 2.066l1.414-1.414A9.972 9.972 0 0010 0C7.028 0 4.347 1.199 2.414 3.172L3.707 2.293z" clip-rule="evenodd" />
+        </svg>
+        <span>Modo offline</span>
+        } @else {
+        <svg class="animate-spin" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+            <path d="M10 3a7 7 0 017 7" stroke-linecap="round" />
+        </svg>
+        <span>Sincronizando ventas...</span>
+        }
+        @if (offlineSync.pendingCount() > 0) {
+        <span class="inline-flex items-center justify-center min-w-[18px] h-[18px] rounded-full px-1 text-[10px] font-bold bg-[var(--color-warning)] text-black">
+            {{ offlineSync.pendingCount() }}
+        </span>
+        <span>pendientes</span>
+        }
+    </div>
+    }
 
     <!-- ══ WORKSPACE: sidenav + contenido ══ -->
     <div class="pos-workspace">
@@ -106,7 +140,14 @@
                     (productSelected)="carrito.agregarProducto($event)" (searchChanged)="onSearchChanged($event)"
                     (favoritoSelected)="onFavoritoSelected($event)" (favoritoRemoved)="removeFavorito($event)"
                     (addToFavorites)="addFavorito($event)" />
-                <app-pos-order-panel (procesarVenta)="procesarVenta()" (irAlNumpad)="showScreen('pago')" />
+                <div class="flex flex-col" style="min-width: 0;">
+                    <!-- Customer Lookup -->
+                    <app-pos-customer-lookup
+                        (clientSelected)="onClientSelected($event)"
+                        (clientCleared)="onClientCleared()" />
+                    <app-pos-order-panel (procesarVenta)="procesarVenta()" (irAlNumpad)="showScreen('pago')"
+                        (giftCardLookup)="lookupGiftCard($event)" />
+                </div>
             </div>
             }
 
@@ -185,10 +226,27 @@
     (close)="showCameraScanner.set(false)" />
 }
 
+<!-- Cross-Stock Dialog -->
+@if (showCrossStock()) {
+<app-pos-cross-stock-dialog
+    [varianteId]="crossStockVarianteId()"
+    [companyId]="companyId"
+    (close)="showCrossStock.set(false)" />
+}
+
+<!-- Manager PIN Dialog (discount authorization) -->
+@if (showManagerPin()) {
+<app-pos-manager-pin-dialog
+    (confirmed)="onManagerPinConfirmed($event)"
+    (cancel)="showManagerPin.set(false)" />
+}
+
 <!-- Shortcuts help overlay -->
 @if (keyboard.showShortcuts()) {
 <app-pos-shortcuts-help (close)="keyboard.toggleShortcutsPanel()" />
 }
+
+} <!-- end @if (pinAuthenticated()) -->
 
 <!-- Toast global con tipo visual -->
 @if (toastVisible()) {

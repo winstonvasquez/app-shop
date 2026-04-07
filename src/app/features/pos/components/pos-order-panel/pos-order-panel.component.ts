@@ -18,6 +18,7 @@ export class PosOrderPanelComponent {
 
     readonly procesarVenta = output<void>();
     readonly irAlNumpad = output<void>();
+    readonly giftCardLookup = output<string>();
 
     readonly paymentMethods: { id: MetodoPagoPos; label: string; icon: string; i18nKey: string }[] = [
         { id: 'EFECTIVO', label: 'Efectivo',  icon: 'cash', i18nKey: 'pos.panel.cash' },
@@ -105,6 +106,12 @@ export class PosOrderPanelComponent {
 
     fmt(val: number | undefined | null): string {
         return (val ?? 0).toFixed(2);
+    }
+
+    onGiftCardLookup(codigo: string): void {
+        if (codigo.trim()) {
+            this.giftCardLookup.emit(codigo.trim());
+        }
     }
 
     bgColor(id: number): string {

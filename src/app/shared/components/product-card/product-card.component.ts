@@ -7,6 +7,7 @@ import { QuickviewService } from '@shared/services/quickview.service';
 import { UrlEncryptionService } from '@core/services/url-encryption.service';
 import { WishlistService } from '@core/services/wishlist.service';
 import { AuthService } from '@core/auth/auth.service';
+import { CompareService } from '@features/products/services/compare.service';
 
 export interface Product {
   id: number;
@@ -38,8 +39,10 @@ export class ProductCardComponent {
   readonly wishlistService = inject(WishlistService);
   private authService = inject(AuthService);
 
+  readonly compareService = inject(CompareService);
   readonly isAuthenticated = computed(() => this.authService.isAuthenticated());
   readonly isFavorito = computed(() => this.wishlistService.isInWishlist(this.product().id));
+  readonly isComparing = computed(() => this.compareService.isInCompare(this.product().id));
 
   private toggling = signal(false);
 
@@ -61,5 +64,14 @@ export class ProductCardComponent {
       complete: () => this.toggling.set(false),
       error: () => this.toggling.set(false),
     });
+  }
+
+  toggleCompare(event: Event) {
+    event.stopPropagation();
+    const p = this.product();
+    this.compareService.toggle({ id: p.id, name: p.name, price: p.price, image: p.image });
+    if (this.compareService.count() >= 2 && !this.compareService.isInCompare(p.id)) {
+      this.router.navigate(['/products/compare']);
+    }
   }
 }

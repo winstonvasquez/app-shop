@@ -155,10 +155,22 @@
             <span class="totals-val">−S/{{ fmt(carrito.descuento()) }}</span>
         </div>
         }
+        @if (carrito.totalIcbper() > 0) {
+        <div class="totals-row">
+            <span>ICBPER (bolsas)</span>
+            <span class="totals-val">S/{{ fmt(carrito.totalIcbper()) }}</span>
+        </div>
+        }
+        @if (carrito.giftCardMonto() > 0) {
+        <div class="totals-row totals-row--discount">
+            <span>Gift Card ({{ carrito.giftCardCodigo() }})</span>
+            <span class="totals-val">−S/{{ fmt(carrito.giftCardMonto()) }}</span>
+        </div>
+        }
         <div class="totals-grand">
             <span class="totals-grand-label">TOTAL</span>
             <span class="totals-grand-amount">
-                <span class="totals-currency">S/</span>{{ fmt(carrito.totalConDescuento()) }}
+                <span class="totals-currency">S/</span>{{ fmt(carrito.totalFinal()) }}
             </span>
         </div>
     </div>
@@ -288,6 +300,28 @@
             }
         </div>
 
+        <!-- Gift Card -->
+        <div class="mt-3">
+            @if (!carrito.giftCardCodigo()) {
+            <div class="flex items-center gap-2">
+                <input #giftInput type="text" class="flex-1 h-8 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-raised)] text-on text-xs px-3"
+                    placeholder="Código gift card..." (keydown.enter)="onGiftCardLookup(giftInput.value); giftInput.value = ''">
+                <button class="h-8 px-3 rounded-lg text-xs font-medium bg-[var(--color-surface-raised)] border border-[var(--color-border)] text-on hover:bg-[var(--color-border)]"
+                    (click)="onGiftCardLookup(giftInput.value); giftInput.value = ''">
+                    <svg viewBox="0 0 20 20" fill="currentColor" width="12" height="12">
+                        <path fill-rule="evenodd" d="M5 5a3 3 0 015-2.236A3 3 0 0114.83 6H16a2 2 0 110 4h-5V9a1 1 0 10-2 0v1H4a2 2 0 110-4h1.17C5.06 5.687 5 5.35 5 5zm4 1V5a1 1 0 10-1 1h1zm2 0a1 1 0 10-1-1v1h1z" clip-rule="evenodd" />
+                        <path d="M9 11H3v5a2 2 0 002 2h4v-7zM11 18h4a2 2 0 002-2v-5h-6v7z" />
+                    </svg>
+                </button>
+            </div>
+            } @else {
+            <div class="flex items-center justify-between gap-2 h-8 px-3 rounded-lg bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/30 text-xs">
+                <span class="text-on font-medium">Gift Card: −S/{{ fmt(carrito.giftCardMonto()) }}</span>
+                <button class="text-[var(--color-error)] text-[10px] font-semibold" (click)="carrito.clearGiftCard()">Quitar</button>
+            </div>
+            }
+        </div>
+
         <div class="order-actions flex items-center gap-2 mt-4 pt-4 border-t border-[var(--color-border)]">
             <button class="btn-secondary !h-12 !w-12 !p-0 !rounded-xl shrink-0" (click)="irAlNumpad.emit()"
                 [disabled]="carrito.isEmpty()" title="Teclado numérico">
@@ -307,7 +341,7 @@
                 </svg>
                 Cobrar
                 <span class="ml-2 font-mono text-[16px] bg-black/20 px-2 py-0.5 rounded-md">S/{{
-                    fmt(carrito.totalConDescuento()) }}</span>
+                    fmt(carrito.totalFinal()) }}</span>
             </button>
         </div>
 
