@@ -1,5 +1,4 @@
 import { Component, inject, OnInit, OnDestroy, signal, computed } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { FlashSaleService, FlashSale } from '@core/services/flash-sale.service';
 
 interface Countdown {
@@ -11,7 +10,7 @@ interface Countdown {
 @Component({
     selector: 'app-flash-sale-banner',
     standalone: true,
-    imports: [CommonModule],
+    imports: [],
     template: `
         @if (activeFlashSale()) {
         <div class="flash-sale-banner">

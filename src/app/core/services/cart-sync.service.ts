@@ -4,7 +4,7 @@ import { AuthService } from '@core/auth/auth.service';
 import { CartService } from '@features/cart/services/cart.service';
 import { environment } from '@env/environment';
 
-const API = environment.apiUrl;
+const API = `${environment.apiUrls.sales}/api/v1`;
 
 /**
  * Sincroniza el carrito con el backend para activar la recuperación de carritos abandonados.

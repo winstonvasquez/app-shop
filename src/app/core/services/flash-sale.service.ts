@@ -22,7 +22,7 @@ export class FlashSaleService {
     private refreshInterval: ReturnType<typeof setInterval> | null = null;
 
     loadFlashSales(): void {
-        this.http.get<FlashSale[]>(`${environment.apiUrl}/promociones/flash-activas`).subscribe({
+        this.http.get<FlashSale[]>(`${environment.apiUrls.sales}/api/v1/promociones/flash-activas`).subscribe({
             next: (data) => this.flashSales.set(data),
             error: () => {}
         });

@@ -8,6 +8,7 @@ import { CartDrawerComponent } from '@shared/components/cart-drawer/cart-drawer.
 import { ProductQuickviewComponent } from '@shared/components/product-quickview/product-quickview.component';
 import { AuthModal } from '@shared/components/auth-modal/auth-modal.component';
 import { ToastContainerComponent } from '@shared/components/toast/toast-container.component';
+import { FlashSaleBannerComponent } from '@shared/components/flash-sale-banner/flash-sale-banner.component';
 import { ModalStateService } from '@core/services/modal-state.service';
 import { AuthService } from '@core/auth/auth.service';
 import { ThemeService } from '@core/services/theme/theme';
@@ -16,7 +17,7 @@ import { Subscription, filter } from 'rxjs';
 @Component({
     selector: 'app-main-layout',
     standalone: true,
-    imports: [RouterOutlet, HeaderComponent, FooterComponent, FloatingMenuComponent, FloatingChatComponent, CartDrawerComponent, ProductQuickviewComponent, AuthModal, ToastContainerComponent],
+    imports: [RouterOutlet, HeaderComponent, FooterComponent, FloatingMenuComponent, FloatingChatComponent, CartDrawerComponent, ProductQuickviewComponent, AuthModal, ToastContainerComponent, FlashSaleBannerComponent],
     templateUrl: './main-layout.component.html',
     host: { class: 'block w-full' }
 })
