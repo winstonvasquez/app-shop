@@ -73,6 +73,11 @@ export const CONTABILIDAD_ROUTES: Routes = [
                 path: 'cierre',
                 loadComponent: () => import('./pages/cierre-contable/cierre-contable.component')
                     .then(m => m.CierreContableComponent)
+            },
+            {
+                path: 'reglas-asiento',
+                loadComponent: () => import('./pages/reglas-asiento/reglas-asiento.component')
+                    .then(m => m.ReglasAsientoComponent)
             }
         ]
     }
