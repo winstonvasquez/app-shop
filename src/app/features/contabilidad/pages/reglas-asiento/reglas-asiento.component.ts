@@ -26,7 +26,7 @@ export class ReglasAsientoComponent implements OnInit {
     readonly errorForm = signal('');
 
     // Form signals
-    readonly tipoTransaccion = signal<string>('VENTA');
+    readonly tipoTransaccion = signal<TransactionType>('VENTA');
     readonly nombre = signal('');
     readonly descripcion = signal('');
     readonly detalles = signal<DetalleRegla[]>([
@@ -66,7 +66,7 @@ export class ReglasAsientoComponent implements OnInit {
 
     abrirEditar(r: ReglaAsiento) {
         this.editandoId.set(r.id);
-        this.tipoTransaccion.set(r.transactionType);
+        this.tipoTransaccion.set(r.transactionType as TransactionType);
         this.nombre.set(r.nombre);
         this.descripcion.set(r.descripcion);
         this.detalles.set(r.detalles.map(d => ({ ...d })));
@@ -85,8 +85,14 @@ export class ReglasAsientoComponent implements OnInit {
     }
 
     eliminarDetalle(i: number) {
-        if (this.detalles().length <= 2) return; // min 2 lines
+        if (this.detalles().length <= 2) return;
         this.detalles.update(ds => ds.filter((_, idx) => idx !== i));
+    }
+
+    actualizarDetalle(i: number, campo: keyof DetalleRegla, valor: unknown) {
+        this.detalles.update(ds => ds.map((d, idx) =>
+            idx === i ? { ...d, [campo]: valor } : d
+        ));
     }
 
     guardar() {
