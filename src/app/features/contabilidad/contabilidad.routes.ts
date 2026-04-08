@@ -83,6 +83,11 @@ export const CONTABILIDAD_ROUTES: Routes = [
                 path: 'flujo-efectivo',
                 loadComponent: () => import('./pages/flujo-efectivo/flujo-efectivo.component')
                     .then(m => m.FlujoEfectivoComponent)
+            },
+            {
+                path: 'conciliacion',
+                loadComponent: () => import('./pages/conciliacion-bancaria/conciliacion-bancaria.component')
+                    .then(m => m.ConciliacionBancariaComponent)
             }
         ]
     }
