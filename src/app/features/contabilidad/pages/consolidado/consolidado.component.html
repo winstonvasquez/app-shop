@@ -1,0 +1,76 @@
+<div class="page-container">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Consolidación Multiempresa</h1>
+            <p class="page-subtitle">Estados financieros consolidados para grupos con múltiples sucursales</p>
+        </div>
+    </div>
+
+    <!-- Config -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="grid grid-cols-3 gap-4 items-end">
+                <div>
+                    <label class="input-label">Año</label>
+                    <input class="input-field" type="number" [ngModel]="anno()" (ngModelChange)="anno.set($event)">
+                </div>
+                <div class="col-span-2">
+                    <label class="input-label">IDs de empresa (UUIDs separados por coma)</label>
+                    <input class="input-field" type="text" placeholder="uuid1, uuid2, uuid3..."
+                        [ngModel]="empresaIdsTexto()" (ngModelChange)="empresaIdsTexto.set($event)">
+                </div>
+            </div>
+            @if (error()) {
+                <p class="input-error-message mt-2">{{ error() }}</p>
+            }
+            <button class="btn btn-primary mt-3" (click)="consolidar()" [disabled]="cargando()">
+                @if (cargando()) { <span class="spinner-sm"></span> }
+                Consolidar
+            </button>
+        </div>
+    </div>
+
+    @if (reporte()) {
+        <!-- Tabs balance/resultados -->
+        <div class="flex gap-1 mb-4">
+            <button class="btn" [ngClass]="seccion() === 'balance' ? 'btn-primary' : 'btn-secondary'"
+                (click)="seccion.set('balance')">Balance General</button>
+            <button class="btn" [ngClass]="seccion() === 'resultados' ? 'btn-primary' : 'btn-secondary'"
+                (click)="seccion.set('resultados')">Estado de Resultados</button>
+        </div>
+
+        <div class="card">
+            <div class="card-body overflow-x-auto">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th class="table-header-cell">Cuenta</th>
+                            @for (emp of empresas(); track emp) {
+                                <th class="table-header-cell text-right">{{ emp.substring(0, 8) }}…</th>
+                            }
+                            <th class="table-header-cell text-right font-bold">CONSOLIDADO</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (l of lineas(); track l.codigo) {
+                            <tr class="table-row">
+                                <td class="table-cell">
+                                    <div class="font-mono text-sm">{{ l.codigo }}</div>
+                                    <div class="text-muted text-xs">{{ l.nombre }}</div>
+                                </td>
+                                @for (emp of empresas(); track emp) {
+                                    <td class="table-cell text-right text-sm">
+                                        S/ {{ saldoEmpresa(l, emp) | number:'1.2-2' }}
+                                    </td>
+                                }
+                                <td class="table-cell text-right font-bold">
+                                    S/ {{ l.totalConsolidado | number:'1.2-2' }}
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+</div>

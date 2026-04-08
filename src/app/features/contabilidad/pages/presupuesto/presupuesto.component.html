@@ -1,0 +1,145 @@
+<div class="page-container">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Presupuesto vs Ejecutado</h1>
+            <p class="page-subtitle">Control presupuestal anual por cuenta contable</p>
+        </div>
+        @if (vista() === 'lista') {
+            <button class="btn btn-primary" (click)="vista.set('nuevo')">+ Nuevo Presupuesto</button>
+        }
+        @if (vista() !== 'lista') {
+            <button class="btn btn-secondary" (click)="cancelar()">← Volver</button>
+        }
+    </div>
+
+    @if (error()) {
+        <div class="badge badge-error mb-4 w-full text-left py-2 px-3">{{ error() }}</div>
+    }
+
+    <!-- LISTA -->
+    @if (vista() === 'lista') {
+        <div class="card">
+            <div class="card-body">
+                @if (presupuestos().length === 0) {
+                    <p class="text-muted text-center py-8">No hay presupuestos registrados.</p>
+                } @else {
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th class="table-header-cell">Año</th>
+                                <th class="table-header-cell">Nombre</th>
+                                <th class="table-header-cell">Estado</th>
+                                <th class="table-header-cell text-right">Total</th>
+                                <th class="table-header-cell">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (p of presupuestos(); track p.id) {
+                                <tr class="table-row">
+                                    <td class="table-cell font-bold">{{ p.anno }}</td>
+                                    <td class="table-cell">{{ p.nombre }}</td>
+                                    <td class="table-cell">
+                                        <span [ngClass]="p.estado === 'APROBADO' ? 'badge badge-success' : 'badge badge-warning'">
+                                            {{ p.estado }}
+                                        </span>
+                                    </td>
+                                    <td class="table-cell text-right">S/ {{ p.total | number:'1.2-2' }}</td>
+                                    <td class="table-cell flex gap-2">
+                                        <button class="btn btn-secondary text-xs py-1 px-2" (click)="verComparativo(p.anno)">
+                                            Ver comparativo
+                                        </button>
+                                        @if (p.estado === 'BORRADOR') {
+                                            <button class="btn btn-primary text-xs py-1 px-2" (click)="aprobar(p)">
+                                                Aprobar
+                                            </button>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+    }
+
+    <!-- NUEVO -->
+    @if (vista() === 'nuevo') {
+        <div class="card">
+            <div class="card-header"><h2 class="card-title">Nuevo Presupuesto</h2></div>
+            <div class="card-body">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="input-label">Año</label>
+                        <input class="input-field" type="number" [ngModel]="nuevoAnno()" (ngModelChange)="nuevoAnno.set($event)">
+                    </div>
+                    <div>
+                        <label class="input-label">Nombre del presupuesto</label>
+                        <input class="input-field" type="text" placeholder="Ej. Presupuesto 2025 Aprobado"
+                            [ngModel]="nuevoNombre()" (ngModelChange)="nuevoNombre.set($event)">
+                    </div>
+                </div>
+                <p class="text-muted text-sm mt-3">El detalle por cuenta y mes se puede agregar después de la creación.</p>
+                <div class="flex gap-3 mt-4">
+                    <button class="btn btn-primary" (click)="crear()" [disabled]="cargando() || !nuevoNombre()">
+                        Crear Presupuesto
+                    </button>
+                    <button class="btn btn-secondary" (click)="cancelar()">Cancelar</button>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- COMPARATIVO -->
+    @if (vista() === 'comparativo') {
+        @if (cargando()) {
+            <div class="loading-container"><div class="spinner"></div></div>
+        } @else if (comparativo().length === 0) {
+            <div class="card">
+                <div class="card-body text-center py-8">
+                    <p class="text-muted">No hay datos comparativos para {{ annoComparativo() }}.</p>
+                    <p class="text-muted text-sm mt-2">Verifique que exista un presupuesto aprobado y movimientos contables para este año.</p>
+                </div>
+            </div>
+        } @else {
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Comparativo Presupuesto vs Ejecutado — {{ annoComparativo() }}</h2>
+                </div>
+                <div class="card-body overflow-x-auto">
+                    <table class="table" style="min-width: 900px">
+                        <thead>
+                            <tr>
+                                <th class="table-header-cell">Cuenta</th>
+                                <th class="table-header-cell text-right">Presupuesto</th>
+                                <th class="table-header-cell text-right">Ejecutado</th>
+                                <th class="table-header-cell text-right">Variación</th>
+                                <th class="table-header-cell text-center">% Ejecución</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (c of comparativo(); track c.codigoCuenta) {
+                                <tr class="table-row">
+                                    <td class="table-cell">
+                                        <div class="font-mono text-sm">{{ c.codigoCuenta }}</div>
+                                        <div class="text-muted text-xs">{{ c.nombreCuenta }}</div>
+                                    </td>
+                                    <td class="table-cell text-right">S/ {{ c.totalPresupuestado | number:'1.2-2' }}</td>
+                                    <td class="table-cell text-right">S/ {{ c.totalEjecutado | number:'1.2-2' }}</td>
+                                    <td class="table-cell text-right" [ngClass]="c.variacion >= 0 ? 'text-green-400' : 'text-red-400'">
+                                        {{ c.variacion >= 0 ? '+' : '' }}S/ {{ c.variacion | number:'1.2-2' }}
+                                    </td>
+                                    <td class="table-cell text-center">
+                                        <span [ngClass]="ejecucionClass(c.porcentajeEjecucion)">
+                                            {{ c.porcentajeEjecucion | number:'1.1-1' }}%
+                                        </span>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
+    }
+</div>

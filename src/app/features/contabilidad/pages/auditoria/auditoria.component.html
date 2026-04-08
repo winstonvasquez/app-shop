@@ -1,0 +1,111 @@
+<div class="page-container">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Auditoría de Transacciones</h1>
+            <p class="page-subtitle">Registro completo de acciones sobre asientos y documentos contables</p>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="filters-bar mb-4">
+        <div class="flex gap-3 flex-wrap items-end">
+            <div>
+                <label class="input-label">Tipo de entidad</label>
+                <input class="input-field w-40" type="text" placeholder="ASIENTO, PERIODO..."
+                    [ngModel]="filtroTipo()" (ngModelChange)="filtroTipo.set($event)">
+            </div>
+            <div>
+                <label class="input-label">Desde</label>
+                <input class="input-field" type="date" [ngModel]="filtroDesde()" (ngModelChange)="filtroDesde.set($event)">
+            </div>
+            <div>
+                <label class="input-label">Hasta</label>
+                <input class="input-field" type="date" [ngModel]="filtroHasta()" (ngModelChange)="filtroHasta.set($event)">
+            </div>
+            <button class="btn btn-primary" (click)="buscar()">Buscar</button>
+        </div>
+    </div>
+
+    <div class="grid" [ngClass]="seleccionado() ? 'grid-cols-2 gap-4' : 'grid-cols-1'">
+        <!-- Tabla -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Eventos de auditoría</h3>
+                <span class="text-muted text-sm">{{ totalElements() }} registros</span>
+            </div>
+            <div class="card-body">
+                @if (cargando()) {
+                    <div class="loading-container"><div class="spinner"></div></div>
+                } @else if (logs().length === 0) {
+                    <p class="text-muted text-center py-6">No hay registros.</p>
+                } @else {
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th class="table-header-cell">Fecha/Hora</th>
+                                <th class="table-header-cell">Entidad</th>
+                                <th class="table-header-cell">Acción</th>
+                                <th class="table-header-cell">Usuario</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (log of logs(); track log.id) {
+                                <tr class="table-row cursor-pointer" (click)="verDetalle(log)"
+                                    [ngClass]="seleccionado()?.id === log.id ? 'bg-[var(--color-surface-raised)]' : ''">
+                                    <td class="table-cell text-sm">{{ log.timestamp | date:'dd/MM/yyyy HH:mm' }}</td>
+                                    <td class="table-cell">
+                                        <div class="text-sm">{{ log.entidadTipo }}</div>
+                                        <div class="text-muted text-xs font-mono">{{ log.entidadId.substring(0, 8) }}…</div>
+                                    </td>
+                                    <td class="table-cell">
+                                        <span [ngClass]="accionClass(log.accion)">{{ log.accion }}</span>
+                                    </td>
+                                    <td class="table-cell text-sm">{{ log.usuarioNombre }}</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                    @if (totalPages() > 1) {
+                        <div class="pagination mt-3">
+                            <button class="btn-page" [disabled]="page() === 0" (click)="buscar(page() - 1)">‹</button>
+                            <span class="pagination-info">{{ page() + 1 }} / {{ totalPages() }}</span>
+                            <button class="btn-page" [disabled]="page() + 1 >= totalPages()" (click)="buscar(page() + 1)">›</button>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+
+        <!-- Panel de detalle -->
+        @if (seleccionado()) {
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Detalle del evento</h3>
+                    <button class="btn-icon" (click)="cerrarDetalle()">✕</button>
+                </div>
+                <div class="card-body space-y-3">
+                    <div class="grid grid-cols-2 gap-2 text-sm">
+                        <div><span class="text-muted">Entidad:</span> {{ seleccionado()!.entidadTipo }}</div>
+                        <div><span class="text-muted">Acción:</span> <span [ngClass]="accionClass(seleccionado()!.accion)">{{ seleccionado()!.accion }}</span></div>
+                        <div><span class="text-muted">Usuario:</span> {{ seleccionado()!.usuarioNombre }}</div>
+                        <div><span class="text-muted">IP:</span> {{ seleccionado()!.ipOrigen ?? '—' }}</div>
+                        <div class="col-span-2"><span class="text-muted">ID entidad:</span> <span class="font-mono text-xs">{{ seleccionado()!.entidadId }}</span></div>
+                        <div class="col-span-2"><span class="text-muted">Timestamp:</span> {{ seleccionado()!.timestamp | date:'dd/MM/yyyy HH:mm:ss' }}</div>
+                    </div>
+                    @if (seleccionado()!.datosAnteriores) {
+                        <div>
+                            <p class="text-muted text-xs mb-1">Datos anteriores:</p>
+                            <pre class="bg-[var(--color-surface-raised)] p-2 rounded text-xs overflow-auto max-h-40">{{ formatJson(seleccionado()!.datosAnteriores) }}</pre>
+                        </div>
+                    }
+                    @if (seleccionado()!.datosNuevos) {
+                        <div>
+                            <p class="text-muted text-xs mb-1">Datos nuevos:</p>
+                            <pre class="bg-[var(--color-surface-raised)] p-2 rounded text-xs overflow-auto max-h-40">{{ formatJson(seleccionado()!.datosNuevos) }}</pre>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+</div>

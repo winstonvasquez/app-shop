@@ -1,0 +1,90 @@
+<div class="page-container">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Aging CxC / CxP</h1>
+            <p class="page-subtitle">Antigüedad de saldos — cuentas por cobrar y por pagar</p>
+        </div>
+        <div class="flex gap-2 items-center">
+            <label class="input-label mb-0">Año:</label>
+            <input class="input-field w-24" type="number" [ngModel]="anno()" (ngModelChange)="anno.set($event); cargar()">
+        </div>
+    </div>
+
+    @if (error()) {
+        <div class="badge badge-error mb-4 w-full text-left py-2 px-3">{{ error() }}</div>
+    }
+
+    <!-- Tabs -->
+    <div class="flex gap-1 mb-4">
+        <button class="btn" [ngClass]="tab() === 'cxc' ? 'btn-primary' : 'btn-secondary'" (click)="cambiarTab('cxc')">
+            Cuentas por Cobrar (12x)
+        </button>
+        <button class="btn" [ngClass]="tab() === 'cxp' ? 'btn-primary' : 'btn-secondary'" (click)="cambiarTab('cxp')">
+            Cuentas por Pagar (42x)
+        </button>
+    </div>
+
+    @if (cargando()) {
+        <div class="loading-container"><div class="spinner"></div></div>
+    } @else if (reporte()) {
+        <!-- Total KPI -->
+        <div class="card mb-4">
+            <div class="card-body text-center">
+                <p class="text-muted text-sm">Total Pendiente</p>
+                <p class="text-on text-3xl font-bold">S/ {{ reporte()!.totalPendiente | number:'1.2-2' }}</p>
+            </div>
+        </div>
+
+        <!-- Buckets -->
+        <div class="grid grid-cols-5 gap-3 mb-6">
+            @for (b of reporte()!.buckets; track b.etiqueta) {
+                <div class="card">
+                    <div class="card-body text-center">
+                        <p class="text-muted text-xs">{{ b.etiqueta }}</p>
+                        <p class="text-on text-lg font-bold">S/ {{ b.monto | number:'1.2-2' }}</p>
+                        <p class="text-muted text-xs">{{ b.cantidadDocumentos }} documentos</p>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- Detalle -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Detalle de documentos</h3>
+            </div>
+            <div class="card-body">
+                @if (reporte()!.detalles.length === 0) {
+                    <p class="text-muted text-center py-6">No hay documentos pendientes.</p>
+                } @else {
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th class="table-header-cell">Tipo</th>
+                                <th class="table-header-cell">Número</th>
+                                <th class="table-header-cell">Fecha</th>
+                                <th class="table-header-cell">Glosa</th>
+                                <th class="table-header-cell">Días vencido</th>
+                                <th class="table-header-cell text-right">Saldo</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (d of reporte()!.detalles; track d.documentoNumero) {
+                                <tr class="table-row">
+                                    <td class="table-cell">{{ d.documentoTipo }}</td>
+                                    <td class="table-cell font-mono text-sm">{{ d.documentoNumero }}</td>
+                                    <td class="table-cell">{{ d.documentoFecha | date:'dd/MM/yyyy' }}</td>
+                                    <td class="table-cell text-muted text-sm">{{ d.glosa }}</td>
+                                    <td class="table-cell">
+                                        <span [ngClass]="semaforo(d.diasVencido)">{{ d.diasVencido }}d</span>
+                                    </td>
+                                    <td class="table-cell text-right font-medium">S/ {{ d.saldoPendiente | number:'1.2-2' }}</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+    }
+</div>

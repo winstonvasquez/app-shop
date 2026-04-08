@@ -88,6 +88,26 @@ export const CONTABILIDAD_ROUTES: Routes = [
                 path: 'conciliacion',
                 loadComponent: () => import('./pages/conciliacion-bancaria/conciliacion-bancaria.component')
                     .then(m => m.ConciliacionBancariaComponent)
+            },
+            {
+                path: 'aging',
+                loadComponent: () => import('./pages/aging/aging.component')
+                    .then(m => m.AgingComponent)
+            },
+            {
+                path: 'presupuesto',
+                loadComponent: () => import('./pages/presupuesto/presupuesto.component')
+                    .then(m => m.PresupuestoComponent)
+            },
+            {
+                path: 'auditoria',
+                loadComponent: () => import('./pages/auditoria/auditoria.component')
+                    .then(m => m.AuditoriaComponent)
+            },
+            {
+                path: 'consolidado',
+                loadComponent: () => import('./pages/consolidado/consolidado.component')
+                    .then(m => m.ConsolidadoComponent)
             }
         ]
     }
