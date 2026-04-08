@@ -195,6 +195,25 @@
             "buscar_cuenta": "Buscar cuenta...",
             "error_cuadra": "El asiento no cuadra — DEBE debe ser igual a HABER"
         },
+        "tipo_cambio": {
+            "title": "Tipo de Cambio",
+            "subtitle": "Registro diario SBS — multimoneda",
+            "card_title": "Consultar / Registrar",
+            "fecha": "Fecha",
+            "moneda": "Moneda",
+            "consultar": "Consultar",
+            "consultando": "Consultando...",
+            "compra": "Compra (S/)",
+            "venta": "Venta (S/)",
+            "registrar": "Registrar Tipo de Cambio",
+            "guardando": "Guardando...",
+            "sin_registro": "No hay tipo de cambio registrado para esta fecha y moneda",
+            "exito": "Tipo de cambio {{moneda}} del {{fecha}} registrado correctamente",
+            "error": "Error al registrar tipo de cambio",
+            "col_moneda": "Moneda",
+            "col_compra": "Compra",
+            "col_venta": "Venta"
+        },
         "cuentas": {
             "title": "Plan de Cuentas (PCGE 2020)",
             "codigo": "Código",

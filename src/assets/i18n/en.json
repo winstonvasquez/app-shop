@@ -195,6 +195,25 @@
             "buscar_cuenta": "Search account...",
             "error_cuadra": "Entry is out of balance — Debit must equal Credit"
         },
+        "tipo_cambio": {
+            "title": "Exchange Rate",
+            "subtitle": "Daily SBS registration — multi-currency",
+            "card_title": "Query / Register",
+            "fecha": "Date",
+            "moneda": "Currency",
+            "consultar": "Query",
+            "consultando": "Querying...",
+            "compra": "Buy (S/)",
+            "venta": "Sell (S/)",
+            "registrar": "Register Exchange Rate",
+            "guardando": "Saving...",
+            "sin_registro": "No exchange rate registered for this date and currency",
+            "exito": "Exchange rate {{moneda}} for {{fecha}} registered successfully",
+            "error": "Error registering exchange rate",
+            "col_moneda": "Currency",
+            "col_compra": "Buy",
+            "col_venta": "Sell"
+        },
         "cuentas": {
             "title": "Chart of Accounts (PCGE 2020)",
             "codigo": "Code",

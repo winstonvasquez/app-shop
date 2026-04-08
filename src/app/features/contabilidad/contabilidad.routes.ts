@@ -108,6 +108,11 @@ export const CONTABILIDAD_ROUTES: Routes = [
                 path: 'consolidado',
                 loadComponent: () => import('./pages/consolidado/consolidado.component')
                     .then(m => m.ConsolidadoComponent)
+            },
+            {
+                path: 'tipo-cambio',
+                loadComponent: () => import('./pages/tipo-cambio/tipo-cambio.component')
+                    .then(m => m.TipoCambioComponent)
             }
         ]
     }
