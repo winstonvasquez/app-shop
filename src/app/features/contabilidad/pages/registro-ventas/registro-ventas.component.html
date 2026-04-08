@@ -5,6 +5,13 @@
             <p class="page-subtitle">PLE — Libro 14 · SUNAT</p>
         </div>
         <div class="page-actions">
+            <input class="input-field" type="text" maxlength="11" placeholder="RUC (11 dígitos)"
+                   style="width:160px"
+                   [ngModel]="rucEmpresa()" (ngModelChange)="rucEmpresa.set($event)" />
+            <button class="btn btn-primary" (click)="descargarPLE14()"
+                    [disabled]="descargandoPLE() || !periodoSeleccionado() || rucEmpresa().length !== 11">
+                @if (descargandoPLE()) { Generando... } @else { Descargar PLE Libro 14 }
+            </button>
             <button class="btn btn-secondary" (click)="exportarPLE()" [disabled]="ventas().length === 0">
                 Exportar PLE TXT
             </button>

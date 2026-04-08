@@ -3,6 +3,7 @@ import { DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { PeriodoService, PeriodoContable } from '../../services/periodo.service';
 import { OrdenCompraService } from '../../../compras/services/orden-compra.service';
+import { PleService } from '../../services/ple.service';
 import { OrdenCompra } from '../../../compras/models/orden-compra.model';
 import { ExportService } from '@shared/services/export.service';
 import { DataTableComponent, TableColumn } from '@shared/ui/tables/data-table/data-table.component';
@@ -18,6 +19,7 @@ export class RegistroComprasComponent implements OnInit {
     private periodoService = inject(PeriodoService);
     private ordenCompraService = inject(OrdenCompraService);
     private exportService = inject(ExportService);
+    private pleService = inject(PleService);
 
     periodos = signal<PeriodoContable[]>([]);
     periodoSeleccionado = signal<string>('');
@@ -25,6 +27,8 @@ export class RegistroComprasComponent implements OnInit {
     cargando = signal(false);
     error = signal<string | null>(null);
     estadoFiltro = '';
+    readonly rucEmpresa = signal('');
+    readonly descargandoPLE = signal(false);
 
     readonly estadoOptions = [
         { value: 'APROBADA',  label: 'Aprobadas' },
@@ -100,7 +104,27 @@ export class RegistroComprasComponent implements OnInit {
         return `badge ${map[estado] ?? 'badge-neutral'}`;
     }
 
-    // PLE Libro 8 — formato SUNAT pipe-delimited
+    descargarPLE08() {
+        const periodoId = this.periodoSeleccionado();
+        const ruc = this.rucEmpresa();
+        if (!periodoId || ruc.length !== 11) return;
+        this.descargandoPLE.set(true);
+        this.pleService.descargarLibro08(periodoId, ruc).subscribe({
+            next: resp => {
+                const blob = resp.body!;
+                const cd = resp.headers.get('Content-Disposition') ?? '';
+                const filename = cd.match(/filename="?([^"]+)"?/)?.[1] ?? `PLE-08-${periodoId}.txt`;
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url; a.download = filename; a.click();
+                URL.revokeObjectURL(url);
+                this.descargandoPLE.set(false);
+            },
+            error: () => this.descargandoPLE.set(false),
+        });
+    }
+
+    // PLE Libro 8 — formato SUNAT pipe-delimited (generación local)
     exportarPLE() {
         const periodo = this.periodos().find(p => p.id === this.periodoSeleccionado());
         const periodoStr = periodo ? this.formatPeriodoPLE(periodo.nombre) : '20260300';

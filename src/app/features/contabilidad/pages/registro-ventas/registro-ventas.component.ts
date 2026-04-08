@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { PeriodoService, PeriodoContable } from '../../services/periodo.service';
 import { ExportService } from '@shared/services/export.service';
+import { PleService } from '../../services/ple.service';
 import { environment } from '@env/environment';
 import { PaginationComponent, PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
 
@@ -32,6 +33,7 @@ export class RegistroVentasComponent implements OnInit {
     private http = inject(HttpClient);
     private periodoService = inject(PeriodoService);
     private exportService = inject(ExportService);
+    private pleService = inject(PleService);
 
     periodos = signal<PeriodoContable[]>([]);
     periodoSeleccionado = signal<string>('');
@@ -40,6 +42,8 @@ export class RegistroVentasComponent implements OnInit {
     error = signal<string | null>(null);
     readonly fechaDesde = signal('');
     readonly fechaHasta = signal('');
+    readonly rucEmpresa = signal('');
+    readonly descargandoPLE = signal(false);
 
     readonly currentPage = signal(0);
     readonly pageSize = signal(20);
@@ -78,7 +82,27 @@ export class RegistroVentasComponent implements OnInit {
         this.ventas.set([]);
     }
 
-    // PLE Libro 14 — formato SUNAT pipe-delimited
+    descargarPLE14() {
+        const periodoId = this.periodoSeleccionado();
+        const ruc = this.rucEmpresa();
+        if (!periodoId || ruc.length !== 11) return;
+        this.descargandoPLE.set(true);
+        this.pleService.descargarLibro14(periodoId, ruc).subscribe({
+            next: resp => {
+                const blob = resp.body!;
+                const cd = resp.headers.get('Content-Disposition') ?? '';
+                const filename = cd.match(/filename="?([^"]+)"?/)?.[1] ?? `PLE-14-${periodoId}.txt`;
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url; a.download = filename; a.click();
+                URL.revokeObjectURL(url);
+                this.descargandoPLE.set(false);
+            },
+            error: () => this.descargandoPLE.set(false),
+        });
+    }
+
+    // PLE Libro 14 — formato SUNAT pipe-delimited (generación local)
     exportarPLE() {
         const periodo = this.periodos().find(p => p.id === this.periodoSeleccionado());
         const periodoStr = periodo ? this.formatPeriodoPLE(periodo.nombre) : '20260300';
