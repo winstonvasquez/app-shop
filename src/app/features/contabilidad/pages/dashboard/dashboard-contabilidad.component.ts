@@ -3,6 +3,7 @@ import { NgApexchartsModule } from 'ng-apexcharts';
 import { AsientoService } from '../../services/asiento.service';
 import { PeriodoService } from '../../services/periodo.service';
 import { ChartDefaultsService, CHART_COLORS } from '@shared/services/chart-defaults.service';
+import { EstadosFinancierosService, EstadoResultados } from '../../services/estados-financieros.service';
 import {
     ApexAxisChartSeries, ApexChart, ApexDataLabels, ApexFill,
     ApexGrid, ApexLegend, ApexPlotOptions, ApexStroke, ApexTooltip, ApexXAxis, ApexYAxis,
@@ -179,22 +180,34 @@ import {
     `
 })
 export class DashboardContabilidadComponent implements OnInit {
-    private asientoService = inject(AsientoService);
-    private periodoService = inject(PeriodoService);
+    private readonly asientoService = inject(AsientoService);
+    private readonly periodoService = inject(PeriodoService);
     private readonly chartDefaults = inject(ChartDefaultsService);
+    private readonly estadosService = inject(EstadosFinancierosService);
 
     periodoActual = signal('Cargando...');
-    ingresos  = signal(147999);
-    gastos    = signal(82400);
-    utilidad  = signal(65599);
-    igv       = signal(10007);
-    igvDebito = signal(22576);
-    igvCredito = signal(12569);
-    renta     = signal(1881);
+    readonly anno = signal(new Date().getFullYear());
+    readonly estadoResultados = signal<EstadoResultados | null>(null);
+    readonly cargandoDashboard = signal(false);
+
+    readonly ingresos = computed(() =>
+        this.estadoResultados()?.ingresos.reduce((sum, l) => sum + l.monto, 0) ?? 0
+    );
+    readonly gastos = computed(() =>
+        this.estadoResultados()?.gastos.reduce((sum, l) => sum + l.monto, 0) ?? 0
+    );
+    readonly utilidad = computed(() => this.estadoResultados()?.utilidadNeta ?? 0);
+    igv       = signal(0);
+    igvDebito = signal(0);
+    igvCredito = signal(0);
+    renta     = signal(0);
 
     margen = () => {
-        if (this.ingresos() === 0) return 0;
-        return ((this.utilidad() / this.ingresos()) * 100).toFixed(1);
+        const ing = this.ingresos();
+        if (ing === 0) return 0;
+        const util = this.utilidad();
+        if (!isFinite(util / ing)) return 0;
+        return ((util / ing) * 100).toFixed(1);
     };
 
     formatoMonto = (monto: number): string =>
@@ -203,8 +216,8 @@ export class DashboardContabilidadComponent implements OnInit {
     /* ── Chart: Bar ingresos vs gastos ────────────────────────── */
     barChart: ApexChart = this.chartDefaults.barChart(false, 260);
     barSeries: ApexAxisChartSeries = [
-        { name: 'Ingresos', data: [112000, 125000, 138000, 130000, 142000, 147999] },
-        { name: 'Gastos',   data: [78000,  82000,  75000,  88000,  79000,  82400] }
+        { name: 'Ingresos', data: [112000, 125000, 138000, 130000, 142000, 147999] as number[] },
+        { name: 'Gastos',   data: [78000,  82000,  75000,  88000,  79000,  82400] as number[] }
     ];
     barXAxis: ApexXAxis = this.chartDefaults.xAxis(this.chartDefaults.last6MonthLabels());
     barYAxis: ApexYAxis = this.chartDefaults.yAxis('S/ ');
@@ -232,6 +245,15 @@ export class DashboardContabilidadComponent implements OnInit {
                 },
                 error: () => this.periodoActual.set('Sin periodo activo')
             })
+        });
+
+        this.cargandoDashboard.set(true);
+        this.estadosService.estadoResultados(this.anno()).subscribe({
+            next: data => {
+                this.estadoResultados.set(data);
+                this.cargandoDashboard.set(false);
+            },
+            error: () => this.cargandoDashboard.set(false),
         });
     }
 }
