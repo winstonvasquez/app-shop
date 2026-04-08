@@ -1,42 +1,31 @@
 import { Component, inject, signal, computed, OnInit, ChangeDetectionStrategy } from '@angular/core';
-import { DecimalPipe } from '@angular/common';
+import { DecimalPipe, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { PeriodoService, PeriodoContable } from '../../services/periodo.service';
-
-interface ResumenIGV {
-    ventasGravadas: number;
-    igvVentas: number;
-    comprasGravadas: number;
-    igvCompras: number;
-    igvNeto: number;
-    rentaBase: number;
-    rentaMensual: number;
-}
+import { DeclaracionIgvService, PDT621, HistorialDeclaracion } from '../../services/declaracion-igv.service';
 
 @Component({
     selector: 'app-declaracion-igv',
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [DecimalPipe, FormsModule],
+    imports: [DecimalPipe, DatePipe, FormsModule],
     templateUrl: './declaracion-igv.component.html',
     styleUrls: ['./declaracion-igv.component.scss']
 })
 export class DeclaracionIgvComponent implements OnInit {
     private periodoService = inject(PeriodoService);
+    private declaracionService = inject(DeclaracionIgvService);
 
-    periodos = signal<PeriodoContable[]>([]);
-    periodoSeleccionado = signal<string>('');
-    periodoActivo = signal<PeriodoContable | null>(null);
+    readonly periodos = signal<PeriodoContable[]>([]);
+    readonly periodoSeleccionado = signal<string>('');
+    readonly periodoActivo = signal<PeriodoContable | null>(null);
 
-    resumen = signal<ResumenIGV>({
-        ventasGravadas: 147999,
-        igvVentas: 22576,
-        comprasGravadas: 68983,
-        igvCompras: 12569,
-        igvNeto: 10007,
-        rentaBase: 147999,
-        rentaMensual: 2220
-    });
+    readonly resumen = signal<PDT621 | null>(null);
+    readonly guardando = signal(false);
+    readonly cargando = signal(false);
+    readonly historial = signal<HistorialDeclaracion[]>([]);
+    readonly regimenRenta = signal<'RMT' | 'MYPE' | 'GENERAL'>('RMT');
+    readonly coeficiente = signal(0.015);
 
     readonly vencimientoPDT = computed(() => {
         const p = this.periodoActivo();
@@ -52,19 +41,65 @@ export class DeclaracionIgvComponent implements OnInit {
         this.periodoService.listar().subscribe({
             next: (lista) => {
                 this.periodos.set(lista);
-                const abierto = lista.find(p => p.estado === 'ABIERTO');
+                const abierto = lista.find(periodo => periodo.estado === 'ABIERTO');
                 if (abierto) {
                     this.periodoSeleccionado.set(abierto.id);
                     this.periodoActivo.set(abierto);
+                    this.calcularIGV(abierto.id);
                 }
             },
-            error: () => {}
+            error: (err: unknown) => console.warn('[DeclaracionIGV] Error al cargar periodos:', err)
+        });
+        this.declaracionService.historial().subscribe({
+            next: h => this.historial.set(h),
+            error: (err: unknown) => console.warn('[DeclaracionIGV] Error al cargar historial:', err)
         });
     }
 
     cambiarPeriodo(id: string) {
         this.periodoSeleccionado.set(id);
-        const p = this.periodos().find(x => x.id === id) ?? null;
-        this.periodoActivo.set(p);
+        const periodo = this.periodos().find(p => p.id === id) ?? null;
+        this.periodoActivo.set(periodo);
+        if (id) {
+            this.calcularIGV(id);
+        }
+    }
+
+    calcularIGV(periodoId: string) {
+        this.cargando.set(true);
+        this.declaracionService.calcular({
+            periodoId,
+            regimenRenta: this.regimenRenta(),
+            coeficienteRenta: this.coeficiente(),
+        }).subscribe({
+            next: data => {
+                this.resumen.set(data);
+                this.cargando.set(false);
+            },
+            error: (err: unknown) => {
+                console.warn('[DeclaracionIGV] Error al calcular IGV:', err);
+                this.cargando.set(false);
+            },
+        });
+    }
+
+    guardarDeclaracion() {
+        const periodoId = this.periodoSeleccionado();
+        if (!periodoId) return;
+        this.guardando.set(true);
+        this.declaracionService.guardar({
+            periodoId,
+            regimenRenta: this.regimenRenta(),
+            coeficienteRenta: this.coeficiente(),
+        }).subscribe({
+            next: data => {
+                this.resumen.set(data);
+                this.guardando.set(false);
+            },
+            error: (err: unknown) => {
+                console.warn('[DeclaracionIGV] Error al guardar declaración:', err);
+                this.guardando.set(false);
+            },
+        });
     }
 }
