@@ -185,7 +185,7 @@ export class DashboardContabilidadComponent implements OnInit {
     private readonly chartDefaults = inject(ChartDefaultsService);
     private readonly estadosService = inject(EstadosFinancierosService);
 
-    periodoActual = signal('Cargando...');
+    readonly periodoActual = signal('Cargando...');
     readonly anno = signal(new Date().getFullYear());
     readonly estadoResultados = signal<EstadoResultados | null>(null);
     readonly cargandoDashboard = signal(false);
@@ -202,13 +202,13 @@ export class DashboardContabilidadComponent implements OnInit {
     igvCredito = signal(0);
     renta     = signal(0);
 
-    margen = () => {
+    readonly margen = computed(() => {
         const ing = this.ingresos();
         if (ing === 0) return 0;
         const util = this.utilidadNeta();
         if (!isFinite(util / ing)) return 0;
         return ((util / ing) * 100).toFixed(1);
-    };
+    });
 
     formatoMonto = (monto: number): string =>
         'S/ ' + monto.toLocaleString('es-PE', { minimumFractionDigits: 0 });
@@ -235,17 +235,26 @@ export class DashboardContabilidadComponent implements OnInit {
 
     ngOnInit() { this._cargarDatos(); }
 
-    private _cargarDatos() {
+    private _cargarPeriodo() {
         this.periodoService.actual().subscribe({
             next: (periodo) => this.periodoActual.set(periodo.nombre),
-            error: () => this.periodoService.listar().subscribe({
-                next: (lista) => {
-                    const abierto = lista.find(p => p.estado === 'ABIERTO');
-                    if (abierto) this.periodoActual.set(abierto.nombre);
-                },
-                error: () => this.periodoActual.set('Sin periodo activo')
-            })
+            error: () => this._cargarPeriodoFallback()
         });
+    }
+
+    private _cargarPeriodoFallback() {
+        this.periodoService.listar().subscribe({
+            next: (lista) => {
+                const abierto = lista.find(p => p.estado === 'ABIERTO');
+                if (abierto) this.periodoActual.set(abierto.nombre);
+                else this.periodoActual.set('Sin periodo activo');
+            },
+            error: () => this.periodoActual.set('Sin periodo activo')
+        });
+    }
+
+    private _cargarDatos() {
+        this._cargarPeriodo();
 
         this.cargandoDashboard.set(true);
         this.estadosService.estadoResultados(this.anno()).subscribe({
