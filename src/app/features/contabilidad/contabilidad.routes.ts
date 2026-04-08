@@ -68,6 +68,11 @@ export const CONTABILIDAD_ROUTES: Routes = [
                 path: 'asientos-recurrentes',
                 loadComponent: () => import('./pages/asientos-recurrentes/asientos-recurrentes.component')
                     .then(m => m.AsientosRecurrentesComponent)
+            },
+            {
+                path: 'cierre',
+                loadComponent: () => import('./pages/cierre-contable/cierre-contable.component')
+                    .then(m => m.CierreContableComponent)
             }
         ]
     }
