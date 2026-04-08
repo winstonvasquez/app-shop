@@ -68,7 +68,7 @@ import {
                         </svg>
                     </div>
                 </div>
-                <div class="kpi-value" style="font-size:1.5rem">{{ formatoMonto(utilidad()) }}</div>
+                <div class="kpi-value" style="font-size:1.5rem">{{ formatoMonto(utilidadNeta()) }}</div>
                 <div class="kpi-trend trend-up">▲ Margen {{ margen() }}%</div>
             </div>
 
@@ -196,7 +196,7 @@ export class DashboardContabilidadComponent implements OnInit {
     readonly gastos = computed(() =>
         this.estadoResultados()?.gastos.reduce((sum, l) => sum + l.monto, 0) ?? 0
     );
-    readonly utilidad = computed(() => this.estadoResultados()?.utilidadNeta ?? 0);
+    readonly utilidadNeta = computed(() => this.estadoResultados()?.utilidadNeta ?? 0);
     igv       = signal(0);
     igvDebito = signal(0);
     igvCredito = signal(0);
@@ -205,7 +205,7 @@ export class DashboardContabilidadComponent implements OnInit {
     margen = () => {
         const ing = this.ingresos();
         if (ing === 0) return 0;
-        const util = this.utilidad();
+        const util = this.utilidadNeta();
         if (!isFinite(util / ing)) return 0;
         return ((util / ing) * 100).toFixed(1);
     };
