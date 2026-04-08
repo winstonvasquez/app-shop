@@ -1,5 +1,6 @@
 import { Component, inject, signal, computed, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '@core/auth/auth.service';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
@@ -221,6 +222,54 @@ interface LineaForm {
                 (pageChange)="onPaginationChange($event)">
             </app-data-table>
         </div>
+
+        @if (mostrarModalExtorno()) {
+            <div class="modal-overlay" (click)="cerrarModalExtorno()">
+                <div class="modal-content" style="max-width: 480px" (click)="$event.stopPropagation()">
+                    <div class="modal-header">
+                        <h3 class="modal-title">
+                            {{ tipoOperacion() === 'EXTORNO' ? 'Extornar Asiento' : 'Anular Asiento' }}
+                        </h3>
+                        <button class="modal-close-btn" (click)="cerrarModalExtorno()">✕</button>
+                    </div>
+                    <div class="modal-body" style="display: flex; flex-direction: column; gap: 0.75rem">
+                        <p class="text-muted">
+                            Asiento: <strong>{{ asientoParaExtorno()?.codigo }}</strong>
+                            — {{ asientoParaExtorno()?.glosa }}
+                        </p>
+                        @if (tipoOperacion() === 'ANULACION') {
+                            <div class="badge badge-error">
+                                La anulación es irreversible. Se crea un asiento espejo (extorno)
+                                y el original queda en estado ANULADO (NIC 8).
+                            </div>
+                        }
+                        @if (errorExtorno()) {
+                            <div class="badge badge-error">{{ errorExtorno() }}</div>
+                        }
+                        <div>
+                            <label class="input-label">Motivo *</label>
+                            <input class="input-field" type="text"
+                                   placeholder="Motivo obligatorio (NIC 8)"
+                                   [ngModel]="motivoExtorno()"
+                                   (ngModelChange)="motivoExtorno.set($event)" />
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary"
+                                (click)="cerrarModalExtorno()"
+                                [disabled]="procesandoExtorno()">
+                            Cancelar
+                        </button>
+                        <button class="btn btn-danger"
+                                [disabled]="procesandoExtorno() || !motivoExtorno()"
+                                (click)="confirmarExtorno()">
+                            @if (procesandoExtorno()) { Procesando... }
+                            @else { Confirmar {{ tipoOperacion() === 'EXTORNO' ? 'Extorno' : 'Anulación' }} }
+                        </button>
+                    </div>
+                </div>
+            </div>
+        }
     `
 })
 export class AsientosComponent implements OnInit {
@@ -264,6 +313,14 @@ export class AsientosComponent implements OnInit {
         !!this.form.fecha && !!this.form.glosa.trim() &&
         this.lineas().some(l => (Number(l.debe) || 0) > 0 || (Number(l.haber) || 0) > 0)
     );
+
+    // ── Extorno / Anulación ────────────────────────────────────────────────
+    readonly mostrarModalExtorno = signal(false);
+    readonly asientoParaExtorno = signal<Asiento | null>(null);
+    readonly tipoOperacion = signal<'EXTORNO' | 'ANULACION'>('EXTORNO');
+    readonly motivoExtorno = signal('');
+    readonly procesandoExtorno = signal(false);
+    readonly errorExtorno = signal('');
 
     // ── Columnas DataTable ─────────────────────────────────────────────────
     readonly columns: TableColumn<Asiento>[] = [
@@ -324,6 +381,18 @@ export class AsientosComponent implements OnInit {
             class: 'btn-icon btn-icon-delete',
             show: (r) => r.estado !== 'CERRADO' && r.estado !== 'DEFINITIVO',
             onClick: (r) => this.cerrarAsiento(r)
+        },
+        {
+            label: 'Extornar',
+            class: 'btn-icon',
+            show: (r) => r.estado === 'DEFINITIVO' || r.estado === 'CERRADO',
+            onClick: (r) => this.abrirExtorno(r, 'EXTORNO')
+        },
+        {
+            label: 'Anular',
+            class: 'btn-icon btn-icon-delete',
+            show: (r) => r.estado === 'DEFINITIVO' || r.estado === 'CERRADO',
+            onClick: (r) => this.abrirExtorno(r, 'ANULACION')
         }
     ];
 
@@ -516,6 +585,49 @@ export class AsientosComponent implements OnInit {
     onPaginationChange(event: PaginationEvent): void {
         this.currentPage.set(event.page);
         this.pageSize.set(event.size);
+    }
+
+    abrirExtorno(asiento: Asiento, tipo: 'EXTORNO' | 'ANULACION') {
+        this.asientoParaExtorno.set(asiento);
+        this.tipoOperacion.set(tipo);
+        this.motivoExtorno.set('');
+        this.errorExtorno.set('');
+        this.mostrarModalExtorno.set(true);
+    }
+
+    cerrarModalExtorno() {
+        this.mostrarModalExtorno.set(false);
+        this.asientoParaExtorno.set(null);
+    }
+
+    confirmarExtorno() {
+        const asiento = this.asientoParaExtorno();
+        const motivo = this.motivoExtorno();
+        if (!asiento || !motivo) return;
+        this.procesandoExtorno.set(true);
+        this.errorExtorno.set('');
+        const obs = this.tipoOperacion() === 'EXTORNO'
+            ? this.asientoService.extornarAsiento(asiento.id, motivo)
+            : this.asientoService.anularAsiento(asiento.id, motivo);
+        obs.subscribe({
+            next: () => {
+                this.cerrarModalExtorno();
+                this.procesandoExtorno.set(false);
+                const periodoId = this.periodoSeleccionado();
+                if (periodoId) {
+                    this.asientoService.obtenerAsientos(periodoId).subscribe({
+                        next: lista => this.asientos.set(lista),
+                    });
+                }
+            },
+            error: (err: unknown) => {
+                const msg = err instanceof HttpErrorResponse
+                    ? (err.error?.message ?? err.message)
+                    : 'Error al procesar la operación';
+                this.errorExtorno.set(msg);
+                this.procesandoExtorno.set(false);
+            },
+        });
     }
 
     estadoBadge(estado: string): string {

@@ -27,6 +27,14 @@ export class AsientoService {
         return this.http.put<void>(`${this.baseUrl}/asientos/${id}/cerrar`, {});
     }
 
+    extornarAsiento(id: string, motivo: string) {
+        return this.http.post<Asiento>(`${this.baseUrl}/asientos/${id}/extorno`, { motivo });
+    }
+
+    anularAsiento(id: string, motivo: string) {
+        return this.http.put<Asiento>(`${this.baseUrl}/asientos/${id}/anular`, { motivo });
+    }
+
     obtenerLibroDiario(periodoId: string, fechaDesde: string, fechaHasta: string) {
         const params = new HttpParams()
             .set('periodo', periodoId)
