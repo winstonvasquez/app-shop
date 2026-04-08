@@ -78,6 +78,11 @@ export const CONTABILIDAD_ROUTES: Routes = [
                 path: 'reglas-asiento',
                 loadComponent: () => import('./pages/reglas-asiento/reglas-asiento.component')
                     .then(m => m.ReglasAsientoComponent)
+            },
+            {
+                path: 'flujo-efectivo',
+                loadComponent: () => import('./pages/flujo-efectivo/flujo-efectivo.component')
+                    .then(m => m.FlujoEfectivoComponent)
             }
         ]
     }
