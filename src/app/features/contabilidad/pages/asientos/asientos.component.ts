@@ -613,12 +613,7 @@ export class AsientosComponent implements OnInit {
             next: () => {
                 this.cerrarModalExtorno();
                 this.procesandoExtorno.set(false);
-                const periodoId = this.periodoSeleccionado();
-                if (periodoId) {
-                    this.asientoService.obtenerAsientos(periodoId).subscribe({
-                        next: lista => this.asientos.set(lista),
-                    });
-                }
+                this.cargarAsientos();
             },
             error: (err: unknown) => {
                 const msg = err instanceof HttpErrorResponse
