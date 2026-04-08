@@ -1,5 +1,7 @@
 import { Component, inject, signal, computed, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { HttpErrorResponse } from '@angular/common/http';
+import { switchMap } from 'rxjs/operators';
 import { PeriodoService, PeriodoContable } from '../../services/periodo.service';
 import {
     CierreContableService,
@@ -57,7 +59,9 @@ export class CierreContableComponent implements OnInit {
                 this.cargando.set(false);
             },
             error: (err: unknown) => {
-                const msg = err instanceof Error ? err.message : 'Error al validar el período';
+                const msg = err instanceof HttpErrorResponse
+                    ? (err.error?.message ?? err.message)
+                    : 'Error al validar el período';
                 this.error.set(msg);
                 this.cargando.set(false);
             },
@@ -74,15 +78,21 @@ export class CierreContableComponent implements OnInit {
             this.tipoCierre() === 'MENSUAL'
                 ? this.cierreService.cierreMensual(req)
                 : this.cierreService.cierreAnual(req);
-        obs.subscribe({
-            next: res => {
+        obs.pipe(
+            switchMap(res => {
                 this.resultado.set(res);
                 this.paso.set('resultado');
+                return this.periodoService.listar();
+            })
+        ).subscribe({
+            next: lista => {
+                this.periodos.set(lista);
                 this.cargando.set(false);
-                this.periodoService.listar().subscribe(l => this.periodos.set(l));
             },
             error: (err: unknown) => {
-                const msg = err instanceof Error ? err.message : 'Error al ejecutar el cierre';
+                const msg = err instanceof HttpErrorResponse
+                    ? (err.error?.message ?? err.message)
+                    : 'Error al ejecutar el cierre';
                 this.error.set(msg);
                 this.cargando.set(false);
             },
@@ -99,14 +109,18 @@ export class CierreContableComponent implements OnInit {
         const id = this.periodoSeleccionado();
         if (!id || !this.motivo()) return;
         this.cargando.set(true);
-        this.cierreService.reabrir(id, this.motivo()).subscribe({
-            next: () => {
-                this.periodoService.listar().subscribe(l => this.periodos.set(l));
+        this.cierreService.reabrir(id, this.motivo()).pipe(
+            switchMap(() => this.periodoService.listar())
+        ).subscribe({
+            next: lista => {
+                this.periodos.set(lista);
                 this.reiniciar();
                 this.cargando.set(false);
             },
             error: (err: unknown) => {
-                const msg = err instanceof Error ? err.message : 'Error al reabrir el período';
+                const msg = err instanceof HttpErrorResponse
+                    ? (err.error?.message ?? err.message)
+                    : 'Error al reabrir el período';
                 this.error.set(msg);
                 this.cargando.set(false);
             },
