@@ -58,6 +58,11 @@ export const comprasRoutes: Routes = [
                 path: 'facturas-proveedor',
                 loadComponent: () => import('./pages/facturas-proveedor/facturas-proveedor.component')
                     .then(m => m.FacturasProveedorComponent)
+            },
+            {
+                path: 'devoluciones',
+                loadComponent: () => import('./pages/devoluciones/devoluciones.component')
+                    .then(m => m.DevolucionesComponent)
             }
         ]
     }

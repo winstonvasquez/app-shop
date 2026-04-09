@@ -1,0 +1,181 @@
+<app-page-header
+    title="Devoluciones a Proveedor"
+    subtitle="Gestión de devoluciones y cambios de mercancía"
+    [breadcrumbs]="breadcrumbs">
+    <button class="btn btn-primary" (click)="openCreateForm()">+ Nueva Devolución</button>
+</app-page-header>
+
+<div class="page-container">
+    <app-alert *ngIf="error()" type="error" [message]="error()!" (close)="error.set(null)" />
+    <app-alert *ngIf="actionError()" type="error" [message]="actionError()!" (close)="actionError.set(null)" />
+
+    <div class="filters-bar">
+        <select class="input-field" style="width:180px" (change)="onFilterEstado($event)">
+            <option value="">Todos los estados</option>
+            @for (opt of estadoOptions; track opt.value) {
+                <option [value]="opt.value">{{ opt.label }}</option>
+            }
+        </select>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            @if (loading()) {
+                <app-loading-spinner />
+            } @else if (isEmpty()) {
+                <p class="text-muted text-center py-8">No hay devoluciones registradas.</p>
+            } @else {
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th class="table-header-cell">Código</th>
+                            <th class="table-header-cell">OC</th>
+                            <th class="table-header-cell">Proveedor</th>
+                            <th class="table-header-cell">Motivo</th>
+                            <th class="table-header-cell">Tipo</th>
+                            <th class="table-header-cell">Estado</th>
+                            <th class="table-header-cell">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (dev of devoluciones(); track dev.id) {
+                            <tr class="table-row">
+                                <td class="table-cell font-mono text-sm">{{ dev.codigo }}</td>
+                                <td class="table-cell font-mono text-sm">{{ dev.ordenCompraCodigo }}</td>
+                                <td class="table-cell">{{ dev.proveedorNombre }}</td>
+                                <td class="table-cell">{{ getMotivoLabel(dev.motivo) }}</td>
+                                <td class="table-cell">{{ dev.tipo }}</td>
+                                <td class="table-cell">
+                                    <span [class]="getBadge(dev.estado)">{{ getEstadoLabel(dev.estado) }}</span>
+                                </td>
+                                <td class="table-cell">
+                                    <button class="btn btn-secondary text-xs py-1 px-2"
+                                        (click)="openDetail(dev)">Ver</button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+                <app-pagination
+                    [currentPage]="currentPage()"
+                    [totalPages]="totalPages()"
+                    [totalElements]="totalElements()"
+                    [pageSize]="pageSize()"
+                    (pageChange)="onPageChange($event)" />
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Create Drawer -->
+<app-drawer title="Nueva Devolución" [isOpen]="showForm()" (closed)="closeForm()">
+    <form [formGroup]="devolucionForm" (ngSubmit)="crearDevolucion()">
+        <app-alert *ngIf="submitError()" type="error" [message]="submitError()!" />
+
+        <div class="mb-4">
+            <label class="input-label">ID Orden de Compra *</label>
+            <input class="input-field" formControlName="ordenCompraId" placeholder="UUID de la OC" />
+        </div>
+        <div class="mb-4">
+            <label class="input-label">ID Recepción (opcional)</label>
+            <input class="input-field" formControlName="recepcionId" placeholder="UUID de la recepción" />
+        </div>
+        <div class="grid grid-cols-2 gap-4 mb-4">
+            <div>
+                <label class="input-label">Motivo *</label>
+                <select class="input-field" formControlName="motivo">
+                    @for (opt of motivoOptions; track opt.value) {
+                        <option [value]="opt.value">{{ opt.label }}</option>
+                    }
+                </select>
+            </div>
+            <div>
+                <label class="input-label">Tipo</label>
+                <select class="input-field" formControlName="tipo">
+                    <option value="DEVOLUCION">Devolución</option>
+                    <option value="CAMBIO">Cambio</option>
+                    <option value="NOTA_CREDITO">Nota de Crédito</option>
+                </select>
+            </div>
+        </div>
+        <div class="mb-4">
+            <label class="input-label">Observaciones</label>
+            <textarea class="input-field" formControlName="observaciones" rows="2"></textarea>
+        </div>
+
+        <!-- Items -->
+        <div class="mb-4">
+            <div class="flex justify-between items-center mb-2">
+                <label class="input-label mb-0">Ítems *</label>
+                <button type="button" class="btn btn-secondary text-xs py-1 px-2" (click)="addItem()">+ Agregar</button>
+            </div>
+            <div formArrayName="items">
+                @for (item of itemsArray.controls; track $index) {
+                    <div [formGroupName]="$index" class="card mb-2 p-3">
+                        <div class="flex justify-between items-start mb-2">
+                            <span class="text-sm text-muted">Ítem {{ $index + 1 }}</span>
+                            @if (itemsArray.length > 1) {
+                                <button type="button" class="btn-icon btn-icon-delete" (click)="removeItem($index)">✕</button>
+                            }
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div class="col-span-2">
+                                <input class="input-field" formControlName="productoNombre" placeholder="Nombre del producto *" />
+                            </div>
+                            <input class="input-field" formControlName="ordenItemId" placeholder="ID Ítem OC" />
+                            <input class="input-field" formControlName="sku" placeholder="SKU" />
+                            <input type="number" class="input-field" formControlName="cantidad" placeholder="Cantidad" min="1" />
+                            <input class="input-field" formControlName="motivoItem" placeholder="Motivo específico" />
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="flex gap-3 justify-end mt-6">
+            <button type="button" class="btn btn-secondary" (click)="closeForm()">Cancelar</button>
+            <button type="submit" class="btn btn-primary" [disabled]="devolucionForm.invalid || submitting()">
+                {{ submitting() ? 'Creando...' : 'Crear Devolución' }}
+            </button>
+        </div>
+    </form>
+</app-drawer>
+
+<!-- Detail Drawer -->
+<app-drawer title="Detalle de Devolución" [isOpen]="showDetail()" (closed)="closeDetail()">
+    @if (selected(); as dev) {
+        <div class="space-y-4">
+            <div class="grid grid-cols-2 gap-3 text-sm">
+                <div><span class="text-muted">Código:</span> <span class="font-mono">{{ dev.codigo }}</span></div>
+                <div><span class="text-muted">OC:</span> <span class="font-mono">{{ dev.ordenCompraCodigo }}</span></div>
+                <div><span class="text-muted">Proveedor:</span> {{ dev.proveedorNombre }}</div>
+                <div><span class="text-muted">Tipo:</span> {{ dev.tipo }}</div>
+                <div><span class="text-muted">Motivo:</span> {{ getMotivoLabel(dev.motivo) }}</div>
+                <div><span class="text-muted">Estado:</span> <span [class]="getBadge(dev.estado)">{{ getEstadoLabel(dev.estado) }}</span></div>
+            </div>
+
+            @if (dev.items && dev.items.length > 0) {
+                <h4 class="text-on font-semibold">Ítems a devolver</h4>
+                @for (item of dev.items; track item.id) {
+                    <div class="card p-3 text-sm">
+                        <span class="font-medium">{{ item.productoNombre }}</span>
+                        <span class="text-muted ml-2">Cant: {{ item.cantidad }}</span>
+                        @if (item.motivoItem) { <p class="text-xs text-muted mt-1">{{ item.motivoItem }}</p> }
+                    </div>
+                }
+            }
+
+            <div class="flex flex-wrap gap-2 mt-4">
+                @if (dev.estado === 'BORRADOR') {
+                    <button class="btn btn-primary" (click)="cambiarEstado('enviar')">Enviar al Proveedor</button>
+                }
+                @if (dev.estado === 'ENVIADA') {
+                    <button class="btn btn-primary" (click)="cambiarEstado('aceptar')">Registrar Aceptación</button>
+                }
+                @if (dev.estado === 'ACEPTADA') {
+                    <button class="btn btn-primary" (click)="cambiarEstado('completar')">Completar</button>
+                }
+            </div>
+        </div>
+    }
+</app-drawer>
