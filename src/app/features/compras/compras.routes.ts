@@ -83,6 +83,11 @@ export const comprasRoutes: Routes = [
                 path: 'historial-precios',
                 loadComponent: () => import('./pages/historial-precios/historial-precios.component')
                     .then(m => m.HistorialPreciosComponent)
+            },
+            {
+                path: 'alertas',
+                loadComponent: () => import('./pages/alertas/alertas.component')
+                    .then(m => m.AlertasComponent)
             }
         ]
     }
