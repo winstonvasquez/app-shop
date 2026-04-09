@@ -63,6 +63,26 @@ export const comprasRoutes: Routes = [
                 path: 'devoluciones',
                 loadComponent: () => import('./pages/devoluciones/devoluciones.component')
                     .then(m => m.DevolucionesComponent)
+            },
+            {
+                path: 'evaluaciones',
+                loadComponent: () => import('./pages/evaluaciones/evaluaciones.component')
+                    .then(m => m.EvaluacionesComponent)
+            },
+            {
+                path: 'presupuestos',
+                loadComponent: () => import('./pages/presupuestos/presupuestos.component')
+                    .then(m => m.PresupuestosComponent)
+            },
+            {
+                path: 'puntos-reorden',
+                loadComponent: () => import('./pages/puntos-reorden/puntos-reorden.component')
+                    .then(m => m.PuntosReordenComponent)
+            },
+            {
+                path: 'historial-precios',
+                loadComponent: () => import('./pages/historial-precios/historial-precios.component')
+                    .then(m => m.HistorialPreciosComponent)
             }
         ]
     }

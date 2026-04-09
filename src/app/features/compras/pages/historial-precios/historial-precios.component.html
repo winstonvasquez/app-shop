@@ -1,0 +1,142 @@
+<div class="page-container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Historial de Precios</h1>
+      <p class="page-subtitle">Evolución de precios por proveedor y producto</p>
+    </div>
+    <button class="btn btn-primary" (click)="showForm.set(true)">+ Registrar Precio</button>
+  </div>
+
+  <!-- Búsqueda -->
+  <div class="card mb-4">
+    <div class="card-body">
+      <div class="flex gap-3 items-end flex-wrap">
+        <div>
+          <label class="input-label">Buscar por</label>
+          <select class="input-field"
+                  [value]="tipoBusqueda()"
+                  (change)="tipoBusqueda.set($any($event.target).value); busquedaValor.set('')">
+            <option value="sku">SKU</option>
+            <option value="producto">ID Producto</option>
+            <option value="proveedor">ID Proveedor</option>
+          </select>
+        </div>
+        <div class="flex-1">
+          <label class="input-label">
+            {{ tipoBusqueda() === 'sku' ? 'SKU del Producto' :
+               tipoBusqueda() === 'producto' ? 'UUID del Producto' : 'UUID del Proveedor' }}
+          </label>
+          <input class="input-field"
+                 [value]="busquedaValor()"
+                 (input)="busquedaValor.set($any($event.target).value)"
+                 (keydown.enter)="buscar()"
+                 placeholder="Ingresa el valor a buscar..." />
+        </div>
+        <button class="btn btn-secondary" (click)="buscar()" [disabled]="!busquedaValor().trim()">
+          Buscar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabla historial -->
+  <div class="card">
+    <div class="card-body p-0">
+      @if (loading()) {
+        <div class="loading-container"><div class="spinner"></div></div>
+      } @else if (historial().length === 0) {
+        <div class="p-8 text-center text-muted">Realiza una búsqueda para ver el historial de precios</div>
+      } @else {
+        <table class="table">
+          <thead>
+            <tr>
+              <th class="table-header-cell">Fecha</th>
+              <th class="table-header-cell">SKU</th>
+              <th class="table-header-cell">Producto</th>
+              <th class="table-header-cell">Proveedor</th>
+              <th class="table-header-cell">OC</th>
+              <th class="table-header-cell text-right">Precio Unit.</th>
+              <th class="table-header-cell text-center">Moneda</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (h of historial(); track h.id) {
+              <tr class="table-row">
+                <td class="table-cell">{{ h.fechaReferencia | date:'dd/MM/yyyy' }}</td>
+                <td class="table-cell font-mono text-sm">{{ h.sku }}</td>
+                <td class="table-cell">{{ h.productoNombre }}</td>
+                <td class="table-cell">{{ h.proveedorNombre }}</td>
+                <td class="table-cell text-muted text-sm">{{ h.ordenCompraCodigo ?? '—' }}</td>
+                <td class="table-cell text-right font-semibold"
+                    [class.text-green-400]="h.precioUnitario === precioMinimo(h.sku)"
+                    [class.text-on]="h.precioUnitario !== precioMinimo(h.sku)">
+                  {{ h.precioUnitario | number:'1.2-2' }}
+                </td>
+                <td class="table-cell text-center">
+                  <span class="badge badge-neutral">{{ h.moneda }}</span>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    </div>
+  </div>
+</div>
+
+<!-- Drawer registrar precio -->
+<div class="drawer-overlay" [class.open]="showForm()" (click)="showForm.set(false)"></div>
+<div class="drawer drawer-right" [class.open]="showForm()">
+  <div class="drawer-header">
+    <h2 class="drawer-title">Registrar Precio de Referencia</h2>
+    <button class="modal-close-btn" (click)="showForm.set(false)">✕</button>
+  </div>
+  <div class="drawer-body">
+    <form [formGroup]="form" (ngSubmit)="guardar()">
+      <div class="mb-4">
+        <label class="input-label">SKU *</label>
+        <input class="input-field" formControlName="sku" />
+      </div>
+      <div class="mb-4">
+        <label class="input-label">ID Producto *</label>
+        <input class="input-field" formControlName="productoId" placeholder="UUID" />
+      </div>
+      <div class="mb-4">
+        <label class="input-label">Nombre del Producto *</label>
+        <input class="input-field" formControlName="productoNombre" />
+      </div>
+      <div class="mb-4">
+        <label class="input-label">Proveedor *</label>
+        <select class="input-field" formControlName="proveedorId">
+          <option value="">Seleccionar...</option>
+          @for (p of proveedores(); track p.id) {
+            <option [value]="p.id">{{ p.razonSocial }}</option>
+          }
+        </select>
+      </div>
+      <div class="grid grid-cols-2 gap-3 mb-4">
+        <div>
+          <label class="input-label">Precio Unitario *</label>
+          <input type="number" class="input-field" formControlName="precioUnitario" min="0" step="0.01" />
+        </div>
+        <div>
+          <label class="input-label">Moneda</label>
+          <select class="input-field" formControlName="moneda">
+            <option value="PEN">PEN (S/)</option>
+            <option value="USD">USD ($)</option>
+          </select>
+        </div>
+      </div>
+      <div class="mb-4">
+        <label class="input-label">Fecha de Referencia</label>
+        <input type="date" class="input-field" formControlName="fechaReferencia" />
+      </div>
+      <div class="flex gap-3 mt-6">
+        <button type="submit" class="btn btn-primary flex-1" [disabled]="form.invalid || saving()">
+          {{ saving() ? 'Guardando...' : 'Registrar' }}
+        </button>
+        <button type="button" class="btn btn-secondary" (click)="showForm.set(false)">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>

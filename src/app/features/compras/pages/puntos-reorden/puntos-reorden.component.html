@@ -1,0 +1,137 @@
+<div class="page-container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Puntos de Reorden</h1>
+      <p class="page-subtitle">Alertas de stock mínimo y compras sugeridas</p>
+    </div>
+    <div class="flex gap-2">
+      <button class="btn" [class.btn-danger]="soloAlerta()" [class.btn-secondary]="!soloAlerta()"
+              (click)="toggleFiltro()">
+        {{ soloAlerta() ? '⚠ Solo alertas' : 'Todos' }}
+      </button>
+      <button class="btn btn-primary" (click)="showForm.set(true)">+ Nuevo</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-body p-0">
+      @if (loading()) {
+        <div class="loading-container"><div class="spinner"></div></div>
+      } @else if (items().length === 0) {
+        <div class="p-8 text-center text-muted">
+          {{ soloAlerta() ? 'No hay productos que requieran reorden' : 'No hay puntos de reorden configurados' }}
+        </div>
+      } @else {
+        <table class="table">
+          <thead>
+            <tr>
+              <th class="table-header-cell">SKU</th>
+              <th class="table-header-cell">Producto</th>
+              <th class="table-header-cell">Proveedor</th>
+              <th class="table-header-cell text-center">Stock Mín.</th>
+              <th class="table-header-cell text-center">Punto Reorden</th>
+              <th class="table-header-cell text-center">Stock Actual</th>
+              <th class="table-header-cell text-center">Sugerido</th>
+              <th class="table-header-cell text-center">Estado</th>
+              <th class="table-header-cell text-center">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of items(); track item.id) {
+              <tr class="table-row" [class.bg-red-950]="item.requiereReorden">
+                <td class="table-cell font-mono text-sm">{{ item.sku }}</td>
+                <td class="table-cell font-semibold">{{ item.productoNombre }}</td>
+                <td class="table-cell text-muted">{{ item.proveedorNombre ?? '—' }}</td>
+                <td class="table-cell text-center">{{ item.stockMinimo }}</td>
+                <td class="table-cell text-center">{{ item.puntoReorden }}</td>
+                <td class="table-cell text-center">
+                  @if (editingStock() === item.id) {
+                    <div class="flex items-center gap-1">
+                      <input type="number" class="input-field w-16 text-center py-1"
+                             [value]="nuevoStock()"
+                             (input)="nuevoStock.set(+$any($event.target).value)" />
+                      <button class="btn btn-primary py-1 px-2 text-xs" (click)="guardarStock(item.id)">✓</button>
+                      <button class="btn btn-secondary py-1 px-2 text-xs" (click)="editingStock.set(null)">✕</button>
+                    </div>
+                  } @else {
+                    <span class="font-bold"
+                          [class.text-red-400]="item.requiereReorden"
+                          [class.text-green-400]="!item.requiereReorden">
+                      {{ item.stockActual }}
+                    </span>
+                  }
+                </td>
+                <td class="table-cell text-center text-blue-400 font-semibold">{{ item.cantidadSugerida }}</td>
+                <td class="table-cell text-center">
+                  @if (item.requiereReorden) {
+                    <span class="badge badge-error">⚠ Reordenar</span>
+                  } @else {
+                    <span class="badge badge-success">OK</span>
+                  }
+                </td>
+                <td class="table-cell text-center">
+                  <button class="btn-icon btn-icon-edit" title="Actualizar stock"
+                          (click)="iniciarEditStock(item)">✏</button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    </div>
+  </div>
+</div>
+
+<!-- Drawer nuevo punto de reorden -->
+<div class="drawer-overlay" [class.open]="showForm()" (click)="showForm.set(false)"></div>
+<div class="drawer drawer-right" [class.open]="showForm()">
+  <div class="drawer-header">
+    <h2 class="drawer-title">Nuevo Punto de Reorden</h2>
+    <button class="modal-close-btn" (click)="showForm.set(false)">✕</button>
+  </div>
+  <div class="drawer-body">
+    <form [formGroup]="form" (ngSubmit)="guardar()">
+      <div class="mb-4">
+        <label class="input-label">SKU *</label>
+        <input class="input-field" formControlName="sku" />
+      </div>
+      <div class="mb-4">
+        <label class="input-label">Nombre del Producto *</label>
+        <input class="input-field" formControlName="productoNombre" />
+      </div>
+      <div class="mb-4">
+        <label class="input-label">ID Producto *</label>
+        <input class="input-field" formControlName="productoId" placeholder="UUID del producto" />
+      </div>
+      <div class="mb-4">
+        <label class="input-label">Proveedor Preferido</label>
+        <select class="input-field" formControlName="proveedorId">
+          <option value="">Sin proveedor</option>
+          @for (p of proveedores(); track p.id) {
+            <option [value]="p.id">{{ p.razonSocial }}</option>
+          }
+        </select>
+      </div>
+      <div class="grid grid-cols-3 gap-3 mb-4">
+        <div>
+          <label class="input-label">Stock Mín.</label>
+          <input type="number" class="input-field" formControlName="stockMinimo" min="0" />
+        </div>
+        <div>
+          <label class="input-label">Punto Reorden</label>
+          <input type="number" class="input-field" formControlName="puntoReorden" min="0" />
+        </div>
+        <div>
+          <label class="input-label">Cant. Sugerida</label>
+          <input type="number" class="input-field" formControlName="cantidadSugerida" min="1" />
+        </div>
+      </div>
+      <div class="flex gap-3 mt-6">
+        <button type="submit" class="btn btn-primary flex-1" [disabled]="form.invalid || saving()">
+          {{ saving() ? 'Guardando...' : 'Crear' }}
+        </button>
+        <button type="button" class="btn btn-secondary" (click)="showForm.set(false)">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>

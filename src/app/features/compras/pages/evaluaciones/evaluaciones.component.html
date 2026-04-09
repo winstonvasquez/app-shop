@@ -1,0 +1,127 @@
+<div class="page-container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Evaluación de Proveedores</h1>
+      <p class="page-subtitle">Puntúa entrega, calidad, precio y servicio</p>
+    </div>
+    <button class="btn btn-primary" (click)="showForm.set(true)">+ Nueva Evaluación</button>
+  </div>
+
+  <!-- Filtro por proveedor -->
+  <div class="card mb-4">
+    <div class="card-body">
+      <div class="flex gap-3 items-end">
+        <div class="flex-1">
+          <label class="input-label">Proveedor</label>
+          <select class="input-field"
+                  [value]="selectedProveedor()"
+                  (change)="selectedProveedor.set($any($event.target).value)">
+            <option value="">Seleccionar proveedor...</option>
+            @for (p of proveedores(); track p.id) {
+              <option [value]="p.id">{{ p.razonSocial }}</option>
+            }
+          </select>
+        </div>
+        <button class="btn btn-secondary" (click)="buscarEvaluaciones()" [disabled]="!selectedProveedor()">
+          Ver Historial
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabla de evaluaciones -->
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title">Historial de Evaluaciones</h2>
+    </div>
+    <div class="card-body p-0">
+      @if (loading()) {
+        <div class="loading-container"><div class="spinner"></div></div>
+      } @else if (evaluaciones().length === 0) {
+        <div class="p-8 text-center text-muted">Selecciona un proveedor para ver su historial</div>
+      } @else {
+        <table class="table">
+          <thead>
+            <tr>
+              <th class="table-header-cell">Fecha</th>
+              <th class="table-header-cell">OC</th>
+              <th class="table-header-cell text-center">Entrega</th>
+              <th class="table-header-cell text-center">Calidad</th>
+              <th class="table-header-cell text-center">Precio</th>
+              <th class="table-header-cell text-center">Servicio</th>
+              <th class="table-header-cell text-center">Total</th>
+              <th class="table-header-cell text-center">Nivel</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (ev of evaluaciones(); track ev.id) {
+              <tr class="table-row">
+                <td class="table-cell">{{ ev.fechaEvaluacion | date:'dd/MM/yyyy' }}</td>
+                <td class="table-cell text-muted">{{ ev.ordenCompraCodigo ?? '—' }}</td>
+                <td class="table-cell text-center font-semibold" [class]="puntajeColor(ev.puntajeEntrega)">{{ ev.puntajeEntrega }}</td>
+                <td class="table-cell text-center font-semibold" [class]="puntajeColor(ev.puntajeCalidad)">{{ ev.puntajeCalidad }}</td>
+                <td class="table-cell text-center font-semibold" [class]="puntajeColor(ev.puntajePrecio)">{{ ev.puntajePrecio }}</td>
+                <td class="table-cell text-center font-semibold" [class]="puntajeColor(ev.puntajeServicio)">{{ ev.puntajeServicio }}</td>
+                <td class="table-cell text-center font-bold text-lg" [class]="puntajeColor(ev.puntajeTotal)">{{ ev.puntajeTotal | number:'1.0-1' }}</td>
+                <td class="table-cell text-center">
+                  <span [class]="nivelClass(ev.nivel)">{{ ev.nivel }}</span>
+                </td>
+              </tr>
+              @if (ev.comentarios) {
+                <tr class="table-row bg-[var(--color-surface-raised)]">
+                  <td class="table-cell text-muted text-sm italic" colspan="8">💬 {{ ev.comentarios }}</td>
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      }
+    </div>
+  </div>
+</div>
+
+<!-- Drawer nueva evaluación -->
+<div class="drawer-overlay" [class.open]="showForm()" (click)="showForm.set(false)"></div>
+<div class="drawer drawer-right" [class.open]="showForm()">
+  <div class="drawer-header">
+    <h2 class="drawer-title">Nueva Evaluación</h2>
+    <button class="modal-close-btn" (click)="showForm.set(false)">✕</button>
+  </div>
+  <div class="drawer-body">
+    <form [formGroup]="form" (ngSubmit)="guardar()">
+      <div class="mb-4">
+        <label class="input-label">Proveedor *</label>
+        <select class="input-field" formControlName="proveedorId">
+          <option value="">Seleccionar...</option>
+          @for (p of proveedores(); track p.id) {
+            <option [value]="p.id">{{ p.razonSocial }}</option>
+          }
+        </select>
+      </div>
+
+      @for (criterio of ['puntajeEntrega', 'puntajeCalidad', 'puntajePrecio', 'puntajeServicio']; track criterio) {
+        <div class="mb-4">
+          <label class="input-label">
+            {{ criterio === 'puntajeEntrega' ? 'Entrega' :
+               criterio === 'puntajeCalidad' ? 'Calidad' :
+               criterio === 'puntajePrecio' ? 'Precio' : 'Servicio' }} (0–100) *
+          </label>
+          <input type="number" class="input-field" [formControlName]="criterio" min="0" max="100" />
+        </div>
+      }
+
+      <div class="mb-4">
+        <label class="input-label">Comentarios</label>
+        <textarea class="input-field" formControlName="comentarios" rows="3"
+                  placeholder="Observaciones adicionales..."></textarea>
+      </div>
+
+      <div class="flex gap-3 mt-6">
+        <button type="submit" class="btn btn-primary flex-1" [disabled]="form.invalid || saving()">
+          {{ saving() ? 'Guardando...' : 'Guardar Evaluación' }}
+        </button>
+        <button type="button" class="btn btn-secondary" (click)="showForm.set(false)">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
