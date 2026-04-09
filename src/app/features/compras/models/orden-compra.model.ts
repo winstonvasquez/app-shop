@@ -42,6 +42,7 @@ export interface Recepcion {
     id?: string;
     ordenCompraId: string;
     ordenCompraCodigo?: string;
+    numeroRecepcion?: string;
     numeroGuia?: string;
     transportista?: string;
     fechaRecepcion: string;
@@ -50,6 +51,12 @@ export interface Recepcion {
     estado: string;
     observaciones?: string;
     items?: RecepcionItem[];
+}
+
+export interface ItemRecepcionRequest {
+    ordenItemId: string;
+    cantidadRecibida: number;
+    observaciones?: string;
 }
 
 export interface RecepcionItem {
