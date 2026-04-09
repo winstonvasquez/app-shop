@@ -28,6 +28,31 @@ export const comprasRoutes: Routes = [
                 path: 'recepcion',
                 loadComponent: () => import('./pages/recepcion/recepcion.component')
                     .then(m => m.RecepcionComponent)
+            },
+            {
+                path: 'solicitudes',
+                loadComponent: () => import('./pages/solicitudes-compra/solicitudes-compra.component')
+                    .then(m => m.SolicitudesCompraComponent)
+            },
+            {
+                path: 'mis-solicitudes',
+                loadComponent: () => import('./pages/mis-solicitudes/mis-solicitudes.component')
+                    .then(m => m.MisSolicitudesComponent)
+            },
+            {
+                path: 'bandeja-aprobaciones',
+                loadComponent: () => import('./pages/bandeja-aprobaciones/bandeja-aprobaciones.component')
+                    .then(m => m.BandejaAprobacionesComponent)
+            },
+            {
+                path: 'config-aprobaciones',
+                loadComponent: () => import('./pages/config-aprobaciones/config-aprobaciones.component')
+                    .then(m => m.ConfigAprobacionesComponent)
+            },
+            {
+                path: 'cotizaciones',
+                loadComponent: () => import('./pages/cotizaciones/cotizaciones.component')
+                    .then(m => m.CotizacionesComponent)
             }
         ]
     }

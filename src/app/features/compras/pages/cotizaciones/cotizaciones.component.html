@@ -1,0 +1,244 @@
+<app-page-header
+    title="Cotizaciones (RFQ)"
+    subtitle="Solicitudes de cotización multi-proveedor"
+    [breadcrumbs]="breadcrumbs">
+    <button class="btn btn-primary" (click)="openCreateForm()">+ Nueva Cotización</button>
+</app-page-header>
+
+<div class="page-container">
+    <app-alert *ngIf="error()" type="error" [message]="error()!" (close)="error.set(null)" />
+    <app-alert *ngIf="actionError()" type="error" [message]="actionError()!" (close)="actionError.set(null)" />
+
+    <!-- Filters -->
+    <div class="filters-bar">
+        <select class="input-field" style="width:200px" (change)="onFilterEstado($event)">
+            <option value="">Todos los estados</option>
+            @for (opt of estadoOptions; track opt.value) {
+                <option [value]="opt.value">{{ opt.label }}</option>
+            }
+        </select>
+    </div>
+
+    <!-- Table -->
+    <div class="card">
+        <div class="card-body">
+            @if (loading()) {
+                <app-loading-spinner />
+            } @else if (isEmpty()) {
+                <p class="text-muted text-center py-8">No hay cotizaciones registradas.</p>
+            } @else {
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th class="table-header-cell">Código</th>
+                            <th class="table-header-cell">Título</th>
+                            <th class="table-header-cell">Estado</th>
+                            <th class="table-header-cell">Emisión</th>
+                            <th class="table-header-cell">Vencimiento</th>
+                            <th class="table-header-cell">Items</th>
+                            <th class="table-header-cell">Proveedores</th>
+                            <th class="table-header-cell">Respuestas</th>
+                            <th class="table-header-cell">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (cot of cotizaciones(); track cot.id) {
+                            <tr class="table-row">
+                                <td class="table-cell font-mono text-sm">{{ cot.codigo }}</td>
+                                <td class="table-cell">{{ cot.titulo }}</td>
+                                <td class="table-cell">
+                                    <span [class]="getBadgeClass(cot.estado)">{{ getEstadoLabel(cot.estado) }}</span>
+                                </td>
+                                <td class="table-cell">{{ cot.fechaEmision }}</td>
+                                <td class="table-cell">{{ cot.fechaVencimiento }}</td>
+                                <td class="table-cell text-center">{{ cot.totalItems }}</td>
+                                <td class="table-cell text-center">{{ cot.totalProveedores }}</td>
+                                <td class="table-cell text-center">
+                                    <span [class]="cot.respuestasRecibidas > 0 ? 'badge badge-success' : 'badge badge-neutral'">
+                                        {{ cot.respuestasRecibidas }}/{{ cot.totalProveedores }}
+                                    </span>
+                                </td>
+                                <td class="table-cell">
+                                    <div class="flex gap-2 flex-wrap">
+                                        @if (cot.estado === 'CREADA') {
+                                            <button class="btn btn-secondary text-xs py-1 px-2"
+                                                (click)="enviarCotizacion(cot.id)">Enviar</button>
+                                        }
+                                        @if (cot.estado === 'EN_RESPUESTA') {
+                                            <button class="btn btn-secondary text-xs py-1 px-2"
+                                                (click)="verComparativa(cot)">Comparativa</button>
+                                            <button class="btn btn-primary text-xs py-1 px-2"
+                                                (click)="openAdjudicarModal(cot)">Adjudicar</button>
+                                        }
+                                        @if (cot.estado === 'ADJUDICADA') {
+                                            <button class="btn btn-primary text-xs py-1 px-2"
+                                                (click)="convertirOc(cot.id)">Generar OC</button>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+
+                <app-pagination
+                    [currentPage]="currentPage()"
+                    [totalPages]="totalPages()"
+                    [totalElements]="totalElements()"
+                    [pageSize]="pageSize()"
+                    (pageChange)="onPageChange($event)" />
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Create Cotizacion Drawer -->
+<app-drawer title="Nueva Cotización" [isOpen]="showForm()" (closed)="closeForm()">
+    <form [formGroup]="cotizacionForm" (ngSubmit)="crearCotizacion()">
+        <app-alert *ngIf="submitError()" type="error" [message]="submitError()!" />
+
+        <div class="mb-4">
+            <label class="input-label">Título *</label>
+            <input class="input-field" formControlName="titulo" placeholder="Ej: Compra de materiales de oficina" />
+        </div>
+
+        <div class="mb-4">
+            <label class="input-label">Descripción</label>
+            <textarea class="input-field" formControlName="descripcion" rows="2"></textarea>
+        </div>
+
+        <div class="mb-4">
+            <label class="input-label">Fecha de Vencimiento *</label>
+            <input type="date" class="input-field" formControlName="fechaVencimiento" />
+        </div>
+
+        <!-- Items -->
+        <div class="mb-4">
+            <div class="flex justify-between items-center mb-2">
+                <label class="input-label mb-0">Ítems *</label>
+                <button type="button" class="btn btn-secondary text-xs py-1 px-2" (click)="addItem()">+ Agregar</button>
+            </div>
+            <div formArrayName="items">
+                @for (item of itemsArray.controls; track $index) {
+                    <div [formGroupName]="$index" class="card mb-2 p-3">
+                        <div class="flex justify-between items-start mb-2">
+                            <span class="text-sm text-muted">Ítem {{ $index + 1 }}</span>
+                            @if (itemsArray.length > 1) {
+                                <button type="button" class="btn-icon btn-icon-delete" (click)="removeItem($index)">✕</button>
+                            }
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div class="col-span-2">
+                                <input class="input-field" formControlName="productoNombre" placeholder="Nombre del producto *" />
+                            </div>
+                            <input class="input-field" formControlName="sku" placeholder="SKU" />
+                            <input type="number" class="input-field" formControlName="cantidad" placeholder="Cantidad" min="1" />
+                            <input class="input-field" formControlName="unidadMedida" placeholder="Unidad (UNIDAD)" />
+                            <input class="input-field" formControlName="especificaciones" placeholder="Especificaciones" />
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="flex gap-3 justify-end mt-6">
+            <button type="button" class="btn btn-secondary" (click)="closeForm()">Cancelar</button>
+            <button type="submit" class="btn btn-primary" [disabled]="cotizacionForm.invalid || submitting()">
+                {{ submitting() ? 'Creando...' : 'Crear Cotización' }}
+            </button>
+        </div>
+    </form>
+</app-drawer>
+
+<!-- Comparativa Drawer -->
+<app-drawer title="Tabla Comparativa" [isOpen]="showComparativa()" (closed)="closeComparativa()">
+    @if (comparativa(); as cmp) {
+        <div class="mb-4">
+            <p class="text-muted text-sm">{{ cmp.codigo }} — {{ cmp.titulo }}</p>
+        </div>
+
+        <!-- Comparativa Table -->
+        <div class="overflow-x-auto mb-6">
+            <table class="table text-sm">
+                <thead>
+                    <tr>
+                        <th class="table-header-cell">Producto</th>
+                        <th class="table-header-cell text-center">Cant.</th>
+                        @for (prov of cmp.proveedores; track $index) {
+                            <th class="table-header-cell text-right">{{ prov }}</th>
+                        }
+                        <th class="table-header-cell text-right">Mín.</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (fila of cmp.filas; track fila.productoNombre) {
+                        <tr class="table-row">
+                            <td class="table-cell">{{ fila.productoNombre }}</td>
+                            <td class="table-cell text-center">{{ fila.cantidad }}</td>
+                            @for (precio of fila.precios; track $index) {
+                                <td class="table-cell text-right"
+                                    [class.text-green-500]="isMinPrecio(precio, fila.precios)">
+                                    {{ precio !== null ? ('S/ ' + precio.toFixed(2)) : '—' }}
+                                </td>
+                            }
+                            <td class="table-cell text-right font-semibold">
+                                {{ fila.precioMinimo !== null ? ('S/ ' + fila.precioMinimo!.toFixed(2)) : '—' }}
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Totals per supplier -->
+        <h4 class="text-on font-semibold mb-3">Totales por Proveedor</h4>
+        <div class="grid gap-3">
+            @for (total of cmp.totales; track total.proveedorId) {
+                <div class="card p-3">
+                    <div class="flex justify-between items-center">
+                        <span class="font-medium">{{ total.proveedorNombre }}</span>
+                        <span class="badge" [class]="total.estado === 'RESPONDIO' ? 'badge-success' : 'badge-neutral'">
+                            {{ total.estado }}
+                        </span>
+                    </div>
+                    <div class="text-sm text-muted mt-1">
+                        Total: <strong class="text-on">S/ {{ total.total?.toFixed(2) ?? '—' }}</strong>
+                        @if (total.plazoEntregaDias) {
+                            · Plazo: {{ total.plazoEntregaDias }} días
+                        }
+                        @if (total.condicionPago) {
+                            · {{ total.condicionPago }}
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</app-drawer>
+
+<!-- Adjudicar Modal -->
+@if (showAdjudicarModal()) {
+    <div class="modal-overlay" (click)="closeAdjudicarModal()">
+        <div class="modal-content" (click)="$event.stopPropagation()">
+            <div class="modal-header">
+                <h3 class="modal-title">Adjudicar Proveedor</h3>
+                <button class="modal-close-btn" (click)="closeAdjudicarModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted text-sm mb-4">Seleccione el proveedor ganador para la cotización
+                    <strong>{{ selectedCotizacion()?.codigo }}</strong>.
+                </p>
+                <form [formGroup]="adjudicarForm">
+                    <label class="input-label">ID del Proveedor *</label>
+                    <input class="input-field" formControlName="proveedorId"
+                        placeholder="UUID del proveedor adjudicado" />
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" (click)="closeAdjudicarModal()">Cancelar</button>
+                <button class="btn btn-primary" (click)="confirmarAdjudicacion()"
+                    [disabled]="adjudicarForm.invalid">Adjudicar</button>
+            </div>
+        </div>
+    </div>
+}
