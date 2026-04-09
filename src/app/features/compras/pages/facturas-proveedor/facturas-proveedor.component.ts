@@ -95,6 +95,7 @@ export class FacturasProveedorComponent implements OnInit {
     });
 
     showRechazarModal = signal(false);
+    validandoSunatId = signal<string | null>(null);
 
     get itemsArray(): FormArray {
         return this.facturaForm.get('items') as FormArray;
@@ -265,6 +266,22 @@ export class FacturasProveedorComponent implements OnInit {
 
     getMatchLabel(match: string | undefined): string {
         return this.matchOptions.find(o => o.value === match)?.label ?? (match ?? '—');
+    }
+
+    validarSunat(id: string): void {
+        this.validandoSunatId.set(id);
+        this.facturaService.validarSunat(id).subscribe({
+            next: () => {
+                this.validandoSunatId.set(null);
+                this.loadFacturas();
+                if (this.selectedFactura()?.id === id) this.closeDetail();
+            },
+            error: () => {
+                this.validandoSunatId.set(null);
+                this.actionError.set('Error al validar con SUNAT');
+                this.cdr.markForCheck();
+            }
+        });
     }
 
     private createItemGroup(): FormGroup {

@@ -93,6 +93,26 @@ export const comprasRoutes: Routes = [
                 path: 'catalogo',
                 loadComponent: () => import('./pages/catalogo/catalogo.component')
                     .then(m => m.CatalogoComponent)
+            },
+            {
+                path: 'kanban',
+                loadComponent: () => import('./pages/kanban-ordenes/kanban-ordenes.component')
+                    .then(m => m.KanbanOrdenesComponent)
+            },
+            {
+                path: 'consolidaciones',
+                loadComponent: () => import('./pages/consolidaciones/consolidaciones.component')
+                    .then(m => m.ConsolidacionesComponent)
+            },
+            {
+                path: 'reportes-kpi',
+                loadComponent: () => import('./pages/reportes-kpi/reportes-kpi.component')
+                    .then(m => m.ReportesKpiComponent)
+            },
+            {
+                path: 'contratos',
+                loadComponent: () => import('./pages/contratos/contratos.component')
+                    .then(m => m.ContratosComponent)
             }
         ]
     }

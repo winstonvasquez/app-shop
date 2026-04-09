@@ -1,0 +1,76 @@
+<div class="page-container">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Kanban — Órdenes de Compra</h1>
+            <p class="page-subtitle">Vista por estado del ciclo de vida de las OC</p>
+        </div>
+        <button class="btn btn-secondary" (click)="cargarTodas()">Actualizar</button>
+    </div>
+
+    @if (error()) {
+        <div class="badge badge-error" style="margin-bottom:1rem">{{ error() }}</div>
+    }
+
+    @if (cargando()) {
+        <div class="loading-container"><div class="spinner"></div></div>
+    } @else {
+        <div style="display:flex; gap:1rem; overflow-x:auto; padding-bottom:1rem">
+            @for (col of columnas(); track col.estado) {
+                <div style="min-width:220px; flex:0 0 220px">
+                    <!-- Cabecera columna -->
+                    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:.75rem">
+                        <span class="badge {{ col.color }}">{{ col.label }}</span>
+                        <span style="font-size:.75rem; color:var(--color-text-muted)">
+                            {{ col.ordenes.length }} OC
+                        </span>
+                    </div>
+
+                    <!-- Total columna -->
+                    <div style="font-size:.8rem; color:var(--color-text-subtle); margin-bottom:.5rem">
+                        S/ {{ totalColumna(col) | number:'1.2-2' }}
+                    </div>
+
+                    <!-- Cards -->
+                    <div style="display:flex; flex-direction:column; gap:.5rem">
+                        @for (oc of col.ordenes; track oc.id) {
+                            <div class="card" style="padding:.75rem; cursor:default">
+                                <div style="font-weight:600; font-size:.85rem; color:var(--color-text-on)">
+                                    {{ oc.codigo }}
+                                </div>
+                                <div style="font-size:.78rem; color:var(--color-text-subtle); margin:.25rem 0">
+                                    {{ oc.proveedorNombre ?? 'Proveedor' }}
+                                </div>
+                                <div style="font-size:.8rem; font-weight:500; color:var(--color-primary)">
+                                    S/ {{ (oc.total ?? 0) | number:'1.2-2' }}
+                                </div>
+                                @if (oc.fechaEntregaEstimada) {
+                                    <div style="font-size:.73rem; color:var(--color-text-muted); margin-top:.25rem">
+                                        Entrega: {{ oc.fechaEntregaEstimada }}
+                                    </div>
+                                }
+                                @if (col.estado === 'APROBADA') {
+                                    <button
+                                        class="btn btn-secondary"
+                                        style="margin-top:.5rem; width:100%; font-size:.75rem; padding:.25rem"
+                                        [disabled]="enviandoId() === oc.id"
+                                        (click)="enviarAlProveedor(oc)">
+                                        @if (enviandoId() === oc.id) {
+                                            <span class="spinner-sm"></span>
+                                        } @else {
+                                            Enviar al proveedor
+                                        }
+                                    </button>
+                                }
+                            </div>
+                        }
+                        @if (col.ordenes.length === 0) {
+                            <div style="font-size:.8rem; color:var(--color-text-muted); text-align:center; padding:1rem">
+                                Sin OC
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>

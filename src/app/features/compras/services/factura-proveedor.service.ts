@@ -67,4 +67,9 @@ export class FacturaProveedorService {
             headers: this.getHeaders(),
         });
     }
+
+    validarSunat(id: string): Observable<FacturaProveedor> {
+        const sunatUrl = `${environment.apiUrls.purchases}/api/sunat/facturas/${id}/validar`;
+        return this.http.post<FacturaProveedor>(sunatUrl, {}, { headers: this.getHeaders() });
+    }
 }

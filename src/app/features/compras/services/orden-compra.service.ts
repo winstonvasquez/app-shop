@@ -8,7 +8,7 @@ import { OrdenCompra, OrdenCompraPage } from '../models/orden-compra.model';
 @Injectable({ providedIn: 'root' })
 export class OrdenCompraService {
     private http = inject(HttpClient);
-    private baseUrl = `${environment.apiUrl}/purchases/api/ordenes-compra`;
+    private baseUrl = `${environment.apiUrls.purchases}/api/ordenes-compra`;
 
     getOrdenes(page = 0, size = 10, estado?: string): Observable<OrdenCompraPage> {
         let params = new HttpParams()
@@ -50,5 +50,9 @@ export class OrdenCompraService {
 
     cancelarOrden(id: string): Observable<OrdenCompra> {
         return this.http.post<OrdenCompra>(`${this.baseUrl}/${id}/cancelar`, {});
+    }
+
+    enviarAlProveedor(id: string): Observable<OrdenCompra> {
+        return this.http.post<OrdenCompra>(`${this.baseUrl}/${id}/enviar`, {});
     }
 }
