@@ -53,6 +53,11 @@ export const comprasRoutes: Routes = [
                 path: 'cotizaciones',
                 loadComponent: () => import('./pages/cotizaciones/cotizaciones.component')
                     .then(m => m.CotizacionesComponent)
+            },
+            {
+                path: 'facturas-proveedor',
+                loadComponent: () => import('./pages/facturas-proveedor/facturas-proveedor.component')
+                    .then(m => m.FacturasProveedorComponent)
             }
         ]
     }
