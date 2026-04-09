@@ -88,6 +88,11 @@ export const comprasRoutes: Routes = [
                 path: 'alertas',
                 loadComponent: () => import('./pages/alertas/alertas.component')
                     .then(m => m.AlertasComponent)
+            },
+            {
+                path: 'catalogo',
+                loadComponent: () => import('./pages/catalogo/catalogo.component')
+                    .then(m => m.CatalogoComponent)
             }
         ]
     }
