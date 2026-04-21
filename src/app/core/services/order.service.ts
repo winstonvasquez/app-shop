@@ -6,7 +6,9 @@ import { environment } from '@env/environment';
 import {
     OrderResponse,
     OrderRequest,
-    OrderStatusUpdate
+    OrderStatusUpdate,
+    PaymentConfirmResponse,
+    OrderCancelResponse
 } from '@core/models/order.model';
 import { PageResponse, PaginationConfig } from '@core/models/pagination.model';
 
@@ -49,6 +51,32 @@ export class OrderService {
     updateStatus(id: number, update: OrderStatusUpdate): Observable<OrderResponse> {
         return this.http
             .put<OrderResponse>(`${this.baseUrl}/${id}/estado`, update)
+            .pipe(catchError(this.handleError));
+    }
+
+    /**
+     * Confirma el pago de un pedido PENDIENTE_PAGO.
+     * POST /api/pedidos/{orderId}/confirmar-pago
+     *
+     * @param orderId       ID del pedido creado previamente
+     * @param referenciaPago Referencia del gateway (paymentId, transactionId, etc.)
+     */
+    confirmPayment(orderId: number, referenciaPago: string): Observable<PaymentConfirmResponse> {
+        return this.http
+            .post<PaymentConfirmResponse>(`${this.baseUrl}/${orderId}/confirmar-pago`, { referenciaPago })
+            .pipe(catchError(this.handleError));
+    }
+
+    /**
+     * Cancela un pedido y restaura el stock en el backend.
+     * POST /api/pedidos/{orderId}/cancelar
+     *
+     * @param orderId ID del pedido a cancelar
+     * @param motivo  Razón de cancelación (ej. 'PAGO_FALLIDO', 'TIMEOUT')
+     */
+    cancelOrder(orderId: number, motivo: string): Observable<OrderCancelResponse> {
+        return this.http
+            .post<OrderCancelResponse>(`${this.baseUrl}/${orderId}/cancelar`, { motivo })
             .pipe(catchError(this.handleError));
     }
 

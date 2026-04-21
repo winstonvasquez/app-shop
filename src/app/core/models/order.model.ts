@@ -40,6 +40,22 @@ export interface OrderRequest {
     metodoPago: string;
     codigoCupon?: string;
     zonaEnvioId?: number;
+    /** Estado inicial del pedido. Usar 'PENDIENTE_PAGO' cuando el gateway se llama después de crear el pedido. */
+    estado?: string;
+}
+
+/** Respuesta de confirmación de pago en el backend. */
+export interface PaymentConfirmResponse {
+    orderId: number;
+    estado: string;
+    referenciaPago: string;
+}
+
+/** Respuesta de cancelación de pedido en el backend. */
+export interface OrderCancelResponse {
+    orderId: number;
+    estado: string;
+    motivo: string;
 }
 
 export interface OrderDetailRequest {
