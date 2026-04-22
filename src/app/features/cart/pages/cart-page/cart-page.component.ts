@@ -1,5 +1,5 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { DecimalPipe } from '@angular/common';
 import { Router } from '@angular/router';
 import { CartService } from '@features/cart/services/cart.service';
 import { ConfigService, MedioPago, Certificacion } from '@core/services/config.service';
@@ -10,7 +10,11 @@ import { BreadcrumbComponent, BreadcrumbItem } from '@shared/components/breadcru
 @Component({
     selector: 'app-cart-page',
     standalone: true,
-    imports: [CommonModule, TranslateModule, BreadcrumbComponent],
+    imports: [
+    TranslateModule,
+    BreadcrumbComponent,
+    DecimalPipe,
+  ],
     templateUrl: './cart-page.component.html'
 })
 export class CartPageComponent implements OnInit {

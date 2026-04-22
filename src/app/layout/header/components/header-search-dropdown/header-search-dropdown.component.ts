@@ -1,5 +1,5 @@
 import { Component, ElementRef, HostListener, inject, OnInit, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
@@ -13,7 +13,11 @@ import { UrlEncryptionService } from '@core/services/url-encryption.service';
 @Component({
     selector: 'app-header-search-dropdown',
     standalone: true,
-    imports: [CommonModule, FormsModule, TranslateModule],
+    imports: [
+    FormsModule,
+    TranslateModule,
+    DecimalPipe,
+  ],
     templateUrl: './header-search-dropdown.component.html'
 })
 export class HeaderSearchDropdownComponent implements OnInit {
@@ -62,8 +66,8 @@ export class HeaderSearchDropdownComponent implements OnInit {
     }
 
     @HostListener('document:click', ['$event.target'])
-    onClickOutside(targetElement: any) {
-        const clickedInside = this.elementRef.nativeElement.contains(targetElement);
+    onClickOutside(targetElement: EventTarget | null) {
+        const clickedInside = this.elementRef.nativeElement.contains(targetElement as Node);
         if (!clickedInside) {
             this.isOpen.set(false);
         }

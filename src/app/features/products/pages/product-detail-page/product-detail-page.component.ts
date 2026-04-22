@@ -1,4 +1,5 @@
-import { Component, inject, OnInit, signal, computed } from '@angular/core';
+import { Component, DestroyRef, inject, OnInit, signal, computed } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Title } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
 import { SeoService } from '@core/services/seo.service';
@@ -30,8 +31,7 @@ import { ProductCardComponent, Product as UIProduct } from '@shared/components/p
     SellerInfoComponent,
     ProductAttributesComponent,
     TranslateModule,
-    BreadcrumbComponent,
-    ProductCardComponent
+    BreadcrumbComponent
   ],
   templateUrl: './product-detail-page.component.html'
 })
@@ -44,6 +44,7 @@ export class ProductDetailPageComponent implements OnInit {
   private urlEncryption = inject(UrlEncryptionService);
   private analytics = inject(AnalyticsService);
   private seo = inject(SeoService);
+  private destroyRef = inject(DestroyRef);
 
   private _isLoading = signal<boolean>(true);
   private _error = signal<boolean>(false);
@@ -74,7 +75,7 @@ export class ProductDetailPageComponent implements OnInit {
   });
 
   ngOnInit() {
-    this.route.params.subscribe(params => {
+    this.route.params.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(params => {
       const rawId = params['id'];
       const id = this.urlEncryption.decrypt(rawId) ?? rawId;
       this._isLoading.set(true);
@@ -99,7 +100,7 @@ export class ProductDetailPageComponent implements OnInit {
           this.recommendationsService.getSimilares(data.id).subscribe(similares => {
             this.similarProducts.set(similares.map(p => ({
               id: p.id, name: p.nombre, price: p.precioBase,
-              image: p.imagenes?.find((img: { esPrincipal: boolean; url: string }) => img.esPrincipal)?.url
+              image: p.imagenes?.find((img) => img.esPrincipal)?.url
                      || p.imagenes?.[0]?.url
                      || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&h=400&fit=crop'
             })));

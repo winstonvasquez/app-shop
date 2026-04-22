@@ -32,7 +32,7 @@
 
         <!-- Cart Items List -->
         <div class="space-y-6">
-            <ng-container *ngFor="let item of cartItems()">
+            @for (item of cartItems(); track item.productId) {
                 <div class="flex flex-col sm:flex-row gap-4 pt-4 relative group">
                     <!-- Selection Checkbox -->
                     <div class="pt-2 sm:pt-14 absolute left-0 z-10">
@@ -45,10 +45,11 @@
                     <div
                         class="relative w-32 h-32 ml-8 flex-shrink-0 bg-[var(--color-surface-raised)] rounded-md overflow-hidden border border-[var(--color-border)]">
                         <img [src]="item.image" [alt]="item.name" class="w-full h-full object-cover">
-                        <div *ngIf="item.stock !== undefined && item.stock < 10"
-                            class="absolute bottom-0 left-0 right-0 bg-black/70 text-white text-[10px] font-bold text-center py-1 truncate">
-                            CASI AGOTADO(S)
-                        </div>
+                        @if (item.stock !== undefined && item.stock < 10) {
+                            <div class="absolute bottom-0 left-0 right-0 bg-black/70 text-white text-[10px] font-bold text-center py-1 truncate">
+                                CASI AGOTADO(S)
+                            </div>
+                        }
                     </div>
 
                     <!-- Product Details -->
@@ -80,9 +81,11 @@
                                 <select
                                     class="appearance-none bg-transparent pl-3 pr-8 py-1 text-sm font-medium text-[var(--color-text-primary)] outline-none w-full h-full cursor-pointer"
                                     [value]="item.quantity" (change)="onQuantityChange(item.productId, $event)">
-                                    <option *ngFor="let qty of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]" [value]="qty">
-                                        Cant. {{ qty }}
-                                    </option>
+                                    @for (qty of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]; track qty) {
+                                        <option [value]="qty">
+                                            Cant. {{ qty }}
+                                        </option>
+                                    }
                                 </select>
                                 <div
                                     class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-[var(--color-text-muted)]">
@@ -96,11 +99,13 @@
                         </div>
                     </div>
                 </div>
-            </ng-container>
+            }
 
-            <div *ngIf="cartItems().length === 0" class="text-center py-12 text-[var(--color-text-muted)]">
-                {{ 'cart.empty' | translate }}
-            </div>
+            @if (cartItems().length === 0) {
+                <div class="text-center py-12 text-[var(--color-text-muted)]">
+                    {{ 'cart.empty' | translate }}
+                </div>
+            }
         </div>
 
     </div>
@@ -124,7 +129,7 @@
             </div>
 
             <button (click)="checkout()" [disabled]="cartService.selectedCount() === 0 || isCheckingOut()"
-                class="w-full bg-accent hover:brightness-110 text-white font-bold py-3 px-4 rounded-full transition-all flex flex-col items-center justify-center leading-tight mb-4 disabled:opacity-50 disabled:cursor-not-allowed">
+                class="btn btn-primary w-full rounded-full flex flex-col items-center justify-center leading-tight mb-4">
                 @if (isCheckingOut()) {
                 <span class="flex items-center justify-center gap-2 text-base">
                     <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
@@ -182,16 +187,19 @@
 
                     <p class="text-[11px] font-medium text-[var(--color-text-secondary)] mb-2">1. Métodos de pago</p>
                     <div class="flex flex-wrap gap-2">
-                        <ng-container *ngFor="let m of mediosPago()">
+                        @for (m of mediosPago(); track m.codigo) {
                             <div class="h-6 w-10 bg-[var(--color-surface)] border border-[var(--color-border)] rounded overflow-hidden flex items-center justify-center p-0.5"
                                 [title]="m.nombre">
-                                <img *ngIf="m.iconoUrl" [src]="m.iconoUrl" [alt]="m.nombre"
-                                    class="h-full object-contain"
-                                    fallback="https://via.placeholder.com/40x24?text=Method">
-                                <span *ngIf="!m.iconoUrl" class="text-[8px] text-[var(--color-text-primary)] font-bold truncate">{{
-                                    m.codigo }}</span>
+                                @if (m.iconoUrl) {
+                                    <img [src]="m.iconoUrl" [alt]="m.nombre"
+                                        class="h-full object-contain"
+                                        fallback="https://via.placeholder.com/40x24?text=Method">
+                                } @else {
+                                    <span class="text-[8px] text-[var(--color-text-primary)] font-bold truncate">{{
+                                        m.codigo }}</span>
+                                }
                             </div>
-                        </ng-container>
+                        }
                     </div>
                 </div>
 
@@ -199,16 +207,19 @@
                 <div>
                     <p class="text-[11px] font-medium text-[var(--color-text-secondary)] mb-2">2. Certificación de seguridad</p>
                     <div class="flex flex-wrap gap-2">
-                        <ng-container *ngFor="let c of certificaciones()">
+                        @for (c of certificaciones(); track c.codigo) {
                             <div class="h-6 bg-[var(--color-surface)] border border-[var(--color-border)] rounded overflow-hidden flex items-center justify-center px-1"
                                 [title]="c.nombre">
-                                <img *ngIf="c.iconoUrl" [src]="c.iconoUrl" [alt]="c.nombre"
-                                    class="h-full object-contain"
-                                    fallback="https://via.placeholder.com/60x24?text=Cert">
-                                <span *ngIf="!c.iconoUrl" class="text-[8px] text-[var(--color-text-primary)] font-bold truncate">{{
-                                    c.codigo }}</span>
+                                @if (c.iconoUrl) {
+                                    <img [src]="c.iconoUrl" [alt]="c.nombre"
+                                        class="h-full object-contain"
+                                        fallback="https://via.placeholder.com/60x24?text=Cert">
+                                } @else {
+                                    <span class="text-[8px] text-[var(--color-text-primary)] font-bold truncate">{{
+                                        c.codigo }}</span>
+                                }
                             </div>
-                        </ng-container>
+                        }
                     </div>
                 </div>
 

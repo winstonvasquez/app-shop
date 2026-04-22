@@ -82,8 +82,10 @@ export class BalanceGeneralComponent implements OnInit {
         this.isLoading.set(true);
         this.error.set(null);
         this.asientoService.obtenerBalanceComprobacion(pid).subscribe({
-            next: (data: { cuentaCodigo: string; cuentaNombre: string; saldoDeudor: number; saldoAcreedor: number }[]) => {
-                this.lineas.set(data);
+            next: (data) => {
+                const lineas = (data as unknown as { lineas?: { cuentaCodigo: string; cuentaNombre: string; saldoDeudor: number; saldoAcreedor: number }[] }).lineas
+                    ?? (data as unknown as { cuentaCodigo: string; cuentaNombre: string; saldoDeudor: number; saldoAcreedor: number }[]);
+                this.lineas.set(Array.isArray(lineas) ? lineas : []);
                 this.isLoading.set(false);
             },
             error: () => {
