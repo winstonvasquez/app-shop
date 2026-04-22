@@ -1,6 +1,6 @@
 import { Component, inject, signal, computed, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { PeriodoService, PeriodoContable } from '../../services/periodo.service';
 import { OrdenCompraService } from '../../../compras/services/orden-compra.service';
 import { PleService } from '../../services/ple.service';
@@ -12,7 +12,7 @@ import { DataTableComponent, TableColumn } from '@shared/ui/tables/data-table/da
     selector: 'app-registro-compras',
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [DecimalPipe, FormsModule, DataTableComponent],
+    imports: [DecimalPipe, ReactiveFormsModule, DataTableComponent],
     templateUrl: './registro-compras.component.html'
 })
 export class RegistroComprasComponent implements OnInit {
@@ -20,14 +20,18 @@ export class RegistroComprasComponent implements OnInit {
     private ordenCompraService = inject(OrdenCompraService);
     private exportService = inject(ExportService);
     private pleService = inject(PleService);
+    private fb = inject(FormBuilder);
+
+    filterForm = this.fb.group({
+        estadoFiltro: [''],
+        rucEmpresa: [''],
+    });
 
     periodos = signal<PeriodoContable[]>([]);
     periodoSeleccionado = signal<string>('');
     ordenes = signal<OrdenCompra[]>([]);
     cargando = signal(false);
     error = signal<string | null>(null);
-    estadoFiltro = '';
-    readonly rucEmpresa = signal('');
     readonly descargandoPLE = signal(false);
 
     readonly estadoOptions = [
@@ -82,7 +86,8 @@ export class RegistroComprasComponent implements OnInit {
         if (!this.periodoSeleccionado()) return;
         this.cargando.set(true);
         this.error.set(null);
-        this.ordenCompraService.getOrdenes(0, 200, this.estadoFiltro || undefined).subscribe({
+        const estadoFiltro = this.filterForm.value.estadoFiltro || undefined;
+        this.ordenCompraService.getOrdenes(0, 200, estadoFiltro).subscribe({
             next: (page) => {
                 this.ordenes.set(page.content ?? []);
                 this.cargando.set(false);
@@ -106,7 +111,7 @@ export class RegistroComprasComponent implements OnInit {
 
     descargarPLE08() {
         const periodoId = this.periodoSeleccionado();
-        const ruc = this.rucEmpresa();
+        const ruc = this.filterForm.value.rucEmpresa ?? '';
         if (!periodoId || ruc.length !== 11) return;
         this.descargandoPLE.set(true);
         this.pleService.descargarLibro08(periodoId, ruc).subscribe({

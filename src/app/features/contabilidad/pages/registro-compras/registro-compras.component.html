@@ -5,11 +5,12 @@
             <p class="page-subtitle">PLE — Libro 8 · SUNAT</p>
         </div>
         <div class="page-actions">
-            <input class="input-field" type="text" maxlength="11" placeholder="RUC (11 dígitos)"
-                   style="width:160px"
-                   [ngModel]="rucEmpresa()" (ngModelChange)="rucEmpresa.set($event)" />
+            <form [formGroup]="filterForm" class="inline-flex gap-2">
+                <input class="form-input" type="text" maxlength="11" placeholder="RUC (11 dígitos)"
+                       style="width:160px" formControlName="rucEmpresa" />
+            </form>
             <button class="btn btn-primary" (click)="descargarPLE08()"
-                    [disabled]="descargandoPLE() || !periodoSeleccionado() || rucEmpresa().length !== 11">
+                    [disabled]="descargandoPLE() || !periodoSeleccionado() || (filterForm.value.rucEmpresa?.length ?? 0) !== 11">
                 @if (descargandoPLE()) { Generando... } @else { Descargar PLE Libro 08 }
             </button>
             <button class="btn btn-secondary" (click)="exportarPLE()" [disabled]="ordenes().length === 0">
@@ -23,7 +24,7 @@
 
     <div class="card mb-lg">
         <div class="filters-bar">
-            <select class="input-field"
+            <select class="form-input"
                     [value]="periodoSeleccionado()"
                     (change)="cambiarPeriodo($any($event.target).value)">
                 <option value="">— Seleccionar periodo —</option>
@@ -31,12 +32,14 @@
                     <option [value]="p.id">{{ p.nombre }} ({{ p.estado }})</option>
                 }
             </select>
-            <select class="input-field" [(ngModel)]="estadoFiltro" (change)="cargar()">
-                <option value="">Todos los estados</option>
-                @for (opt of estadoOptions; track opt.value) {
-                    <option [value]="opt.value">{{ opt.label }}</option>
-                }
-            </select>
+            <form [formGroup]="filterForm">
+                <select class="form-input" formControlName="estadoFiltro" (change)="cargar()">
+                    <option value="">Todos los estados</option>
+                    @for (opt of estadoOptions; track opt.value) {
+                        <option [value]="opt.value">{{ opt.label }}</option>
+                    }
+                </select>
+            </form>
             <button class="btn btn-primary" (click)="cargar()">Buscar</button>
         </div>
     </div>
