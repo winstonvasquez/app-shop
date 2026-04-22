@@ -19,7 +19,6 @@ import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
-        DecimalPipe,
         ReactiveFormsModule,
         DrawerComponent,
         DataTableComponent,

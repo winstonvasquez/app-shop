@@ -12,6 +12,7 @@ import { PaginationComponent, PaginationChangeEvent } from '@shared/ui/paginatio
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { DateInputComponent } from '@shared/ui/forms/date-input/date-input.component';
+import { AdminFormSectionComponent } from '@shared/ui/forms/admin-form-section/admin-form-section.component';
 
 type TipoRegistro = 'NORMAL' | 'TARDANZA' | 'FALTA' | 'PERMISO' | 'LICENCIA' | 'VACACIONES';
 
@@ -27,6 +28,7 @@ type TipoRegistro = 'NORMAL' | 'TARDANZA' | 'FALTA' | 'PERMISO' | 'LICENCIA' | '
         PageHeaderComponent,
         AlertComponent,
         DateInputComponent,
+        AdminFormSectionComponent,
     ],
     templateUrl: './attendance.component.html',
 })

@@ -1,4 +1,5 @@
-import { Component, inject, signal, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import { Component, DestroyRef, inject, signal, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DecimalPipe, DatePipe } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { ConfiguracionRemunerativa, ConfiguracionRemunerativaService, CONFIG_DEFAULT } from '../../services/configuracion-remunerativa.service';
@@ -421,6 +422,7 @@ const SUELDOS_POR_CARGO: Record<string, number> = {
 export class BoletaPagoComponent implements OnInit {
     private readonly route = inject(ActivatedRoute);
     private readonly configuracionService = inject(ConfiguracionRemunerativaService);
+    private readonly destroyRef = inject(DestroyRef);
 
     readonly empresa: DatosEmpresa = EMPRESA_DEMO;
 
@@ -442,7 +444,7 @@ export class BoletaPagoComponent implements OnInit {
         // Cargar configuración desde el backend (con fallback automático si falla)
         this.config = await this.configuracionService.getConfiguracion();
 
-        this.route.queryParams.subscribe(params => {
+        this.route.queryParams.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(params => {
             const empleadoId = params['empleadoId'] ? parseInt(params['empleadoId'], 10) : null;
             const periodoParam = params['periodo'] ?? new Date().toISOString().substring(0, 7);
 

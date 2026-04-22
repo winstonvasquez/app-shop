@@ -4,7 +4,7 @@
             <h1 class="page-title">Reporte de Inventario</h1>
             <p class="page-subtitle">Estado del stock y almacenes</p>
         </div>
-        <div class="page-actions no-print" style="display:flex;gap:8px">
+        <div class="page-actions no-print flex gap-2">
             <button class="btn btn-secondary" (click)="onExportarCsv()" [disabled]="cargando() || stockBajo().length === 0">
                 Exportar CSV
             </button>
@@ -21,8 +21,8 @@
     </div>
 
     @if (error()) {
-        <div class="card" style="border-left:3px solid var(--color-warning);padding:var(--space-md);margin-bottom:var(--space-lg)">
-            <p style="color:var(--color-text-muted);font-size:0.875rem">
+        <div class="card border-l-[3px] border-l-[var(--color-warning)] p-[var(--space-md)] mb-[var(--space-lg)]">
+            <p class="text-[var(--color-text-muted)] text-sm">
                 Servicio de inventario no disponible. Verifique que microshoplogistica esté corriendo en puerto 8090.
             </p>
         </div>
@@ -32,39 +32,39 @@
         <div class="loading-container"><div class="spinner"></div></div>
     } @else if (dashboard()) {
         <!-- KPIs -->
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:var(--space-md);margin-bottom:var(--space-lg)">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <div class="card">
                 <div class="card-body">
-                    <p style="font-size:0.75rem;color:var(--color-text-muted)">ALMACENES ACTIVOS</p>
-                    <p style="font-size:2rem;font-weight:700;color:var(--color-primary)">{{ dashboard()!.almacenesActivos }}</p>
-                    <p style="font-size:0.75rem;color:var(--color-text-muted)">de {{ dashboard()!.totalAlmacenes }} total</p>
+                    <p class="text-[0.75rem] text-[var(--color-text-muted)]">ALMACENES ACTIVOS</p>
+                    <p class="text-[2rem] font-bold text-[var(--color-primary)]">{{ dashboard()!.almacenesActivos }}</p>
+                    <p class="text-[0.75rem] text-[var(--color-text-muted)]">de {{ dashboard()!.totalAlmacenes }} total</p>
                 </div>
             </div>
             <div class="card">
                 <div class="card-body">
-                    <p style="font-size:0.75rem;color:var(--color-text-muted)">STOCK BAJO</p>
-                    <p style="font-size:2rem;font-weight:700"
+                    <p class="text-[0.75rem] text-[var(--color-text-muted)]">STOCK BAJO</p>
+                    <p class="text-[2rem] font-bold"
                        [style.color]="dashboard()!.productosStockBajo > 0 ? 'var(--color-warning)' : 'var(--color-success)'">
                         {{ dashboard()!.productosStockBajo }}
                     </p>
-                    <p style="font-size:0.75rem;color:var(--color-text-muted)">productos bajo mínimo</p>
+                    <p class="text-[0.75rem] text-[var(--color-text-muted)]">productos bajo mínimo</p>
                 </div>
             </div>
             <div class="card">
                 <div class="card-body">
-                    <p style="font-size:0.75rem;color:var(--color-text-muted)">NECESITAN REORDEN</p>
-                    <p style="font-size:2rem;font-weight:700"
+                    <p class="text-[0.75rem] text-[var(--color-text-muted)]">NECESITAN REORDEN</p>
+                    <p class="text-[2rem] font-bold"
                        [style.color]="dashboard()!.productosNecesitanReorden > 0 ? 'var(--color-warning)' : 'var(--color-success)'">
                         {{ dashboard()!.productosNecesitanReorden }}
                     </p>
-                    <p style="font-size:0.75rem;color:var(--color-text-muted)">ítems a reabastecer</p>
+                    <p class="text-[0.75rem] text-[var(--color-text-muted)]">ítems a reabastecer</p>
                 </div>
             </div>
             <div class="card">
                 <div class="card-body">
-                    <p style="font-size:0.75rem;color:var(--color-text-muted)">MOVIMIENTOS HOY</p>
-                    <p style="font-size:2rem;font-weight:700">{{ dashboard()!.movimientosHoy }}</p>
-                    <p style="font-size:0.75rem;color:var(--color-text-muted)">entradas / salidas</p>
+                    <p class="text-[0.75rem] text-[var(--color-text-muted)]">MOVIMIENTOS HOY</p>
+                    <p class="text-[2rem] font-bold">{{ dashboard()!.movimientosHoy }}</p>
+                    <p class="text-[0.75rem] text-[var(--color-text-muted)]">entradas / salidas</p>
                 </div>
             </div>
         </div>
@@ -81,30 +81,30 @@
                         <tr>
                             <th class="table-header-cell">Producto ID</th>
                             <th class="table-header-cell">Almacén ID</th>
-                            <th class="table-header-cell" style="text-align:right">Stock actual</th>
-                            <th class="table-header-cell" style="text-align:right">Stock mínimo</th>
+                            <th class="table-header-cell text-right">Stock actual</th>
+                            <th class="table-header-cell text-right">Stock mínimo</th>
                             <th class="table-header-cell">Estado</th>
                         </tr>
                     </thead>
                     <tbody>
                         @for (item of stockBajo(); track item.productoId) {
                             <tr class="table-row">
-                                <td class="table-cell" style="font-family:monospace">{{ item.productoId }}</td>
-                                <td class="table-cell" style="font-family:monospace">{{ item.almacenId }}</td>
-                                <td class="table-cell" style="text-align:right;font-weight:700;color:var(--color-warning)">{{ item.cantidadActual }}</td>
-                                <td class="table-cell" style="text-align:right">{{ item.stockMinimo }}</td>
+                                <td class="table-cell font-mono">{{ item.productoId }}</td>
+                                <td class="table-cell font-mono">{{ item.almacenId }}</td>
+                                <td class="table-cell text-right font-bold text-[var(--color-warning)]">{{ item.cantidadActual }}</td>
+                                <td class="table-cell text-right">{{ item.stockMinimo }}</td>
                                 <td class="table-cell"><span class="badge badge-warning">STOCK BAJO</span></td>
                             </tr>
                         } @empty {
-                            <tr><td colspan="5" style="text-align:center;padding:24px;color:var(--color-text-muted)">Sin datos</td></tr>
+                            <tr><td colspan="5" class="table-cell text-center p-6 text-[var(--color-text-muted)]">Sin datos</td></tr>
                         }
                     </tbody>
                 </table>
             </div>
         } @else {
             <div class="card">
-                <div class="card-body" style="text-align:center;padding:var(--space-lg)">
-                    <p style="color:var(--color-text-muted)">Todos los productos tienen stock suficiente.</p>
+                <div class="card-body text-center p-[var(--space-lg)]">
+                    <p class="text-[var(--color-text-muted)]">Todos los productos tienen stock suficiente.</p>
                 </div>
             </div>
         }

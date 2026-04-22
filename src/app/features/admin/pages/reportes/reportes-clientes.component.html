@@ -4,7 +4,7 @@
             <h1 class="page-title">Reporte de Clientes</h1>
             <p class="page-subtitle">Base de usuarios registrados en el sistema</p>
         </div>
-        <div class="page-actions no-print" style="display:flex;gap:8px">
+        <div class="page-actions no-print flex gap-2">
             <button class="btn btn-secondary" (click)="onExportarCsv()" [disabled]="cargando() || usuarios().length === 0">
                 Exportar CSV
             </button>
@@ -21,34 +21,34 @@
     </div>
 
     @if (error()) {
-        <div class="card" style="border-left:3px solid var(--color-warning);padding:var(--space-md);margin-bottom:var(--space-lg)">
-            <p style="color:var(--color-text-muted);font-size:0.875rem">
+        <div class="card border-l-[3px] border-l-[var(--color-warning)] p-[var(--space-md)] mb-[var(--space-lg)]">
+            <p class="text-[var(--color-text-muted)] text-sm">
                 Servicio de usuarios no disponible. Verifique que microshopusers esté corriendo en puerto 8080.
             </p>
         </div>
     }
 
     <!-- KPIs -->
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:var(--space-md);margin-bottom:var(--space-lg)">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <div class="card">
             <div class="card-body">
-                <p style="font-size:0.75rem;color:var(--color-text-muted)">TOTAL USUARIOS</p>
-                <p style="font-size:2rem;font-weight:700;color:var(--color-primary)">{{ totalElements() }}</p>
-                <p style="font-size:0.75rem;color:var(--color-text-muted)">registrados</p>
+                <p class="text-[0.75rem] text-[var(--color-text-muted)]">TOTAL USUARIOS</p>
+                <p class="text-[2rem] font-bold text-[var(--color-primary)]">{{ totalElements() }}</p>
+                <p class="text-[0.75rem] text-[var(--color-text-muted)]">registrados</p>
             </div>
         </div>
         <div class="card">
             <div class="card-body">
-                <p style="font-size:0.75rem;color:var(--color-text-muted)">ACTIVOS</p>
-                <p style="font-size:2rem;font-weight:700;color:var(--color-success)">{{ activos() }}</p>
-                <p style="font-size:0.75rem;color:var(--color-text-muted)">con acceso</p>
+                <p class="text-[0.75rem] text-[var(--color-text-muted)]">ACTIVOS</p>
+                <p class="text-[2rem] font-bold text-[var(--color-success)]">{{ activos() }}</p>
+                <p class="text-[0.75rem] text-[var(--color-text-muted)]">con acceso</p>
             </div>
         </div>
         <div class="card">
             <div class="card-body">
-                <p style="font-size:0.75rem;color:var(--color-text-muted)">INACTIVOS</p>
-                <p style="font-size:2rem;font-weight:700">{{ totalElements() - activos() }}</p>
-                <p style="font-size:0.75rem;color:var(--color-text-muted)">suspendidos</p>
+                <p class="text-[0.75rem] text-[var(--color-text-muted)]">INACTIVOS</p>
+                <p class="text-[2rem] font-bold">{{ totalElements() - activos() }}</p>
+                <p class="text-[0.75rem] text-[var(--color-text-muted)]">suspendidos</p>
             </div>
         </div>
     </div>
@@ -61,7 +61,7 @@
             <div class="search-box">
                 <span class="search-box-icon">&#128269;</span>
                 <input type="text" class="form-input" placeholder="Buscar por nombre o email..."
-                       formControlName="busqueda" style="padding-left:2rem">
+                       formControlName="busqueda" class="pl-8">
             </div>
         </div>
 
@@ -82,21 +82,21 @@
                 <tbody>
                     @for (u of usuariosFiltrados(); track u.id) {
                         <tr class="table-row">
-                            <td class="table-cell" style="font-family:monospace;font-size:0.875rem">{{ u.id }}</td>
-                            <td class="table-cell" style="font-weight:700">{{ u.username }}</td>
-                            <td class="table-cell" style="color:var(--color-text-muted)">{{ u.email }}</td>
+                            <td class="table-cell font-mono text-sm">{{ u.id }}</td>
+                            <td class="table-cell font-bold">{{ u.username }}</td>
+                            <td class="table-cell text-[var(--color-text-muted)]">{{ u.email }}</td>
                             <td class="table-cell">{{ (u.nombre ?? '') + ' ' + (u.apellido ?? '') || '—' }}</td>
                             <td class="table-cell">
                                 <span [class]="u.activo ? 'badge badge-success' : 'badge badge-error'">
                                     {{ u.activo ? 'ACTIVO' : 'INACTIVO' }}
                                 </span>
                             </td>
-                            <td class="table-cell" style="font-size:0.875rem;color:var(--color-text-muted)">
+                            <td class="table-cell text-sm text-[var(--color-text-muted)]">
                                 {{ u.fechaCreacion ? (u.fechaCreacion | date:'dd/MM/yyyy') : '—' }}
                             </td>
                         </tr>
                     } @empty {
-                        <tr><td colspan="6" style="text-align:center;padding:24px;color:var(--color-text-muted)">Sin resultados</td></tr>
+                        <tr><td colspan="6" class="table-cell text-center p-6 text-[var(--color-text-muted)]">Sin resultados</td></tr>
                     }
                 </tbody>
             </table>

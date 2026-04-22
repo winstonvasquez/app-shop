@@ -9,13 +9,13 @@
   </app-page-header>
 
   <!-- Filtros -->
-  <div class="filters-bar" style="margin-bottom:var(--space-lg)">
+  <div class="filters-bar mb-6">
     <div style="display:flex;gap:var(--space-md);align-items:flex-end;flex-wrap:wrap">
       <div>
         <label class="input-label">Fecha Inicio</label>
         <input
           type="date"
-          class="input-field"
+          class="form-input"
           [value]="fechaInicio()"
           (change)="fechaInicio.set($any($event.target).value)">
       </div>
@@ -23,7 +23,7 @@
         <label class="input-label">Fecha Fin</label>
         <input
           type="date"
-          class="input-field"
+          class="form-input"
           [value]="fechaFin()"
           (change)="fechaFin.set($any($event.target).value)">
       </div>
@@ -88,7 +88,7 @@
   (closed)="showCreateDrawer.set(false)">
 
   @if (errorMsg()) {
-    <div style="background:var(--color-error-subtle,rgba(215,19,42,0.1));border:1px solid var(--color-error);border-radius:8px;padding:var(--space-sm);margin-bottom:var(--space-md);color:var(--color-error);font-size:0.875rem">
+    <div style="background:var(--color-error-subtle,color-mix(in oklch, var(--color-primary) 10%, transparent));border:1px solid var(--color-error);border-radius:8px;padding:var(--space-sm);margin-bottom:var(--space-md);color:var(--color-error);font-size:0.875rem">
       {{ errorMsg() }}
     </div>
   }
@@ -98,7 +98,7 @@
     <!-- Tipo de Movimiento -->
     <div>
       <label class="input-label">Tipo de Movimiento <span style="color:var(--color-error)">*</span></label>
-      <select class="input-field" formControlName="tipoMovimiento">
+      <select class="form-input" formControlName="tipoMovimiento">
         @for (opt of tipoOptions; track opt.value) {
           <option [value]="opt.value">{{ opt.label }}</option>
         }

@@ -4,7 +4,7 @@
             <h1 class="page-title">Reporte de Ventas POS</h1>
             <p class="page-subtitle">Transacciones registradas en el punto de venta</p>
         </div>
-        <div class="page-actions no-print" style="display:flex;gap:8px">
+        <div class="page-actions no-print flex gap-2">
             <button class="btn btn-secondary" (click)="onExportarCsv()" [disabled]="cargando() || ventas().length === 0">
                 Exportar CSV
             </button>
@@ -21,8 +21,8 @@
     </div>
 
     @if (error()) {
-        <div class="card" style="border-left:3px solid var(--color-warning);padding:var(--space-md);margin-bottom:var(--space-lg)">
-            <p style="color:var(--color-text-muted);font-size:0.875rem">
+        <div class="card border-l-[3px] border-l-[var(--color-warning)] p-[var(--space-md)] mb-[var(--space-lg)]">
+            <p class="text-[var(--color-text-muted)] text-sm">
                 Servicio POS no disponible. Verifique que microshopventas esté corriendo.
             </p>
         </div>
@@ -32,37 +32,37 @@
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:var(--space-md);margin-bottom:var(--space-lg)">
         <div class="card">
             <div class="card-body">
-                <p style="font-size:0.75rem;color:var(--color-text-muted)">TOTAL VENTAS</p>
-                <p style="font-size:2rem;font-weight:700;color:var(--color-primary)">{{ totalVentas() }}</p>
-                <p style="font-size:0.75rem;color:var(--color-text-muted)">transacciones</p>
+                <p class="text-[0.75rem] text-[var(--color-text-muted)]">TOTAL VENTAS</p>
+                <p class="text-[2rem] font-bold text-[var(--color-primary)]">{{ totalVentas() }}</p>
+                <p class="text-[0.75rem] text-[var(--color-text-muted)]">transacciones</p>
             </div>
         </div>
         <div class="card">
             <div class="card-body">
-                <p style="font-size:0.75rem;color:var(--color-text-muted)">MONTO TOTAL</p>
-                <p style="font-size:1.5rem;font-weight:700;color:var(--color-success)">S/ {{ montoTotal() | number:'1.2-2' }}</p>
-                <p style="font-size:0.75rem;color:var(--color-text-muted)">en ventas</p>
+                <p class="text-[0.75rem] text-[var(--color-text-muted)]">MONTO TOTAL</p>
+                <p class="text-[1.5rem] font-bold text-[var(--color-success)]">S/ {{ montoTotal() | number:'1.2-2' }}</p>
+                <p class="text-[0.75rem] text-[var(--color-text-muted)]">en ventas</p>
             </div>
         </div>
         <div class="card">
             <div class="card-body">
-                <p style="font-size:0.75rem;color:var(--color-text-muted)">TICKET PROMEDIO</p>
-                <p style="font-size:1.5rem;font-weight:700">S/ {{ ticketPromedio() | number:'1.2-2' }}</p>
-                <p style="font-size:0.75rem;color:var(--color-text-muted)">por venta</p>
+                <p class="text-[0.75rem] text-[var(--color-text-muted)]">TICKET PROMEDIO</p>
+                <p class="text-[1.5rem] font-bold">S/ {{ ticketPromedio() | number:'1.2-2' }}</p>
+                <p class="text-[0.75rem] text-[var(--color-text-muted)]">por venta</p>
             </div>
         </div>
         <div class="card">
             <div class="card-body">
-                <p style="font-size:0.75rem;color:var(--color-text-muted)">COMPLETADAS</p>
-                <p style="font-size:2rem;font-weight:700;color:var(--color-success)">{{ ventasCompletadas() }}</p>
-                <p style="font-size:0.75rem;color:var(--color-text-muted)">transacciones</p>
+                <p class="text-[0.75rem] text-[var(--color-text-muted)]">COMPLETADAS</p>
+                <p class="text-[2rem] font-bold text-[var(--color-success)]">{{ ventasCompletadas() }}</p>
+                <p class="text-[0.75rem] text-[var(--color-text-muted)]">transacciones</p>
             </div>
         </div>
         <div class="card">
             <div class="card-body">
-                <p style="font-size:0.75rem;color:var(--color-text-muted)">IGV TOTAL</p>
-                <p style="font-size:1.5rem;font-weight:700">S/ {{ igvTotal() | number:'1.2-2' }}</p>
-                <p style="font-size:0.75rem;color:var(--color-text-muted)">18% recaudado</p>
+                <p class="text-[0.75rem] text-[var(--color-text-muted)]">IGV TOTAL</p>
+                <p class="text-[1.5rem] font-bold">S/ {{ igvTotal() | number:'1.2-2' }}</p>
+                <p class="text-[0.75rem] text-[var(--color-text-muted)]">18% recaudado</p>
             </div>
         </div>
     </div>

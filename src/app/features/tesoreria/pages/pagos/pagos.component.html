@@ -9,29 +9,29 @@
   </app-page-header>
 
   <!-- KPIs -->
-  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:var(--space-md);margin-bottom:var(--space-lg)">
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
     <div class="card">
       <div class="card-body">
-        <div class="text-sm" style="color:var(--color-text-muted)">Pendientes</div>
-        <div class="font-bold" style="font-size:2rem;color:var(--color-warning)">{{ countPendientes() }}</div>
+        <div class="text-sm text-[var(--color-text-muted)]">Pendientes</div>
+        <div class="font-bold text-[2rem] text-[var(--color-warning)]">{{ countPendientes() }}</div>
       </div>
     </div>
     <div class="card">
       <div class="card-body">
-        <div class="text-sm" style="color:var(--color-text-muted)">Aprobados</div>
-        <div class="font-bold" style="font-size:2rem;color:var(--color-accent)">{{ countAprobados() }}</div>
+        <div class="text-sm text-[var(--color-text-muted)]">Aprobados</div>
+        <div class="font-bold text-[2rem] text-[var(--color-accent)]">{{ countAprobados() }}</div>
       </div>
     </div>
     <div class="card">
       <div class="card-body">
-        <div class="text-sm" style="color:var(--color-text-muted)">Pagados</div>
-        <div class="font-bold" style="font-size:2rem;color:var(--color-success)">{{ countPagados() }}</div>
+        <div class="text-sm text-[var(--color-text-muted)]">Pagados</div>
+        <div class="font-bold text-[2rem] text-[var(--color-success)]">{{ countPagados() }}</div>
       </div>
     </div>
     <div class="card">
       <div class="card-body">
-        <div class="text-sm" style="color:var(--color-text-muted)">Total Comprometido</div>
-        <div class="font-bold" style="font-size:1.5rem;color:var(--color-primary)">
+        <div class="text-sm text-[var(--color-text-muted)]">Total Comprometido</div>
+        <div class="font-bold text-[1.5rem] text-[var(--color-primary)]">
           S/ {{ totalComprometido() | number:'1.2-2' }}
         </div>
       </div>
@@ -65,17 +65,17 @@
   (closed)="showCreateDrawer.set(false)">
 
   @if (errorMsg()) {
-    <div style="background:var(--color-error-subtle,rgba(215,19,42,0.1));border:1px solid var(--color-error);border-radius:8px;padding:var(--space-sm);margin-bottom:var(--space-md);color:var(--color-error);font-size:0.875rem">
+    <div class="bg-[var(--color-error-subtle,color-mix(in_oklch,var(--color-primary)_10%,transparent))] border border-[var(--color-error)] rounded-lg p-[var(--space-sm)] mb-[var(--space-md)] text-[var(--color-error)] text-sm">
       {{ errorMsg() }}
     </div>
   }
 
-  <form [formGroup]="pagoForm" style="display:flex;flex-direction:column;gap:16px">
+  <form [formGroup]="pagoForm" class="flex flex-col gap-4">
 
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-sm)">
+    <div class="grid grid-cols-2 gap-3">
       <div>
-        <label class="input-label">Tipo de Pago <span style="color:var(--color-error)">*</span></label>
-        <select class="input-field" formControlName="tipoPago">
+        <label class="input-label">Tipo de Pago <span class="text-[var(--color-error)]">*</span></label>
+        <select class="form-input" formControlName="tipoPago">
           @for (opt of tipoPagoOptions; track opt.value) {
             <option [value]="opt.value">{{ opt.label }}</option>
           }
@@ -85,8 +85,8 @@
         }
       </div>
       <div>
-        <label class="input-label">Método de Pago <span style="color:var(--color-error)">*</span></label>
-        <select class="input-field" formControlName="metodoPago">
+        <label class="input-label">Método de Pago <span class="text-[var(--color-error)]">*</span></label>
+        <select class="form-input" formControlName="metodoPago">
           @for (opt of metodoPagoOptions; track opt.value) {
             <option [value]="opt.value">{{ opt.label }}</option>
           }
@@ -121,7 +121,7 @@
       [required]="true">
     </app-form-field>
 
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-sm)">
+    <div class="grid grid-cols-2 gap-3">
       <app-form-field
         label="Monto (S/)"
         [control]="getControl('monto')"

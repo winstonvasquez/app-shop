@@ -178,11 +178,11 @@
     </div>
 
     <!-- Enviar por email -->
-    <div class="flex gap-2 mt-3">
-        <input class="input-field flex-1 !h-10 !text-sm" [(ngModel)]="emailInput"
+    <form [formGroup]="emailForm" class="flex gap-2 mt-3" (ngSubmit)="enviarEmail()">
+        <input class="input-field flex-1 !h-10 !text-sm" formControlName="email"
                placeholder="cliente@email.com" type="email">
-        <button class="btn-primary !h-10 !px-4 !text-sm gap-1.5"
-                [disabled]="emailSending() || !emailInput().trim()"
+        <button type="submit" class="btn-primary !h-10 !px-4 !text-sm gap-1.5"
+                [disabled]="emailSending() || !(emailForm.value.email ?? '').trim()"
                 (click)="enviarEmail()">
             <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14">
                 <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
@@ -190,7 +190,7 @@
             </svg>
             @if (emailSending()) { Enviando... } @else if (emailSent()) { Enviado } @else { Enviar }
         </button>
-    </div>
+    </form>
 
     } @else {
     <div class="receipt-empty">

@@ -31,7 +31,7 @@
             (input)="onSearch($event)" />
     </div>
 
-    <select class="input-field" style="width: auto; min-width: 160px"
+    <select class="form-input" style="width: auto; min-width: 160px"
             [value]="filterStatus()"
             (change)="onFilterStatus($event)">
         <option value="">Todos los estados</option>
@@ -41,7 +41,7 @@
         <option value="RENOVADO">Renovado</option>
     </select>
 
-    <select class="input-field" style="width: auto; min-width: 160px"
+    <select class="form-input" style="width: auto; min-width: 160px"
             [value]="filterType()"
             (change)="onFilterType($event)">
         <option value="">Todos los tipos</option>
@@ -90,7 +90,7 @@
         <!-- Empleado -->
         <div style="margin-bottom: var(--space-md)">
             <label class="input-label">Empleado *</label>
-            <select class="input-field" formControlName="employeeId">
+            <select class="form-input" formControlName="employeeId">
                 <option [ngValue]="null">— Seleccionar empleado —</option>
                 @for (emp of employees(); track emp.id) {
                     <option [ngValue]="emp.id">{{ emp.nombres }} {{ emp.apellidos }} ({{ emp.codigoEmpleado }})</option>
@@ -98,11 +98,10 @@
             </select>
         </div>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md)">
-            <!-- Tipo de contrato -->
+        <app-admin-form-section title="Tipo y Jornada" [columns]="2">
             <div>
                 <label class="input-label">Tipo de Contrato *</label>
-                <select class="input-field" formControlName="tipoContrato">
+                <select class="form-input" formControlName="tipoContrato">
                     <option [ngValue]="null">— Seleccionar —</option>
                     @for (type of contractTypes; track type.value) {
                         <option [value]="type.value">{{ type.label }}</option>
@@ -110,19 +109,18 @@
                 </select>
             </div>
 
-            <!-- Jornada laboral -->
             <div>
                 <label class="input-label">Jornada Laboral *</label>
-                <select class="input-field" formControlName="jornadaLaboral">
+                <select class="form-input" formControlName="jornadaLaboral">
                     <option [ngValue]="null">— Seleccionar —</option>
                     @for (wd of workingDays; track wd.value) {
                         <option [value]="wd.value">{{ wd.label }}</option>
                     }
                 </select>
             </div>
-        </div>
+        </app-admin-form-section>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md); margin-top: var(--space-md)">
+        <app-admin-form-section title="Vigencia" [columns]="2">
             <app-form-field
                 label="Fecha Inicio"
                 type="date"
@@ -133,9 +131,9 @@
                 label="Fecha Fin"
                 type="date"
                 [control]="getControl('fechaFin')" />
-        </div>
+        </app-admin-form-section>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--space-md); margin-top: var(--space-md)">
+        <app-admin-form-section title="Remuneración" [columns]="3">
             <app-form-field
                 label="Salario Base"
                 type="number"
@@ -145,7 +143,7 @@
 
             <div>
                 <label class="input-label">Moneda</label>
-                <select class="input-field" formControlName="moneda">
+                <select class="form-input" formControlName="moneda">
                     <option value="PEN">S/ Soles</option>
                     <option value="USD">$ Dólares</option>
                 </select>
@@ -157,9 +155,9 @@
                 [control]="getControl('horasSemanales')"
                 placeholder="48"
                 [required]="true" />
-        </div>
+        </app-admin-form-section>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md); margin-top: var(--space-md)">
+        <app-admin-form-section title="Adicional" [columns]="2">
             <app-form-field
                 label="Periodo Prueba (meses)"
                 type="number"
@@ -170,11 +168,11 @@
                 label="URL Documento"
                 [control]="getControl('documentoContratoUrl')"
                 placeholder="https://..." />
-        </div>
+        </app-admin-form-section>
 
     </form>
 
-    <div slot="footer" style="display: flex; justify-content: flex-end; gap: var(--space-sm)">
+    <div slot="footer" class="form-actions">
         <button class="btn btn-secondary" type="button" (click)="closeModal()">
             Cancelar
         </button>
@@ -205,7 +203,7 @@
         placeholder="Ej: Renuncia voluntaria, término de contrato..."
         [required]="true" />
 
-    <div slot="footer" style="display: flex; justify-content: flex-end; gap: var(--space-sm)">
+    <div slot="footer" class="form-actions">
         <button class="btn btn-secondary" type="button" (click)="closeTerminateModal()">
             Cancelar
         </button>

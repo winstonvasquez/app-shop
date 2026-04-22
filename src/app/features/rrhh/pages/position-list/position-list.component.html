@@ -26,7 +26,7 @@
             (input)="onSearch($event)" />
     </div>
 
-    <select class="input-field" style="width: auto; min-width: 180px"
+    <select class="form-input" style="width: auto; min-width: 180px"
             [value]="filterDepartment()"
             (change)="onFilterDepartment($event)">
         <option value="">Todos los departamentos</option>
@@ -70,7 +70,7 @@
             <app-alert type="error" [message]="submitError()!" />
         }
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md)">
+        <div class="grid grid-cols-2 gap-4">
             <app-form-field
                 label="Código"
                 [control]="getControl('codigo')"
@@ -86,7 +86,7 @@
 
         <div style="margin-top: var(--space-md)">
             <label class="input-label">Departamento <span style="color:var(--color-error)">*</span></label>
-            <select class="input-field" formControlName="departmentId">
+            <select class="form-input" formControlName="departmentId">
                 <option [ngValue]="null">— Seleccionar departamento —</option>
                 @for (dept of departments(); track dept.id) {
                     <option [ngValue]="dept.id">{{ dept.nombre }}</option>
@@ -101,7 +101,7 @@
                 placeholder="Descripción del puesto" />
         </div>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md); margin-top: var(--space-md)">
+        <div class="grid grid-cols-2 gap-4 mt-4">
             <app-form-field
                 label="Nivel"
                 [control]="getControl('nivel')"
@@ -131,7 +131,7 @@
 
     </form>
 
-    <div slot="footer" style="display: flex; justify-content: flex-end; gap: var(--space-sm)">
+    <div slot="footer" class="flex justify-end gap-2">
         <button class="btn btn-secondary" type="button" (click)="closeModal()">
             Cancelar
         </button>

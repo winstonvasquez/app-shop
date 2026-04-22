@@ -17,7 +17,7 @@
 
 <!-- Tab Navigation -->
 <div class="card" style="margin-bottom: var(--space-md)">
-    <div style="display: flex; gap: 0; border-bottom: 1px solid var(--color-border); overflow-x: auto">
+    <div class="flex gap-0 border-b border-[var(--color-border)] overflow-x-auto">
         @for (tab of tabs; track tab.key) {
             <button
                 class="btn"
@@ -38,7 +38,7 @@
     <div class="card">
         <div class="card-header"><h3 class="card-title">Datos Personales</h3></div>
         <div class="card-body">
-            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-md)">
+            <div class="form-group-3col">
                 <div><span class="input-label">Tipo Documento</span><p>{{ employee()!.tipoDocumento ?? 'DNI' }}</p></div>
                 <div><span class="input-label">Documento</span><p>{{ employee()!.documentoIdentidad }}</p></div>
                 <div><span class="input-label">Fecha Nacimiento</span><p>{{ employee()!.fechaNacimiento ?? '—' }}</p></div>
@@ -58,7 +58,7 @@
     <div class="card">
         <div class="card-header"><h3 class="card-title">Datos Laborales</h3></div>
         <div class="card-body">
-            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-md)">
+            <div class="form-group-3col">
                 <div><span class="input-label">Departamento</span><p>{{ employee()!.departmentName ?? '—' }}</p></div>
                 <div><span class="input-label">Puesto</span><p>{{ employee()!.positionName ?? employee()!.cargo ?? '—' }}</p></div>
                 <div><span class="input-label">Supervisor</span><p>{{ employee()!.supervisorName ?? '—' }}</p></div>
@@ -81,7 +81,7 @@
     <div class="card">
         <div class="card-header"><h3 class="card-title">Contacto y Dirección</h3></div>
         <div class="card-body">
-            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-md)">
+            <div class="form-group-3col">
                 <div style="grid-column: span 3"><span class="input-label">Dirección</span><p>{{ employee()!.direccion ?? '—' }}</p></div>
                 <div><span class="input-label">Distrito</span><p>{{ employee()!.distrito ?? '—' }}</p></div>
                 <div><span class="input-label">Provincia</span><p>{{ employee()!.provincia ?? '—' }}</p></div>
@@ -96,7 +96,7 @@
     <div class="card">
         <div class="card-header"><h3 class="card-title">Educación y Perfil</h3></div>
         <div class="card-body">
-            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-md)">
+            <div class="form-group-3col">
                 <div><span class="input-label">Nivel Educación</span><p>{{ employee()!.nivelEducacion ?? '—' }}</p></div>
                 <div><span class="input-label">Profesión</span><p>{{ employee()!.profesion ?? '—' }}</p></div>
                 <div><span class="input-label">Universidad</span><p>{{ employee()!.universidad ?? '—' }}</p></div>

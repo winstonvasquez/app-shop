@@ -26,7 +26,7 @@
             (input)="onSearch($event)" />
     </div>
 
-    <select class="input-field" style="width: auto; min-width: 160px"
+    <select class="form-input" style="width: auto; min-width: 160px"
             [value]="filterEstado()"
             (change)="onFilterEstado($event)">
         <option value="">Todos los estados</option>
@@ -71,11 +71,7 @@
             <app-alert type="error" [message]="submitError()!" />
         }
 
-        <!-- Sección: Datos Personales -->
-        <p class="text-subtle text-sm font-semibold mb-2 mt-1">Datos Personales</p>
-        <hr style="border-color: var(--color-border); margin-bottom: var(--space-md)">
-
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md)">
+        <app-admin-form-section title="Datos Personales" [columns]="2">
             <app-form-field
                 label="Código Empleado"
                 [control]="getControl('codigoEmpleado')"
@@ -99,20 +95,16 @@
                 [control]="getControl('apellidos')"
                 placeholder="Apellidos del empleado"
                 [required]="true" />
-        </div>
 
-        <div style="margin-top: var(--space-md)">
-            <app-date-input
-                label="Fecha de Ingreso"
-                [required]="true"
-                formControlName="fechaIngreso" />
-        </div>
+            <div class="form-group-2col-span">
+                <app-date-input
+                    label="Fecha de Ingreso"
+                    [required]="true"
+                    formControlName="fechaIngreso" />
+            </div>
+        </app-admin-form-section>
 
-        <!-- Sección: Información Laboral -->
-        <p class="text-subtle text-sm font-semibold mb-2 mt-4">Información Laboral</p>
-        <hr style="border-color: var(--color-border); margin-bottom: var(--space-md)">
-
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md)">
+        <app-admin-form-section title="Información Laboral" [columns]="2">
             <app-form-field
                 label="Cargo"
                 [control]="getControl('cargo')"
@@ -122,23 +114,19 @@
                 label="Área"
                 [control]="getControl('area')"
                 placeholder="Ej: Contabilidad" />
-        </div>
 
-        <div style="margin-top: var(--space-md)">
-            <label class="input-label">Estado</label>
-            <select class="input-field" formControlName="estado">
-                <option value="ACTIVO">Activo</option>
-                <option value="INACTIVO">Inactivo</option>
-                <option value="SUSPENDIDO">Suspendido</option>
-                <option value="CESADO">Cesado</option>
-            </select>
-        </div>
+            <div>
+                <label class="input-label">Estado</label>
+                <select class="form-input" formControlName="estado">
+                    <option value="ACTIVO">Activo</option>
+                    <option value="INACTIVO">Inactivo</option>
+                    <option value="SUSPENDIDO">Suspendido</option>
+                    <option value="CESADO">Cesado</option>
+                </select>
+            </div>
+        </app-admin-form-section>
 
-        <!-- Sección: Contacto -->
-        <p class="text-subtle text-sm font-semibold mb-2 mt-4">Contacto</p>
-        <hr style="border-color: var(--color-border); margin-bottom: var(--space-md)">
-
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md)">
+        <app-admin-form-section title="Contacto" [columns]="2">
             <app-form-field
                 label="Email"
                 [control]="getControl('email')"
@@ -150,12 +138,12 @@
                 [control]="getControl('telefono')"
                 type="tel"
                 placeholder="Ej: 987654321" />
-        </div>
+        </app-admin-form-section>
 
     </form>
 
     <!-- Footer del Drawer -->
-    <div slot="footer" style="display: flex; justify-content: flex-end; gap: var(--space-sm)">
+    <div slot="footer" class="form-actions">
         <button class="btn btn-secondary" type="button" (click)="closeModal()">
             Cancelar
         </button>

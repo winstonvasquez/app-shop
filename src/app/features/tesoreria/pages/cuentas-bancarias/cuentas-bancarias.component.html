@@ -9,32 +9,32 @@
   </app-page-header>
 
   <!-- KPIs por moneda -->
-  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:var(--space-md);margin-bottom:var(--space-lg)">
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
     <div class="card">
       <div class="card-body">
-        <div class="text-sm" style="color:var(--color-text-muted)">Saldo PEN</div>
-        <div class="font-bold" style="font-size:1.75rem;color:var(--color-primary)">
+        <div class="text-sm text-[var(--color-text-muted)]">Saldo PEN</div>
+        <div class="font-bold text-[1.75rem] text-[var(--color-primary)]">
           S/ {{ saldoTotalPEN() | number:'1.2-2' }}
         </div>
-        <div class="text-sm" style="color:var(--color-text-muted)">{{ cuentasPEN() }} cuentas en soles</div>
+        <div class="text-sm text-[var(--color-text-muted)]">{{ cuentasPEN() }} cuentas en soles</div>
       </div>
     </div>
     <div class="card">
       <div class="card-body">
-        <div class="text-sm" style="color:var(--color-text-muted)">Saldo USD</div>
-        <div class="font-bold" style="font-size:1.75rem">
+        <div class="text-sm text-[var(--color-text-muted)]">Saldo USD</div>
+        <div class="font-bold text-[1.75rem]">
           $ {{ saldoTotalUSD() | number:'1.2-2' }}
         </div>
-        <div class="text-sm" style="color:var(--color-text-muted)">{{ cuentasUSD() }} cuentas en dólares</div>
+        <div class="text-sm text-[var(--color-text-muted)]">{{ cuentasUSD() }} cuentas en dólares</div>
       </div>
     </div>
     <div class="card">
       <div class="card-body">
-        <div class="text-sm" style="color:var(--color-text-muted)">Cuenta Detracciones</div>
-        <div class="font-bold" style="font-size:1.75rem;color:var(--color-accent)">
+        <div class="text-sm text-[var(--color-text-muted)]">Cuenta Detracciones</div>
+        <div class="font-bold text-[1.75rem] text-[var(--color-accent)]">
           S/ {{ saldoDetracciones() | number:'1.2-2' }}
         </div>
-        <div class="text-sm" style="color:var(--color-text-muted)">Banco de la Nación</div>
+        <div class="text-sm text-[var(--color-text-muted)]">Banco de la Nación</div>
       </div>
     </div>
   </div>
@@ -66,16 +66,16 @@
   (closed)="showCreateDrawer.set(false)">
 
   @if (errorMsg()) {
-    <div style="background:var(--color-error-subtle,rgba(215,19,42,0.1));border:1px solid var(--color-error);border-radius:8px;padding:var(--space-sm);margin-bottom:var(--space-md);color:var(--color-error);font-size:0.875rem">
+    <div class="bg-[var(--color-error-subtle,color-mix(in_oklch,var(--color-primary)_10%,transparent))] border border-[var(--color-error)] rounded-lg p-[var(--space-sm)] mb-[var(--space-md)] text-[var(--color-error)] text-sm">
       {{ errorMsg() }}
     </div>
   }
 
-  <form [formGroup]="createForm" style="display:flex;flex-direction:column;gap:var(--space-sm)">
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-sm)">
+  <form [formGroup]="createForm" class="flex flex-col gap-3">
+    <div class="grid grid-cols-2 gap-3">
       <div>
         <label class="input-label">Banco *</label>
-        <select class="input-field" formControlName="banco">
+        <select class="form-input" formControlName="banco">
           <option value="">Seleccionar banco...</option>
           @for (b of BANCOS; track b) {
             <option [value]="b">{{ b }}</option>
@@ -84,7 +84,7 @@
       </div>
       <div>
         <label class="input-label">Tipo de Cuenta *</label>
-        <select class="input-field" formControlName="tipoCuenta">
+        <select class="form-input" formControlName="tipoCuenta">
           @for (t of tipoOptions; track t) {
             <option [value]="t">{{ t }}</option>
           }
@@ -92,7 +92,7 @@
       </div>
     </div>
 
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-sm)">
+    <div class="grid grid-cols-2 gap-3">
       <app-form-field
         label="N° Cuenta"
         [control]="getControl(createForm, 'numeroCuenta')"
@@ -102,7 +102,7 @@
       </app-form-field>
       <div>
         <label class="input-label">Moneda *</label>
-        <select class="input-field" formControlName="moneda">
+        <select class="form-input" formControlName="moneda">
           @for (m of monedaOptions; track m) {
             <option [value]="m">{{ m }}</option>
           }
@@ -152,16 +152,16 @@
   (closed)="showEditDrawer.set(false)">
 
   @if (errorMsg()) {
-    <div style="background:var(--color-error-subtle,rgba(215,19,42,0.1));border:1px solid var(--color-error);border-radius:8px;padding:var(--space-sm);margin-bottom:var(--space-md);color:var(--color-error);font-size:0.875rem">
+    <div class="bg-[var(--color-error-subtle,color-mix(in_oklch,var(--color-primary)_10%,transparent))] border border-[var(--color-error)] rounded-lg p-[var(--space-sm)] mb-[var(--space-md)] text-[var(--color-error)] text-sm">
       {{ errorMsg() }}
     </div>
   }
 
-  <form [formGroup]="editForm" style="display:flex;flex-direction:column;gap:var(--space-sm)">
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-sm)">
+  <form [formGroup]="editForm" class="flex flex-col gap-3">
+    <div class="grid grid-cols-2 gap-3">
       <div>
         <label class="input-label">Banco *</label>
-        <select class="input-field" formControlName="banco">
+        <select class="form-input" formControlName="banco">
           <option value="">Seleccionar banco...</option>
           @for (b of BANCOS; track b) {
             <option [value]="b">{{ b }}</option>
@@ -170,7 +170,7 @@
       </div>
       <div>
         <label class="input-label">Tipo de Cuenta *</label>
-        <select class="input-field" formControlName="tipoCuenta">
+        <select class="form-input" formControlName="tipoCuenta">
           @for (t of tipoOptions; track t) {
             <option [value]="t">{{ t }}</option>
           }
@@ -178,7 +178,7 @@
       </div>
     </div>
 
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-sm)">
+    <div class="grid grid-cols-2 gap-3">
       <app-form-field
         label="N° Cuenta"
         [control]="getControl(editForm, 'numeroCuenta')"
@@ -188,7 +188,7 @@
       </app-form-field>
       <div>
         <label class="input-label">Moneda *</label>
-        <select class="input-field" formControlName="moneda">
+        <select class="form-input" formControlName="moneda">
           @for (m of monedaOptions; track m) {
             <option [value]="m">{{ m }}</option>
           }

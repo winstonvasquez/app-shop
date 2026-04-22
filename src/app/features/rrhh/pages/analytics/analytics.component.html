@@ -6,7 +6,7 @@
 
 @if (data(); as d) {
     <!-- KPI Cards -->
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: var(--space-md); margin-bottom: var(--space-lg)">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
         <div class="card">
             <div class="card-body">
                 <div class="text-muted" style="font-size: 0.8rem">Empleados Activos</div>
@@ -48,7 +48,7 @@
     </div>
 
     <!-- Charts -->
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-lg); margin-bottom: var(--space-lg)">
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
         <div class="card">
             <div class="card-header">
                 <h3 class="card-title">Headcount por Departamento</h3>
@@ -89,7 +89,7 @@
     </div>
 
     <!-- Additional metrics -->
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--space-md)">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <div class="card">
             <div class="card-body">
                 <div class="text-muted" style="font-size: 0.8rem">Vacaciones Pendientes</div>

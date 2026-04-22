@@ -17,25 +17,25 @@
         <!-- KPI Cards -->
         @if (kpi(); as k) {
             <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:1rem; margin-bottom:1.5rem">
-                <div class="card card-body" style="text-align:center">
-                    <div style="font-size:1.6rem; font-weight:700; color:var(--color-primary)">{{ k.totalOrdenes }}</div>
-                    <div style="font-size:.82rem; color:var(--color-text-subtle)">Órdenes de Compra</div>
+                <div class="card card-body text-center">
+                    <div class="text-[1.6rem] font-bold text-[var(--color-primary)]">{{ k.totalOrdenes }}</div>
+                    <div class="text-[0.82rem] text-[var(--color-text-subtle)]">Órdenes de Compra</div>
                 </div>
-                <div class="card card-body" style="text-align:center">
-                    <div style="font-size:1.6rem; font-weight:700; color:var(--color-primary)">{{ k.totalProveedores }}</div>
-                    <div style="font-size:.82rem; color:var(--color-text-subtle)">Proveedores Activos</div>
+                <div class="card card-body text-center">
+                    <div class="text-[1.6rem] font-bold text-[var(--color-primary)]">{{ k.totalProveedores }}</div>
+                    <div class="text-[0.82rem] text-[var(--color-text-subtle)]">Proveedores Activos</div>
                 </div>
-                <div class="card card-body" style="text-align:center">
-                    <div style="font-size:1.6rem; font-weight:700; color:var(--color-error)">{{ k.facturasVencidas }}</div>
-                    <div style="font-size:.82rem; color:var(--color-text-subtle)">Facturas Vencidas</div>
+                <div class="card card-body text-center">
+                    <div class="text-[1.6rem] font-bold text-[var(--color-error)]">{{ k.facturasVencidas }}</div>
+                    <div class="text-[0.82rem] text-[var(--color-text-subtle)]">Facturas Vencidas</div>
                 </div>
-                <div class="card card-body" style="text-align:center">
-                    <div style="font-size:1.6rem; font-weight:700; color:var(--color-text-on)">{{ k.totalDevoluciones }}</div>
-                    <div style="font-size:.82rem; color:var(--color-text-subtle)">Devoluciones</div>
+                <div class="card card-body text-center">
+                    <div class="text-[1.6rem] font-bold text-[var(--color-text-on)]">{{ k.totalDevoluciones }}</div>
+                    <div class="text-[0.82rem] text-[var(--color-text-subtle)]">Devoluciones</div>
                 </div>
-                <div class="card card-body" style="text-align:center">
-                    <div style="font-size:1.4rem; font-weight:700; color:var(--color-primary)">S/ {{ k.totalFacturado | number:'1.0-0' }}</div>
-                    <div style="font-size:.82rem; color:var(--color-text-subtle)">Total Facturado</div>
+                <div class="card card-body text-center">
+                    <div class="text-[1.4rem] font-bold text-[var(--color-primary)]">S/ {{ k.totalFacturado | number:'1.0-0' }}</div>
+                    <div class="text-[0.82rem] text-[var(--color-text-subtle)]">Total Facturado</div>
                 </div>
             </div>
         }
@@ -57,7 +57,7 @@
                         <tbody>
                             @for (p of proveedores(); track p.proveedorId) {
                                 <tr class="table-row">
-                                    <td class="table-cell" style="font-size:.83rem">{{ p.proveedorNombre }}</td>
+                                    <td class="table-cell text-[0.83rem]">{{ p.proveedorNombre }}</td>
                                     <td class="table-cell">{{ p.totalOrdenes }}</td>
                                     <td class="table-cell">S/ {{ p.montoTotal | number:'1.0-0' }}</td>
                                     <td class="table-cell">
@@ -70,7 +70,7 @@
                                 </tr>
                             }
                             @if (proveedores().length === 0) {
-                                <tr><td class="table-cell" colspan="4" style="text-align:center">Sin datos</td></tr>
+                                <tr><td class="table-cell text-center" colspan="4">Sin datos</td></tr>
                             }
                         </tbody>
                     </table>
@@ -82,22 +82,22 @@
                 <div class="card-header"><h3 class="card-title">Ejecución Presupuestal</h3></div>
                 <div class="card-body">
                     @for (p of presupuesto(); track p.presupuestoId) {
-                        <div style="margin-bottom:1rem">
-                            <div style="display:flex; justify-content:space-between; margin-bottom:.3rem">
-                                <span style="font-size:.85rem; color:var(--color-text-on)">{{ p.categoria }}</span>
+                        <div class="mb-4">
+                            <div class="flex justify-between mb-1">
+                                <span class="text-[0.85rem] text-[var(--color-text-on)]">{{ p.categoria }}</span>
                                 <span class="badge {{ pctClass(p.porcentajeEjecucion) }}">{{ p.porcentajeEjecucion }}%</span>
                             </div>
-                            <div style="background:var(--color-surface-raised); border-radius:4px; height:8px; overflow:hidden">
+                            <div class="bg-[var(--color-surface-raised)] rounded h-2 overflow-hidden">
                                 <div style="height:100%; background:var(--color-primary); width:{{ p.porcentajeEjecucion }}%; border-radius:4px"></div>
                             </div>
-                            <div style="display:flex; justify-content:space-between; font-size:.75rem; color:var(--color-text-muted); margin-top:.2rem">
+                            <div class="flex justify-between text-[0.75rem] text-[var(--color-text-muted)] mt-1">
                                 <span>S/ {{ p.montoEjecutado | number:'1.0-0' }}</span>
                                 <span>S/ {{ p.montoAsignado | number:'1.0-0' }}</span>
                             </div>
                         </div>
                     }
                     @if (presupuesto().length === 0) {
-                        <p style="color:var(--color-text-muted); text-align:center">Sin presupuestos registrados</p>
+                        <p class="text-[var(--color-text-muted)] text-center">Sin presupuestos registrados</p>
                     }
                 </div>
             </div>
