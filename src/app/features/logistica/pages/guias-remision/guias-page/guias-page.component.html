@@ -9,15 +9,16 @@
   </app-page-header>
 
   <!-- Filtro -->
-  <div class="filters-bar">
-    <select class="input-field" style="width:200px"
-            [(ngModel)]="filtroEstado" (ngModelChange)="aplicarFiltro()">
+  <form [formGroup]="filterForm" class="filters-bar">
+    <select class="form-input" style="width:200px"
+            formControlName="estado"
+            (change)="aplicarFiltro()">
       <option value="">Todos los estados</option>
       @for (opt of estadoGuiaOptions; track opt.value) {
         <option [value]="opt.value">{{ opt.label }}</option>
       }
     </select>
-  </div>
+  </form>
 
   <app-data-table
     [data]="guiasFiltradas()"
@@ -44,7 +45,7 @@
   [hasFooter]="true"
   (closed)="cerrarModal()">
 
-  <div style="display:flex;flex-direction:column;gap:var(--space-md)">
+  <form [formGroup]="greForm" style="display:flex;flex-direction:column;gap:var(--space-md)">
 
     <!-- Sección: Identificación -->
     <fieldset class="gre-section">
@@ -52,14 +53,14 @@
       <div class="form-grid form-grid-4">
         <div class="form-field-wrapper">
           <label class="input-label">Serie *</label>
-          <input class="input-field" [(ngModel)]="form.serie" placeholder="T001">
+          <input class="form-input" formControlName="serie" placeholder="T001">
         </div>
         <div class="form-field-wrapper">
           <label class="input-label">N° Correlativo *</label>
-          <input class="input-field" [(ngModel)]="form.numeroDocumento" placeholder="00000001">
+          <input class="form-input" formControlName="numeroDocumento" placeholder="00000001">
         </div>
-        <app-date-input label="Fecha Emisión" [(ngModel)]="form.fechaEmision" />
-        <app-date-input label="Inicio Traslado" [(ngModel)]="form.fechaInicioTraslado" />
+        <app-date-input label="Fecha Emisión" formControlName="fechaEmision" />
+        <app-date-input label="Inicio Traslado" formControlName="fechaInicioTraslado" />
       </div>
     </fieldset>
 
@@ -69,7 +70,7 @@
       <div class="form-grid form-grid-3">
         <div class="form-field-wrapper">
           <label class="input-label">Motivo de Traslado *</label>
-          <select class="input-field" [(ngModel)]="form.motivoTraslado">
+          <select class="form-input" formControlName="motivoTraslado">
             <option value="">Seleccionar...</option>
             @for (m of motivos; track m.codigo) {
               <option [value]="m.codigo">{{ m.descripcion }}</option>
@@ -78,20 +79,20 @@
         </div>
         <div class="form-field-wrapper">
           <label class="input-label">Modalidad *</label>
-          <select class="input-field" [(ngModel)]="form.modalidadTraslado">
+          <select class="form-input" formControlName="modalidadTraslado">
             <option value="01">01 — Transporte Público</option>
             <option value="02">02 — Transporte Privado</option>
           </select>
         </div>
         <div class="form-field-wrapper">
           <label class="input-label">Peso Bruto Total (kg)</label>
-          <input class="input-field" type="number" [(ngModel)]="form.pesoBrutoTotal"
+          <input class="form-input" type="number" formControlName="pesoBrutoTotal"
                  placeholder="0.00" min="0" step="0.01">
         </div>
       </div>
       <div class="form-field-wrapper" style="margin-top:var(--space-md)">
         <label class="input-label">Descripción del Traslado</label>
-        <input class="input-field" [(ngModel)]="form.descripcionTraslado"
+        <input class="form-input" formControlName="descripcionTraslado"
                placeholder="Ej: Traslado de mercadería por venta">
       </div>
     </fieldset>
@@ -102,12 +103,12 @@
       <div class="form-grid">
         <div class="form-field-wrapper">
           <label class="input-label">Dirección de Origen *</label>
-          <input class="input-field" [(ngModel)]="form.direccionOrigen"
+          <input class="form-input" formControlName="direccionOrigen"
                  placeholder="Av. Principal 123, Lima">
         </div>
         <div class="form-field-wrapper">
           <label class="input-label">Ubigeo</label>
-          <input class="input-field" [(ngModel)]="form.ubigeoOrigen"
+          <input class="form-input" formControlName="ubigeoOrigen"
                  placeholder="150101" maxlength="6" style="font-family:monospace">
         </div>
       </div>
@@ -119,45 +120,45 @@
       <div class="form-grid">
         <div class="form-field-wrapper">
           <label class="input-label">RUC Destinatario</label>
-          <input class="input-field" [(ngModel)]="form.destinatarioRuc"
+          <input class="form-input" formControlName="destinatarioRuc"
                  placeholder="20123456789" maxlength="11" style="font-family:monospace">
         </div>
         <div class="form-field-wrapper">
           <label class="input-label">Razón Social Destinatario</label>
-          <input class="input-field" [(ngModel)]="form.destinatarioRazonSocial"
+          <input class="form-input" formControlName="destinatarioRazonSocial"
                  placeholder="Empresa SAC">
         </div>
         <div class="form-field-wrapper">
           <label class="input-label">Dirección Destinatario</label>
-          <input class="input-field" [(ngModel)]="form.destinatarioDireccion"
+          <input class="form-input" formControlName="destinatarioDireccion"
                  placeholder="Jr. Comercio 456, Callao">
         </div>
         <div class="form-field-wrapper">
           <label class="input-label">Ubigeo Destino</label>
-          <input class="input-field" [(ngModel)]="form.ubigeoDestino"
+          <input class="form-input" formControlName="ubigeoDestino"
                  placeholder="070101" maxlength="6" style="font-family:monospace">
         </div>
       </div>
     </fieldset>
 
     <!-- Sección: Transportista (solo si público) -->
-    @if (form.modalidadTraslado === '01') {
+    @if (esTransportePublico) {
       <fieldset class="gre-section">
         <legend class="gre-legend">TRANSPORTISTA (Transporte Público)</legend>
         <div class="form-grid form-grid-3">
           <div class="form-field-wrapper">
             <label class="input-label">RUC Transportista</label>
-            <input class="input-field" [(ngModel)]="form.transportistaRuc"
+            <input class="form-input" formControlName="transportistaRuc"
                    placeholder="20987654321" maxlength="11" style="font-family:monospace">
           </div>
           <div class="form-field-wrapper">
             <label class="input-label">Razón Social</label>
-            <input class="input-field" [(ngModel)]="form.transportistaRazonSocial"
+            <input class="form-input" formControlName="transportistaRazonSocial"
                    placeholder="Transportes XYZ SAC">
           </div>
           <div class="form-field-wrapper">
             <label class="input-label">N° Autorización MTC</label>
-            <input class="input-field" [(ngModel)]="form.transportistaMtc"
+            <input class="form-input" formControlName="transportistaMtc"
                    placeholder="0000-00000" style="font-family:monospace">
           </div>
         </div>
@@ -170,22 +171,22 @@
       <div class="form-grid form-grid-4">
         <div class="form-field-wrapper">
           <label class="input-label">Placa del Vehículo</label>
-          <input class="input-field" [(ngModel)]="form.vehiculoPlaca"
+          <input class="form-input" formControlName="vehiculoPlaca"
                  placeholder="ABC-123" style="font-family:monospace;text-transform:uppercase">
         </div>
         <div class="form-field-wrapper">
           <label class="input-label">N° Licencia</label>
-          <input class="input-field" [(ngModel)]="form.conductorLicencia"
+          <input class="form-input" formControlName="conductorLicencia"
                  placeholder="Q12345678" style="font-family:monospace">
         </div>
         <div class="form-field-wrapper">
           <label class="input-label">DNI Conductor</label>
-          <input class="input-field" [(ngModel)]="form.conductorDocumento"
+          <input class="form-input" formControlName="conductorDocumento"
                  placeholder="12345678" maxlength="8" style="font-family:monospace">
         </div>
         <div class="form-field-wrapper">
           <label class="input-label">Nombre Conductor</label>
-          <input class="input-field" [(ngModel)]="form.conductorNombre"
+          <input class="form-input" formControlName="conductorNombre"
                  placeholder="Juan Pérez López">
         </div>
       </div>
@@ -211,19 +212,23 @@
           @for (item of itemForms(); track $index; let i = $index) {
             <tr>
               <td class="table-cell" style="padding:4px">
-                <input class="input-field" [(ngModel)]="item.sku"
+                <input class="form-input" [value]="item.sku"
+                       (input)="updateItemField(i, 'sku', $any($event.target).value)"
                        placeholder="SKU001" style="font-family:monospace;font-size:0.8rem">
               </td>
               <td class="table-cell" style="padding:4px">
-                <input class="input-field" [(ngModel)]="item.productoNombre"
+                <input class="form-input" [value]="item.productoNombre"
+                       (input)="updateItemField(i, 'productoNombre', $any($event.target).value)"
                        placeholder="Descripción" style="font-size:0.8rem">
               </td>
               <td class="table-cell" style="padding:4px">
-                <input class="input-field" type="number" [(ngModel)]="item.cantidad"
+                <input class="form-input" type="number" [value]="item.cantidad"
+                       (input)="updateItemField(i, 'cantidad', +$any($event.target).value)"
                        min="0.01" step="0.01" style="font-size:0.8rem">
               </td>
               <td class="table-cell" style="padding:4px">
-                <input class="input-field" [(ngModel)]="item.unidad"
+                <input class="form-input" [value]="item.unidad"
+                       (input)="updateItemField(i, 'unidad', $any($event.target).value)"
                        placeholder="NIU" style="font-size:0.8rem">
               </td>
               <td class="table-cell" style="padding:4px;text-align:center">
@@ -247,7 +252,7 @@
       <app-alert type="error" [message]="errorMsg()!" />
     }
 
-  </div>
+  </form>
 
   <div slot="footer">
     <button class="btn btn-secondary" (click)="cerrarModal()">Cancelar</button>

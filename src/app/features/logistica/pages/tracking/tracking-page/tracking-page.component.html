@@ -7,20 +7,19 @@
 
 <div class="card" style="margin-bottom:24px">
   <div class="card-body">
-    <div style="display:flex;gap:12px;align-items:flex-end">
+    <form [formGroup]="searchForm" (ngSubmit)="buscarTracking()" style="display:flex;gap:12px;align-items:flex-end">
       <div style="flex:1">
         <label class="input-label">Número de Guía / Tracking</label>
         <input
-          class="input-field"
-          [(ngModel)]="trackingInput"
+          class="form-input"
+          formControlName="trackingInput"
           placeholder="Ej: T001-20240315143022"
-          (keydown.enter)="buscarTracking()"
         >
       </div>
-      <button class="btn btn-primary" (click)="buscarTracking()" [disabled]="buscando()">
+      <button type="submit" class="btn btn-primary" [disabled]="buscando()">
         {{ buscando() ? 'Buscando...' : 'Rastrear' }}
       </button>
-    </div>
+    </form>
 
     @if (errorMsg()) {
       <p class="input-error-message" style="margin-top:8px">{{ errorMsg() }}</p>

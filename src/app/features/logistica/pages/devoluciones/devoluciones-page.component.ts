@@ -1,6 +1,6 @@
 import { Component, inject, signal, OnInit, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { DatePipe } from '@angular/common';
+import { ReactiveFormsModule, FormBuilder } from '@angular/forms';
 import { DevolucionService } from '../../services/devolucion.service';
 import { Devolucion, DevolucionStatus } from '../../models/devolucion.model';
 import { AuthService } from '../../../../core/auth/auth.service';
@@ -24,18 +24,19 @@ const STATUS_LABELS: Record<DevolucionStatus, string> = {
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
-        CommonModule,
-        FormsModule,
+        ReactiveFormsModule,
         DataTableComponent,
         DrawerComponent,
         AlertComponent,
-        PageHeaderComponent
+        PageHeaderComponent,
+        DatePipe
     ],
     templateUrl: './devoluciones-page.component.html'
 })
 export class DevolucionesPageComponent implements OnInit {
     private readonly service     = inject(DevolucionService);
     private readonly authService = inject(AuthService);
+    private readonly fb          = inject(FormBuilder);
 
     // Data
     devoluciones    = signal<Devolucion[]>([]);
@@ -49,12 +50,16 @@ export class DevolucionesPageComponent implements OnInit {
     actionLoading   = signal(false);
     actionError     = signal<string | null>(null);
 
-    // Inputs para acciones
-    inspectionNotes = '';
-    refundAmount    = 0;
+    // Filters — reactive
+    filterForm = this.fb.group({
+        status: ['']
+    });
 
-    // Filters
-    filterStatus = '';
+    // Acción drawer — reactive
+    actionForm = this.fb.group({
+        inspectionNotes: [''],
+        refundAmount:    [0]
+    });
 
     // Pagination
     currentPage   = signal(0);
@@ -116,9 +121,10 @@ export class DevolucionesPageComponent implements OnInit {
     loadDevoluciones() {
         this.loading.set(true);
         this.error.set(null);
+        const filterStatus = this.filterForm.value.status ?? '';
         this.service.getDevoluciones(
             this.companyId, this.currentPage(), this.pageSize(),
-            this.filterStatus || undefined
+            filterStatus || undefined
         ).subscribe({
             next: (res) => {
                 this.devoluciones.set(res.content);
@@ -134,7 +140,7 @@ export class DevolucionesPageComponent implements OnInit {
     }
 
     onFilterStatus(event: Event) {
-        this.filterStatus = (event.target as HTMLSelectElement).value;
+        this.filterForm.patchValue({ status: (event.target as HTMLSelectElement).value });
         this.currentPage.set(0);
         this.loadDevoluciones();
     }
@@ -149,8 +155,10 @@ export class DevolucionesPageComponent implements OnInit {
     openDetail(dev: Devolucion) {
         this.selected.set(dev);
         this.actionError.set(null);
-        this.inspectionNotes = '';
-        this.refundAmount    = dev.refundAmount ?? 0;
+        this.actionForm.patchValue({
+            inspectionNotes: '',
+            refundAmount:    dev.refundAmount ?? 0
+        });
         this.showDetail.set(true);
     }
 
@@ -193,7 +201,8 @@ export class DevolucionesPageComponent implements OnInit {
         const dev = this.selected();
         if (!dev) return;
         this.actionLoading.set(true);
-        this.service.registrarInspeccion(dev.id, this.inspectionNotes, this.companyId).subscribe({
+        const notes = this.actionForm.value.inspectionNotes ?? '';
+        this.service.registrarInspeccion(dev.id, notes, this.companyId).subscribe({
             next: (updated) => { this.selected.set(updated); this.actionLoading.set(false); this.loadDevoluciones(); },
             error: (err: Error) => { this.actionError.set(err.message); this.actionLoading.set(false); }
         });
@@ -203,7 +212,8 @@ export class DevolucionesPageComponent implements OnInit {
         const dev = this.selected();
         if (!dev) return;
         this.actionLoading.set(true);
-        this.service.registrarReembolso(dev.id, this.refundAmount, this.companyId).subscribe({
+        const amount = this.actionForm.value.refundAmount ?? 0;
+        this.service.registrarReembolso(dev.id, amount, this.companyId).subscribe({
             next: (updated) => { this.selected.set(updated); this.actionLoading.set(false); this.loadDevoluciones(); },
             error: (err: Error) => { this.actionError.set(err.message); this.actionLoading.set(false); }
         });

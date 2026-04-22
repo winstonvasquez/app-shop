@@ -13,19 +13,19 @@
   }
 
   <!-- Filtros -->
-  <div class="filters-bar">
-    <select class="input-field" style="width:200px" [(ngModel)]="tipoFilter">
+  <form [formGroup]="filterForm" (ngSubmit)="buscar()" class="filters-bar">
+    <select class="form-input" style="width:200px" formControlName="tipoFilter">
       <option value="">Todos los tipos</option>
       @for (opt of tipoOptions; track opt.value) {
         <option [value]="opt.value">{{ opt.label }}</option>
       }
     </select>
 
-    <app-date-input label="Desde" [(ngModel)]="dateFrom" />
-    <app-date-input label="Hasta"  [(ngModel)]="dateTo" />
+    <app-date-input label="Desde" formControlName="dateFrom" />
+    <app-date-input label="Hasta"  formControlName="dateTo" />
 
-    <button class="btn btn-secondary" (click)="buscar()">Buscar</button>
-  </div>
+    <button type="submit" class="btn btn-secondary">Buscar</button>
+  </form>
 
   <!-- Tabla -->
   <app-data-table
@@ -59,20 +59,20 @@
     <div class="form-grid">
       <div class="form-field-wrapper" style="grid-column:1/-1">
         <label class="input-label">Tipo de movimiento *</label>
-        <select class="input-field" formControlName="tipo">
+        <select class="form-input" formControlName="tipo">
           <option value="">-- Seleccione tipo --</option>
           @for (opt of tipoOptions; track opt.value) {
             <option [value]="opt.value">{{ opt.label }}</option>
           }
         </select>
-        @if (form.get('tipo')?.invalid && form.get('tipo')?.touched) {
-          <span class="input-error-message">Seleccione el tipo de movimiento</span>
+        @if (err('tipo')) {
+          <span class="input-error-message">{{ err('tipo') }}</span>
         }
       </div>
 
       <div class="form-field-wrapper">
         <label class="input-label">Almacén Origen</label>
-        <select class="input-field" formControlName="almacenOrigenId">
+        <select class="form-input" formControlName="almacenOrigenId">
           <option value="">-- Sin origen --</option>
           @for (alm of almacenes(); track alm.id) {
             <option [value]="alm.id">{{ alm.nombre }}</option>
@@ -82,7 +82,7 @@
 
       <div class="form-field-wrapper">
         <label class="input-label">Almacén Destino</label>
-        <select class="input-field" formControlName="almacenDestinoId">
+        <select class="form-input" formControlName="almacenDestinoId">
           <option value="">-- Sin destino --</option>
           @for (alm of almacenes(); track alm.id) {
             <option [value]="alm.id">{{ alm.nombre }}</option>
@@ -95,12 +95,12 @@
     <div class="form-section">
       <div class="form-field-wrapper">
         <label class="input-label">Motivo</label>
-        <input class="input-field" type="text" formControlName="motivo"
+        <input class="form-input" type="text" formControlName="motivo"
                placeholder="Motivo del movimiento">
       </div>
       <div class="form-field-wrapper" style="margin-top:var(--space-md)">
         <label class="input-label">Observaciones</label>
-        <textarea class="input-field" formControlName="observaciones" rows="2"
+        <textarea class="form-input" formControlName="observaciones" rows="2"
                   placeholder="Observaciones adicionales" style="resize:vertical"></textarea>
       </div>
     </div>
@@ -116,21 +116,21 @@
         <div style="display:grid;grid-template-columns:1fr 120px 80px 36px;gap:var(--space-sm);align-items:end;margin-bottom:var(--space-sm)">
           <div>
             <label class="input-label" [for]="'prod-' + i">Producto *</label>
-            <input [id]="'prod-' + i" class="input-field" type="text"
+            <input [id]="'prod-' + i" class="form-input" type="text"
                    [value]="item.productoNombre"
                    (input)="updateItem(i, 'productoNombre', $any($event.target).value)"
                    placeholder="Nombre del producto">
           </div>
           <div>
             <label class="input-label" [for]="'sku-' + i">SKU</label>
-            <input [id]="'sku-' + i" class="input-field" type="text"
+            <input [id]="'sku-' + i" class="form-input" type="text"
                    [value]="item.sku"
                    (input)="updateItem(i, 'sku', $any($event.target).value)"
                    placeholder="SKU">
           </div>
           <div>
             <label class="input-label" [for]="'qty-' + i">Cantidad *</label>
-            <input [id]="'qty-' + i" class="input-field" type="number" min="1"
+            <input [id]="'qty-' + i" class="form-input" type="number" min="1"
                    [value]="item.cantidad"
                    (input)="updateItem(i, 'cantidad', +$any($event.target).value)"
                    placeholder="1">

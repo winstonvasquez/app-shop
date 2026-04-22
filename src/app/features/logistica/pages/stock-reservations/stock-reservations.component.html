@@ -1,0 +1,91 @@
+<div class="p-6 max-w-3xl mx-auto">
+    <h2 class="text-xl font-semibold mb-4">Reservas de Stock</h2>
+
+    <form [formGroup]="searchForm" (ngSubmit)="buscar()" class="flex gap-2 mb-4">
+        <input
+            type="text"
+            formControlName="orderId"
+            placeholder="ID de orden"
+            class="border rounded px-3 py-2 flex-1"
+        />
+        <button
+            type="submit"
+            [disabled]="loading()"
+            class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 disabled:opacity-50"
+        >
+            {{ loading() ? 'Buscando...' : 'Buscar' }}
+        </button>
+    </form>
+
+    @if (error()) {
+        <div class="bg-error/10 text-error p-3 rounded mb-4">{{ error() }}</div>
+    }
+
+    @if (successMsg()) {
+        <div class="bg-success/10 text-success p-3 rounded mb-4">{{ successMsg() }}</div>
+    }
+
+    @if (reservation(); as res) {
+        <div class="border rounded-lg p-4">
+            <div class="flex items-center justify-between mb-3">
+                <h3 class="font-medium">Orden: {{ res.orderId }}</h3>
+                <span class="px-2 py-1 rounded text-sm font-medium" [class]="statusClass(res.status)">
+                    {{ statusLabel(res.status) }}
+                </span>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 text-sm text-gray-600 mb-4">
+                <div><span class="font-medium">Empresa:</span> {{ res.companyId }}</div>
+                <div><span class="font-medium">Items:</span> {{ res.items.length }}</div>
+                <div><span class="font-medium">Reservado:</span> {{ res.reservedAt | date:'short' }}</div>
+                @if (res.expiresAt) {
+                    <div><span class="font-medium">Expira:</span> {{ res.expiresAt | date:'short' }}</div>
+                }
+            </div>
+
+            @if (res.items.length) {
+                <table class="w-full text-sm mb-4">
+                    <thead>
+                        <tr class="border-b text-left text-gray-500">
+                            <th class="py-1">SKU</th>
+                            <th class="py-1">Producto</th>
+                            <th class="py-1 text-right">Cantidad</th>
+                            <th class="py-1">Ubicación</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (item of res.items; track item.productId) {
+                            <tr class="border-b">
+                                <td class="py-1">{{ item.sku }}</td>
+                                <td class="py-1">{{ item.productId }}</td>
+                                <td class="py-1 text-right">{{ item.qty }}</td>
+                                <td class="py-1">{{ item.locationCode ?? '—' }}</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+
+            <div class="flex gap-2">
+                @if (canRelease()) {
+                    <button
+                        (click)="release()"
+                        [disabled]="actionId() !== null"
+                        class="bg-warning text-white px-3 py-1.5 rounded text-sm hover:brightness-90 disabled:opacity-50"
+                    >
+                        {{ actionId() === 'release' ? 'Liberando...' : 'Liberar' }}
+                    </button>
+                }
+                @if (canConsume()) {
+                    <button
+                        (click)="consume()"
+                        [disabled]="actionId() !== null"
+                        class="bg-success text-white px-3 py-1.5 rounded text-sm hover:brightness-90 disabled:opacity-50"
+                    >
+                        {{ actionId() === 'consume' ? 'Consumiendo...' : 'Consumir' }}
+                    </button>
+                }
+            </div>
+        </div>
+    }
+</div>

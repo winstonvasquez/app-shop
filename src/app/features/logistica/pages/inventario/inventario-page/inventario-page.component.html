@@ -10,9 +10,10 @@
   }
 
   <!-- Filtros -->
-  <div class="filters-bar">
-    <select class="input-field" style="width:220px"
-            [(ngModel)]="filterAlmacen" (ngModelChange)="aplicarFiltros()">
+  <form [formGroup]="filterForm" class="filters-bar" (ngSubmit)="aplicarFiltros()">
+    <select class="form-input" style="width:220px"
+            formControlName="almacen"
+            (change)="aplicarFiltros()">
       <option value="">Todos los almacenes</option>
       @for (alm of almacenes(); track alm.id) {
         <option [value]="alm.id">{{ alm.nombre }}</option>
@@ -24,14 +25,14 @@
         <circle cx="9" cy="9" r="6" stroke-width="1.5"/>
         <path d="M13.5 13.5l3 3" stroke-width="1.5" stroke-linecap="round"/>
       </svg>
-      <input class="input-field" style="padding-left:2.25rem" type="text"
+      <input class="form-input" style="padding-left:2.25rem" type="text"
              placeholder="Buscar producto o SKU..."
-             [(ngModel)]="filterBusqueda"
+             formControlName="busqueda"
              (keydown.enter)="aplicarFiltros()">
     </div>
 
-    <button class="btn btn-secondary" (click)="aplicarFiltros()">Buscar</button>
-  </div>
+    <button type="submit" class="btn btn-secondary">Buscar</button>
+  </form>
 
   <!-- Tabla -->
   <app-data-table

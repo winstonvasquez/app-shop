@@ -1,6 +1,5 @@
 import { Component, inject, signal, OnInit, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder } from '@angular/forms';
 import { InventarioService } from '../../../services/inventario.service';
 import { InventarioItem } from '../../../models/inventario.model';
 import { AlmacenService } from '../../../services/almacen.service';
@@ -16,8 +15,7 @@ import { PaginationChangeEvent } from '@shared/ui/pagination/pagination.componen
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
-        CommonModule,
-        FormsModule,
+        ReactiveFormsModule,
         DataTableComponent,
         AlertComponent,
         PageHeaderComponent
@@ -26,20 +24,23 @@ import { PaginationChangeEvent } from '@shared/ui/pagination/pagination.componen
 })
 export class InventarioPageComponent implements OnInit {
     private readonly inventarioService = inject(InventarioService);
-    private readonly almacenService = inject(AlmacenService);
-    private readonly authService = inject(AuthService);
+    private readonly almacenService    = inject(AlmacenService);
+    private readonly authService       = inject(AuthService);
+    private readonly fb                = inject(FormBuilder);
 
     // Data
-    items = signal<InventarioItem[]>([]);
+    items     = signal<InventarioItem[]>([]);
     almacenes = signal<Almacen[]>([]);
 
     // UI state
     loading = signal(false);
     error   = signal<string | null>(null);
 
-    // Filters
-    filterAlmacen  = '';
-    filterBusqueda = '';
+    // Filters — reactive
+    filterForm = this.fb.group({
+        almacen:  [''],
+        busqueda: ['']
+    });
 
     // Pagination
     currentPage   = signal(0);
@@ -90,9 +91,10 @@ export class InventarioPageComponent implements OnInit {
     loadInventario() {
         this.loading.set(true);
         this.error.set(null);
+        const { almacen, busqueda } = this.filterForm.value;
         this.inventarioService.getInventario(this.companyId, {
-            almacenId: this.filterAlmacen || undefined,
-            busqueda:  this.filterBusqueda || undefined,
+            almacenId: almacen   || undefined,
+            busqueda:  busqueda  || undefined,
             page:      this.currentPage(),
             size:      this.pageSize()
         }).subscribe({

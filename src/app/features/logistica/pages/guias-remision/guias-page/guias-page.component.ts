@@ -1,5 +1,5 @@
 import { Component, inject, signal, OnInit, ChangeDetectionStrategy, computed } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { DrawerComponent } from '../../../../../shared/components/drawer/drawer.component';
 import { GuiaRemisionService } from '../../../services/guia-remision.service';
 import { GuiaRemision, EstadoGuia, CreateGuiaRemisionDto, GuiaRemisionItemDto } from '../../../models/guia-remision.model';
@@ -30,63 +30,33 @@ interface ItemForm {
     descripcion: string;
 }
 
-interface GREForm {
-    serie: string;
-    numeroDocumento: string;
-    fechaEmision: string;
-    fechaInicioTraslado: string;
-    // Punto de partida
-    direccionOrigen: string;
-    ubigeoOrigen: string;
-    // Punto de llegada
-    destinatarioRuc: string;
-    destinatarioRazonSocial: string;
-    destinatarioDireccion: string;
-    ubigeoDestino: string;
-    puntoLlegada: string;
-    // Traslado
-    motivoTraslado: string;
-    descripcionTraslado: string;
-    modalidadTraslado: '01' | '02';
-    pesoBrutoTotal: number | null;
-    // Transportista (solo si modalidad=01 público)
-    transportistaRuc: string;
-    transportistaRazonSocial: string;
-    transportistaMtc: string;
-    // Vehículo y conductor
-    vehiculoPlaca: string;
-    conductorDocumento: string;
-    conductorNombre: string;
-    conductorLicencia: string;
-}
-
 @Component({
     selector: 'app-guias-page',
     standalone: true,
-    imports: [FormsModule, DrawerComponent, DataTableComponent, DateInputComponent, AlertComponent, PageHeaderComponent],
+    imports: [ReactiveFormsModule, DrawerComponent, DataTableComponent, DateInputComponent, AlertComponent, PageHeaderComponent],
     changeDetection: ChangeDetectionStrategy.OnPush,
     templateUrl: './guias-page.component.html'
 })
 export class GuiasPageComponent implements OnInit {
     private readonly guiaService = inject(GuiaRemisionService);
     private readonly authService = inject(AuthService);
+    private readonly fb          = inject(FormBuilder);
 
-    readonly guias = signal<GuiaRemision[]>([]);
-    readonly guiasFiltradas = signal<GuiaRemision[]>([]);
-    readonly totalElements = signal(0);
-    readonly showModal = signal(false);
-    readonly loading = signal(false);
-    readonly guardando = signal(false);
-    readonly errorMsg = signal<string | null>(null);
-    readonly itemForms = signal<ItemForm[]>([]);
+    readonly guias           = signal<GuiaRemision[]>([]);
+    readonly guiasFiltradas  = signal<GuiaRemision[]>([]);
+    readonly totalElements   = signal(0);
+    readonly showModal       = signal(false);
+    readonly loading         = signal(false);
+    readonly guardando       = signal(false);
+    readonly errorMsg        = signal<string | null>(null);
+    readonly itemForms       = signal<ItemForm[]>([]);
 
-    filtroEstado = '';
     readonly motivos = MOTIVOS_TRASLADO;
 
     // Pagination
-    currentPage   = signal(0);
-    pageSize      = signal(10);
-    totalPages    = signal(0);
+    currentPage = signal(0);
+    pageSize    = signal(10);
+    totalPages  = signal(0);
 
     breadcrumbs: Breadcrumb[] = [
         { label: 'Inicio',    url: '/admin/dashboard' },
@@ -100,6 +70,45 @@ export class GuiasPageComponent implements OnInit {
         { value: 'RECHAZADA', label: 'Rechazada' },
         { value: 'ANULADA',   label: 'Anulada' },
     ];
+
+    // Filter — reactive (1 campo compacto)
+    filterForm = this.fb.group({
+        estado: ['']
+    });
+
+    // Form GRE — reactive
+    private readonly hoy = new Date().toISOString().split('T')[0];
+
+    greForm = this.fb.group({
+        // Identificación
+        serie:              ['T001', [Validators.required]],
+        numeroDocumento:    ['',     [Validators.required]],
+        fechaEmision:       [this.hoy],
+        fechaInicioTraslado:[this.hoy],
+        // Punto de partida
+        direccionOrigen:    ['',     [Validators.required]],
+        ubigeoOrigen:       [''],
+        // Destinatario
+        destinatarioRuc:         [''],
+        destinatarioRazonSocial: [''],
+        destinatarioDireccion:   [''],
+        ubigeoDestino:           [''],
+        puntoLlegada:            [''],
+        // Traslado
+        motivoTraslado:      ['',   [Validators.required]],
+        descripcionTraslado: [''],
+        modalidadTraslado:   ['02' as '01' | '02'],
+        pesoBrutoTotal:      [null as number | null],
+        // Transportista
+        transportistaRuc:         [''],
+        transportistaRazonSocial: [''],
+        transportistaMtc:         [''],
+        // Vehículo y conductor
+        vehiculoPlaca:     [''],
+        conductorDocumento:[''],
+        conductorNombre:   [''],
+        conductorLicencia: ['']
+    });
 
     columns: TableColumn<GuiaRemision>[] = [
         { key: 'serie', label: 'Serie/N°',
@@ -132,15 +141,19 @@ export class GuiasPageComponent implements OnInit {
         },
     ];
 
-    form: GREForm = this.defaultForm();
+    readonly formularioValido = computed(() => {
+        const v = this.greForm.value;
+        return !!v.serie &&
+            !!v.numeroDocumento &&
+            !!v.direccionOrigen &&
+            !!v.motivoTraslado &&
+            this.itemForms().length > 0;
+    });
 
-    readonly formularioValido = computed(() =>
-        !!this.form.serie &&
-        !!this.form.numeroDocumento &&
-        !!this.form.direccionOrigen &&
-        !!this.form.motivoTraslado &&
-        this.itemForms().length > 0
-    );
+    /** Shortcut para saber si la modalidad es pública */
+    get esTransportePublico(): boolean {
+        return this.greForm.value.modalidadTraslado === '01';
+    }
 
     private get companyId(): string {
         return String(this.authService.currentUser()?.activeCompanyId ?? 1);
@@ -166,10 +179,11 @@ export class GuiasPageComponent implements OnInit {
     }
 
     aplicarFiltro() {
-        if (!this.filtroEstado) {
+        const estado = this.filterForm.value.estado ?? '';
+        if (!estado) {
             this.guiasFiltradas.set(this.guias());
         } else {
-            this.guiasFiltradas.set(this.guias().filter(g => g.estado === this.filtroEstado));
+            this.guiasFiltradas.set(this.guias().filter(g => g.estado === estado));
         }
     }
 
@@ -181,38 +195,40 @@ export class GuiasPageComponent implements OnInit {
         this.errorMsg.set(null);
         this.guardando.set(true);
 
+        const f = this.greForm.value;
+
         const items: GuiaRemisionItemDto[] = this.itemForms().map(it => ({
             productoNombre: it.productoNombre,
-            sku: it.sku || undefined,
-            cantidad: it.cantidad,
-            unidad: it.unidad || 'NIU',
-            descripcion: it.descripcion || undefined
+            sku:            it.sku || undefined,
+            cantidad:       it.cantidad,
+            unidad:         it.unidad || 'NIU',
+            descripcion:    it.descripcion || undefined
         }));
 
         const dto: CreateGuiaRemisionDto = {
-            serie: this.form.serie,
-            numeroDocumento: this.form.numeroDocumento,
-            fechaEmision: this.form.fechaEmision || undefined,
-            fechaInicioTraslado: this.form.fechaInicioTraslado || undefined,
-            almacenOrigenId: '00000000-0000-0000-0000-000000000001',
-            direccionOrigen: this.form.direccionOrigen,
-            ubigeoOrigen: this.form.ubigeoOrigen || undefined,
-            destinatarioRuc: this.form.destinatarioRuc || undefined,
-            destinatarioRazonSocial: this.form.destinatarioRazonSocial || undefined,
-            destinatarioDireccion: this.form.destinatarioDireccion || undefined,
-            ubigeoDestino: this.form.ubigeoDestino || undefined,
-            puntoLlegada: this.form.puntoLlegada || undefined,
-            motivoTraslado: this.form.motivoTraslado,
-            descripcionTraslado: this.form.descripcionTraslado || undefined,
-            modalidadTraslado: this.form.modalidadTraslado,
-            pesoBrutoTotal: this.form.pesoBrutoTotal ?? undefined,
-            transportistaRuc: this.form.transportistaRuc || undefined,
-            transportistaRazonSocial: this.form.transportistaRazonSocial || undefined,
-            transportistaMtc: this.form.transportistaMtc || undefined,
-            vehiculoPlaca: this.form.vehiculoPlaca || undefined,
-            conductorDocumento: this.form.conductorDocumento || undefined,
-            conductorNombre: this.form.conductorNombre || undefined,
-            conductorLicencia: this.form.conductorLicencia || undefined,
+            serie:              f.serie ?? '',
+            numeroDocumento:    f.numeroDocumento ?? '',
+            fechaEmision:       f.fechaEmision       || undefined,
+            fechaInicioTraslado:f.fechaInicioTraslado || undefined,
+            almacenOrigenId:    '00000000-0000-0000-0000-000000000001',
+            direccionOrigen:    f.direccionOrigen ?? '',
+            ubigeoOrigen:       f.ubigeoOrigen       || undefined,
+            destinatarioRuc:    f.destinatarioRuc    || undefined,
+            destinatarioRazonSocial: f.destinatarioRazonSocial || undefined,
+            destinatarioDireccion:   f.destinatarioDireccion   || undefined,
+            ubigeoDestino:      f.ubigeoDestino      || undefined,
+            puntoLlegada:       f.puntoLlegada        || undefined,
+            motivoTraslado:     f.motivoTraslado      ?? '',
+            descripcionTraslado:f.descripcionTraslado || undefined,
+            modalidadTraslado:  (f.modalidadTraslado ?? '02') as '01' | '02',
+            pesoBrutoTotal:     f.pesoBrutoTotal      ?? undefined,
+            transportistaRuc:   f.transportistaRuc    || undefined,
+            transportistaRazonSocial: f.transportistaRazonSocial || undefined,
+            transportistaMtc:   f.transportistaMtc    || undefined,
+            vehiculoPlaca:      f.vehiculoPlaca        || undefined,
+            conductorDocumento: f.conductorDocumento   || undefined,
+            conductorNombre:    f.conductorNombre      || undefined,
+            conductorLicencia:  f.conductorLicencia    || undefined,
             items
         };
 
@@ -222,7 +238,7 @@ export class GuiasPageComponent implements OnInit {
                 this.cargarGuias();
                 this.guardando.set(false);
             },
-            error: (err) => {
+            error: () => {
                 this.errorMsg.set('Error al crear la guía. Verifique los datos e intente nuevamente.');
                 this.guardando.set(false);
             }
@@ -235,6 +251,7 @@ export class GuiasPageComponent implements OnInit {
         });
     }
 
+    // ── Items ──────────────────────────────────────────
     agregarItem() {
         this.itemForms.update(items => [
             ...items,
@@ -246,9 +263,20 @@ export class GuiasPageComponent implements OnInit {
         this.itemForms.update(items => items.filter((_, i) => i !== index));
     }
 
+    updateItemField(index: number, field: keyof ItemForm, value: string | number) {
+        this.itemForms.update(items =>
+            items.map((item, i) => i === index ? { ...item, [field]: value } : item)
+        );
+    }
+
     cerrarModal() {
         this.showModal.set(false);
-        this.form = this.defaultForm();
+        this.greForm.reset({
+            serie: 'T001',
+            modalidadTraslado: '02',
+            fechaEmision: this.hoy,
+            fechaInicioTraslado: this.hoy
+        });
         this.itemForms.set([]);
         this.errorMsg.set(null);
     }
@@ -259,39 +287,11 @@ export class GuiasPageComponent implements OnInit {
 
     badgeClass(estado: EstadoGuia): string {
         const map: Record<EstadoGuia, string> = {
-            EMITIDA: 'badge badge-accent',
-            ACEPTADA: 'badge badge-success',
+            EMITIDA:   'badge badge-accent',
+            ACEPTADA:  'badge badge-success',
             RECHAZADA: 'badge badge-error',
-            ANULADA: 'badge badge-neutral'
+            ANULADA:   'badge badge-neutral'
         };
         return map[estado] ?? 'badge';
-    }
-
-    private defaultForm(): GREForm {
-        const hoy = new Date().toISOString().split('T')[0];
-        return {
-            serie: 'T001',
-            numeroDocumento: '',
-            fechaEmision: hoy,
-            fechaInicioTraslado: hoy,
-            direccionOrigen: '',
-            ubigeoOrigen: '',
-            destinatarioRuc: '',
-            destinatarioRazonSocial: '',
-            destinatarioDireccion: '',
-            ubigeoDestino: '',
-            puntoLlegada: '',
-            motivoTraslado: '',
-            descripcionTraslado: '',
-            modalidadTraslado: '02',
-            pesoBrutoTotal: null,
-            transportistaRuc: '',
-            transportistaRazonSocial: '',
-            transportistaMtc: '',
-            vehiculoPlaca: '',
-            conductorDocumento: '',
-            conductorNombre: '',
-            conductorLicencia: ''
-        };
     }
 }

@@ -1,6 +1,6 @@
 import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { DatePipe } from '@angular/common';
-import { FormsModule } from '@angular/forms';
 import { ShipmentService, TrackingInfoResponse, ShipmentResponse } from '../../../services/shipment.service';
 import { DataTableComponent, TableColumn, TableAction } from '@shared/ui/tables/data-table/data-table.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
@@ -8,13 +8,14 @@ import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/p
 @Component({
     selector: 'app-tracking-page',
     standalone: true,
-    imports: [DatePipe, FormsModule, DataTableComponent, PageHeaderComponent],
+    imports: [DatePipe, ReactiveFormsModule, DataTableComponent, PageHeaderComponent],
     templateUrl: './tracking-page.component.html',
     styleUrls: ['./tracking-page.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class TrackingPageComponent {
     private readonly shipmentService = inject(ShipmentService);
+    private readonly fb = inject(FormBuilder);
 
     breadcrumbs: Breadcrumb[] = [
         { label: 'Inicio',    url: '/admin/dashboard' },
@@ -41,12 +42,15 @@ export class TrackingPageComponent {
         }
     ];
 
-    trackingInput = '';
-    readonly trackingInfo = signal<TrackingInfoResponse | null>(null);
-    readonly envios = signal<ShipmentResponse[]>([]);
-    readonly buscando = signal(false);
+    searchForm = this.fb.group({
+        trackingInput: ['']
+    });
+
+    readonly trackingInfo  = signal<TrackingInfoResponse | null>(null);
+    readonly envios        = signal<ShipmentResponse[]>([]);
+    readonly buscando      = signal(false);
     readonly loadingEnvios = signal(false);
-    readonly errorMsg = signal('');
+    readonly errorMsg      = signal('');
 
     constructor() {
         this.cargarEnvios();
@@ -67,7 +71,7 @@ export class TrackingPageComponent {
     }
 
     buscarTracking() {
-        const numero = this.trackingInput.trim();
+        const numero = (this.searchForm.value.trackingInput ?? '').trim();
         if (!numero) return;
         this.buscando.set(true);
         this.errorMsg.set('');
@@ -85,7 +89,7 @@ export class TrackingPageComponent {
     }
 
     rastrearDesdeTabla(trackingNumber: string) {
-        this.trackingInput = trackingNumber;
+        this.searchForm.patchValue({ trackingInput: trackingNumber });
         this.buscarTracking();
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }

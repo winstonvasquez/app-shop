@@ -1,9 +1,8 @@
 import {
     Component, inject, signal, OnInit, ChangeDetectionStrategy
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormBuilder, FormsModule, ReactiveFormsModule, Validators, FormGroup } from '@angular/forms';
-import { MovimientoService, Movimiento } from '../../../services/movimiento.service';
+import { FormBuilder, ReactiveFormsModule, Validators, FormGroup } from '@angular/forms';
+import { MovimientoService, Movimiento, MovimientoPage } from '../../../services/movimiento.service';
 import { AlmacenService } from '../../../services/almacen.service';
 import { Almacen } from '../../../models/almacen.model';
 import { MovimientoItem, CreateMovimientoDto } from '../../../models/movimiento.model';
@@ -26,8 +25,6 @@ interface ItemForm {
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
-        CommonModule,
-        FormsModule,
         ReactiveFormsModule,
         DataTableComponent,
         DrawerComponent,
@@ -55,10 +52,12 @@ export class MovimientosPageComponent implements OnInit {
     submitting  = signal(false);
     submitError = signal<string | null>(null);
 
-    // Filters
-    tipoFilter = '';
-    dateFrom   = '';
-    dateTo     = '';
+    // Filter form
+    filterForm = this.fb.group({
+        tipoFilter: [''],
+        dateFrom:   [''],
+        dateTo:     ['']
+    });
 
     // Pagination
     currentPage   = signal(0);
@@ -127,16 +126,17 @@ export class MovimientosPageComponent implements OnInit {
     }
 
     loadMovimientos() {
+        const { tipoFilter, dateFrom, dateTo } = this.filterForm.value;
         this.loading.set(true);
         this.error.set(null);
         this.movimientoService.getMovimientos(this.companyId, {
-            tipo:  this.tipoFilter || undefined,
-            desde: this.dateFrom  || undefined,
-            hasta: this.dateTo    || undefined,
+            tipo:  tipoFilter  || undefined,
+            desde: dateFrom    || undefined,
+            hasta: dateTo      || undefined,
             page:  this.currentPage(),
             size:  this.pageSize()
-        } as any).subscribe({
-            next: (res: any) => {
+        }).subscribe({
+            next: (res: MovimientoPage) => {
                 this.movimientos.set(res.content || []);
                 this.totalElements.set(res.totalElements ?? res.content?.length ?? 0);
                 this.totalPages.set(res.totalPages ?? 1);
@@ -229,6 +229,13 @@ export class MovimientosPageComponent implements OnInit {
                 this.submitting.set(false);
             }
         });
+    }
+
+    err(field: string): string {
+        const c = this.form.get(field);
+        if (!c || c.pristine || c.valid) return '';
+        if (c.hasError('required')) return 'Campo requerido';
+        return 'Campo inválido';
     }
 
     private emptyItem(): ItemForm {
