@@ -1,10 +1,14 @@
-import { Component, inject, signal, computed, OnInit, ChangeDetectionStrategy } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { Component, inject, signal, computed, OnInit, ChangeDetectionStrategy, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '@env/environment';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { DataTableComponent, TableColumn, TableAction } from '@shared/ui/tables/data-table/data-table.component';
 import { DateInputComponent } from '@shared/ui/forms/date-input/date-input.component';
+import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
+import { AdminFormSectionComponent } from '@shared/ui/forms/admin-form-section/admin-form-section.component';
+import { AdminFormLayoutComponent } from '@shared/ui/forms/admin-form-layout/admin-form-layout.component';
 import { VentasParametrosService, SelectOption } from '../../services/ventas-parametros.service';
 
 type MotivoDevolucion = 'DEFECTO' | 'CAMBIO' | 'ERROR_PEDIDO' | 'NO_LLEGÓ' | 'OTRO';
@@ -31,34 +35,51 @@ interface PageResponse<T> { content: T[]; }
     selector: 'app-returns',
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [FormsModule, DrawerComponent, DataTableComponent, DateInputComponent],
+    imports: [
+        ReactiveFormsModule,
+        DrawerComponent,
+        DataTableComponent,
+        DateInputComponent,
+        FormFieldComponent,
+        AdminFormSectionComponent,
+        AdminFormLayoutComponent,
+    ],
     templateUrl: './returns.component.html',
 })
 export class ReturnsComponent implements OnInit {
-    private readonly http = inject(HttpClient);
-    readonly parametros = inject(VentasParametrosService);
+    private readonly http      = inject(HttpClient);
+    private readonly fb        = inject(FormBuilder);
+    private readonly destroyRef = inject(DestroyRef);
+    readonly parametros        = inject(VentasParametrosService);
 
-    devoluciones = signal<Devolucion[]>([]);
+    devoluciones      = signal<Devolucion[]>([]);
     pedidosEntregados = signal<OrderSummary[]>([]);
-    showModal   = signal(false);
-    guardando   = signal(false);
-    editMode    = signal(false);
-    selectedId  = signal<string | null>(null);
-    filtroEstado = '';
+    showModal         = signal(false);
+    guardando         = signal(false);
+    editMode          = signal(false);
+    selectedId        = signal<string | null>(null);
+    submitError       = signal('');
 
-    motivoOptions  = signal<SelectOption[]>([]);
-    resolucionOptions = signal<SelectOption[]>([]);
-    estadoOptions  = signal<SelectOption[]>([{ value: '', label: 'Todos los estados' }]);
+    motivoOptions      = signal<SelectOption[]>([]);
+    resolucionOptions  = signal<SelectOption[]>([]);
+    estadoOptions      = signal<SelectOption[]>([{ value: '', label: 'Todos los estados' }]);
+    filtroEstadoSignal = signal('');
 
-    // Form state
-    formPedidoId     = 0;
-    formCliente      = '';
-    formNumeroOrden  = '';
-    formMotivo: MotivoDevolucion = 'DEFECTO';
-    formResolucion: TipoResolucion = 'REEMBOLSO';
-    formMonto        = 0;
-    formObservaciones = '';
-    formFecha        = new Date().toISOString().split('T')[0];
+    // Formulario de filtro
+    filterForm: FormGroup = this.fb.group({
+        filtroEstado: [''],
+    });
+
+    // Formulario de devolución
+    returnForm: FormGroup = this.fb.group({
+        numeroOrden:   ['', Validators.required],
+        clienteNombre: [''],
+        motivo:        ['DEFECTO' as MotivoDevolucion, Validators.required],
+        tipoResolucion:['REEMBOLSO' as TipoResolucion],
+        monto:         [0, [Validators.required, Validators.min(0.01)]],
+        fechaSolicitud:[new Date().toISOString().split('T')[0], Validators.required],
+        observaciones: [''],
+    });
 
     columns: TableColumn<Devolucion>[] = [
         { key: 'fechaSolicitud', label: 'Fecha',
@@ -87,8 +108,9 @@ export class ReturnsComponent implements OnInit {
     ];
 
     devolucionesFiltradas = computed(() => {
-        if (!this.filtroEstado) return this.devoluciones();
-        return this.devoluciones().filter(d => d.estado === this.filtroEstado);
+        const estado = this.filtroEstadoSignal();
+        if (!estado) return this.devoluciones();
+        return this.devoluciones().filter(d => d.estado === estado);
     });
 
     totalDevoluciones  = computed(() => this.devoluciones().length);
@@ -101,6 +123,10 @@ export class ReturnsComponent implements OnInit {
     );
 
     ngOnInit(): void {
+        this.filterForm.get('filtroEstado')!.valueChanges
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe((v: string) => this.filtroEstadoSignal.set(v ?? ''));
+
         this.cargarPedidos();
         this.parametros.getMotivosDevolucion().subscribe(opts => this.motivoOptions.set(opts));
         this.parametros.getTiposResolucion().subscribe(opts => this.resolucionOptions.set(opts));
@@ -123,37 +149,54 @@ export class ReturnsComponent implements OnInit {
         this.resetForm();
         this.editMode.set(false);
         this.selectedId.set(null);
+        this.submitError.set('');
         this.showModal.set(true);
     }
 
     abrirDetalle(row: Devolucion): void {
-        this.formPedidoId     = row.pedidoId;
-        this.formCliente      = row.clienteNombre;
-        this.formNumeroOrden  = row.numeroOrden;
-        this.formMotivo       = row.motivo;
-        this.formResolucion   = row.tipoResolucion;
-        this.formMonto        = row.monto;
-        this.formObservaciones = row.observaciones ?? '';
-        this.formFecha        = row.fechaSolicitud;
+        this.returnForm.patchValue({
+            numeroOrden:    row.numeroOrden,
+            clienteNombre:  row.clienteNombre,
+            motivo:         row.motivo,
+            tipoResolucion: row.tipoResolucion,
+            monto:          row.monto,
+            fechaSolicitud: row.fechaSolicitud,
+            observaciones:  row.observaciones ?? '',
+        });
+        this.returnForm.markAsPristine();
         this.editMode.set(true);
         this.selectedId.set(row.id);
+        this.submitError.set('');
         this.showModal.set(true);
     }
 
     guardar(): void {
-        if (!this.formNumeroOrden.trim() || this.formMonto <= 0) return;
+        if (this.returnForm.invalid) {
+            this.returnForm.markAllAsTouched();
+            return;
+        }
+
+        const v = this.returnForm.getRawValue() as {
+            numeroOrden: string;
+            clienteNombre: string;
+            motivo: MotivoDevolucion;
+            tipoResolucion: TipoResolucion;
+            monto: number;
+            fechaSolicitud: string;
+            observaciones: string;
+        };
 
         const devolucion: Devolucion = {
-            id: this.editMode() ? (this.selectedId() ?? crypto.randomUUID()) : crypto.randomUUID(),
-            pedidoId:       this.formPedidoId,
-            numeroOrden:    this.formNumeroOrden,
-            clienteNombre:  this.formCliente || `Usuario #${this.formPedidoId}`,
-            fechaSolicitud: this.formFecha,
-            motivo:         this.formMotivo,
-            tipoResolucion: this.formResolucion,
-            monto:          this.formMonto,
+            id:             this.editMode() ? (this.selectedId() ?? crypto.randomUUID()) : crypto.randomUUID(),
+            pedidoId:       0,
+            numeroOrden:    v.numeroOrden,
+            clienteNombre:  v.clienteNombre || `Pedido ${v.numeroOrden}`,
+            fechaSolicitud: v.fechaSolicitud,
+            motivo:         v.motivo,
+            tipoResolucion: v.tipoResolucion,
+            monto:          v.monto,
             estado:         'SOLICITADA',
-            observaciones:  this.formObservaciones || undefined,
+            observaciones:  v.observaciones || undefined,
         };
 
         if (this.editMode()) {
@@ -178,14 +221,26 @@ export class ReturnsComponent implements OnInit {
         this.resetForm();
     }
 
+    /** Helper canónico de errores para returnForm */
+    err(field: string): string {
+        const c = this.returnForm.get(field);
+        if (!c || c.pristine || c.valid) return '';
+        if (c.hasError('required')) return 'Campo requerido';
+        if (c.hasError('min')) return `Valor mínimo: ${c.getError('min').min}`;
+        return 'Campo inválido';
+    }
+
     private resetForm(): void {
-        this.formPedidoId      = 0;
-        this.formCliente       = '';
-        this.formNumeroOrden   = '';
-        this.formMotivo        = 'DEFECTO';
-        this.formResolucion    = 'REEMBOLSO';
-        this.formMonto         = 0;
-        this.formObservaciones = '';
-        this.formFecha         = new Date().toISOString().split('T')[0];
+        this.returnForm.reset({
+            numeroOrden:    '',
+            clienteNombre:  '',
+            motivo:         'DEFECTO',
+            tipoResolucion: 'REEMBOLSO',
+            monto:          0,
+            fechaSolicitud: new Date().toISOString().split('T')[0],
+            observaciones:  '',
+        });
+        this.returnForm.markAsPristine();
+        this.returnForm.markAsUntouched();
     }
 }

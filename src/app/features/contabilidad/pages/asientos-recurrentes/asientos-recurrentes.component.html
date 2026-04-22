@@ -9,7 +9,7 @@
         </div>
     </div>
 
-    <!-- Error -->
+    <!-- Error de carga -->
     @if (error()) {
         <div class="badge badge-error mb-4">{{ error() }}</div>
     }
@@ -92,110 +92,112 @@
     title="Nuevo Asiento Recurrente"
     size="lg"
     side="right"
-    [hasFooter]="true"
     (closed)="cerrarForm()">
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-        <div class="md:col-span-2">
-            <label class="input-label">Nombre *</label>
-            <input class="input-field" type="text" placeholder="Ej: Depreciación maquinaria"
-                   [ngModel]="nombre()" (ngModelChange)="nombre.set($event)" />
-        </div>
-        <div class="md:col-span-2">
-            <label class="input-label">Descripción</label>
-            <input class="input-field" type="text" placeholder="Descripción opcional"
-                   [ngModel]="descripcion()" (ngModelChange)="descripcion.set($event)" />
-        </div>
+    <form [formGroup]="form" (ngSubmit)="onSubmit()">
+        <app-admin-form-layout
+            [errorMessage]="submitError()"
+            [stickyActions]="true">
 
-        <div>
-            <label class="input-label">Frecuencia *</label>
-            <select class="input-field" [ngModel]="frecuencia()" (ngModelChange)="frecuencia.set($event)">
-                @for (f of frecuencias; track f) {
-                    <option [value]="f">{{ frecuenciaLabel(f) }}</option>
-                }
-            </select>
-        </div>
-        <div>
-            <label class="input-label">Día del mes (1–28) *</label>
-            <input class="input-field" type="number" min="1" max="28"
-                   [ngModel]="diaEjecucion()" (ngModelChange)="diaEjecucion.set(+$event)" />
-        </div>
+            <!-- Sección: Identificación -->
+            <app-admin-form-section title="Identificación" [columns]="1">
+                <app-form-field label="Nombre" [required]="true" [error]="err('nombre')">
+                    <input class="form-input" formControlName="nombre"
+                           placeholder="Ej: Depreciación maquinaria" />
+                </app-form-field>
+                <app-form-field label="Descripción" [error]="err('descripcion')">
+                    <input class="form-input" formControlName="descripcion"
+                           placeholder="Descripción opcional" />
+                </app-form-field>
+            </app-admin-form-section>
 
-        <div>
-            <label class="input-label">Fecha inicio *</label>
-            <input class="input-field" type="date"
-                   [ngModel]="fechaInicio()" (ngModelChange)="fechaInicio.set($event)" />
-        </div>
-        <div>
-            <label class="input-label">Fecha fin (vacío = sin fin)</label>
-            <input class="input-field" type="date"
-                   [ngModel]="fechaFin()" (ngModelChange)="fechaFin.set($event)" />
-        </div>
+            <!-- Sección: Programación -->
+            <app-admin-form-section title="Programación" [columns]="2">
+                <app-form-field label="Frecuencia" [required]="true" [error]="err('frecuencia')">
+                    <select class="form-input" formControlName="frecuencia">
+                        @for (f of frecuencias; track f) {
+                            <option [value]="f">{{ frecuenciaLabel(f) }}</option>
+                        }
+                    </select>
+                </app-form-field>
+                <app-form-field label="Día del mes (1–31)" [required]="true" [error]="err('diaEjecucion')">
+                    <input class="form-input" type="number" min="1" max="31"
+                           formControlName="diaEjecucion" />
+                </app-form-field>
+                <app-form-field label="Fecha inicio" [required]="true" [error]="err('fechaInicio')">
+                    <input class="form-input" type="date" formControlName="fechaInicio" />
+                </app-form-field>
+                <app-form-field label="Fecha fin (vacío = sin fin)" [error]="err('fechaFin')">
+                    <input class="form-input" type="date" formControlName="fechaFin" />
+                </app-form-field>
+            </app-admin-form-section>
 
-        <div class="md:col-span-2">
-            <label class="input-label">Glosa del asiento *</label>
-            <input class="input-field" type="text" placeholder="Ej: Depreciación mensual activo fijo"
-                   [ngModel]="glosa()" (ngModelChange)="glosa.set($event)" />
-        </div>
-    </div>
+            <!-- Sección: Contabilidad -->
+            <app-admin-form-section title="Contabilidad" [columns]="1">
+                <app-form-field label="Glosa del asiento" [required]="true" [error]="err('glosa')">
+                    <input class="form-input" formControlName="glosa"
+                           placeholder="Ej: Depreciación mensual activo fijo" />
+                </app-form-field>
+            </app-admin-form-section>
 
-    <!-- Líneas debe/haber -->
-    <div class="mb-4">
-        <div class="flex items-center justify-between mb-2">
-            <label class="input-label mb-0">Líneas del asiento *</label>
-            <button class="btn btn-secondary text-sm" (click)="agregarLinea()">+ Línea</button>
-        </div>
+            <!-- Sección: Líneas contables -->
+            <app-admin-form-section
+                title="Líneas contables"
+                description="La suma de DEBE debe igualar la suma de HABER.">
 
-        <div class="overflow-x-auto">
-            <table class="table text-sm">
-                <thead>
-                    <tr>
-                        <th class="table-header-cell">Código cuenta</th>
-                        <th class="table-header-cell">Tipo</th>
-                        <th class="table-header-cell">Monto S/</th>
-                        <th class="table-header-cell w-10"></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @for (linea of lineas(); track $index; let i = $index) {
-                        <tr class="table-row">
-                            <td class="table-cell">
-                                <input class="input-field py-1" type="text"
-                                       placeholder="Ej: 336101"
-                                       [(ngModel)]="linea.accountCode" />
-                            </td>
-                            <td class="table-cell">
-                                <select class="input-field py-1" [(ngModel)]="linea.movementType">
+                <div formArrayName="lineas" class="flex flex-col gap-2">
+                    @for (linea of lineasArray.controls; track $index; let i = $index) {
+                        <div [formGroupName]="i"
+                             class="grid grid-cols-[2fr_1fr_1fr_auto] gap-2 items-end">
+                            <app-form-field label="Código cuenta" [required]="true"
+                                            [error]="errLinea(i, 'accountCode')">
+                                <input class="form-input" formControlName="accountCode"
+                                       placeholder="Ej: 336101" />
+                            </app-form-field>
+                            <app-form-field label="Tipo" [required]="true"
+                                            [error]="errLinea(i, 'movementType')">
+                                <select class="form-input" formControlName="movementType">
                                     <option value="DEBE">DEBE</option>
                                     <option value="HABER">HABER</option>
                                 </select>
-                            </td>
-                            <td class="table-cell">
-                                <input class="input-field py-1" type="number" min="0.01" step="0.01"
-                                       placeholder="0.00"
-                                       [(ngModel)]="linea.amount" />
-                            </td>
-                            <td class="table-cell">
-                                @if (lineas().length > 2) {
-                                    <button class="btn btn-icon btn-icon-delete"
-                                            (click)="eliminarLinea(i)">✕</button>
+                            </app-form-field>
+                            <app-form-field label="Monto S/" [required]="true"
+                                            [error]="errLinea(i, 'amount')">
+                                <input class="form-input" type="number" step="0.01" min="0.01"
+                                       formControlName="amount" placeholder="0.00" />
+                            </app-form-field>
+                            <div class="pb-0">
+                                @if (lineasArray.length > 2) {
+                                    <button type="button" class="btn btn-icon btn-icon-delete"
+                                            title="Eliminar línea"
+                                            (click)="removeLinea(i)">✕</button>
                                 }
-                            </td>
-                        </tr>
+                            </div>
+                        </div>
                     }
-                </tbody>
-            </table>
-        </div>
-    </div>
+                    <button type="button" class="btn btn-secondary self-start"
+                            (click)="addLinea()">+ Agregar línea</button>
+                </div>
 
-    <ng-container slot="footer">
-        <div class="flex gap-3 justify-end">
-            <button class="btn btn-secondary" (click)="cerrarForm()" [disabled]="guardando()">
-                Cancelar
-            </button>
-            <button class="btn btn-primary" (click)="guardar()" [disabled]="guardando()">
-                @if (guardando()) { Guardando... } @else { Guardar }
-            </button>
-        </div>
-    </ng-container>
+                @if (balanceError()) {
+                    <p class="input-error-message mt-2">
+                        DEBE y HABER deben igualarse (diferencia: S/ {{ balanceDiff() }})
+                    </p>
+                }
+            </app-admin-form-section>
+
+            <!-- Acciones -->
+            <div slot="actions">
+                <button type="button" class="btn btn-secondary"
+                        (click)="cerrarForm()" [disabled]="guardando()">
+                    Cancelar
+                </button>
+                <button type="submit" class="btn btn-primary"
+                        [disabled]="form.invalid || guardando()">
+                    @if (guardando()) { Guardando... } @else { Guardar }
+                </button>
+            </div>
+
+        </app-admin-form-layout>
+    </form>
 </app-drawer>

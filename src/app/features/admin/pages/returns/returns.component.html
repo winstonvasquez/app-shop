@@ -30,8 +30,8 @@
     </div>
 
     <!-- Filtros -->
-    <div class="filters-bar mb-[var(--form-gap)]">
-        <select class="input-field" [(ngModel)]="filtroEstado">
+    <div class="filters-bar mb-[var(--form-gap)]" [formGroup]="filterForm">
+        <select class="form-input" formControlName="filtroEstado">
             @for (opt of estadoOptions(); track opt.value) {
                 <option [value]="opt.value">{{ opt.label }}</option>
             }
@@ -59,82 +59,83 @@
     [title]="editMode() ? 'Detalle de Devolución' : 'Nueva Devolución'"
     size="lg"
     side="right"
-    [hasFooter]="true"
+    [hasFooter]="false"
     (closed)="cerrarModal()">
 
-    <div class="flex flex-col gap-[var(--form-gap)]">
+    <form [formGroup]="returnForm" (ngSubmit)="guardar()">
+        <app-admin-form-layout
+            [errorMessage]="submitError()"
+            [stickyActions]="true">
 
-        <!-- Pedido referencia -->
-        <div>
-            <label class="input-label">N° de Pedido / Orden <span class="text-[var(--color-error)]">*</span></label>
-            <input type="text" class="input-field"
-                   placeholder="Ej: #1234 o OC-001"
-                   [(ngModel)]="formNumeroOrden" />
-        </div>
+            <!-- Sección: Datos de la devolución -->
+            <app-admin-form-section title="Datos de la devolución" [columns]="2">
 
-        <!-- Cliente -->
-        <div>
-            <label class="input-label">Nombre del Cliente</label>
-            <input type="text" class="input-field"
-                   placeholder="Nombre del cliente"
-                   [(ngModel)]="formCliente" />
-        </div>
+                <app-form-field label="N° de Pedido / Orden" [required]="true" [error]="err('numeroOrden')">
+                    <input formControlName="numeroOrden" type="text" class="form-input"
+                           placeholder="Ej: #1234 o OC-001" />
+                </app-form-field>
 
-        <!-- Grid 2 cols: Motivo | Tipo resolución -->
-        <div class="grid grid-cols-1 gap-[var(--form-gap)] sm:grid-cols-2">
-            <div>
-                <label class="input-label">Motivo <span class="text-[var(--color-error)]">*</span></label>
-                <select class="input-field" [(ngModel)]="formMotivo">
-                    @for (opt of motivoOptions(); track opt.value) {
-                        <option [value]="opt.value">{{ opt.label }}</option>
-                    }
-                </select>
+                <app-form-field label="Nombre del Cliente" [error]="err('clienteNombre')">
+                    <input formControlName="clienteNombre" type="text" class="form-input"
+                           placeholder="Nombre del cliente" />
+                </app-form-field>
+
+                <app-form-field label="Monto (S/)" [required]="true" [error]="err('monto')">
+                    <input formControlName="monto" type="number" class="form-input"
+                           min="0" step="0.01" placeholder="0.00" />
+                </app-form-field>
+
+                <app-form-field label="Fecha Solicitud" [required]="true" [error]="err('fechaSolicitud')">
+                    <app-date-input
+                        formControlName="fechaSolicitud"
+                        [required]="true">
+                    </app-date-input>
+                </app-form-field>
+
+            </app-admin-form-section>
+
+            <!-- Sección: Motivo y resolución -->
+            <app-admin-form-section title="Motivo y resolución" [columns]="2">
+
+                <app-form-field label="Motivo" [required]="true" [error]="err('motivo')">
+                    <select formControlName="motivo" class="form-input">
+                        @for (opt of motivoOptions(); track opt.value) {
+                            <option [value]="opt.value">{{ opt.label }}</option>
+                        }
+                    </select>
+                </app-form-field>
+
+                <app-form-field label="Tipo de Resolución" [error]="err('tipoResolucion')">
+                    <select formControlName="tipoResolucion" class="form-input">
+                        @for (opt of resolucionOptions(); track opt.value) {
+                            <option [value]="opt.value">{{ opt.label }}</option>
+                        }
+                    </select>
+                </app-form-field>
+
+            </app-admin-form-section>
+
+            <!-- Sección: Observaciones -->
+            <app-admin-form-section title="Observaciones">
+
+                <app-form-field label="Observaciones" [error]="err('observaciones')">
+                    <textarea formControlName="observaciones" class="form-input" rows="3"
+                              placeholder="Detalles adicionales sobre la devolución..."></textarea>
+                </app-form-field>
+
+            </app-admin-form-section>
+
+            <div slot="actions">
+                <button type="button" class="btn btn-secondary" (click)="cerrarModal()">Cancelar</button>
+                @if (!editMode()) {
+                    <button type="submit" class="btn btn-primary"
+                            [disabled]="returnForm.invalid || guardando()">
+                        {{ guardando() ? 'Guardando...' : 'Registrar Devolución' }}
+                    </button>
+                }
             </div>
-            <div>
-                <label class="input-label">Tipo de Resolución</label>
-                <select class="input-field" [(ngModel)]="formResolucion">
-                    @for (opt of resolucionOptions(); track opt.value) {
-                        <option [value]="opt.value">{{ opt.label }}</option>
-                    }
-                </select>
-            </div>
-        </div>
 
-        <!-- Grid 2 cols: Monto | Fecha solicitud -->
-        <div class="grid grid-cols-1 gap-[var(--form-gap)] sm:grid-cols-2">
-            <div>
-                <label class="input-label">Monto (S/) <span class="text-[var(--color-error)]">*</span></label>
-                <input type="number" class="input-field" min="0" step="0.01"
-                       placeholder="0.00"
-                       [(ngModel)]="formMonto" />
-            </div>
-            <div>
-                <app-date-input
-                    label="Fecha Solicitud"
-                    [required]="true"
-                    [(ngModel)]="formFecha">
-                </app-date-input>
-            </div>
-        </div>
-
-        <!-- Observaciones -->
-        <div>
-            <label class="input-label">Observaciones</label>
-            <textarea class="input-field" rows="3"
-                      placeholder="Detalles adicionales sobre la devolución..."
-                      [(ngModel)]="formObservaciones"></textarea>
-        </div>
-
-    </div>
-
-    <div slot="footer">
-        <button class="btn btn-secondary" (click)="cerrarModal()">Cancelar</button>
-        @if (!editMode()) {
-            <button class="btn btn-primary" (click)="guardar()"
-                    [disabled]="!formNumeroOrden.trim() || formMonto <= 0">
-                Registrar Devolución
-            </button>
-        }
-    </div>
+        </app-admin-form-layout>
+    </form>
 
 </app-drawer>
