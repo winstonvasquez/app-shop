@@ -1,6 +1,7 @@
-import { Component, ChangeDetectionStrategy, inject, signal, OnInit, computed } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, signal, OnInit, computed, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DecimalPipe } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '@env/environment';
 import { AuthService } from '@core/auth/auth.service';
@@ -34,7 +35,7 @@ interface PageResponse<T> {
     selector: 'app-reportes-ventas',
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [DecimalPipe, FormsModule, DataTableComponent],
+    imports: [DecimalPipe, ReactiveFormsModule, DataTableComponent],
     templateUrl: './reportes-ventas.component.html',
     styleUrls: ['./reportes-ventas.component.scss'],
 })
@@ -42,15 +43,23 @@ export class ReportesVentasComponent implements OnInit {
     private readonly http = inject(HttpClient);
     private readonly auth = inject(AuthService);
     private readonly exportService = inject(ExportService);
+    private readonly fb = inject(FormBuilder);
+    private readonly destroyRef = inject(DestroyRef);
 
     ventas = signal<VentaPos[]>([]);
     cargando = signal(false);
     error = signal<string | null>(null);
-    busqueda = '';
-    filtroEstado = '';
     pagina = signal(0);
     totalElements = signal(0);
     totalPages = signal(0);
+
+    private busquedaSignal = signal('');
+    private filtroEstadoSignal = signal('');
+
+    filterForm: FormGroup = this.fb.group({
+        busqueda: [''],
+        filtroEstado: [''],
+    });
 
     totalVentas = computed(() => this.ventas().length);
     montoTotal = computed(() => this.ventas().reduce((sum, v) => sum + (v.total ?? 0), 0));
@@ -88,20 +97,29 @@ export class ReportesVentasComponent implements OnInit {
 
     ventasFiltradas = computed(() => {
         let lista = this.ventas();
-        const q = this.busqueda.toLowerCase();
+        const q = this.busquedaSignal().toLowerCase();
         if (q) {
             lista = lista.filter(v =>
                 v.numeroTicket?.toLowerCase().includes(q) ||
                 v.cajeroNombre?.toLowerCase().includes(q)
             );
         }
-        if (this.filtroEstado) {
-            lista = lista.filter(v => v.estado === this.filtroEstado);
+        const estado = this.filtroEstadoSignal();
+        if (estado) {
+            lista = lista.filter(v => v.estado === estado);
         }
         return lista;
     });
 
-    ngOnInit() { this.cargar(); }
+    ngOnInit() {
+        this.filterForm.get('busqueda')!.valueChanges
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe((v: string) => this.busquedaSignal.set(v ?? ''));
+        this.filterForm.get('filtroEstado')!.valueChanges
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe((v: string) => this.filtroEstadoSignal.set(v ?? ''));
+        this.cargar();
+    }
 
     cargar() {
         this.cargando.set(true);

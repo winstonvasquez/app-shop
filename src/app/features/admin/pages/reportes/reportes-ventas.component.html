@@ -71,13 +71,13 @@
         <div class="card-header">
             <h3 class="card-title">Transacciones POS</h3>
         </div>
-        <div class="filters-bar no-print">
+        <div class="filters-bar no-print" [formGroup]="filterForm">
             <div class="search-box">
                 <span class="search-box-icon">&#128269;</span>
-                <input type="text" class="input-field" placeholder="Buscar por ticket o cajero..."
-                       [(ngModel)]="busqueda" style="padding-left:2rem">
+                <input type="text" class="form-input" placeholder="Buscar por ticket o cajero..."
+                       formControlName="busqueda" style="padding-left:2rem">
             </div>
-            <select class="input-field" [(ngModel)]="filtroEstado" style="width:auto">
+            <select class="form-input" formControlName="filtroEstado" style="width:auto">
                 <option value="">Todos los estados</option>
                 @for (opt of estadoOptions; track opt.value) {
                     <option [value]="opt.value">{{ opt.label }}</option>

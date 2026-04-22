@@ -1,6 +1,7 @@
-import { Component, ChangeDetectionStrategy, inject, signal, OnInit, computed } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, signal, OnInit, computed, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DatePipe } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '@env/environment';
 import { ExportService } from '../../../../shared/services/export.service';
@@ -28,27 +29,34 @@ interface PageResponse<T> {
     selector: 'app-reportes-clientes',
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [DatePipe, FormsModule],
+    imports: [DatePipe, ReactiveFormsModule],
     templateUrl: './reportes-clientes.component.html',
     styleUrls: ['./reportes-clientes.component.scss'],
 })
 export class ReportesClientesComponent implements OnInit {
     private readonly http = inject(HttpClient);
     private readonly exportService = inject(ExportService);
+    private readonly fb = inject(FormBuilder);
+    private readonly destroyRef = inject(DestroyRef);
 
     usuarios = signal<Usuario[]>([]);
     cargando = signal(false);
     error = signal<string | null>(null);
-    busqueda = '';
     pagina = signal(0);
     totalElements = signal(0);
     totalPages = signal(0);
+
+    private busquedaSignal = signal('');
+
+    filterForm: FormGroup = this.fb.group({
+        busqueda: [''],
+    });
 
     activos = computed(() => this.usuarios().filter(u => u.activo).length);
     pages = computed(() => Array.from({ length: Math.min(this.totalPages(), 5) }, (_, i) => i));
 
     usuariosFiltrados = computed(() => {
-        const q = this.busqueda.toLowerCase();
+        const q = this.busquedaSignal().toLowerCase();
         if (!q) return this.usuarios();
         return this.usuarios().filter(u =>
             u.username?.toLowerCase().includes(q) ||
@@ -57,7 +65,12 @@ export class ReportesClientesComponent implements OnInit {
         );
     });
 
-    ngOnInit() { this.cargar(); }
+    ngOnInit() {
+        this.filterForm.get('busqueda')!.valueChanges
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe((v: string) => this.busquedaSignal.set(v ?? ''));
+        this.cargar();
+    }
 
     cargar() {
         this.cargando.set(true);

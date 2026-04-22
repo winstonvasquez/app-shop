@@ -57,11 +57,11 @@
         <div class="card-header">
             <h3 class="card-title">Usuarios registrados</h3>
         </div>
-        <div class="filters-bar no-print">
+        <div class="filters-bar no-print" [formGroup]="filterForm">
             <div class="search-box">
                 <span class="search-box-icon">&#128269;</span>
-                <input type="text" class="input-field" placeholder="Buscar por nombre o email..."
-                       [(ngModel)]="busqueda" style="padding-left:2rem">
+                <input type="text" class="form-input" placeholder="Buscar por nombre o email..."
+                       formControlName="busqueda" style="padding-left:2rem">
             </div>
         </div>
 

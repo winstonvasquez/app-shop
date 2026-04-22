@@ -23,7 +23,7 @@
     @if (error()) {
         <div class="card" style="border-left:3px solid var(--color-warning);padding:var(--space-md);margin-bottom:var(--space-lg)">
             <p style="color:var(--color-text-muted);font-size:0.875rem">
-                Servicio RRHH no disponible. Verifique que microshoprrhh esté corriendo en puerto 8088.
+                Servicio RRHH no disponible. Verifique que microshopusers esté corriendo en puerto 8080.
             </p>
         </div>
     }
@@ -57,13 +57,13 @@
         <div class="card-header">
             <h3 class="card-title">Personal</h3>
         </div>
-        <div class="filters-bar no-print">
+        <div class="filters-bar no-print" [formGroup]="filterForm">
             <div class="search-box">
                 <span class="search-box-icon">&#128269;</span>
-                <input type="text" class="input-field" placeholder="Buscar por nombre, código o área..."
-                       [(ngModel)]="busqueda" style="padding-left:2rem">
+                <input type="text" class="form-input" placeholder="Buscar por nombre, código o área..."
+                       formControlName="busqueda" style="padding-left:2rem">
             </div>
-            <select class="input-field" [(ngModel)]="filtroArea" style="width:auto">
+            <select class="form-input" formControlName="filtroArea" style="width:auto">
                 <option value="">Todas las áreas</option>
                 @for (area of areasUnicas(); track area) {
                     <option [value]="area">{{ area }}</option>

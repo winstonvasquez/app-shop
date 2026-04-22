@@ -1,6 +1,7 @@
-import { Component, ChangeDetectionStrategy, inject, signal, OnInit, computed } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, signal, OnInit, computed, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DatePipe } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '@env/environment';
 import { ExportService } from '../../../../shared/services/export.service';
@@ -30,19 +31,27 @@ interface PageResponse<T> {
     selector: 'app-reportes-rrhh',
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [DatePipe, FormsModule],
+    imports: [DatePipe, ReactiveFormsModule],
     templateUrl: './reportes-rrhh.component.html',
     styleUrls: ['./reportes-rrhh.component.scss'],
 })
 export class ReportesRrhhComponent implements OnInit {
     private readonly http = inject(HttpClient);
     private readonly exportService = inject(ExportService);
+    private readonly fb = inject(FormBuilder);
+    private readonly destroyRef = inject(DestroyRef);
 
     empleados = signal<EmpleadoReporte[]>([]);
     cargando = signal(false);
     error = signal<string | null>(null);
-    busqueda = '';
-    filtroArea = '';
+
+    private busquedaSignal = signal('');
+    private filtroAreaSignal = signal('');
+
+    filterForm: FormGroup = this.fb.group({
+        busqueda: [''],
+        filtroArea: [''],
+    });
 
     totalActivos = computed(() => this.empleados().filter(e => e.estado === 'ACTIVO').length);
     totalInactivos = computed(() => this.empleados().filter(e => e.estado !== 'ACTIVO').length);
@@ -58,7 +67,7 @@ export class ReportesRrhhComponent implements OnInit {
 
     empleadosFiltrados = computed(() => {
         let lista = this.empleados();
-        const q = this.busqueda.toLowerCase();
+        const q = this.busquedaSignal().toLowerCase();
         if (q) {
             lista = lista.filter(e =>
                 e.nombres?.toLowerCase().includes(q) ||
@@ -67,13 +76,22 @@ export class ReportesRrhhComponent implements OnInit {
                 e.area?.toLowerCase().includes(q)
             );
         }
-        if (this.filtroArea) {
-            lista = lista.filter(e => e.area === this.filtroArea);
+        const area = this.filtroAreaSignal();
+        if (area) {
+            lista = lista.filter(e => e.area === area);
         }
         return lista;
     });
 
-    ngOnInit() { this.cargar(); }
+    ngOnInit() {
+        this.filterForm.get('busqueda')!.valueChanges
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe((v: string) => this.busquedaSignal.set(v ?? ''));
+        this.filterForm.get('filtroArea')!.valueChanges
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe((v: string) => this.filtroAreaSignal.set(v ?? ''));
+        this.cargar();
+    }
 
     cargar() {
         this.cargando.set(true);
