@@ -1,10 +1,16 @@
-import { Component, inject, signal, OnInit, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import {
+  Component, inject, signal, OnInit, ChangeDetectionStrategy
+} from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '@env/environment';
 import { DireccionEnvio } from '@core/models/order.model';
 import { BreadcrumbComponent, BreadcrumbItem } from '@shared/components/breadcrumb/breadcrumb.component';
+import {
+  FormFieldComponent,
+  AdminFormSectionComponent,
+  AdminFormLayoutComponent,
+} from '@shared/ui';
 
 interface DireccionResponse extends DireccionEnvio {
   id: number;
@@ -14,7 +20,13 @@ interface DireccionResponse extends DireccionEnvio {
 @Component({
   selector: 'app-account-addresses',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, BreadcrumbComponent],
+  imports: [
+    ReactiveFormsModule,
+    BreadcrumbComponent,
+    FormFieldComponent,
+    AdminFormSectionComponent,
+    AdminFormLayoutComponent,
+  ],
   templateUrl: './account-addresses.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -33,7 +45,7 @@ export class AccountAddressesComponent implements OnInit {
   saving = signal(false);
   showForm = signal(false);
   editingId = signal<number | null>(null);
-  errorMsg = signal<string | null>(null);
+  submitError = signal('');
 
   addressForm = this.fb.group({
     nombreDestinatario: ['', Validators.required],
@@ -46,6 +58,16 @@ export class AccountAddressesComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadAddresses();
+  }
+
+  err(field: string): string {
+    const c = this.addressForm.get(field);
+    if (!c || c.pristine || c.valid) return '';
+    if (c.hasError('required')) return 'Campo requerido';
+    if (c.hasError('email')) return 'Email inválido';
+    if (c.hasError('minlength')) return `Mínimo ${c.getError('minlength').requiredLength} caracteres`;
+    if (c.hasError('pattern')) return 'Formato inválido';
+    return 'Campo inválido';
   }
 
   loadAddresses(): void {
@@ -78,13 +100,16 @@ export class AccountAddressesComponent implements OnInit {
   cancelForm(): void {
     this.showForm.set(false);
     this.editingId.set(null);
-    this.errorMsg.set(null);
+    this.submitError.set('');
   }
 
   onSubmit(): void {
-    if (this.addressForm.invalid) return;
+    if (this.addressForm.invalid) {
+      this.addressForm.markAllAsTouched();
+      return;
+    }
     this.saving.set(true);
-    this.errorMsg.set(null);
+    this.submitError.set('');
     const body = this.addressForm.value;
     const id = this.editingId();
 
@@ -94,7 +119,10 @@ export class AccountAddressesComponent implements OnInit {
 
     request.subscribe({
       next: () => { this.saving.set(false); this.showForm.set(false); this.loadAddresses(); },
-      error: (err) => { this.saving.set(false); this.errorMsg.set(err?.error?.message ?? 'Error al guardar la dirección.'); }
+      error: (err) => {
+        this.saving.set(false);
+        this.submitError.set(err?.error?.message ?? 'Error al guardar la dirección.');
+      }
     });
   }
 
@@ -102,7 +130,7 @@ export class AccountAddressesComponent implements OnInit {
     if (!confirm('¿Eliminar esta dirección?')) return;
     this.http.delete(`${environment.apiUrls.users}/api/users/me/addresses/${id}`).subscribe({
       next: () => this.loadAddresses(),
-      error: () => {}
+      error: () => this.submitError.set('Error al eliminar la dirección. Inténtalo de nuevo.')
     });
   }
 }

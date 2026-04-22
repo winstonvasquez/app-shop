@@ -1,12 +1,11 @@
-import { Component, OnInit, inject, signal, computed } from '@angular/core';
-import { CommonModule, DatePipe, CurrencyPipe } from '@angular/common';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Component, OnInit, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
+import { DatePipe, CurrencyPipe } from '@angular/common';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { OrderService } from '@core/services/order.service';
 import { OrderResponse } from '@core/models/order.model';
 import { OrderStatus, OrderDetail } from '@features/admin/models/order.model';
 import { VentasParametrosService } from '../../services/ventas-parametros.service';
-import { PaginationConfig, PageResponse } from '@core/models/pagination.model';
+import { PaginationConfig } from '@core/models/pagination.model';
 import { DataTableComponent, TableColumn, TableAction, PaginationEvent, SortEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { PaginationComponent, PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
@@ -18,8 +17,6 @@ import { LoadingSpinnerComponent } from '@shared/ui/feedback/loading-spinner/loa
   selector: 'app-orders',
   standalone: true,
   imports: [
-    CommonModule,
-    ReactiveFormsModule,
     DatePipe,
     CurrencyPipe,
     TranslateModule,
@@ -30,7 +27,8 @@ import { LoadingSpinnerComponent } from '@shared/ui/feedback/loading-spinner/loa
     AlertComponent,
     LoadingSpinnerComponent
   ],
-  templateUrl: './orders.component.html'
+  templateUrl: './orders.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class OrdersComponent implements OnInit {
   private readonly orderService = inject(OrderService);
@@ -127,7 +125,7 @@ export class OrdersComponent implements OnInit {
       next: (response) => {
         this.orders.set(response.content);
         // Spring Boot 3.3+ puede anidar metadatos en "page": { totalElements, totalPages }
-        const raw = response as any;
+        const raw = response as { page?: { totalElements?: number; totalPages?: number } };
         this.totalElements.set(response.totalElements ?? raw.page?.totalElements ?? 0);
         this.totalPages.set(response.totalPages ?? raw.page?.totalPages ?? 0);
         this.loading.set(false);

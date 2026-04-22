@@ -1,8 +1,11 @@
 import { Component, inject, signal, computed, OnInit, ChangeDetectionStrategy } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { DataTableComponent, TableColumn, TableAction } from '@shared/ui/tables/data-table/data-table.component';
 import { DateInputComponent } from '@shared/ui/forms/date-input/date-input.component';
+import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
+import { AdminFormSectionComponent } from '@shared/ui/forms/admin-form-section/admin-form-section.component';
+import { AdminFormLayoutComponent } from '@shared/ui/forms/admin-form-layout/admin-form-layout.component';
 import { PromotionsService, Promocion } from '../../services/promotions.service';
 import { VentasParametrosService, SelectOption } from '../../services/ventas-parametros.service';
 
@@ -16,19 +19,29 @@ interface PromocionVM extends Promocion {
     selector: 'app-promotions',
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [FormsModule, DrawerComponent, DataTableComponent, DateInputComponent],
+    imports: [
+        ReactiveFormsModule,
+        DrawerComponent,
+        DataTableComponent,
+        DateInputComponent,
+        FormFieldComponent,
+        AdminFormSectionComponent,
+        AdminFormLayoutComponent,
+    ],
     templateUrl: './promotions.component.html',
 })
 export class PromotionsComponent implements OnInit {
-    private readonly service = inject(PromotionsService);
+    private readonly service    = inject(PromotionsService);
     private readonly parametros = inject(VentasParametrosService);
+    private readonly fb         = inject(FormBuilder);
 
-    promociones = signal<PromocionVM[]>([]);
-    cargando    = signal(false);
-    showModal   = signal(false);
-    guardando   = signal(false);
-    editMode    = signal(false);
-    editId      = signal<number | null>(null);
+    promociones  = signal<PromocionVM[]>([]);
+    cargando     = signal(false);
+    showModal    = signal(false);
+    guardando    = signal(false);
+    editMode     = signal(false);
+    editId       = signal<number | null>(null);
+    submitError  = signal('');
     filtroEstado = '';
 
     tipoOptions    = signal<SelectOption[]>([]);
@@ -40,17 +53,18 @@ export class PromotionsComponent implements OnInit {
         { value: 'VENCIDA',  label: 'Vencidas' },
     ];
 
-    // Form
-    formNombre      = '';
-    formDescripcion = '';
-    formTipo: Promocion['tipo']     = 'PORCENTAJE';
-    formValor       = 0;
-    formAlcance: Promocion['alcance'] = 'CARRITO';
-    formCupon       = '';
-    formLimite: number | null = null;
-    formFechaInicio = new Date().toISOString().split('T')[0];
-    formFechaFin    = '';
-    formActivo      = true;
+    form = this.fb.group({
+        nombre:       ['', Validators.required],
+        descripcion:  [''],
+        tipo:         ['PORCENTAJE' as Promocion['tipo'], Validators.required],
+        valor:        [0, [Validators.required, Validators.min(0)]],
+        alcance:      ['CARRITO' as Promocion['alcance'], Validators.required],
+        codigoCupon:  [''],
+        limiteUsos:   [null as number | null],
+        fechaInicio:  [new Date().toISOString().split('T')[0], Validators.required],
+        fechaFin:     ['', Validators.required],
+        activo:       [true],
+    });
 
     columns: TableColumn<PromocionVM>[] = [
         { key: 'nombre',    label: 'Nombre' },
@@ -83,8 +97,8 @@ export class PromotionsComponent implements OnInit {
         return this.promociones().filter(p => p.estado === this.filtroEstado);
     });
 
-    totalActivas        = computed(() => this.promociones().filter(p => p.estado === 'ACTIVA').length);
-    proximasAVencer     = computed(() => {
+    totalActivas    = computed(() => this.promociones().filter(p => p.estado === 'ACTIVA').length);
+    proximasAVencer = computed(() => {
         const en7dias = new Date();
         en7dias.setDate(en7dias.getDate() + 7);
         return this.promociones().filter(p => {
@@ -92,7 +106,13 @@ export class PromotionsComponent implements OnInit {
             return p.estado === 'ACTIVA' && fin <= en7dias;
         }).length;
     });
-    totalVencidas       = computed(() => this.promociones().filter(p => p.estado === 'VENCIDA').length);
+    totalVencidas   = computed(() => this.promociones().filter(p => p.estado === 'VENCIDA').length);
+
+    /** Label dinámico para el campo valor según tipo de descuento seleccionado. */
+    valorLabel = computed(() => {
+        const tipo = this.form.controls.tipo.value;
+        return tipo === 'PORCENTAJE' ? 'Valor (%)' : 'Valor (S/)';
+    });
 
     ngOnInit(): void {
         this.cargar();
@@ -118,42 +138,61 @@ export class PromotionsComponent implements OnInit {
         this.resetForm();
         this.editMode.set(false);
         this.editId.set(null);
+        this.submitError.set('');
         this.showModal.set(true);
     }
 
     abrirEditar(row: PromocionVM): void {
-        this.formNombre      = row.nombre;
-        this.formDescripcion = row.descripcion ?? '';
-        this.formTipo        = row.tipo;
-        this.formValor       = row.valor;
-        this.formAlcance     = row.alcance;
-        this.formCupon       = row.codigoCupon ?? '';
-        this.formLimite      = row.limiteUsos ?? null;
-        this.formFechaInicio = row.fechaInicio;
-        this.formFechaFin    = row.fechaFin;
-        this.formActivo      = row.activo;
+        this.form.setValue({
+            nombre:      row.nombre,
+            descripcion: row.descripcion ?? '',
+            tipo:        row.tipo,
+            valor:       row.valor,
+            alcance:     row.alcance,
+            codigoCupon: row.codigoCupon ?? '',
+            limiteUsos:  row.limiteUsos ?? null,
+            fechaInicio: row.fechaInicio,
+            fechaFin:    row.fechaFin,
+            activo:      row.activo,
+        });
+        this.form.markAsPristine();
         this.editMode.set(true);
         this.editId.set(row.id ?? null);
+        this.submitError.set('');
         this.showModal.set(true);
     }
 
-    guardar(): void {
-        if (!this.formNombre.trim() || this.formValor <= 0 || !this.formFechaFin) return;
+    err(field: string): string {
+        const c = this.form.get(field);
+        if (!c || c.pristine || c.valid) return '';
+        if (c.hasError('required')) return 'Campo requerido';
+        if (c.hasError('min'))      return `Valor mínimo: ${c.getError('min').min}`;
+        return 'Campo inválido';
+    }
+
+    onSubmit(): void {
+        if (this.form.invalid) {
+            this.form.markAllAsTouched();
+            return;
+        }
+
+        const v = this.form.getRawValue();
 
         const dto: Omit<Promocion, 'id' | 'usosActuales'> = {
-            nombre:       this.formNombre,
-            descripcion:  this.formDescripcion || undefined,
-            tipo:         this.formTipo,
-            valor:        this.formValor,
-            alcance:      this.formAlcance,
-            codigoCupon:  this.formCupon || undefined,
-            limiteUsos:   this.formLimite ?? undefined,
-            fechaInicio:  this.formFechaInicio,
-            fechaFin:     this.formFechaFin,
-            activo:       this.formActivo,
+            nombre:      v.nombre!,
+            descripcion: v.descripcion || undefined,
+            tipo:        v.tipo as Promocion['tipo'],
+            valor:       v.valor!,
+            alcance:     v.alcance as Promocion['alcance'],
+            codigoCupon: v.codigoCupon || undefined,
+            limiteUsos:  v.limiteUsos ?? undefined,
+            fechaInicio: v.fechaInicio!,
+            fechaFin:    v.fechaFin!,
+            activo:      v.activo ?? true,
         };
 
         this.guardando.set(true);
+        this.submitError.set('');
 
         if (this.editMode() && this.editId() !== null) {
             this.service.update(this.editId()!, dto).subscribe({
@@ -168,7 +207,6 @@ export class PromotionsComponent implements OnInit {
                     this.cerrarModal();
                 },
                 error: () => {
-                    // fallback: update local
                     this.promociones.update(list =>
                         list.map(p => p.id === this.editId()
                             ? { ...p, ...dto, estado: this.calcularEstado({ ...p, ...dto }) }
@@ -190,7 +228,6 @@ export class PromotionsComponent implements OnInit {
                     this.cerrarModal();
                 },
                 error: () => {
-                    // fallback: add local
                     const local: PromocionVM = {
                         id: Date.now(), ...dto, usosActuales: 0,
                         estado: this.calcularEstado({ ...dto, usosActuales: 0 })
@@ -229,15 +266,18 @@ export class PromotionsComponent implements OnInit {
     }
 
     private resetForm(): void {
-        this.formNombre       = '';
-        this.formDescripcion  = '';
-        this.formTipo         = 'PORCENTAJE';
-        this.formValor        = 0;
-        this.formAlcance      = 'CARRITO';
-        this.formCupon        = '';
-        this.formLimite       = null;
-        this.formFechaInicio  = new Date().toISOString().split('T')[0];
-        this.formFechaFin     = '';
-        this.formActivo       = true;
+        this.form.reset({
+            nombre:      '',
+            descripcion: '',
+            tipo:        'PORCENTAJE',
+            valor:       0,
+            alcance:     'CARRITO',
+            codigoCupon: '',
+            limiteUsos:  null,
+            fechaInicio: new Date().toISOString().split('T')[0],
+            fechaFin:    '',
+            activo:      true,
+        });
+        this.form.markAsPristine();
     }
 }

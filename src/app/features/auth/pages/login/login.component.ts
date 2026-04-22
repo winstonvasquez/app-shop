@@ -1,14 +1,25 @@
 import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { AuthService } from '@core/auth/auth.service';
+import {
+  FormFieldComponent,
+  AdminFormSectionComponent,
+  AdminFormLayoutComponent,
+} from '@shared/ui';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, TranslateModule, RouterLink],
+  imports: [
+    ReactiveFormsModule,
+    TranslateModule,
+    RouterLink,
+    FormFieldComponent,
+    AdminFormSectionComponent,
+    AdminFormLayoutComponent,
+  ],
   templateUrl: './login.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block w-full min-h-screen' }
@@ -18,6 +29,7 @@ export class LoginComponent {
   private authService = inject(AuthService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
+  private translate = inject(TranslateService);
 
   loginForm = this.fb.group({
     username: ['', [Validators.required]],
@@ -26,6 +38,20 @@ export class LoginComponent {
 
   loading = signal(false);
   errorMessage = signal<string | null>(null);
+
+  /** Traduce errores de validación del control al mensaje canónico i18n. */
+  err(field: 'username' | 'password'): string {
+    const c = this.loginForm.get(field);
+    if (!c || c.pristine || c.valid) return '';
+    if (c.hasError('required')) return this.translate.instant('auth.fieldRequired');
+    return this.translate.instant('auth.fieldInvalid');
+  }
+
+  /** Texto del banner de error global (traducido). */
+  errorBanner(): string {
+    const key = this.errorMessage();
+    return key ? this.translate.instant(key) : '';
+  }
 
   onSubmit(): void {
     if (this.loginForm.invalid) {

@@ -63,6 +63,26 @@
                     {{ 'checkout.envioGratis' | translate }}
                 </div>
 
+                <!-- Guest Form (solo para invitados no autenticados) -->
+                @if (isGuest()) {
+                <div class="bg-[var(--color-surface)] rounded-lg p-5 shadow-sm border border-[var(--color-border)]">
+                    <h2 class="text-lg font-bold mb-4 text-[var(--color-text-primary)]">Tus datos de contacto</h2>
+                    <form [formGroup]="guestForm">
+                        <app-admin-form-section [columns]="2">
+                            <app-form-field label="Email" [required]="true" [error]="errGuest('guestEmail')">
+                                <input formControlName="guestEmail" type="email" class="form-input" placeholder="tucorreo@ejemplo.com" autocomplete="email" />
+                            </app-form-field>
+                            <app-form-field label="Nombre completo" [required]="true" [error]="errGuest('guestName')">
+                                <input formControlName="guestName" type="text" class="form-input" placeholder="Juan Pérez" autocomplete="name" />
+                            </app-form-field>
+                            <app-form-field label="Teléfono" [error]="errGuest('guestPhone')">
+                                <input formControlName="guestPhone" type="tel" class="form-input" placeholder="999 888 777" autocomplete="tel" />
+                            </app-form-field>
+                        </app-admin-form-section>
+                    </form>
+                </div>
+                }
+
                 <!-- Shipping Address -->
                 <div class="bg-[var(--color-surface)] rounded-lg p-5 shadow-sm border border-[var(--color-border)]">
                     <div class="flex justify-between items-center mb-4">
@@ -161,48 +181,54 @@
                                 <!-- Formulario de tarjeta — datos se tokenizan antes de ir al backend -->
                                 <!-- TODO (F4): reemplazar este form por <div id="mp-card-brick"> del SDK real -->
                                 <form (ngSubmit)="payWithCard()" class="flex flex-col gap-3">
-                                    <div class="relative">
-                                        <input
-                                            type="text"
-                                            placeholder="Número de la tarjeta"
-                                            [value]="cardNumber()"
-                                            (input)="cardNumber.set($any($event.target).value)"
-                                            maxlength="19"
-                                            autocomplete="cc-number"
-                                            class="w-full border border-[var(--color-border)] bg-[var(--color-surface-raised)] text-[var(--color-text-primary)] rounded-md py-2.5 px-3 focus:outline-none focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[var(--color-accent)]">
-                                        <div class="absolute right-2 top-2 flex gap-1">
-                                            <img src="https://upload.wikimedia.org/wikipedia/commons/4/41/Visa_Logo.png" class="h-6" alt="Visa">
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <input
-                                            type="text"
-                                            placeholder="Nombre del titular"
-                                            [value]="cardholderName()"
-                                            (input)="cardholderName.set($any($event.target).value)"
-                                            autocomplete="cc-name"
-                                            class="w-full border border-[var(--color-border)] bg-[var(--color-surface-raised)] text-[var(--color-text-primary)] rounded-md py-2.5 px-3 focus:outline-none focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[var(--color-accent)]">
-                                    </div>
-                                    <div class="flex gap-3">
-                                        <input
-                                            type="text"
-                                            placeholder="Fecha exp. MM/AA"
-                                            [value]="expiryDate()"
-                                            (input)="expiryDate.set($any($event.target).value)"
-                                            maxlength="5"
-                                            autocomplete="cc-exp"
-                                            class="w-1/2 border border-[var(--color-border)] bg-[var(--color-surface-raised)] text-[var(--color-text-primary)] rounded-md py-2.5 px-3 focus:outline-none focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[var(--color-accent)]">
-                                        <input
-                                            type="password"
-                                            placeholder="CVV"
-                                            [value]="cvv()"
-                                            (input)="cvv.set($any($event.target).value)"
-                                            maxlength="4"
-                                            autocomplete="cc-csc"
-                                            class="w-1/2 border border-[var(--color-border)] bg-[var(--color-surface-raised)] text-[var(--color-text-primary)] rounded-md py-2.5 px-3 focus:outline-none focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[var(--color-accent)]">
-                                    </div>
+                                    <app-admin-form-section [columns]="2">
+                                        <app-form-field label="Número de tarjeta" [required]="true">
+                                            <div class="relative">
+                                                <input
+                                                    type="text"
+                                                    [value]="cardNumber()"
+                                                    (input)="cardNumber.set($any($event.target).value)"
+                                                    maxlength="19"
+                                                    autocomplete="cc-number"
+                                                    placeholder="1234 5678 9012 3456"
+                                                    class="form-input pr-10">
+                                                <div class="absolute right-2 top-2 flex gap-1">
+                                                    <img src="https://upload.wikimedia.org/wikipedia/commons/4/41/Visa_Logo.png" class="h-5" alt="Visa">
+                                                </div>
+                                            </div>
+                                        </app-form-field>
+                                        <app-form-field label="Nombre del titular" [required]="true">
+                                            <input
+                                                type="text"
+                                                [value]="cardholderName()"
+                                                (input)="cardholderName.set($any($event.target).value)"
+                                                autocomplete="cc-name"
+                                                placeholder="Ej: JUAN PEREZ"
+                                                class="form-input">
+                                        </app-form-field>
+                                        <app-form-field label="Fecha de vencimiento" [required]="true">
+                                            <input
+                                                type="text"
+                                                [value]="expiryDate()"
+                                                (input)="expiryDate.set($any($event.target).value)"
+                                                maxlength="5"
+                                                autocomplete="cc-exp"
+                                                placeholder="MM/AA"
+                                                class="form-input">
+                                        </app-form-field>
+                                        <app-form-field label="CVV" [required]="true">
+                                            <input
+                                                type="password"
+                                                [value]="cvv()"
+                                                (input)="cvv.set($any($event.target).value)"
+                                                maxlength="4"
+                                                autocomplete="cc-csc"
+                                                placeholder="•••"
+                                                class="form-input">
+                                        </app-form-field>
+                                    </app-admin-form-section>
 
-                                    <div class="mt-1 pt-3 border-t border-[var(--color-border)]">
+                                    <div class="pt-2 border-t border-[var(--color-border)]">
                                         <label class="flex items-center gap-2 cursor-pointer">
                                             <input type="radio" checked class="w-4 h-4 accent-[var(--color-accent)]">
                                             <span class="text-sm text-[var(--color-text-secondary)]">Dirección de facturación igual a la de envío</span>
@@ -212,7 +238,7 @@
                                     <button
                                         type="submit"
                                         [disabled]="isLoading()"
-                                        class="w-full bg-accent text-white font-bold py-3 px-4 rounded-xl shadow-lg shadow-accent/30 hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed mt-2">
+                                        class="btn btn-primary w-full mt-2">
                                         @if (isLoading()) {
                                         <span class="flex items-center justify-center gap-2">
                                             <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
@@ -335,7 +361,7 @@
                                     placeholder="Introduce cod. cupón"
                                     class="flex-grow border border-[var(--color-border)] bg-[var(--color-surface-raised)] text-[var(--color-text-primary)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[var(--color-accent)] placeholder:text-[var(--color-text-muted)]">
                                 <button (click)="applyCoupon()" [disabled]="couponApplying()"
-                                    class="bg-[var(--color-text-primary)] text-[var(--color-surface)] font-bold px-4 rounded-lg text-sm hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed">
+                                    class="btn btn-secondary btn-sm">
                                     @if (couponApplying()) { Validando... } @else { Aplicar }
                                 </button>
                             </div>
@@ -350,13 +376,13 @@
                         <!-- Saldo de crédito -->
                         @if (creditService.balance(); as bal) {
                             @if (bal.balance > 0) {
-                                <div class="mb-4 p-3 rounded-lg border" style="border-color: var(--color-border); background: var(--color-surface-raised)">
+                                <div class="mb-4 p-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-raised)]">
                                     <label class="flex items-center justify-between gap-3 cursor-pointer">
                                         <div class="min-w-0">
-                                            <p class="text-sm font-medium" style="color: var(--color-text-primary)">
+                                            <p class="text-sm font-medium text-[var(--color-text-primary)]">
                                                 Usar saldo de crédito
                                             </p>
-                                            <p class="text-xs" style="color: var(--color-text-muted)">
+                                            <p class="text-xs text-[var(--color-text-muted)]">
                                                 Disponible: S/ {{ bal.balance | number:'1.2-2' }}
                                             </p>
                                         </div>
@@ -366,7 +392,7 @@
                                             class="w-4 h-4 flex-shrink-0 accent-[var(--color-primary)]">
                                     </label>
                                     @if (useCredit() && creditToApply() > 0) {
-                                        <p class="text-xs mt-1 font-medium" style="color: var(--color-success, #22c55e)">
+                                        <p class="text-xs mt-1 font-medium text-[var(--color-success)]">
                                             Crédito aplicado: -S/ {{ creditToApply() | number:'1.2-2' }}
                                         </p>
                                     }
@@ -391,7 +417,7 @@
                                 </div>
                             }
                             @if (useCredit() && creditToApply() > 0) {
-                                <div class="flex justify-between font-medium" style="color: var(--color-success, #22c55e)">
+                                <div class="flex justify-between font-medium text-[var(--color-success)]">
                                     <span>Saldo de crédito</span>
                                     <span>-S/ {{ creditToApply() | number:'1.2-2' }}</span>
                                 </div>
@@ -416,7 +442,7 @@
                         <!-- Submit Button -->
                         <div class="mb-5">
                             <button (click)="placeOrder()" [disabled]="isLoading()"
-                                class="w-full bg-accent text-white font-bold text-lg py-3.5 px-4 rounded-full shadow-lg shadow-accent/30 hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed transform active:scale-95">
+                                class="btn btn-primary btn-lg w-full rounded-full active:scale-95">
                                 @if (isLoading()) {
                                 <span class="flex items-center justify-center gap-2">
                                     <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
@@ -522,43 +548,39 @@
                 <p class="text-sm text-[var(--color-error)]">{{ addressFormError() }}</p>
                 }
 
-                <form [formGroup]="addressForm" (ngSubmit)="saveNewAddress()" class="flex flex-col gap-3">
-                    <div>
-                        <label class="input-label">Nombre completo *</label>
-                        <input type="text" formControlName="nombreCompleto" class="input-field w-full" placeholder="Ej: Juan Pérez">
+                <form [formGroup]="addressForm" (ngSubmit)="saveNewAddress()">
+                    <app-admin-form-section [columns]="2">
+                        <app-form-field label="Nombre completo" [required]="true" [error]="errAddress('nombreCompleto')">
+                            <input type="text" formControlName="nombreCompleto" class="form-input" placeholder="Ej: Juan Pérez">
+                        </app-form-field>
+                        <app-form-field label="Teléfono" [required]="true" [error]="errAddress('telefono')">
+                            <input type="tel" formControlName="telefono" class="form-input" placeholder="Ej: 999 888 777">
+                        </app-form-field>
+                        <app-form-field label="Departamento" [required]="true" [error]="errAddress('departamento')">
+                            <input type="text" formControlName="departamento" class="form-input" placeholder="Ej: Lima">
+                        </app-form-field>
+                        <app-form-field label="Provincia" [required]="true" [error]="errAddress('provincia')">
+                            <input type="text" formControlName="provincia" class="form-input" placeholder="Ej: Lima">
+                        </app-form-field>
+                    </app-admin-form-section>
+                    <app-admin-form-section [columns]="1">
+                        <app-form-field label="Distrito" [required]="true" [error]="errAddress('distrito')">
+                            <input type="text" formControlName="distrito" class="form-input" placeholder="Ej: Miraflores">
+                        </app-form-field>
+                        <app-form-field label="Dirección" [required]="true" [error]="errAddress('direccionLinea1')">
+                            <input type="text" formControlName="direccionLinea1" class="form-input" placeholder="Calle, número, urbanización">
+                        </app-form-field>
+                        <app-form-field label="Referencia" [error]="errAddress('referencia')">
+                            <input type="text" formControlName="referencia" class="form-input" placeholder="Ej: Frente al parque">
+                        </app-form-field>
+                    </app-admin-form-section>
+                    <div class="mt-3">
+                        <label class="flex items-center gap-2 cursor-pointer text-sm text-[var(--color-text-secondary)]">
+                            <input type="checkbox" formControlName="esPrincipal" class="w-4 h-4 accent-[var(--color-primary)]">
+                            Establecer como dirección principal
+                        </label>
                     </div>
-                    <div>
-                        <label class="input-label">Teléfono *</label>
-                        <input type="tel" formControlName="telefono" class="input-field w-full" placeholder="Ej: 999 888 777">
-                    </div>
-                    <div class="grid grid-cols-2 gap-3">
-                        <div>
-                            <label class="input-label">Departamento *</label>
-                            <input type="text" formControlName="departamento" class="input-field w-full" placeholder="Ej: Lima">
-                        </div>
-                        <div>
-                            <label class="input-label">Provincia *</label>
-                            <input type="text" formControlName="provincia" class="input-field w-full" placeholder="Ej: Lima">
-                        </div>
-                    </div>
-                    <div>
-                        <label class="input-label">Distrito *</label>
-                        <input type="text" formControlName="distrito" class="input-field w-full" placeholder="Ej: Miraflores">
-                    </div>
-                    <div>
-                        <label class="input-label">Dirección *</label>
-                        <input type="text" formControlName="direccionLinea1" class="input-field w-full" placeholder="Calle, número, urbanización">
-                    </div>
-                    <div>
-                        <label class="input-label">Referencia</label>
-                        <input type="text" formControlName="referencia" class="input-field w-full" placeholder="Ej: Frente al parque">
-                    </div>
-                    <label class="flex items-center gap-2 cursor-pointer text-sm text-[var(--color-text-secondary)]">
-                        <input type="checkbox" formControlName="esPrincipal" class="w-4 h-4 accent-[var(--color-primary)]">
-                        Establecer como dirección principal
-                    </label>
-
-                    <div class="flex gap-3 pt-2">
+                    <div class="flex gap-3 pt-4">
                         <button type="button" class="btn btn-secondary flex-1" (click)="showAddressForm.set(false)">Cancelar</button>
                         <button type="submit" class="btn btn-primary flex-1" [disabled]="addressForm.invalid || savingAddress()">
                             @if (savingAddress()) { Guardando... } @else { Guardar dirección }

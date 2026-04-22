@@ -1,27 +1,31 @@
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule, Validators, FormGroup, FormControl } from '@angular/forms';
 import { CompanyService } from '@features/admin/services/company.service';
 import {
   CompanyResponse,
   CompanyRequest,
-  CompanyFilter
 } from '@features/admin/models/company.model';
 import { DataTableComponent, TableColumn, TableAction } from '@shared/ui/tables/data-table/data-table.component';
-import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
+import {
+  FormFieldComponent,
+  AdminFormLayoutComponent,
+  AdminFormSectionComponent,
+  AlertComponent,
+  PageHeaderComponent,
+  Breadcrumb,
+} from '@shared/ui';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
-import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
-import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 
 @Component({
   selector: 'app-companies',
   standalone: true,
   imports: [
-    CommonModule,
     ReactiveFormsModule,
     DataTableComponent,
     FormFieldComponent,
+    AdminFormLayoutComponent,
+    AdminFormSectionComponent,
     DrawerComponent,
     PageHeaderComponent,
     AlertComponent
@@ -320,35 +324,16 @@ export class CompaniesComponent implements OnInit {
   }
 
   /**
-   * Get form control error message
+   * Canonical error helper — returns human-readable error for a form control.
    */
-  getErrorMessage(controlName: string): string {
-    const control = this.companyForm.get(controlName);
-    if (!control || !control.errors || !control.touched) {
-      return '';
-    }
-
-    if (control.errors['required']) {
-      return 'Este campo es obligatorio';
-    }
-    if (control.errors['maxlength']) {
-      return `Máximo ${control.errors['maxlength'].requiredLength} caracteres`;
-    }
-    if (control.errors['pattern']) {
-      return 'El RUC debe tener exactamente 11 dígitos';
-    }
-    if (control.errors['email']) {
-      return 'Formato de email inválido';
-    }
-
+  err(field: string): string {
+    const c = this.companyForm.get(field);
+    if (!c || c.pristine || c.valid) return '';
+    if (c.hasError('required')) return 'Campo requerido';
+    if (c.hasError('email')) return 'Email inválido';
+    if (c.hasError('minlength')) return `Mínimo ${c.getError('minlength').requiredLength} caracteres`;
+    if (c.hasError('maxlength')) return `Máximo ${c.getError('maxlength').requiredLength} caracteres`;
+    if (c.hasError('pattern')) return 'Formato inválido';
     return 'Campo inválido';
-  }
-
-  /**
-   * Check if form control has error
-   */
-  hasError(controlName: string): boolean {
-    const control = this.companyForm.get(controlName);
-    return !!(control && control.invalid && control.touched);
   }
 }

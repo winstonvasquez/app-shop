@@ -11,52 +11,58 @@
         <div class="card max-w-lg">
             <div class="card-body">
                 @if (successMsg()) {
-                    <div class="badge badge-success mb-4 w-full text-sm py-2 px-3">{{ successMsg() }}</div>
+                    <app-alert type="success" [message]="successMsg()" />
                 }
-                @if (errorMsg()) {
-                    <div class="badge badge-error mb-4 w-full text-sm py-2 px-3">{{ errorMsg() }}</div>
-                }
-                <form [formGroup]="profileForm" (ngSubmit)="onSubmit()" class="flex flex-col gap-4">
-                    <div class="flex gap-4">
-                        <div class="flex-1">
-                            <label class="input-label">Nombres</label>
-                            <input class="input-field" type="text" formControlName="nombres" placeholder="Nombres">
+
+                <form [formGroup]="profileForm" (ngSubmit)="onSubmit()">
+                    <app-admin-form-layout [errorMessage]="submitError()">
+
+                        <app-admin-form-section title="Datos personales" [columns]="2">
+                            <app-form-field label="Nombres" [required]="true" [error]="err('nombres')">
+                                <input class="form-input" type="text" formControlName="nombres" placeholder="Nombres" autocomplete="given-name" />
+                            </app-form-field>
+                            <app-form-field label="Apellidos" [required]="true" [error]="err('apellidos')">
+                                <input class="form-input" type="text" formControlName="apellidos" placeholder="Apellidos" autocomplete="family-name" />
+                            </app-form-field>
+                        </app-admin-form-section>
+
+                        <app-admin-form-section title="Contacto" [columns]="1">
+                            <app-form-field
+                                label="Correo electrónico"
+                                hint="El correo no puede cambiarse desde aquí.">
+                                <input class="form-input opacity-60" type="email" formControlName="email" readonly />
+                            </app-form-field>
+                            <app-form-field label="Teléfono" [error]="err('telefono')">
+                                <input class="form-input" type="tel" formControlName="telefono" placeholder="Ej: 999 999 999" autocomplete="tel" />
+                            </app-form-field>
+                        </app-admin-form-section>
+
+                        <app-admin-form-section title="Documento de identidad" [columns]="2">
+                            <app-form-field label="Tipo de documento" [error]="err('tipoDocumento')">
+                                <select class="form-input" formControlName="tipoDocumento">
+                                    <option value="DNI">DNI</option>
+                                    <option value="CE">Carnet de Extranjería</option>
+                                    <option value="PASAPORTE">Pasaporte</option>
+                                </select>
+                            </app-form-field>
+                            <app-form-field label="N° Documento" [error]="err('numeroDocumento')">
+                                <input class="form-input" type="text" formControlName="numeroDocumento" placeholder="12345678" />
+                            </app-form-field>
+                        </app-admin-form-section>
+
+                        <app-admin-form-section [columns]="1">
+                            <app-form-field label="Fecha de nacimiento" [error]="err('fechaNacimiento')">
+                                <input class="form-input" type="date" formControlName="fechaNacimiento" />
+                            </app-form-field>
+                        </app-admin-form-section>
+
+                        <div slot="actions">
+                            <button type="submit" class="btn btn-primary" [disabled]="saving() || profileForm.invalid">
+                                @if (saving()) { Guardando... } @else { Guardar cambios }
+                            </button>
                         </div>
-                        <div class="flex-1">
-                            <label class="input-label">Apellidos</label>
-                            <input class="input-field" type="text" formControlName="apellidos" placeholder="Apellidos">
-                        </div>
-                    </div>
-                    <div>
-                        <label class="input-label">Correo electrónico</label>
-                        <input class="input-field opacity-60" type="email" formControlName="email" readonly>
-                        <p class="input-hint">El correo no puede cambiarse desde aquí.</p>
-                    </div>
-                    <div>
-                        <label class="input-label">Teléfono</label>
-                        <input class="input-field" type="tel" formControlName="telefono" placeholder="Ej: 999 999 999">
-                    </div>
-                    <div class="flex gap-4">
-                        <div class="flex-1">
-                            <label class="input-label">Tipo de documento</label>
-                            <select class="input-field" formControlName="tipoDocumento">
-                                <option value="DNI">DNI</option>
-                                <option value="CE">Carnet de Extranjería</option>
-                                <option value="PASAPORTE">Pasaporte</option>
-                            </select>
-                        </div>
-                        <div class="flex-1">
-                            <label class="input-label">N° Documento</label>
-                            <input class="input-field" type="text" formControlName="numeroDocumento" placeholder="12345678">
-                        </div>
-                    </div>
-                    <div>
-                        <label class="input-label">Fecha de nacimiento</label>
-                        <input class="input-field" type="date" formControlName="fechaNacimiento">
-                    </div>
-                    <button type="submit" class="btn btn-primary" [disabled]="saving() || profileForm.invalid">
-                        @if (saving()) { Guardando... } @else { Guardar cambios }
-                    </button>
+
+                    </app-admin-form-layout>
                 </form>
             </div>
         </div>

@@ -27,7 +27,7 @@
 
     <!-- Filtros -->
     <div class="filters-bar mb-[var(--form-gap)]">
-        <select class="input-field" [(ngModel)]="filtroEstado">
+        <select class="form-input" [value]="filtroEstado" (change)="filtroEstado = $any($event.target).value">
             @for (opt of estadoOptions; track opt.value) {
                 <option [value]="opt.value">{{ opt.label }}</option>
             }
@@ -56,109 +56,95 @@
     [title]="editMode() ? 'Editar Promoción' : 'Nueva Promoción'"
     size="lg"
     side="right"
-    [hasFooter]="true"
     (closed)="cerrarModal()">
 
-    <div class="flex flex-col gap-[var(--form-gap)]">
+    <form [formGroup]="form" (ngSubmit)="onSubmit()">
+        <app-admin-form-layout [errorMessage]="submitError()" [stickyActions]="true">
 
-        <!-- Nombre -->
-        <div>
-            <label class="input-label">Nombre <span class="text-[var(--color-error)]">*</span></label>
-            <input type="text" class="input-field"
-                   placeholder="Ej: Descuento verano 20%"
-                   [(ngModel)]="formNombre" />
-        </div>
+            <!-- Sección: Información -->
+            <app-admin-form-section title="Información" [columns]="1">
+                <app-form-field label="Nombre" [required]="true" [error]="err('nombre')">
+                    <input formControlName="nombre" type="text"
+                           class="form-input"
+                           placeholder="Ej: Descuento verano 20%" />
+                </app-form-field>
+                <app-form-field label="Descripción" [error]="err('descripcion')">
+                    <textarea formControlName="descripcion"
+                              class="form-input" rows="2"
+                              placeholder="Descripción breve de la promoción..."></textarea>
+                </app-form-field>
+            </app-admin-form-section>
 
-        <!-- Descripción -->
-        <div>
-            <label class="input-label">Descripción</label>
-            <textarea class="input-field" rows="2"
-                      placeholder="Descripción breve de la promoción..."
-                      [(ngModel)]="formDescripcion"></textarea>
-        </div>
+            <!-- Sección: Configuración del descuento -->
+            <app-admin-form-section title="Configuración del Descuento" [columns]="2">
+                <app-form-field label="Tipo de Descuento" [required]="true" [error]="err('tipo')">
+                    <select formControlName="tipo" class="form-input">
+                        @for (opt of tipoOptions(); track opt.value) {
+                            <option [value]="opt.value">{{ opt.label }}</option>
+                        }
+                    </select>
+                </app-form-field>
+                <app-form-field [label]="valorLabel()" [required]="true" [error]="err('valor')">
+                    <input formControlName="valor" type="number"
+                           class="form-input" min="0"
+                           [step]="form.controls.tipo.value === 'PORCENTAJE' ? 1 : 0.01"
+                           [max]="form.controls.tipo.value === 'PORCENTAJE' ? 100 : null"
+                           placeholder="0" />
+                </app-form-field>
+                <app-form-field label="Alcance" [error]="err('alcance')">
+                    <select formControlName="alcance" class="form-input">
+                        @for (opt of alcanceOptions(); track opt.value) {
+                            <option [value]="opt.value">{{ opt.label }}</option>
+                        }
+                    </select>
+                </app-form-field>
+            </app-admin-form-section>
 
-        <!-- Grid: Tipo | Alcance -->
-        <div class="grid grid-cols-1 gap-[var(--form-gap)] sm:grid-cols-2">
-            <div>
-                <label class="input-label">Tipo de Descuento <span class="text-[var(--color-error)]">*</span></label>
-                <select class="input-field" [(ngModel)]="formTipo">
-                    @for (opt of tipoOptions(); track opt.value) {
-                        <option [value]="opt.value">{{ opt.label }}</option>
-                    }
-                </select>
+            <!-- Sección: Vigencia -->
+            <app-admin-form-section title="Vigencia" [columns]="2">
+                <app-date-input
+                    formControlName="fechaInicio"
+                    label="Fecha Inicio"
+                    [required]="true">
+                </app-date-input>
+                <app-date-input
+                    formControlName="fechaFin"
+                    label="Fecha Fin"
+                    [required]="true"
+                    [minDate]="form.controls.fechaInicio.value ?? ''">
+                </app-date-input>
+            </app-admin-form-section>
+
+            <!-- Sección: Otros -->
+            <app-admin-form-section title="Otros" [columns]="1">
+                <app-form-field label="Código Cupón" [error]="err('codigoCupon')">
+                    <input formControlName="codigoCupon" type="text"
+                           class="form-input"
+                           placeholder="Ej: VERANO25" />
+                </app-form-field>
+                <app-form-field label="Límite de Usos" [error]="err('limiteUsos')">
+                    <input formControlName="limiteUsos" type="number"
+                           class="form-input" min="1"
+                           placeholder="Sin límite" />
+                </app-form-field>
+                <div class="flex items-center gap-3">
+                    <input type="checkbox" id="promoActivo" formControlName="activo"
+                           class="w-4 h-4 accent-[var(--color-primary)]" />
+                    <label for="promoActivo" class="input-label" style="margin:0">
+                        Promoción activa al guardar
+                    </label>
+                </div>
+            </app-admin-form-section>
+
+            <div slot="actions">
+                <button type="button" class="btn btn-secondary" (click)="cerrarModal()">Cancelar</button>
+                <button type="submit" class="btn btn-primary"
+                        [disabled]="guardando() || form.invalid">
+                    @if (guardando()) { Guardando... } @else { Guardar Promoción }
+                </button>
             </div>
-            <div>
-                <label class="input-label">Alcance</label>
-                <select class="input-field" [(ngModel)]="formAlcance">
-                    @for (opt of alcanceOptions(); track opt.value) {
-                        <option [value]="opt.value">{{ opt.label }}</option>
-                    }
-                </select>
-            </div>
-        </div>
 
-        <!-- Valor descuento -->
-        <div>
-            <label class="input-label">
-                Valor
-                @if (formTipo === 'PORCENTAJE') { (%) } @else { (S/) }
-                <span class="text-[var(--color-error)]">*</span>
-            </label>
-            <input type="number" class="input-field" min="0"
-                   [step]="formTipo === 'PORCENTAJE' ? 1 : 0.01"
-                   [max]="formTipo === 'PORCENTAJE' ? 100 : null"
-                   placeholder="0"
-                   [(ngModel)]="formValor" />
-        </div>
-
-        <!-- Grid: Fecha Inicio | Fecha Fin -->
-        <div class="grid grid-cols-1 gap-[var(--form-gap)] sm:grid-cols-2">
-            <app-date-input
-                label="Fecha Inicio"
-                [required]="true"
-                [(ngModel)]="formFechaInicio">
-            </app-date-input>
-            <app-date-input
-                label="Fecha Fin"
-                [required]="true"
-                [minDate]="formFechaInicio"
-                [(ngModel)]="formFechaFin">
-            </app-date-input>
-        </div>
-
-        <!-- Grid: Cupón | Límite usos -->
-        <div class="grid grid-cols-1 gap-[var(--form-gap)] sm:grid-cols-2">
-            <div>
-                <label class="input-label">Código Cupón</label>
-                <input type="text" class="input-field"
-                       placeholder="Ej: VERANO25"
-                       [(ngModel)]="formCupon" />
-            </div>
-            <div>
-                <label class="input-label">Límite de Usos</label>
-                <input type="number" class="input-field" min="1"
-                       placeholder="Sin límite"
-                       [(ngModel)]="formLimite" />
-            </div>
-        </div>
-
-        <!-- Toggle activo -->
-        <div class="flex items-center gap-3">
-            <input type="checkbox" id="promoActivo" [(ngModel)]="formActivo"
-                   class="w-4 h-4 accent-[var(--color-primary)]" />
-            <label for="promoActivo" class="input-label" style="margin:0">
-                Promoción activa al guardar
-            </label>
-        </div>
-
-    </div>
-
-    <div slot="footer">
-        <button class="btn btn-secondary" (click)="cerrarModal()">Cancelar</button>
-        <button class="btn btn-primary" (click)="guardar()"
-                [disabled]="guardando() || !formNombre.trim() || formValor <= 0 || !formFechaFin">
-            @if (guardando()) { Guardando... } @else { Guardar Promoción }
-        </button>
-    </div>
+        </app-admin-form-layout>
+    </form>
 
 </app-drawer>

@@ -21,40 +21,42 @@
                     <h2 class="card-title">{{ editingId() ? 'Editar dirección' : 'Nueva dirección' }}</h2>
                 </div>
                 <div class="card-body">
-                    @if (errorMsg()) {
-                        <div class="badge badge-error mb-4 w-full text-sm py-2 px-3">{{ errorMsg() }}</div>
-                    }
-                    <form [formGroup]="addressForm" (ngSubmit)="onSubmit()" class="flex flex-col gap-3">
-                        <div class="flex gap-3">
-                            <div class="flex-1">
-                                <label class="input-label">Destinatario</label>
-                                <input class="input-field" type="text" formControlName="nombreDestinatario" placeholder="Nombre completo">
+                    <form [formGroup]="addressForm" (ngSubmit)="onSubmit()">
+                        <app-admin-form-layout [errorMessage]="submitError()">
+
+                            <app-admin-form-section [columns]="2">
+                                <app-form-field label="Destinatario" [required]="true" [error]="err('nombreDestinatario')">
+                                    <input class="form-input" type="text" formControlName="nombreDestinatario" placeholder="Nombre completo" />
+                                </app-form-field>
+                                <app-form-field label="Teléfono" [required]="true" [error]="err('telefono')">
+                                    <input class="form-input" type="tel" formControlName="telefono" placeholder="999 999 999" />
+                                </app-form-field>
+                            </app-admin-form-section>
+
+                            <app-admin-form-section [columns]="1">
+                                <app-form-field label="Dirección" [required]="true" [error]="err('direccion')">
+                                    <input class="form-input" type="text" formControlName="direccion" placeholder="Av. Ejemplo 123, Dpto 4B" />
+                                </app-form-field>
+                            </app-admin-form-section>
+
+                            <app-admin-form-section [columns]="2">
+                                <app-form-field label="Ciudad" [required]="true" [error]="err('ciudad')">
+                                    <input class="form-input" type="text" formControlName="ciudad" placeholder="Lima" />
+                                </app-form-field>
+                                <app-form-field label="Región" [error]="err('region')">
+                                    <input class="form-input" type="text" formControlName="region" placeholder="Lima Metropolitana" />
+                                </app-form-field>
+                            </app-admin-form-section>
+
+                            <div slot="actions">
+                                <button type="button" class="btn btn-secondary" (click)="cancelForm()">Cancelar</button>
+                                <button type="submit" class="btn btn-primary"
+                                        [disabled]="saving() || addressForm.invalid">
+                                    {{ saving() ? 'Guardando...' : 'Guardar' }}
+                                </button>
                             </div>
-                            <div class="flex-1">
-                                <label class="input-label">Teléfono</label>
-                                <input class="input-field" type="tel" formControlName="telefono" placeholder="999 999 999">
-                            </div>
-                        </div>
-                        <div>
-                            <label class="input-label">Dirección</label>
-                            <input class="input-field" type="text" formControlName="direccion" placeholder="Av. Ejemplo 123, Dpto 4B">
-                        </div>
-                        <div class="flex gap-3">
-                            <div class="flex-1">
-                                <label class="input-label">Ciudad</label>
-                                <input class="input-field" type="text" formControlName="ciudad" placeholder="Lima">
-                            </div>
-                            <div class="flex-1">
-                                <label class="input-label">Región</label>
-                                <input class="input-field" type="text" formControlName="region" placeholder="Lima Metropolitana">
-                            </div>
-                        </div>
-                        <div class="flex gap-3 mt-2">
-                            <button type="submit" class="btn btn-primary flex-1" [disabled]="saving() || addressForm.invalid">
-                                @if (saving()) { Guardando... } @else { Guardar }
-                            </button>
-                            <button type="button" class="btn btn-secondary flex-1" (click)="cancelForm()">Cancelar</button>
-                        </div>
+
+                        </app-admin-form-layout>
                     </form>
                 </div>
             </div>

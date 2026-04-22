@@ -3,6 +3,10 @@ import {
 } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators, FormGroup } from '@angular/forms';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
+import {
+    AdminFormLayoutComponent,
+    AdminFormSectionComponent,
+} from '@shared/ui';
 import { CustomerService } from '@features/admin/services/customer.service';
 import { AuthService } from '@core/auth/auth.service';
 import {
@@ -16,7 +20,7 @@ import {
 @Component({
     selector: 'app-customer-form',
     standalone: true,
-    imports: [ReactiveFormsModule, DrawerComponent],
+    imports: [ReactiveFormsModule, DrawerComponent, AdminFormLayoutComponent, AdminFormSectionComponent],
     templateUrl: './customer-form.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -146,18 +150,15 @@ export class CustomerFormComponent {
         });
     }
 
-    hasError(name: string): boolean {
-        const ctrl = this.form.get(name);
-        return !!(ctrl && ctrl.invalid && ctrl.touched);
-    }
-
-    getError(name: string): string {
-        const ctrl = this.form.get(name);
-        if (!ctrl?.errors || !ctrl.touched) return '';
-        if (ctrl.errors['required']) return 'Campo obligatorio';
-        if (ctrl.errors['email']) return 'Email inválido';
-        if (ctrl.errors['maxlength']) return `Máximo ${ctrl.errors['maxlength'].requiredLength} caracteres`;
-        if (ctrl.errors['min']) return 'El valor no puede ser negativo';
+    err(field: string): string {
+        const c = this.form.get(field);
+        if (!c || c.pristine || c.valid) return '';
+        if (c.hasError('required')) return 'Campo requerido';
+        if (c.hasError('email')) return 'Email inválido';
+        if (c.hasError('minlength')) return `Mínimo ${c.getError('minlength').requiredLength} caracteres`;
+        if (c.hasError('maxlength')) return `Máximo ${c.getError('maxlength').requiredLength} caracteres`;
+        if (c.hasError('pattern')) return 'Formato inválido';
+        if (c.hasError('min')) return 'El valor no puede ser negativo';
         return 'Campo inválido';
     }
 }

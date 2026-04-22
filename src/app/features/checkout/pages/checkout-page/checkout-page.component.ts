@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed, OnInit } from '@angular/core';
+import { Component, inject, signal, computed, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
@@ -19,17 +19,22 @@ import { FormsModule, ReactiveFormsModule, FormBuilder, Validators } from '@angu
 import { OrderRequest } from '@core/models/order.model';
 import { firstValueFrom } from 'rxjs';
 import { finalize } from 'rxjs/operators';
+import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
+import { AdminFormSectionComponent } from '@shared/ui/forms/admin-form-section/admin-form-section.component';
 
 @Component({
   selector: 'app-checkout-page',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     TranslateModule,
     FormsModule,
     ReactiveFormsModule,
     BreadcrumbComponent,
     RouterLink,
-    DecimalPipe
+    DecimalPipe,
+    FormFieldComponent,
+    AdminFormSectionComponent,
   ],
   templateUrl: './checkout-page.component.html'
 })
@@ -552,6 +557,23 @@ export class CheckoutPageComponent implements OnInit {
       clearInterval(this.yapePollingInterval);
       this.yapePollingInterval = null;
     }
+  }
+
+  /** Helper de validación para el formulario de dirección — usado en template con [error]. */
+  errAddress(field: string): string {
+    const c = this.addressForm.get(field);
+    if (!c || c.pristine || c.valid) return '';
+    if (c.hasError('required')) return 'Campo requerido';
+    return 'Campo inválido';
+  }
+
+  /** Helper de validación para el formulario de invitado — usado en template con [error]. */
+  errGuest(field: string): string {
+    const c = this.guestForm.get(field);
+    if (!c || c.pristine || c.valid) return '';
+    if (c.hasError('required')) return 'Campo requerido';
+    if (c.hasError('email')) return 'Email inválido';
+    return 'Campo inválido';
   }
 
   /**

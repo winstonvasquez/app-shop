@@ -1,15 +1,26 @@
 import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { TranslateModule } from '@ngx-translate/core';
 import { environment } from '@env/environment';
+import {
+    FormFieldComponent,
+    AdminFormSectionComponent,
+    AdminFormLayoutComponent,
+} from '@shared/ui';
 
 @Component({
     selector: 'app-forgot-password',
     standalone: true,
-    imports: [CommonModule, ReactiveFormsModule, RouterLink, TranslateModule],
+    imports: [
+        ReactiveFormsModule,
+        RouterLink,
+        TranslateModule,
+        FormFieldComponent,
+        AdminFormSectionComponent,
+        AdminFormLayoutComponent,
+    ],
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: { class: 'block w-full min-h-screen' },
     template: `
@@ -52,53 +63,39 @@ import { environment } from '@env/environment';
         </div>
         }
 
-        <!-- Error -->
-        @if (error()) {
-        <div class="mb-6 p-4 bg-[var(--color-error)]/10 border border-[var(--color-error)]/20 text-[var(--color-error)] rounded-xl text-sm font-medium flex items-center gap-3">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24"
-                stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            {{ error() }}
-        </div>
-        }
-
-        <!-- Formulario -->
+        <!-- Formulario canónico -->
         @if (!sent()) {
         <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+            <app-admin-form-layout [errorMessage]="error() ?? ''">
+                <app-admin-form-section [columns]="1">
+                    <app-form-field
+                        label="Correo electrónico"
+                        [required]="true"
+                        [error]="emailError()">
+                        <input
+                            id="email"
+                            type="email"
+                            formControlName="email"
+                            placeholder="tu@correo.com"
+                            class="form-input"
+                            autocomplete="email" />
+                    </app-form-field>
+                </app-admin-form-section>
 
-            <!-- Email -->
-            <div class="mb-6">
-                <label for="email" class="block mb-2 text-sm font-medium text-[var(--color-text-secondary)]">
-                    Correo electrónico
-                </label>
-                <input
-                    id="email"
-                    type="email"
-                    formControlName="email"
-                    placeholder="tu@correo.com"
-                    class="block w-full rounded-xl bg-[var(--color-surface-raised)] py-3.5 px-4 text-[var(--color-text-primary)] ring-1 ring-inset ring-[var(--color-border)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[var(--color-primary)] transition-shadow text-base" />
-                @if (form.get('email')?.invalid && form.get('email')?.touched) {
-                <p class="mt-1.5 text-xs text-[var(--color-error)]">
-                    Ingresa un correo electrónico válido.
-                </p>
-                }
-            </div>
-
-            <!-- Submit -->
-            <button
-                type="submit"
-                [disabled]="form.invalid || isSending()"
-                class="flex w-full justify-center items-center gap-3 btn-primary-gradient rounded-xl px-4 py-4 text-sm font-bold text-white shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 transition-all uppercase tracking-wider disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0">
-                @if (isSending()) {
-                <div class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                <span>Enviando...</span>
-                } @else {
-                <span>Enviar enlace</span>
-                }
-            </button>
-
+                <div slot="actions" class="w-full">
+                    <button
+                        type="submit"
+                        [disabled]="form.invalid || isSending()"
+                        class="flex w-full justify-center items-center gap-3 btn-primary-gradient rounded-xl px-4 py-4 text-sm font-bold text-white shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 transition-all uppercase tracking-wider disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0">
+                        @if (isSending()) {
+                            <div class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                            <span>Enviando...</span>
+                        } @else {
+                            <span>Enviar enlace</span>
+                        }
+                    </button>
+                </div>
+            </app-admin-form-layout>
         </form>
 
         <!-- Volver al login -->
@@ -125,6 +122,14 @@ export class ForgotPasswordComponent {
     form = this.fb.group({
         email: ['', [Validators.required, Validators.email]]
     });
+
+    emailError(): string {
+        const c = this.form.get('email');
+        if (!c || c.pristine || c.valid) return '';
+        if (c.hasError('required')) return 'Correo electrónico requerido.';
+        if (c.hasError('email')) return 'Ingresa un correo electrónico válido.';
+        return 'Campo inválido.';
+    }
 
     onSubmit(): void {
         if (this.form.invalid) {

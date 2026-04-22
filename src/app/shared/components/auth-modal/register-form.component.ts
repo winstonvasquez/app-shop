@@ -1,6 +1,10 @@
-import { Component, EventEmitter, Input, Output, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  FormFieldComponent,
+  AdminFormSectionComponent,
+  AdminFormLayoutComponent,
+} from '@shared/ui';
 
 export interface RegisterData {
   nombres: string;
@@ -13,37 +17,58 @@ export interface RegisterData {
 @Component({
   selector: 'app-register-form',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [
+    ReactiveFormsModule,
+    FormFieldComponent,
+    AdminFormSectionComponent,
+    AdminFormLayoutComponent,
+  ],
   templateUrl: './register-form.component.html',
-  styleUrl: './register-form.component.scss'
+  styleUrl: './register-form.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RegisterFormComponent {
-  @Input() email = '';
-  @Output() register = new EventEmitter<RegisterData>();
-  @Output() back = new EventEmitter<void>();
+  private fb = inject(FormBuilder);
 
-  nombres = '';
-  apellidos = '';
-  tipoDocumento = 'DNI';
-  numeroDocumento = '';
-  fechaNacimiento = '';
+  /** Email que se registra (mostrado informativamente arriba del form). */
+  email = input('');
+
+  /** Emite al completar el registro. */
+  register = output<RegisterData>();
+
+  /** Emite para volver al paso anterior. */
+  back = output<void>();
+
+  readonly documentTypes = ['DNI', 'CE', 'PASAPORTE'] as const;
+
   loading = signal(false);
   errorMsg = signal('');
 
-  documentTypes = ['DNI', 'CE', 'PASAPORTE'];
+  form = this.fb.group({
+    nombres: ['', [Validators.required, Validators.minLength(2)]],
+    apellidos: ['', [Validators.required, Validators.minLength(2)]],
+    tipoDocumento: ['DNI', Validators.required],
+    numeroDocumento: ['', Validators.required],
+    fechaNacimiento: ['', Validators.required],
+  });
 
-  isValid(): boolean {
-    return !!(
-      this.nombres.trim() &&
-      this.apellidos.trim() &&
-      this.tipoDocumento &&
-      this.numeroDocumento.trim() &&
-      this.fechaNacimiento
-    );
+  /** Placeholder dinámico según tipoDocumento. */
+  documentPlaceholder = computed(() => {
+    const tipo = this.form.controls.tipoDocumento.value ?? 'DNI';
+    return tipo === 'DNI' ? '12345678' : 'AB1234567';
+  });
+
+  err(field: string): string {
+    const c = this.form.get(field);
+    if (!c || c.pristine || c.valid) return '';
+    if (c.hasError('required')) return 'Campo requerido';
+    if (c.hasError('minlength')) return `Mínimo ${c.getError('minlength').requiredLength} caracteres`;
+    return 'Campo inválido';
   }
 
-  onSubmit() {
-    if (!this.isValid()) {
+  onSubmit(): void {
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
       this.errorMsg.set('Por favor completa todos los campos.');
       return;
     }
@@ -51,16 +76,17 @@ export class RegisterFormComponent {
     this.loading.set(true);
     this.errorMsg.set('');
 
+    const v = this.form.value;
     this.register.emit({
-      nombres: this.nombres.trim(),
-      apellidos: this.apellidos.trim(),
-      tipoDocumento: this.tipoDocumento,
-      numeroDocumento: this.numeroDocumento.trim(),
-      fechaNacimiento: this.fechaNacimiento
+      nombres: (v.nombres ?? '').trim(),
+      apellidos: (v.apellidos ?? '').trim(),
+      tipoDocumento: v.tipoDocumento ?? 'DNI',
+      numeroDocumento: (v.numeroDocumento ?? '').trim(),
+      fechaNacimiento: v.fechaNacimiento ?? '',
     });
   }
 
-  goBack() {
+  goBack(): void {
     this.back.emit();
   }
 }

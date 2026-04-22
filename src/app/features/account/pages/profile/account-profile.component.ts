@@ -1,10 +1,17 @@
-import { Component, inject, signal, OnInit, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import {
+  Component, inject, signal, OnInit, ChangeDetectionStrategy
+} from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { AuthService } from '@core/auth/auth.service';
 import { environment } from '@env/environment';
 import { BreadcrumbComponent, BreadcrumbItem } from '@shared/components/breadcrumb/breadcrumb.component';
+import {
+  FormFieldComponent,
+  AdminFormSectionComponent,
+  AdminFormLayoutComponent,
+  AlertComponent,
+} from '@shared/ui';
 
 interface UserProfile {
   id: number;
@@ -21,7 +28,14 @@ interface UserProfile {
 @Component({
   selector: 'app-account-profile',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, BreadcrumbComponent],
+  imports: [
+    ReactiveFormsModule,
+    BreadcrumbComponent,
+    FormFieldComponent,
+    AdminFormSectionComponent,
+    AdminFormLayoutComponent,
+    AlertComponent,
+  ],
   templateUrl: './account-profile.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -38,8 +52,8 @@ export class AccountProfileComponent implements OnInit {
 
   loading = signal(true);
   saving = signal(false);
-  errorMsg = signal<string | null>(null);
-  successMsg = signal<string | null>(null);
+  submitError = signal('');
+  successMsg = signal('');
 
   profileForm = this.fb.group({
     nombres: ['', Validators.required],
@@ -53,6 +67,16 @@ export class AccountProfileComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadProfile();
+  }
+
+  err(field: string): string {
+    const c = this.profileForm.get(field);
+    if (!c || c.pristine || c.valid) return '';
+    if (c.hasError('required')) return 'Campo requerido';
+    if (c.hasError('email')) return 'Email inválido';
+    if (c.hasError('minlength')) return `Mínimo ${c.getError('minlength').requiredLength} caracteres`;
+    if (c.hasError('pattern')) return 'Formato inválido';
+    return 'Campo inválido';
   }
 
   loadProfile(): void {
@@ -82,10 +106,13 @@ export class AccountProfileComponent implements OnInit {
   }
 
   onSubmit(): void {
-    if (this.profileForm.invalid) return;
+    if (this.profileForm.invalid) {
+      this.profileForm.markAllAsTouched();
+      return;
+    }
     this.saving.set(true);
-    this.errorMsg.set(null);
-    this.successMsg.set(null);
+    this.submitError.set('');
+    this.successMsg.set('');
 
     const body = this.profileForm.getRawValue();
     this.http.put(`${environment.apiUrls.users}/api/users/me`, body).subscribe({
@@ -95,7 +122,7 @@ export class AccountProfileComponent implements OnInit {
       },
       error: (err) => {
         this.saving.set(false);
-        this.errorMsg.set(err?.error?.message ?? 'Error al guardar el perfil.');
+        this.submitError.set(err?.error?.message ?? 'Error al guardar el perfil.');
       }
     });
   }

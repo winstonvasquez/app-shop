@@ -8,34 +8,46 @@
     <div class="card max-w-md">
         <div class="card-body">
             @if (successMsg()) {
-                <div class="badge badge-success mb-4 w-full text-sm py-2 px-3">{{ successMsg() }}</div>
+                <app-alert type="success" [message]="successMsg()" />
             }
-            @if (errorMsg()) {
-                <div class="badge badge-error mb-4 w-full text-sm py-2 px-3">{{ errorMsg() }}</div>
-            }
-            <form [formGroup]="passwordForm" (ngSubmit)="onSubmit()" class="flex flex-col gap-4">
-                <div>
-                    <label class="input-label">Contraseña actual</label>
-                    <input class="input-field" type="password" formControlName="currentPassword" placeholder="••••••••">
-                </div>
-                <div>
-                    <label class="input-label">Nueva contraseña</label>
-                    <input class="input-field" type="password" formControlName="newPassword" placeholder="Mínimo 8 caracteres">
-                    @if (passwordForm.get('newPassword')?.touched && passwordForm.get('newPassword')?.hasError('minlength')) {
-                        <p class="input-error-message">Mínimo 8 caracteres.</p>
-                    }
-                </div>
-                <div>
-                    <label class="input-label">Confirmar nueva contraseña</label>
-                    <input class="input-field" type="password" formControlName="confirmPassword" placeholder="Repite la contraseña">
-                    @if (passwordForm.get('confirmPassword')?.touched && !passwordsMatch) {
-                        <p class="input-error-message">Las contraseñas no coinciden.</p>
-                    }
-                </div>
-                <button type="submit" class="btn btn-primary"
-                    [disabled]="saving() || passwordForm.invalid || !passwordsMatch">
-                    @if (saving()) { Guardando... } @else { Cambiar contraseña }
-                </button>
+
+            <form [formGroup]="passwordForm" (ngSubmit)="onSubmit()">
+                <app-admin-form-layout [errorMessage]="errorMsg()">
+
+                    <app-admin-form-section [columns]="1">
+                        <app-form-field
+                            label="Contraseña actual"
+                            [required]="true"
+                            [error]="err('currentPassword')">
+                            <input class="form-input" type="password" formControlName="currentPassword"
+                                placeholder="••••••••" autocomplete="current-password" />
+                        </app-form-field>
+
+                        <app-form-field
+                            label="Nueva contraseña"
+                            [required]="true"
+                            [error]="err('newPassword')">
+                            <input class="form-input" type="password" formControlName="newPassword"
+                                placeholder="Mínimo 8 caracteres" autocomplete="new-password" />
+                        </app-form-field>
+
+                        <app-form-field
+                            label="Confirmar nueva contraseña"
+                            [required]="true"
+                            [error]="err('confirmPassword')">
+                            <input class="form-input" type="password" formControlName="confirmPassword"
+                                placeholder="Repite la contraseña" autocomplete="new-password" />
+                        </app-form-field>
+                    </app-admin-form-section>
+
+                    <div slot="actions">
+                        <button type="submit" class="btn btn-primary"
+                            [disabled]="saving() || passwordForm.invalid">
+                            @if (saving()) { Guardando... } @else { Cambiar contraseña }
+                        </button>
+                    </div>
+
+                </app-admin-form-layout>
             </form>
         </div>
     </div>

@@ -1,4 +1,4 @@
-@if (isOpen) {
+@if (isOpen()) {
 <div class="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
     (click)="closeModal()">
     <!-- Modal Container -->
@@ -108,6 +108,7 @@
 
                 <!-- Right: Social -->
                 <div class="flex-1 flex flex-col gap-3 min-w-0">
+                    @if (isGoogleConfigured) {
                     <div class="relative w-full">
                         <button
                             class="w-full border border-[var(--color-border)] rounded-full py-3 px-4 flex items-center justify-center gap-3 hover:bg-[var(--color-surface-raised)] hover:border-[var(--color-text-muted)] hover:shadow-sm active:scale-[0.98] transition-all cursor-pointer text-sm text-[var(--color-text-primary)]">
@@ -132,6 +133,7 @@
                                 theme="outline"></asl-google-signin-button>
                         </div>
                     </div>
+                    }
                     <button (click)="signInWithFacebook()"
                         class="w-full border border-[var(--color-border)] rounded-full py-3 px-4 flex items-center justify-center gap-3 hover:bg-[var(--color-surface-raised)] hover:border-[var(--color-text-muted)] hover:shadow-sm active:scale-[0.98] transition-all cursor-pointer text-sm text-[var(--color-text-primary)]">
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"

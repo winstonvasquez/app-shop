@@ -18,10 +18,7 @@
     }
 
     @if (loading()) {
-    <div class="loading-container">
-        <div class="spinner"></div>
-        <p>Cargando lista de pedidos...</p>
-    </div>
+    <app-loading-spinner size="md" [text]="'Cargando lista de pedidos...'"></app-loading-spinner>
     }
 
     @if (isEmpty()) {
@@ -74,7 +71,7 @@
         (closed)="closeModal()">
 
         @if (loadingDetails()) {
-        <app-loading-spinner size="md" message="Cargando detalles...">
+        <app-loading-spinner size="md" [text]="'Cargando detalles...'">
         </app-loading-spinner>
         } @else if (selectedOrder()) {
         <div class="grid grid-cols-1 md:grid-cols-2 gap-md mb-xl">

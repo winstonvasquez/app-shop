@@ -1,23 +1,24 @@
-import { Component, EventEmitter, Input, Output, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { ChangeDetectionStrategy, Component, inject, input, output, signal } from '@angular/core';
 import { AuthService } from '@core/auth/auth.service';
 import { SocialAuthService, SocialUser, GoogleSigninButtonModule } from '@abacritt/angularx-social-login';
 import { GoogleLoginProvider, FacebookLoginProvider } from '@abacritt/angularx-social-login';
 import { RegisterFormComponent, RegisterData } from './register-form.component';
+import { environment } from '../../../../environments/environment';
 
 type AuthStep = 'select' | 'email' | 'otp' | 'register';
 
 @Component({
   selector: 'app-auth-modal',
   standalone: true,
-  imports: [CommonModule, GoogleSigninButtonModule, RegisterFormComponent],
+  imports: [GoogleSigninButtonModule, RegisterFormComponent],
   templateUrl: './auth-modal.component.html',
-  styleUrl: './auth-modal.component.scss'
+  styleUrl: './auth-modal.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AuthModal {
-  @Input() isOpen = false;
-  @Output() close = new EventEmitter<void>();
-  @Output() loginSuccess = new EventEmitter<void>();
+  isOpen = input(false);
+  close = output<void>();
+  loginSuccess = output<void>();
 
   private auth = inject(AuthService);
   private socialAuthService = inject(SocialAuthService);
@@ -50,6 +51,9 @@ export class AuthModal {
     });
   }
 
+  /** true si Google client ID está configurado (no es placeholder) */
+  readonly isGoogleConfigured = !environment.socialAuth.googleClientId.startsWith('TU_');
+
   step = signal<AuthStep>('select');
   email = signal('');
   otp = signal('');
@@ -58,7 +62,6 @@ export class AuthModal {
   maskedEmail = signal('');
 
   closeModal() {
-    this.isOpen = false;
     this.resetState();
     this.close.emit();
   }
@@ -178,9 +181,9 @@ export class AuthModal {
       this.errorMsg.set('');
       this.loading.set(true);
       await this.socialAuthService.signIn(FacebookLoginProvider.PROVIDER_ID);
-    } catch (err: any) {
+    } catch (err: unknown) {
       this.loading.set(false);
-      const msg: string = err?.message ?? '';
+      const msg: string = (err as { message?: string })?.message ?? '';
       if (msg.includes('FB.init') || msg.includes('before') || msg.includes('initialized')) {
         this.errorMsg.set('El SDK de Facebook no está listo todavía. Intenta de nuevo en unos segundos.');
       } else if (msg.includes('Facebook App Id') || msg.includes('App Id')) {

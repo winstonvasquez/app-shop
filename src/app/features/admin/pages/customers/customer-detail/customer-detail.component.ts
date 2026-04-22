@@ -4,6 +4,10 @@ import {
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { PageHeaderComponent } from '@shared/ui/layout/page-header/page-header.component';
+import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
+import { AdminFormSectionComponent } from '@shared/ui/forms/admin-form-section/admin-form-section.component';
+import { AdminFormLayoutComponent } from '@shared/ui/forms/admin-form-layout/admin-form-layout.component';
+import { DataTableComponent, TableColumn, TableAction } from '@shared/ui/tables/data-table/data-table.component';
 import { CustomerService } from '@features/admin/services/customer.service';
 import {
     CustomerResponse,
@@ -17,8 +21,17 @@ import {
 @Component({
     selector: 'app-customer-detail',
     standalone: true,
-    imports: [PageHeaderComponent, RouterLink, ReactiveFormsModule],
+    imports: [
+        PageHeaderComponent,
+        RouterLink,
+        ReactiveFormsModule,
+        FormFieldComponent,
+        AdminFormSectionComponent,
+        AdminFormLayoutComponent,
+        DataTableComponent,
+    ],
     templateUrl: './customer-detail.component.html',
+    styleUrl: './customer-detail.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CustomerDetailComponent implements OnInit {
@@ -40,29 +53,99 @@ export class CustomerDetailComponent implements OnInit {
         { label: 'Detalle' },
     ];
 
-    // Formulario dirección inline
+    // ── Formulario dirección inline ─────────────────────────────────────────
     dirForm = this.fb.group({
         tipoDireccion: ['ENVIO', Validators.required],
-        departamento: ['', Validators.required],
-        provincia: ['', Validators.required],
-        distrito: ['', Validators.required],
-        direccion: ['', Validators.required],
-        referencia: [''],
-        ubigeo: [''],
-        esPrincipal: [false],
+        departamento:  ['', Validators.required],
+        provincia:     ['', Validators.required],
+        distrito:      ['', Validators.required],
+        direccion:     ['', Validators.required],
+        referencia:    [''],
+        ubigeo:        [''],
+        esPrincipal:   [false],
     });
-    showDirForm = signal(false);
+    showDirForm  = signal(false);
+    dirSaving    = signal(false);
+    dirSaveError = signal('');
 
-    // Formulario contacto inline
+    // ── Formulario contacto inline ──────────────────────────────────────────
     ctForm = this.fb.group({
         nombreCompleto: ['', Validators.required],
-        cargo: [''],
-        email: ['', Validators.email],
-        telefono: [''],
-        esPrincipal: [false],
+        cargo:          [''],
+        email:          ['', Validators.email],
+        telefono:       [''],
+        esPrincipal:    [false],
     });
-    showCtForm = signal(false);
+    showCtForm   = signal(false);
+    ctSaving     = signal(false);
+    ctSaveError  = signal('');
 
+    // ── Columnas data-table ─────────────────────────────────────────────────
+    readonly dirColumns: TableColumn<CustomerDireccionResponse>[] = [
+        {
+            key: 'tipoDireccion',
+            label: 'Tipo',
+            render: (r) => `<span class="badge badge-neutral">${r.tipoDireccion}</span>`,
+            html: true,
+        },
+        {
+            key: 'ubicacion',
+            label: 'Ubicación',
+            render: (r) => `${r.departamento} / ${r.provincia} / ${r.distrito}`,
+        },
+        { key: 'direccion', label: 'Dirección' },
+        {
+            key: 'esPrincipal',
+            label: 'Principal',
+            render: (r) => r.esPrincipal ? '<span class="badge badge-success">Sí</span>' : '',
+            html: true,
+        },
+    ];
+
+    readonly dirActions: TableAction<CustomerDireccionResponse>[] = [
+        {
+            label: 'Eliminar',
+            icon: 'delete',
+            class: 'btn-icon-delete',
+            onClick: (row) => this.deleteDireccion(row.id),
+        },
+    ];
+
+    readonly ctColumns: TableColumn<CustomerContactoResponse>[] = [
+        { key: 'nombreCompleto', label: 'Nombre' },
+        {
+            key: 'cargo',
+            label: 'Cargo',
+            render: (r) => r.cargo ?? '-',
+        },
+        {
+            key: 'email',
+            label: 'Email',
+            render: (r) => r.email ?? '-',
+        },
+        {
+            key: 'telefono',
+            label: 'Teléfono',
+            render: (r) => r.telefono ?? '-',
+        },
+        {
+            key: 'esPrincipal',
+            label: 'Principal',
+            render: (r) => r.esPrincipal ? '<span class="badge badge-success">Sí</span>' : '',
+            html: true,
+        },
+    ];
+
+    readonly ctActions: TableAction<CustomerContactoResponse>[] = [
+        {
+            label: 'Eliminar',
+            icon: 'delete',
+            class: 'btn-icon-delete',
+            onClick: (row) => this.deleteContacto(row.id),
+        },
+    ];
+
+    // ── Lifecycle ───────────────────────────────────────────────────────────
     ngOnInit(): void {
         const id = Number(this.route.snapshot.paramMap.get('id'));
         if (id) {
@@ -99,19 +182,57 @@ export class CustomerDetailComponent implements OnInit {
         });
     }
 
+    // ── Tabs ────────────────────────────────────────────────────────────────
     setTab(tab: 'general' | 'direcciones' | 'contactos'): void {
         this.activeTab.set(tab);
     }
 
+    // ── Error helpers ───────────────────────────────────────────────────────
+    errDir(field: string): string {
+        const c = this.dirForm.get(field);
+        if (!c || c.pristine || c.valid) return '';
+        if (c.hasError('required')) return 'Campo requerido';
+        return 'Campo inválido';
+    }
+
+    errCt(field: string): string {
+        const c = this.ctForm.get(field);
+        if (!c || c.pristine || c.valid) return '';
+        if (c.hasError('required')) return 'Campo requerido';
+        if (c.hasError('email')) return 'Email inválido';
+        return 'Campo inválido';
+    }
+
+    // ── CRUD direcciones ────────────────────────────────────────────────────
+    openDirForm(): void {
+        this.dirSaveError.set('');
+        this.showDirForm.set(true);
+    }
+
+    cancelDirForm(): void {
+        this.showDirForm.set(false);
+        this.dirForm.reset({ tipoDireccion: 'ENVIO', esPrincipal: false });
+        this.dirSaveError.set('');
+    }
+
     saveDireccion(): void {
-        if (this.dirForm.invalid) return;
+        if (this.dirForm.invalid) {
+            this.dirForm.markAllAsTouched();
+            return;
+        }
         const id = this.customer()!.id;
         const dto = this.dirForm.value as CustomerDireccionRequest;
+        this.dirSaving.set(true);
+        this.dirSaveError.set('');
         this.customerService.addDireccion(id, dto).subscribe({
             next: () => {
-                this.showDirForm.set(false);
-                this.dirForm.reset({ tipoDireccion: 'ENVIO', esPrincipal: false });
+                this.dirSaving.set(false);
+                this.cancelDirForm();
                 this.loadDirecciones(id);
+            },
+            error: () => {
+                this.dirSaving.set(false);
+                this.dirSaveError.set('Error al guardar la dirección. Intenta de nuevo.');
             },
         });
     }
@@ -124,15 +245,36 @@ export class CustomerDetailComponent implements OnInit {
         });
     }
 
+    // ── CRUD contactos ──────────────────────────────────────────────────────
+    openCtForm(): void {
+        this.ctSaveError.set('');
+        this.showCtForm.set(true);
+    }
+
+    cancelCtForm(): void {
+        this.showCtForm.set(false);
+        this.ctForm.reset({ esPrincipal: false });
+        this.ctSaveError.set('');
+    }
+
     saveContacto(): void {
-        if (this.ctForm.invalid) return;
+        if (this.ctForm.invalid) {
+            this.ctForm.markAllAsTouched();
+            return;
+        }
         const id = this.customer()!.id;
         const dto = this.ctForm.value as CustomerContactoRequest;
+        this.ctSaving.set(true);
+        this.ctSaveError.set('');
         this.customerService.addContacto(id, dto).subscribe({
             next: () => {
-                this.showCtForm.set(false);
-                this.ctForm.reset({ esPrincipal: false });
+                this.ctSaving.set(false);
+                this.cancelCtForm();
                 this.loadContactos(id);
+            },
+            error: () => {
+                this.ctSaving.set(false);
+                this.ctSaveError.set('Error al guardar el contacto. Intenta de nuevo.');
             },
         });
     }

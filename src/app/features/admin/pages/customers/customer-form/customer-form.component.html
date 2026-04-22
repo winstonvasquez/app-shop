@@ -5,141 +5,156 @@
     (closed)="cancel.emit()">
 
     <form [formGroup]="form" (ngSubmit)="onSubmit()">
+        <app-admin-form-layout
+            [errorMessage]="submitError() ?? ''"
+            [stickyActions]="true">
 
-        @if (submitError()) {
-            <div class="card" style="border-left: 3px solid var(--color-error); margin-bottom: 1rem;">
-                <div class="card-body" style="padding: 0.75rem;">
-                    <p class="text-on">{{ submitError() }}</p>
+            <!-- Sección: Tipo de Cliente -->
+            <app-admin-form-section title="Tipo de Cliente" [columns]="1">
+                <div class="form-group">
+                    <label class="input-label">Tipo de Cliente</label>
+                    <select class="form-input" formControlName="tipoCliente"
+                            (change)="onTipoClienteChange($any($event.target).value)">
+                        @for (opt of tipoClienteOptions; track opt.value) {
+                            <option [value]="opt.value">{{ opt.label }}</option>
+                        }
+                    </select>
                 </div>
-            </div>
-        }
+            </app-admin-form-section>
 
-        <!-- Tipo de Cliente -->
-        <div style="margin-bottom: 1.25rem;">
-            <label class="input-label">Tipo de Cliente</label>
-            <select class="input-field" formControlName="tipoCliente"
-                    (change)="onTipoClienteChange($any($event.target).value)">
-                @for (opt of tipoClienteOptions; track opt.value) {
-                    <option [value]="opt.value">{{ opt.label }}</option>
-                }
-            </select>
-        </div>
-
-        <!-- Documento -->
-        <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 0.75rem; margin-bottom: 1.25rem;">
-            <div>
-                <label class="input-label">Tipo Doc.</label>
-                <select class="input-field" formControlName="tipoDocumento"
-                        [class.is-invalid]="hasError('tipoDocumento')">
-                    @for (opt of tipoDocumentoOptions; track opt.value) {
-                        <option [value]="opt.value">{{ opt.label }}</option>
-                    }
-                </select>
-            </div>
-            <div>
-                <label class="input-label">Nro. Documento</label>
-                <input type="text" class="input-field" formControlName="numeroDocumento"
-                       [class.is-invalid]="hasError('numeroDocumento')"
-                       placeholder="Ingrese el número">
-                @if (hasError('numeroDocumento')) {
-                    <span class="input-error-message">{{ getError('numeroDocumento') }}</span>
-                }
-            </div>
-        </div>
-
-        <!-- Datos Persona Natural -->
-        @if (!isJuridica()) {
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1.25rem;">
-                <div>
-                    <label class="input-label">Nombres <span style="color: var(--color-error)">*</span></label>
-                    <input type="text" class="input-field" formControlName="nombres"
-                           [class.is-invalid]="hasError('nombres')">
-                    @if (hasError('nombres')) {
-                        <span class="input-error-message">{{ getError('nombres') }}</span>
+            <!-- Sección: Datos del Documento -->
+            <app-admin-form-section title="Documento" [columns]="2">
+                <div class="form-group">
+                    <label class="input-label">Tipo Doc.</label>
+                    <select class="form-input" formControlName="tipoDocumento">
+                        @for (opt of tipoDocumentoOptions; track opt.value) {
+                            <option [value]="opt.value">{{ opt.label }}</option>
+                        }
+                    </select>
+                    @if (err('tipoDocumento')) {
+                        <span class="input-error-message">{{ err('tipoDocumento') }}</span>
                     }
                 </div>
-                <div>
-                    <label class="input-label">Apellidos</label>
-                    <input type="text" class="input-field" formControlName="apellidos">
+                <div class="form-group">
+                    <label class="input-label">Nro. Documento <span class="required-indicator">*</span></label>
+                    <input type="text" class="form-input" formControlName="numeroDocumento"
+                           placeholder="Ingrese el número">
+                    @if (err('numeroDocumento')) {
+                        <span class="input-error-message">{{ err('numeroDocumento') }}</span>
+                    }
                 </div>
-            </div>
-        }
+            </app-admin-form-section>
 
-        <!-- Datos Persona Jurídica -->
-        @if (isJuridica()) {
-            <div style="margin-bottom: 1.25rem;">
-                <label class="input-label">Razón Social <span style="color: var(--color-error)">*</span></label>
-                <input type="text" class="input-field" formControlName="razonSocial"
-                       [class.is-invalid]="hasError('razonSocial')">
-            </div>
-            <div style="margin-bottom: 1.25rem;">
-                <label class="input-label">Nombre Comercial</label>
-                <input type="text" class="input-field" formControlName="nombreComercial">
-            </div>
-            <div style="margin-bottom: 1.25rem;">
-                <label class="input-label">Contacto Principal <span style="color: var(--color-error)">*</span></label>
-                <input type="text" class="input-field" formControlName="nombres"
-                       placeholder="Nombre del contacto principal">
-                @if (hasError('nombres')) {
-                    <span class="input-error-message">{{ getError('nombres') }}</span>
-                }
-            </div>
-        }
-
-        <!-- Contacto -->
-        <div style="margin-bottom: 1.25rem;">
-            <label class="input-label">Email</label>
-            <input type="email" class="input-field" formControlName="email"
-                   [class.is-invalid]="hasError('email')"
-                   placeholder="correo@ejemplo.com">
-            @if (hasError('email')) {
-                <span class="input-error-message">{{ getError('email') }}</span>
+            <!-- Sección: Datos Persona Natural -->
+            @if (!isJuridica()) {
+                <app-admin-form-section title="Datos Principales" [columns]="2">
+                    <div class="form-group">
+                        <label class="input-label">Nombres <span class="required-indicator">*</span></label>
+                        <input type="text" class="form-input" formControlName="nombres">
+                        @if (err('nombres')) {
+                            <span class="input-error-message">{{ err('nombres') }}</span>
+                        }
+                    </div>
+                    <div class="form-group">
+                        <label class="input-label">Apellidos</label>
+                        <input type="text" class="form-input" formControlName="apellidos">
+                        @if (err('apellidos')) {
+                            <span class="input-error-message">{{ err('apellidos') }}</span>
+                        }
+                    </div>
+                </app-admin-form-section>
             }
-        </div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1.25rem;">
-            <div>
-                <label class="input-label">Teléfono</label>
-                <input type="tel" class="input-field" formControlName="telefono" placeholder="01-XXXXXXX">
-            </div>
-            <div>
-                <label class="input-label">Celular</label>
-                <input type="tel" class="input-field" formControlName="celular" placeholder="9XX XXX XXX">
-            </div>
-        </div>
 
-        <!-- Sección Comercial -->
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1.25rem;">
-            <div>
-                <label class="input-label">Condición de Pago</label>
-                <select class="input-field" formControlName="condicionPago">
-                    @for (opt of condicionPagoOptions; track opt.value) {
-                        <option [value]="opt.value">{{ opt.label }}</option>
+            <!-- Sección: Datos Persona Jurídica -->
+            @if (isJuridica()) {
+                <app-admin-form-section title="Datos Principales" [columns]="1">
+                    <div class="form-group">
+                        <label class="input-label">Razón Social <span class="required-indicator">*</span></label>
+                        <input type="text" class="form-input" formControlName="razonSocial">
+                        @if (err('razonSocial')) {
+                            <span class="input-error-message">{{ err('razonSocial') }}</span>
+                        }
+                    </div>
+                    <div class="form-group">
+                        <label class="input-label">Nombre Comercial</label>
+                        <input type="text" class="form-input" formControlName="nombreComercial">
+                        @if (err('nombreComercial')) {
+                            <span class="input-error-message">{{ err('nombreComercial') }}</span>
+                        }
+                    </div>
+                    <div class="form-group">
+                        <label class="input-label">Contacto Principal <span class="required-indicator">*</span></label>
+                        <input type="text" class="form-input" formControlName="nombres"
+                               placeholder="Nombre del contacto principal">
+                        @if (err('nombres')) {
+                            <span class="input-error-message">{{ err('nombres') }}</span>
+                        }
+                    </div>
+                </app-admin-form-section>
+            }
+
+            <!-- Sección: Contacto -->
+            <app-admin-form-section title="Contacto" [columns]="2">
+                <div class="form-group" style="grid-column: 1 / -1;">
+                    <label class="input-label">Email</label>
+                    <input type="email" class="form-input" formControlName="email"
+                           placeholder="correo@ejemplo.com">
+                    @if (err('email')) {
+                        <span class="input-error-message">{{ err('email') }}</span>
                     }
-                </select>
-            </div>
-            <div>
-                <label class="input-label">Límite de Crédito (S/)</label>
-                <input type="number" class="input-field" formControlName="limiteCredito"
-                       min="0" step="100">
-            </div>
-        </div>
+                </div>
+                <div class="form-group">
+                    <label class="input-label">Teléfono</label>
+                    <input type="tel" class="form-input" formControlName="telefono"
+                           placeholder="01-XXXXXXX">
+                </div>
+                <div class="form-group">
+                    <label class="input-label">Celular</label>
+                    <input type="tel" class="form-input" formControlName="celular"
+                           placeholder="9XX XXX XXX">
+                </div>
+            </app-admin-form-section>
 
-        <!-- Notas -->
-        <div style="margin-bottom: 1.25rem;">
-            <label class="input-label">Notas</label>
-            <textarea class="input-field" formControlName="notas" rows="3"
-                      placeholder="Observaciones adicionales"></textarea>
-        </div>
+            <!-- Sección: Comercial -->
+            <app-admin-form-section title="Comercial" [columns]="2">
+                <div class="form-group">
+                    <label class="input-label">Condición de Pago</label>
+                    <select class="form-input" formControlName="condicionPago">
+                        @for (opt of condicionPagoOptions; track opt.value) {
+                            <option [value]="opt.value">{{ opt.label }}</option>
+                        }
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="input-label">Límite de Crédito (S/)</label>
+                    <input type="number" class="form-input" formControlName="limiteCredito"
+                           min="0" step="100">
+                    @if (err('limiteCredito')) {
+                        <span class="input-error-message">{{ err('limiteCredito') }}</span>
+                    }
+                </div>
+            </app-admin-form-section>
 
-        <!-- Acciones -->
-        <div style="display: flex; justify-content: flex-end; gap: 0.75rem; padding-top: 1rem; border-top: 1px solid var(--color-border);">
-            <button type="button" class="btn btn-secondary" (click)="cancel.emit()">
-                Cancelar
-            </button>
-            <button type="submit" class="btn btn-primary"
-                    [disabled]="form.invalid || submitting()">
-                {{ submitting() ? 'Guardando...' : (customer() ? 'Actualizar' : 'Crear') }}
-            </button>
-        </div>
+            <!-- Sección: Notas -->
+            <app-admin-form-section title="Notas" [columns]="1">
+                <div class="form-group">
+                    <label class="input-label">Observaciones</label>
+                    <textarea class="form-input" formControlName="notas" rows="3"
+                              placeholder="Observaciones adicionales"></textarea>
+                </div>
+            </app-admin-form-section>
+
+            <!-- Acciones -->
+            <div slot="actions">
+                <button type="button" class="btn btn-secondary" (click)="cancel.emit()">
+                    Cancelar
+                </button>
+                <button type="submit" class="btn btn-primary"
+                        [disabled]="form.invalid || submitting()">
+                    {{ submitting() ? 'Guardando...' : (customer() ? 'Actualizar' : 'Crear') }}
+                </button>
+            </div>
+
+        </app-admin-form-layout>
     </form>
 </app-drawer>

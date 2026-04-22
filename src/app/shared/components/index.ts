@@ -6,7 +6,7 @@ export type { ButtonVariant, ButtonSize } from './button/button.component';
 export * from './data-table/data-table.component';
 export * from './data-table/paginator.component';
 export * from './data-table/data-table.types';
-export * from './form-field/form-field.component';
+// form-field/ (slot-only) fue eliminado 2026-04-21 — usar FormFieldComponent de @shared/ui (híbrido)
 export * from './toggle/toggle.component';
 export * from './number-input/number-input.component';
 export * from './toolbar/toolbar.component';
