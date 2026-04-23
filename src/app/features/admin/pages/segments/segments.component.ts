@@ -79,10 +79,15 @@ export class SegmentsComponent implements OnInit {
             this.pageSize(),
             this.searchQuery() || undefined
         ).subscribe({
-            next: (res) => {
-                this.segments.set(res.content);
-                this.totalElements.set(res.page.totalElements);
-                this.totalPages.set(res.page.totalPages);
+            next: (res: unknown) => {
+                // Backend users devuelve Spring Page<T> nativo (totalElements al root),
+                // no PageResponse con wrapper .page. Cast necesario porque el tipo del
+                // service espera PageResponse (alineado con Spring VIA_DTO) pero el
+                // backend aún no tiene esa config. Fix detectado en audit E2E 2026-04-23.
+                const page = res as { content: SegmentResponse[]; totalElements: number; totalPages: number };
+                this.segments.set(page.content);
+                this.totalElements.set(page.totalElements);
+                this.totalPages.set(page.totalPages);
                 this.loading.set(false);
             },
             error: (err: Error) => {
