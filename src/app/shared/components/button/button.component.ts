@@ -30,7 +30,7 @@ export type ButtonSize = 'xs' | 'sm' | 'md' | 'lg';
     `,
 })
 export class ButtonComponent {
-    label = input.required<string>();
+    label = input<string>('');
     variant = input<ButtonVariant>('primary');
     size = input<ButtonSize>('md');
     icon = input<string | undefined>(undefined);

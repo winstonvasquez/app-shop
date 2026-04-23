@@ -1,5 +1,14 @@
 import { ApplicationConfig, provideBrowserGlobalErrorListeners, importProvidersFrom, APP_INITIALIZER } from '@angular/core';
-import { LUCIDE_ICONS, LucideIconProvider, X, CircleCheck, CircleAlert, TriangleAlert, Info } from 'lucide-angular';
+import {
+  LUCIDE_ICONS, LucideIconProvider,
+  X, CircleCheck, CircleAlert, TriangleAlert, Info,
+  ArrowLeft, ArrowRightCircle, ArrowRightLeft, Ban, BookOpen, Check, CheckCircle,
+  ClipboardCheck, Clock, Copy, DoorOpen, DoorClosed, Download, Eye, FilePlus,
+  FileSearch, FileText, Filter, GitCompare, HeartOff, Key, Layers, Link, Lock,
+  LockOpen, LogIn, MapPin, PackageCheck, Pencil, Percent, Play, Plus, Power,
+  Printer, Receipt, RefreshCw, RotateCcw, Save, Search, Send, ShoppingBag,
+  ShoppingCart, Ticket, Trash2, Truck, UserMinus, Wallet, XCircle
+} from 'lucide-angular';
 import { provideRouter } from '@angular/router';
 import { provideHttpClient, withInterceptors, withFetch, HttpClient, HttpBackend } from '@angular/common/http';
 import { TranslateModule, TranslateLoader } from '@ngx-translate/core';
@@ -91,7 +100,15 @@ export const appConfig: ApplicationConfig = {
     },
     {
       provide: LUCIDE_ICONS,
-      useValue: new LucideIconProvider({ X, CircleCheck, CircleAlert, TriangleAlert, Info }),
+      useValue: new LucideIconProvider({
+        X, CircleCheck, CircleAlert, TriangleAlert, Info,
+        ArrowLeft, ArrowRightCircle, ArrowRightLeft, Ban, BookOpen, Check, CheckCircle,
+        ClipboardCheck, Clock, Copy, DoorOpen, DoorClosed, Download, Eye, FilePlus,
+        FileSearch, FileText, Filter, GitCompare, HeartOff, Key, Layers, Link, Lock,
+        LockOpen, LogIn, MapPin, PackageCheck, Pencil, Percent, Play, Plus, Power,
+        Printer, Receipt, RefreshCw, RotateCcw, Save, Search, Send, ShoppingBag,
+        ShoppingCart, Ticket, Trash2, Truck, UserMinus, Wallet, XCircle
+      }),
       multi: true
     },
     {
@@ -111,7 +128,7 @@ export const appConfig: ApplicationConfig = {
             provider: new FacebookLoginProvider(environment.socialAuth.facebookAppId)
           }
         ],
-        onError: (err: any) => {
+        onError: (err: unknown) => {
           console.error('Social Login Config Error', err);
         }
       } as SocialAuthServiceConfig,
