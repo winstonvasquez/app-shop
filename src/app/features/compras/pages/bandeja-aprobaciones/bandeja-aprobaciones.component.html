@@ -4,9 +4,7 @@
       <h1 class="page-title">Bandeja de Aprobaciones</h1>
       <p class="page-subtitle">Órdenes de compra pendientes de tu aprobación</p>
     </div>
-    <button class="btn btn-secondary" (click)="cargarPendientes()">
-      Actualizar
-    </button>
+    <app-button label="Actualizar" variant="secondary" icon="refresh-cw" (click)="cargarPendientes()" />
   </div>
 
   @if (loading()) {
@@ -53,14 +51,8 @@
                 </td>
                 <td class="table-cell">
                   <div style="display:flex; gap:0.5rem">
-                    <button class="btn btn-primary" style="padding:0.25rem 0.75rem; font-size:0.8rem"
-                      (click)="abrirAprobar(item.id)">
-                      Aprobar
-                    </button>
-                    <button class="btn btn-danger" style="padding:0.25rem 0.75rem; font-size:0.8rem"
-                      (click)="abrirRechazar(item.id)">
-                      Rechazar
-                    </button>
+                    <app-button label="Aprobar" variant="success" icon="check-circle" size="sm" (click)="abrirAprobar(item.id)" />
+                    <app-button label="Rechazar" variant="danger" icon="x-circle" size="sm" (click)="abrirRechazar(item.id)" />
                   </div>
                 </td>
               </tr>
@@ -82,14 +74,14 @@
       </div>
       <div class="modal-body">
         <label class="input-label">Comentario (opcional)</label>
-        <textarea class="input-field" rows="3"
+        <textarea class="form-input" rows="3"
           [value]="comentario()"
           (input)="comentario.set($any($event.target).value)"
           placeholder="Ingresa un comentario..."></textarea>
       </div>
       <div class="modal-footer">
-        <button class="btn btn-secondary" (click)="cerrarModales()">Cancelar</button>
-        <button class="btn btn-primary" (click)="confirmarAprobacion()">Aprobar</button>
+        <app-button label="Cancelar" variant="secondary" icon="x" (click)="cerrarModales()" />
+        <app-button label="Aprobar" variant="primary" icon="check-circle" (click)="confirmarAprobacion()" />
       </div>
     </div>
   </div>
@@ -105,16 +97,14 @@
       </div>
       <div class="modal-body">
         <label class="input-label">Motivo del rechazo <span style="color:var(--color-error)">*</span></label>
-        <textarea class="input-field" rows="3"
+        <textarea class="form-input" rows="3"
           [value]="motivo()"
           (input)="motivo.set($any($event.target).value)"
           placeholder="Indica el motivo..."></textarea>
       </div>
       <div class="modal-footer">
-        <button class="btn btn-secondary" (click)="cerrarModales()">Cancelar</button>
-        <button class="btn btn-danger" (click)="confirmarRechazo()" [disabled]="!motivo()">
-          Rechazar
-        </button>
+        <app-button label="Cancelar" variant="secondary" icon="x" (click)="cerrarModales()" />
+        <app-button label="Rechazar" variant="danger" icon="x-circle" [disabled]="!motivo()" (click)="confirmarRechazo()" />
       </div>
     </div>
   </div>

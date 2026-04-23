@@ -1,5 +1,5 @@
 import { Component, OnInit, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { DecimalPipe } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators, FormGroup, FormControl } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { OrdenCompraService } from '../../services/orden-compra.service';
@@ -10,6 +10,7 @@ import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.compo
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { LoadingSpinnerComponent } from '@shared/ui/feedback/loading-spinner/loading-spinner.component';
+import { ButtonComponent } from '@shared/components';
 
 export interface OcItemForm {
     productoNombre: string;
@@ -23,13 +24,14 @@ export interface OcItemForm {
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
-        CommonModule,
-        ReactiveFormsModule,
-        FormFieldComponent,
-        PageHeaderComponent,
-        AlertComponent,
-        LoadingSpinnerComponent
-    ],
+    ReactiveFormsModule,
+    FormFieldComponent,
+    PageHeaderComponent,
+    AlertComponent,
+    LoadingSpinnerComponent,
+    DecimalPipe,
+    ButtonComponent
+  ],
     templateUrl: './orden-compra-form.component.html'
 })
 export class OrdenCompraFormComponent implements OnInit {

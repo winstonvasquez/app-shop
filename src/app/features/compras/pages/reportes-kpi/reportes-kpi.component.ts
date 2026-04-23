@@ -2,6 +2,7 @@ import { Component, OnInit, ChangeDetectionStrategy, signal, inject } from '@ang
 import { DecimalPipe } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '@env/environment';
+import { ButtonComponent } from '@shared/components';
 
 interface KpiResumen {
     totalOrdenes: number;
@@ -30,7 +31,7 @@ interface ResumenPresupuestal {
 @Component({
     selector: 'app-reportes-kpi',
     standalone: true,
-    imports: [DecimalPipe],
+    imports: [DecimalPipe, ButtonComponent],
     templateUrl: './reportes-kpi.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
 })

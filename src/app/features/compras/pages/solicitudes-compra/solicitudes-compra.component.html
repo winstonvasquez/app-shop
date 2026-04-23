@@ -4,13 +4,13 @@
         subtitle="Gestión del ciclo de aprobación de solicitudes internas"
         [breadcrumbs]="breadcrumbs">
         <div actions>
-            <button class="btn btn-primary" (click)="openCreateForm()">+ Nueva Solicitud</button>
+            <app-button label="Nueva Solicitud" icon="file-plus" variant="primary" (click)="openCreateForm()"></app-button>
         </div>
     </app-page-header>
 
     <!-- Filtro por estado -->
     <div class="mb-lg">
-        <select class="input-field" style="width:220px" [value]="filterEstado()" (change)="onFilterEstado($event)">
+        <select class="form-input" style="width:220px" [value]="filterEstado()" (change)="onFilterEstado($event)">
             <option value="">Todos los estados</option>
             @for (opt of estadoOptions; track opt.value) {
                 <option [value]="opt.value">{{ opt.label }}</option>
@@ -94,18 +94,18 @@
 
         <div class="mb-md">
             <label class="input-label">Justificación *</label>
-            <textarea class="input-field" formControlName="justificacion" rows="3" placeholder="Motivo de la solicitud"></textarea>
+            <textarea class="form-input" formControlName="justificacion" rows="3" placeholder="Motivo de la solicitud"></textarea>
         </div>
 
         <div class="mb-md">
             <label class="input-label">Departamento</label>
-            <input class="input-field" type="text" formControlName="departamento" placeholder="Ej: Operaciones">
+            <input class="form-input" type="text" formControlName="departamento" placeholder="Ej: Operaciones">
         </div>
 
         <div class="mb-md" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
             <div>
                 <label class="input-label">Prioridad</label>
-                <select class="input-field" formControlName="prioridad">
+                <select class="form-input" formControlName="prioridad">
                     @for (opt of prioridadOptions; track opt.value) {
                         <option [value]="opt.value">{{ opt.label }}</option>
                     }
@@ -113,7 +113,7 @@
             </div>
             <div>
                 <label class="input-label">Fecha Requerida</label>
-                <input class="input-field" type="date" formControlName="fechaRequerida">
+                <input class="form-input" type="date" formControlName="fechaRequerida">
             </div>
         </div>
 
@@ -121,15 +121,15 @@
         <div class="mb-md">
             <div class="card-header" style="padding:0 0 8px 0">
                 <span class="card-title">Ítems solicitados</span>
-                <button type="button" class="btn btn-secondary" style="padding:4px 10px;font-size:12px" (click)="addItem()">+ Agregar ítem</button>
+                <app-button label="Agregar ítem" icon="plus" variant="secondary" size="sm" type="button" (click)="addItem()"></app-button>
             </div>
 
             @for (item of itemsArray.controls; track $index; let i = $index) {
-                <div [formGroupName]="i" class="card" style="margin-bottom:8px;padding:12px">
+                <div [formGroupName]="i" class="card mb-2 p-3">
                     <div style="display:grid;grid-template-columns:1fr auto;align-items:start;gap:8px">
                         <div>
                             <label class="input-label">Producto / Descripción *</label>
-                            <input class="input-field" type="text" formControlName="productoNombre" placeholder="Nombre del producto">
+                            <input class="form-input" type="text" formControlName="productoNombre" placeholder="Nombre del producto">
                         </div>
                         @if (itemsArray.length > 1) {
                             <button type="button" class="btn-icon btn-icon-delete" style="margin-top:24px" (click)="removeItem(i)">
@@ -142,30 +142,30 @@
                     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px">
                         <div>
                             <label class="input-label">Cantidad *</label>
-                            <input class="input-field" type="number" min="1" formControlName="cantidad">
+                            <input class="form-input" type="number" min="1" formControlName="cantidad">
                         </div>
                         <div>
                             <label class="input-label">Unidad</label>
-                            <input class="input-field" type="text" formControlName="unidadMedida" placeholder="UNIDAD">
+                            <input class="form-input" type="text" formControlName="unidadMedida" placeholder="UNIDAD">
                         </div>
                         <div>
                             <label class="input-label">Precio Estimado (S/)</label>
-                            <input class="input-field" type="number" step="0.01" formControlName="precioEstimado">
+                            <input class="form-input" type="number" step="0.01" formControlName="precioEstimado">
                         </div>
                     </div>
                     <div style="margin-top:8px">
                         <label class="input-label">Observaciones</label>
-                        <input class="input-field" type="text" formControlName="observaciones">
+                        <input class="form-input" type="text" formControlName="observaciones">
                     </div>
                 </div>
             }
         </div>
 
         <div style="display:flex;gap:8px;justify-content:flex-end">
-            <button type="button" class="btn btn-secondary" (click)="closeForm()">Cancelar</button>
-            <button type="submit" class="btn btn-primary" [disabled]="submitting() || solicitudForm.invalid">
-                {{ submitting() ? 'Guardando...' : 'Crear Solicitud' }}
-            </button>
+            <app-button label="Cancelar" icon="x" variant="secondary" type="button" (click)="closeForm()"></app-button>
+            <app-button label="Crear Solicitud" icon="save" variant="primary" type="submit"
+                [loading]="submitting()"
+                [disabled]="submitting() || solicitudForm.invalid"></app-button>
         </div>
     </form>
 </app-drawer>
@@ -246,16 +246,16 @@
         <!-- Acciones por estado -->
         <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:16px">
             @if (sol.estado === 'BORRADOR') {
-                <button class="btn btn-primary" (click)="enviarSolicitud(sol.id!)">Enviar a Aprobación</button>
-                <button class="btn btn-danger" (click)="cancelarSolicitud(sol.id!)">Cancelar</button>
+                <app-button label="Enviar a Aprobación" icon="send" variant="primary" (click)="enviarSolicitud(sol.id!)"></app-button>
+                <app-button label="Cancelar" icon="ban" variant="danger" (click)="cancelarSolicitud(sol.id!)"></app-button>
             }
             @if (sol.estado === 'PENDIENTE_APROBACION') {
-                <button class="btn btn-primary" (click)="aprobarSolicitud(sol.id!)">Aprobar</button>
-                <button class="btn btn-danger" (click)="openRechazarModal()">Rechazar</button>
-                <button class="btn btn-secondary" (click)="cancelarSolicitud(sol.id!)">Cancelar</button>
+                <app-button label="Aprobar" icon="check-circle" variant="success" (click)="aprobarSolicitud(sol.id!)"></app-button>
+                <app-button label="Rechazar" icon="x-circle" variant="danger" (click)="openRechazarModal()"></app-button>
+                <app-button label="Cancelar" icon="ban" variant="secondary" (click)="cancelarSolicitud(sol.id!)"></app-button>
             }
             @if (sol.estado === 'APROBADA') {
-                <button class="btn btn-primary" (click)="openConvertirModal()">Convertir a OC</button>
+                <app-button label="Convertir a OC" icon="arrow-right-circle" variant="primary" (click)="openConvertirModal()"></app-button>
             }
         </div>
     }
@@ -272,12 +272,13 @@
             <div class="modal-body">
                 <form [formGroup]="rechazarForm">
                     <label class="input-label">Motivo de Rechazo *</label>
-                    <textarea class="input-field" formControlName="motivoRechazo" rows="4" placeholder="Indique el motivo del rechazo"></textarea>
+                    <textarea class="form-input" formControlName="motivoRechazo" rows="4" placeholder="Indique el motivo del rechazo"></textarea>
                 </form>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-secondary" (click)="closeRechazarModal()">Cancelar</button>
-                <button class="btn btn-danger" (click)="confirmarRechazo()" [disabled]="rechazarForm.invalid">Confirmar Rechazo</button>
+                <app-button label="Cancelar" icon="x" variant="secondary" (click)="closeRechazarModal()"></app-button>
+                <app-button label="Confirmar Rechazo" icon="x-circle" variant="danger"
+                    [disabled]="rechazarForm.invalid" (click)="confirmarRechazo()"></app-button>
             </div>
         </div>
     </div>
@@ -295,11 +296,11 @@
                 <form [formGroup]="convertirForm">
                     <div class="mb-md">
                         <label class="input-label">ID Proveedor *</label>
-                        <input class="input-field" type="text" formControlName="proveedorId" placeholder="UUID del proveedor">
+                        <input class="form-input" type="text" formControlName="proveedorId" placeholder="UUID del proveedor">
                     </div>
                     <div class="mb-md">
                         <label class="input-label">Condición de Pago *</label>
-                        <select class="input-field" formControlName="condicionPago">
+                        <select class="form-input" formControlName="condicionPago">
                             <option value="CONTADO">Contado</option>
                             <option value="CREDITO_30">Crédito 30 días</option>
                             <option value="CREDITO_60">Crédito 60 días</option>
@@ -308,13 +309,14 @@
                     </div>
                     <div class="mb-md">
                         <label class="input-label">Almacén Destino</label>
-                        <input class="input-field" type="text" formControlName="almacenDestino" placeholder="Opcional">
+                        <input class="form-input" type="text" formControlName="almacenDestino" placeholder="Opcional">
                     </div>
                 </form>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-secondary" (click)="closeConvertirModal()">Cancelar</button>
-                <button class="btn btn-primary" (click)="confirmarConversion()" [disabled]="convertirForm.invalid">Crear Orden de Compra</button>
+                <app-button label="Cancelar" icon="x" variant="secondary" (click)="closeConvertirModal()"></app-button>
+                <app-button label="Crear Orden de Compra" icon="arrow-right-circle" variant="primary"
+                    [disabled]="convertirForm.invalid" (click)="confirmarConversion()"></app-button>
             </div>
         </div>
     </div>

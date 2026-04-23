@@ -28,10 +28,11 @@
                             </div>
                             <div style="display:flex; gap:.5rem">
                                 @if (sol.estado === 'ABIERTA' || sol.estado === 'EN_PROCESO') {
-                                    <button class="btn btn-secondary" style="font-size:.8rem"
-                                        (click)="cerrarSolicitud(sol.id)">
-                                        Cerrar
-                                    </button>
+                                    <app-button
+                                        label="Cerrar"
+                                        variant="secondary"
+                                        size="sm"
+                                        (click)="cerrarSolicitud(sol.id)" />
                                 }
                             </div>
                         </div>

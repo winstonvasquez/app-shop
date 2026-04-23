@@ -5,11 +5,12 @@ import { EvaluacionService } from '../../services/evaluacion.service';
 import { ProveedorService } from '../../services/proveedor.service';
 import { EvaluacionProveedor } from '../../models/evaluacion.model';
 import { Proveedor } from '../../models/proveedor.model';
+import { ButtonComponent } from '@shared/components';
 
 @Component({
     selector: 'app-evaluaciones',
     standalone: true,
-    imports: [DatePipe, DecimalPipe, ReactiveFormsModule],
+    imports: [DatePipe, DecimalPipe, ReactiveFormsModule, ButtonComponent],
     templateUrl: './evaluaciones.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -78,9 +79,9 @@ export class EvaluacionesComponent implements OnInit {
     }
 
     puntajeColor(p: number): string {
-        if (p >= 90) return 'text-green-400';
-        if (p >= 75) return 'text-blue-400';
-        if (p >= 60) return 'text-yellow-400';
-        return 'text-red-400';
+        if (p >= 90) return 'text-success';
+        if (p >= 75) return 'text-info';
+        if (p >= 60) return 'text-warning';
+        return 'text-error';
     }
 }

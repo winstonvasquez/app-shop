@@ -1,6 +1,6 @@
 import { Component, ChangeDetectionStrategy, signal, inject, OnInit } from '@angular/core';
-import { NgClass } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ButtonComponent } from '@shared/components';
 import { EvaluacionService } from '../../services/evaluacion.service';
 import { ProveedorService } from '../../services/proveedor.service';
 import { PuntoReorden } from '../../models/evaluacion.model';
@@ -9,7 +9,7 @@ import { Proveedor } from '../../models/proveedor.model';
 @Component({
     selector: 'app-puntos-reorden',
     standalone: true,
-    imports: [NgClass, ReactiveFormsModule],
+    imports: [ReactiveFormsModule, ButtonComponent],
     templateUrl: './puntos-reorden.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
 })

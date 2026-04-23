@@ -1,5 +1,5 @@
 import { Component, OnInit, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators, FormGroup, FormControl } from '@angular/forms';
 import { OrdenCompraService } from '../../services/orden-compra.service';
 import { ProveedorService } from '../../services/proveedor.service';
@@ -12,6 +12,7 @@ import { DateInputComponent } from '@shared/ui/forms/date-input/date-input.compo
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { LoadingSpinnerComponent } from '@shared/ui/feedback/loading-spinner/loading-spinner.component';
+import { ButtonComponent } from '@shared/components';
 
 export interface OcItemForm {
     productoNombre: string;
@@ -25,16 +26,17 @@ export interface OcItemForm {
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
-        CommonModule,
-        ReactiveFormsModule,
-        DataTableComponent,
-        PaginationComponent,
-        DrawerComponent,
-        DateInputComponent,
-        PageHeaderComponent,
-        AlertComponent,
-        LoadingSpinnerComponent
-    ],
+    ReactiveFormsModule,
+    DataTableComponent,
+    PaginationComponent,
+    DrawerComponent,
+    DateInputComponent,
+    PageHeaderComponent,
+    AlertComponent,
+    LoadingSpinnerComponent,
+    DatePipe,
+    ButtonComponent
+  ],
     templateUrl: './ordenes-compra.component.html'
 })
 export class OrdenesCompraComponent implements OnInit {

@@ -4,13 +4,13 @@
         subtitle="Gestión de órdenes de compra a proveedores"
         [breadcrumbs]="breadcrumbs">
         <div actions>
-            <button class="btn btn-primary" (click)="openCreateForm()">+ Nueva OC</button>
+            <app-button label="Nueva OC" icon="plus" variant="primary" (click)="openCreateForm()"></app-button>
         </div>
     </app-page-header>
 
     <!-- Filters -->
     <div class="mb-lg">
-        <select class="input-field" style="width:200px" [value]="filterEstado()" (change)="onFilterEstado($event)">
+        <select class="form-input" style="width:200px" [value]="filterEstado()" (change)="onFilterEstado($event)">
             <option value="">Todos los estados</option>
             @for (opt of estadoOptions; track opt.value) {
                 <option [value]="opt.value">{{ opt.label }}</option>
@@ -111,14 +111,14 @@
                     </span>
                     <div class="flex gap-sm mt-md flex-wrap">
                         @if (selectedOrden()?.estado === 'BORRADOR' || selectedOrden()?.estado === 'PENDIENTE') {
-                            <button class="btn btn-primary py-xs px-sm text-xs"
-                                (click)="updateEstado('APROBADA')">Aprobar</button>
-                            <button class="btn btn-danger py-xs px-sm text-xs"
-                                (click)="updateEstado('CANCELADA')">Cancelar</button>
+                            <app-button label="Aprobar" icon="check-circle" variant="success" size="sm"
+                                (click)="updateEstado('APROBADA')"></app-button>
+                            <app-button label="Cancelar" icon="x-circle" variant="danger" size="sm"
+                                (click)="updateEstado('CANCELADA')"></app-button>
                         }
                         @if (selectedOrden()?.estado === 'APROBADA') {
-                            <button class="btn btn-primary py-xs px-sm text-xs"
-                                (click)="updateEstado('ENVIADA')">Marcar Enviada</button>
+                            <app-button label="Marcar Enviada" icon="send" variant="primary" size="sm"
+                                (click)="updateEstado('ENVIADA')"></app-button>
                         }
                     </div>
                     @if (selectedOrden()?.observaciones) {
@@ -173,7 +173,7 @@
         }
 
         <div slot="footer">
-            <button type="button" class="btn btn-secondary" (click)="closeDetail()">Cerrar</button>
+            <app-button label="Cerrar" icon="x" variant="secondary" (click)="closeDetail()"></app-button>
         </div>
     </app-drawer>
 
@@ -197,7 +197,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-sm mb-md">
                 <div class="md:col-span-2">
                     <label class="input-label">Proveedor <span class="text-error">*</span></label>
-                    <select class="input-field" formControlName="proveedorId">
+                    <select class="form-input" formControlName="proveedorId">
                         <option value="">Seleccione un proveedor</option>
                         @for (p of proveedores(); track p.id) {
                             <option [value]="p.id">{{ p.razonSocial }} — {{ p.ruc }}</option>
@@ -215,7 +215,7 @@
                 </div>
                 <div>
                     <label class="input-label">Condición de Pago <span class="text-error">*</span></label>
-                    <select class="input-field" formControlName="condicionPago">
+                    <select class="form-input" formControlName="condicionPago">
                         @for (opt of condicionPagoOptions; track opt.value) {
                             <option [value]="opt.value">{{ opt.label }}</option>
                         }
@@ -223,7 +223,7 @@
                 </div>
                 <div>
                     <label class="input-label">Almacén Destino <span class="text-error">*</span></label>
-                    <select class="input-field" formControlName="almacenDestino">
+                    <select class="form-input" formControlName="almacenDestino">
                         @for (opt of almacenOptions; track opt.value) {
                             <option [value]="opt.value">{{ opt.label }}</option>
                         }
@@ -234,8 +234,8 @@
             <!-- Items -->
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-sm)">
                 <h3 class="text-sm font-bold text-subtle uppercase tracking-wide">Productos</h3>
-                <button type="button" class="btn btn-secondary" style="padding:4px 12px;font-size:0.8rem"
-                    (click)="addItem()">+ Agregar</button>
+                <app-button label="Agregar" icon="plus" variant="secondary" size="sm" type="button"
+                    (click)="addItem()"></app-button>
             </div>
 
             <div class="table-erp-container mb-md">
@@ -254,22 +254,22 @@
                         @for (item of formItems(); track $index; let i = $index) {
                             <tr>
                                 <td>
-                                    <input type="text" class="input-field" placeholder="Nombre del producto"
+                                    <input type="text" class="form-input" placeholder="Nombre del producto"
                                         [value]="item.productoNombre"
                                         (input)="updateItem(i, 'productoNombre', $any($event.target).value)" />
                                 </td>
                                 <td>
-                                    <input type="text" class="input-field" placeholder="SKU"
+                                    <input type="text" class="form-input" placeholder="SKU"
                                         [value]="item.sku"
                                         (input)="updateItem(i, 'sku', $any($event.target).value)" />
                                 </td>
                                 <td>
-                                    <input type="number" class="input-field text-right" min="1"
+                                    <input type="number" class="form-input text-right" min="1"
                                         [value]="item.cantidad"
                                         (input)="updateItem(i, 'cantidad', +$any($event.target).value)" />
                                 </td>
                                 <td>
-                                    <input type="number" class="input-field text-right" min="0" step="0.01"
+                                    <input type="number" class="form-input text-right" min="0" step="0.01"
                                         [value]="item.precioUnitario"
                                         (input)="updateItem(i, 'precioUnitario', +$any($event.target).value)" />
                                 </td>
@@ -315,18 +315,16 @@
             <!-- Observaciones -->
             <div>
                 <label class="input-label">Observaciones</label>
-                <textarea class="input-field" rows="2" placeholder="Notas adicionales..."
+                <textarea class="form-input" rows="2" placeholder="Notas adicionales..."
                     formControlName="observaciones"></textarea>
             </div>
         </form>
 
         <div slot="footer">
-            <button type="button" class="btn btn-secondary" (click)="closeForm()" [disabled]="submitting()">
-                Cancelar
-            </button>
-            <button type="button" class="btn btn-primary" (click)="onSubmit()" [disabled]="submitting() || ocForm.invalid">
-                @if (submitting()) { Guardando... } @else { {{ editMode() ? 'Actualizar OC' : 'Guardar Borrador' }} }
-            </button>
+            <app-button label="Cancelar" icon="x" variant="secondary" type="button"
+                [disabled]="submitting()" (click)="closeForm()"></app-button>
+            <app-button [label]="editMode() ? 'Actualizar OC' : 'Guardar Borrador'" icon="save" variant="primary" type="button"
+                [loading]="submitting()" [disabled]="submitting() || ocForm.invalid" (click)="onSubmit()"></app-button>
         </div>
     </app-drawer>
 </div>

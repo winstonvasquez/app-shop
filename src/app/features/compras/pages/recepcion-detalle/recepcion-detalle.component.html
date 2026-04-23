@@ -26,9 +26,13 @@
                 <div class="flex items-center gap-3">
                     <span class="badge badge-{{ badgeEstado(rec.estado) }}">{{ rec.estado }}</span>
                     @if (rec.estado === 'PENDIENTE') {
-                        <button class="btn btn-primary" (click)="confirmarRecepcion()" [disabled]="confirming()">
-                            {{ confirming() ? 'Confirmando...' : 'Confirmar Recepción' }}
-                        </button>
+                        <app-button
+                            variant="primary"
+                            icon="package-check"
+                            label="Confirmar Recepción"
+                            [loading]="confirming()"
+                            (click)="confirmarRecepcion()">
+                        </app-button>
                     }
                 </div>
             </div>
@@ -110,9 +114,12 @@
         }
 
         <div class="flex justify-end">
-            <button type="button" class="btn btn-secondary" (click)="onVolver()">
-                ← Volver a Recepciones
-            </button>
+            <app-button
+                variant="secondary"
+                icon="x"
+                label="Volver a Recepciones"
+                (click)="onVolver()">
+            </app-button>
         </div>
     }
 </div>

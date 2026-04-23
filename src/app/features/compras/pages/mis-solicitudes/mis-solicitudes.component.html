@@ -52,17 +52,29 @@
                                 <td class="table-cell">
                                     <div style="display:flex;gap:6px">
                                         @if (sol.estado === 'BORRADOR') {
-                                            <button class="btn btn-primary" style="padding:4px 10px;font-size:12px" (click)="enviarSolicitud(sol.id!)">
-                                                Enviar
-                                            </button>
-                                            <button class="btn btn-danger" style="padding:4px 10px;font-size:12px" (click)="cancelarSolicitud(sol.id!)">
-                                                Cancelar
-                                            </button>
+                                            <app-button
+                                                variant="primary"
+                                                icon="send"
+                                                label="Enviar"
+                                                size="sm"
+                                                (click)="enviarSolicitud(sol.id!)">
+                                            </app-button>
+                                            <app-button
+                                                variant="danger"
+                                                icon="x-circle"
+                                                label="Cancelar"
+                                                size="sm"
+                                                (click)="cancelarSolicitud(sol.id!)">
+                                            </app-button>
                                         }
                                         @if (sol.estado === 'PENDIENTE_APROBACION') {
-                                            <button class="btn btn-secondary" style="padding:4px 10px;font-size:12px" (click)="cancelarSolicitud(sol.id!)">
-                                                Cancelar
-                                            </button>
+                                            <app-button
+                                                variant="secondary"
+                                                icon="x-circle"
+                                                label="Cancelar"
+                                                size="sm"
+                                                (click)="cancelarSolicitud(sol.id!)">
+                                            </app-button>
                                         }
                                         @if (sol.motivoRechazo) {
                                             <span class="badge badge-error" title="{{ sol.motivoRechazo }}">Ver motivo</span>

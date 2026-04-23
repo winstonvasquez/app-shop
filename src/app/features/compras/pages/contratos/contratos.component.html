@@ -4,7 +4,7 @@
             <h1 class="page-title">Contratos con Proveedores</h1>
             <p class="page-subtitle">Gestión de contratos marco, específicos y de servicios</p>
         </div>
-        <button class="btn btn-primary" (click)="mostrarForm.set(true)">+ Nuevo Contrato</button>
+        <app-button label="Nuevo Contrato" icon="plus" variant="primary" (click)="mostrarForm.set(true)" />
     </div>
 
     @if (error()) {
@@ -21,7 +21,7 @@
 
     <!-- Filtro estado -->
     <div class="filters-bar" style="margin-bottom:1rem">
-        <select class="input-field" style="width:160px" (change)="onFiltro($event)">
+        <select class="form-input" style="width:160px" (change)="onFiltro($event)">
             <option value="">Todos los estados</option>
             <option value="ACTIVO">Activo</option>
             <option value="VENCIDO">Vencido</option>
@@ -87,11 +87,11 @@
                 <div style="display:grid; gap:.75rem">
                     <div>
                         <label class="input-label">ID Proveedor *</label>
-                        <input class="input-field" formControlName="proveedorId" placeholder="UUID del proveedor" />
+                        <input class="form-input" formControlName="proveedorId" placeholder="UUID del proveedor" />
                     </div>
                     <div>
                         <label class="input-label">Tipo de Contrato *</label>
-                        <select class="input-field" formControlName="tipoContrato">
+                        <select class="form-input" formControlName="tipoContrato">
                             <option value="MARCO">Marco</option>
                             <option value="ESPECIFICO">Específico</option>
                             <option value="SERVICIO">Servicio</option>
@@ -99,26 +99,26 @@
                     </div>
                     <div>
                         <label class="input-label">Descripción *</label>
-                        <textarea class="input-field" formControlName="descripcion" rows="2"></textarea>
+                        <textarea class="form-input" formControlName="descripcion" rows="2"></textarea>
                     </div>
                     <div style="display:grid; grid-template-columns:1fr 1fr; gap:.75rem">
                         <div>
                             <label class="input-label">Fecha Inicio *</label>
-                            <input class="input-field" type="date" formControlName="fechaInicio" />
+                            <input class="form-input" type="date" formControlName="fechaInicio" />
                         </div>
                         <div>
                             <label class="input-label">Fecha Fin *</label>
-                            <input class="input-field" type="date" formControlName="fechaFin" />
+                            <input class="form-input" type="date" formControlName="fechaFin" />
                         </div>
                     </div>
                     <div style="display:grid; grid-template-columns:2fr 1fr; gap:.75rem">
                         <div>
                             <label class="input-label">Monto Contrato</label>
-                            <input class="input-field" type="number" formControlName="montoContrato" />
+                            <input class="form-input" type="number" formControlName="montoContrato" />
                         </div>
                         <div>
                             <label class="input-label">Moneda</label>
-                            <select class="input-field" formControlName="moneda">
+                            <select class="form-input" formControlName="moneda">
                                 <option value="PEN">PEN</option>
                                 <option value="USD">USD</option>
                             </select>
@@ -126,7 +126,7 @@
                     </div>
                     <div>
                         <label class="input-label">Condiciones de Pago</label>
-                        <input class="input-field" formControlName="condicionesPago" />
+                        <input class="form-input" formControlName="condicionesPago" />
                     </div>
                     <div style="display:flex; align-items:center; gap:.5rem">
                         <input type="checkbox" formControlName="renovacionAutomatica" id="renov" />
@@ -134,14 +134,12 @@
                     </div>
                     <div>
                         <label class="input-label">Días aviso vencimiento</label>
-                        <input class="input-field" type="number" formControlName="diasAvisoVencimiento" />
+                        <input class="form-input" type="number" formControlName="diasAvisoVencimiento" />
                     </div>
                 </div>
                 <div style="display:flex; gap:.75rem; justify-content:flex-end; margin-top:1.25rem">
-                    <button type="button" class="btn btn-secondary" (click)="mostrarForm.set(false)">Cancelar</button>
-                    <button type="submit" class="btn btn-primary" [disabled]="form.invalid || guardando()">
-                        @if (guardando()) { Guardando... } @else { Crear Contrato }
-                    </button>
+                    <app-button type="button" label="Cancelar" icon="x" variant="secondary" (click)="mostrarForm.set(false)" />
+                    <app-button type="submit" label="Crear Contrato" icon="file-text" variant="primary" [loading]="guardando()" [disabled]="form.invalid" />
                 </div>
             </form>
         </div>

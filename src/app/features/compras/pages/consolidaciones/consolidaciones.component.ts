@@ -3,6 +3,7 @@ import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { DecimalPipe } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '@env/environment';
+import { ButtonComponent } from '@shared/components';
 
 interface TiendaReq { storeId: string; storeNombre: string; cantidad: number; }
 interface LineaReq  { productoId: string; productoNombre: string; lineas: TiendaReq[]; }
@@ -26,7 +27,7 @@ interface ConsolidacionDto {
 @Component({
     selector: 'app-consolidaciones',
     standalone: true,
-    imports: [ReactiveFormsModule, DecimalPipe],
+    imports: [ReactiveFormsModule, ButtonComponent],
     templateUrl: './consolidaciones.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
 })

@@ -4,7 +4,7 @@
             <h1 class="page-title">KPIs & Reportes de Compras</h1>
             <p class="page-subtitle">Indicadores clave del módulo de compras</p>
         </div>
-        <button class="btn btn-secondary" (click)="cargar()">Actualizar</button>
+        <app-button label="Actualizar" variant="secondary" icon="refresh-cw" (click)="cargar()" />
     </div>
 
     @if (error()) {

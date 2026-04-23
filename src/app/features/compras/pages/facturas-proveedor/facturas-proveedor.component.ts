@@ -12,6 +12,7 @@ import { RouterModule } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
 import { FacturaProveedorService } from '../../services/factura-proveedor.service';
 import { FacturaProveedor, RegistrarFacturaRequest } from '../../models/factura-proveedor.model';
+import { ButtonComponent } from '@shared/components';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
@@ -25,7 +26,7 @@ import { PaginationComponent, PaginationChangeEvent } from '@shared/ui/paginatio
     imports: [
         ReactiveFormsModule,
         RouterModule,
-        TranslatePipe,
+        ButtonComponent,
         DrawerComponent,
         PageHeaderComponent,
         AlertComponent,

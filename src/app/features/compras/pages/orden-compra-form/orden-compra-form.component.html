@@ -25,7 +25,7 @@
                 <div class="card-body">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <app-form-field label="Proveedor" [required]="true" [control]="getControl('proveedorId')">
-                            <select class="input-field" formControlName="proveedorId">
+                            <select class="form-input" formControlName="proveedorId">
                                 <option value="">Seleccionar proveedor...</option>
                                 @for (p of proveedores(); track p.id) {
                                     <option [value]="p.id">{{ p.razonSocial }} ({{ p.ruc }})</option>
@@ -34,7 +34,7 @@
                         </app-form-field>
 
                         <app-form-field label="Condición de Pago" [required]="true" [control]="getControl('condicionPago')">
-                            <select class="input-field" formControlName="condicionPago">
+                            <select class="form-input" formControlName="condicionPago">
                                 @for (opt of condicionPagoOptions; track opt.value) {
                                     <option [value]="opt.value">{{ opt.label }}</option>
                                 }
@@ -42,15 +42,15 @@
                         </app-form-field>
 
                         <app-form-field label="Fecha de Emisión" [required]="true" [control]="getControl('fechaEmision')">
-                            <input class="input-field" type="date" formControlName="fechaEmision" />
+                            <input class="form-input" type="date" formControlName="fechaEmision" />
                         </app-form-field>
 
                         <app-form-field label="Fecha Entrega Estimada" [control]="getControl('fechaEntregaEstimada')">
-                            <input class="input-field" type="date" formControlName="fechaEntregaEstimada" />
+                            <input class="form-input" type="date" formControlName="fechaEntregaEstimada" />
                         </app-form-field>
 
                         <app-form-field label="Almacén Destino" [required]="true" [control]="getControl('almacenDestino')">
-                            <select class="input-field" formControlName="almacenDestino">
+                            <select class="form-input" formControlName="almacenDestino">
                                 @for (opt of almacenOptions; track opt.value) {
                                     <option [value]="opt.value">{{ opt.label }}</option>
                                 }
@@ -58,7 +58,7 @@
                         </app-form-field>
 
                         <app-form-field label="Observaciones" [control]="getControl('observaciones')" class="md:col-span-2">
-                            <textarea class="input-field" formControlName="observaciones" rows="2"></textarea>
+                            <textarea class="form-input" formControlName="observaciones" rows="2"></textarea>
                         </app-form-field>
                     </div>
                 </div>
@@ -68,7 +68,7 @@
             <div class="card mb-4">
                 <div class="card-header">
                     <h3 class="card-title">Productos</h3>
-                    <button type="button" class="btn btn-secondary" (click)="addItem()">+ Agregar</button>
+                    <app-button type="button" label="Agregar" icon="plus" variant="secondary" (click)="addItem()" />
                 </div>
                 <div class="card-body">
                     <table class="table w-full">
@@ -86,25 +86,25 @@
                             @for (item of formItems(); track $index) {
                                 <tr class="table-row">
                                     <td class="table-cell">
-                                        <input class="input-field"
+                                        <input class="form-input"
                                             [value]="item.productoNombre"
                                             (input)="updateItem($index, 'productoNombre', $any($event.target).value)"
                                             placeholder="Nombre del producto" />
                                     </td>
                                     <td class="table-cell">
-                                        <input class="input-field"
+                                        <input class="form-input"
                                             [value]="item.sku"
                                             (input)="updateItem($index, 'sku', $any($event.target).value)"
                                             placeholder="SKU" />
                                     </td>
                                     <td class="table-cell text-right">
-                                        <input class="input-field text-right w-24"
+                                        <input class="form-input text-right w-24"
                                             type="number" min="1"
                                             [value]="item.cantidad"
                                             (input)="updateItem($index, 'cantidad', +$any($event.target).value)" />
                                     </td>
                                     <td class="table-cell text-right">
-                                        <input class="input-field text-right w-28"
+                                        <input class="form-input text-right w-28"
                                             type="number" min="0" step="0.01"
                                             [value]="item.precioUnitario"
                                             (input)="updateItem($index, 'precioUnitario', +$any($event.target).value)" />
@@ -143,16 +143,8 @@
             </div>
 
             <div class="flex gap-3 justify-end">
-                <button type="button" class="btn btn-secondary" (click)="onCancel()" [disabled]="submitting()">
-                    Cancelar
-                </button>
-                <button type="submit" class="btn btn-primary" [disabled]="submitting()">
-                    @if (submitting()) {
-                        Guardando...
-                    } @else {
-                        {{ editMode() ? 'Actualizar Orden' : 'Crear Orden' }}
-                    }
-                </button>
+                <app-button type="button" label="Cancelar" icon="x" variant="secondary" [disabled]="submitting()" (click)="onCancel()" />
+                <app-button type="submit" [label]="editMode() ? 'Actualizar Orden' : 'Crear Orden'" icon="file-plus" variant="primary" [loading]="submitting()" />
             </div>
         </form>
     }

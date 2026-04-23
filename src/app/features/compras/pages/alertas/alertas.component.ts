@@ -3,6 +3,7 @@ import { DatePipe } from '@angular/common';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { environment } from '@env/environment';
 import { AuthService } from '@core/auth/auth.service';
+import { ButtonComponent } from '@shared/components';
 
 interface AlertaCompras {
     id: string;
@@ -20,7 +21,7 @@ interface AlertaCompras {
 @Component({
     selector: 'app-alertas',
     standalone: true,
-    imports: [DatePipe],
+    imports: [DatePipe, ButtonComponent],
     templateUrl: './alertas.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
 })

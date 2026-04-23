@@ -4,7 +4,12 @@
         subtitle="Gestión de proveedores y datos de contacto"
         [breadcrumbs]="breadcrumbs">
         <div actions>
-            <button class="btn btn-primary" (click)="openCreateModal()">+ Nuevo Proveedor</button>
+            <app-button
+                variant="primary"
+                icon="plus"
+                label="Nuevo Proveedor"
+                (click)="openCreateModal()">
+            </app-button>
         </div>
     </app-page-header>
 
@@ -18,7 +23,7 @@
             <input type="text" placeholder="Buscar por RUC o razón social..."
                 [value]="searchQuery()" (input)="onSearch($event)" />
         </div>
-        <select class="input-field" style="width:180px" [value]="filterEstado()" (change)="onFilterEstado($event)">
+        <select class="form-input" style="width:180px" [value]="filterEstado()" (change)="onFilterEstado($event)">
             <option value="">Todos los estados</option>
             <option value="ACTIVO">Activo</option>
             <option value="INACTIVO">Inactivo</option>
@@ -103,7 +108,7 @@
                 </app-form-field>
                 <div>
                     <label class="input-label">Condición SUNAT</label>
-                    <select class="input-field" formControlName="condicionSunat">
+                    <select class="form-input" formControlName="condicionSunat">
                         <option value="HABIDO">HABIDO</option>
                         <option value="NO HABIDO">NO HABIDO</option>
                     </select>
@@ -142,7 +147,7 @@
                 </app-form-field>
                 <div>
                     <label class="input-label">Condición de Pago</label>
-                    <select class="input-field" formControlName="condicionPago">
+                    <select class="form-input" formControlName="condicionPago">
                         <option value="CONTADO">Contado</option>
                         <option value="CREDITO_15">Crédito 15 días</option>
                         <option value="CREDITO_30">Crédito 30 días</option>
@@ -152,7 +157,7 @@
                 </div>
                 <div>
                     <label class="input-label">Moneda Preferida</label>
-                    <select class="input-field" formControlName="monedaPreferida">
+                    <select class="form-input" formControlName="monedaPreferida">
                         <option value="PEN">Soles (PEN)</option>
                         <option value="USD">Dólares (USD)</option>
                     </select>
@@ -161,12 +166,21 @@
         </form>
 
         <div slot="footer">
-            <button type="button" class="btn btn-secondary" (click)="closeModal()" [disabled]="submitting()">
-                Cancelar
-            </button>
-            <button type="button" class="btn btn-primary" (click)="onSubmit()" [disabled]="submitting() || proveedorForm.invalid">
-                @if (submitting()) { Guardando... } @else { {{ editMode() ? 'Actualizar' : 'Guardar' }} }
-            </button>
+            <app-button
+                variant="secondary"
+                icon="x"
+                label="Cancelar"
+                [disabled]="submitting()"
+                (click)="closeModal()">
+            </app-button>
+            <app-button
+                variant="primary"
+                icon="save"
+                [label]="submitting() ? 'Guardando...' : (editMode() ? 'Actualizar' : 'Guardar')"
+                [loading]="submitting()"
+                [disabled]="proveedorForm.invalid"
+                (click)="onSubmit()">
+            </app-button>
         </div>
     </app-drawer>
 </div>

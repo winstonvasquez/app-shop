@@ -4,6 +4,7 @@ import { DecimalPipe } from '@angular/common';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { environment } from '@env/environment';
 import { AuthService } from '@core/auth/auth.service';
+import { ButtonComponent } from '@shared/components';
 
 interface ContratoDto {
     id: string;
@@ -26,7 +27,7 @@ interface ContratoDto {
 @Component({
     selector: 'app-contratos',
     standalone: true,
-    imports: [ReactiveFormsModule, DecimalPipe],
+    imports: [ReactiveFormsModule, DecimalPipe, ButtonComponent],
     templateUrl: './contratos.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
 })

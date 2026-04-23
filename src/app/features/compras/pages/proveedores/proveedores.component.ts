@@ -1,5 +1,4 @@
 import { Component, OnInit, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators, FormGroup, FormControl } from '@angular/forms';
 import { ProveedorService } from '../../services/proveedor.service';
 import { Proveedor } from '../../models/proveedor.model';
@@ -9,20 +8,21 @@ import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
+import { ButtonComponent } from '@shared/components';
 
 @Component({
     selector: 'app-proveedores',
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
-        CommonModule,
         ReactiveFormsModule,
         DataTableComponent,
         PaginationComponent,
         DrawerComponent,
         FormFieldComponent,
         PageHeaderComponent,
-        AlertComponent
+        AlertComponent,
+        ButtonComponent
     ],
     templateUrl: './proveedores.component.html'
 })

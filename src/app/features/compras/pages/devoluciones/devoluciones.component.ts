@@ -17,6 +17,7 @@ import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/p
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { LoadingSpinnerComponent } from '@shared/ui/feedback/loading-spinner/loading-spinner.component';
 import { PaginationComponent, PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
+import { ButtonComponent } from '@shared/components';
 
 @Component({
     selector: 'app-devoluciones',
@@ -25,12 +26,12 @@ import { PaginationComponent, PaginationChangeEvent } from '@shared/ui/paginatio
     imports: [
         ReactiveFormsModule,
         RouterModule,
-        TranslatePipe,
         DrawerComponent,
         PageHeaderComponent,
         AlertComponent,
         LoadingSpinnerComponent,
         PaginationComponent,
+        ButtonComponent,
     ],
     templateUrl: './devoluciones.component.html',
 })

@@ -7,7 +7,7 @@
 
     <!-- Filters -->
     <div class="mb-lg">
-        <select class="input-field" style="width:200px" [value]="estadoFiltro()" (change)="onFilterEstado($event)">
+        <select class="form-input" style="width:200px" [value]="estadoFiltro()" (change)="onFilterEstado($event)">
             <option value="">Todos los estados</option>
             @for (opt of estadoOptions; track opt.value) {
                 <option [value]="opt.value">{{ opt.label }}</option>
@@ -153,11 +153,20 @@
 
         <div slot="footer">
             @if (selectedRecepcion()?.estado === 'PENDIENTE') {
-                <button type="button" class="btn btn-primary" (click)="confirmarRecepcion()" [disabled]="loadingDetail()">
-                    @if (loadingDetail()) { Confirmando... } @else { Confirmar Recepción }
-                </button>
+                <app-button
+                    variant="primary"
+                    icon="package-check"
+                    label="Confirmar Recepción"
+                    [loading]="loadingDetail()"
+                    (click)="confirmarRecepcion()">
+                </app-button>
             }
-            <button type="button" class="btn btn-secondary" (click)="closeDetail()">Cerrar</button>
+            <app-button
+                variant="secondary"
+                icon="x"
+                label="Cerrar"
+                (click)="closeDetail()">
+            </app-button>
         </div>
     </app-drawer>
 </div>

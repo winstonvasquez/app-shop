@@ -5,13 +5,14 @@ import { EvaluacionService } from '../../services/evaluacion.service';
 import { ProveedorService } from '../../services/proveedor.service';
 import { HistorialPrecio } from '../../models/evaluacion.model';
 import { Proveedor } from '../../models/proveedor.model';
+import { ButtonComponent } from '@shared/components';
 
 type BusquedaTipo = 'sku' | 'producto' | 'proveedor';
 
 @Component({
     selector: 'app-historial-precios',
     standalone: true,
-    imports: [DatePipe, DecimalPipe, ReactiveFormsModule],
+    imports: [DatePipe, DecimalPipe, ReactiveFormsModule, ButtonComponent],
     templateUrl: './historial-precios.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
 })

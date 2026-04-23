@@ -3,6 +3,7 @@ import { DecimalPipe } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { BreadcrumbComponent, BreadcrumbItem } from '@shared/components/breadcrumb/breadcrumb.component';
+import { ButtonComponent } from '@shared/components';
 import { CartService } from '@features/cart/services/cart.service';
 import { OrderService } from '@core/services/order.service';
 import { SystemParameterService } from '@core/services/system-parameter.service';
@@ -31,6 +32,7 @@ import { AdminFormSectionComponent } from '@shared/ui/forms/admin-form-section/a
     FormsModule,
     ReactiveFormsModule,
     BreadcrumbComponent,
+    ButtonComponent,
     RouterLink,
     DecimalPipe,
     FormFieldComponent,

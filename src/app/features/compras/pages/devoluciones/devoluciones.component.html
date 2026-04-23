@@ -2,7 +2,7 @@
     title="Devoluciones a Proveedor"
     subtitle="Gestión de devoluciones y cambios de mercancía"
     [breadcrumbs]="breadcrumbs">
-    <button class="btn btn-primary" (click)="openCreateForm()">+ Nueva Devolución</button>
+    <app-button label="Nueva Devolución" variant="primary" icon="plus" (click)="openCreateForm()" />
 </app-page-header>
 
 <div class="page-container">
@@ -133,10 +133,11 @@
         </div>
 
         <div class="flex gap-3 justify-end mt-6">
-            <button type="button" class="btn btn-secondary" (click)="closeForm()">Cancelar</button>
-            <button type="submit" class="btn btn-primary" [disabled]="devolucionForm.invalid || submitting()">
-                {{ submitting() ? 'Creando...' : 'Crear Devolución' }}
-            </button>
+            <app-button type="button" label="Cancelar" variant="secondary" icon="x" (click)="closeForm()" />
+            <app-button type="submit" icon="save" variant="primary"
+                [label]="submitting() ? 'Creando...' : 'Crear Devolución'"
+                [disabled]="devolucionForm.invalid || submitting()"
+                [loading]="submitting()" />
         </div>
     </form>
 </app-drawer>
@@ -167,13 +168,13 @@
 
             <div class="flex flex-wrap gap-2 mt-4">
                 @if (dev.estado === 'BORRADOR') {
-                    <button class="btn btn-primary" (click)="cambiarEstado('enviar')">Enviar al Proveedor</button>
+                    <app-button label="Enviar al Proveedor" variant="primary" icon="send" (click)="cambiarEstado('enviar')" />
                 }
                 @if (dev.estado === 'ENVIADA') {
-                    <button class="btn btn-primary" (click)="cambiarEstado('aceptar')">Registrar Aceptación</button>
+                    <app-button label="Registrar Aceptación" variant="primary" icon="check" (click)="cambiarEstado('aceptar')" />
                 }
                 @if (dev.estado === 'ACEPTADA') {
-                    <button class="btn btn-primary" (click)="cambiarEstado('completar')">Completar</button>
+                    <app-button label="Completar" variant="success" icon="check-circle" (click)="cambiarEstado('completar')" />
                 }
             </div>
         </div>

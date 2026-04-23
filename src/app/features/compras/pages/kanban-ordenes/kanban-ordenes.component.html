@@ -4,7 +4,7 @@
             <h1 class="page-title">Kanban — Órdenes de Compra</h1>
             <p class="page-subtitle">Vista por estado del ciclo de vida de las OC</p>
         </div>
-        <button class="btn btn-secondary" (click)="cargarTodas()">Actualizar</button>
+        <app-button label="Actualizar" variant="secondary" icon="refresh-cw" (click)="cargarTodas()" />
     </div>
 
     @if (error()) {
@@ -33,7 +33,7 @@
                     <!-- Cards -->
                     <div style="display:flex; flex-direction:column; gap:.5rem">
                         @for (oc of col.ordenes; track oc.id) {
-                            <div class="card" style="padding:.75rem; cursor:default">
+                            <div class="card p-3 cursor-default">
                                 <div style="font-weight:600; font-size:.85rem; color:var(--color-text-on)">
                                     {{ oc.codigo }}
                                 </div>

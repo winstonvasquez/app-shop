@@ -6,6 +6,7 @@ import { environment } from '@env/environment';
 import { AuthService } from '@core/auth/auth.service';
 import { ProveedorService } from '../../services/proveedor.service';
 import { Proveedor } from '../../models/proveedor.model';
+import { ButtonComponent } from '@shared/components';
 
 interface ProveedorHomologado {
     id: string;
@@ -39,7 +40,7 @@ interface CatalogoPage {
 @Component({
     selector: 'app-catalogo',
     standalone: true,
-    imports: [DecimalPipe, ReactiveFormsModule],
+    imports: [DecimalPipe, ReactiveFormsModule, ButtonComponent],
     templateUrl: './catalogo.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
 })

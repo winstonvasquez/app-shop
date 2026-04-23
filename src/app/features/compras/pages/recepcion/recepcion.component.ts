@@ -1,5 +1,5 @@
 import { Component, OnInit, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RecepcionService, RecepcionPage } from '../../services/recepcion.service';
 import { Recepcion, RecepcionItem } from '../../models/orden-compra.model';
@@ -9,21 +9,23 @@ import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { LoadingSpinnerComponent } from '@shared/ui/feedback/loading-spinner/loading-spinner.component';
+import { ButtonComponent } from '@shared/components';
 
 @Component({
     selector: 'app-recepcion',
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
-        CommonModule,
-        FormsModule,
-        DataTableComponent,
-        PaginationComponent,
-        DrawerComponent,
-        PageHeaderComponent,
-        AlertComponent,
-        LoadingSpinnerComponent
-    ],
+    FormsModule,
+    DataTableComponent,
+    PaginationComponent,
+    DrawerComponent,
+    PageHeaderComponent,
+    AlertComponent,
+    LoadingSpinnerComponent,
+    DatePipe,
+    ButtonComponent
+  ],
     templateUrl: './recepcion.component.html'
 })
 export class RecepcionComponent implements OnInit {

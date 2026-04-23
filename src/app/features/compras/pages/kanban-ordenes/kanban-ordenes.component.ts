@@ -5,6 +5,7 @@ import { environment } from '@env/environment';
 import { AuthService } from '@core/auth/auth.service';
 import { OrdenCompra } from '../../models/orden-compra.model';
 import { OrdenCompraService } from '../../services/orden-compra.service';
+import { ButtonComponent } from '@shared/components';
 
 interface KanbanColumna {
     estado: string;
@@ -16,7 +17,7 @@ interface KanbanColumna {
 @Component({
     selector: 'app-kanban-ordenes',
     standalone: true,
-    imports: [DecimalPipe],
+    imports: [DecimalPipe, ButtonComponent],
     templateUrl: './kanban-ordenes.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
 })

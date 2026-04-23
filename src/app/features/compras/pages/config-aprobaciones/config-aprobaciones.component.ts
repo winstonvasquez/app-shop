@@ -1,11 +1,12 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { AprobacionService } from '../../services/aprobacion.service';
 import { ConfigAprobacionRequest, NivelAprobacion } from '../../models/aprobacion.model';
+import { ButtonComponent } from '@shared/components';
 
 @Component({
     selector: 'app-config-aprobaciones',
     standalone: true,
-    imports: [],
+    imports: [ButtonComponent],
     templateUrl: './config-aprobaciones.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
 })

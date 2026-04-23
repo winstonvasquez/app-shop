@@ -10,12 +10,10 @@
       </p>
     </div>
     <div class="flex gap-2">
-      <button class="btn btn-secondary" (click)="marcarTodasLeidas()" [disabled]="noLeidas() === 0">
-        Marcar todas leídas
-      </button>
-      <button class="btn btn-primary" (click)="generarAlertas()" [disabled]="generando()">
-        {{ generando() ? 'Generando...' : '🔍 Generar alertas' }}
-      </button>
+      <app-button label="Marcar todas leídas" variant="secondary" icon="check"
+                  [disabled]="noLeidas() === 0" (click)="marcarTodasLeidas()" />
+      <app-button label="Generar alertas" variant="primary" icon="search"
+                  [loading]="generando()" [disabled]="generando()" (click)="generarAlertas()" />
     </div>
   </div>
 

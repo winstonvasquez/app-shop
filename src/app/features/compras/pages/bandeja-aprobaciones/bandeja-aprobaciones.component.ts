@@ -3,11 +3,12 @@ import { DatePipe } from '@angular/common';
 import { AuthService } from '@core/auth/auth.service';
 import { AprobacionService } from '../../services/aprobacion.service';
 import { AprobacionPendiente } from '../../models/aprobacion.model';
+import { ButtonComponent } from '@shared/components';
 
 @Component({
     selector: 'app-bandeja-aprobaciones',
     standalone: true,
-    imports: [DatePipe],
+    imports: [DatePipe, ButtonComponent],
     templateUrl: './bandeja-aprobaciones.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
 })

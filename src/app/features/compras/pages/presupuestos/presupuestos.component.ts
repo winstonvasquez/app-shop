@@ -3,11 +3,12 @@ import { DecimalPipe } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { EvaluacionService } from '../../services/evaluacion.service';
 import { PresupuestoCompras } from '../../models/evaluacion.model';
+import { ButtonComponent } from '@shared/components';
 
 @Component({
     selector: 'app-presupuestos',
     standalone: true,
-    imports: [DecimalPipe, ReactiveFormsModule],
+    imports: [DecimalPipe, ReactiveFormsModule, ButtonComponent],
     templateUrl: './presupuestos.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
 })

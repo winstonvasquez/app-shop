@@ -2,7 +2,7 @@
     title="Facturas de Proveedor"
     subtitle="Registro y validación 3-Way Match (OC → Recepción → Factura)"
     [breadcrumbs]="breadcrumbs">
-    <button class="btn btn-primary" (click)="openCreateForm()">+ Registrar Factura</button>
+    <app-button label="Registrar Factura" variant="primary" icon="receipt" (click)="openCreateForm()" />
 </app-page-header>
 
 <div class="page-container">
@@ -55,8 +55,7 @@
                                     </span>
                                 </td>
                                 <td class="table-cell">
-                                    <button class="btn btn-secondary text-xs py-1 px-2"
-                                        (click)="openDetail(fac)">Ver</button>
+                                    <app-button label="Ver" variant="secondary" icon="eye" size="sm" (click)="openDetail(fac)" />
                                 </td>
                             </tr>
                         }
@@ -125,7 +124,7 @@
         <div class="mb-4">
             <div class="flex justify-between items-center mb-2">
                 <label class="input-label mb-0">Ítems *</label>
-                <button type="button" class="btn btn-secondary text-xs py-1 px-2" (click)="addItem()">+ Agregar</button>
+                <app-button label="Agregar" variant="secondary" icon="plus" size="sm" type="button" (click)="addItem()" />
             </div>
             <div formArrayName="items">
                 @for (item of itemsArray.controls; track $index) {
@@ -151,10 +150,8 @@
         </div>
 
         <div class="flex gap-3 justify-end mt-6">
-            <button type="button" class="btn btn-secondary" (click)="closeForm()">Cancelar</button>
-            <button type="submit" class="btn btn-primary" [disabled]="facturaForm.invalid || submitting()">
-                {{ submitting() ? 'Registrando...' : 'Registrar' }}
-            </button>
+            <app-button label="Cancelar" variant="secondary" icon="x" type="button" (click)="closeForm()" />
+            <app-button [label]="submitting() ? 'Registrando...' : 'Registrar'" variant="primary" icon="save" type="submit" [disabled]="facturaForm.invalid" [loading]="submitting()" />
         </div>
     </form>
 </app-drawer>
@@ -203,8 +200,8 @@
 
             @if (fac.estado === 'PENDIENTE') {
                 <div class="flex gap-3 mt-4">
-                    <button class="btn btn-primary flex-1" (click)="aprobarFactura(fac.id!)">Aprobar</button>
-                    <button class="btn btn-danger flex-1" (click)="openRechazarModal()">Rechazar</button>
+                    <app-button label="Aprobar" variant="success" icon="check-circle" (click)="aprobarFactura(fac.id!)" />
+                    <app-button label="Rechazar" variant="danger" icon="x-circle" (click)="openRechazarModal()" />
                 </div>
             }
         </div>
@@ -227,8 +224,8 @@
                 </form>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-secondary" (click)="closeRechazarModal()">Cancelar</button>
-                <button class="btn btn-danger" (click)="confirmarRechazo()" [disabled]="rechazarForm.invalid">Rechazar</button>
+                <app-button label="Cancelar" variant="secondary" icon="x" (click)="closeRechazarModal()" />
+                <app-button label="Rechazar" variant="danger" icon="x-circle" (click)="confirmarRechazo()" [disabled]="rechazarForm.invalid" />
             </div>
         </div>
     </div>

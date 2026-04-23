@@ -4,19 +4,19 @@
       <h1 class="page-title">Catálogo de Compras</h1>
       <p class="page-subtitle">Ítems homologados con proveedores y precios de referencia</p>
     </div>
-    <button class="btn btn-primary" (click)="showForm.set(true)">+ Nuevo Ítem</button>
+    <app-button label="Nuevo Ítem" icon="plus" variant="primary" (click)="showForm.set(true)"></app-button>
   </div>
 
   <!-- Filtros -->
   <div class="filters-bar mb-4">
     <div class="search-box">
       <span class="search-box-icon">🔍</span>
-      <input class="input-field pl-8" placeholder="Buscar por código o descripción..."
+      <input class="form-input pl-8" placeholder="Buscar por código o descripción..."
              [value]="busqueda()"
              (input)="busqueda.set($any($event.target).value)"
              (keydown.enter)="cargar(0)" />
     </div>
-    <select class="input-field w-48"
+    <select class="form-input w-48"
             [value]="filtroCategoria()"
             (change)="filtroCategoria.set($any($event.target).value); cargar(0)">
       <option value="">Todas las categorías</option>
@@ -24,7 +24,7 @@
         <option [value]="cat">{{ cat }}</option>
       }
     </select>
-    <button class="btn btn-secondary" (click)="cargar(0)">Buscar</button>
+    <app-button label="Buscar" icon="search" variant="primary" (click)="cargar(0)"></app-button>
   </div>
 
   <!-- Grid de ítems -->
@@ -56,7 +56,7 @@
                   <div class="flex items-center gap-2 py-1 border-b border-[var(--color-border)] last:border-0">
                     <span class="text-sm text-on flex-1">{{ pv.proveedorNombre }}</span>
                     @if (pv.precioReferencia) {
-                      <span class="text-sm font-semibold text-green-400">
+                      <span class="text-sm font-semibold text-success">
                         {{ pv.precioReferencia | number:'1.2-2' }} {{ pv.moneda }}
                       </span>
                     }
@@ -71,9 +71,8 @@
             }
           </div>
           <div class="card-footer">
-            <button class="btn btn-secondary text-xs" (click)="abrirProveedorForm(item)">
-              + Proveedor
-            </button>
+            <app-button label="Proveedor" icon="plus" variant="secondary" size="sm"
+              (click)="abrirProveedorForm(item)"></app-button>
           </div>
         </div>
       }
@@ -101,19 +100,19 @@
     <form [formGroup]="form" (ngSubmit)="crear()">
       <div class="mb-4">
         <label class="input-label">Código *</label>
-        <input class="input-field" formControlName="codigo" placeholder="Ej: MAT-001" />
+        <input class="form-input" formControlName="codigo" placeholder="Ej: MAT-001" />
       </div>
       <div class="mb-4">
         <label class="input-label">Descripción *</label>
-        <input class="input-field" formControlName="descripcion" />
+        <input class="form-input" formControlName="descripcion" />
       </div>
       <div class="mb-4">
         <label class="input-label">Categoría *</label>
-        <input class="input-field" formControlName="categoria" placeholder="Ej: MATERIALES, SERVICIOS" />
+        <input class="form-input" formControlName="categoria" placeholder="Ej: MATERIALES, SERVICIOS" />
       </div>
       <div class="mb-4">
         <label class="input-label">Unidad de Medida</label>
-        <select class="input-field" formControlName="unidadMedida">
+        <select class="form-input" formControlName="unidadMedida">
           <option value="UND">UND</option>
           <option value="KG">KG</option>
           <option value="LT">LT</option>
@@ -124,13 +123,13 @@
       </div>
       <div class="mb-4">
         <label class="input-label">Especificaciones</label>
-        <textarea class="input-field" formControlName="especificaciones" rows="3"></textarea>
+        <textarea class="form-input" formControlName="especificaciones" rows="3"></textarea>
       </div>
       <div class="flex gap-3 mt-6">
-        <button type="submit" class="btn btn-primary flex-1" [disabled]="form.invalid || saving()">
-          {{ saving() ? 'Guardando...' : 'Crear Ítem' }}
-        </button>
-        <button type="button" class="btn btn-secondary" (click)="showForm.set(false)">Cancelar</button>
+        <app-button label="Crear Ítem" icon="save" variant="primary" type="submit"
+          [loading]="saving()" [disabled]="form.invalid || saving()"></app-button>
+        <app-button label="Cancelar" icon="x" variant="secondary" type="button"
+          (click)="showForm.set(false)"></app-button>
       </div>
     </form>
   </div>
@@ -150,7 +149,7 @@
     <form [formGroup]="proveedorForm" (ngSubmit)="agregarProveedor()">
       <div class="mb-4">
         <label class="input-label">Proveedor *</label>
-        <select class="input-field" formControlName="proveedorId">
+        <select class="form-input" formControlName="proveedorId">
           <option value="">Seleccionar...</option>
           @for (p of proveedores(); track p.id) {
             <option [value]="p.id">{{ p.razonSocial }}</option>
@@ -160,11 +159,11 @@
       <div class="grid grid-cols-2 gap-3 mb-4">
         <div>
           <label class="input-label">Precio Referencia</label>
-          <input type="number" class="input-field" formControlName="precioReferencia" min="0" step="0.01" />
+          <input type="number" class="form-input" formControlName="precioReferencia" min="0" step="0.01" />
         </div>
         <div>
           <label class="input-label">Moneda</label>
-          <select class="input-field" formControlName="moneda">
+          <select class="form-input" formControlName="moneda">
             <option value="PEN">PEN</option>
             <option value="USD">USD</option>
           </select>
@@ -172,17 +171,17 @@
       </div>
       <div class="mb-4">
         <label class="input-label">Plazo Entrega (días)</label>
-        <input type="number" class="input-field" formControlName="plazoEntregaDias" min="0" />
+        <input type="number" class="form-input" formControlName="plazoEntregaDias" min="0" />
       </div>
       <div class="mb-4 flex items-center gap-2">
         <input type="checkbox" formControlName="esPreferido" id="esPreferido" />
         <label for="esPreferido" class="input-label mb-0 cursor-pointer">Proveedor preferido</label>
       </div>
       <div class="flex gap-3 mt-6">
-        <button type="submit" class="btn btn-primary flex-1" [disabled]="proveedorForm.invalid || saving()">
-          {{ saving() ? 'Guardando...' : 'Homologar' }}
-        </button>
-        <button type="button" class="btn btn-secondary" (click)="showProveedorForm.set(false)">Cancelar</button>
+        <app-button label="Homologar" icon="save" variant="primary" type="submit"
+          [loading]="saving()" [disabled]="proveedorForm.invalid || saving()"></app-button>
+        <app-button label="Cancelar" icon="x" variant="secondary" type="button"
+          (click)="showProveedorForm.set(false)"></app-button>
       </div>
     </form>
   </div>

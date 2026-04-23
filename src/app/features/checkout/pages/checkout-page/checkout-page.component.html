@@ -360,10 +360,13 @@
                                     (input)="couponCode.set($any($event.target).value)"
                                     placeholder="Introduce cod. cupón"
                                     class="flex-grow border border-[var(--color-border)] bg-[var(--color-surface-raised)] text-[var(--color-text-primary)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[var(--color-accent)] placeholder:text-[var(--color-text-muted)]">
-                                <button (click)="applyCoupon()" [disabled]="couponApplying()"
-                                    class="btn btn-secondary btn-sm">
-                                    @if (couponApplying()) { Validando... } @else { Aplicar }
-                                </button>
+                                <app-button
+                                    label="Aplicar"
+                                    variant="secondary"
+                                    size="sm"
+                                    icon="ticket"
+                                    [loading]="couponApplying()"
+                                    (click)="applyCoupon()" />
                             </div>
                             @if (couponError()) {
                             <p class="text-xs text-[var(--color-error)] mt-1">{{ couponError() }}</p>
@@ -534,12 +537,13 @@
                 </div>
                 }
 
-                <button class="btn btn-secondary w-full flex items-center justify-center gap-2" (click)="openNewAddressForm()">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-                    </svg>
-                    Agregar nueva dirección
-                </button>
+                <div class="w-full">
+                    <app-button
+                        label="Agregar nueva dirección"
+                        variant="secondary"
+                        icon="plus"
+                        (click)="openNewAddressForm()" />
+                </div>
             } @else {
                 <!-- Formulario nueva dirección -->
                 <h4 class="font-bold text-[var(--color-text-primary)]">Nueva dirección</h4>
@@ -581,10 +585,23 @@
                         </label>
                     </div>
                     <div class="flex gap-3 pt-4">
-                        <button type="button" class="btn btn-secondary flex-1" (click)="showAddressForm.set(false)">Cancelar</button>
-                        <button type="submit" class="btn btn-primary flex-1" [disabled]="addressForm.invalid || savingAddress()">
-                            @if (savingAddress()) { Guardando... } @else { Guardar dirección }
-                        </button>
+                        <div class="flex-1">
+                            <app-button
+                                label="Cancelar"
+                                variant="secondary"
+                                icon="x"
+                                type="button"
+                                (click)="showAddressForm.set(false)" />
+                        </div>
+                        <div class="flex-1">
+                            <app-button
+                                label="Guardar dirección"
+                                variant="primary"
+                                icon="save"
+                                type="submit"
+                                [loading]="savingAddress()"
+                                [disabled]="addressForm.invalid" />
+                        </div>
                     </div>
                 </form>
             }

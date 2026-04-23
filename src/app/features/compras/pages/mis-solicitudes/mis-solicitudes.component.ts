@@ -16,6 +16,7 @@ import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/p
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { LoadingSpinnerComponent } from '@shared/ui/feedback/loading-spinner/loading-spinner.component';
 import { PaginationComponent, PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
+import { ButtonComponent } from '@shared/components';
 
 @Component({
     selector: 'app-mis-solicitudes',
@@ -23,11 +24,11 @@ import { PaginationComponent, PaginationChangeEvent } from '@shared/ui/paginatio
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
         RouterModule,
-        TranslatePipe,
         PageHeaderComponent,
         AlertComponent,
         LoadingSpinnerComponent,
         PaginationComponent,
+        ButtonComponent,
     ],
     templateUrl: './mis-solicitudes.component.html',
 })

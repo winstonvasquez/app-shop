@@ -2,7 +2,7 @@
     title="Cotizaciones (RFQ)"
     subtitle="Solicitudes de cotización multi-proveedor"
     [breadcrumbs]="breadcrumbs">
-    <button class="btn btn-primary" (click)="openCreateForm()">+ Nueva Cotización</button>
+    <app-button label="Nueva Cotización" variant="primary" icon="file-search" (click)="openCreateForm()" />
 </app-page-header>
 
 <div class="page-container">
@@ -61,18 +61,14 @@
                                 <td class="table-cell">
                                     <div class="flex gap-2 flex-wrap">
                                         @if (cot.estado === 'CREADA') {
-                                            <button class="btn btn-secondary text-xs py-1 px-2"
-                                                (click)="enviarCotizacion(cot.id)">Enviar</button>
+                                            <app-button label="Enviar" variant="secondary" icon="send" size="sm" (click)="enviarCotizacion(cot.id)" />
                                         }
                                         @if (cot.estado === 'EN_RESPUESTA') {
-                                            <button class="btn btn-secondary text-xs py-1 px-2"
-                                                (click)="verComparativa(cot)">Comparativa</button>
-                                            <button class="btn btn-primary text-xs py-1 px-2"
-                                                (click)="openAdjudicarModal(cot)">Adjudicar</button>
+                                            <app-button label="Comparativa" variant="secondary" icon="git-compare" size="sm" (click)="verComparativa(cot)" />
+                                            <app-button label="Adjudicar" variant="primary" icon="check-circle" size="sm" (click)="openAdjudicarModal(cot)" />
                                         }
                                         @if (cot.estado === 'ADJUDICADA') {
-                                            <button class="btn btn-primary text-xs py-1 px-2"
-                                                (click)="convertirOc(cot.id)">Generar OC</button>
+                                            <app-button label="Generar OC" variant="primary" icon="receipt" size="sm" (click)="convertirOc(cot.id)" />
                                         }
                                     </div>
                                 </td>
@@ -116,7 +112,7 @@
         <div class="mb-4">
             <div class="flex justify-between items-center mb-2">
                 <label class="input-label mb-0">Ítems *</label>
-                <button type="button" class="btn btn-secondary text-xs py-1 px-2" (click)="addItem()">+ Agregar</button>
+                <app-button label="Agregar" variant="secondary" icon="plus" size="sm" type="button" (click)="addItem()" />
             </div>
             <div formArrayName="items">
                 @for (item of itemsArray.controls; track $index) {
@@ -142,10 +138,8 @@
         </div>
 
         <div class="flex gap-3 justify-end mt-6">
-            <button type="button" class="btn btn-secondary" (click)="closeForm()">Cancelar</button>
-            <button type="submit" class="btn btn-primary" [disabled]="cotizacionForm.invalid || submitting()">
-                {{ submitting() ? 'Creando...' : 'Crear Cotización' }}
-            </button>
+            <app-button label="Cancelar" variant="secondary" icon="x" type="button" (click)="closeForm()" />
+            <app-button [label]="submitting() ? 'Creando...' : 'Crear Cotización'" variant="primary" icon="save" type="submit" [disabled]="cotizacionForm.invalid" [loading]="submitting()" />
         </div>
     </form>
 </app-drawer>
@@ -235,9 +229,8 @@
                 </form>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-secondary" (click)="closeAdjudicarModal()">Cancelar</button>
-                <button class="btn btn-primary" (click)="confirmarAdjudicacion()"
-                    [disabled]="adjudicarForm.invalid">Adjudicar</button>
+                <app-button label="Cancelar" variant="secondary" icon="x" (click)="closeAdjudicarModal()" />
+                <app-button label="Adjudicar" variant="primary" icon="check-circle" (click)="confirmarAdjudicacion()" [disabled]="adjudicarForm.invalid" />
             </div>
         </div>
     </div>

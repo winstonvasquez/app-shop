@@ -4,9 +4,7 @@
       <h1 class="page-title">Configuración de Aprobaciones</h1>
       <p class="page-subtitle">Define los niveles jerárquicos de aprobación por monto</p>
     </div>
-    <button class="btn btn-primary" (click)="abrirFormulario()">
-      + Agregar Nivel
-    </button>
+    <app-button label="Agregar Nivel" variant="primary" icon="plus" (click)="abrirFormulario()" />
   </div>
 
   @if (loading()) {
@@ -71,20 +69,20 @@
         <div style="display:flex; flex-direction:column; gap:1rem">
           <div>
             <label class="input-label">Nombre <span style="color:var(--color-error)">*</span></label>
-            <input class="input-field" type="text" placeholder="Ej: Jefe de Área"
+            <input class="form-input" type="text" placeholder="Ej: Jefe de Área"
               [value]="form().nombre"
               (input)="updateForm('nombre', $any($event.target).value)" />
           </div>
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem">
             <div>
               <label class="input-label">Monto Mínimo (S/) *</label>
-              <input class="input-field" type="number" min="0" step="0.01"
+              <input class="form-input" type="number" min="0" step="0.01"
                 [value]="form().montoMinimo"
                 (input)="updateForm('montoMinimo', +$any($event.target).value)" />
             </div>
             <div>
               <label class="input-label">Monto Máximo (S/)</label>
-              <input class="input-field" type="number" min="0" step="0.01"
+              <input class="form-input" type="number" min="0" step="0.01"
                 placeholder="Dejar vacío = sin límite"
                 [value]="form().montoMaximo ?? ''"
                 (input)="updateForm('montoMaximo', $any($event.target).value ? +$any($event.target).value : null)" />
@@ -92,21 +90,21 @@
           </div>
           <div>
             <label class="input-label">Rol Aprobador <span style="color:var(--color-error)">*</span></label>
-            <input class="input-field" type="text" placeholder="Ej: ROLE_MANAGER"
+            <input class="form-input" type="text" placeholder="Ej: ROLE_MANAGER"
               [value]="form().rolAprobador"
               (input)="updateForm('rolAprobador', $any($event.target).value)" />
           </div>
           <div>
             <label class="input-label">Orden de Secuencia</label>
-            <input class="input-field" type="number" min="1"
+            <input class="form-input" type="number" min="1"
               [value]="form().orden"
               (input)="updateForm('orden', +$any($event.target).value)" />
           </div>
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn btn-secondary" (click)="showForm.set(false)">Cancelar</button>
-        <button class="btn btn-primary" (click)="guardar()">Guardar</button>
+        <app-button label="Cancelar" variant="secondary" icon="x" (click)="showForm.set(false)" />
+        <app-button label="Guardar" variant="primary" icon="save" (click)="guardar()" />
       </div>
     </div>
   </div>
