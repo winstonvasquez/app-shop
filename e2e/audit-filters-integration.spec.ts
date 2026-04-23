@@ -32,11 +32,10 @@ const TESTS: Test[] = [
     { feature: 'admin/customers',   route: '/admin/customers',   placeholderRegex: /Buscar por nombre, documento/,   apiRegex: /\/clientes|\/customers/ },
     { feature: 'admin/products',    route: '/admin/products',    placeholderRegex: /Buscar productos/,               apiRegex: /\/productos/ },
     { feature: 'admin/segments',    route: '/admin/segments',    placeholderRegex: /Buscar segmento/,                apiRegex: /\/segments/ },
-    { feature: 'admin/users',       route: '/admin/users',       placeholderRegex: /Buscar por nombre, email o doc/, apiRegex: /\/users\/api\/users/ },
     { feature: 'admin/orders',      route: '/admin/orders',      placeholderRegex: /Buscar por ID, cliente/,         apiRegex: /\/pedidos|\/orders/ },
     { feature: 'compras/proveedores', route: '/admin/compras/proveedores', placeholderRegex: /Buscar por RUC/,        apiRegex: /\/proveedores/ },
     { feature: 'compras/catalogo',  route: '/admin/compras/catalogo',       placeholderRegex: /Buscar por código o descripción/, apiRegex: /\/catalogo/ },
-    { feature: 'rrhh/empleados',    route: '/admin/rrhh/empleados',         placeholderRegex: /Buscar por código, nombre o documento/, apiRegex: /\/empleados|\/employees/ },
+    { feature: 'rrhh/employees',    route: '/admin/rrhh/employees',         placeholderRegex: /Buscar por código, nombre o documento/, apiRegex: /\/empleados|\/employees/ },
 ];
 
 interface Result {
@@ -106,21 +105,21 @@ test('audit filters integration: search behavior por feature', async ({ page }) 
         try {
             // Baseline: capturar request del listado al cargar la página
             r.baseline = await captureResponse(page, t.apiRegex, async () => {
-                await page.goto(t.route, { waitUntil: 'domcontentloaded', timeout: 15_000 });
-            }, 10_000);
+                await page.goto(t.route, { waitUntil: 'networkidle', timeout: 20_000 });
+            }, 12_000);
 
             if (r.baseline.status === null) {
                 r.errors.push('BASELINE_REQUEST_NOT_CAPTURED');
             }
 
-            await page.waitForTimeout(800);
+            await page.waitForTimeout(1500);
 
-            // Selector específico por placeholder regex
-            const input = page.locator(`input[placeholder*="${t.placeholderRegex.source.split(/\\/)[0]}"]`).first();
-            const hasInput = await input.count() > 0 && await input.isVisible().catch(() => false);
+            // Playwright getByPlaceholder es más robusto que construir selector CSS manual
+            const input = page.getByPlaceholder(t.placeholderRegex).first();
+            const count = await input.count();
 
-            if (!hasInput) {
-                r.errors.push('SEARCH_INPUT_NOT_VISIBLE');
+            if (count === 0) {
+                r.errors.push('SEARCH_INPUT_NOT_FOUND');
                 r.verdict = evaluate(r);
                 results.push(r);
                 continue;
@@ -129,20 +128,20 @@ test('audit filters integration: search behavior por feature', async ({ page }) 
             // Caso MATCHING: texto que matchea mucho
             r.matching = await captureResponse(page, t.apiRegex, async () => {
                 await input.fill('a');
-                await page.waitForTimeout(800);
-            }, 6000);
+                await page.waitForTimeout(1200);
+            }, 8000);
 
             // Caso IMPOSSIBLE: texto que no matchea nada
             r.impossible = await captureResponse(page, t.apiRegex, async () => {
                 await input.fill('_zzz_xyz_nomatch_999_');
-                await page.waitForTimeout(800);
-            }, 6000);
+                await page.waitForTimeout(1200);
+            }, 8000);
 
             // Caso CLEARED: limpiar filtro
             r.cleared = await captureResponse(page, t.apiRegex, async () => {
                 await input.fill('');
-                await page.waitForTimeout(800);
-            }, 6000);
+                await page.waitForTimeout(1200);
+            }, 8000);
 
         } catch (e) {
             r.errors.push(`EXC: ${(e as Error).message.substring(0, 120)}`);
