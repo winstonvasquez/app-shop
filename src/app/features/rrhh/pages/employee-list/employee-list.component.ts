@@ -5,6 +5,7 @@ import {
 import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { EmployeeService } from '../../services/employee.service';
 import { Employee } from '../../models/employee.model';
+import { ButtonComponent } from '@shared/components';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { DataTableComponent, TableColumn, TableAction } from '@shared/ui/tables/data-table/data-table.component';
 import { PaginationComponent, PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
@@ -21,6 +22,7 @@ import { Router } from '@angular/router';
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
         ReactiveFormsModule,
+        ButtonComponent,
         DrawerComponent,
         DataTableComponent,
         PaginationComponent,

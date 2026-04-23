@@ -9,6 +9,7 @@ import { DataTableComponent, TableColumn } from '@shared/ui/tables/data-table/da
 import { PageHeaderComponent } from '@shared/ui/layout/page-header/page-header.component';
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
 import { DatePickerComponent } from '@shared/ui/forms/date-picker/date-picker.component';
+import { ButtonComponent } from '@shared/components';
 import { MovimientosFinancierosService, FinancialMovementRequest } from '../../services/movimientos-financieros.service';
 import { AuthService } from '@core/auth/auth.service';
 import { FinancialMovement, Page } from '../../models/tesoreria.model';
@@ -19,7 +20,8 @@ import { FinancialMovement, Page } from '../../models/tesoreria.model';
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
         DecimalPipe, ReactiveFormsModule,
-        DrawerComponent, DataTableComponent, PageHeaderComponent, FormFieldComponent, DatePickerComponent
+        DrawerComponent, DataTableComponent, PageHeaderComponent, FormFieldComponent, DatePickerComponent,
+        ButtonComponent
     ],
     templateUrl: './flujo-caja.component.html'
 })

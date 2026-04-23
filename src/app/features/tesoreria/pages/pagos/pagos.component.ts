@@ -9,6 +9,7 @@ import { DataTableComponent, TableColumn, TableAction } from '@shared/ui/tables/
 import { PageHeaderComponent } from '@shared/ui/layout/page-header/page-header.component';
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
 import { DatePickerComponent } from '@shared/ui/forms/date-picker/date-picker.component';
+import { ButtonComponent } from '@shared/components';
 import { PagosService } from '../../services/pagos.service';
 import { AuthService } from '@core/auth/auth.service';
 import { Payment, PaymentRequest, Page } from '../../models/tesoreria.model';
@@ -19,7 +20,8 @@ import { Payment, PaymentRequest, Page } from '../../models/tesoreria.model';
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
         DecimalPipe, ReactiveFormsModule,
-        DrawerComponent, DataTableComponent, PageHeaderComponent, FormFieldComponent, DatePickerComponent
+        DrawerComponent, DataTableComponent, PageHeaderComponent, FormFieldComponent, DatePickerComponent,
+        ButtonComponent
     ],
     templateUrl: './pagos.component.html'
 })

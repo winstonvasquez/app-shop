@@ -16,6 +16,7 @@ import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.compo
 import { AdminFormSectionComponent } from '@shared/ui/forms/admin-form-section/admin-form-section.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
+import { ButtonComponent } from '@shared/components';
 
 @Component({
     selector: 'app-contract-list',
@@ -30,6 +31,7 @@ import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
         AdminFormSectionComponent,
         PageHeaderComponent,
         AlertComponent,
+        ButtonComponent,
     ],
     templateUrl: './contract-list.component.html',
 })

@@ -6,6 +6,7 @@ import { HttpClient } from '@angular/common/http';
 import { environment } from '@env/environment';
 import { DireccionEnvio } from '@core/models/order.model';
 import { BreadcrumbComponent, BreadcrumbItem } from '@shared/components/breadcrumb/breadcrumb.component';
+import { ButtonComponent } from '@shared/components';
 import {
   FormFieldComponent,
   AdminFormSectionComponent,
@@ -23,6 +24,7 @@ interface DireccionResponse extends DireccionEnvio {
   imports: [
     ReactiveFormsModule,
     BreadcrumbComponent,
+    ButtonComponent,
     FormFieldComponent,
     AdminFormSectionComponent,
     AdminFormLayoutComponent,

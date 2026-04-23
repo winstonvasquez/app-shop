@@ -52,17 +52,15 @@
                                     <form [formGroup]="editForm" (ngSubmit)="saveEdit(review)" class="flex flex-col gap-3 mt-2">
                                         <div>
                                             <label class="input-label">Calificación (1–5)</label>
-                                            <input type="number" class="input-field" formControlName="calificacion" min="1" max="5">
+                                            <input type="number" class="form-input" formControlName="calificacion" min="1" max="5">
                                         </div>
                                         <div>
                                             <label class="input-label">Comentario</label>
-                                            <textarea class="input-field" formControlName="comentario" rows="3" style="resize: vertical"></textarea>
+                                            <textarea class="form-input" formControlName="comentario" rows="3" style="resize: vertical"></textarea>
                                         </div>
                                         <div class="flex gap-2">
-                                            <button type="submit" class="btn btn-primary" [disabled]="saving() || editForm.invalid">
-                                                @if (saving()) { Guardando... } @else { Guardar }
-                                            </button>
-                                            <button type="button" class="btn btn-secondary" (click)="cancelEdit()">Cancelar</button>
+                                            <app-button type="submit" [label]="saving() ? 'Guardando...' : 'Guardar'" icon="save" variant="primary" [loading]="saving()" [disabled]="editForm.invalid" />
+                                            <app-button type="button" label="Cancelar" icon="x" variant="secondary" (click)="cancelEdit()" />
                                         </div>
                                     </form>
                                 }
@@ -70,23 +68,8 @@
 
                             @if (editing() !== review.id) {
                                 <div class="flex gap-1 flex-shrink-0">
-                                    <button class="btn-icon btn-icon-edit" title="Editar" (click)="startEdit(review)">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                                        </svg>
-                                    </button>
-                                    <button class="btn-icon btn-icon-delete" title="Eliminar"
-                                        [disabled]="deleting() === review.id"
-                                        (click)="deleteReview(review.id)">
-                                        @if (deleting() === review.id) {
-                                            <div class="spinner-sm"></div>
-                                        } @else {
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
-                                            </svg>
-                                        }
-                                    </button>
+                                    <app-button icon="pencil" variant="ghost" [iconOnly]="true" ariaLabel="Editar" size="sm" (click)="startEdit(review)" />
+                                    <app-button icon="trash-2" variant="danger" [iconOnly]="true" ariaLabel="Eliminar" size="sm" [loading]="deleting() === review.id" (click)="deleteReview(review.id)" />
                                 </div>
                             }
                         </div>

@@ -5,14 +5,14 @@
     subtitle="Gestiona el traslado de stock entre almacenes"
     [breadcrumbs]="breadcrumbs">
     <div actions>
-      <button class="btn btn-primary" (click)="openCreate()">+ Nueva Transferencia</button>
+      <app-button icon="plus" label="Nueva Transferencia" variant="primary" (click)="openCreate()" />
     </div>
   </app-page-header>
 
   <div class="filters-bar">
     <div class="filter-field">
       <label class="input-label">Estado</label>
-      <select class="input-field" style="min-width:180px" (change)="onFilterStatus($event)">
+      <select class="form-input" style="min-width:180px" (change)="onFilterStatus($event)">
         <option value="">Todos</option>
         <option value="PENDIENTE">Pendiente</option>
         <option value="ENVIADA">Enviada</option>
@@ -56,7 +56,7 @@
     <div class="drawer-form-grid">
       <div>
         <label class="input-label">Almacén Origen <span class="text-error">*</span></label>
-        <select class="input-field" formControlName="sourceWarehouseId">
+        <select class="form-input" formControlName="sourceWarehouseId">
           <option [value]="null">Seleccionar...</option>
           @for (w of warehouses(); track w.id) {
             <option [value]="w.id">{{ w.name }}</option>
@@ -66,7 +66,7 @@
 
       <div>
         <label class="input-label">Almacén Destino <span class="text-error">*</span></label>
-        <select class="input-field" formControlName="destinationWarehouseId">
+        <select class="form-input" formControlName="destinationWarehouseId">
           <option [value]="null">Seleccionar...</option>
           @for (w of warehouses(); track w.id) {
             <option [value]="w.id">{{ w.name }}</option>
@@ -88,7 +88,7 @@
     <div class="items-section">
       <div class="items-header">
         <span class="input-label">Productos a transferir</span>
-        <button class="btn btn-secondary" type="button" (click)="addDetail()">+ Agregar</button>
+        <app-button icon="plus" label="Agregar" variant="secondary" type="button" (click)="addDetail()" />
       </div>
 
       <div formArrayName="details">
@@ -101,7 +101,7 @@
             <app-form-field label="Notas" [control]="getDetailCtrl(i, 'notes')"
               type="text" placeholder="Opcional" />
             @if (details.length > 1) {
-              <button class="btn btn-danger remove-btn" type="button" (click)="removeDetail(i)">✕</button>
+              <app-button [iconOnly]="true" icon="x" variant="danger" size="sm" ariaLabel="Eliminar ítem" type="button" (click)="removeDetail(i)" />
             }
           </div>
         }
@@ -110,10 +110,9 @@
   </form>
 
   <div slot="footer">
-    <button class="btn btn-secondary" type="button" (click)="closeDrawer()">Cancelar</button>
-    <button class="btn btn-primary" type="button" (click)="onSubmit()"
-            [disabled]="submitting() || form.invalid">
-      {{ submitting() ? 'Guardando...' : 'Crear Transferencia' }}
-    </button>
+    <app-button icon="x" label="Cancelar" variant="secondary" type="button" (click)="closeDrawer()" />
+    <app-button icon="save" label="Crear Transferencia" variant="primary" type="button"
+                [loading]="submitting()" [disabled]="submitting() || form.invalid"
+                (click)="onSubmit()" />
   </div>
 </app-drawer>

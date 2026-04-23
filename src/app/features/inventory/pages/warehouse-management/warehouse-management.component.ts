@@ -1,7 +1,6 @@
 import {
     ChangeDetectionStrategy, Component, inject, signal, OnInit
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators, FormGroup, FormControl } from '@angular/forms';
 import { DataTableComponent, TableColumn, TableAction, PaginationEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
@@ -9,6 +8,7 @@ import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/p
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
 import { ModalComponent } from '@shared/components/modal/modal.component';
+import { ButtonComponent } from '@shared/components';
 import { InventoryApiService } from '../../services/inventory-api.service';
 import { Warehouse } from '../../models/inventory.models';
 
@@ -17,9 +17,10 @@ import { Warehouse } from '../../models/inventory.models';
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
-        CommonModule, ReactiveFormsModule,
+        ReactiveFormsModule,
         DataTableComponent, DrawerComponent, ModalComponent,
-        PageHeaderComponent, AlertComponent, FormFieldComponent
+        PageHeaderComponent, AlertComponent, FormFieldComponent,
+        ButtonComponent
     ],
     templateUrl: './warehouse-management.component.html',
     styleUrl: './warehouse-management.component.scss'

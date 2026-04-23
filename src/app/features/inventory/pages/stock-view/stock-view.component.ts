@@ -1,16 +1,16 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { InventoryApiService } from '../../services/inventory-api.service';
 import { InventoryStock, Warehouse } from '../../models/inventory.models';
 import { DataTableComponent, TableColumn, PaginationEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
+import { ButtonComponent } from '@shared/components';
 
 @Component({
     selector: 'app-stock-view',
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [CommonModule, DataTableComponent, PageHeaderComponent, AlertComponent],
+    imports: [DataTableComponent, PageHeaderComponent, AlertComponent, ButtonComponent],
     templateUrl: './stock-view.component.html'
 })
 export class StockViewComponent {

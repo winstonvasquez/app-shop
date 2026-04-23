@@ -3,7 +3,7 @@
     [subtitle]="employee() ? employee()!.codigoEmpleado + ' — ' + (employee()!.positionName ?? employee()!.cargo ?? 'Sin puesto') : ''"
     [breadcrumbs]="breadcrumbs">
     <div actions>
-        <button class="btn btn-secondary" (click)="goBack()">Volver</button>
+        <app-button label="Volver" icon="x" variant="secondary" (click)="goBack()" />
     </div>
 </app-page-header>
 
@@ -19,6 +19,7 @@
 <div class="card" style="margin-bottom: var(--space-md)">
     <div class="flex gap-0 border-b border-[var(--color-border)] overflow-x-auto">
         @for (tab of tabs; track tab.key) {
+            <!-- btn-migration: SKIP — color custom + multi-línea con estilos dinámicos de tab activo -->
             <button
                 class="btn"
                 [style.border-bottom]="activeTab() === tab.key ? '2px solid var(--color-primary)' : '2px solid transparent'"

@@ -7,6 +7,7 @@ import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.compo
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { DateInputComponent } from '@shared/ui/forms/date-input/date-input.component';
+import { ButtonComponent } from '@shared/components';
 import { TrainingService } from '../../services/training.service';
 import { Training, TRAINING_STATUS_LABELS, TrainingStatus } from '../../models/training.model';
 
@@ -23,6 +24,7 @@ import { Training, TRAINING_STATUS_LABELS, TrainingStatus } from '../../models/t
         PageHeaderComponent,
         AlertComponent,
         DateInputComponent,
+        ButtonComponent,
     ],
     templateUrl: './training-list.component.html',
 })

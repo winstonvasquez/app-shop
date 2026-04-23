@@ -3,9 +3,7 @@
     subtitle="Cargos, requisitos y rangos salariales"
     [breadcrumbs]="breadcrumbs">
     <div actions>
-        <button class="btn btn-primary" (click)="openCreateModal()">
-            + Nuevo Puesto
-        </button>
+        <app-button icon="plus" label="Nuevo Puesto" variant="primary" (click)="openCreateModal()" />
     </div>
 </app-page-header>
 
@@ -132,9 +130,8 @@
     </form>
 
     <div slot="footer" class="flex justify-end gap-2">
-        <button class="btn btn-secondary" type="button" (click)="closeModal()">
-            Cancelar
-        </button>
+        <app-button icon="x" label="Cancelar" variant="secondary" type="button" (click)="closeModal()" />
+        <!-- btn-migration: SKIP — label dinámico con ternario (submitting/editMode) -->
         <button class="btn btn-primary" type="button"
                 [disabled]="submitting()"
                 (click)="onSubmit()">

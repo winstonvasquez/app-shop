@@ -4,11 +4,12 @@ import { CurrencyPipe } from '@angular/common';
 import { WishlistService, WishlistItem } from '@core/services/wishlist.service';
 import { CartService } from '@features/cart/services/cart.service';
 import { BreadcrumbComponent, BreadcrumbItem } from '@shared/components/breadcrumb/breadcrumb.component';
+import { ButtonComponent } from '@shared/components';
 
 @Component({
     selector: 'app-account-wishlist',
     standalone: true,
-    imports: [RouterLink, CurrencyPipe, BreadcrumbComponent],
+    imports: [RouterLink, BreadcrumbComponent, ButtonComponent],
     templateUrl: './account-wishlist.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
 })

@@ -1,19 +1,19 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators, FormGroup, FormControl } from '@angular/forms';
 import { InventoryApiService } from '../../services/inventory-api.service';
 import { KardexEntry, InventoryMovementType } from '../../models/inventory.models';
 import { DataTableComponent, TableColumn, PaginationEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
+import { ButtonComponent } from '@shared/components';
 
 @Component({
     selector: 'app-kardex-view',
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
-        CommonModule, ReactiveFormsModule,
-        DataTableComponent, PageHeaderComponent, AlertComponent
+        ReactiveFormsModule,
+        DataTableComponent, PageHeaderComponent, AlertComponent, ButtonComponent
     ],
     templateUrl: './kardex-view.component.html'
 })

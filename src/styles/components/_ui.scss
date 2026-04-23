@@ -8,7 +8,7 @@
 
     /* --- BUTTONS --- */
     .btn-base {
-        @apply inline-flex items-center justify-center font-sans font-bold text-[14px] rounded-md transition-colors duration-200 px-lg py-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed;
+        @apply inline-flex items-center justify-center gap-2 font-sans font-bold text-[14px] rounded-md transition-colors duration-200 px-lg py-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed;
     }
 
     .btn {
@@ -43,6 +43,23 @@
             @extend .btn-base;
             @apply bg-[var(--color-success)] text-white hover:brightness-110 active:brightness-90;
         }
+
+        /* Variant premium: gradient + shadow + uppercase (login / landings) */
+        &-primary-gradient {
+            @extend .btn-base;
+            @apply rounded-xl px-4 py-4 uppercase tracking-wider shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 transition-all;
+        }
+    }
+
+    /* Button size variants */
+    .btn-sm {
+        padding: var(--spacing-xs) var(--spacing-sm);
+        font-size: var(--text-xs);
+    }
+
+    .btn-lg {
+        padding: var(--spacing-sm) var(--spacing-xl);
+        font-size: var(--text-base);
     }
 
     /* --- CIRCULAR ICON BUTTONS --- */
@@ -75,6 +92,21 @@
         &-primary {
             @apply text-[var(--color-primary)] hover:bg-[var(--color-primary)]/10 active:bg-[var(--color-primary)]/20;
         }
+    }
+
+    /* --- CARD PARTS (generic, used by kpi-card, chart-card, card-erp) --- */
+    .card-header {
+        @apply flex items-center justify-between border-b border-[var(--color-border)];
+        padding: var(--spacing-md) var(--spacing-lg);
+    }
+
+    .card-body {
+        padding: var(--spacing-lg);
+    }
+
+    .card-footer {
+        @apply flex items-center justify-end gap-3 border-t border-[var(--color-border)];
+        padding: var(--spacing-md) var(--spacing-lg);
     }
 
     /* --- CARDS --- */

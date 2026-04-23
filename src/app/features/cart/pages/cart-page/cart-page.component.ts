@@ -6,6 +6,7 @@ import { ConfigService, MedioPago, Certificacion } from '@core/services/config.s
 import { TranslateModule } from '@ngx-translate/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { BreadcrumbComponent, BreadcrumbItem } from '@shared/components/breadcrumb/breadcrumb.component';
+import { ButtonComponent } from '@shared/components';
 
 @Component({
     selector: 'app-cart-page',
@@ -14,6 +15,7 @@ import { BreadcrumbComponent, BreadcrumbItem } from '@shared/components/breadcru
     TranslateModule,
     BreadcrumbComponent,
     DecimalPipe,
+    ButtonComponent,
   ],
     templateUrl: './cart-page.component.html'
 })

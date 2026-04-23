@@ -7,6 +7,7 @@ import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angu
 import { PositionService } from '../../services/position.service';
 import { DepartmentService } from '../../services/department.service';
 import { Position } from '../../models/position.model';
+import { ButtonComponent } from '@shared/components';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { DataTableComponent, TableColumn, TableAction } from '@shared/ui/tables/data-table/data-table.component';
 import { PaginationComponent, PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
@@ -20,6 +21,7 @@ import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
         ReactiveFormsModule,
+        ButtonComponent,
         DrawerComponent,
         DataTableComponent,
         PaginationComponent,

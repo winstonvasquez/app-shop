@@ -3,6 +3,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { AuthService } from '@core/auth/auth.service';
+import { ButtonComponent } from '@shared/components';
 import {
   FormFieldComponent,
   AdminFormSectionComponent,
@@ -16,6 +17,7 @@ import {
     ReactiveFormsModule,
     TranslateModule,
     RouterLink,
+    ButtonComponent,
     FormFieldComponent,
     AdminFormSectionComponent,
     AdminFormLayoutComponent,

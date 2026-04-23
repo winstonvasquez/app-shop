@@ -3,9 +3,7 @@
     subtitle="Gestión de programas de capacitación y formación"
     [breadcrumbs]="breadcrumbs">
     <div actions>
-        <button class="btn btn-primary" (click)="openCreate()">
-            + Nueva Capacitación
-        </button>
+        <app-button icon="plus" label="Nueva Capacitación" variant="primary" (click)="openCreate()" />
     </div>
 </app-page-header>
 
@@ -131,11 +129,7 @@
     </form>
 
     <div slot="footer" class="flex justify-end gap-2">
-        <button class="btn btn-secondary" type="button" (click)="closeDrawer()">Cancelar</button>
-        <button class="btn btn-primary" type="button"
-                [disabled]="submitting()"
-                (click)="guardar()">
-            {{ submitting() ? 'Guardando...' : (editMode() ? 'Actualizar' : 'Crear Capacitación') }}
-        </button>
+        <app-button icon="x" label="Cancelar" variant="secondary" type="button" (click)="closeDrawer()" />
+        <app-button icon="save" [label]="editMode() ? 'Actualizar' : 'Crear Capacitación'" variant="primary" type="button" [loading]="submitting()" (click)="guardar()" />
     </div>
 </app-drawer>

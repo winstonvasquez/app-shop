@@ -3,11 +3,12 @@ import { RouterLink } from '@angular/router';
 import { DatePipe } from '@angular/common';
 import { StoreFollowService, FollowedStoreResponse } from '@core/services/store-follow.service';
 import { BreadcrumbComponent, BreadcrumbItem } from '@shared/components/breadcrumb/breadcrumb.component';
+import { ButtonComponent } from '@shared/components';
 
 @Component({
     selector: 'app-account-followed-stores',
     standalone: true,
-    imports: [RouterLink, DatePipe, BreadcrumbComponent],
+    imports: [RouterLink, DatePipe, BreadcrumbComponent, ButtonComponent],
     templateUrl: './account-followed-stores.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
 })

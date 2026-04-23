@@ -1,7 +1,8 @@
 import { Component, inject, signal, OnInit, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { DatePipe, DecimalPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { BreadcrumbComponent, BreadcrumbItem } from '@shared/components/breadcrumb/breadcrumb.component';
+import { ButtonComponent } from '@shared/components';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { environment } from '@env/environment';
 import { OrderResponse } from '@core/models/order.model';
@@ -10,7 +11,13 @@ import { PageResponse } from '@core/models/pagination.model';
 @Component({
   selector: 'app-account-orders',
   standalone: true,
-  imports: [CommonModule, RouterLink, BreadcrumbComponent],
+  imports: [
+    RouterLink,
+    BreadcrumbComponent,
+    ButtonComponent,
+    DatePipe,
+    DecimalPipe
+  ],
   templateUrl: './account-orders.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

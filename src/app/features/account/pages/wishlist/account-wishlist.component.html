@@ -53,29 +53,24 @@
 
                     <!-- Acciones -->
                     <div class="card-footer flex gap-2">
-                        <button class="btn btn-primary flex-1 text-xs"
+                        <app-button
+                            label="Mover al carrito"
+                            variant="primary"
+                            size="xs"
+                            icon="shopping-cart"
+                            [loading]="addingToCart() === item.productoId"
                             [disabled]="addingToCart() === item.productoId"
-                            (click)="addToCart(item)">
-                            @if (addingToCart() === item.productoId) {
-                                <div class="spinner-sm"></div>
-                            } @else {
-                                Mover al carrito
-                            }
-                        </button>
-                        <button class="btn btn-danger text-xs"
+                            (click)="addToCart(item)" />
+                        <app-button
+                            label="Quitar de favoritos"
+                            variant="ghost"
+                            size="xs"
+                            icon="heart-off"
+                            [iconOnly]="true"
+                            ariaLabel="Quitar de favoritos"
+                            [loading]="removing() === item.productoId"
                             [disabled]="removing() === item.productoId"
-                            (click)="remove(item.productoId)"
-                            aria-label="Quitar de favoritos">
-                            @if (removing() === item.productoId) {
-                                <div class="spinner-sm"></div>
-                            } @else {
-                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
-                                    fill="none" stroke="currentColor" stroke-width="2.5"
-                                    stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-                                </svg>
-                            }
-                        </button>
+                            (click)="remove(item.productoId)" />
                     </div>
                 </div>
             }

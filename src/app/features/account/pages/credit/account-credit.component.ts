@@ -2,11 +2,12 @@ import { Component, inject, OnInit, signal, ChangeDetectionStrategy } from '@ang
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { CreditService, CreditTransaction } from '@core/services/credit.service';
 import { BreadcrumbComponent, BreadcrumbItem } from '@shared/components/breadcrumb/breadcrumb.component';
+import { ButtonComponent } from '@shared/components';
 
 @Component({
     selector: 'app-account-credit',
     standalone: true,
-    imports: [DatePipe, DecimalPipe, BreadcrumbComponent],
+    imports: [DatePipe, DecimalPipe, BreadcrumbComponent, ButtonComponent],
     templateUrl: './account-credit.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
 })

@@ -1,15 +1,14 @@
 import { Component, input, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { LucideAngularModule } from 'lucide-angular';
 
-export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'success' | 'outline';
+export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'success' | 'outline' | 'primary-gradient';
 export type ButtonSize = 'xs' | 'sm' | 'md' | 'lg';
 
 @Component({
     selector: 'app-button',
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [CommonModule, LucideAngularModule],
+    imports: [LucideAngularModule],
     template: `
         <button
             [type]="type()"

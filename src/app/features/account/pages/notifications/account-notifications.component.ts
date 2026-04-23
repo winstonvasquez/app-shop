@@ -3,11 +3,12 @@ import { DatePipe } from '@angular/common';
 import { Router } from '@angular/router';
 import { NotificationService, Notification } from '@core/services/notification.service';
 import { BreadcrumbComponent, BreadcrumbItem } from '@shared/components/breadcrumb/breadcrumb.component';
+import { ButtonComponent } from '@shared/components';
 
 @Component({
     selector: 'app-account-notifications',
     standalone: true,
-    imports: [BreadcrumbComponent, DatePipe],
+    imports: [BreadcrumbComponent, DatePipe, ButtonComponent],
     templateUrl: './account-notifications.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
 })

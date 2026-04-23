@@ -66,19 +66,21 @@
         <!-- Paginación simple -->
         @if (totalPages() > 1) {
             <div class="flex justify-center gap-2 mt-4">
-                <button class="btn btn-secondary text-xs"
+                <app-button
+                    label="Anterior"
+                    variant="secondary"
+                    size="xs"
                     [disabled]="currentPage() === 0"
-                    (click)="loadHistory(currentPage() - 1)">
-                    Anterior
-                </button>
+                    (click)="loadHistory(currentPage() - 1)" />
                 <span class="text-xs flex items-center px-2" style="color: var(--color-text-muted)">
                     {{ currentPage() + 1 }} / {{ totalPages() }}
                 </span>
-                <button class="btn btn-secondary text-xs"
+                <app-button
+                    label="Siguiente"
+                    variant="secondary"
+                    size="xs"
                     [disabled]="currentPage() >= totalPages() - 1"
-                    (click)="loadHistory(currentPage() + 1)">
-                    Siguiente
-                </button>
+                    (click)="loadHistory(currentPage() + 1)" />
             </div>
         }
     }

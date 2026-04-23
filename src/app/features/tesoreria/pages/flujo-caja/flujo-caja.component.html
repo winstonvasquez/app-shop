@@ -4,7 +4,7 @@
     title="Flujo de Caja"
     subtitle="Movimientos financieros del periodo">
     <div actions>
-      <button class="btn btn-primary" (click)="openCreateDrawer()">+ Nuevo Movimiento</button>
+      <app-button icon="plus" label="Nuevo Movimiento" variant="primary" (click)="openCreateDrawer()" />
     </div>
   </app-page-header>
 
@@ -27,7 +27,7 @@
           [value]="fechaFin()"
           (change)="fechaFin.set($any($event.target).value)">
       </div>
-      <button class="btn btn-primary" (click)="consultar()">Consultar</button>
+      <app-button icon="search" label="Consultar" variant="primary" (click)="consultar()" />
     </div>
   </div>
 
@@ -155,12 +155,10 @@
   </form>
 
   <div slot="footer">
-    <button class="btn btn-secondary" (click)="showCreateDrawer.set(false)" [disabled]="guardando()">
-      Cancelar
-    </button>
-    <button class="btn btn-primary" (click)="registrarMovimiento()" [disabled]="guardando() || movimientoForm.invalid">
-      {{ guardando() ? 'Guardando...' : 'Registrar Movimiento' }}
-    </button>
+    <app-button icon="x" label="Cancelar" variant="secondary"
+        [disabled]="guardando()" (click)="showCreateDrawer.set(false)" />
+    <app-button icon="save" label="Registrar Movimiento" variant="primary"
+        [loading]="guardando()" [disabled]="guardando() || movimientoForm.invalid" (click)="registrarMovimiento()" />
   </div>
 
 </app-drawer>

@@ -9,7 +9,7 @@ import { BankAccount, BankAccountRequest, Page } from '../models/tesoreria.model
 export class CuentasBancariasService {
     private http = inject(HttpClient);
     private auth = inject(AuthService);
-    private apiUrl = `${environment.apiUrl}${environment.apiUrls.treasury}/api/tesoreria/cuentas-bancarias`;
+    private apiUrl = `${environment.apiUrls.treasury}/api/tesoreria/cuentas-bancarias`;
 
     private get tenantId(): string {
         return String(this.auth.currentUser()?.activeCompanyId ?? 1);

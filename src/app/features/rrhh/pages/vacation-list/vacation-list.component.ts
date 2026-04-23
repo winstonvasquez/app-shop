@@ -12,6 +12,7 @@ import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.compo
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { DateInputComponent } from '@shared/ui/forms/date-input/date-input.component';
+import { ButtonComponent } from '@shared/components';
 
 @Component({
     selector: 'app-vacation-list',
@@ -26,6 +27,7 @@ import { DateInputComponent } from '@shared/ui/forms/date-input/date-input.compo
         PageHeaderComponent,
         AlertComponent,
         DateInputComponent,
+        ButtonComponent,
     ],
     templateUrl: './vacation-list.component.html',
 })

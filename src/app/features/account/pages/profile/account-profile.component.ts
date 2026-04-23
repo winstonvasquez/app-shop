@@ -6,6 +6,7 @@ import { HttpClient } from '@angular/common/http';
 import { AuthService } from '@core/auth/auth.service';
 import { environment } from '@env/environment';
 import { BreadcrumbComponent, BreadcrumbItem } from '@shared/components/breadcrumb/breadcrumb.component';
+import { ButtonComponent } from '@shared/components';
 import {
   FormFieldComponent,
   AdminFormSectionComponent,
@@ -31,6 +32,7 @@ interface UserProfile {
   imports: [
     ReactiveFormsModule,
     BreadcrumbComponent,
+    ButtonComponent,
     FormFieldComponent,
     AdminFormSectionComponent,
     AdminFormLayoutComponent,

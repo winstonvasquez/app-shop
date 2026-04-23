@@ -1,12 +1,12 @@
 import {
     ChangeDetectionStrategy, Component, inject, signal, OnInit
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators, FormGroup, FormControl } from '@angular/forms';
 import { InventoryApiService } from '../../services/inventory-api.service';
 import { Location, Warehouse } from '../../models/inventory.models';
 import { DataTableComponent, TableColumn, TableAction, PaginationEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
+import { ButtonComponent } from '@shared/components';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
@@ -16,9 +16,9 @@ import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.compo
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
-        CommonModule, ReactiveFormsModule,
+        ReactiveFormsModule,
         DataTableComponent, DrawerComponent,
-        PageHeaderComponent, AlertComponent, FormFieldComponent
+        PageHeaderComponent, AlertComponent, FormFieldComponent, ButtonComponent
     ],
     templateUrl: './location-management.component.html',
     styleUrl: './location-management.component.scss'

@@ -13,6 +13,7 @@ import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/p
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { DateInputComponent } from '@shared/ui/forms/date-input/date-input.component';
 import { AdminFormSectionComponent } from '@shared/ui/forms/admin-form-section/admin-form-section.component';
+import { ButtonComponent } from '@shared/components';
 
 type TipoRegistro = 'NORMAL' | 'TARDANZA' | 'FALTA' | 'PERMISO' | 'LICENCIA' | 'VACACIONES';
 
@@ -29,6 +30,7 @@ type TipoRegistro = 'NORMAL' | 'TARDANZA' | 'FALTA' | 'PERMISO' | 'LICENCIA' | '
         AlertComponent,
         DateInputComponent,
         AdminFormSectionComponent,
+        ButtonComponent,
     ],
     templateUrl: './attendance.component.html',
 })

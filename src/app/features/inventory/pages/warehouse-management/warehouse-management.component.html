@@ -5,7 +5,7 @@
     subtitle="Gestiona almacenes, sus direcciones y responsables"
     [breadcrumbs]="breadcrumbs">
     <div actions>
-      <button class="btn btn-primary" (click)="openCreate()">+ Nuevo Almacén</button>
+      <app-button icon="plus" label="Nuevo Almacén" variant="primary" (click)="openCreate()" />
     </div>
   </app-page-header>
 
@@ -74,11 +74,10 @@
   </form>
 
   <div slot="footer">
-    <button class="btn btn-secondary" type="button" (click)="closeDrawer()">Cancelar</button>
-    <button class="btn btn-primary" type="button" (click)="onSubmit()"
-            [disabled]="submitting() || form.invalid">
-      {{ submitting() ? 'Guardando...' : (editMode() ? 'Actualizar' : 'Crear Almacén') }}
-    </button>
+    <app-button icon="x" label="Cancelar" variant="secondary" type="button" (click)="closeDrawer()" />
+    <app-button icon="save" [label]="editMode() ? 'Actualizar' : 'Crear Almacén'" variant="primary"
+                type="button" [loading]="submitting()" [disabled]="submitting() || form.invalid"
+                (click)="onSubmit()" />
   </div>
 </app-drawer>
 
@@ -92,7 +91,7 @@
     ¿Estás seguro de que deseas eliminar este almacén? Esta acción no se puede deshacer.
   </p>
   <div class="flex justify-end gap-3 pt-4">
-    <button class="btn btn-secondary" type="button" (click)="cancelDelete()">Cancelar</button>
-    <button class="btn btn-danger" type="button" (click)="executeDelete()">Eliminar</button>
+    <app-button icon="x" label="Cancelar" variant="secondary" type="button" (click)="cancelDelete()" />
+    <app-button icon="trash-2" label="Eliminar" variant="danger" type="button" (click)="executeDelete()" />
   </div>
 </app-modal>

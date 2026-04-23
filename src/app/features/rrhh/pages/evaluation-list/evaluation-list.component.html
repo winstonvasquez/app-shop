@@ -3,9 +3,7 @@
     subtitle="Gestión de evaluaciones 360 por período y tipo"
     [breadcrumbs]="breadcrumbs">
     <div actions>
-        <button class="btn btn-primary" (click)="openCreate()">
-            + Nueva Evaluación
-        </button>
+        <app-button icon="plus" label="Nueva Evaluación" variant="primary" (click)="openCreate()" />
     </div>
 </app-page-header>
 
@@ -165,7 +163,8 @@
     </form>
 
     <div slot="footer" class="flex justify-end gap-2">
-        <button class="btn btn-secondary" type="button" (click)="closeDrawer()">Cancelar</button>
+        <app-button icon="x" label="Cancelar" variant="secondary" type="button" (click)="closeDrawer()" />
+        <!-- btn-migration: SKIP — label dinámico con ternario (submitting/editMode) -->
         <button class="btn btn-primary" type="button"
                 [disabled]="submitting()"
                 (click)="guardar()">

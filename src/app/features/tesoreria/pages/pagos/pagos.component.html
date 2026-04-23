@@ -4,7 +4,7 @@
     title="Gestión de Pagos"
     subtitle="Flujo de aprobación: Pendiente → Aprobado → Pagado">
     <div actions>
-      <button class="btn btn-primary" (click)="openCreateDrawer()">+ Nuevo Pago</button>
+      <app-button icon="plus" label="Nuevo Pago" variant="primary" (click)="openCreateDrawer()" />
     </div>
   </app-page-header>
 
@@ -140,11 +140,9 @@
   </form>
 
   <div slot="footer">
-    <button class="btn btn-secondary" (click)="showCreateDrawer.set(false)" [disabled]="guardando()">
-      Cancelar
-    </button>
-    <button class="btn btn-primary" (click)="registrarPago()" [disabled]="guardando() || pagoForm.invalid">
-      {{ guardando() ? 'Guardando...' : 'Registrar Pago' }}
-    </button>
+    <app-button icon="x" label="Cancelar" variant="secondary"
+        [disabled]="guardando()" (click)="showCreateDrawer.set(false)" />
+    <app-button icon="save" label="Registrar Pago" variant="primary"
+        [loading]="guardando()" [disabled]="guardando() || pagoForm.invalid" (click)="registrarPago()" />
   </div>
 </app-drawer>

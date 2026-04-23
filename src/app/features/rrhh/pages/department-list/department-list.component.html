@@ -3,9 +3,7 @@
     subtitle="Estructura organizacional de la empresa"
     [breadcrumbs]="breadcrumbs">
     <div actions>
-        <button class="btn btn-primary" (click)="openCreateModal()">
-            + Nuevo Departamento
-        </button>
+        <app-button label="Nuevo Departamento" icon="plus" variant="primary" (click)="openCreateModal()" />
     </div>
 </app-page-header>
 
@@ -115,9 +113,8 @@
     </form>
 
     <div slot="footer" class="flex justify-end gap-2">
-        <button class="btn btn-secondary" type="button" (click)="closeModal()">
-            Cancelar
-        </button>
+        <app-button label="Cancelar" icon="x" variant="secondary" type="button" (click)="closeModal()" />
+        <!-- btn-migration: SKIP — label condicional multi-línea (submitting ? 'Guardando...' : editMode ? 'Actualizar' : 'Crear Departamento') -->
         <button class="btn btn-primary" type="button"
                 [disabled]="submitting()"
                 (click)="onSubmit()">

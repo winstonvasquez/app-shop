@@ -8,6 +8,7 @@ import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { DataTableComponent, TableColumn, TableAction } from '@shared/ui/tables/data-table/data-table.component';
 import { PageHeaderComponent } from '@shared/ui/layout/page-header/page-header.component';
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
+import { ButtonComponent } from '@shared/components';
 import { CajasService } from '../../services/cajas.service';
 import { CashRegister, Page } from '../../models/tesoreria.model';
 
@@ -17,7 +18,8 @@ import { CashRegister, Page } from '../../models/tesoreria.model';
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
         DecimalPipe, ReactiveFormsModule,
-        DrawerComponent, DataTableComponent, PageHeaderComponent, FormFieldComponent
+        DrawerComponent, DataTableComponent, PageHeaderComponent, FormFieldComponent,
+        ButtonComponent
     ],
     templateUrl: './cajas.component.html'
 })

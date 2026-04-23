@@ -3,9 +3,7 @@
     subtitle="Gestión de contratos laborales"
     [breadcrumbs]="breadcrumbs">
     <div actions>
-        <button class="btn btn-primary" (click)="openCreateModal()">
-            + Nuevo Contrato
-        </button>
+        <app-button icon="plus" label="Nuevo Contrato" variant="primary" (click)="openCreateModal()" />
     </div>
 </app-page-header>
 
@@ -173,14 +171,8 @@
     </form>
 
     <div slot="footer" class="form-actions">
-        <button class="btn btn-secondary" type="button" (click)="closeModal()">
-            Cancelar
-        </button>
-        <button class="btn btn-primary" type="button"
-                [disabled]="submitting()"
-                (click)="onSubmit()">
-            {{ submitting() ? 'Guardando...' : (editMode() ? 'Actualizar' : 'Crear Contrato') }}
-        </button>
+        <app-button icon="x" label="Cancelar" variant="secondary" type="button" (click)="closeModal()" />
+        <app-button icon="save" [label]="editMode() ? 'Actualizar' : 'Crear Contrato'" variant="primary" type="button" [loading]="submitting()" (click)="onSubmit()" />
     </div>
 
 </app-drawer>
@@ -204,14 +196,8 @@
         [required]="true" />
 
     <div slot="footer" class="form-actions">
-        <button class="btn btn-secondary" type="button" (click)="closeTerminateModal()">
-            Cancelar
-        </button>
-        <button class="btn btn-danger" type="button"
-                [disabled]="submitting()"
-                (click)="onTerminate()">
-            {{ submitting() ? 'Procesando...' : 'Finalizar Contrato' }}
-        </button>
+        <app-button icon="x" label="Cancelar" variant="secondary" type="button" (click)="closeTerminateModal()" />
+        <app-button icon="x-circle" [label]="submitting() ? 'Procesando...' : 'Finalizar Contrato'" variant="danger" type="button" [loading]="submitting()" (click)="onTerminate()" />
     </div>
 
 </app-drawer>

@@ -11,7 +11,7 @@ import { Payment, PaymentRequest, Page } from '../models/tesoreria.model';
 export class PagosService {
     private http = inject(HttpClient);
     private auth = inject(AuthService);
-    private apiUrl = `${environment.apiUrl}${environment.apiUrls.treasury}/api/tesoreria/pagos`;
+    private apiUrl = `${environment.apiUrls.treasury}/api/tesoreria/pagos`;
 
     private get tenantId(): string {
         return String(this.auth.currentUser()?.activeCompanyId ?? 1);

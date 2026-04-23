@@ -5,10 +5,8 @@
     subtitle="Historial de movimientos y valorización por producto"
     [breadcrumbs]="breadcrumbs">
     <div actions>
-      <button class="btn btn-secondary" (click)="exportCsv()"
-              [disabled]="!entries().length">
-        Exportar CSV
-      </button>
+      <app-button icon="download" label="Exportar CSV" variant="secondary"
+        [disabled]="!entries().length" (click)="exportCsv()" />
     </div>
   </app-page-header>
 
@@ -16,15 +14,13 @@
   <div class="filters-bar" [formGroup]="searchForm" (keydown.enter)="onSearch()">
     <div class="filter-field">
       <label class="input-label">Producto ID</label>
-      <input class="input-field" type="number" formControlName="productId"
+      <input class="form-input" type="number" formControlName="productId"
              style="min-width:220px"
              placeholder="Ingresa el ID del producto" />
     </div>
     <div class="filter-action">
-      <button class="btn btn-primary" type="button" (click)="onSearch()"
-              [disabled]="loading()">
-        Buscar Kardex
-      </button>
+      <app-button icon="search" label="Buscar Kardex" variant="primary"
+        [disabled]="loading()" (click)="onSearch()" />
     </div>
   </div>
 

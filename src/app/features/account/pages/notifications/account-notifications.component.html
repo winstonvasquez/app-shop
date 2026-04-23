@@ -6,9 +6,13 @@
             <p class="page-subtitle">Tus alertas y avisos importantes</p>
         </div>
         @if (notifications().length > 0) {
-            <button class="btn btn-secondary" [disabled]="markingAll()" (click)="markAllRead()">
-                @if (markingAll()) { Marcando... } @else { Marcar todas como leídas }
-            </button>
+            <app-button
+                [label]="markingAll() ? 'Marcando...' : 'Marcar todas como leídas'"
+                variant="secondary"
+                icon="check"
+                [loading]="markingAll()"
+                [disabled]="markingAll()"
+                (click)="markAllRead()" />
         }
     </div>
 
@@ -49,25 +53,26 @@
                         </p>
                     </div>
 
-                    <button
-                        class="flex-shrink-0 p-1 rounded-lg transition-colors hover:bg-[var(--color-surface)]"
-                        style="color: var(--color-text-muted)"
-                        title="Eliminar"
-                        (click)="remove(n.id, $event)"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                        </svg>
-                    </button>
+                    <app-button
+                        label="Eliminar"
+                        variant="danger"
+                        size="xs"
+                        icon="trash-2"
+                        [iconOnly]="true"
+                        ariaLabel="Eliminar notificación"
+                        (click)="remove(n.id, $event)" />
                 </div>
             }
         </div>
 
         @if (hasMore()) {
             <div class="flex justify-center mt-4">
-                <button class="btn btn-secondary" [disabled]="loading()" (click)="loadMore()">
-                    @if (loading()) { Cargando... } @else { Cargar más }
-                </button>
+                <app-button
+                    [label]="loading() ? 'Cargando...' : 'Cargar más'"
+                    variant="secondary"
+                    [loading]="loading()"
+                    [disabled]="loading()"
+                    (click)="loadMore()" />
             </div>
         }
     }

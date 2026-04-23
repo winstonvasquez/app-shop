@@ -13,12 +13,13 @@ import {
     ApexStroke, ApexTooltip, ApexXAxis, ApexYAxis,
     ApexNonAxisChartSeries, ApexPlotOptions, ApexLegend
 } from 'ng-apexcharts';
+import { ButtonComponent } from '@shared/components';
 
 @Component({
     selector: 'app-dashboard-tesoreria',
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [DecimalPipe, DatePipe, RouterLink, NgApexchartsModule],
+    imports: [DecimalPipe, DatePipe, RouterLink, NgApexchartsModule, ButtonComponent],
     templateUrl: './dashboard-tesoreria.component.html'
 })
 export class DashboardTesoreriaComponent implements OnInit {

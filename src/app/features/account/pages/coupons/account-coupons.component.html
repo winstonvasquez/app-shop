@@ -62,9 +62,12 @@
                                         {{ cupon.codigo }}
                                     </div>
                                     <div class="flex gap-1">
-                                        <button class="btn btn-secondary text-xs py-1 px-2" (click)="copyCode(cupon)">
-                                            {{ copiedId() === cupon.id ? '¡Copiado!' : 'Copiar' }}
-                                        </button>
+                                        <app-button
+                                            [label]="copiedId() === cupon.id ? '¡Copiado!' : 'Copiar'"
+                                            variant="secondary"
+                                            icon="copy"
+                                            size="xs"
+                                            (click)="copyCode(cupon)" />
                                         <a routerLink="/cart" [queryParams]="{coupon: cupon.codigo}"
                                             class="btn btn-primary text-xs py-1 px-2">
                                             Usar

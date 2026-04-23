@@ -4,7 +4,7 @@
     title="Control de Cajas"
     subtitle="Gestión de cajas registradoras y arqueos">
     <div actions>
-      <button class="btn btn-primary" (click)="openCreateDrawer()">+ Nueva Caja</button>
+      <app-button icon="plus" label="Nueva Caja" variant="primary" (click)="openCreateDrawer()" />
     </div>
   </app-page-header>
 
@@ -82,10 +82,8 @@
   </form>
 
   <div slot="footer">
-    <button class="btn btn-secondary" (click)="showCreateDrawer.set(false)" [disabled]="guardando()">Cancelar</button>
-    <button class="btn btn-primary" (click)="crearCaja()" [disabled]="guardando() || createForm.invalid">
-      {{ guardando() ? 'Guardando...' : 'Crear Caja' }}
-    </button>
+    <app-button icon="x" label="Cancelar" variant="secondary" [disabled]="guardando()" (click)="showCreateDrawer.set(false)" />
+    <app-button icon="save" label="Crear Caja" variant="primary" [loading]="guardando()" [disabled]="guardando() || createForm.invalid" (click)="crearCaja()" />
   </div>
 </app-drawer>
 
@@ -123,9 +121,7 @@
   }
 
   <div slot="footer">
-    <button class="btn btn-secondary" (click)="showActionDrawer.set(false)" [disabled]="guardando()">Cancelar</button>
-    <button class="btn btn-primary" (click)="ejecutarAccion()" [disabled]="guardando()">
-      {{ guardando() ? 'Procesando...' : (actionType() === 'abrir' ? 'Abrir Caja' : 'Confirmar Cierre') }}
-    </button>
+    <app-button icon="x" label="Cancelar" variant="secondary" [disabled]="guardando()" (click)="showActionDrawer.set(false)" />
+    <app-button [icon]="actionType() === 'abrir' ? 'door-open' : 'door-closed'" [label]="actionType() === 'abrir' ? 'Abrir Caja' : 'Confirmar Cierre'" [variant]="actionType() === 'abrir' ? 'primary' : 'secondary'" [loading]="guardando()" [disabled]="guardando()" (click)="ejecutarAccion()" />
   </div>
 </app-drawer>

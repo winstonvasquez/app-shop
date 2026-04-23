@@ -12,6 +12,7 @@ import {
 import { Contract } from '../../models/contract.model';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
+import { ButtonComponent } from '@shared/components';
 
 type TabKey = 'personal' | 'laboral' | 'direccion' | 'educacion' | 'contratos' | 'emergencia' | 'dependientes' | 'documentos' | 'salarios';
 
@@ -19,7 +20,7 @@ type TabKey = 'personal' | 'laboral' | 'direccion' | 'educacion' | 'contratos' |
     selector: 'app-employee-detail',
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [PageHeaderComponent, AlertComponent],
+    imports: [PageHeaderComponent, AlertComponent, ButtonComponent],
     templateUrl: './employee-detail.component.html',
 })
 export class EmployeeDetailComponent implements OnInit {

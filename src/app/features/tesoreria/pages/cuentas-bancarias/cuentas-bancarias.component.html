@@ -4,7 +4,7 @@
     title="Cuentas Bancarias"
     subtitle="Gestión de cuentas bancarias del tenant">
     <div actions>
-      <button class="btn btn-primary" (click)="openCreateDrawer()">+ Nueva Cuenta</button>
+      <app-button icon="plus" label="Nueva Cuenta" variant="primary" (click)="openCreateDrawer()" />
     </div>
   </app-page-header>
 
@@ -135,10 +135,8 @@
   </form>
 
   <div slot="footer">
-    <button class="btn btn-secondary" (click)="showCreateDrawer.set(false)" [disabled]="guardando()">Cancelar</button>
-    <button class="btn btn-primary" (click)="crearCuenta()" [disabled]="guardando() || createForm.invalid">
-      {{ guardando() ? 'Guardando...' : 'Guardar Cuenta' }}
-    </button>
+    <app-button icon="x" label="Cancelar" variant="secondary" [disabled]="guardando()" (click)="showCreateDrawer.set(false)" />
+    <app-button icon="save" label="Guardar Cuenta" variant="primary" [loading]="guardando()" [disabled]="guardando() || createForm.invalid" (click)="crearCuenta()" />
   </div>
 </app-drawer>
 
@@ -221,9 +219,7 @@
   </form>
 
   <div slot="footer">
-    <button class="btn btn-secondary" (click)="showEditDrawer.set(false)" [disabled]="guardando()">Cancelar</button>
-    <button class="btn btn-primary" (click)="actualizarCuenta()" [disabled]="guardando() || editForm.invalid">
-      {{ guardando() ? 'Guardando...' : 'Actualizar' }}
-    </button>
+    <app-button icon="x" label="Cancelar" variant="secondary" [disabled]="guardando()" (click)="showEditDrawer.set(false)" />
+    <app-button icon="save" label="Actualizar" variant="primary" [loading]="guardando()" [disabled]="guardando() || editForm.invalid" (click)="actualizarCuenta()" />
   </div>
 </app-drawer>

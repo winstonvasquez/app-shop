@@ -42,16 +42,14 @@
                                 </p>
                             </div>
                         </div>
-                        <button
-                            class="btn btn-secondary text-xs flex-shrink-0"
+                        <app-button
+                            label="Dejar de seguir"
+                            variant="secondary"
+                            icon="user-minus"
+                            size="xs"
+                            [loading]="unfollowing() === store.companyId"
                             [disabled]="unfollowing() === store.companyId"
-                            (click)="unfollow(store.companyId)">
-                            @if (unfollowing() === store.companyId) {
-                                <div class="spinner-sm"></div>
-                            } @else {
-                                Dejar de seguir
-                            }
-                        </button>
+                            (click)="unfollow(store.companyId)" />
                     </div>
                 </div>
             }

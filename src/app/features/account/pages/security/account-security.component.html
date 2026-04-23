@@ -41,10 +41,13 @@
                     </app-admin-form-section>
 
                     <div slot="actions">
-                        <button type="submit" class="btn btn-primary"
-                            [disabled]="saving() || passwordForm.invalid">
-                            @if (saving()) { Guardando... } @else { Cambiar contraseña }
-                        </button>
+                        <app-button
+                            [label]="saving() ? 'Guardando...' : 'Cambiar contraseña'"
+                            variant="primary"
+                            icon="key"
+                            type="submit"
+                            [loading]="saving()"
+                            [disabled]="saving() || passwordForm.invalid" />
                     </div>
 
                 </app-admin-form-layout>

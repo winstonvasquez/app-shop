@@ -3,13 +3,14 @@ import { RouterLink } from '@angular/router';
 import { DatePipe } from '@angular/common';
 import { CouponService, CuponResponse } from '@core/services/coupon.service';
 import { BreadcrumbComponent, BreadcrumbItem } from '@shared/components/breadcrumb/breadcrumb.component';
+import { ButtonComponent } from '@shared/components';
 
 type CuponTab = 'ACTIVE' | 'USED' | 'EXPIRED';
 
 @Component({
     selector: 'app-account-coupons',
     standalone: true,
-    imports: [RouterLink, DatePipe, BreadcrumbComponent],
+    imports: [RouterLink, DatePipe, BreadcrumbComponent, ButtonComponent],
     templateUrl: './account-coupons.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
 })

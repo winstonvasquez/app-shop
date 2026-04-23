@@ -5,6 +5,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '@env/environment';
 import { BreadcrumbComponent, BreadcrumbItem } from '@shared/components/breadcrumb/breadcrumb.component';
+import { ButtonComponent } from '@shared/components';
 
 interface ResenaResponse {
     id: number;
@@ -18,7 +19,7 @@ interface ResenaResponse {
 @Component({
     selector: 'app-account-reviews',
     standalone: true,
-    imports: [DatePipe, RouterLink, ReactiveFormsModule, BreadcrumbComponent],
+    imports: [DatePipe, RouterLink, ReactiveFormsModule, BreadcrumbComponent, ButtonComponent],
     templateUrl: './account-reviews.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
 })

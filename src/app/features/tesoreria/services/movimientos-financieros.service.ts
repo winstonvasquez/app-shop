@@ -22,7 +22,7 @@ export interface FinancialMovementRequest {
 export class MovimientosFinancierosService {
     private http = inject(HttpClient);
     private auth = inject(AuthService);
-    private apiUrl = `${environment.apiUrl}${environment.apiUrls.treasury}/api/tesoreria/movimientos`;
+    private apiUrl = `${environment.apiUrls.treasury}/api/tesoreria/movimientos`;
 
     private get tenantId(): string {
         return String(this.auth.currentUser()?.activeCompanyId ?? 1);

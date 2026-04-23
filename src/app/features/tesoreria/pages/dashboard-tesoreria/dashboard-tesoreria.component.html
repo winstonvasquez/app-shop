@@ -5,9 +5,8 @@
             <p class="page-subtitle">Resumen financiero del día — {{ hoy | date:'EEEE, d MMMM yyyy' }}</p>
         </div>
         <div class="page-actions">
-            <button class="btn btn-primary" (click)="cargar()" [disabled]="cargando()">
-                {{ cargando() ? 'Cargando...' : 'Actualizar' }}
-            </button>
+            <app-button icon="refresh-cw" label="Actualizar" variant="primary"
+                [loading]="cargando()" [disabled]="cargando()" (click)="cargar()" />
         </div>
     </div>
 

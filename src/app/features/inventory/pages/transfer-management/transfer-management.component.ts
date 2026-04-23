@@ -1,5 +1,4 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import {
     FormBuilder, ReactiveFormsModule, Validators, FormGroup, FormArray, FormControl
 } from '@angular/forms';
@@ -11,16 +10,18 @@ import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/p
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
 import { DateInputComponent } from '@shared/ui/forms/date-input/date-input.component';
+import { ButtonComponent } from '@shared/components';
 
 @Component({
     selector: 'app-transfer-management',
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
-        CommonModule, ReactiveFormsModule,
+        ReactiveFormsModule,
         DataTableComponent, DrawerComponent,
         PageHeaderComponent, AlertComponent,
-        FormFieldComponent, DateInputComponent
+        FormFieldComponent, DateInputComponent,
+        ButtonComponent
     ],
     templateUrl: './transfer-management.component.html',
     styleUrl: './transfer-management.component.scss'

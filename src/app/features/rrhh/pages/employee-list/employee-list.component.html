@@ -3,9 +3,7 @@
     subtitle="Gestión del personal de la empresa"
     [breadcrumbs]="breadcrumbs">
     <div actions>
-        <button class="btn btn-primary" (click)="openCreateModal()">
-            + Nuevo Empleado
-        </button>
+        <app-button icon="plus" label="Nuevo Empleado" variant="primary" (click)="openCreateModal()" />
     </div>
 </app-page-header>
 
@@ -144,9 +142,8 @@
 
     <!-- Footer del Drawer -->
     <div slot="footer" class="form-actions">
-        <button class="btn btn-secondary" type="button" (click)="closeModal()">
-            Cancelar
-        </button>
+        <app-button icon="x" label="Cancelar" variant="secondary" type="button" (click)="closeModal()" />
+        <!-- btn-migration: SKIP — label dinámico con ternario (submitting/editMode) -->
         <button class="btn btn-primary" type="button"
                 [disabled]="submitting()"
                 (click)="onSubmit()">

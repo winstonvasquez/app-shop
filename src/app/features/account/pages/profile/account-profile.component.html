@@ -57,9 +57,13 @@
                         </app-admin-form-section>
 
                         <div slot="actions">
-                            <button type="submit" class="btn btn-primary" [disabled]="saving() || profileForm.invalid">
-                                @if (saving()) { Guardando... } @else { Guardar cambios }
-                            </button>
+                            <app-button
+                                [label]="saving() ? 'Guardando...' : 'Guardar cambios'"
+                                variant="primary"
+                                icon="save"
+                                type="submit"
+                                [loading]="saving()"
+                                [disabled]="saving() || profileForm.invalid" />
                         </div>
 
                     </app-admin-form-layout>

@@ -13,7 +13,7 @@
         <div class="card">
             <div class="card-body text-center text-[var(--color-error)]">
                 <p>{{ error() }}</p>
-                <button class="btn btn-secondary mt-4" (click)="loadOrders(0)">Reintentar</button>
+                <app-button label="Reintentar" icon="rotate-ccw" variant="secondary" class="mt-4" (click)="loadOrders(0)" />
             </div>
         </div>
     } @else if (orders().length === 0) {
