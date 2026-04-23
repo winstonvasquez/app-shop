@@ -1,5 +1,4 @@
 import { Component, inject, signal, OnInit, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators, FormGroup } from '@angular/forms';
 import { AlmacenService } from '../../../services/almacen.service';
 import { Almacen, CreateAlmacenDto } from '../../../models/almacen.model';
@@ -9,18 +8,19 @@ import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
+import { ButtonComponent } from '@shared/components';
 
 @Component({
     selector: 'app-almacenes-page',
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
-        CommonModule,
         ReactiveFormsModule,
         DataTableComponent,
         DrawerComponent,
         AlertComponent,
-        PageHeaderComponent
+        PageHeaderComponent,
+        ButtonComponent
     ],
     templateUrl: './almacenes-page.component.html'
 })

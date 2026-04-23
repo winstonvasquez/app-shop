@@ -1,5 +1,4 @@
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators, FormGroup, FormControl } from '@angular/forms';
 import { ProductService, ProductRequest, ProductFilter } from '@core/services/product.service';
 import { ProductResponse } from '@core/models/product.model';
@@ -9,18 +8,20 @@ import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.compo
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
+import { ButtonComponent } from '@shared/components';
 
 @Component({
   selector: 'app-products',
   standalone: true,
   imports: [
-    CommonModule,
+    
     ReactiveFormsModule,
     DataTableComponent,
     FormFieldComponent,
     DrawerComponent,
     PageHeaderComponent,
-    AlertComponent
+    AlertComponent,
+    ButtonComponent
   ],
   templateUrl: './products.component.html',
   styleUrl: './products.component.scss'
@@ -93,7 +94,7 @@ export class ProductsComponent implements OnInit {
       key: 'categorias',
       label: 'Categorías',
       render: (row) => row.categorias && row.categorias.length > 0
-        ? row.categorias.map((c: any) => c.nombre).join(', ')
+        ? row.categorias.map((c: { nombre: string }) => c.nombre).join(', ')
         : 'Sin categorías'
     }
   ];
@@ -238,7 +239,7 @@ export class ProductsComponent implements OnInit {
       precioBase: product.precioBase,
       marca: product.marca,
       companyId: product.companyId,
-      categoriaIds: product.categorias?.map((c: any) => c.id) || []
+      categoriaIds: product.categorias?.map((c: { id: number }) => c.id) || []
     });
 
     this.showModal.set(true);

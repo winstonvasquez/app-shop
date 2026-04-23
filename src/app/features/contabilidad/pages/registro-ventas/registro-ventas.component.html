@@ -5,25 +5,37 @@
             <p class="page-subtitle">PLE — Libro 14 · SUNAT</p>
         </div>
         <div class="page-actions">
-            <input class="input-field" type="text" maxlength="11" placeholder="RUC (11 dígitos)"
+            <input class="form-input" type="text" maxlength="11" placeholder="RUC (11 dígitos)"
                    style="width:160px"
                    [ngModel]="rucEmpresa()" (ngModelChange)="rucEmpresa.set($event)" />
-            <button class="btn btn-primary" (click)="descargarPLE14()"
-                    [disabled]="descargandoPLE() || !periodoSeleccionado() || rucEmpresa().length !== 11">
-                @if (descargandoPLE()) { Generando... } @else { Descargar PLE Libro 14 }
-            </button>
-            <button class="btn btn-secondary" (click)="exportarPLE()" [disabled]="ventas().length === 0">
-                Exportar PLE TXT
-            </button>
-            <button class="btn btn-secondary" (click)="exportarCSV()" [disabled]="ventas().length === 0">
-                Exportar CSV
-            </button>
+            <app-button
+                [label]="descargandoPLE() ? 'Generando...' : 'Descargar PLE Libro 14'"
+                variant="primary"
+                icon="download"
+                [loading]="descargandoPLE()"
+                [disabled]="descargandoPLE() || !periodoSeleccionado() || rucEmpresa().length !== 11"
+                (click)="descargarPLE14()">
+            </app-button>
+            <app-button
+                label="Exportar PLE TXT"
+                variant="secondary"
+                icon="download"
+                [disabled]="ventas().length === 0"
+                (click)="exportarPLE()">
+            </app-button>
+            <app-button
+                label="Exportar CSV"
+                variant="secondary"
+                icon="download"
+                [disabled]="ventas().length === 0"
+                (click)="exportarCSV()">
+            </app-button>
         </div>
     </div>
 
     <div class="card mb-lg">
         <div class="filters-bar">
-            <select class="input-field"
+            <select class="form-input"
                     [value]="periodoSeleccionado()"
                     (change)="cambiarPeriodo($any($event.target).value)">
                 <option value="">— Seleccionar periodo —</option>
@@ -31,9 +43,9 @@
                     <option [value]="p.id">{{ p.nombre }} ({{ p.estado }})</option>
                 }
             </select>
-            <input type="date" class="input-field" style="width:160px" [value]="fechaDesde()" (input)="fechaDesde.set($any($event.target).value)" />
-            <input type="date" class="input-field" style="width:160px" [value]="fechaHasta()" (input)="fechaHasta.set($any($event.target).value)" />
-            <button class="btn btn-primary" (click)="cargar()">Buscar</button>
+            <input type="date" class="form-input" style="width:160px" [value]="fechaDesde()" (input)="fechaDesde.set($any($event.target).value)" />
+            <input type="date" class="form-input" style="width:160px" [value]="fechaHasta()" (input)="fechaHasta.set($any($event.target).value)" />
+            <app-button label="Buscar" variant="primary" icon="search" (click)="cargar()"></app-button>
         </div>
     </div>
 

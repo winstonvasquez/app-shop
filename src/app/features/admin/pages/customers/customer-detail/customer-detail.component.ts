@@ -8,6 +8,7 @@ import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.compo
 import { AdminFormSectionComponent } from '@shared/ui/forms/admin-form-section/admin-form-section.component';
 import { AdminFormLayoutComponent } from '@shared/ui/forms/admin-form-layout/admin-form-layout.component';
 import { DataTableComponent, TableColumn, TableAction } from '@shared/ui/tables/data-table/data-table.component';
+import { ButtonComponent } from '@shared/components';
 import { CustomerService } from '@features/admin/services/customer.service';
 import {
     CustomerResponse,
@@ -29,6 +30,7 @@ import {
         AdminFormSectionComponent,
         AdminFormLayoutComponent,
         DataTableComponent,
+        ButtonComponent,
     ],
     templateUrl: './customer-detail.component.html',
     styleUrl: './customer-detail.component.scss',

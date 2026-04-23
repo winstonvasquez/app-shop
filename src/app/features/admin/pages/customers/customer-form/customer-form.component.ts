@@ -3,6 +3,7 @@ import {
 } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators, FormGroup } from '@angular/forms';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
+import { ButtonComponent } from '@shared/components';
 import {
     AdminFormLayoutComponent,
     AdminFormSectionComponent,
@@ -20,7 +21,7 @@ import {
 @Component({
     selector: 'app-customer-form',
     standalone: true,
-    imports: [ReactiveFormsModule, DrawerComponent, AdminFormLayoutComponent, AdminFormSectionComponent],
+    imports: [ReactiveFormsModule, DrawerComponent, ButtonComponent, AdminFormLayoutComponent, AdminFormSectionComponent],
     templateUrl: './customer-form.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
 })

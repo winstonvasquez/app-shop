@@ -4,6 +4,7 @@ import { ReactiveFormsModule, FormBuilder } from '@angular/forms';
 import { DevolucionService } from '../../services/devolucion.service';
 import { Devolucion, DevolucionStatus } from '../../models/devolucion.model';
 import { AuthService } from '../../../../core/auth/auth.service';
+import { ButtonComponent } from '@shared/components';
 import { DataTableComponent, TableColumn, TableAction } from '@shared/ui/tables/data-table/data-table.component';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
@@ -25,6 +26,7 @@ const STATUS_LABELS: Record<DevolucionStatus, string> = {
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
         ReactiveFormsModule,
+        ButtonComponent,
         DataTableComponent,
         DrawerComponent,
         AlertComponent,

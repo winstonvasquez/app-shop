@@ -9,16 +9,28 @@
                 <input class="form-input" type="text" maxlength="11" placeholder="RUC (11 dígitos)"
                        style="width:160px" formControlName="rucEmpresa" />
             </form>
-            <button class="btn btn-primary" (click)="descargarPLE08()"
-                    [disabled]="descargandoPLE() || !periodoSeleccionado() || (filterForm.value.rucEmpresa?.length ?? 0) !== 11">
-                @if (descargandoPLE()) { Generando... } @else { Descargar PLE Libro 08 }
-            </button>
-            <button class="btn btn-secondary" (click)="exportarPLE()" [disabled]="ordenes().length === 0">
-                Exportar PLE TXT
-            </button>
-            <button class="btn btn-secondary" (click)="exportarCSV()" [disabled]="ordenes().length === 0">
-                Exportar CSV
-            </button>
+            <app-button
+                [label]="descargandoPLE() ? 'Generando...' : 'Descargar PLE Libro 08'"
+                variant="primary"
+                icon="download"
+                [loading]="descargandoPLE()"
+                [disabled]="descargandoPLE() || !periodoSeleccionado() || (filterForm.value.rucEmpresa?.length ?? 0) !== 11"
+                (click)="descargarPLE08()">
+            </app-button>
+            <app-button
+                label="Exportar PLE TXT"
+                variant="secondary"
+                icon="download"
+                [disabled]="ordenes().length === 0"
+                (click)="exportarPLE()">
+            </app-button>
+            <app-button
+                label="Exportar CSV"
+                variant="secondary"
+                icon="download"
+                [disabled]="ordenes().length === 0"
+                (click)="exportarCSV()">
+            </app-button>
         </div>
     </div>
 
@@ -40,7 +52,7 @@
                     }
                 </select>
             </form>
-            <button class="btn btn-primary" (click)="cargar()">Buscar</button>
+            <app-button label="Buscar" variant="primary" icon="search" (click)="cargar()"></app-button>
         </div>
     </div>
 

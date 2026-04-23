@@ -6,12 +6,13 @@
             <h1 class="page-title">Gestión de Clientes</h1>
             <p class="page-subtitle">Administra los usuarios y clientes del sistema</p>
         </div>
-        <button class="btn btn-primary" (click)="openCreateModal()" aria-label="Crear nuevo cliente">
-            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-            </svg>
-            Nuevo Cliente
-        </button>
+        <app-button
+            label="Nuevo Cliente"
+            icon="plus"
+            variant="primary"
+            (click)="openCreateModal()"
+            ariaLabel="Crear nuevo cliente">
+        </app-button>
     </div>
 
     <!-- Alerta de error -->

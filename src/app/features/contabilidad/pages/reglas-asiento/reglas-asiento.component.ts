@@ -2,6 +2,7 @@ import { Component, inject, signal, OnInit, ChangeDetectionStrategy } from '@ang
 import { FormsModule } from '@angular/forms';
 import { DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
+import { ButtonComponent } from '@shared/components';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import {
     ReglaAsientoService, ReglaAsiento, ReglaAsientoRequest, DetalleRegla, TransactionType
@@ -11,7 +12,7 @@ import {
     selector: 'app-reglas-asiento',
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [FormsModule, DatePipe, DrawerComponent],
+    imports: [FormsModule, DatePipe, ButtonComponent, DrawerComponent],
     templateUrl: './reglas-asiento.component.html',
 })
 export class ReglasAsientoComponent implements OnInit {

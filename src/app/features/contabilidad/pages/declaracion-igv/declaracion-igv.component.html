@@ -5,17 +5,20 @@
             <p class="page-subtitle">PDT 621 · SUNAT · Régimen MYPE Tributario</p>
         </div>
         <div class="page-actions">
-            <button class="btn btn-secondary"
-                    [disabled]="!periodoSeleccionado() || guardando()"
-                    (click)="guardarDeclaracion()">
-                {{ guardando() ? 'Guardando...' : 'Guardar Declaración' }}
-            </button>
+            <app-button
+                [label]="guardando() ? 'Guardando...' : 'Guardar Declaración'"
+                variant="secondary"
+                icon="save"
+                [loading]="guardando()"
+                [disabled]="!periodoSeleccionado() || guardando()"
+                (click)="guardarDeclaracion()">
+            </app-button>
         </div>
     </div>
 
     <div class="card mb-lg">
         <div class="filters-bar">
-            <select class="input-field"
+            <select class="form-input"
                     [value]="periodoSeleccionado()"
                     (change)="cambiarPeriodo(periodoSelect.value)"
                     #periodoSelect>
@@ -24,11 +27,14 @@
                     <option [value]="p.id">{{ p.nombre }} ({{ p.estado }})</option>
                 }
             </select>
-            <button class="btn btn-primary"
-                    [disabled]="!periodoSeleccionado() || cargando()"
-                    (click)="calcularIGV(periodoSeleccionado())">
-                {{ cargando() ? 'Calculando...' : 'Calcular' }}
-            </button>
+            <app-button
+                [label]="cargando() ? 'Calculando...' : 'Calcular'"
+                variant="primary"
+                icon="percent"
+                [loading]="cargando()"
+                [disabled]="!periodoSeleccionado() || cargando()"
+                (click)="calcularIGV(periodoSeleccionado())">
+            </app-button>
         </div>
     </div>
 

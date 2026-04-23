@@ -1,9 +1,9 @@
 import { Component, inject, signal, OnInit, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators, FormGroup } from '@angular/forms';
 import { TransportistaService } from '../../services/transportista.service';
 import { Transportista } from '../../models/transportista.model';
 import { AuthService } from '../../../../core/auth/auth.service';
+import { ButtonComponent } from '@shared/components';
 import { DataTableComponent, TableColumn, TableAction } from '@shared/ui/tables/data-table/data-table.component';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
@@ -15,8 +15,8 @@ import { PaginationChangeEvent } from '@shared/ui/pagination/pagination.componen
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
-        CommonModule,
         ReactiveFormsModule,
+        ButtonComponent,
         DataTableComponent,
         DrawerComponent,
         AlertComponent,

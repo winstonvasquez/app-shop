@@ -94,18 +94,18 @@
                     </div>
                     <div class="flex gap-sm mt-sm">
                         @if (selectedOrder()?.estado === 'PENDIENTE') {
-                        <button class="btn-primary py-xs px-sm text-xs" (click)="updateStatus('PAGADO')">Marcar
-                            Pagado</button>
-                        <button class="btn-danger py-xs px-sm text-xs"
-                            (click)="updateStatus('CANCELADO')">Cancelar</button>
+                        <app-button label="Marcar Pagado" variant="primary" size="sm" icon="check-circle"
+                            [loading]="loadingDetails()" (click)="updateStatus('PAGADO')"></app-button>
+                        <app-button label="Cancelar" variant="danger" size="sm" icon="x-circle"
+                            [loading]="loadingDetails()" (click)="updateStatus('CANCELADO')"></app-button>
                         }
                         @if (selectedOrder()?.estado === 'PAGADO') {
-                        <button class="btn-primary py-xs px-sm text-xs"
-                            (click)="updateStatus('ENVIADO')">Enviar</button>
+                        <app-button label="Enviar" variant="primary" size="sm" icon="shopping-bag"
+                            [loading]="loadingDetails()" (click)="updateStatus('ENVIADO')"></app-button>
                         }
                         @if (selectedOrder()?.estado === 'ENVIADO') {
-                        <button class="btn-success py-xs px-sm text-xs"
-                            (click)="updateStatus('ENTREGADO')">Entregar</button>
+                        <app-button label="Entregar" variant="success" size="sm" icon="check-circle"
+                            [loading]="loadingDetails()" (click)="updateStatus('ENTREGADO')"></app-button>
                         }
                     </div>
                 </div>
@@ -147,7 +147,7 @@
         }
 
         <div slot="footer">
-            <button type="button" class="btn btn-secondary" (click)="closeModal()">Cerrar</button>
+            <app-button label="Cerrar" variant="secondary" icon="x" (click)="closeModal()"></app-button>
         </div>
     </app-drawer>
 </div>

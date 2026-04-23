@@ -4,7 +4,7 @@
     subtitle="Gestión de couriers y transportistas"
     [breadcrumbs]="breadcrumbs">
     <div actions>
-      <button class="btn btn-primary" (click)="openCreateForm()">+ Nuevo Transportista</button>
+      <app-button variant="primary" icon="truck" label="Nuevo Transportista" (click)="openCreateForm()" />
     </div>
   </app-page-header>
 
@@ -43,7 +43,7 @@
     <div class="form-grid">
       <div class="form-field-wrapper">
         <label class="input-label">Código *</label>
-        <input class="input-field" type="text" formControlName="code"
+        <input class="form-input" type="text" formControlName="code"
                placeholder="OLVA, SHALOM, etc.">
         @if (form.get('code')?.invalid && form.get('code')?.touched) {
           <span class="input-error-message">Código requerido</span>
@@ -52,7 +52,7 @@
 
       <div class="form-field-wrapper">
         <label class="input-label">Tipo de servicio *</label>
-        <select class="input-field" formControlName="serviceType">
+        <select class="form-input" formControlName="serviceType">
           @for (opt of serviceTypeOptions; track opt.value) {
             <option [value]="opt.value">{{ opt.label }}</option>
           }
@@ -61,7 +61,7 @@
 
       <div class="form-field-wrapper" style="grid-column:1/-1">
         <label class="input-label">Nombre *</label>
-        <input class="input-field" type="text" formControlName="name"
+        <input class="form-input" type="text" formControlName="name"
                placeholder="Nombre completo del transportista">
         @if (form.get('name')?.invalid && form.get('name')?.touched) {
           <span class="input-error-message">Nombre requerido</span>
@@ -75,13 +75,13 @@
       <div class="form-grid">
         <div class="form-field-wrapper">
           <label class="input-label">Teléfono</label>
-          <input class="input-field" type="tel" formControlName="contactPhone"
+          <input class="form-input" type="tel" formControlName="contactPhone"
                  placeholder="01-234-5678">
         </div>
 
         <div class="form-field-wrapper">
           <label class="input-label">Email</label>
-          <input class="input-field" type="email" formControlName="contactEmail"
+          <input class="form-input" type="email" formControlName="contactEmail"
                  placeholder="contacto@transportista.pe">
           @if (form.get('contactEmail')?.errors?.['email'] && form.get('contactEmail')?.touched) {
             <span class="input-error-message">Email inválido</span>
@@ -95,7 +95,7 @@
       <h4 class="form-section-title">Integración API <span class="input-hint">(opcional)</span></h4>
       <div class="form-field-wrapper">
         <label class="input-label">URL del API</label>
-        <input class="input-field" type="url" formControlName="apiUrl"
+        <input class="form-input" type="url" formControlName="apiUrl"
                placeholder="https://api.transportista.pe/v1">
       </div>
     </div>
@@ -114,9 +114,7 @@
   }
 
   <div slot="footer">
-    <button class="btn btn-secondary" (click)="closeForm()">Cancelar</button>
-    <button class="btn btn-primary" (click)="onSubmit()" [disabled]="submitting()">
-      {{ submitting() ? 'Guardando...' : (editMode() ? 'Actualizar' : 'Crear') }}
-    </button>
+    <app-button variant="secondary" icon="x" label="Cancelar" (click)="closeForm()" />
+    <app-button variant="primary" icon="save" [label]="submitting() ? 'Guardando...' : (editMode() ? 'Actualizar' : 'Crear')" [loading]="submitting()" (click)="onSubmit()" />
   </div>
 </app-drawer>

@@ -5,29 +5,42 @@
             <p class="page-subtitle">PCGE 2020 · Partida doble</p>
         </div>
         <div class="page-actions">
-            <button class="btn btn-secondary" (click)="exportarPLE()" [disabled]="lineas().length === 0">
-                Exportar PLE
-            </button>
-            <button class="btn btn-secondary" (click)="exportarCSV()" [disabled]="lineas().length === 0">
-                Exportar CSV
-            </button>
+            <app-button
+                icon="download"
+                variant="secondary"
+                label="Exportar PLE"
+                [disabled]="lineas().length === 0"
+                (click)="exportarPLE()">
+            </app-button>
+            <app-button
+                icon="download"
+                variant="secondary"
+                label="Exportar CSV"
+                [disabled]="lineas().length === 0"
+                (click)="exportarCSV()">
+            </app-button>
         </div>
     </div>
 
     <div class="card mb-lg">
         <div class="filters-bar">
-            <select class="input-field" [value]="periodoSeleccionado()"
+            <select class="form-input" [value]="periodoSeleccionado()"
                     (change)="cambiarPeriodo($any($event.target).value)">
                 <option value="">— Seleccionar periodo —</option>
                 @for (p of periodos(); track p.id) {
                     <option [value]="p.id">{{ p.nombre }} ({{ p.estado }})</option>
                 }
             </select>
-            <input type="date" class="input-field" style="width:160px"
+            <input type="date" class="form-input" style="width:160px"
                    [value]="fechaDesde()" (input)="fechaDesde.set($any($event.target).value)" />
-            <input type="date" class="input-field" style="width:160px"
+            <input type="date" class="form-input" style="width:160px"
                    [value]="fechaHasta()" (input)="fechaHasta.set($any($event.target).value)" />
-            <button class="btn btn-primary" (click)="cargarLibro()">Consultar</button>
+            <app-button
+                icon="search"
+                variant="primary"
+                label="Consultar"
+                (click)="cargarLibro()">
+            </app-button>
         </div>
     </div>
 

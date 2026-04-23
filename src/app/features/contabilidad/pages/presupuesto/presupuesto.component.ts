@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { DecimalPipe, NgClass } from '@angular/common';
 import { PresupuestoService, Presupuesto, ComparativoPresupuesto } from '../../services/presupuesto.service';
+import { ButtonComponent } from '@shared/components';
 
 type Vista = 'lista' | 'comparativo' | 'nuevo';
 
@@ -12,7 +13,7 @@ const MESES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov'
     selector: 'app-presupuesto',
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [FormsModule, DecimalPipe, NgClass],
+    imports: [FormsModule, DecimalPipe, NgClass, ButtonComponent],
     templateUrl: './presupuesto.component.html',
 })
 export class PresupuestoComponent implements OnInit {

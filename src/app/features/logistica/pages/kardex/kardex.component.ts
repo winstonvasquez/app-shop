@@ -3,11 +3,12 @@ import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { DecimalPipe, DatePipe } from '@angular/common';
 import { KardexService } from '../../services/kardex.service';
 import { KardexEntry } from '../../models/kardex.model';
+import { ButtonComponent } from '@shared/components';
 
 @Component({
     selector: 'app-kardex',
     standalone: true,
-    imports: [ReactiveFormsModule, DecimalPipe, DatePipe],
+    imports: [ReactiveFormsModule, DecimalPipe, DatePipe, ButtonComponent],
     templateUrl: './kardex.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
 })

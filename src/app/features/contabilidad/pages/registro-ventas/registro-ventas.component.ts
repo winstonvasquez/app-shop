@@ -7,6 +7,7 @@ import { ExportService } from '@shared/services/export.service';
 import { PleService } from '../../services/ple.service';
 import { environment } from '@env/environment';
 import { PaginationComponent, PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
+import { ButtonComponent } from '@shared/components';
 
 interface VentaPLE {
     id: string | number;
@@ -26,7 +27,7 @@ interface VentaPLE {
     selector: 'app-registro-ventas',
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [DatePipe, DecimalPipe, FormsModule, PaginationComponent],
+    imports: [DatePipe, DecimalPipe, FormsModule, PaginationComponent, ButtonComponent],
     templateUrl: './registro-ventas.component.html'
 })
 export class RegistroVentasComponent implements OnInit {

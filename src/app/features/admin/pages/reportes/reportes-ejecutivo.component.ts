@@ -2,6 +2,7 @@ import { Component, ChangeDetectionStrategy, inject, signal, OnInit } from '@ang
 import { DecimalPipe } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '@env/environment';
+import { ButtonComponent } from '@shared/components';
 import { ExportService } from '../../../../shared/services/export.service';
 
 interface KpiVentas   { totalVentas: number; montoTotal: number; ticketPromedio: number; }
@@ -26,7 +27,7 @@ interface DashboardEjecutivo {
     selector: 'app-reportes-ejecutivo',
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [DecimalPipe],
+    imports: [DecimalPipe, ButtonComponent],
     templateUrl: './reportes-ejecutivo.component.html',
     styleUrls: ['./reportes-ejecutivo.component.scss'],
 })

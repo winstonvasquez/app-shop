@@ -92,12 +92,10 @@
             <div class="card-body">
               <p class="card-title" style="margin-bottom:var(--space-md)">Revisar solicitud</p>
               <div style="display:flex;gap:var(--space-sm)">
-                <button class="btn btn-primary" (click)="aprobar()" [disabled]="actionLoading()">
-                  {{ actionLoading() ? '...' : '✓ Aprobar' }}
-                </button>
-                <button class="btn btn-danger" (click)="rechazar()" [disabled]="actionLoading()">
-                  {{ actionLoading() ? '...' : '✕ Rechazar' }}
-                </button>
+                <app-button label="Aprobar" variant="success" icon="check-circle"
+                  [loading]="actionLoading()" (click)="aprobar()" />
+                <app-button label="Rechazar" variant="danger" icon="x-circle"
+                  [loading]="actionLoading()" (click)="rechazar()" />
               </div>
             </div>
           </div>
@@ -107,9 +105,8 @@
           <div class="card">
             <div class="card-body">
               <p class="card-title" style="margin-bottom:var(--space-md)">Mercadería devuelta</p>
-              <button class="btn btn-primary" (click)="marcarRecibida()" [disabled]="actionLoading()">
-                {{ actionLoading() ? '...' : '📦 Marcar como recibida' }}
-              </button>
+              <app-button label="Marcar como recibida" variant="primary" icon="undo-2"
+                [loading]="actionLoading()" (click)="marcarRecibida()" />
             </div>
           </div>
         }
@@ -125,9 +122,8 @@
                             placeholder="Estado del producto, daños encontrados..."
                             style="resize:vertical"></textarea>
                 </div>
-                <button type="button" class="btn btn-primary" (click)="registrarInspeccion()" [disabled]="actionLoading()">
-                  {{ actionLoading() ? '...' : '🔍 Registrar inspección' }}
-                </button>
+                <app-button label="Registrar inspección" variant="primary" icon="eye"
+                  [loading]="actionLoading()" (click)="registrarInspeccion()" />
               </div>
             </div>
           </form>
@@ -143,9 +139,8 @@
                   <input class="form-input" type="number" min="0" step="0.01"
                          formControlName="refundAmount" placeholder="0.00">
                 </div>
-                <button type="button" class="btn btn-primary" (click)="registrarReembolso()" [disabled]="actionLoading()">
-                  {{ actionLoading() ? '...' : '💰 Registrar reembolso' }}
-                </button>
+                <app-button label="Registrar reembolso" variant="primary" icon="save"
+                  [loading]="actionLoading()" (click)="registrarReembolso()" />
               </div>
             </div>
           </form>

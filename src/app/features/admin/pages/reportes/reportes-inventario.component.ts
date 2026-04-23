@@ -2,6 +2,7 @@ import { Component, ChangeDetectionStrategy, inject, signal, OnInit } from '@ang
 import { HttpClient } from '@angular/common/http';
 import { environment } from '@env/environment';
 import { ExportService } from '../../../../shared/services/export.service';
+import { ButtonComponent } from '@shared/components';
 
 interface DashboardInventario {
     totalAlmacenes: number;
@@ -25,7 +26,7 @@ interface StockItem {
     selector: 'app-reportes-inventario',
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [],
+    imports: [ButtonComponent],
     templateUrl: './reportes-inventario.component.html',
     styleUrls: ['./reportes-inventario.component.scss'],
 })

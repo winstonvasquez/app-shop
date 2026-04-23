@@ -5,6 +5,7 @@ import { RolService } from '@features/admin/services/rol.service';
 import { UserListComponent } from '@features/admin/pages/users/components/user-list/user-list.component';
 import { UserFormComponent } from '@features/admin/pages/users/components/user-form/user-form.component';
 import { PaginationComponent, PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
+import { ButtonComponent } from '@shared/components';
 import {
   UserResponse,
   UserRequest,
@@ -16,7 +17,7 @@ import { PaginationConfig, PageResponse } from '@features/admin/models/product.m
 @Component({
   selector: 'app-users',
   standalone: true,
-  imports: [ReactiveFormsModule, UserListComponent, UserFormComponent, PaginationComponent],
+  imports: [ReactiveFormsModule, UserListComponent, UserFormComponent, PaginationComponent, ButtonComponent],
   templateUrl: './users.component.html',
   styleUrl: './users.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush

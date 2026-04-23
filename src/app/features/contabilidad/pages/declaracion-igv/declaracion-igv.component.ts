@@ -3,12 +3,13 @@ import { DecimalPipe, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { PeriodoService, PeriodoContable } from '../../services/periodo.service';
 import { DeclaracionIgvService, PDT621, HistorialDeclaracion } from '../../services/declaracion-igv.service';
+import { ButtonComponent } from '@shared/components';
 
 @Component({
     selector: 'app-declaracion-igv',
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [DecimalPipe, DatePipe, FormsModule],
+    imports: [DecimalPipe, DatePipe, FormsModule, ButtonComponent],
     templateUrl: './declaracion-igv.component.html',
     styleUrls: ['./declaracion-igv.component.scss']
 })

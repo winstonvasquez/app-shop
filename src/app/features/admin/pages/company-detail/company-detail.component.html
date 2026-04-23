@@ -4,12 +4,12 @@
         subtitle="Detalle de empresa"
         [breadcrumbs]="breadcrumbs()">
         <div actions>
-            <button class="btn btn-secondary" (click)="goBack()">
-                <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
-                    <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
-                </svg>
-                Volver
-            </button>
+            <app-button
+                label="Volver"
+                variant="secondary"
+                icon="arrow-left"
+                (click)="goBack()">
+            </app-button>
         </div>
     </app-page-header>
 
@@ -69,7 +69,12 @@
                 <div class="card">
                     <div class="card-header">
                         <h3 class="card-title">Informacion de la Empresa</h3>
-                        <button class="btn btn-secondary" (click)="startEditing()">Editar</button>
+                        <app-button
+                            label="Editar"
+                            variant="ghost"
+                            icon="pencil"
+                            (click)="startEditing()">
+                        </app-button>
                     </div>
                     <div class="card-body">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -147,12 +152,22 @@
                                 </div>
                             </div>
                             <div class="flex gap-3 mt-6">
-                                <button type="submit" class="btn btn-primary" [disabled]="saving() || profileForm.invalid">
-                                    @if (saving()) { Guardando... } @else { Guardar Cambios }
-                                </button>
-                                <button type="button" class="btn btn-secondary" (click)="cancelEditing()" [disabled]="saving()">
-                                    Cancelar
-                                </button>
+                                <app-button
+                                    label="Guardar Cambios"
+                                    variant="primary"
+                                    icon="save"
+                                    type="submit"
+                                    [loading]="saving()"
+                                    [disabled]="saving() || profileForm.invalid">
+                                </app-button>
+                                <app-button
+                                    label="Cancelar"
+                                    variant="secondary"
+                                    icon="x"
+                                    type="button"
+                                    [disabled]="saving()"
+                                    (click)="cancelEditing()">
+                                </app-button>
                             </div>
                         </form>
                     </div>

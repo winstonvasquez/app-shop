@@ -1,5 +1,4 @@
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators, FormGroup, FormControl } from '@angular/forms';
 import { CategoryService } from '@core/services/category.service';
 import {
@@ -13,18 +12,19 @@ import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.compo
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
+import { ButtonComponent } from '@shared/components';
 
 @Component({
   selector: 'app-categories',
   standalone: true,
   imports: [
-    CommonModule,
     ReactiveFormsModule,
     DataTableComponent,
     FormFieldComponent,
     DrawerComponent,
     PageHeaderComponent,
-    AlertComponent
+    AlertComponent,
+    ButtonComponent
   ],
   templateUrl: './categories.component.html',
   styleUrl: './categories.component.scss'

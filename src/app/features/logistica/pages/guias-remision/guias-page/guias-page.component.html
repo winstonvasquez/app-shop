@@ -4,7 +4,7 @@
     subtitle="GRE-SUNAT — {{ totalElements() }} registros"
     [breadcrumbs]="breadcrumbs">
     <div actions>
-      <button class="btn btn-primary" (click)="showModal.set(true)">+ Nueva GRE</button>
+      <app-button label="Nueva GRE" variant="primary" icon="plus" (click)="showModal.set(true)" />
     </div>
   </app-page-header>
 
@@ -196,7 +196,7 @@
     <fieldset class="gre-section">
       <legend class="gre-legend">BIENES TRASLADADOS</legend>
       <div style="display:flex;justify-content:flex-end;margin-bottom:var(--space-sm)">
-        <button type="button" class="btn btn-secondary" (click)="agregarItem()">+ Agregar ítem</button>
+        <app-button label="Agregar ítem" variant="secondary" icon="plus" (click)="agregarItem()" />
       </div>
       <table class="table" style="font-size:0.85rem">
         <thead>
@@ -255,11 +255,10 @@
   </form>
 
   <div slot="footer">
-    <button class="btn btn-secondary" (click)="cerrarModal()">Cancelar</button>
-    <button class="btn btn-primary" (click)="crearGuia()"
-            [disabled]="guardando() || !formularioValido()">
-      {{ guardando() ? 'Guardando...' : 'Emitir GRE' }}
-    </button>
+    <app-button label="Cancelar" variant="secondary" icon="x" (click)="cerrarModal()" />
+    <app-button label="Emitir GRE" variant="primary" icon="file-text"
+      [loading]="guardando()" [disabled]="guardando() || !formularioValido()"
+      (click)="crearGuia()" />
   </div>
 </app-drawer>
 

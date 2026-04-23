@@ -2,6 +2,7 @@ import { Component, inject, signal, computed, OnInit, ChangeDetectionStrategy } 
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { DecimalPipe, DatePipe, NgClass } from '@angular/common';
+import { ButtonComponent } from '@shared/components';
 import {
     ConciliacionBancariaService,
     Conciliacion,
@@ -18,7 +19,7 @@ type Vista = 'lista' | 'detalle' | 'nueva';
     selector: 'app-conciliacion-bancaria',
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [FormsModule, DecimalPipe, DatePipe, NgClass],
+    imports: [FormsModule, DecimalPipe, DatePipe, NgClass, ButtonComponent],
     templateUrl: './conciliacion-bancaria.component.html',
 })
 export class ConciliacionBancariaComponent implements OnInit {

@@ -14,25 +14,26 @@
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <label class="input-label">{{ 'contabilidad.tipo_cambio.fecha' | translate }}</label>
-                    <input type="date" class="input-field"
+                    <input type="date" class="form-input"
                            [ngModel]="fecha()" (ngModelChange)="fecha.set($event)" />
                 </div>
                 <div>
                     <label class="input-label">{{ 'contabilidad.tipo_cambio.moneda' | translate }}</label>
-                    <select class="input-field" [ngModel]="moneda()" (ngModelChange)="moneda.set($event)">
+                    <select class="form-input" [ngModel]="moneda()" (ngModelChange)="moneda.set($event)">
                         @for (m of monedas; track m) {
                             <option [value]="m">{{ m }}</option>
                         }
                     </select>
                 </div>
             </div>
-            <button class="btn btn-secondary" (click)="consultar()" [disabled]="cargando()">
-                @if (cargando()) {
-                    {{ 'contabilidad.tipo_cambio.consultando' | translate }}
-                } @else {
-                    {{ 'contabilidad.tipo_cambio.consultar' | translate }}
-                }
-            </button>
+            <app-button
+                [label]="cargando() ? ('contabilidad.tipo_cambio.consultando' | translate) : ('contabilidad.tipo_cambio.consultar' | translate)"
+                variant="secondary"
+                icon="arrow-right-left"
+                [loading]="cargando()"
+                [disabled]="cargando()"
+                (click)="consultar()">
+            </app-button>
 
             <div class="border-t border-[var(--color-border)] pt-4 space-y-4">
                 @if (resultado()) {
@@ -46,13 +47,13 @@
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="input-label">{{ 'contabilidad.tipo_cambio.compra' | translate }}</label>
-                        <input type="number" class="input-field font-mono"
+                        <input type="number" class="form-input font-mono"
                                step="0.0001" min="0"
                                [ngModel]="compra()" (ngModelChange)="compra.set($event)" />
                     </div>
                     <div>
                         <label class="input-label">{{ 'contabilidad.tipo_cambio.venta' | translate }}</label>
-                        <input type="number" class="input-field font-mono"
+                        <input type="number" class="form-input font-mono"
                                step="0.0001" min="0"
                                [ngModel]="venta()" (ngModelChange)="venta.set($event)" />
                     </div>
@@ -65,14 +66,14 @@
                     <div class="badge badge-success">{{ exito() }}</div>
                 }
 
-                <button class="btn btn-primary" (click)="registrar()"
-                        [disabled]="guardando() || !compra() || !venta()">
-                    @if (guardando()) {
-                        {{ 'contabilidad.tipo_cambio.guardando' | translate }}
-                    } @else {
-                        {{ 'contabilidad.tipo_cambio.registrar' | translate }}
-                    }
-                </button>
+                <app-button
+                    [label]="guardando() ? ('contabilidad.tipo_cambio.guardando' | translate) : ('contabilidad.tipo_cambio.registrar' | translate)"
+                    variant="primary"
+                    icon="save"
+                    [loading]="guardando()"
+                    [disabled]="guardando() || !compra() || !venta()"
+                    (click)="registrar()">
+                </app-button>
             </div>
         </div>
     </div>

@@ -1,11 +1,12 @@
 import { Component, inject, signal, OnInit, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators, FormGroup } from '@angular/forms';
 import { EnvioService } from '../../services/envio.service';
 import { TransportistaService } from '../../services/transportista.service';
 import { Envio, EnvioStatus, TrackingEvent } from '../../models/envio.model';
 import { Transportista } from '../../models/transportista.model';
 import { AuthService } from '../../../../core/auth/auth.service';
+import { ButtonComponent } from '@shared/components';
 import { DataTableComponent, TableColumn, TableAction } from '@shared/ui/tables/data-table/data-table.component';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { DateInputComponent } from '@shared/ui/forms/date-input/date-input.component';
@@ -29,16 +30,17 @@ const STATUS_MAP: Record<EnvioStatus, string> = {
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
-        CommonModule,
-        FormsModule,
-        ReactiveFormsModule,
-        DataTableComponent,
-        DrawerComponent,
-        DateInputComponent,
-        AlertComponent,
-        LoadingSpinnerComponent,
-        PageHeaderComponent
-    ],
+    FormsModule,
+    ReactiveFormsModule,
+    ButtonComponent,
+    DataTableComponent,
+    DrawerComponent,
+    DateInputComponent,
+    AlertComponent,
+    LoadingSpinnerComponent,
+    PageHeaderComponent,
+    DatePipe
+  ],
     templateUrl: './envios-page.component.html'
 })
 export class EnviosPageComponent implements OnInit {

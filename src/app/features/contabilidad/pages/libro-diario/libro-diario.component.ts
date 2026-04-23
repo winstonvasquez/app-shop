@@ -5,6 +5,7 @@ import { AsientoService } from '../../services/asiento.service';
 import { PeriodoService, PeriodoContable } from '../../services/periodo.service';
 import { ExportService } from '@shared/services/export.service';
 import { PaginationComponent, PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
+import { ButtonComponent } from '@shared/components';
 
 interface LibroDiarioLinea {
     fecha: string;
@@ -20,7 +21,7 @@ interface LibroDiarioLinea {
     selector: 'app-libro-diario',
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [DatePipe, DecimalPipe, FormsModule, PaginationComponent],
+    imports: [DatePipe, DecimalPipe, FormsModule, PaginationComponent, ButtonComponent],
     templateUrl: './libro-diario.component.html'
 })
 export class LibroDiarioComponent implements OnInit {

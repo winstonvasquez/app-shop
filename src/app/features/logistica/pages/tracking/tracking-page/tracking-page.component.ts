@@ -4,11 +4,12 @@ import { DatePipe } from '@angular/common';
 import { ShipmentService, TrackingInfoResponse, ShipmentResponse } from '../../../services/shipment.service';
 import { DataTableComponent, TableColumn, TableAction } from '@shared/ui/tables/data-table/data-table.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
+import { ButtonComponent } from '@shared/components';
 
 @Component({
     selector: 'app-tracking-page',
     standalone: true,
-    imports: [DatePipe, ReactiveFormsModule, DataTableComponent, PageHeaderComponent],
+    imports: [DatePipe, ReactiveFormsModule, DataTableComponent, PageHeaderComponent, ButtonComponent],
     templateUrl: './tracking-page.component.html',
     styleUrls: ['./tracking-page.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush

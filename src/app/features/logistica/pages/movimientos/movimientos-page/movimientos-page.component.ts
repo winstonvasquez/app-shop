@@ -7,6 +7,7 @@ import { AlmacenService } from '../../../services/almacen.service';
 import { Almacen } from '../../../models/almacen.model';
 import { MovimientoItem, CreateMovimientoDto } from '../../../models/movimiento.model';
 import { AuthService } from '../../../../../core/auth/auth.service';
+import { ButtonComponent } from '@shared/components';
 import { DataTableComponent, TableColumn, TableAction } from '@shared/ui/tables/data-table/data-table.component';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { DateInputComponent } from '@shared/ui/forms/date-input/date-input.component';
@@ -26,6 +27,7 @@ interface ItemForm {
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
         ReactiveFormsModule,
+        ButtonComponent,
         DataTableComponent,
         DrawerComponent,
         DateInputComponent,

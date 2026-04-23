@@ -9,6 +9,7 @@ import { DataTableComponent, TableColumn, TableAction } from '@shared/ui/tables/
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
+import { ButtonComponent } from '@shared/components';
 
 @Component({
     selector: 'app-inventario-page',
@@ -18,7 +19,8 @@ import { PaginationChangeEvent } from '@shared/ui/pagination/pagination.componen
         ReactiveFormsModule,
         DataTableComponent,
         AlertComponent,
-        PageHeaderComponent
+        PageHeaderComponent,
+        ButtonComponent
     ],
     templateUrl: './inventario-page.component.html'
 })

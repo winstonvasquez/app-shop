@@ -95,8 +95,8 @@
                 <div class="card-header">
                     <h3 class="card-title">Direcciones</h3>
                     @if (!showDirForm()) {
-                        <button type="button" class="btn btn-primary btn--sm"
-                                (click)="openDirForm()">Agregar</button>
+                        <app-button label="Agregar" variant="primary" size="sm" icon="plus"
+                                    (click)="openDirForm()" />
                     }
                 </div>
 
@@ -137,12 +137,11 @@
                                 </app-admin-form-section>
 
                                 <div slot="actions">
-                                    <button type="button" class="btn btn-secondary"
-                                            (click)="cancelDirForm()">Cancelar</button>
-                                    <button type="submit" class="btn btn-primary"
-                                            [disabled]="dirForm.invalid || dirSaving()">
-                                        {{ dirSaving() ? 'Guardando...' : 'Guardar' }}
-                                    </button>
+                                    <app-button label="Cancelar" variant="secondary" icon="x"
+                                                (click)="cancelDirForm()" />
+                                    <app-button label="Guardar" variant="primary" icon="save"
+                                                type="submit" [loading]="dirSaving()"
+                                                [disabled]="dirForm.invalid || dirSaving()" />
                                 </div>
                             </app-admin-form-layout>
                         </form>
@@ -166,8 +165,8 @@
                 <div class="card-header">
                     <h3 class="card-title">Contactos</h3>
                     @if (!showCtForm()) {
-                        <button type="button" class="btn btn-primary btn--sm"
-                                (click)="openCtForm()">Agregar</button>
+                        <app-button label="Agregar" variant="primary" size="sm" icon="plus"
+                                    (click)="openCtForm()" />
                     }
                 </div>
 
@@ -198,12 +197,11 @@
                                 </app-admin-form-section>
 
                                 <div slot="actions">
-                                    <button type="button" class="btn btn-secondary"
-                                            (click)="cancelCtForm()">Cancelar</button>
-                                    <button type="submit" class="btn btn-primary"
-                                            [disabled]="ctForm.invalid || ctSaving()">
-                                        {{ ctSaving() ? 'Guardando...' : 'Guardar' }}
-                                    </button>
+                                    <app-button label="Cancelar" variant="secondary" icon="x"
+                                                (click)="cancelCtForm()" />
+                                    <app-button label="Guardar" variant="primary" icon="save"
+                                                type="submit" [loading]="ctSaving()"
+                                                [disabled]="ctForm.invalid || ctSaving()" />
                                 </div>
                             </app-admin-form-layout>
                         </form>

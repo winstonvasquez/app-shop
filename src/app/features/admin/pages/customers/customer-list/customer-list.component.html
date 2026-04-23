@@ -2,14 +2,7 @@
     title="Gestión de Clientes"
     subtitle="Administra los clientes de tu empresa"
     [breadcrumbs]="breadcrumbs">
-    <button actions class="btn btn-primary" (click)="openCreate()">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
-             fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="12" y1="5" x2="12" y2="19"></line>
-            <line x1="5" y1="12" x2="19" y2="12"></line>
-        </svg>
-        Nuevo Cliente
-    </button>
+    <app-button actions label="Nuevo Cliente" variant="primary" icon="plus" (click)="openCreate()" />
 </app-page-header>
 
 <div class="page-container">
@@ -54,11 +47,9 @@
         <div class="card" style="margin-bottom: 1rem;">
             <div class="card-body" style="display: flex; align-items: center; gap: 1rem; padding: 0.75rem 1rem;">
                 <span class="text-on">{{ selectedIds().size }} seleccionados</span>
-                <button class="btn btn-secondary btn-sm" (click)="showBulkSegment.set(!showBulkSegment())">
-                    Asignar Segmento
-                </button>
+                <app-button label="Asignar Segmento" variant="secondary" size="sm" (click)="showBulkSegment.set(!showBulkSegment())" />
                 @if (showBulkSegment()) {
-                    <select class="input-field" style="width: auto;" (change)="assignSegment(+$any($event.target).value)">
+                    <select class="form-input" style="width: auto;" (change)="assignSegment(+$any($event.target).value)">
                         <option value="">Seleccionar...</option>
                         <option value="1">VIP</option>
                         <option value="2">Regular</option>

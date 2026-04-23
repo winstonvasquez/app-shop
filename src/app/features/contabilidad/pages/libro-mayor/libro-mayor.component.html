@@ -5,13 +5,18 @@
             <p class="page-subtitle">Saldos por cuenta PCGE 2020</p>
         </div>
         <div class="page-actions">
-            <button class="btn btn-secondary" disabled>Generar PLE</button>
+            <app-button
+                label="Generar PLE"
+                variant="secondary"
+                icon="file-plus"
+                [disabled]="true">
+            </app-button>
         </div>
     </div>
 
     <div class="card mb-lg">
         <div class="filters-bar" style="flex-wrap:wrap">
-            <select class="input-field" style="min-width:260px"
+            <select class="form-input" style="min-width:260px"
                     [value]="cuentaSeleccionada()"
                     (change)="cambiarCuenta($any($event.target).value)">
                 <option value="">— Seleccionar cuenta PCGE —</option>
@@ -19,7 +24,7 @@
                     <option [value]="c.id">{{ c.codigo }} — {{ c.nombre }}</option>
                 }
             </select>
-            <select class="input-field"
+            <select class="form-input"
                     [value]="periodoSeleccionado()"
                     (change)="cambiarPeriodo($any($event.target).value)">
                 <option value="">— Periodo —</option>
@@ -27,10 +32,13 @@
                     <option [value]="p.id">{{ p.nombre }}</option>
                 }
             </select>
-            <button class="btn btn-primary" (click)="cargarMayor()"
-                    [disabled]="!cuentaSeleccionada() || !periodoSeleccionado()">
-                Ver Mayor
-            </button>
+            <app-button
+                label="Ver Mayor"
+                variant="primary"
+                icon="book-open"
+                [disabled]="!cuentaSeleccionada() || !periodoSeleccionado()"
+                (click)="cargarMayor()">
+            </app-button>
         </div>
     </div>
 

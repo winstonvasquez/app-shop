@@ -3,6 +3,7 @@ import { DecimalPipe, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { TipoCambioService, TipoCambio, TipoCambioRequest } from '../../services/tipo-cambio.service';
+import { ButtonComponent } from '@shared/components';
 
 const MONEDAS = ['USD', 'EUR', 'GBP', 'JPY', 'CHF'] as const;
 
@@ -10,7 +11,7 @@ const MONEDAS = ['USD', 'EUR', 'GBP', 'JPY', 'CHF'] as const;
     selector: 'app-tipo-cambio',
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [FormsModule, DecimalPipe, DatePipe, TranslatePipe],
+    imports: [FormsModule, DecimalPipe, DatePipe, TranslatePipe, ButtonComponent],
     templateUrl: './tipo-cambio.component.html',
 })
 export class TipoCambioComponent implements OnInit {

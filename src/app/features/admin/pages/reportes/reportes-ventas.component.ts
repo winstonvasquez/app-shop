@@ -6,6 +6,7 @@ import { HttpClient } from '@angular/common/http';
 import { environment } from '@env/environment';
 import { AuthService } from '@core/auth/auth.service';
 import { ExportService } from '../../../../shared/services/export.service';
+import { ButtonComponent } from '@shared/components';
 import { DataTableComponent, TableColumn, TableAction } from '@shared/ui/tables/data-table/data-table.component';
 
 interface VentaPos {
@@ -35,7 +36,7 @@ interface PageResponse<T> {
     selector: 'app-reportes-ventas',
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [DecimalPipe, ReactiveFormsModule, DataTableComponent],
+    imports: [DecimalPipe, ReactiveFormsModule, DataTableComponent, ButtonComponent],
     templateUrl: './reportes-ventas.component.html',
     styleUrls: ['./reportes-ventas.component.scss'],
 })

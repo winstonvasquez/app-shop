@@ -17,6 +17,7 @@ import {
     ValidatorFn,
     Validators,
 } from '@angular/forms';
+import { ButtonComponent } from '@shared/components';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
 import { AdminFormSectionComponent } from '@shared/ui/forms/admin-form-section/admin-form-section.component';
@@ -43,6 +44,7 @@ const FRECUENCIA_LABELS: Record<string, string> = {
         DatePipe,
         DecimalPipe,
         ReactiveFormsModule,
+        ButtonComponent,
         DrawerComponent,
         FormFieldComponent,
         AdminFormSectionComponent,

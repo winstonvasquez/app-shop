@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { NgApexchartsModule } from 'ng-apexcharts';
 import { environment } from '@env/environment';
 import { DataTableComponent, TableColumn } from '@shared/ui/tables/data-table/data-table.component';
+import { ButtonComponent } from '@shared/components';
 import { VentasParametrosService } from '../../services/ventas-parametros.service';
 import { ChartDefaultsService, CHART_COLORS } from '@shared/services/chart-defaults.service';
 import {
@@ -20,7 +21,7 @@ interface OrderSummary {
     selector: 'app-ventas-dashboard',
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [DataTableComponent, NgApexchartsModule],
+    imports: [DataTableComponent, NgApexchartsModule, ButtonComponent],
     templateUrl: './ventas-dashboard.component.html',
 })
 export class VentasDashboardComponent implements OnInit {

@@ -7,12 +7,13 @@ import { PleService } from '../../services/ple.service';
 import { OrdenCompra } from '../../../compras/models/orden-compra.model';
 import { ExportService } from '@shared/services/export.service';
 import { DataTableComponent, TableColumn } from '@shared/ui/tables/data-table/data-table.component';
+import { ButtonComponent } from '@shared/components';
 
 @Component({
     selector: 'app-registro-compras',
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [DecimalPipe, ReactiveFormsModule, DataTableComponent],
+    imports: [DecimalPipe, ReactiveFormsModule, DataTableComponent, ButtonComponent],
     templateUrl: './registro-compras.component.html'
 })
 export class RegistroComprasComponent implements OnInit {

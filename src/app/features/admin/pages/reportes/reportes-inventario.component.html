@@ -5,18 +5,23 @@
             <p class="page-subtitle">Estado del stock y almacenes</p>
         </div>
         <div class="page-actions no-print flex gap-2">
-            <button class="btn btn-secondary" (click)="onExportarCsv()" [disabled]="cargando() || stockBajo().length === 0">
-                Exportar CSV
-            </button>
-            <button class="btn btn-secondary" (click)="exportarExcel()" [disabled]="cargando() || stockBajo().length === 0">
-                Exportar Excel
-            </button>
-            <button class="btn btn-secondary" (click)="imprimir()" [disabled]="cargando()">
-                Imprimir / PDF
-            </button>
-            <button class="btn btn-primary" (click)="cargar()" [disabled]="cargando()">
-                {{ cargando() ? 'Cargando...' : 'Actualizar' }}
-            </button>
+            <app-button label="Exportar CSV" icon="download" variant="secondary"
+                [disabled]="cargando() || stockBajo().length === 0"
+                (click)="onExportarCsv()">
+            </app-button>
+            <app-button label="Exportar Excel" icon="download" variant="secondary"
+                [disabled]="cargando() || stockBajo().length === 0"
+                (click)="exportarExcel()">
+            </app-button>
+            <app-button label="Imprimir / PDF" icon="printer" variant="secondary"
+                [disabled]="cargando()"
+                (click)="imprimir()">
+            </app-button>
+            <app-button label="Actualizar" icon="refresh-cw" variant="primary"
+                [disabled]="cargando()"
+                [loading]="cargando()"
+                (click)="cargar()">
+            </app-button>
         </div>
     </div>
 

@@ -18,7 +18,7 @@
         <div class="form-row">
             <div class="form-group">
                 <label for="username">Usuario <span class="required">*</span></label>
-                <input type="text" id="username" formControlName="username" class="form-control"
+                <input type="text" id="username" formControlName="username" class="form-input"
                     [class.error]="hasError('username')" placeholder="nombre_usuario" autocomplete="username" />
                 @if (hasError('username')) {
                 <span class="error-message">{{ getErrorMessage('username') }}</span>
@@ -26,7 +26,7 @@
             </div>
             <div class="form-group">
                 <label for="email">Email <span class="required">*</span></label>
-                <input type="email" id="email" formControlName="email" class="form-control"
+                <input type="email" id="email" formControlName="email" class="form-input"
                     [class.error]="hasError('email')" placeholder="usuario@empresa.com" autocomplete="email" />
                 @if (hasError('email')) {
                 <span class="error-message">{{ getErrorMessage('email') }}</span>
@@ -40,7 +40,7 @@
                     Contraseña
                     @if (!editMode()) { <span class="required">*</span> }
                 </label>
-                <input type="password" id="password" formControlName="password" class="form-control"
+                <input type="password" id="password" formControlName="password" class="form-input"
                     [class.error]="hasError('password')" autocomplete="new-password" />
                 @if (hasError('password')) {
                 <span class="error-message">{{ getErrorMessage('password') }}</span>
@@ -57,7 +57,7 @@
         <div class="form-row">
             <div class="form-group">
                 <label for="nombres">Nombres <span class="required">*</span></label>
-                <input type="text" id="nombres" formControlName="nombres" class="form-control"
+                <input type="text" id="nombres" formControlName="nombres" class="form-input"
                     [class.error]="hasError('nombres')" autocomplete="given-name" />
                 @if (hasError('nombres')) {
                 <span class="error-message">{{ getErrorMessage('nombres') }}</span>
@@ -65,7 +65,7 @@
             </div>
             <div class="form-group">
                 <label for="apellidos">Apellidos <span class="required">*</span></label>
-                <input type="text" id="apellidos" formControlName="apellidos" class="form-control"
+                <input type="text" id="apellidos" formControlName="apellidos" class="form-input"
                     [class.error]="hasError('apellidos')" autocomplete="family-name" />
                 @if (hasError('apellidos')) {
                 <span class="error-message">{{ getErrorMessage('apellidos') }}</span>
@@ -76,7 +76,7 @@
         <div class="form-row">
             <div class="form-group">
                 <label for="tipoDocumento">Tipo Documento <span class="required">*</span></label>
-                <select id="tipoDocumento" formControlName="tipoDocumento" class="form-control">
+                <select id="tipoDocumento" formControlName="tipoDocumento" class="form-input">
                     @for (tipo of tipoDocumentoOptions; track tipo.value) {
                     <option [value]="tipo.value">{{ tipo.label }}</option>
                     }
@@ -84,7 +84,7 @@
             </div>
             <div class="form-group">
                 <label for="numeroDocumento">Nro. Documento <span class="required">*</span></label>
-                <input type="text" id="numeroDocumento" formControlName="numeroDocumento" class="form-control"
+                <input type="text" id="numeroDocumento" formControlName="numeroDocumento" class="form-input"
                     [class.error]="hasError('numeroDocumento')" />
                 @if (hasError('numeroDocumento')) {
                 <span class="error-message">{{ getErrorMessage('numeroDocumento') }}</span>
@@ -95,7 +95,7 @@
         <div class="form-row">
             <div class="form-group">
                 <label for="fechaNacimiento">Fecha de Nacimiento <span class="required">*</span></label>
-                <input type="date" id="fechaNacimiento" formControlName="fechaNacimiento" class="form-control"
+                <input type="date" id="fechaNacimiento" formControlName="fechaNacimiento" class="form-input"
                     [class.error]="hasError('fechaNacimiento')" [max]="todayISO()" />
                 @if (hasError('fechaNacimiento')) {
                 <span class="error-message">{{ getErrorMessage('fechaNacimiento') }}</span>
@@ -103,7 +103,7 @@
             </div>
             <div class="form-group">
                 <label for="rolId">Rol <span class="required">*</span></label>
-                <select id="rolId" formControlName="rolId" class="form-control"
+                <select id="rolId" formControlName="rolId" class="form-input"
                     [class.error]="hasError('rolId')">
                     <option value="">Seleccionar rol</option>
                     @for (rol of roles(); track rol.id) {
@@ -119,17 +119,21 @@
     </form>
 
     <div slot="footer">
-        <button type="button" class="btn btn-secondary" (click)="cancel.emit()"
-            [disabled]="submitting()">Cancelar</button>
-        <button type="button" class="btn btn-primary" (click)="save.emit()"
-            [disabled]="submitting() || formGroup().invalid">
-            @if (submitting()) {
-            <span class="spinner-sm"></span>
-            Guardando...
-            } @else {
-            {{ editMode() ? 'Actualizar' : 'Crear' }} Cliente
-            }
-        </button>
+        <app-button
+            label="Cancelar"
+            variant="secondary"
+            icon="x"
+            type="button"
+            [disabled]="submitting()"
+            (click)="cancel.emit()" />
+        <app-button
+            [label]="(editMode() ? 'Actualizar' : 'Crear') + ' Cliente'"
+            variant="primary"
+            icon="save"
+            type="button"
+            [loading]="submitting()"
+            [disabled]="submitting() || formGroup().invalid"
+            (click)="save.emit()" />
     </div>
 
 </app-drawer>

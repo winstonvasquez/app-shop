@@ -5,7 +5,7 @@
             <p class="page-subtitle">Depreciación, alquileres, seguros y otros asientos periódicos automáticos</p>
         </div>
         <div class="page-actions">
-            <button class="btn btn-primary" (click)="abrirForm()">+ Nuevo</button>
+            <app-button label="Nuevo" icon="plus" variant="primary" (click)="abrirForm()" />
         </div>
     </div>
 
@@ -62,12 +62,12 @@
                                 <td class="table-cell">
                                     <div class="flex gap-2">
                                         @if (r.active) {
-                                            <button class="btn btn-secondary btn-icon"
-                                                    title="Ejecutar ahora"
-                                                    (click)="ejecutarAhora(r.id)">▶</button>
-                                            <button class="btn btn-icon btn-icon-delete"
-                                                    title="Desactivar"
-                                                    (click)="desactivar(r.id)">✕</button>
+                                            <app-button icon="play" [iconOnly]="true" variant="primary"
+                                                    ariaLabel="Ejecutar ahora"
+                                                    (click)="ejecutarAhora(r.id)" />
+                                            <app-button icon="power" [iconOnly]="true" variant="danger"
+                                                    ariaLabel="Desactivar"
+                                                    (click)="desactivar(r.id)" />
                                         }
                                     </div>
                                 </td>
@@ -168,15 +168,15 @@
                             </app-form-field>
                             <div class="pb-0">
                                 @if (lineasArray.length > 2) {
-                                    <button type="button" class="btn btn-icon btn-icon-delete"
-                                            title="Eliminar línea"
-                                            (click)="removeLinea(i)">✕</button>
+                                    <app-button type="button" icon="trash-2" [iconOnly]="true" variant="danger"
+                                            ariaLabel="Eliminar línea"
+                                            (click)="removeLinea(i)" />
                                 }
                             </div>
                         </div>
                     }
-                    <button type="button" class="btn btn-secondary self-start"
-                            (click)="addLinea()">+ Agregar línea</button>
+                    <app-button type="button" label="Agregar línea" icon="plus" variant="secondary"
+                            (click)="addLinea()" />
                 </div>
 
                 @if (balanceError()) {
@@ -188,14 +188,13 @@
 
             <!-- Acciones -->
             <div slot="actions">
-                <button type="button" class="btn btn-secondary"
-                        (click)="cerrarForm()" [disabled]="guardando()">
-                    Cancelar
-                </button>
-                <button type="submit" class="btn btn-primary"
-                        [disabled]="form.invalid || guardando()">
-                    @if (guardando()) { Guardando... } @else { Guardar }
-                </button>
+                <app-button type="button" label="Cancelar" icon="x" variant="secondary"
+                        [disabled]="guardando()"
+                        (click)="cerrarForm()" />
+                <app-button type="submit" [label]="guardando() ? 'Guardando...' : 'Guardar'"
+                        icon="save" variant="primary"
+                        [loading]="guardando()"
+                        [disabled]="form.invalid || guardando()" />
             </div>
 
         </app-admin-form-layout>

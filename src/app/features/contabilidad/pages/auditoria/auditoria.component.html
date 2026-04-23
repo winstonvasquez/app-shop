@@ -11,18 +11,23 @@
         <div class="flex gap-3 flex-wrap items-end">
             <div>
                 <label class="input-label">Tipo de entidad</label>
-                <input class="input-field w-40" type="text" placeholder="ASIENTO, PERIODO..."
+                <input class="form-input w-40" type="text" placeholder="ASIENTO, PERIODO..."
                     [ngModel]="filtroTipo()" (ngModelChange)="filtroTipo.set($event)">
             </div>
             <div>
                 <label class="input-label">Desde</label>
-                <input class="input-field" type="date" [ngModel]="filtroDesde()" (ngModelChange)="filtroDesde.set($event)">
+                <input class="form-input" type="date" [ngModel]="filtroDesde()" (ngModelChange)="filtroDesde.set($event)">
             </div>
             <div>
                 <label class="input-label">Hasta</label>
-                <input class="input-field" type="date" [ngModel]="filtroHasta()" (ngModelChange)="filtroHasta.set($event)">
+                <input class="form-input" type="date" [ngModel]="filtroHasta()" (ngModelChange)="filtroHasta.set($event)">
             </div>
-            <button class="btn btn-primary" (click)="buscar()">Buscar</button>
+            <app-button
+                icon="search"
+                variant="primary"
+                label="Buscar"
+                (click)="buscar()">
+            </app-button>
         </div>
     </div>
 
@@ -81,7 +86,13 @@
             <div class="card">
                 <div class="card-header">
                     <h3 class="card-title">Detalle del evento</h3>
-                    <button class="btn-icon" (click)="cerrarDetalle()">✕</button>
+                    <app-button
+                        icon="x"
+                        [iconOnly]="true"
+                        variant="ghost"
+                        ariaLabel="Cerrar detalle"
+                        (click)="cerrarDetalle()">
+                    </app-button>
                 </div>
                 <div class="card-body space-y-3">
                     <div class="grid grid-cols-2 gap-2 text-sm">

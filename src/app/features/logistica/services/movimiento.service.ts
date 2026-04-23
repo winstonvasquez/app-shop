@@ -7,17 +7,27 @@ import { Movimiento, MovimientoItem, CreateMovimientoDto } from '../models/movim
 // Re-exportar tipos para que estén disponibles desde el servicio
 export type { Movimiento, MovimientoItem, CreateMovimientoDto };
 
+export interface MovimientoPage {
+    content: Movimiento[];
+    totalElements: number;
+    totalPages: number;
+    size: number;
+    number: number;
+}
+
 @Injectable({ providedIn: 'root' })
 export class MovimientoService {
   private http = inject(HttpClient);
   private baseUrl = '/logistics/api/movimientos';
 
-  getMovimientos(companyId: string, params?: { tipo?: string; page?: number; size?: number }): Observable<any> {
+  getMovimientos(companyId: string, params?: { tipo?: string; desde?: string; hasta?: string; page?: number; size?: number }): Observable<MovimientoPage> {
     let httpParams = new HttpParams().set('companyId', companyId);
-    if (params?.tipo) httpParams = httpParams.set('tipo', params.tipo);
+    if (params?.tipo)  httpParams = httpParams.set('tipo', params.tipo);
+    if (params?.desde) httpParams = httpParams.set('desde', params.desde);
+    if (params?.hasta) httpParams = httpParams.set('hasta', params.hasta);
     if (params?.page !== undefined) httpParams = httpParams.set('page', params.page.toString());
     if (params?.size !== undefined) httpParams = httpParams.set('size', params.size.toString());
-    return this.http.get<any>(this.baseUrl, { params: httpParams });
+    return this.http.get<MovimientoPage>(this.baseUrl, { params: httpParams });
   }
 
   getMovimientoById(id: string, companyId: string): Observable<Movimiento> {

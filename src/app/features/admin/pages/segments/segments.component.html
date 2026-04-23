@@ -6,12 +6,9 @@
             <h1 class="page-title">Segmentos de Clientes</h1>
             <p class="page-subtitle">Clasificación y agrupación de clientes por tipo y comportamiento</p>
         </div>
-        <button class="btn btn-primary" (click)="openCreate()" aria-label="Crear nuevo segmento">
-            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-            </svg>
-            Nuevo Segmento
-        </button>
+        <app-button label="Nuevo Segmento" variant="primary" icon="plus"
+            ariaLabel="Crear nuevo segmento"
+            (click)="openCreate()"></app-button>
     </div>
 
     <!-- Alerta de error -->
@@ -116,7 +113,8 @@
                     d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
             <p>No hay segmentos registrados</p>
-            <button class="btn btn-primary mt-4" (click)="openCreate()">Crear primer segmento</button>
+            <app-button label="Crear primer segmento" variant="primary" icon="plus"
+                (click)="openCreate()"></app-button>
         </div>
         }
     }
@@ -139,7 +137,7 @@
             <!-- Nombre -->
             <div class="form-group">
                 <label for="seg-nombre">Nombre del Segmento <span class="required">*</span></label>
-                <input type="text" id="seg-nombre" formControlName="nombre" class="form-control"
+                <input type="text" id="seg-nombre" formControlName="nombre" class="form-input"
                     [class.error]="hasError('nombre')" placeholder="Ej: Clientes VIP" />
                 @if (hasError('nombre')) {
                 <span class="error-message">{{ getErrorMessage('nombre') }}</span>
@@ -149,7 +147,7 @@
             <!-- Tipo de Cliente -->
             <div class="form-group">
                 <label for="seg-tipo">Tipo de Cliente <span class="required">*</span></label>
-                <select id="seg-tipo" formControlName="tipoCliente" class="form-control"
+                <select id="seg-tipo" formControlName="tipoCliente" class="form-input"
                     [class.error]="hasError('tipoCliente')">
                     @for (tipo of tipoClienteOptions; track tipo.value) {
                     <option [value]="tipo.value">{{ tipo.label }}</option>
@@ -178,7 +176,7 @@
             <!-- Descripción -->
             <div class="form-group">
                 <label for="seg-desc">Descripción</label>
-                <textarea id="seg-desc" formControlName="descripcion" class="form-control"
+                <textarea id="seg-desc" formControlName="descripcion" class="form-input"
                     rows="3" placeholder="Descripción opcional del segmento..."
                     [class.error]="hasError('descripcion')"></textarea>
                 @if (hasError('descripcion')) {
@@ -198,17 +196,13 @@
         </form>
 
         <div slot="footer">
-            <button type="button" class="btn btn-secondary" (click)="closeDrawer()"
-                [disabled]="submitting()">Cancelar</button>
-            <button type="button" class="btn btn-primary" (click)="onSubmit()"
-                [disabled]="submitting() || segmentForm.invalid">
-                @if (submitting()) {
-                <span class="spinner-sm"></span>
-                Guardando...
-                } @else {
-                {{ editMode() ? 'Actualizar' : 'Crear' }} Segmento
-                }
-            </button>
+            <app-button label="Cancelar" variant="secondary" icon="x"
+                [disabled]="submitting()"
+                (click)="closeDrawer()"></app-button>
+            <app-button [label]="editMode() ? 'Actualizar Segmento' : 'Crear Segmento'" variant="primary" icon="save"
+                [loading]="submitting()"
+                [disabled]="submitting() || segmentForm.invalid"
+                (click)="onSubmit()"></app-button>
         </div>
 
     </app-drawer>

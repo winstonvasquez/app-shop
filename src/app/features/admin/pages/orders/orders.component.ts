@@ -12,6 +12,7 @@ import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { LoadingSpinnerComponent } from '@shared/ui/feedback/loading-spinner/loading-spinner.component';
+import { ButtonComponent } from '@shared/components';
 
 @Component({
   selector: 'app-orders',
@@ -25,7 +26,8 @@ import { LoadingSpinnerComponent } from '@shared/ui/feedback/loading-spinner/loa
     DrawerComponent,
     PageHeaderComponent,
     AlertComponent,
-    LoadingSpinnerComponent
+    LoadingSpinnerComponent,
+    ButtonComponent
   ],
   templateUrl: './orders.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush

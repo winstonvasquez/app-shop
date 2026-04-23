@@ -5,6 +5,7 @@ import { ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '@env/environment';
 import { ExportService } from '../../../../shared/services/export.service';
+import { ButtonComponent } from '@shared/components';
 
 interface Usuario {
     id: number;
@@ -29,7 +30,7 @@ interface PageResponse<T> {
     selector: 'app-reportes-clientes',
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [DatePipe, ReactiveFormsModule],
+    imports: [DatePipe, ReactiveFormsModule, ButtonComponent],
     templateUrl: './reportes-clientes.component.html',
     styleUrls: ['./reportes-clientes.component.scss'],
 })

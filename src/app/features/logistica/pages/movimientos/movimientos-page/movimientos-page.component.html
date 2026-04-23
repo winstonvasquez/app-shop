@@ -4,7 +4,7 @@
     subtitle="Kardex de entradas, salidas y traslados"
     [breadcrumbs]="breadcrumbs">
     <div actions>
-      <button class="btn btn-primary" (click)="openCreateForm()">+ Movimiento</button>
+      <app-button label="Movimiento" variant="primary" icon="arrow-right-left" (click)="openCreateForm()" />
     </div>
   </app-page-header>
 
@@ -24,7 +24,7 @@
     <app-date-input label="Desde" formControlName="dateFrom" />
     <app-date-input label="Hasta"  formControlName="dateTo" />
 
-    <button type="submit" class="btn btn-secondary">Buscar</button>
+    <app-button label="Buscar" variant="primary" icon="search" type="submit" />
   </form>
 
   <!-- Tabla -->
@@ -109,7 +109,7 @@
     <div class="form-section">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-md)">
         <h4 class="form-section-title" style="margin:0">Productos</h4>
-        <button type="button" class="btn btn-secondary" (click)="addItem()">+ Agregar</button>
+        <app-button label="Agregar" variant="secondary" icon="plus" (click)="addItem()" />
       </div>
 
       @for (item of formItems(); track $index; let i = $index) {
@@ -148,9 +148,8 @@
   }
 
   <div slot="footer">
-    <button class="btn btn-secondary" (click)="closeForm()">Cancelar</button>
-    <button class="btn btn-primary" (click)="onSubmit()" [disabled]="submitting()">
-      {{ submitting() ? 'Registrando...' : 'Registrar Movimiento' }}
-    </button>
+    <app-button label="Cancelar" variant="secondary" icon="x" (click)="closeForm()" />
+    <app-button label="Registrar Movimiento" variant="primary" icon="arrow-right-left"
+      [loading]="submitting()" [disabled]="submitting()" (click)="onSubmit()" />
   </div>
 </app-drawer>

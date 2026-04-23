@@ -16,6 +16,7 @@ import {
   Breadcrumb,
 } from '@shared/ui';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
+import { ButtonComponent } from '@shared/components';
 
 @Component({
   selector: 'app-companies',
@@ -28,7 +29,8 @@ import { DrawerComponent } from '@shared/components/drawer/drawer.component';
     AdminFormSectionComponent,
     DrawerComponent,
     PageHeaderComponent,
-    AlertComponent
+    AlertComponent,
+    ButtonComponent
   ],
   templateUrl: './companies.component.html',
   styleUrl: './companies.component.scss'

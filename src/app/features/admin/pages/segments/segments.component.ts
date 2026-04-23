@@ -5,6 +5,7 @@ import { FormBuilder, ReactiveFormsModule, Validators, FormGroup } from '@angula
 import { SegmentService } from '@features/admin/services/segment.service';
 import { PaginationComponent, PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
+import { ButtonComponent } from '@shared/components';
 import {
     SegmentResponse,
     SegmentRequest,
@@ -16,7 +17,7 @@ import {
     selector: 'app-segments',
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [ReactiveFormsModule, PaginationComponent, DrawerComponent],
+    imports: [ReactiveFormsModule, PaginationComponent, DrawerComponent, ButtonComponent],
     templateUrl: './segments.component.html',
     styleUrl: './segments.component.scss'
 })

@@ -9,6 +9,7 @@ import {
     TIPO_CLIENTE_OPTIONS,
     CONDICION_PAGO_OPTIONS,
 } from '@features/admin/models/customer.model';
+import { ButtonComponent } from '@shared/components';
 import { PageHeaderComponent } from '@shared/ui/layout/page-header/page-header.component';
 import { PaginationComponent, PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
 import { AuthService } from '@core/auth/auth.service';
@@ -17,7 +18,7 @@ import { CustomerFormComponent } from '../customer-form/customer-form.component'
 @Component({
     selector: 'app-customer-list',
     standalone: true,
-    imports: [FormsModule, RouterLink, PageHeaderComponent, PaginationComponent, CustomerFormComponent],
+    imports: [FormsModule, RouterLink, PageHeaderComponent, PaginationComponent, CustomerFormComponent, ButtonComponent],
     templateUrl: './customer-list.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
 })

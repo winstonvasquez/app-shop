@@ -13,13 +13,14 @@ import {
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
+import { ButtonComponent } from '@shared/components';
 
 type DetailTab = 'perfil' | 'modulos' | 'usuarios' | 'suscripcion';
 
 @Component({
     selector: 'app-company-detail',
     standalone: true,
-    imports: [DatePipe, ReactiveFormsModule, FormFieldComponent, PageHeaderComponent, AlertComponent],
+    imports: [DatePipe, ReactiveFormsModule, FormFieldComponent, PageHeaderComponent, AlertComponent, ButtonComponent],
     templateUrl: './company-detail.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
 })

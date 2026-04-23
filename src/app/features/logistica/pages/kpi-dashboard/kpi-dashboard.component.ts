@@ -3,11 +3,12 @@ import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { DecimalPipe } from '@angular/common';
 import { LogisticsDashboardService } from '../../services/logistics-dashboard.service';
 import { LogisticsKpi, CarrierKpi } from '../../models/logistics-dashboard.model';
+import { ButtonComponent } from '@shared/components';
 
 @Component({
     selector: 'app-kpi-dashboard',
     standalone: true,
-    imports: [ReactiveFormsModule, DecimalPipe],
+    imports: [ReactiveFormsModule, DecimalPipe, ButtonComponent],
     templateUrl: './kpi-dashboard.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
 })

@@ -1,8 +1,9 @@
 import { Component, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
-import { DecimalPipe, NgClass } from '@angular/common';
+import { DecimalPipe } from '@angular/common';
 import { ConsolidadoService, ConsolidadoReport, LineaConsolidada } from '../../services/consolidado.service';
+import { ButtonComponent } from '@shared/components';
 
 type Seccion = 'balance' | 'resultados';
 
@@ -10,7 +11,7 @@ type Seccion = 'balance' | 'resultados';
     selector: 'app-consolidado',
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [FormsModule, DecimalPipe, NgClass],
+    imports: [FormsModule, DecimalPipe, ButtonComponent],
     templateUrl: './consolidado.component.html',
 })
 export class ConsolidadoComponent {

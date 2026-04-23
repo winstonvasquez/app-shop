@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { DecimalPipe, DatePipe, NgClass } from '@angular/common';
 import { AgingService, AgingReport } from '../../services/aging.service';
+import { ButtonComponent } from '@shared/components';
 
 type Tab = 'cxc' | 'cxp';
 
@@ -10,7 +11,7 @@ type Tab = 'cxc' | 'cxp';
     selector: 'app-aging',
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [FormsModule, DecimalPipe, DatePipe, NgClass],
+    imports: [FormsModule, DecimalPipe, DatePipe, NgClass, ButtonComponent],
     templateUrl: './aging.component.html',
 })
 export class AgingComponent implements OnInit {

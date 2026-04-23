@@ -6,6 +6,7 @@ import { DateInputComponent } from '@shared/ui/forms/date-input/date-input.compo
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
 import { AdminFormSectionComponent } from '@shared/ui/forms/admin-form-section/admin-form-section.component';
 import { AdminFormLayoutComponent } from '@shared/ui/forms/admin-form-layout/admin-form-layout.component';
+import { ButtonComponent } from '@shared/components';
 import { PromotionsService, Promocion } from '../../services/promotions.service';
 import { VentasParametrosService, SelectOption } from '../../services/ventas-parametros.service';
 
@@ -27,6 +28,7 @@ interface PromocionVM extends Promocion {
         FormFieldComponent,
         AdminFormSectionComponent,
         AdminFormLayoutComponent,
+        ButtonComponent,
     ],
     templateUrl: './promotions.component.html',
 })

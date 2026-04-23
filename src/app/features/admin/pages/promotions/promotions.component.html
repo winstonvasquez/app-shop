@@ -6,7 +6,7 @@
             <h1 class="page-title">Promociones</h1>
             <p class="page-subtitle">Campañas, descuentos y cupones para tus clientes</p>
         </div>
-        <button class="btn btn-primary" (click)="abrirNueva()">+ Nueva Promoción</button>
+        <app-button label="Nueva Promoción" icon="plus" variant="primary" (click)="abrirNueva()" />
     </div>
 
     <!-- KPI Cards -->
@@ -137,11 +137,14 @@
             </app-admin-form-section>
 
             <div slot="actions">
-                <button type="button" class="btn btn-secondary" (click)="cerrarModal()">Cancelar</button>
-                <button type="submit" class="btn btn-primary"
-                        [disabled]="guardando() || form.invalid">
-                    @if (guardando()) { Guardando... } @else { Guardar Promoción }
-                </button>
+                <app-button label="Cancelar" icon="x" variant="secondary" (click)="cerrarModal()" />
+                <app-button
+                    label="Guardar Promoción"
+                    icon="save"
+                    variant="primary"
+                    type="submit"
+                    [disabled]="guardando() || form.invalid"
+                    [loading]="guardando()" />
             </div>
 
         </app-admin-form-layout>

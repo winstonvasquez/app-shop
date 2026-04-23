@@ -146,13 +146,19 @@
 
             <!-- Acciones -->
             <div slot="actions">
-                <button type="button" class="btn btn-secondary" (click)="cancel.emit()">
-                    Cancelar
-                </button>
-                <button type="submit" class="btn btn-primary"
-                        [disabled]="form.invalid || submitting()">
-                    {{ submitting() ? 'Guardando...' : (customer() ? 'Actualizar' : 'Crear') }}
-                </button>
+                <app-button
+                    label="Cancelar"
+                    variant="secondary"
+                    icon="x"
+                    type="button"
+                    (click)="cancel.emit()" />
+                <app-button
+                    [label]="customer() ? 'Actualizar' : 'Crear'"
+                    variant="primary"
+                    icon="save"
+                    type="submit"
+                    [loading]="submitting()"
+                    [disabled]="form.invalid || submitting()" />
             </div>
 
         </app-admin-form-layout>

@@ -5,7 +5,7 @@
             <p class="page-subtitle">Configura qué cuentas PCGE se afectan por tipo de transacción</p>
         </div>
         <div class="page-actions">
-            <button class="btn btn-primary" (click)="abrirNueva()">+ Nueva Regla</button>
+            <app-button label="Nueva Regla" icon="plus" variant="primary" (click)="abrirNueva()" />
         </div>
     </div>
 
@@ -55,10 +55,12 @@
                                 <td class="table-cell">
                                     <div class="flex gap-2">
                                         @if (r.activo) {
-                                            <button class="btn btn-icon btn-icon-edit" title="Editar"
-                                                    (click)="abrirEditar(r)">✎</button>
-                                            <button class="btn btn-icon btn-icon-delete" title="Desactivar"
-                                                    (click)="desactivar(r.id)">✕</button>
+                                            <app-button icon="pencil" [iconOnly]="true" variant="ghost"
+                                                    ariaLabel="Editar"
+                                                    (click)="abrirEditar(r)" />
+                                            <app-button icon="power" [iconOnly]="true" variant="danger"
+                                                    ariaLabel="Desactivar"
+                                                    (click)="desactivar(r.id)" />
                                         }
                                     </div>
                                 </td>
@@ -93,7 +95,7 @@
     <div class="grid grid-cols-2 gap-4 mb-4">
         <div>
             <label class="input-label">Tipo de transacción *</label>
-            <select class="input-field" [ngModel]="tipoTransaccion()" (ngModelChange)="tipoTransaccion.set($event)">
+            <select class="form-input" [ngModel]="tipoTransaccion()" (ngModelChange)="tipoTransaccion.set($event)">
                 @for (t of tiposTransaccion; track t) {
                     <option [value]="t">{{ t }}</option>
                 }
@@ -101,12 +103,12 @@
         </div>
         <div>
             <label class="input-label">Nombre *</label>
-            <input class="input-field" type="text" placeholder="Ej: Venta gravada con IGV"
+            <input class="form-input" type="text" placeholder="Ej: Venta gravada con IGV"
                    [ngModel]="nombre()" (ngModelChange)="nombre.set($event)" />
         </div>
         <div class="col-span-2">
             <label class="input-label">Descripción</label>
-            <input class="input-field" type="text" placeholder="Descripción opcional"
+            <input class="form-input" type="text" placeholder="Descripción opcional"
                    [ngModel]="descripcion()" (ngModelChange)="descripcion.set($event)" />
         </div>
     </div>
@@ -115,7 +117,7 @@
     <div class="mb-4">
         <div class="flex items-center justify-between mb-2">
             <label class="input-label mb-0">Líneas de asiento *</label>
-            <button class="btn btn-secondary text-sm" (click)="agregarDetalle()">+ Línea</button>
+            <app-button label="Línea" icon="plus" variant="secondary" (click)="agregarDetalle()" />
         </div>
         <div class="overflow-x-auto">
             <table class="table text-sm">
@@ -132,13 +134,13 @@
                     @for (d of detalles(); track $index; let i = $index) {
                         <tr class="table-row">
                             <td class="table-cell">
-                                <input class="input-field py-1" type="text"
+                                <input class="form-input py-1" type="text"
                                        placeholder="Ej: 121101"
                                        [ngModel]="d.codigoCuenta"
                                        (ngModelChange)="actualizarDetalle(i, 'codigoCuenta', $event)" />
                             </td>
                             <td class="table-cell">
-                                <select class="input-field py-1"
+                                <select class="form-input py-1"
                                         [ngModel]="d.campoOrigen"
                                         (ngModelChange)="actualizarDetalle(i, 'campoOrigen', $event)">
                                     @for (c of camposOrigen; track c) {
@@ -147,7 +149,7 @@
                                 </select>
                             </td>
                             <td class="table-cell">
-                                <select class="input-field py-1"
+                                <select class="form-input py-1"
                                         [ngModel]="d.movimientoTipo"
                                         (ngModelChange)="actualizarDetalle(i, 'movimientoTipo', $event)">
                                     <option value="DEBE">DEBE</option>
@@ -155,15 +157,16 @@
                                 </select>
                             </td>
                             <td class="table-cell">
-                                <input class="input-field py-1 w-20"
+                                <input class="form-input py-1 w-20"
                                        type="number" min="1" max="100"
                                        [ngModel]="d.porcentaje"
                                        (ngModelChange)="actualizarDetalle(i, 'porcentaje', +$event)" />
                             </td>
                             <td class="table-cell">
                                 @if (detalles().length > 2) {
-                                    <button class="btn btn-icon btn-icon-delete"
-                                            (click)="eliminarDetalle(i)">✕</button>
+                                    <app-button icon="trash-2" [iconOnly]="true" variant="danger"
+                                            ariaLabel="Eliminar línea"
+                                            (click)="eliminarDetalle(i)" />
                                 }
                             </td>
                         </tr>
@@ -175,10 +178,14 @@
 
     <ng-container slot="footer">
         <div class="flex gap-3 justify-end">
-            <button class="btn btn-secondary" (click)="cerrarForm()" [disabled]="guardando()">Cancelar</button>
-            <button class="btn btn-primary" (click)="guardar()" [disabled]="guardando() || !nombre()">
-                @if (guardando()) { Guardando... } @else { Guardar }
-            </button>
+            <app-button label="Cancelar" icon="x" variant="secondary"
+                    [disabled]="guardando()"
+                    (click)="cerrarForm()" />
+            <app-button [label]="guardando() ? 'Guardando...' : 'Guardar'"
+                    icon="save" variant="primary"
+                    [loading]="guardando()"
+                    [disabled]="guardando() || !nombre()"
+                    (click)="guardar()" />
         </div>
     </ng-container>
 </app-drawer>

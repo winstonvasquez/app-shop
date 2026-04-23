@@ -5,6 +5,7 @@ import { AsientoService } from '../../services/asiento.service';
 import { CuentaService, CuentaContable } from '../../services/cuenta.service';
 import { PeriodoService, PeriodoContable } from '../../services/periodo.service';
 import { PaginationComponent, PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
+import { ButtonComponent } from '@shared/components';
 
 interface MayorMovimiento {
     fecha: string;
@@ -19,7 +20,7 @@ interface MayorMovimiento {
     selector: 'app-libro-mayor',
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [DatePipe, DecimalPipe, FormsModule, PaginationComponent],
+    imports: [DatePipe, DecimalPipe, FormsModule, PaginationComponent, ButtonComponent],
     templateUrl: './libro-mayor.component.html'
 })
 export class LibroMayorComponent implements OnInit {

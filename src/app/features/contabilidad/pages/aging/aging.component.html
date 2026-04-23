@@ -6,7 +6,7 @@
         </div>
         <div class="flex gap-2 items-center">
             <label class="input-label mb-0">Año:</label>
-            <input class="input-field w-24" type="number" [ngModel]="anno()" (ngModelChange)="anno.set($event); cargar()">
+            <input class="form-input w-24" type="number" [ngModel]="anno()" (ngModelChange)="anno.set($event); cargar()">
         </div>
     </div>
 
@@ -16,12 +16,18 @@
 
     <!-- Tabs -->
     <div class="flex gap-1 mb-4">
-        <button class="btn" [ngClass]="tab() === 'cxc' ? 'btn-primary' : 'btn-secondary'" (click)="cambiarTab('cxc')">
-            Cuentas por Cobrar (12x)
-        </button>
-        <button class="btn" [ngClass]="tab() === 'cxp' ? 'btn-primary' : 'btn-secondary'" (click)="cambiarTab('cxp')">
-            Cuentas por Pagar (42x)
-        </button>
+        <app-button
+            label="Cuentas por Cobrar (12x)"
+            [variant]="tab() === 'cxc' ? 'primary' : 'secondary'"
+            icon="clock"
+            (click)="cambiarTab('cxc')">
+        </app-button>
+        <app-button
+            label="Cuentas por Pagar (42x)"
+            [variant]="tab() === 'cxp' ? 'primary' : 'secondary'"
+            icon="clock"
+            (click)="cambiarTab('cxp')">
+        </app-button>
     </div>
 
     @if (cargando()) {

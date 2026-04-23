@@ -2,12 +2,13 @@ import { Component, inject, signal, computed, OnInit, ChangeDetectionStrategy } 
 import { FormsModule } from '@angular/forms';
 import { DatePipe, NgClass } from '@angular/common';
 import { AuditLogService, AuditLog } from '../../services/audit-log.service';
+import { ButtonComponent } from '@shared/components';
 
 @Component({
     selector: 'app-auditoria',
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [FormsModule, DatePipe, NgClass],
+    imports: [FormsModule, DatePipe, NgClass, ButtonComponent],
     templateUrl: './auditoria.component.html',
 })
 export class AuditoriaComponent implements OnInit {
