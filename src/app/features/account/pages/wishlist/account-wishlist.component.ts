@@ -1,6 +1,5 @@
 import { Component, inject, OnInit, signal, ChangeDetectionStrategy } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { CurrencyPipe } from '@angular/common';
 import { WishlistService, WishlistItem } from '@core/services/wishlist.service';
 import { CartService } from '@features/cart/services/cart.service';
 import { BreadcrumbComponent, BreadcrumbItem } from '@shared/components/breadcrumb/breadcrumb.component';

@@ -6,7 +6,7 @@ import {
     OnInit,
     ChangeDetectionStrategy,
 } from '@angular/core';
-import { DecimalPipe, DatePipe } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import {
     AbstractControl,
     FormArray,
@@ -42,7 +42,6 @@ const FRECUENCIA_LABELS: Record<string, string> = {
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
         DatePipe,
-        DecimalPipe,
         ReactiveFormsModule,
         ButtonComponent,
         DrawerComponent,

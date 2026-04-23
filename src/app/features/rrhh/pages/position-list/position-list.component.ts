@@ -2,7 +2,6 @@ import {
     Component, OnInit, inject, signal, computed,
     ChangeDetectionStrategy
 } from '@angular/core';
-import { DecimalPipe } from '@angular/common';
 import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { PositionService } from '../../services/position.service';
 import { DepartmentService } from '../../services/department.service';
