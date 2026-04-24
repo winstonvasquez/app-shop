@@ -1,5 +1,4 @@
 import { Component, input, model, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { LucideAngularModule } from 'lucide-angular';
 
@@ -7,7 +6,7 @@ import { LucideAngularModule } from 'lucide-angular';
   selector: 'app-number-input',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, LucideAngularModule],
+  imports: [FormsModule, LucideAngularModule],
   template: `
     <div class="input-number-wrapper">
       <button type="button" class="input-number-btn"

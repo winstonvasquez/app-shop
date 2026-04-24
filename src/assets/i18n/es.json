@@ -49,7 +49,10 @@
         "valentinesTitle": "Ofertas de San Valentín",
         "exploreInterests": "EXPLORA TUS INTERESES",
         "flashDeals": "OFERTAS RELÁMPAGO",
-        "limitedTime": "Por tiempo limitado"
+        "limitedTime": "Por tiempo limitado",
+        "bestSellers": "Artículos más vendidos",
+        "topRated": "5 estrellas",
+        "newArrivals": "Lo nuevo"
     },
     "categories": {
         "recommended": "Recomendado",

@@ -3,6 +3,31 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { environment } from '@env/environment';
 import { Asiento, AsientoRequest } from '../models/asiento.model';
 
+export interface LibroDiarioEntry {
+    fecha: string;
+    numero: string;
+    glosa: string;
+    debe: number;
+    haber: number;
+    [key: string]: unknown;
+}
+
+export interface LibroMayorEntry {
+    cuenta: string;
+    codigoCuenta: string;
+    debe: number;
+    haber: number;
+    saldo: number;
+    [key: string]: unknown;
+}
+
+export interface BalanceComprobacion {
+    cuentas: LibroMayorEntry[];
+    totalDebe: number;
+    totalHaber: number;
+    [key: string]: unknown;
+}
+
 @Injectable({ providedIn: 'root' })
 export class AsientoService {
     private http = inject(HttpClient);
@@ -40,17 +65,17 @@ export class AsientoService {
             .set('periodo', periodoId)
             .set('fechaDesde', fechaDesde)
             .set('fechaHasta', fechaHasta);
-        return this.http.get<any>(`${this.baseUrl}/libro-diario`, { params });
+        return this.http.get<LibroDiarioEntry[]>(`${this.baseUrl}/libro-diario`, { params });
     }
 
     obtenerLibroMayor(periodoId: string, cuentaId?: string) {
         let params = new HttpParams().set('periodo', periodoId);
         if (cuentaId) params = params.set('cuenta', cuentaId);
-        return this.http.get<any>(`${this.baseUrl}/libro-mayor`, { params });
+        return this.http.get<LibroMayorEntry[]>(`${this.baseUrl}/libro-mayor`, { params });
     }
 
     obtenerBalanceComprobacion(periodoId: string) {
-        return this.http.get<any>(`${this.baseUrl}/balance-comprobacion`, {
+        return this.http.get<BalanceComprobacion>(`${this.baseUrl}/balance-comprobacion`, {
             params: new HttpParams().set('periodo', periodoId)
         });
     }

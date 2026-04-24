@@ -1,5 +1,4 @@
 import { Component, inject, signal, OnInit, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
@@ -19,7 +18,7 @@ function passwordsMatchValidator(control: AbstractControl): ValidationErrors | n
 @Component({
     selector: 'app-reset-password',
     standalone: true,
-    imports: [CommonModule, ReactiveFormsModule, RouterLink, TranslateModule],
+    imports: [ReactiveFormsModule, RouterLink, TranslateModule],
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: { class: 'block w-full min-h-screen' },
     template: `
@@ -127,7 +126,7 @@ function passwordsMatchValidator(control: AbstractControl): ValidationErrors | n
             <button
                 type="submit"
                 [disabled]="form.invalid || isSaving()"
-                class="flex w-full justify-center items-center gap-3 btn-primary-gradient rounded-xl px-4 py-4 text-sm font-bold text-white shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 transition-all uppercase tracking-wider disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0">
+                class="btn btn-primary btn-lg w-full gap-3 rounded-xl uppercase tracking-wider hover:-translate-y-0.5 active:translate-y-0">
                 @if (isSaving()) {
                 <div class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                 <span>Guardando...</span>

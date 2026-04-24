@@ -1,17 +1,17 @@
 .form-field {
     display: flex;
     flex-direction: column;
-    gap: 6px;
-    margin-bottom: 16px;
+    gap: var(--spacing-xs);
+    margin-bottom: var(--spacing-md);
 }
 
 .form-label {
-    font-size: 14px;
+    font-size: var(--text-sm);
     font-weight: 500;
     color: var(--color-text-secondary);
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: var(--spacing-xs);
 }
 
 .required-indicator {
@@ -19,28 +19,52 @@
     font-weight: 600;
 }
 
-.form-input {
+.form-input,
+.form-select,
+.form-textarea,
+select.form-input,
+textarea.form-input {
     width: 100%;
-    padding: 10px 12px;
-    font-size: 14px;
-    border: 1px solid var(--color-border);
+    padding: var(--spacing-sm) var(--spacing-sm);
+    font-size: var(--text-sm);
+    border: 1px solid var(--color-input-border, var(--color-border));
     border-radius: var(--radius-md);
-    background: var(--color-surface-raised);
-    color: var(--color-text-primary);
-    transition: all 0.15s;
+    /* Fondo SIEMPRE claro (casi blanco) — en todos los temas, nunca luce disabled */
+    background: var(--color-input-bg, #ffffff);
+    color: var(--color-input-text, oklch(0.18 0 0));
+    transition: all var(--transition-fast);
 }
 
-.form-input:focus {
+.form-input::placeholder,
+.form-textarea::placeholder {
+    color: var(--color-input-placeholder, oklch(0.55 0 0));
+    opacity: 1;
+}
+
+.form-input:hover:not(:disabled):not(.error),
+.form-select:hover:not(:disabled),
+.form-textarea:hover:not(:disabled) {
+    background: var(--color-input-bg-hover, oklch(0.985 0 0));
+    border-color: var(--color-input-border-hover, color-mix(in oklch, var(--color-primary) 35%, var(--color-input-border)));
+}
+
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
     outline: none;
     border-color: var(--color-primary);
-    box-shadow: 0 0 0 3px rgba(215, 19, 42, 0.12);
+    background: var(--color-input-bg, #ffffff);
+    box-shadow: 0 0 0 3px color-mix(in oklch, var(--color-primary) 15%, transparent);
 }
 
-.form-input:disabled {
-    background: var(--color-background);
-    color: var(--color-text-muted);
+.form-input:disabled,
+.form-select:disabled,
+.form-textarea:disabled {
+    background: oklch(0.94 0 0);
+    color: oklch(0.55 0 0);
+    border-color: oklch(0.88 0 0);
     cursor: not-allowed;
-    opacity: 0.7;
+    opacity: 0.8;
 }
 
 .form-input.error {
@@ -51,19 +75,147 @@
     box-shadow: 0 0 0 3px color-mix(in oklch, var(--color-error) 20%, transparent);
 }
 
+.form-input.success {
+    border-color: var(--color-success);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Date / Time / Month inputs — estilo mejorado
+   Aplica a todos los <input type="date|time|datetime-local|month|week">
+   con clase .form-input en el panel admin.
+   ───────────────────────────────────────────────────────────── */
+.form-input[type="date"],
+.form-input[type="time"],
+.form-input[type="datetime-local"],
+.form-input[type="month"],
+.form-input[type="week"] {
+    position: relative;
+    padding-left: 2.5rem;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.02em;
+    /* Icono en gris oscuro (sobre fondo claro) */
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%235a5a5a' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><rect x='3' y='4.5' width='14' height='13' rx='2'/><line x1='3' y1='8.5' x2='17' y2='8.5'/><line x1='7' y1='2.5' x2='7' y2='5.5'/><line x1='13' y1='2.5' x2='13' y2='5.5'/><circle cx='7' cy='12' r='0.9' fill='%235a5a5a' stroke='none'/><circle cx='10' cy='12' r='0.9' fill='%235a5a5a' stroke='none'/><circle cx='13' cy='12' r='0.9' fill='%235a5a5a' stroke='none'/></svg>");
+    background-repeat: no-repeat;
+    background-position: 0.75rem center;
+    background-size: 1.125rem 1.125rem;
+    background-color: var(--color-input-bg, #ffffff);
+    color: var(--color-input-text, oklch(0.18 0 0));
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+}
+
+.form-input[type="date"]:hover,
+.form-input[type="time"]:hover,
+.form-input[type="datetime-local"]:hover,
+.form-input[type="month"]:hover,
+.form-input[type="week"]:hover {
+    border-color: color-mix(in oklch, var(--color-primary) 40%, var(--color-border));
+}
+
+.form-input[type="date"]:focus,
+.form-input[type="time"]:focus,
+.form-input[type="datetime-local"]:focus,
+.form-input[type="month"]:focus,
+.form-input[type="week"]:focus {
+    /* icon tint on focus */
+    filter: none;
+}
+
+/* El picker indicator nativo (Chromium) — overlay invisible que cubre todo el input.
+   Así el click en cualquier parte abre el calendario. */
+.form-input[type="date"]::-webkit-calendar-picker-indicator,
+.form-input[type="time"]::-webkit-calendar-picker-indicator,
+.form-input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+.form-input[type="month"]::-webkit-calendar-picker-indicator,
+.form-input[type="week"]::-webkit-calendar-picker-indicator {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    background: transparent;
+    color: transparent;
+    cursor: pointer;
+    opacity: 0;
+}
+
+/* Oculta el placeholder vacío "dd/mm/aaaa" genérico — ya tenemos icono */
+.form-input[type="date"]::-webkit-datetime-edit-fields-wrapper,
+.form-input[type="datetime-local"]::-webkit-datetime-edit-fields-wrapper {
+    padding: 0;
+}
+
+/* Campos individuales de fecha (dd, mm, yyyy) */
+.form-input[type="date"]::-webkit-datetime-edit-day-field:focus,
+.form-input[type="date"]::-webkit-datetime-edit-month-field:focus,
+.form-input[type="date"]::-webkit-datetime-edit-year-field:focus,
+.form-input[type="time"]::-webkit-datetime-edit-hour-field:focus,
+.form-input[type="time"]::-webkit-datetime-edit-minute-field:focus {
+    background: color-mix(in oklch, var(--color-primary) 18%, transparent);
+    color: var(--color-text-primary);
+    border-radius: 3px;
+    outline: none;
+}
+
+/* Los inputs SIEMPRE usan color-scheme: light porque el fondo es claro */
+.form-input[type="date"],
+.form-input[type="time"],
+.form-input[type="datetime-local"],
+.form-input[type="month"],
+.form-input[type="week"] {
+    color-scheme: light;
+}
+
+/* Estado deshabilitado: pierde cursor pointer */
+.form-input[type="date"]:disabled,
+.form-input[type="time"]:disabled,
+.form-input[type="datetime-local"]:disabled,
+.form-input[type="month"]:disabled,
+.form-input[type="week"]:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+/* Rangos de fecha — layout horizontal con separador visual */
+.form-date-range {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+}
+.form-date-range .form-input {
+    width: auto;
+    min-width: 150px;
+}
+.form-date-range::after {
+    content: "";
+}
+.form-date-range .form-input + .form-input {
+    position: relative;
+}
+.form-date-range .form-input + .form-input::before {
+    content: "→";
+    position: absolute;
+    left: -0.9rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--color-text-muted);
+    font-size: 0.875rem;
+    pointer-events: none;
+}
+
 .form-hint {
-    font-size: 13px;
+    font-size: 0.8125rem;
     color: var(--color-text-muted);
     margin: 0;
 }
 
 .form-error {
-    font-size: 13px;
+    font-size: 0.8125rem;
     color: var(--color-error);
     margin: 0;
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: var(--spacing-xs);
 }
 
 .form-error::before {

@@ -64,14 +64,14 @@ interface ModuleCard {
 
       /* Hero */
       .hero { max-width: 800px; margin: 0 auto; padding: 80px 24px 60px; text-align: center; }
-      .hero-badge { display: inline-block; background: rgba(215,19,42,0.12); color: var(--color-primary); border: 1px solid rgba(215,19,42,0.3); border-radius: 20px; padding: 4px 14px; font-size: 0.8rem; font-weight: 600; margin-bottom: 24px; }
+      .hero-badge { display: inline-block; background: color-mix(in oklch, var(--color-primary) 12%, transparent); color: var(--color-primary); border: 1px solid color-mix(in oklch, var(--color-primary) 30%, transparent); border-radius: 20px; padding: 4px 14px; font-size: 0.8rem; font-weight: 600; margin-bottom: 24px; }
       .hero-title { font-size: clamp(2rem, 5vw, 3.5rem); font-weight: 900; line-height: 1.1; color: #fff; margin: 0 0 20px; letter-spacing: -1px; }
       .hero-subtitle { font-size: 1.1rem; color: var(--color-subtle); max-width: 560px; margin: 0 auto 36px; line-height: 1.6; }
       .hero-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-bottom: 48px; }
       .cta-primary { background: var(--color-primary); color: #fff; padding: 14px 28px; border-radius: 10px; text-decoration: none; font-weight: 700; font-size: 0.95rem; transition: opacity 0.15s; }
       .cta-primary:hover { opacity: 0.88; }
-      .cta-secondary { background: rgba(255,255,255,0.06); color: #fff; padding: 14px 24px; border-radius: 10px; text-decoration: none; font-weight: 600; font-size: 0.95rem; border: 1px solid var(--color-border); transition: background 0.15s; }
-      .cta-secondary:hover { background: rgba(255,255,255,0.1); }
+      .cta-secondary { background: oklch(1 0 0 / 0.06); color: #fff; padding: 14px 24px; border-radius: 10px; text-decoration: none; font-weight: 600; font-size: 0.95rem; border: 1px solid var(--color-border); transition: background 0.15s; }
+      .cta-secondary:hover { background: oklch(1 0 0 / 0.1); }
       .hero-stats { display: flex; gap: 40px; justify-content: center; }
       .stat { display: flex; flex-direction: column; align-items: center; }
       .stat-num { font-size: 2rem; font-weight: 900; color: var(--color-primary); }
@@ -89,7 +89,7 @@ interface ModuleCard {
       .module-card p { font-size: 0.8rem; color: var(--color-subtle); margin: 0; line-height: 1.5; }
 
       /* CTA Banner */
-      .cta-banner { background: linear-gradient(135deg, rgba(215,19,42,0.15), rgba(215,19,42,0.05)); border-top: 1px solid rgba(215,19,42,0.2); border-bottom: 1px solid rgba(215,19,42,0.2); padding: 60px 24px; text-align: center; }
+      .cta-banner { background: linear-gradient(135deg, color-mix(in oklch, var(--color-primary) 15%, transparent), color-mix(in oklch, var(--color-primary) 5%, transparent)); border-top: 1px solid color-mix(in oklch, var(--color-primary) 20%, transparent); border-bottom: 1px solid color-mix(in oklch, var(--color-primary) 20%, transparent); padding: 60px 24px; text-align: center; }
       .cta-banner h2 { font-size: 2rem; font-weight: 800; color: #fff; margin: 0 0 12px; }
       .cta-banner p { color: var(--color-subtle); margin-bottom: 28px; }
     `]
@@ -98,7 +98,7 @@ export class LandingPageComponent {
     readonly modules: ModuleCard[] = [
         { code: 'POS', name: 'Punto de Venta', description: 'POS táctil con soporte para múltiples medios de pago, boletas y facturas electrónicas.', icon: '🛒', color: '#d7132a' },
         { code: 'VENTAS', name: 'Ventas', description: 'Pedidos, cotizaciones, comprobantes electrónicos SUNAT. Integración con e-commerce.', icon: '📊', color: '#fb8c00' },
-        { code: 'COMPRAS', name: 'Compras', description: 'Gestión de proveedores, órdenes de compra y recepción de mercadería con validación SUNAT.', icon: '📦', color: '#10b981' },
+        { code: 'COMPRAS', name: 'Compras', description: 'Gestión de proveedores, órdenes de compra y recepción de mercadería con validación SUNAT.', icon: '📦', color: 'var(--color-success)' },
         { code: 'INVENTARIO', name: 'Inventario', description: 'Control de almacenes, kardex, stock mínimo y máximo. Múltiples ubicaciones.', icon: '🏭', color: '#3b82f6' },
         { code: 'CONTABILIDAD', name: 'Contabilidad', description: 'PCGE 2020, libro diario y mayor. PLE para SUNAT, PDT 621, declaraciones automáticas.', icon: '📒', color: '#8b5cf6' },
         { code: 'LOGISTICA', name: 'Logística', description: 'Guías de remisión electrónicas, tracking de envíos, gestión de despacho y devoluciones.', icon: '🚚', color: '#06b6d4' },

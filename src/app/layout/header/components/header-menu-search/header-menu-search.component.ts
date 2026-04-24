@@ -1,5 +1,4 @@
 import { Component, inject, signal, computed, OnInit, OnDestroy } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { Subscription, merge } from 'rxjs';
@@ -19,7 +18,7 @@ interface SubNavItem {
 @Component({
     selector: 'app-header-menu-search',
     standalone: true,
-    imports: [CommonModule, RouterLink, TranslateModule, HeaderSearchDropdownComponent, HeaderUserMenu, CategoryMegaMenuComponent],
+    imports: [RouterLink, TranslateModule, HeaderSearchDropdownComponent, HeaderUserMenu, CategoryMegaMenuComponent],
     templateUrl: './header-menu-search.component.html',
   host: { class: 'block w-full' }
 })
@@ -41,6 +40,12 @@ export class HeaderMenuSearchComponent implements OnInit, OnDestroy {
             this.modalState.openAuthModal();
         } else {
             this.isUserMenuOpen.update(v => !v);
+        }
+    }
+
+    openUserMenu() {
+        if (this.isAuthenticated()) {
+            this.isUserMenuOpen.set(true);
         }
     }
 

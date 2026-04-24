@@ -1,5 +1,5 @@
 import { Component, inject, signal, OnInit, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { DatePipe, DecimalPipe } from '@angular/common';
 import { RouterLink, ActivatedRoute } from '@angular/router';
 import { OrderService } from '@core/services/order.service';
 import { OrderResponse } from '@core/models/order.model';
@@ -16,7 +16,7 @@ const ESTADOS_TIMELINE = [
 @Component({
     selector: 'app-order-detail',
     standalone: true,
-    imports: [CommonModule, RouterLink],
+    imports: [RouterLink, DatePipe, DecimalPipe],
     templateUrl: './order-detail.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
 })

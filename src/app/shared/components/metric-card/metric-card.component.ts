@@ -1,5 +1,4 @@
 import { Component, input, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule } from '@angular/common';
 
 export interface MetricCardData {
     label: string;
@@ -13,7 +12,7 @@ export interface MetricCardData {
     selector: 'app-metric-card',
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [CommonModule],
+    imports: [],
     template: `
         <div class="card-metric">
             <div class="flex items-start justify-between">

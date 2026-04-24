@@ -49,7 +49,10 @@
         "valentinesTitle": "Valentine's Deals",
         "exploreInterests": "EXPLORE YOUR INTERESTS",
         "flashDeals": "FLASH DEALS",
-        "limitedTime": "Limited time only"
+        "limitedTime": "Limited time only",
+        "bestSellers": "Best Sellers",
+        "topRated": "5 Stars",
+        "newArrivals": "What's New"
     },
     "categories": {
         "recommended": "Recommended",

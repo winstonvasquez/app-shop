@@ -53,6 +53,15 @@
     --color-border: oklch(0.27 0 0);
     /* Subtle border #2c2c2c */
 
+    /* Form Input Colors — SIEMPRE CLARO en todos los temas
+       Previene que los inputs luzcan como disabled */
+    --color-input-bg: #ffffff;
+    --color-input-bg-hover: oklch(0.985 0 0);
+    --color-input-text: oklch(0.18 0 0);
+    --color-input-placeholder: oklch(0.55 0 0);
+    --color-input-border: oklch(0.85 0 0);
+    --color-input-border-hover: oklch(0.7 0 0);
+
     /* Text Colors — DARK DEFAULT */
     --color-text-primary: oklch(0.96 0 0);
     /* Near white #f5f5f5 */
@@ -82,6 +91,10 @@
     --color-active-overlay: oklch(1 0 0 / 0.10);  /* white/10 — for dark surfaces */
     --color-border-strong:  oklch(0.45 0 0);       /* stronger border — gray-600 equiv */
     --color-focus-ring:     color-mix(in srgb, var(--color-primary) 30%, transparent);
+
+    /* Surface interaction states (derived from base surfaces) */
+    --color-surface-hover:    oklch(0.22 0 0);     /* surface + hover step */
+    --color-surface-selected: oklch(0.24 0 0);     /* surface + selected step */
 
     /* Text on dark header/secondary backgrounds — always light */
     --color-on-secondary:    oklch(1 0 0);          /* white — secondary bg is always dark */
@@ -237,6 +250,10 @@
     --color-error:          oklch(0.63 0.24 22);     /* rojo error */
     --color-info:           oklch(0.65 0.20 250);    /* azul información */
 
+    /* Surface interaction states */
+    --color-surface-hover:    oklch(0.20 0.011 245);
+    --color-surface-selected: oklch(0.22 0.012 245);
+
     /* Interaction overlays */
     --color-hover-overlay:  oklch(1 0 0 / 0.05);
     --color-active-overlay: oklch(1 0 0 / 0.10);
@@ -277,6 +294,10 @@
     --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
     --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
     --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+
+    /* Surface interaction states */
+    --color-surface-hover:    oklch(0.95 0 0);
+    --color-surface-selected: oklch(0.93 0 0);
 
     /* Light mode interaction overlays */
     --color-hover-overlay:  oklch(0 0 0 / 0.05);  /* black/5  — for light surfaces */
@@ -419,4 +440,24 @@
 /* Text on dark backgrounds */
 @utility text-on-dark {
     color: var(--color-text-primary);
+}
+
+/* Surface hover/selected states */
+@utility bg-surface-hover {
+    background-color: var(--color-surface-hover);
+}
+
+@utility bg-surface-selected {
+    background-color: var(--color-surface-selected);
+}
+
+/* Semantic text sizes — caption (13px) and label (12px) */
+@utility text-caption {
+    font-size: 0.8125rem;
+    line-height: var(--leading-normal);
+}
+
+@utility text-label {
+    font-size: var(--text-xs);
+    line-height: 1.4;
 }

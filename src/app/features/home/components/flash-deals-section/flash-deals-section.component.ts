@@ -3,7 +3,6 @@ import {
   ChangeDetectionStrategy, effect, untracked,
   ViewChild, ElementRef
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ProductCardComponent, Product as UIProduct } from '@shared/components/product-card/product-card.component';
 import { TranslateModule } from '@ngx-translate/core';
@@ -15,7 +14,7 @@ const FEATURED_COUNT = 10;
 @Component({
   selector: 'app-flash-deals-section',
   standalone: true,
-  imports: [CommonModule, ProductCardComponent, TranslateModule, RouterLink],
+  imports: [ProductCardComponent, TranslateModule, RouterLink],
   templateUrl: './flash-deals-section.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })

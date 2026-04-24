@@ -1,5 +1,4 @@
 import { Component, inject, signal, computed, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { CategoryService } from '@core/services/category.service';
 import { UrlEncryptionService } from '@core/services/url-encryption.service';
@@ -9,7 +8,7 @@ import { SearchService } from '@shared/services/search.service';
 @Component({
     selector: 'app-category-mega-menu',
     standalone: true,
-    imports: [CommonModule],
+    imports: [],
     templateUrl: './category-mega-menu.component.html',
     styleUrls: ['./category-mega-menu.component.scss'],
 })

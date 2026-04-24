@@ -1,13 +1,46 @@
 /**
- * Skip list compartido para todos los federation.config.js
+ * Shared federation config — paquetes explícitos en lugar de shareAll()
  *
- * Los path aliases internos (@core/*, @shared/*, @features/*) son rutas
- * de TypeScript dentro del monolito — NO son paquetes npm compartibles.
- * Native Federation los detecta desde tsconfig.json y emite WARNs.
- * Añadirlos al skip los excluye del shared scope.
+ * shareAll() detecta y bundlea TODOS los sub-paquetes de node_modules
+ * (84 paquetes incluyendo 27 de apexcharts y 25 de @angular/cdk),
+ * consumiendo mucha memoria y tiempo. Solo necesitamos compartir los
+ * paquetes que realmente cruzan boundaries entre shell y MFEs.
+ */
+
+const SHARED_CONFIG = { singleton: true, strictVersion: true, requiredVersion: 'auto' };
+
+/**
+ * Paquetes que deben compartirse entre shell y MFEs.
+ * Solo los que se usan en ambos lados de la federación.
+ */
+const SHARED_PACKAGES = {
+  '@angular/core':             SHARED_CONFIG,
+  '@angular/core/rxjs-interop': SHARED_CONFIG,
+  '@angular/core/primitives/signals': SHARED_CONFIG,
+  '@angular/core/primitives/di':      SHARED_CONFIG,
+  '@angular/common':           SHARED_CONFIG,
+  '@angular/common/http':      SHARED_CONFIG,
+  '@angular/compiler':         SHARED_CONFIG,
+  '@angular/forms':            SHARED_CONFIG,
+  '@angular/router':           SHARED_CONFIG,
+  '@angular/animations':       SHARED_CONFIG,
+  '@angular/animations/browser': SHARED_CONFIG,
+  '@angular/platform-browser':   SHARED_CONFIG,
+  '@angular/platform-browser/animations': SHARED_CONFIG,
+  '@angular/cdk':              SHARED_CONFIG,
+  'rxjs':                      SHARED_CONFIG,
+  'rxjs/operators':            SHARED_CONFIG,
+  '@ngx-translate/core':       SHARED_CONFIG,
+  '@ngx-translate/http-loader': SHARED_CONFIG,
+  'tslib':                     SHARED_CONFIG,
+  'lucide-angular':            SHARED_CONFIG,
+};
+
+/**
+ * Skip list — aliases internos del monolito + paquetes que no necesitan
+ * compartirse (se bundlean localmente en cada MFE que los use).
  */
 const INTERNAL_ALIASES_SKIP = [
-  // Aliases internos — no son paquetes, son paths del monolito
   '@core/auth',
   '@core/i18n',
   '@core/interceptors',
@@ -34,7 +67,6 @@ const INTERNAL_ALIASES_SKIP = [
   '@features/products',
   '@features/rrhh',
   '@features/tesoreria',
-  // Paquetes sin metadatos de versión
   'crypto',
 ];
 
@@ -46,4 +78,4 @@ const BASE_SKIP = [
   ...INTERNAL_ALIASES_SKIP,
 ];
 
-module.exports = { BASE_SKIP };
+module.exports = { BASE_SKIP, SHARED_PACKAGES };

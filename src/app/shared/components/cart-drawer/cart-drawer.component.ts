@@ -1,6 +1,5 @@
 
 import { Component, inject, computed } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { TranslateModule } from '@ngx-translate/core';
 import { CartService } from '@features/cart/services/cart.service';
 
@@ -9,7 +8,7 @@ import { Router } from '@angular/router';
 @Component({
     selector: 'app-cart-drawer',
     standalone: true,
-    imports: [CommonModule, TranslateModule],
+    imports: [TranslateModule],
     templateUrl: './cart-drawer.component.html',
     styleUrls: ['./cart-drawer.component.scss']
 })

@@ -4,6 +4,7 @@ import { NgApexchartsModule } from 'ng-apexcharts';
 import { AlmacenService } from '../../services/almacen.service';
 import { Almacen } from '../../models/almacen.model';
 import { MovimientoService } from '../../services/movimiento.service';
+import { Movimiento } from '../../models/movimiento.model';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { ChartDefaultsService, CHART_COLORS } from '@shared/services/chart-defaults.service';
 import {
@@ -25,7 +26,7 @@ export class DashboardLogisticaComponent implements OnInit {
     private readonly chartDefaults = inject(ChartDefaultsService);
 
     almacenes = signal<Almacen[]>([]);
-    ultimosMovimientos = signal<any[]>([]);
+    ultimosMovimientos = signal<Movimiento[]>([]);
     totalItems = signal(0);
     movimientosHoy = signal(0);
     movimientosPendientes = signal(0);
@@ -82,7 +83,7 @@ export class DashboardLogisticaComponent implements OnInit {
 
     loadMovimientos() {
         this.movimientoService.getMovimientos(this.companyId, { size: 5 }).subscribe({
-            next: (res: any) => {
+            next: (res: { content: Movimiento[]; totalElements: number }) => {
                 this.ultimosMovimientos.set(res.content || []);
                 this.movimientosHoy.set(res.totalElements || 0);
             },

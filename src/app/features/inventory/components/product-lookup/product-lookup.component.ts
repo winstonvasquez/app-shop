@@ -1,12 +1,11 @@
 import { ChangeDetectionStrategy, Component, inject, signal, output, input } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { ProductsApiService } from '@features/products/services/products-api.service';
 import { ProductResponse } from '@core/models/product.model';
 
 @Component({
     selector: 'app-product-lookup',
     standalone: true,
-    imports: [CommonModule],
+    imports: [],
     changeDetection: ChangeDetectionStrategy.OnPush,
     template: `
         <div class="rounded-xl border border-border-subtle bg-surface p-4 shadow-sm space-y-3">
@@ -31,7 +30,7 @@ import { ProductResponse } from '@core/models/product.model';
             </div>
 
             @if (error()) {
-                <div class="rounded-lg border border-red-200 bg-error/10 p-3 text-xs text-error-hover">{{ error() }}</div>
+                <div class="rounded-lg border border-error/30 bg-error/10 p-3 text-xs text-error-hover">{{ error() }}</div>
             }
 
             @if (results().length) {

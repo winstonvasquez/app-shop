@@ -1,12 +1,11 @@
 import { Component, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ActivatedRoute } from '@angular/router';
 
 @Component({
     selector: 'app-proximamente',
     standalone: true,
-    imports: [CommonModule, RouterLink],
+    imports: [RouterLink],
     template: `
         <div class="page-container flex flex-col items-center justify-center min-h-[60vh] gap-6 text-center">
             <div class="text-6xl opacity-30">🚧</div>

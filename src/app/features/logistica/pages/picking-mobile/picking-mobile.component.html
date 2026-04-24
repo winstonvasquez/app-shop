@@ -1,0 +1,105 @@
+<div class="p-4 max-w-2xl mx-auto">
+  <!-- Header con progreso global -->
+  <div class="mb-4 bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+    <div class="flex items-center justify-between mb-2">
+      <h1 class="text-lg font-semibold text-gray-800">Mis Ordenes de Picking</h1>
+      <button
+        (click)="loadOrders()"
+        class="text-sm text-indigo-600 hover:text-indigo-800 font-medium">
+        Actualizar
+      </button>
+    </div>
+    <div class="flex items-center gap-3">
+      <div class="flex-1 bg-gray-200 rounded-full h-2">
+        <div
+          class="bg-indigo-600 h-2 rounded-full transition-all"
+          [style.width.%]="overallProgress()">
+        </div>
+      </div>
+      <span class="text-sm text-gray-600 whitespace-nowrap">
+        {{ pickedItems() }}/{{ totalItems() }} items
+      </span>
+    </div>
+    <p class="text-xs text-gray-400 mt-1">Progreso global: {{ overallProgress() }}%</p>
+  </div>
+
+  <!-- Loading -->
+  @if (loading()) {
+    <div class="text-center py-12 text-gray-400">
+      <p>Cargando ordenes...</p>
+    </div>
+  }
+
+  <!-- Error -->
+  @if (error()) {
+    <div class="bg-error/10 border border-error/30 text-error rounded-lg p-4 mb-4">
+      {{ error() }}
+    </div>
+  }
+
+  <!-- Lista de ordenes -->
+  @if (!loading()) {
+    @for (order of orders(); track order.id) {
+      <div class="bg-white rounded-xl shadow-sm border border-gray-100 mb-4 overflow-hidden">
+        <!-- Header de la orden -->
+        <div class="p-4 border-b border-gray-50 flex items-center justify-between">
+          <div>
+            <p class="text-sm font-semibold text-gray-800">Orden #{{ order.referenceOrderId }}</p>
+            <p class="text-xs text-gray-400">{{ order.items.length }} items totales</p>
+          </div>
+          <span class="text-xs font-medium px-2 py-1 rounded-full {{ statusClass(order.status) }}">
+            {{ order.status }}
+          </span>
+        </div>
+
+        <!-- Barra de progreso de la orden -->
+        <div class="px-4 pt-3 pb-1">
+          <div class="flex items-center gap-2">
+            <div class="flex-1 bg-gray-100 rounded-full h-1.5">
+              <div
+                class="bg-success h-1.5 rounded-full transition-all"
+                [style.width.%]="orderProgress(order)">
+              </div>
+            </div>
+            <span class="text-xs text-gray-500">{{ orderProgress(order) }}%</span>
+          </div>
+        </div>
+
+        <!-- Items pendientes -->
+        <div class="p-3 space-y-2">
+          @for (item of pendingItems(order); track item.id) {
+            <div class="flex items-center gap-3 bg-gray-50 rounded-lg p-3">
+              <div class="flex-1 min-w-0">
+                <p class="text-sm font-medium text-gray-800 truncate">{{ item.productName }}</p>
+                <p class="text-xs text-gray-500">SKU: {{ item.sku }} &bull; Ubicacion: {{ item.locationCode }}</p>
+                <p class="text-xs text-gray-400">Solicitado: {{ item.requestedQty }}</p>
+              </div>
+              <button
+                (click)="pickItem(order.id, item)"
+                [disabled]="pickingItemId() === item.id"
+                class="shrink-0 px-3 py-2 rounded-lg text-sm font-medium bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-wait transition-colors">
+                @if (pickingItemId() === item.id) {
+                  ...
+                } @else {
+                  Recoger
+                }
+              </button>
+            </div>
+          }
+
+          @if (pendingItems(order).length === 0) {
+            <div class="text-center py-3 text-gray-400 text-sm">
+              Todos los items recogidos
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    @if (orders().length === 0 && !error()) {
+      <div class="text-center py-12 text-gray-400">
+        <p class="text-lg">No tienes ordenes asignadas</p>
+      </div>
+    }
+  }
+</div>

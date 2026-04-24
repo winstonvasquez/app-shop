@@ -1,5 +1,4 @@
 import { Component, signal, ChangeDetectionStrategy, OnInit, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { NgApexchartsModule } from 'ng-apexcharts';
 import { ChartDefaultsService, CHART_COLORS } from '@shared/services/chart-defaults.service';
@@ -36,7 +35,7 @@ interface Product {
 @Component({
     selector: 'app-dashboard',
     standalone: true,
-    imports: [CommonModule, TranslateModule, NgApexchartsModule],
+    imports: [TranslateModule, NgApexchartsModule],
     templateUrl: './dashboard.component.html',
     styleUrl: './dashboard.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush

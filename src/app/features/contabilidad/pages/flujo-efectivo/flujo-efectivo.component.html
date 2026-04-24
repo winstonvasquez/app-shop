@@ -5,7 +5,7 @@
             <p class="page-subtitle">Estado de flujos — actividades operativas, de inversión y de financiamiento</p>
         </div>
         <div class="page-actions">
-            <select class="input-field"
+            <select class="form-input"
                     [value]="anno()"
                     (change)="cambiarAnno(+$any($event.target).value)">
                 @for (a of [2024, 2025, 2026, 2027]; track a) {

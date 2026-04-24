@@ -1,6 +1,6 @@
 import { Component, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { CommonModule } from '@angular/common';
+import { DecimalPipe } from '@angular/common';
 
 interface PlanCard {
     code: string;
@@ -16,7 +16,7 @@ interface PlanCard {
 @Component({
     selector: 'app-pricing-page',
     standalone: true,
-    imports: [RouterLink, CommonModule],
+    imports: [RouterLink, DecimalPipe],
     template: `
     <div class="pricing-page">
       <div class="pricing-header">
@@ -71,10 +71,10 @@ interface PlanCard {
       .toggle-btn { width: 48px; height: 26px; background: var(--color-surface-raised); border: 1px solid var(--color-border); border-radius: 13px; cursor: pointer; position: relative; }
       .toggle-thumb { position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; background: var(--color-primary); border-radius: 50%; transition: left 0.2s; }
       .toggle-thumb.right { left: 25px; }
-      .discount-badge { background: rgba(16,185,129,0.2); color: #10b981; font-size: 0.7rem; padding: 1px 6px; border-radius: 10px; }
+      .discount-badge { background: color-mix(in oklch, var(--color-success) 20%, transparent); color: var(--color-success); font-size: 0.7rem; padding: 1px 6px; border-radius: 10px; }
       .plans-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
       .plan-card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 16px; padding: 32px 24px; position: relative; }
-      .plan-card.highlighted { border-color: var(--color-primary); background: rgba(215,19,42,0.05); }
+      .plan-card.highlighted { border-color: var(--color-primary); background: color-mix(in oklch, var(--color-primary) 5%, transparent); }
       .popular-badge { position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: var(--color-primary); color: #fff; font-size: 0.75rem; font-weight: 700; padding: 4px 14px; border-radius: 10px; }
       .plan-name { font-size: 1.1rem; font-weight: 700; color: #fff; margin-bottom: 16px; }
       .plan-price { display: flex; align-items: baseline; gap: 4px; margin-bottom: 4px; }

@@ -14,7 +14,7 @@ interface StockSucursal {
 @Component({
     selector: 'app-pos-cross-stock-dialog',
     standalone: true,
-    imports: [DecimalPipe],
+    imports: [],
     changeDetection: ChangeDetectionStrategy.OnPush,
     template: `
     <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60" (click)="close.emit()">

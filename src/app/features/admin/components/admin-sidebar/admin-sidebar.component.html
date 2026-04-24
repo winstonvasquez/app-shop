@@ -31,6 +31,7 @@
 
     <!-- ── Selector de Apariencia ─────────────────────────── -->
     <div class="border-t border-[var(--color-border)] px-3 py-3">
+        <!-- btn-migration: SKIP — custom sidebar toggle con flex inline, no clase btn-* -->
         <button
             class="flex items-center justify-between w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors hover:bg-[var(--color-surface-raised)] text-[var(--color-text-primary)]"
             (click)="themePickerOpen.set(!themePickerOpen())"
@@ -61,6 +62,7 @@
                 </p>
                 <div class="flex flex-wrap gap-1.5">
                     @for (t of group.themes; track t.id) {
+                    <!-- btn-migration: SKIP — color picker circular (w-6 h-6 rounded-full), UI custom sin btn-* -->
                     <button
                         class="w-6 h-6 rounded-full border-2 transition-transform hover:scale-110 focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-[var(--color-primary)]"
                         [title]="t.name"

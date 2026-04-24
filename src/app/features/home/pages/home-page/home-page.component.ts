@@ -1,8 +1,8 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { TranslateModule } from '@ngx-translate/core';
 import { PromoBannerComponent, Banner as CarouselBanner } from '@shared/components/promo-banner/promo-banner.component';
 import { FlashDealsSectionComponent } from '@features/home/components/flash-deals-section/flash-deals-section.component';
+import { ProductShowcaseSectionComponent } from '@features/home/components/product-showcase-section/product-showcase-section.component';
 import { CategoryService } from '@core/services/category.service';
 import { BannerService, Banner } from '@features/home/services/banner.service';
 import { SearchService } from '@shared/services/search.service';
@@ -11,9 +11,9 @@ import { SearchService } from '@shared/services/search.service';
   selector: 'app-home-page',
   standalone: true,
   imports: [
-    CommonModule,
     PromoBannerComponent,
     FlashDealsSectionComponent,
+    ProductShowcaseSectionComponent,
     TranslateModule
   ],
   templateUrl: './home-page.component.html'

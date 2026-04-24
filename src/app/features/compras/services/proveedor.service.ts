@@ -8,7 +8,7 @@ import { Proveedor, ProveedorPage } from '../models/proveedor.model';
 @Injectable({ providedIn: 'root' })
 export class ProveedorService {
     private http = inject(HttpClient);
-    private baseUrl = `${environment.apiUrl}/purchases/api/proveedores`;
+    private baseUrl = `${environment.apiUrls.purchases}/api/proveedores`;
 
     getProveedores(page = 0, size = 10, search?: string, estado?: string): Observable<ProveedorPage> {
         let params = new HttpParams()

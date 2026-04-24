@@ -74,5 +74,25 @@
         </section>
         }
 
+        <!-- ════════════════════════════════════════════════
+        SHOWCASE SECTIONS — Más vendidos, 5 estrellas, Lo nuevo
+        ════════════════════════════════════════════════ -->
+        <div class="px-6">
+            <app-product-showcase-section
+                type="best-sellers"
+                [title]="'home.bestSellers' | translate"
+                [linkParams]="{sort: 'sales'}" />
+
+            <app-product-showcase-section
+                type="top-rated"
+                [title]="'home.topRated' | translate"
+                [linkParams]="{rating: '5'}" />
+
+            <app-product-showcase-section
+                type="new-arrivals"
+                [title]="'home.newArrivals' | translate"
+                [linkParams]="{new: 'true'}" />
+        </div>
+
     </div>
 </div>

@@ -3,10 +3,6 @@
  * Constantes para endpoints y configuración de API
  */
 
-import { environment } from '@env/environment';
-
-export const API_BASE_URL = environment.apiUrl || 'http://localhost:8080';
-
 export const API_ENDPOINTS = {
   // Auth
   auth: {

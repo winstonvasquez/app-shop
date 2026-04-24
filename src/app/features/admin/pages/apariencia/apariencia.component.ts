@@ -1,7 +1,6 @@
 import {
     Component, ChangeDetectionStrategy, inject, signal, OnInit, computed
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '@env/environment';
@@ -42,7 +41,7 @@ const APP_FIELDS: ConfigSection[] = [
 @Component({
     selector: 'app-apariencia',
     standalone: true,
-    imports: [CommonModule, FormsModule],
+    imports: [FormsModule],
     changeDetection: ChangeDetectionStrategy.OnPush,
     template: `
         <div class="page-header">

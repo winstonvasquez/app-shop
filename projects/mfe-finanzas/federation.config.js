@@ -1,5 +1,5 @@
-const { withNativeFederation, shareAll } = require('@angular-architects/native-federation/config');
-const { BASE_SKIP } = require('../../federation.shared');
+const { withNativeFederation } = require('@angular-architects/native-federation/config');
+const { BASE_SKIP, SHARED_PACKAGES } = require('../../federation.shared');
 
 module.exports = withNativeFederation({
   name: 'mfe-finanzas',
@@ -11,7 +11,7 @@ module.exports = withNativeFederation({
   },
 
   shared: {
-    ...shareAll({ singleton: true, strictVersion: true, requiredVersion: 'auto' }),
+    ...SHARED_PACKAGES,
   },
 
   skip: BASE_SKIP,

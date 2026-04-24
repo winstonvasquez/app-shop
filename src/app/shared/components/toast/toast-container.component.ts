@@ -1,5 +1,4 @@
 import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { LucideAngularModule } from 'lucide-angular';
 import { ToastService, Toast, ToastType } from '../../services/toast.service';
 
@@ -7,7 +6,7 @@ import { ToastService, Toast, ToastType } from '../../services/toast.service';
     selector: 'app-toast-container',
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [CommonModule, LucideAngularModule],
+    imports: [LucideAngularModule],
     template: `
         <div class="toast-container toast-top-right">
             @for (toast of toastService.toasts(); track toast.id) {

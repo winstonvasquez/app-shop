@@ -1,5 +1,4 @@
 import { Component, OnInit, signal, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 
 interface BrowseHistoryItem {
@@ -13,7 +12,7 @@ interface BrowseHistoryItem {
 @Component({
     selector: 'app-account-history',
     standalone: true,
-    imports: [CommonModule, RouterLink],
+    imports: [RouterLink],
     changeDetection: ChangeDetectionStrategy.OnPush,
     template: `
         <div class="page-container">

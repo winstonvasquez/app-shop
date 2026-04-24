@@ -1,5 +1,4 @@
 import { Component, input, output, HostListener, ChangeDetectionStrategy, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { LucideAngularModule } from 'lucide-angular';
 
 export type ModalSize = 'sm' | 'md' | 'lg' | 'xl' | 'full';
@@ -8,7 +7,7 @@ export type ModalSize = 'sm' | 'md' | 'lg' | 'xl' | 'full';
     selector: 'app-modal',
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [CommonModule, LucideAngularModule],
+    imports: [LucideAngularModule],
     template: `
         @if (isOpen()) {
           <div class="modal-overlay" [class]="'modal-' + size()" (click)="onOverlayClick($event)" role="dialog" aria-modal="true" [attr.aria-labelledby]="titleId">

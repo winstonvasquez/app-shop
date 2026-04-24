@@ -5,7 +5,7 @@
             <p class="page-subtitle">Pérdidas y Ganancias · PCGE 2020</p>
         </div>
         <div class="page-actions">
-            <select class="input-field" (change)="onPeriodoChange($event)">
+            <select class="form-input" (change)="onPeriodoChange($event)">
                 @for (p of periodos(); track p.id) {
                     <option [value]="p.id" [selected]="p.id === periodoId()">{{ p.nombre }}</option>
                 }

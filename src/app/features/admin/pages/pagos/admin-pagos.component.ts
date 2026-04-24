@@ -1,5 +1,5 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
-import { CommonModule, DatePipe } from '@angular/common';
+import { DatePipe, DecimalPipe } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '@env/environment';
 
@@ -31,7 +31,7 @@ export interface PaymentAttempt {
 @Component({
     selector: 'app-admin-pagos',
     standalone: true,
-    imports: [CommonModule, DatePipe],
+    imports: [DatePipe, DecimalPipe],
     template: `
 <div class="page-container">
     <div class="page-header">

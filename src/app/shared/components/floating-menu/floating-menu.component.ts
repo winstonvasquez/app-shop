@@ -1,5 +1,4 @@
 import { Component, inject, signal, computed } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { ChatService } from '@core/services/chat/chat.service';
 
 interface MenuItem {
@@ -12,7 +11,7 @@ interface MenuItem {
 @Component({
     selector: 'app-floating-menu',
     standalone: true,
-    imports: [CommonModule],
+    imports: [],
     templateUrl: './floating-menu.component.html'
 })
 export class FloatingMenuComponent {

@@ -6,7 +6,6 @@ import {
     computed,
     OnInit,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '@env/environment';
 import { ThemeService } from '@core/services/theme/theme';
@@ -162,7 +161,7 @@ const AVAILABLE_THEMES: ThemeOption[] = [
 @Component({
     selector: 'app-store-theme',
     standalone: true,
-    imports: [CommonModule],
+    imports: [],
     changeDetection: ChangeDetectionStrategy.OnPush,
     template: `
         <div class="page-header">
@@ -239,7 +238,8 @@ const AVAILABLE_THEMES: ThemeOption[] = [
                         >
                             <!-- Vista previa -->
                             <div
-                                style="height: 80px; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 12px"
+                                class="p-3"
+                                style="height: 80px; display: flex; align-items: center; justify-content: center; gap: 6px"
                                 [style.background-color]="theme.bgColor"
                             >
                                 <div style="width: 24px; height: 24px; border-radius: 50%" [style.background-color]="theme.primaryColor"></div>
@@ -248,7 +248,7 @@ const AVAILABLE_THEMES: ThemeOption[] = [
                             </div>
 
                             <!-- Info y botón -->
-                            <div style="padding: 12px; background-color: var(--color-surface-raised)">
+                            <div class="p-3" style="background-color: var(--color-surface-raised)">
                                 <p style="font-weight: 600; font-size: 0.875rem; color: var(--color-text-primary); margin: 0 0 4px">{{ theme.name }}</p>
                                 <p style="font-size: 0.75rem; color: var(--color-text-muted); margin: 0 0 10px">{{ theme.description }}</p>
                                 @if (currentModuleTheme()?.themeKey === theme.key) {

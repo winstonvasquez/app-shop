@@ -6,10 +6,12 @@ import { environment } from '@env/environment';
 
 const API = `${environment.apiUrls.sales}/api/v1`;
 
+/** Milisegundos de debounce antes de sincronizar carrito */
+const SYNC_DEBOUNCE_MS = 3_000;
+
 /**
  * Sincroniza el carrito con el backend para activar la recuperación de carritos abandonados.
  * Solo envía para usuarios autenticados o con email de invitado conocido.
- * Usa debounce de 3 segundos para evitar llamadas excesivas.
  */
 @Injectable({ providedIn: 'root' })
 export class CartSyncService {
@@ -32,7 +34,7 @@ export class CartSyncService {
 
     private scheduledSync(items: unknown[], total: number): void {
         if (this.debounceTimer) clearTimeout(this.debounceTimer);
-        this.debounceTimer = setTimeout(() => this.doSync(items, total), 3000);
+        this.debounceTimer = setTimeout(() => this.doSync(items, total), SYNC_DEBOUNCE_MS);
     }
 
     private doSync(items: unknown[], total: number): void {

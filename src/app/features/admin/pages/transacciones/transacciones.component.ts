@@ -1,5 +1,5 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { DecimalPipe } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '@env/environment';
 
@@ -27,7 +27,7 @@ interface ResumenVentas {
 @Component({
     selector: 'app-transacciones',
     standalone: true,
-    imports: [CommonModule],
+    imports: [DecimalPipe],
     template: `
         <div class="page-header">
             <div>

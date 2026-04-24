@@ -1,5 +1,4 @@
 import { Component, input, output, HostListener, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { LucideAngularModule } from 'lucide-angular';
 
 export type DrawerSide = 'left' | 'right';
@@ -9,7 +8,7 @@ export type DrawerSize = 'sm' | 'md' | 'lg' | 'full';
     selector: 'app-drawer',
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [CommonModule, LucideAngularModule],
+    imports: [LucideAngularModule],
     template: `
         @if (isOpen()) {
           <!-- Overlay -->

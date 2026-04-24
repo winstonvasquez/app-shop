@@ -1,5 +1,5 @@
 import { Component, input, output, computed, inject, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule, AsyncPipe } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import { Observable } from 'rxjs';
 import { ExportService } from '@shared/services/export.service';
 import { PaginationComponent, PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
@@ -47,7 +47,7 @@ export interface FilterChangeEvent {
 @Component({
     selector: 'app-data-table',
     standalone: true,
-    imports: [CommonModule, AsyncPipe, PaginationComponent],
+    imports: [AsyncPipe, PaginationComponent],
     templateUrl: './data-table.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
 })

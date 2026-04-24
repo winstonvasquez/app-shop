@@ -1,7 +1,6 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, ActivatedRoute, RouterLink } from '@angular/router';
-import { CommonModule } from '@angular/common';
 import { PortalService } from '../../services/portal.service';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { LoginResponse } from '../../../../core/auth/auth.model';
@@ -9,7 +8,7 @@ import { LoginResponse } from '../../../../core/auth/auth.model';
 @Component({
     selector: 'app-register-page',
     standalone: true,
-    imports: [CommonModule, ReactiveFormsModule, RouterLink],
+    imports: [ReactiveFormsModule, RouterLink],
     template: `
     <div class="register-page">
       <div class="register-card">
@@ -123,11 +122,11 @@ import { LoginResponse } from '../../../../core/auth/auth.model';
       .steps::before { content: ''; position: absolute; top: 14px; left: 10%; right: 10%; height: 2px; background: var(--color-border); z-index: 0; }
       .step { display: flex; flex-direction: column; align-items: center; gap: 6px; z-index: 1; }
       .step-dot { width: 28px; height: 28px; border-radius: 50%; background: var(--color-surface-raised); border: 2px solid var(--color-border); display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; color: var(--color-subtle); }
-      .step.active .step-dot { border-color: var(--color-primary); color: var(--color-primary); background: rgba(215,19,42,0.1); }
+      .step.active .step-dot { border-color: var(--color-primary); color: var(--color-primary); background: color-mix(in oklch, var(--color-primary) 10%, transparent); }
       .step.done .step-dot { background: var(--color-primary); border-color: var(--color-primary); color: #fff; }
       .step span { font-size: 0.7rem; color: var(--color-subtle); }
       .step.active span { color: #fff; }
-      .error-box { background: rgba(215,19,42,0.1); border: 1px solid rgba(215,19,42,0.4); color: #fc8181; border-radius: 8px; padding: 10px 14px; font-size: 0.85rem; margin-bottom: 16px; }
+      .error-box { background: color-mix(in oklch, var(--color-primary) 10%, transparent); border: 1px solid color-mix(in oklch, var(--color-primary) 40%, transparent); color: var(--color-error); border-radius: 8px; padding: 10px 14px; font-size: 0.85rem; margin-bottom: 16px; }
       .field { margin-bottom: 16px; }
       .field label { display: block; font-size: 0.8rem; color: var(--color-subtle); margin-bottom: 6px; font-weight: 500; }
       .field input { width: 100%; background: var(--color-surface-raised); border: 1px solid var(--color-border); border-radius: 8px; padding: 10px 12px; color: #fff; font-size: 0.9rem; box-sizing: border-box; }
@@ -146,7 +145,7 @@ import { LoginResponse } from '../../../../core/auth/auth.model';
       .plan-opt strong { color: #fff; font-size: 0.9rem; }
       .plan-opt span { color: var(--color-primary); font-weight: 700; font-size: 0.9rem; }
       .plan-opt small { width: 100%; color: var(--color-subtle); font-size: 0.75rem; }
-      .plan-opt.selected { border-color: var(--color-primary); background: rgba(215,19,42,0.08); }
+      .plan-opt.selected { border-color: var(--color-primary); background: color-mix(in oklch, var(--color-primary) 8%, transparent); }
       .login-link { text-align: center; color: var(--color-subtle); font-size: 0.8rem; margin-top: 20px; }
       .login-link a { color: var(--color-primary); text-decoration: none; }
     `]

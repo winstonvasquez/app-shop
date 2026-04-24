@@ -1,11 +1,10 @@
 import { Component, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { ThemeService, AppTheme } from '../../../core/services/theme/theme';
 
 @Component({
   selector: 'app-theme-switcher',
   standalone: true,
-  imports: [CommonModule],
+  imports: [],
   templateUrl: './theme-switcher.html',
   styleUrl: './theme-switcher.scss',
 })

@@ -12,7 +12,7 @@ export const environment = {
         hr: '/hr',
         logistics: '/logistics',
         analytics: '/analytics',
-        reports: 'http://localhost:8090'
+        reports: '/reports'
     },
     socialAuth: {
         googleClientId: 'TU_CLIENT_ID_DE_GOOGLE.apps.googleusercontent.com',

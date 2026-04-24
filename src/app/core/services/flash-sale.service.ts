@@ -14,6 +14,9 @@ export interface FlashSale {
     fechaFinTs: string | null;
 }
 
+/** Intervalo de actualización de flash sales */
+const FLASH_SALE_POLLING_MS = 30_000;
+
 @Injectable({ providedIn: 'root' })
 export class FlashSaleService {
     private http = inject(HttpClient);
@@ -32,7 +35,7 @@ export class FlashSaleService {
     startPolling(): void {
         this.loadFlashSales();
         if (this.refreshInterval) return;
-        this.refreshInterval = setInterval(() => this.loadFlashSales(), 30_000);
+        this.refreshInterval = setInterval(() => this.loadFlashSales(), FLASH_SALE_POLLING_MS);
     }
 
     stopPolling(): void {

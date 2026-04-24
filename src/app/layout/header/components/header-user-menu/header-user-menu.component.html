@@ -1,4 +1,7 @@
-<div class="absolute top-full -right-4 mt-2 w-[280px] bg-[var(--color-surface)] rounded-lg shadow-xl border border-[var(--color-border)] py-2 transition-all duration-300 z-50 custom-scrollbar text-[var(--color-text-primary)] before:content-[''] before:absolute before:-top-2 before:right-6 before:border-8 before:border-transparent before:border-b-[var(--color-surface)]"
+<!-- Invisible bridge to prevent mouseleave gap -->
+<div class="absolute top-full -right-4 w-[280px] pt-2 z-50"
+    [class.pointer-events-none]="!isOpen()" [class.pointer-events-auto]="isOpen()">
+<div class="w-full bg-[var(--color-surface)] rounded-lg shadow-xl border border-[var(--color-border)] py-2 transition-all duration-300 custom-scrollbar text-[var(--color-text-primary)]"
     [class.opacity-0]="!isOpen()" [class.invisible]="!isOpen()" [class.opacity-100]="isOpen()"
     [class.visible]="isOpen()">
     <!-- Header del Menú -->
@@ -44,4 +47,5 @@
         }
         <app-menu-logout></app-menu-logout>
     </div>
+</div>
 </div>

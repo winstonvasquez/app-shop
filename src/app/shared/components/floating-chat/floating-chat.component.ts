@@ -8,7 +8,6 @@ import {
     ChangeDetectionStrategy,
     OnDestroy
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ChatService } from '@core/services/chat/chat.service';
 import { AuthService } from '@core/auth/auth.service';
@@ -17,7 +16,7 @@ import { AuthService } from '@core/auth/auth.service';
     selector: 'app-floating-chat',
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [CommonModule, FormsModule],
+    imports: [FormsModule],
     template: `
         <div class="floating-chat" [class.open]="chatService.isOpen()">
             <!-- Header -->

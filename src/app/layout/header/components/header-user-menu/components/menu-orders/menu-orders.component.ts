@@ -1,5 +1,4 @@
 import { Component, inject, signal, OnInit, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { OrderService } from '@core/services/order.service';
 import { OrderResponse } from '@core/models/order.model';
@@ -7,7 +6,7 @@ import { OrderResponse } from '@core/models/order.model';
 @Component({
   selector: 'app-menu-orders',
   standalone: true,
-  imports: [CommonModule],
+  imports: [],
   templateUrl: './menu-orders.component.html',
   styleUrl: './menu-orders.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

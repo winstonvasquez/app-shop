@@ -1,11 +1,10 @@
 import { Component, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { AuthService } from '@core/auth/auth.service';
 
 @Component({
   selector: 'app-admin-header',
   standalone: true,
-  imports: [CommonModule],
+  imports: [],
   templateUrl: './admin-header.component.html',
   styleUrl: './admin-header.component.scss'
 })

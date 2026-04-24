@@ -55,7 +55,7 @@
     }
 
     .documento {
-        font-family: 'JetBrains Mono', 'Courier New', monospace;
+        font-family: var(--font-mono);
         font-size: 0.8125rem;
         color: var(--color-text-muted);
     }

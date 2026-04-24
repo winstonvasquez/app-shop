@@ -1,5 +1,4 @@
 import { Component, input, inject, ChangeDetectionStrategy, signal, computed } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { CartService } from '@features/cart/services/cart.service';
 import { TranslateModule } from '@ngx-translate/core';
 import { Router } from '@angular/router';
@@ -8,6 +7,7 @@ import { UrlEncryptionService } from '@core/services/url-encryption.service';
 import { WishlistService } from '@core/services/wishlist.service';
 import { AuthService } from '@core/auth/auth.service';
 import { CompareService } from '@features/products/services/compare.service';
+import { ModalStateService } from '@core/services/modal-state.service';
 
 export interface Product {
   id: number;
@@ -26,7 +26,7 @@ export interface Product {
 @Component({
   selector: 'app-product-card',
   standalone: true,
-  imports: [CommonModule, TranslateModule],
+  imports: [TranslateModule],
   templateUrl: './product-card.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -36,6 +36,7 @@ export class ProductCardComponent {
   private quickviewService = inject(QuickviewService);
   private router = inject(Router);
   private urlEncryption = inject(UrlEncryptionService);
+  private modalState = inject(ModalStateService);
   readonly wishlistService = inject(WishlistService);
   private authService = inject(AuthService);
 
@@ -53,6 +54,10 @@ export class ProductCardComponent {
 
   openQuickview(event: Event) {
     event.stopPropagation();
+    if (!this.isAuthenticated()) {
+      this.modalState.openAuthModal();
+      return;
+    }
     this.quickviewService.open(this.product().id);
   }
 

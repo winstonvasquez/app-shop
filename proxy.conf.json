@@ -31,26 +31,29 @@
         "pathRewrite": { "^/accounting": "/finance" },
         "secure": false,
         "changeOrigin": true,
-        "logLevel": "debug"
+        "logLevel": "debug",
+        "comment": "microshopfinanzas (antes microshopcontabilidad)"
     },
     "/hr": {
-        "target": "http://127.0.0.1:8088",
+        "target": "http://127.0.0.1:8080",
         "secure": false,
         "changeOrigin": true,
-        "logLevel": "debug"
+        "logLevel": "debug",
+        "comment": "ahora servido por microshopusers fusionado"
     },
     "/inventory": {
-        "target": "http://127.0.0.1:8085",
+        "target": "http://127.0.0.1:8090",
         "secure": false,
         "changeOrigin": true,
-        "logLevel": "debug"
+        "logLevel": "debug",
+        "comment": "ahora servido por microshoplogistica fusionado"
     },
     "/treasury": {
-        "target": "http://127.0.0.1:8089",
-        "pathRewrite": { "^/treasury": "" },
+        "target": "http://127.0.0.1:8084",
         "secure": false,
         "changeOrigin": true,
-        "logLevel": "debug"
+        "logLevel": "debug",
+        "comment": "ahora servido por microshopfinanzas fusionado"
     },
     "/logistics": {
         "target": "http://127.0.0.1:8090",
@@ -63,5 +66,12 @@
         "secure": false,
         "changeOrigin": true,
         "logLevel": "debug"
+    },
+    "/reports": {
+        "target": "http://127.0.0.1:8084",
+        "secure": false,
+        "changeOrigin": true,
+        "logLevel": "debug",
+        "comment": "ahora servido por microshopfinanzas fusionado"
     }
 }

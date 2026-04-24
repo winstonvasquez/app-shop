@@ -94,9 +94,7 @@
         padding: 0;
     }
 
-    font-family: 'Inter',
-    system-ui,
-    sans-serif;
+    font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
 
     display: flex;
@@ -235,7 +233,7 @@
     }
 
     .pos-clock-time {
-        font-family: 'JetBrains Mono', monospace;
+        font-family: var(--font-mono);
         font-size: 16px;
         font-weight: 600;
         color: var(--color-text-primary);
@@ -738,7 +736,7 @@
     .product-sku {
         font-size: 10px;
         color: var(--text3);
-        font-family: 'JetBrains Mono', monospace;
+        font-family: var(--font-mono);
     }
 
     .product-footer {
@@ -1144,7 +1142,7 @@
         font-size: 15px;
         font-weight: 700;
         color: var(--text);
-        font-family: 'JetBrains Mono', monospace;
+        font-family: var(--font-mono);
     }
 
     .order-item-unit-price {
@@ -1191,7 +1189,7 @@
         color: var(--text);
         min-width: 24px;
         text-align: center;
-        font-family: 'JetBrains Mono', monospace;
+        font-family: var(--font-mono);
     }
 
     .order-item-remove {
@@ -1299,7 +1297,7 @@
         font-size: 32px;
         font-weight: 900;
         color: var(--text);
-        font-family: 'JetBrains Mono', monospace;
+        font-family: var(--font-mono);
         letter-spacing: -1px;
     }
 
@@ -1362,15 +1360,15 @@
     }
 
     .pay-btn--yape.pay-btn--active {
-        border-color: #7c3aed;
-        background: rgba(124, 58, 237, .08);
-        color: #7c3aed;
+        border-color: var(--color-yape);
+        background: color-mix(in oklch, var(--color-yape) 8%, transparent);
+        color: var(--color-yape);
     }
 
     .pay-btn--plin.pay-btn--active {
-        border-color: #059669;
-        background: rgba(5, 150, 105, .08);
-        color: #059669;
+        border-color: var(--color-plin);
+        background: color-mix(in oklch, var(--color-plin) 8%, transparent);
+        color: var(--color-plin-text);
     }
 
     .payment-amounts {
@@ -1421,7 +1419,7 @@
         color: var(--text);
         font-size: 14px;
         font-weight: 700;
-        font-family: 'JetBrains Mono', monospace;
+        font-family: var(--font-mono);
         padding: 0 var(--sp2);
         outline: none;
         width: 100%;
@@ -1437,7 +1435,7 @@
         border: 1.5px solid var(--border);
         font-size: 16px;
         font-weight: 800;
-        font-family: 'JetBrains Mono', monospace;
+        font-family: var(--font-mono);
         color: var(--text3);
         background: var(--surface);
     }
@@ -1553,7 +1551,7 @@
     .checkout-amount {
         font-size: 18px;
         font-weight: 900;
-        font-family: 'JetBrains Mono', monospace;
+        font-family: var(--font-mono);
     }
 
     /* ── Historial ── */
@@ -1603,7 +1601,7 @@
         font-size: 22px;
         font-weight: 800;
         color: var(--text);
-        font-family: 'JetBrains Mono', monospace;
+        font-family: var(--font-mono);
     }
 
     .kpi-card--primary .kpi-value {
@@ -1671,7 +1669,7 @@
     }
 
     .mono {
-        font-family: 'JetBrains Mono', monospace;
+        font-family: var(--font-mono);
     }
 
     .fw-bold {
@@ -1766,9 +1764,9 @@
 
     .badge-pago--yape,
     .pago-badge--yape {
-        background: rgba(124, 58, 237, .08);
-        color: #7c3aed;
-        border-color: rgba(124, 58, 237, .25);
+        background: color-mix(in oklch, var(--color-yape) 8%, transparent);
+        color: var(--color-yape);
+        border-color: color-mix(in oklch, var(--color-yape) 25%, transparent);
     }
 
     .badge-pago--plin,
@@ -1941,7 +1939,7 @@
     .turno-total-amount {
         font-size: 24px;
         font-weight: 900;
-        font-family: 'JetBrains Mono', monospace;
+        font-family: var(--font-mono);
         color: var(--brand);
     }
 
@@ -2122,7 +2120,7 @@
         font-size: 36px;
         font-weight: 900;
         color: var(--color-text-primary);
-        font-family: 'JetBrains Mono', monospace;
+        font-family: var(--font-mono);
         margin: var(--sp1) 0;
     }
 
@@ -2149,7 +2147,7 @@
         font-size: 30px;
         font-weight: 800;
         color: var(--text);
-        font-family: 'JetBrains Mono', monospace;
+        font-family: var(--font-mono);
         text-align: right;
         border: 1.5px solid var(--border);
         border-radius: 10px;
@@ -2255,7 +2253,7 @@
     }
 
     .numpad-change-amount {
-        font-family: 'JetBrains Mono', monospace;
+        font-family: var(--font-mono);
         font-weight: 800;
     }
 
@@ -2405,7 +2403,7 @@
     }
 
     .receipt-meta-mono {
-        font-family: 'JetBrains Mono', monospace;
+        font-family: var(--font-mono);
         font-weight: 700;
         color: var(--text);
     }
@@ -2458,7 +2456,7 @@
         font-size: 14px;
         font-weight: 700;
         color: var(--text);
-        font-family: 'JetBrains Mono', monospace;
+        font-family: var(--font-mono);
         flex-shrink: 0;
         margin-left: var(--sp3);
     }
@@ -2509,7 +2507,7 @@
         font-size: 28px;
         font-weight: 900;
         color: var(--text);
-        font-family: 'JetBrains Mono', monospace;
+        font-family: var(--font-mono);
     }
 
     .receipt-payment-detail {
@@ -2545,7 +2543,7 @@
 
     .receipt-qr-data {
         font-size: 8px;
-        font-family: monospace;
+        font-family: var(--font-mono);
         color: var(--text3);
         word-break: break-all;
         text-align: center;
@@ -2978,7 +2976,7 @@
     .catalog-view-toggle button.active {
         background: var(--card);
         color: var(--text);
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+        box-shadow: var(--shadow-sm);
     }
 
     /* ── Held Orders Panel ── */
@@ -3233,5 +3231,3 @@
             padding: 0;
         }
     }
-
-} /* end .pos-layout */

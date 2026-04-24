@@ -24,6 +24,7 @@ export interface ProductFilter {
     minPrice?: number;
     maxPrice?: number;
     marcas?: string[];
+    minRating?: number;
 }
 
 export interface FiltrosDisponibles {
@@ -72,6 +73,9 @@ export class ProductService extends BaseApiService<ProductRequest, ProductRespon
         }
         if (filter?.marcas?.length) {
             filter.marcas.forEach(m => { params = params.append('marca', m); });
+        }
+        if (filter?.minRating !== undefined) {
+            params = params.set('minRating', filter.minRating.toString());
         }
 
         return this.getPaginated<PageResponse<ProductResponse>>(params);

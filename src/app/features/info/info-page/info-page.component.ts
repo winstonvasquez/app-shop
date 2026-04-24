@@ -1,6 +1,5 @@
 import { Component, inject, signal, computed, OnInit, OnDestroy } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { CommonModule } from '@angular/common';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { Subscription, merge } from 'rxjs';
 import { StoreConfigService, TiendaPaginaDto } from '@core/services/store-config.service';
@@ -32,7 +31,7 @@ const PAGE_MAP: Record<string, PageConfig> = {
 @Component({
   selector: 'app-info-page',
   standalone: true,
-  imports: [CommonModule, TranslateModule, RouterLink],
+  imports: [TranslateModule, RouterLink],
   templateUrl: './info-page.component.html',
 })
 export class InfoPageComponent implements OnInit, OnDestroy {

@@ -7,7 +7,7 @@ import {
   ContentChild,
   TemplateRef,
 } from '@angular/core';
-import { CommonModule, NgTemplateOutlet } from '@angular/common';
+import { NgTemplateOutlet } from '@angular/common';
 import { LucideAngularModule } from 'lucide-angular';
 import { PaginatorComponent } from './paginator.component';
 import { TableColumn, SortEvent } from './data-table.types';
@@ -16,7 +16,7 @@ import { TableColumn, SortEvent } from './data-table.types';
   selector: 'app-data-table',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, NgTemplateOutlet, LucideAngularModule, PaginatorComponent],
+  imports: [NgTemplateOutlet, LucideAngularModule, PaginatorComponent],
   template: `
     <div class="card overflow-hidden">
       <!-- Loading skeleton -->

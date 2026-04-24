@@ -7,7 +7,6 @@ import {
     ChangeDetectionStrategy,
     ChangeDetectorRef
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '@env/environment';
@@ -18,7 +17,7 @@ import { ChatConversacion, ChatMessage } from '@core/services/chat/chat.service'
     selector: 'app-chat-soporte',
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [CommonModule, FormsModule],
+    imports: [FormsModule],
     template: `
         <div class="page-header">
             <div>

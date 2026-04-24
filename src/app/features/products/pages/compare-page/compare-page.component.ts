@@ -1,5 +1,5 @@
 import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { DecimalPipe } from '@angular/common';
 import { Router } from '@angular/router';
 import { CompareService } from '@features/products/services/compare.service';
 import { CartService } from '@features/cart/services/cart.service';
@@ -8,7 +8,7 @@ import { BreadcrumbComponent, BreadcrumbItem } from '@shared/components/breadcru
 @Component({
   selector: 'app-compare-page',
   standalone: true,
-  imports: [CommonModule, BreadcrumbComponent],
+  imports: [BreadcrumbComponent, DecimalPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './compare-page.component.html'
 })

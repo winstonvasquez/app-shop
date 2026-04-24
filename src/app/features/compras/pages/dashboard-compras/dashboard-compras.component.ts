@@ -1,5 +1,5 @@
 import { Component, inject, OnInit, signal, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { NgApexchartsModule } from 'ng-apexcharts';
 import { DashboardService, DashboardCompras } from '../../services/dashboard.service';
@@ -14,7 +14,12 @@ import {
     selector: 'app-dashboard-compras',
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [CommonModule, RouterLink, PageHeaderComponent, NgApexchartsModule],
+    imports: [
+    RouterLink,
+    PageHeaderComponent,
+    NgApexchartsModule,
+    DatePipe
+  ],
     templateUrl: './dashboard-compras.component.html'
 })
 export class DashboardComprasComponent implements OnInit {

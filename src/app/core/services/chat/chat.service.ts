@@ -22,6 +22,9 @@ export interface ChatConversacion {
     lastMessageAt: string;
 }
 
+/** Intervalo de polling para mensajes nuevos */
+const CHAT_POLLING_MS = 5_000;
+
 @Injectable({ providedIn: 'root' })
 export class ChatService {
     private readonly http = inject(HttpClient);
@@ -130,7 +133,7 @@ export class ChatService {
     private schedulePolling(): void {
         this.pollingInterval = setInterval(() => {
             this.getNewMessages();
-        }, 5000);
+        }, CHAT_POLLING_MS);
     }
 
     /** Detiene el polling */

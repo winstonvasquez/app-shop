@@ -4,5 +4,5 @@ export interface Variant {
     nombre: string;
     precioAjuste: number;
     stockActual: number;
-    atributos: { [key: string]: any };
+    atributos: { [key: string]: string | number | boolean };
 }

@@ -1,5 +1,4 @@
 import { Component, input, signal, OnInit, OnDestroy, effect, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 
@@ -15,7 +14,7 @@ export interface Banner {
 @Component({
   selector: 'app-promo-banner',
   standalone: true,
-  imports: [CommonModule, RouterLink, TranslateModule],
+  imports: [RouterLink, TranslateModule],
   templateUrl: './promo-banner.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
