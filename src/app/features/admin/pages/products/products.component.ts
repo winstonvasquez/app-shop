@@ -1,4 +1,6 @@
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
 import { FormBuilder, ReactiveFormsModule, Validators, FormGroup, FormControl } from '@angular/forms';
 import { ProductService, ProductRequest, ProductFilter } from '@core/services/product.service';
 import { ProductResponse } from '@core/models/product.model';
@@ -57,6 +59,8 @@ export class ProductsComponent implements OnInit {
 
   // Product form with validations
   productForm: FormGroup;
+
+  private readonly searchInput$ = new Subject<string>();
 
   // Breadcrumbs
   breadcrumbs: Breadcrumb[] = [
@@ -138,6 +142,14 @@ export class ProductsComponent implements OnInit {
       ]],
       categoriaIds: [[]]
     });
+
+    this.searchInput$
+      .pipe(debounceTime(300), distinctUntilChanged(), takeUntilDestroyed())
+      .subscribe(value => {
+        this.searchQuery.set(value);
+        this.currentPage.set(0);
+        this.loadProducts();
+      });
   }
 
   ngOnInit(): void {
@@ -179,13 +191,11 @@ export class ProductsComponent implements OnInit {
   }
 
   /**
-   * Handle search input
+   * Handle search input (debounced 300ms via searchInput$)
    */
   onSearch(event: Event): void {
     const input = event.target as HTMLInputElement;
-    this.searchQuery.set(input.value);
-    this.currentPage.set(0); // Reset to first page
-    this.loadProducts();
+    this.searchInput$.next(input.value);
   }
 
   /**

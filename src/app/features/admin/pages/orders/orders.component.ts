@@ -1,4 +1,6 @@
 import { Component, OnInit, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
 import { DatePipe, CurrencyPipe } from '@angular/common';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { OrderService } from '@core/services/order.service';
@@ -74,6 +76,18 @@ export class OrdersComponent implements OnInit {
   hasOrders = computed(() => this.orders().length > 0);
   isEmpty = computed(() => !this.loading() && !this.hasOrders());
 
+  private readonly searchInput$ = new Subject<string>();
+
+  constructor() {
+    this.searchInput$
+      .pipe(debounceTime(300), distinctUntilChanged(), takeUntilDestroyed())
+      .subscribe(value => {
+        this.searchQuery.set(value);
+        this.currentPage.set(0);
+        this.loadOrders();
+      });
+  }
+
   ngOnInit(): void {
     this.columns = [
       { key: 'id', label: this.translate.instant('admin.orders.colId'), sortable: true, width: '80px' },
@@ -116,9 +130,7 @@ export class OrdersComponent implements OnInit {
 
   onSearch(event: Event): void {
     const input = event.target as HTMLInputElement;
-    this.searchQuery.set(input.value);
-    this.currentPage.set(0);
-    this.loadOrders();
+    this.searchInput$.next(input.value);
   }
 
   loadOrders(): void {
