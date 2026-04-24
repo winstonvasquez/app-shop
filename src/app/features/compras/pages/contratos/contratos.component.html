@@ -1,0 +1,147 @@
+<div class="page-container">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Contratos con Proveedores</h1>
+            <p class="page-subtitle">Gestión de contratos marco, específicos y de servicios</p>
+        </div>
+        <app-button label="Nuevo Contrato" icon="plus" variant="primary" (click)="mostrarForm.set(true)" />
+    </div>
+
+    @if (error()) {
+        <div class="badge badge-error" style="margin-bottom:1rem">{{ error() }}</div>
+    }
+
+    <!-- Alerta próximos a vencer -->
+    @if (proximosVencer().length > 0) {
+        <div style="background:color-mix(in oklch,var(--color-warning) 15%,transparent); border:1px solid var(--color-warning); border-radius:8px; padding:.75rem 1rem; margin-bottom:1rem; display:flex; align-items:center; gap:.5rem">
+            <span style="color:var(--color-warning); font-weight:600">⚠</span>
+            <span style="font-size:.85rem">{{ proximosVencer().length }} contrato(s) vencen en los próximos 30 días</span>
+        </div>
+    }
+
+    <!-- Filtro estado -->
+    <div class="filters-bar" style="margin-bottom:1rem">
+        <select class="form-input" style="width:160px" (change)="onFiltro($event)">
+            <option value="">Todos los estados</option>
+            <option value="ACTIVO">Activo</option>
+            <option value="VENCIDO">Vencido</option>
+            <option value="SUSPENDIDO">Suspendido</option>
+            <option value="RESCINDIDO">Rescindido</option>
+        </select>
+    </div>
+
+    @if (cargando()) {
+        <div class="loading-container"><div class="spinner"></div></div>
+    } @else {
+        <div class="card">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th class="table-header-cell">Código</th>
+                        <th class="table-header-cell">Proveedor</th>
+                        <th class="table-header-cell">Tipo</th>
+                        <th class="table-header-cell">Vigencia</th>
+                        <th class="table-header-cell">Monto</th>
+                        <th class="table-header-cell">Estado</th>
+                        <th class="table-header-cell">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (c of contratos(); track c.id) {
+                        <tr class="table-row">
+                            <td class="table-cell" style="font-weight:600">{{ c.codigo }}</td>
+                            <td class="table-cell">{{ c.proveedorNombre }}</td>
+                            <td class="table-cell">{{ c.tipoContrato }}</td>
+                            <td class="table-cell" style="font-size:.8rem">
+                                {{ c.fechaInicio }} — {{ c.fechaFin }}
+                            </td>
+                            <td class="table-cell">{{ c.moneda }} {{ c.montoContrato | number:'1.2-2' }}</td>
+                            <td class="table-cell">
+                                <span class="badge {{ estadoClass(c.estado) }}">{{ c.estado }}</span>
+                            </td>
+                            <td class="table-cell">
+                                @if (c.estado === 'ACTIVO') {
+                                    <button class="btn-icon btn-icon-delete" title="Rescindir"
+                                        (click)="rescindir(c.id)">✕</button>
+                                }
+                            </td>
+                        </tr>
+                    }
+                    @if (contratos().length === 0) {
+                        <tr><td class="table-cell" colspan="7" style="text-align:center; padding:1.5rem">
+                            No hay contratos registrados
+                        </td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+<!-- Drawer crear contrato -->
+@if (mostrarForm()) {
+    <div class="drawer-overlay" (click)="mostrarForm.set(false)">
+        <div class="drawer" style="width:480px; padding:1.5rem" (click)="$event.stopPropagation()">
+            <h2 style="font-size:1.1rem; font-weight:700; margin-bottom:1.25rem">Nuevo Contrato</h2>
+            <form [formGroup]="form" (ngSubmit)="guardar()">
+                <div style="display:grid; gap:.75rem">
+                    <div>
+                        <label class="input-label">ID Proveedor *</label>
+                        <input class="form-input" formControlName="proveedorId" placeholder="UUID del proveedor" />
+                    </div>
+                    <div>
+                        <label class="input-label">Tipo de Contrato *</label>
+                        <select class="form-input" formControlName="tipoContrato">
+                            <option value="MARCO">Marco</option>
+                            <option value="ESPECIFICO">Específico</option>
+                            <option value="SERVICIO">Servicio</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="input-label">Descripción *</label>
+                        <textarea class="form-input" formControlName="descripcion" rows="2"></textarea>
+                    </div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:.75rem">
+                        <div>
+                            <label class="input-label">Fecha Inicio *</label>
+                            <input class="form-input" type="date" formControlName="fechaInicio" />
+                        </div>
+                        <div>
+                            <label class="input-label">Fecha Fin *</label>
+                            <input class="form-input" type="date" formControlName="fechaFin" />
+                        </div>
+                    </div>
+                    <div style="display:grid; grid-template-columns:2fr 1fr; gap:.75rem">
+                        <div>
+                            <label class="input-label">Monto Contrato</label>
+                            <input class="form-input" type="number" formControlName="montoContrato" />
+                        </div>
+                        <div>
+                            <label class="input-label">Moneda</label>
+                            <select class="form-input" formControlName="moneda">
+                                <option value="PEN">PEN</option>
+                                <option value="USD">USD</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="input-label">Condiciones de Pago</label>
+                        <input class="form-input" formControlName="condicionesPago" />
+                    </div>
+                    <div style="display:flex; align-items:center; gap:.5rem">
+                        <input type="checkbox" formControlName="renovacionAutomatica" id="renov" />
+                        <label for="renov" style="font-size:.85rem">Renovación automática</label>
+                    </div>
+                    <div>
+                        <label class="input-label">Días aviso vencimiento</label>
+                        <input class="form-input" type="number" formControlName="diasAvisoVencimiento" />
+                    </div>
+                </div>
+                <div style="display:flex; gap:.75rem; justify-content:flex-end; margin-top:1.25rem">
+                    <app-button type="button" label="Cancelar" icon="x" variant="secondary" (click)="mostrarForm.set(false)" />
+                    <app-button type="submit" label="Crear Contrato" icon="file-text" variant="primary" [loading]="guardando()" [disabled]="form.invalid" />
+                </div>
+            </form>
+        </div>
+    </div>
+}

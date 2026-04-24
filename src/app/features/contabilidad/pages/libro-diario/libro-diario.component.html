@@ -1,0 +1,127 @@
+<div class="page-container">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Libro Diario</h1>
+            <p class="page-subtitle">PCGE 2020 · Partida doble</p>
+        </div>
+        <div class="page-actions">
+            <app-button
+                icon="download"
+                variant="secondary"
+                label="Exportar PLE"
+                [disabled]="lineas().length === 0"
+                (click)="exportarPLE()">
+            </app-button>
+            <app-button
+                icon="download"
+                variant="secondary"
+                label="Exportar CSV"
+                [disabled]="lineas().length === 0"
+                (click)="exportarCSV()">
+            </app-button>
+        </div>
+    </div>
+
+    <div class="card mb-lg">
+        <div class="filters-bar">
+            <select class="form-input" [value]="periodoSeleccionado()"
+                    (change)="cambiarPeriodo($any($event.target).value)">
+                <option value="">— Seleccionar periodo —</option>
+                @for (p of periodos(); track p.id) {
+                    <option [value]="p.id">{{ p.nombre }} ({{ p.estado }})</option>
+                }
+            </select>
+            <input type="date" class="form-input" style="width:160px"
+                   [value]="fechaDesde()" (input)="fechaDesde.set($any($event.target).value)" />
+            <input type="date" class="form-input" style="width:160px"
+                   [value]="fechaHasta()" (input)="fechaHasta.set($any($event.target).value)" />
+            <app-button
+                icon="search"
+                variant="primary"
+                label="Consultar"
+                (click)="cargarLibro()">
+            </app-button>
+        </div>
+    </div>
+
+    @if (cargando()) {
+        <div class="loading-container"><div class="spinner"></div></div>
+    } @else if (error()) {
+        <div class="card mb-lg">
+            <div class="card-body" style="color:var(--color-error);text-align:center">
+                {{ error() }}
+            </div>
+        </div>
+    } @else {
+        <div class="card">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th class="table-header-cell">Fecha</th>
+                        <th class="table-header-cell">N° Asiento</th>
+                        <th class="table-header-cell">Cuenta</th>
+                        <th class="table-header-cell">Descripción</th>
+                        <th class="table-header-cell text-right">Debe</th>
+                        <th class="table-header-cell text-right">Haber</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (linea of lineasPaginadas(); track $index) {
+                        <tr class="table-row">
+                            <td class="table-cell font-mono">{{ linea.fecha | date:'dd/MM/yyyy' }}</td>
+                            <td class="table-cell font-mono font-bold">{{ linea.codigoAsiento }}</td>
+                            <td class="table-cell font-mono">
+                                <span class="font-bold">{{ linea.cuentaCodigo }}</span>
+                                <span class="text-sm" style="color:var(--color-text-muted)"> {{ linea.cuentaNombre }}</span>
+                            </td>
+                            <td class="table-cell">{{ linea.descripcion }}</td>
+                            <td class="table-cell text-right font-mono">
+                                @if (linea.debe > 0) { {{ linea.debe | number:'1.2-2' }} }
+                            </td>
+                            <td class="table-cell text-right font-mono">
+                                @if (linea.haber > 0) { {{ linea.haber | number:'1.2-2' }} }
+                            </td>
+                        </tr>
+                    } @empty {
+                        <tr>
+                            <td colspan="6" class="table-cell text-center text-sm text-[var(--color-text-muted)]">
+                                @if (periodoSeleccionado()) {
+                                    No hay movimientos en este periodo
+                                } @else {
+                                    Selecciona un periodo para ver el libro diario
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+                @if (lineas().length > 0) {
+                    <tfoot>
+                        <tr class="bg-[var(--color-surface-raised)] font-bold">
+                            <td colspan="4" class="table-cell text-right">TOTALES</td>
+                            <td class="table-cell text-right font-mono">{{ totalDebe() | number:'1.2-2' }}</td>
+                            <td class="table-cell text-right font-mono">{{ totalHaber() | number:'1.2-2' }}</td>
+                        </tr>
+                        <tr>
+                            <td colspan="6" class="table-cell text-right">
+                                @if (cuadra()) {
+                                    <span class="badge badge-success">Cuadra</span>
+                                } @else {
+                                    <span class="badge badge-error">No cuadra</span>
+                                }
+                            </td>
+                        </tr>
+                    </tfoot>
+                }
+            </table>
+        </div>
+        <div class="mt-4">
+            <app-pagination
+                [currentPage]="currentPage()"
+                [totalPages]="totalPagesLocal()"
+                [totalElements]="lineas().length"
+                [pageSize]="pageSize()"
+                (pageChange)="onPageChange($event)">
+            </app-pagination>
+        </div>
+    }
+</div>

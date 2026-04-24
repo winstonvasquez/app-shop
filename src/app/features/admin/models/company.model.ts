@@ -5,12 +5,24 @@ export interface CompanyResponse {
     name: string;
     ruc: string;
     isActive: boolean;
+    legalName: string | null;
+    address: string | null;
+    phone: string | null;
+    email: string | null;
+    logoUrl: string | null;
+    domain: string | null;
 }
 
 export interface CompanyRequest {
     name: string;
     ruc: string;
     active: boolean;
+    legalName?: string;
+    address?: string;
+    phone?: string;
+    email?: string;
+    logoUrl?: string;
+    domain?: string;
 }
 
 // Extended model for frontend with additional properties for UX
@@ -35,4 +47,41 @@ export interface UserCompanyResponse {
     userId: number;
     companyId: number;
     roleIds: number[];
+}
+
+// Company module (SaaS)
+export interface CompanyModuleResponse {
+    id: number;
+    code: string;
+    name: string;
+    description: string | null;
+    icon: string | null;
+    routePrefix: string | null;
+    enabled: boolean;
+}
+
+// Company user
+export interface CompanyUserResponse {
+    userId: number;
+    username: string;
+    fullName: string;
+    email: string;
+    roles: string[];
+    isActive: boolean;
+    assignedAt: string;
+}
+
+// Company subscription
+export interface CompanySubscriptionResponse {
+    subscriptionId: number;
+    planCode: string;
+    planName: string;
+    planDescription: string | null;
+    status: string;
+    startsAt: string;
+    endsAt: string | null;
+    trialEndsAt: string | null;
+    priceMonthly: number | null;
+    priceAnnual: number | null;
+    maxUsers: number;
 }

@@ -1,0 +1,300 @@
+<app-page-header
+    [title]="employee() ? employee()!.nombres + ' ' + employee()!.apellidos : 'Detalle Empleado'"
+    [subtitle]="employee() ? employee()!.codigoEmpleado + ' — ' + (employee()!.positionName ?? employee()!.cargo ?? 'Sin puesto') : ''"
+    [breadcrumbs]="breadcrumbs">
+    <div actions>
+        <app-button label="Volver" icon="x" variant="secondary" (click)="goBack()" />
+    </div>
+</app-page-header>
+
+@if (error()) {
+    <app-alert type="error" [message]="error()!" />
+}
+
+@if (loading()) {
+    <div class="loading-container"><div class="spinner"></div></div>
+} @else if (employee()) {
+
+<!-- Tab Navigation -->
+<div class="card" style="margin-bottom: var(--space-md)">
+    <div class="flex gap-0 border-b border-[var(--color-border)] overflow-x-auto">
+        @for (tab of tabs; track tab.key) {
+            <!-- btn-migration: SKIP — color custom + multi-línea con estilos dinámicos de tab activo -->
+            <button
+                class="btn"
+                [style.border-bottom]="activeTab() === tab.key ? '2px solid var(--color-primary)' : '2px solid transparent'"
+                [style.border-radius]="0"
+                [style.color]="activeTab() === tab.key ? 'var(--color-primary)' : 'var(--color-text-muted)'"
+                [style.font-weight]="activeTab() === tab.key ? '600' : '400'"
+                style="padding: var(--space-sm) var(--space-md); white-space: nowrap"
+                (click)="activeTab.set(tab.key)">
+                {{ tab.label }}
+            </button>
+        }
+    </div>
+</div>
+
+<!-- Tab: Datos Personales -->
+@if (activeTab() === 'personal') {
+    <div class="card">
+        <div class="card-header"><h3 class="card-title">Datos Personales</h3></div>
+        <div class="card-body">
+            <div class="form-group-3col">
+                <div><span class="input-label">Tipo Documento</span><p>{{ employee()!.tipoDocumento ?? 'DNI' }}</p></div>
+                <div><span class="input-label">Documento</span><p>{{ employee()!.documentoIdentidad }}</p></div>
+                <div><span class="input-label">Fecha Nacimiento</span><p>{{ employee()!.fechaNacimiento ?? '—' }}</p></div>
+                <div><span class="input-label">Género</span><p>{{ employee()!.genero ?? '—' }}</p></div>
+                <div><span class="input-label">Estado Civil</span><p>{{ employee()!.estadoCivil ?? '—' }}</p></div>
+                <div><span class="input-label">Nacionalidad</span><p>{{ employee()!.nacionalidad ?? 'Peruana' }}</p></div>
+                <div><span class="input-label">Tipo Sangre</span><p>{{ employee()!.tipoSangre ?? '—' }}</p></div>
+                <div><span class="input-label">Email</span><p>{{ employee()!.email ?? '—' }}</p></div>
+                <div><span class="input-label">Teléfono</span><p>{{ employee()!.telefono ?? '—' }}</p></div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Tab: Datos Laborales -->
+@if (activeTab() === 'laboral') {
+    <div class="card">
+        <div class="card-header"><h3 class="card-title">Datos Laborales</h3></div>
+        <div class="card-body">
+            <div class="form-group-3col">
+                <div><span class="input-label">Departamento</span><p>{{ employee()!.departmentName ?? '—' }}</p></div>
+                <div><span class="input-label">Puesto</span><p>{{ employee()!.positionName ?? employee()!.cargo ?? '—' }}</p></div>
+                <div><span class="input-label">Supervisor</span><p>{{ employee()!.supervisorName ?? '—' }}</p></div>
+                <div><span class="input-label">Fecha Ingreso</span><p>{{ employee()!.fechaIngreso }}</p></div>
+                <div><span class="input-label">Fecha Salida</span><p>{{ employee()!.fechaSalida ?? '—' }}</p></div>
+                <div><span class="input-label">Motivo Salida</span><p>{{ employee()!.motivoSalida ?? '—' }}</p></div>
+                <div>
+                    <span class="input-label">Estado</span>
+                    <p><span class="badge" [class]="'badge-' + (employee()!.estado === 'ACTIVO' ? 'success' : 'neutral')">{{ employee()!.estado }}</span></p>
+                </div>
+                <div><span class="input-label">Sistema Previsional</span><p>{{ employee()!.sistemaPrevisional ?? 'ONP' }}</p></div>
+                <div><span class="input-label">AFP</span><p>{{ employee()!.afpNombre ?? '—' }}</p></div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Tab: Dirección -->
+@if (activeTab() === 'direccion') {
+    <div class="card">
+        <div class="card-header"><h3 class="card-title">Contacto y Dirección</h3></div>
+        <div class="card-body">
+            <div class="form-group-3col">
+                <div style="grid-column: span 3"><span class="input-label">Dirección</span><p>{{ employee()!.direccion ?? '—' }}</p></div>
+                <div><span class="input-label">Distrito</span><p>{{ employee()!.distrito ?? '—' }}</p></div>
+                <div><span class="input-label">Provincia</span><p>{{ employee()!.provincia ?? '—' }}</p></div>
+                <div><span class="input-label">Departamento</span><p>{{ employee()!.departamentoGeo ?? '—' }}</p></div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Tab: Educación -->
+@if (activeTab() === 'educacion') {
+    <div class="card">
+        <div class="card-header"><h3 class="card-title">Educación y Perfil</h3></div>
+        <div class="card-body">
+            <div class="form-group-3col">
+                <div><span class="input-label">Nivel Educación</span><p>{{ employee()!.nivelEducacion ?? '—' }}</p></div>
+                <div><span class="input-label">Profesión</span><p>{{ employee()!.profesion ?? '—' }}</p></div>
+                <div><span class="input-label">Universidad</span><p>{{ employee()!.universidad ?? '—' }}</p></div>
+                <div><span class="input-label">LinkedIn</span>
+                    @if (employee()!.linkedinUrl) {
+                        <p><a [href]="employee()!.linkedinUrl" target="_blank" style="color: var(--color-primary)">Ver perfil</a></p>
+                    } @else {
+                        <p>—</p>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Tab: Contratos -->
+@if (activeTab() === 'contratos') {
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Contratos</h3>
+        </div>
+        <div class="card-body">
+            @if (contractsData().length === 0) {
+                <p style="color: var(--color-text-muted); text-align: center; padding: var(--space-lg)">Sin contratos registrados</p>
+            } @else {
+                <table class="table">
+                    <thead><tr>
+                        <th class="table-header-cell">Tipo</th>
+                        <th class="table-header-cell">Inicio</th>
+                        <th class="table-header-cell">Fin</th>
+                        <th class="table-header-cell">Salario</th>
+                        <th class="table-header-cell">Estado</th>
+                    </tr></thead>
+                    <tbody>
+                        @for (c of contractsData(); track c.id) {
+                            <tr class="table-row">
+                                <td class="table-cell">{{ c.tipoContrato }}</td>
+                                <td class="table-cell">{{ c.fechaInicio }}</td>
+                                <td class="table-cell">{{ c.fechaFin ?? '—' }}</td>
+                                <td class="table-cell">{{ c.moneda === 'USD' ? '$' : 'S/' }} {{ c.salarioBase }}</td>
+                                <td class="table-cell">
+                                    <span class="badge" [class]="'badge-' + (c.estado === 'ACTIVO' ? 'success' : 'neutral')">{{ c.estado }}</span>
+                                    @if (c.expiringSoon) {
+                                        <span class="badge badge-warning" style="margin-left: 4px">Por vencer</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </div>
+}
+
+<!-- Tab: Contactos de Emergencia -->
+@if (activeTab() === 'emergencia') {
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Contactos de Emergencia</h3>
+        </div>
+        <div class="card-body">
+            @if (emergencyContacts().length === 0) {
+                <p style="color: var(--color-text-muted); text-align: center; padding: var(--space-lg)">Sin contactos de emergencia</p>
+            } @else {
+                <table class="table">
+                    <thead><tr>
+                        <th class="table-header-cell">Nombre</th>
+                        <th class="table-header-cell">Relación</th>
+                        <th class="table-header-cell">Teléfono</th>
+                        <th class="table-header-cell">Principal</th>
+                    </tr></thead>
+                    <tbody>
+                        @for (ec of emergencyContacts(); track ec.id) {
+                            <tr class="table-row">
+                                <td class="table-cell">{{ ec.nombreCompleto }}</td>
+                                <td class="table-cell">{{ ec.relacion }}</td>
+                                <td class="table-cell">{{ ec.telefono }}</td>
+                                <td class="table-cell">
+                                    @if (ec.esPrincipal) { <span class="badge badge-success">Sí</span> }
+                                    @else { <span class="badge badge-neutral">No</span> }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </div>
+}
+
+<!-- Tab: Dependientes -->
+@if (activeTab() === 'dependientes') {
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Dependientes / Familiares</h3>
+        </div>
+        <div class="card-body">
+            @if (dependentsData().length === 0) {
+                <p style="color: var(--color-text-muted); text-align: center; padding: var(--space-lg)">Sin dependientes registrados</p>
+            } @else {
+                <table class="table">
+                    <thead><tr>
+                        <th class="table-header-cell">Nombre</th>
+                        <th class="table-header-cell">Relación</th>
+                        <th class="table-header-cell">Nacimiento</th>
+                        <th class="table-header-cell">Carga Familiar</th>
+                    </tr></thead>
+                    <tbody>
+                        @for (d of dependentsData(); track d.id) {
+                            <tr class="table-row">
+                                <td class="table-cell">{{ d.nombreCompleto }}</td>
+                                <td class="table-cell">{{ d.relacion }}</td>
+                                <td class="table-cell">{{ d.fechaNacimiento }}</td>
+                                <td class="table-cell">
+                                    @if (d.esCargaFamiliar) { <span class="badge badge-success">Sí</span> }
+                                    @else { <span class="badge badge-neutral">No</span> }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </div>
+}
+
+<!-- Tab: Documentos -->
+@if (activeTab() === 'documentos') {
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Documentos</h3>
+        </div>
+        <div class="card-body">
+            @if (documentsData().length === 0) {
+                <p style="color: var(--color-text-muted); text-align: center; padding: var(--space-lg)">Sin documentos registrados</p>
+            } @else {
+                <table class="table">
+                    <thead><tr>
+                        <th class="table-header-cell">Tipo</th>
+                        <th class="table-header-cell">Nombre</th>
+                        <th class="table-header-cell">Vencimiento</th>
+                        <th class="table-header-cell">Estado</th>
+                    </tr></thead>
+                    <tbody>
+                        @for (doc of documentsData(); track doc.id) {
+                            <tr class="table-row">
+                                <td class="table-cell">{{ doc.tipoDocumento }}</td>
+                                <td class="table-cell">
+                                    <a [href]="doc.urlArchivo" target="_blank" style="color: var(--color-primary)">{{ doc.nombreArchivo }}</a>
+                                </td>
+                                <td class="table-cell">{{ doc.fechaVencimiento ?? '—' }}</td>
+                                <td class="table-cell">
+                                    <span class="badge" [class]="'badge-' + (doc.estado === 'VIGENTE' ? 'success' : doc.estado === 'VENCIDO' ? 'error' : 'neutral')">{{ doc.estado }}</span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </div>
+}
+
+<!-- Tab: Historial Salarial -->
+@if (activeTab() === 'salarios') {
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Historial Salarial</h3>
+        </div>
+        <div class="card-body">
+            @if (salaryHistory().length === 0) {
+                <p style="color: var(--color-text-muted); text-align: center; padding: var(--space-lg)">Sin historial salarial</p>
+            } @else {
+                <table class="table">
+                    <thead><tr>
+                        <th class="table-header-cell">Desde</th>
+                        <th class="table-header-cell">Hasta</th>
+                        <th class="table-header-cell">Salario</th>
+                        <th class="table-header-cell">Motivo</th>
+                        <th class="table-header-cell">Incremento</th>
+                    </tr></thead>
+                    <tbody>
+                        @for (s of salaryHistory(); track s.id) {
+                            <tr class="table-row">
+                                <td class="table-cell">{{ s.fechaInicio }}</td>
+                                <td class="table-cell">{{ s.fechaFin ?? 'Actual' }}</td>
+                                <td class="table-cell">{{ s.moneda === 'USD' ? '$' : 'S/' }} {{ s.salarioBase }}</td>
+                                <td class="table-cell">{{ s.motivo ?? '—' }}</td>
+                                <td class="table-cell">{{ s.porcentajeIncremento ? s.porcentajeIncremento + '%' : '—' }}</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </div>
+}
+
+}

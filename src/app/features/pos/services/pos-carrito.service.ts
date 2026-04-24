@@ -1,6 +1,6 @@
 import { Injectable, signal, computed } from '@angular/core';
-import { CartItem, ProductoCatalogoPOS } from '../models/catalogo-pos.model';
-import { MetodoPagoPos, TipoCpe } from '../models/venta-pos.model';
+import { CartItem, DescuentoTipo, ProductoCatalogoPOS } from '../models/catalogo-pos.model';
+import { MetodoPagoPos, PagoMixto, TipoCpe } from '../models/venta-pos.model';
 
 @Injectable({ providedIn: 'root' })
 export class PosCarritoService {
@@ -13,6 +13,17 @@ export class PosCarritoService {
     readonly montoRecibido = signal<number>(0);
     readonly clienteNombre = signal<string>('');
     readonly clienteId = signal<number | null>(null);
+
+    /** Pago dividido: activar para registrar múltiples métodos con monto parcial */
+    readonly pagoDividido = signal<boolean>(false);
+    readonly pagos = signal<PagoMixto[]>([
+        { metodo: 'EFECTIVO', monto: 0 },
+        { metodo: 'YAPE',     monto: 0 },
+    ]);
+
+    /** Gift card aplicada al carrito */
+    readonly giftCardCodigo = signal<string>('');
+    readonly giftCardMonto = signal<number>(0);
 
     /** Signal para feedback visual: ID de la última variante añadida. Se resetea a null tras 600ms. */
     readonly lastAddedId = signal<number | null>(null);
@@ -34,8 +45,38 @@ export class PosCarritoService {
         this.totalConDescuento() - this.baseImponible()
     );
 
-    readonly vuelto = computed(() =>
-        Math.max(0, this.montoRecibido() - this.totalConDescuento())
+    readonly vuelto = computed(() => {
+        if (this.pagoDividido()) {
+            const totalPagado = this.pagos().reduce((s, p) => s + (p.monto || 0), 0);
+            return Math.max(0, totalPagado - this.totalConDescuento());
+        }
+        return Math.max(0, this.montoRecibido() - this.totalConDescuento());
+    });
+
+    /** Cuánto falta por cubrir en modo pago dividido */
+    readonly faltaPorCubrir = computed(() => {
+        if (!this.pagoDividido()) return 0;
+        const totalPagado = this.pagos().reduce((s, p) => s + (p.monto || 0), 0);
+        return Math.max(0, this.totalConDescuento() - totalPagado);
+    });
+
+    /** Método principal (el de mayor monto) cuando hay pago dividido */
+    readonly metodoPagoPrimario = computed<MetodoPagoPos>(() => {
+        if (!this.pagoDividido()) return this.metodoPago();
+        const conMonto = this.pagos().filter(p => p.monto > 0);
+        if (conMonto.length === 0) return 'EFECTIVO';
+        if (conMonto.length === 1) return conMonto[0].metodo;
+        return 'MIXTO';
+    });
+
+    /** ICBPER total: bolsas × S/ 0.50 */
+    readonly totalIcbper = computed(() =>
+        this.items().reduce((sum, item) => sum + item.bolsas * 0.50, 0)
+    );
+
+    /** Total final incluyendo ICBPER y descontando gift card */
+    readonly totalFinal = computed(() =>
+        Math.max(0, this.totalConDescuento() + this.totalIcbper() - this.giftCardMonto())
     );
 
     readonly itemCount = computed(() =>
@@ -50,13 +91,19 @@ export class PosCarritoService {
         this.items.update(items => {
             const existing = items.find(i => i.variante.varianteId === variante.varianteId);
             if (existing) {
-                return items.map(i =>
-                    i.variante.varianteId === variante.varianteId
-                        ? { ...i, cantidad: i.cantidad + 1, subtotal: (i.cantidad + 1) * i.variante.precioFinal }
-                        : i
-                );
+                return items.map(i => {
+                    if (i.variante.varianteId !== variante.varianteId) return i;
+                    const newQty = i.cantidad + 1;
+                    const bruto = newQty * i.variante.precioFinal;
+                    return { ...i, cantidad: newQty, subtotal: bruto - i.descuentoMonto };
+                });
             }
-            return [...items, { variante, cantidad: 1, subtotal: variante.precioFinal }];
+            return [...items, {
+                variante, cantidad: 1, subtotal: variante.precioFinal,
+                descuentoTipo: 'NINGUNO' as DescuentoTipo,
+                descuentoValor: 0, descuentoMonto: 0, autorizadoPor: null,
+                bolsas: 0,
+            }];
         });
         // Feedback visual: marca el ID y luego lo limpia tras 600ms
         this.lastAddedId.set(variante.varianteId);
@@ -65,12 +112,11 @@ export class PosCarritoService {
 
     cambiarCantidad(varianteId: number, delta: number): void {
         this.items.update(items =>
-            items
-                .map(i => {
-                    if (i.variante.varianteId !== varianteId) return i;
-                    const newQty = Math.max(1, i.cantidad + delta);
-                    return { ...i, cantidad: newQty, subtotal: newQty * i.variante.precioFinal };
-                })
+            items.map(i => {
+                if (i.variante.varianteId !== varianteId) return i;
+                const newQty = Math.max(1, i.cantidad + delta);
+                return this.recalcSubtotal({ ...i, cantidad: newQty });
+            })
         );
     }
 
@@ -79,7 +125,7 @@ export class PosCarritoService {
         this.items.update(items =>
             items.map(i =>
                 i.variante.varianteId === varianteId
-                    ? { ...i, cantidad, subtotal: cantidad * i.variante.precioFinal }
+                    ? this.recalcSubtotal({ ...i, cantidad })
                     : i
             )
         );
@@ -97,6 +143,83 @@ export class PosCarritoService {
         this.tipoCpe.set('BOLETA');
         this.clienteNombre.set('');
         this.clienteId.set(null);
+        this.pagoDividido.set(false);
+        this.pagos.set([{ metodo: 'EFECTIVO', monto: 0 }, { metodo: 'YAPE', monto: 0 }]);
+        this.giftCardCodigo.set('');
+        this.giftCardMonto.set(0);
+    }
+
+    togglePagoDividido(): void {
+        const on = !this.pagoDividido();
+        this.pagoDividido.set(on);
+        if (on) {
+            // Pre-llenar primer método con el total
+            this.pagos.set([
+                { metodo: this.metodoPago() === 'MIXTO' ? 'EFECTIVO' : (this.metodoPago() as Exclude<MetodoPagoPos,'MIXTO'>), monto: this.totalConDescuento() },
+                { metodo: 'YAPE', monto: 0 },
+            ]);
+        }
+    }
+
+    setPagoMonto(index: number, monto: number): void {
+        this.pagos.update(list => list.map((p, i) => i === index ? { ...p, monto: Math.max(0, monto) } : p));
+    }
+
+    setPagoMetodo(index: number, metodo: Exclude<MetodoPagoPos, 'MIXTO'>): void {
+        this.pagos.update(list => list.map((p, i) => i === index ? { ...p, metodo } : p));
+    }
+
+    agregarPago(): void {
+        this.pagos.update(list => [...list, { metodo: 'EFECTIVO', monto: 0 }]);
+    }
+
+    quitarPago(index: number): void {
+        if (this.pagos().length <= 2) return;
+        this.pagos.update(list => list.filter((_, i) => i !== index));
+    }
+
+    setLineDiscount(varianteId: number, tipo: DescuentoTipo, valor: number, autorizadoPor: number | null = null): void {
+        this.items.update(items =>
+            items.map(i => {
+                if (i.variante.varianteId !== varianteId) return i;
+                return this.recalcSubtotal({ ...i, descuentoTipo: tipo, descuentoValor: valor, autorizadoPor });
+            })
+        );
+    }
+
+    clearLineDiscount(varianteId: number): void {
+        this.setLineDiscount(varianteId, 'NINGUNO', 0);
+    }
+
+    private recalcSubtotal(item: CartItem): CartItem {
+        const bruto = item.cantidad * item.variante.precioFinal;
+        let descMonto = 0;
+        if (item.descuentoTipo === 'PORCENTAJE') {
+            descMonto = Math.round(bruto * item.descuentoValor) / 100;
+        } else if (item.descuentoTipo === 'MONTO') {
+            descMonto = item.descuentoValor;
+        }
+        return { ...item, descuentoMonto: descMonto, subtotal: Math.max(0, bruto - descMonto) };
+    }
+
+    setBolsas(varianteId: number, bolsas: number): void {
+        this.items.update(items =>
+            items.map(i =>
+                i.variante.varianteId === varianteId
+                    ? { ...i, bolsas: Math.max(0, bolsas) }
+                    : i
+            )
+        );
+    }
+
+    setGiftCard(codigo: string, monto: number): void {
+        this.giftCardCodigo.set(codigo);
+        this.giftCardMonto.set(Math.max(0, monto));
+    }
+
+    clearGiftCard(): void {
+        this.giftCardCodigo.set('');
+        this.giftCardMonto.set(0);
     }
 
     setDescuento(valor: number): void { this.descuento.set(Math.max(0, valor)); }

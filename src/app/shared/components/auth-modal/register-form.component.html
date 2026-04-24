@@ -1,70 +1,66 @@
-<div class="max-w-md mx-auto flex flex-col gap-4">
-    <p class="text-sm text-[var(--color-text-muted)] text-center">
+<div class="max-w-md mx-auto">
+    <p class="text-sm text-[var(--color-text-muted)] text-center mb-3">
         Completa tus datos para crear tu cuenta
     </p>
 
-    @if (email) {
-    <div class="bg-[var(--color-surface-raised)] rounded-lg p-3 text-center border border-[var(--color-border)]">
-        <span class="text-xs text-[var(--color-text-muted)]">Registrando con:</span>
-        <p class="font-medium text-[var(--color-text-primary)]">{{ email }}</p>
-    </div>
+    @if (email()) {
+        <div class="bg-[var(--color-surface-raised)] rounded-lg p-3 text-center border border-[var(--color-border)] mb-4">
+            <span class="text-xs text-[var(--color-text-muted)]">Registrando con:</span>
+            <p class="font-medium text-[var(--color-text-primary)]">{{ email() }}</p>
+        </div>
     }
 
-    @if (errorMsg()) {
-    <div class="p-3 bg-[color-mix(in_oklch,var(--color-error)_10%,var(--color-surface))] border border-[color-mix(in_oklch,var(--color-error)_30%,transparent)] rounded-lg text-[var(--color-error)] text-xs text-center">
-        {{ errorMsg() }}
-    </div>
-    }
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+        <app-admin-form-layout [errorMessage]="errorMsg()">
 
-    <div class="flex flex-col gap-3">
-        <div class="flex gap-3">
-            <div class="flex-1">
-                <label class="block text-xs font-medium text-[var(--color-text-secondary)] mb-1">Nombres</label>
-                <input type="text" [(ngModel)]="nombres" placeholder="Juan"
-                    class="w-full border border-[var(--color-border)] bg-[var(--color-surface-raised)] text-[var(--color-text-primary)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] placeholder:text-[var(--color-text-muted)]" />
+            <app-admin-form-section [columns]="2">
+                <app-form-field label="Nombres" [required]="true" [error]="err('nombres')">
+                    <input type="text" formControlName="nombres" placeholder="Juan"
+                        class="form-input" autocomplete="given-name" />
+                </app-form-field>
+                <app-form-field label="Apellidos" [required]="true" [error]="err('apellidos')">
+                    <input type="text" formControlName="apellidos" placeholder="Pérez"
+                        class="form-input" autocomplete="family-name" />
+                </app-form-field>
+            </app-admin-form-section>
+
+            <app-admin-form-section [columns]="2">
+                <app-form-field label="Tipo de documento" [required]="true" [error]="err('tipoDocumento')">
+                    <select formControlName="tipoDocumento" class="form-input">
+                        @for (docType of documentTypes; track docType) {
+                            <option [value]="docType">{{ docType }}</option>
+                        }
+                    </select>
+                </app-form-field>
+                <app-form-field label="Número de documento" [required]="true" [error]="err('numeroDocumento')">
+                    <input type="text" formControlName="numeroDocumento"
+                        [placeholder]="documentPlaceholder()" class="form-input" />
+                </app-form-field>
+            </app-admin-form-section>
+
+            <app-admin-form-section [columns]="1">
+                <app-form-field label="Fecha de nacimiento" [required]="true" [error]="err('fechaNacimiento')">
+                    <input type="date" formControlName="fechaNacimiento" class="form-input" />
+                </app-form-field>
+            </app-admin-form-section>
+
+            <div slot="actions" class="flex flex-col gap-2 w-full">
+                <button type="submit" [disabled]="form.invalid || loading()"
+                    class="w-full bg-accent hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-full py-3 transition-all text-sm flex items-center justify-center gap-2">
+                    @if (loading()) {
+                        <svg class="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                        </svg>
+                    }
+                    Crear cuenta
+                </button>
+                <button type="button" (click)="goBack()"
+                    class="text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] text-xs text-center transition-colors">
+                    ← Volver
+                </button>
             </div>
-            <div class="flex-1">
-                <label class="block text-xs font-medium text-[var(--color-text-secondary)] mb-1">Apellidos</label>
-                <input type="text" [(ngModel)]="apellidos" placeholder="Pérez"
-                    class="w-full border border-[var(--color-border)] bg-[var(--color-surface-raised)] text-[var(--color-text-primary)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] placeholder:text-[var(--color-text-muted)]" />
-            </div>
-        </div>
 
-        <div>
-            <label class="block text-xs font-medium text-[var(--color-text-secondary)] mb-1">Tipo de documento</label>
-            <select [(ngModel)]="tipoDocumento"
-                class="w-full border border-[var(--color-border)] bg-[var(--color-surface-raised)] text-[var(--color-text-primary)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]">
-                @for (docType of documentTypes; track docType) {
-                <option [value]="docType">{{ docType }}</option>
-                }
-            </select>
-        </div>
-
-        <div>
-            <label class="block text-xs font-medium text-[var(--color-text-secondary)] mb-1">Número de documento</label>
-            <input type="text" [(ngModel)]="numeroDocumento" [placeholder]="tipoDocumento === 'DNI' ? '12345678' : 'AB1234567'"
-                class="w-full border border-[var(--color-border)] bg-[var(--color-surface-raised)] text-[var(--color-text-primary)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] placeholder:text-[var(--color-text-muted)]" />
-        </div>
-
-        <div>
-            <label class="block text-xs font-medium text-[var(--color-text-secondary)] mb-1">Fecha de nacimiento</label>
-            <input type="date" [(ngModel)]="fechaNacimiento"
-                class="w-full border border-[var(--color-border)] bg-[var(--color-surface-raised)] text-[var(--color-text-primary)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]" />
-        </div>
-    </div>
-
-    <button (click)="onSubmit()" [disabled]="!isValid() || loading()"
-        class="w-full bg-accent hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-full py-3 transition-all text-sm flex items-center justify-center gap-2">
-        @if (loading()) {
-        <svg class="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-        </svg>
-        }
-        Crear cuenta
-    </button>
-
-    <button (click)="goBack()" class="text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] text-xs text-center transition-colors">
-        ← Volver
-    </button>
+        </app-admin-form-layout>
+    </form>
 </div>

@@ -1,5 +1,4 @@
 import { Component, OnInit, inject, signal, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { EmployeeService } from '../../services/employee.service';
@@ -8,7 +7,6 @@ import { EmployeeService } from '../../services/employee.service';
     selector: 'app-employee-form',
     standalone: true,
     imports: [
-        CommonModule,
         ReactiveFormsModule
     ],
     template: `
@@ -246,9 +244,9 @@ export class EmployeeFormComponent implements OnInit {
             const formValue = this.employeeForm.value;
             const request = {
                 ...formValue,
-                fechaIngreso: formValue.fechaIngreso instanceof Date 
-                    ? formValue.fechaIngreso.toISOString().split('T')[0]
-                    : formValue.fechaIngreso
+                fechaIngreso: typeof formValue.fechaIngreso === 'string'
+                    ? formValue.fechaIngreso
+                    : formValue.fechaIngreso?.toISOString().split('T')[0] ?? ''
             };
 
             if (this.isEditMode() && this.employeeId()) {

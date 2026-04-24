@@ -1,0 +1,75 @@
+<app-breadcrumb [items]="breadcrumbItems" />
+
+<div class="page-container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Comparar productos</h1>
+      <p class="page-subtitle">{{ compareService.count() }} de 4 productos seleccionados</p>
+    </div>
+    <button class="btn btn-secondary" (click)="clearAll()">Limpiar comparación</button>
+  </div>
+
+  @if (compareService.count() === 0) {
+    <div class="card" style="text-align:center; padding: 3rem;">
+      <p class="text-muted">No hay productos para comparar.</p>
+      <a routerLink="/products" class="btn btn-primary" style="margin-top:1rem;">Ver productos</a>
+    </div>
+  } @else {
+    <div style="overflow-x: auto;">
+      <table class="table" style="min-width: 600px;">
+        <!-- Imágenes y nombres -->
+        <thead>
+          <tr class="table-header">
+            <th class="table-header-cell" style="width:180px;">Característica</th>
+            @for (product of compareService.items(); track product.id) {
+              <th class="table-header-cell" style="text-align:center; min-width:160px;">
+                <div style="display:flex; flex-direction:column; align-items:center; gap:0.5rem;">
+                  <img [src]="product.image" [alt]="product.name"
+                       style="width:80px; height:80px; object-fit:cover; border-radius:8px;" />
+                  <span style="font-size:0.85rem; font-weight:600;">{{ product.name }}</span>
+                  <button class="btn btn-secondary" style="font-size:0.75rem; padding:0.25rem 0.5rem;"
+                          (click)="removeProduct(product.id)">Quitar</button>
+                </div>
+              </th>
+            }
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Precio -->
+          <tr class="table-row">
+            <td class="table-cell" style="font-weight:600;">Precio</td>
+            @for (product of compareService.items(); track product.id) {
+              <td class="table-cell" style="text-align:center; color: var(--color-primary); font-weight:700; font-size:1.1rem;">
+                S/ {{ product.price | number:'1.2-2' }}
+              </td>
+            }
+          </tr>
+
+          <!-- Atributos dinámicos -->
+          @for (key of allAttributeKeys; track key) {
+            <tr class="table-row">
+              <td class="table-cell" style="font-weight:600; text-transform:capitalize;">{{ key }}</td>
+              @for (product of compareService.items(); track product.id) {
+                <td class="table-cell" style="text-align:center;">
+                  {{ product.attributes?.[key] ?? '—' }}
+                </td>
+              }
+            </tr>
+          }
+
+          <!-- Acciones -->
+          <tr class="table-row">
+            <td class="table-cell"></td>
+            @for (product of compareService.items(); track product.id) {
+              <td class="table-cell" style="text-align:center;">
+                <button class="btn btn-primary" (click)="addToCart(product)">
+                  Agregar al carrito
+                </button>
+              </td>
+            }
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  }
+</div>

@@ -1,0 +1,123 @@
+<app-page-header
+    title="Mi Portal"
+    subtitle="Autoservicio del empleado"
+    [breadcrumbs]="breadcrumbs">
+</app-page-header>
+
+@if (error()) {
+    <app-alert type="error" [message]="error()!" />
+}
+
+@if (loading()) {
+    <div class="card">
+        <div class="card-body" style="text-align: center; padding: var(--space-xl)">
+            <div class="spinner"></div>
+            <p class="text-muted" style="margin-top: var(--space-md)">Cargando datos...</p>
+        </div>
+    </div>
+} @else if (profile(); as p) {
+    <!-- Perfil -->
+    <div class="card" style="margin-bottom: var(--space-lg)">
+        <div class="card-header">
+            <h3 class="card-title">Mi Perfil</h3>
+        </div>
+        <div class="card-body">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div>
+                    <div class="text-muted" style="font-size: 0.8rem">Nombre</div>
+                    <div style="font-weight: 600">{{ p.nombres }} {{ p.apellidos }}</div>
+                </div>
+                <div>
+                    <div class="text-muted" style="font-size: 0.8rem">Código</div>
+                    <div style="font-weight: 600">{{ p.codigoEmpleado }}</div>
+                </div>
+                <div>
+                    <div class="text-muted" style="font-size: 0.8rem">Email</div>
+                    <div style="font-weight: 600">{{ p.email || '—' }}</div>
+                </div>
+                <div>
+                    <div class="text-muted" style="font-size: 0.8rem">Departamento</div>
+                    <div style="font-weight: 600">{{ p.departmentName || '—' }}</div>
+                </div>
+                <div>
+                    <div class="text-muted" style="font-size: 0.8rem">Puesto</div>
+                    <div style="font-weight: 600">{{ p.positionName || '—' }}</div>
+                </div>
+                <div>
+                    <div class="text-muted" style="font-size: 0.8rem">Fecha de Ingreso</div>
+                    <div style="font-weight: 600">{{ p.fechaIngreso }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Metas -->
+    @if (goals().length > 0) {
+        <div class="card" style="margin-bottom: var(--space-lg)">
+            <div class="card-header">
+                <h3 class="card-title">Mis Metas ({{ goals().length }})</h3>
+            </div>
+            <div class="card-body">
+                <table class="table">
+                    <thead>
+                        <tr class="table-header">
+                            <th class="table-header-cell">Meta</th>
+                            <th class="table-header-cell">Prioridad</th>
+                            <th class="table-header-cell">Avance</th>
+                            <th class="table-header-cell">Estado</th>
+                            <th class="table-header-cell">Fecha Fin</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (g of goals(); track g.id) {
+                            <tr class="table-row">
+                                <td class="table-cell">{{ g.titulo }}</td>
+                                <td class="table-cell">
+                                    <span class="badge badge-neutral">{{ goalPriorityLabel(g.prioridad) }}</span>
+                                </td>
+                                <td class="table-cell">{{ g.porcentajeAvance }}%</td>
+                                <td class="table-cell">
+                                    <span class="badge badge-accent">{{ goalStatusLabel(g.estado) }}</span>
+                                </td>
+                                <td class="table-cell">{{ g.fechaFin }}</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+
+    <!-- Evaluaciones recientes -->
+    @if (evaluations().length > 0) {
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Mis Evaluaciones ({{ evaluations().length }})</h3>
+            </div>
+            <div class="card-body">
+                <table class="table">
+                    <thead>
+                        <tr class="table-header">
+                            <th class="table-header-cell">Período</th>
+                            <th class="table-header-cell">Evaluador</th>
+                            <th class="table-header-cell">Puntaje</th>
+                            <th class="table-header-cell">Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (e of evaluations(); track e.id) {
+                            <tr class="table-row">
+                                <td class="table-cell">{{ e.periodo }}</td>
+                                <td class="table-cell">{{ e.evaluadorName || 'N/A' }}</td>
+                                <td class="table-cell">{{ e.puntaje }}/100</td>
+                                <td class="table-cell">
+                                    <span class="badge badge-accent">{{ e.estado }}</span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+}

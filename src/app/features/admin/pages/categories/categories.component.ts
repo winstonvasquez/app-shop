@@ -1,5 +1,6 @@
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
 import { FormBuilder, ReactiveFormsModule, Validators, FormGroup, FormControl } from '@angular/forms';
 import { CategoryService } from '@core/services/category.service';
 import {
@@ -7,24 +8,25 @@ import {
   CategoryRequest,
   CategoryFilter
 } from '@core/models/category.model';
-import { PaginationConfig, PageResponse } from '@core/models/pagination.model';
+import { PaginationConfig, PageResponse, pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 import { DataTableComponent, TableColumn, TableAction, PaginationEvent, SortEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
-import { ModalComponent } from '@shared/ui/modals/modal/modal.component';
+import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
+import { ButtonComponent } from '@shared/components';
 
 @Component({
   selector: 'app-categories',
   standalone: true,
   imports: [
-    CommonModule,
     ReactiveFormsModule,
     DataTableComponent,
     FormFieldComponent,
-    ModalComponent,
+    DrawerComponent,
     PageHeaderComponent,
-    AlertComponent
+    AlertComponent,
+    ButtonComponent
   ],
   templateUrl: './categories.component.html',
   styleUrl: './categories.component.scss'
@@ -61,6 +63,8 @@ export class CategoriesComponent implements OnInit {
 
   // Category form with validations
   categoryForm: FormGroup;
+
+  private readonly searchInput$ = new Subject<string>();
 
   // Breadcrumbs
   breadcrumbs: Breadcrumb[] = [
@@ -136,6 +140,14 @@ export class CategoriesComponent implements OnInit {
         Validators.max(10)
       ]]
     });
+
+    this.searchInput$
+      .pipe(debounceTime(300), distinctUntilChanged(), takeUntilDestroyed())
+      .subscribe(value => {
+        this.searchQuery.set(value);
+        this.currentPage.set(0);
+        this.loadCategories();
+      });
   }
 
   ngOnInit(): void {
@@ -166,8 +178,8 @@ export class CategoriesComponent implements OnInit {
     this.categoryService.getAll(pagination, filter).subscribe({
       next: (response: PageResponse<CategoryResponse>) => {
         this.categories.set(response.content);
-        this.totalElements.set(response.totalElements);
-        this.totalPages.set(response.totalPages);
+        this.totalElements.set(pageTotalElements(response));
+        this.totalPages.set(pageTotalPages(response));
         this.loading.set(false);
       },
       error: (err: Error) => {
@@ -178,13 +190,11 @@ export class CategoriesComponent implements OnInit {
   }
 
   /**
-   * Handle search input
+   * Handle search input (debounced 300ms via searchInput$)
    */
   onSearch(event: Event): void {
     const input = event.target as HTMLInputElement;
-    this.searchQuery.set(input.value);
-    this.currentPage.set(0);
-    this.loadCategories();
+    this.searchInput$.next(input.value);
   }
 
   /**

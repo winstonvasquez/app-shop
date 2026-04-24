@@ -1,0 +1,120 @@
+<div class="page-container">
+  <app-page-header
+    title="Transportistas"
+    subtitle="Gestión de couriers y transportistas"
+    [breadcrumbs]="breadcrumbs">
+    <div actions>
+      <app-button variant="primary" icon="truck" label="Nuevo Transportista" (click)="openCreateForm()" />
+    </div>
+  </app-page-header>
+
+  @if (error()) {
+    <app-alert type="error" [message]="error()!" (dismiss)="error.set(null)" [dismissible]="true" />
+  }
+
+  <app-data-table
+    [data]="items()"
+    [columns]="columns"
+    [actions]="actions"
+    [loading]="loading()"
+    [currentPage]="currentPage()"
+    [pageSize]="pageSize()"
+    [totalElements]="totalElements()"
+    [totalPages]="totalPages()"
+    [searchable]="true"
+    searchPlaceholder="Buscar transportista..."
+    [exportable]="true"
+    exportFileName="transportistas-export"
+    (pageChange)="onPaginationChange($event)">
+  </app-data-table>
+</div>
+
+<!-- Drawer Formulario -->
+<app-drawer
+  [isOpen]="showForm()"
+  [title]="editMode() ? 'Editar Transportista' : 'Nuevo Transportista'"
+  size="lg"
+  side="right"
+  [hasFooter]="true"
+  (closed)="closeForm()">
+
+  <form [formGroup]="form">
+    <!-- Identificación -->
+    <div class="form-grid">
+      <div class="form-field-wrapper">
+        <label class="input-label">Código *</label>
+        <input class="form-input" type="text" formControlName="code"
+               placeholder="OLVA, SHALOM, etc.">
+        @if (form.get('code')?.invalid && form.get('code')?.touched) {
+          <span class="input-error-message">Código requerido</span>
+        }
+      </div>
+
+      <div class="form-field-wrapper">
+        <label class="input-label">Tipo de servicio *</label>
+        <select class="form-input" formControlName="serviceType">
+          @for (opt of serviceTypeOptions; track opt.value) {
+            <option [value]="opt.value">{{ opt.label }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="form-field-wrapper" style="grid-column:1/-1">
+        <label class="input-label">Nombre *</label>
+        <input class="form-input" type="text" formControlName="name"
+               placeholder="Nombre completo del transportista">
+        @if (form.get('name')?.invalid && form.get('name')?.touched) {
+          <span class="input-error-message">Nombre requerido</span>
+        }
+      </div>
+    </div>
+
+    <!-- Contacto -->
+    <div class="form-section">
+      <h4 class="form-section-title">Contacto</h4>
+      <div class="form-grid">
+        <div class="form-field-wrapper">
+          <label class="input-label">Teléfono</label>
+          <input class="form-input" type="tel" formControlName="contactPhone"
+                 placeholder="01-234-5678">
+        </div>
+
+        <div class="form-field-wrapper">
+          <label class="input-label">Email</label>
+          <input class="form-input" type="email" formControlName="contactEmail"
+                 placeholder="contacto@transportista.pe">
+          @if (form.get('contactEmail')?.errors?.['email'] && form.get('contactEmail')?.touched) {
+            <span class="input-error-message">Email inválido</span>
+          }
+        </div>
+      </div>
+    </div>
+
+    <!-- Integración API (opcional) -->
+    <div class="form-section">
+      <h4 class="form-section-title">Integración API <span class="input-hint">(opcional)</span></h4>
+      <div class="form-field-wrapper">
+        <label class="input-label">URL del API</label>
+        <input class="form-input" type="url" formControlName="apiUrl"
+               placeholder="https://api.transportista.pe/v1">
+      </div>
+    </div>
+
+    <!-- Estado -->
+    <div class="form-section">
+      <label style="display:flex;align-items:center;gap:var(--space-sm);cursor:pointer">
+        <input type="checkbox" formControlName="active" style="width:16px;height:16px;accent-color:var(--color-primary)">
+        <span class="input-label" style="margin:0">Activo</span>
+      </label>
+    </div>
+  </form>
+
+  @if (submitError()) {
+    <app-alert type="error" [message]="submitError()!" />
+  }
+
+  <div slot="footer">
+    <app-button variant="secondary" icon="x" label="Cancelar" (click)="closeForm()" />
+    <app-button variant="primary" icon="save" [label]="submitting() ? 'Guardando...' : (editMode() ? 'Actualizar' : 'Crear')" [loading]="submitting()" (click)="onSubmit()" />
+  </div>
+</app-drawer>

@@ -1,0 +1,258 @@
+<div class="page-container">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Dashboard de Tesorería</h1>
+            <p class="page-subtitle">Resumen financiero del día — {{ hoy | date:'EEEE, d MMMM yyyy' }}</p>
+        </div>
+        <div class="page-actions">
+            <app-button icon="refresh-cw" label="Actualizar" variant="primary"
+                [loading]="cargando()" [disabled]="cargando()" (click)="cargar()" />
+        </div>
+    </div>
+
+    @if (error()) {
+        <div class="card mb-5" style="border-left:3px solid var(--color-warning);padding:var(--space-md)">
+            <p class="text-subtle" style="font-size:0.875rem">
+                Servicio de tesorería no disponible. Verifique que microshopfinanzas esté corriendo en puerto 8084.
+            </p>
+        </div>
+    }
+
+    <!-- KPI Cards -->
+    <div class="kpi-grid kpi-grid-5">
+        <div class="kpi-card kpi-card-blue">
+            <div class="kpi-top">
+                <span class="kpi-label">Cajas Abiertas</span>
+                <div class="kpi-icon kpi-icon-blue">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="kpi-value">{{ cajasAbiertas() }}</div>
+            <div class="kpi-sub">de {{ totalCajas() }} registradas</div>
+        </div>
+
+        <div class="kpi-card kpi-card-green">
+            <div class="kpi-top">
+                <span class="kpi-label">Saldo en Cajas</span>
+                <div class="kpi-icon kpi-icon-green">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="kpi-value" style="font-size:1.4rem">S/ {{ saldoTotalCajas() | number:'1.2-2' }}</div>
+            <div class="kpi-sub">saldo acumulado</div>
+        </div>
+
+        <div class="kpi-card kpi-card-teal">
+            <div class="kpi-top">
+                <span class="kpi-label">Ingresos Hoy</span>
+                <div class="kpi-icon kpi-icon-teal">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M7 11l5-5m0 0l5 5m-5-5v12"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="kpi-value" style="font-size:1.4rem">S/ {{ ingresosHoy() | number:'1.2-2' }}</div>
+            <div class="kpi-sub">movimientos INGRESO</div>
+        </div>
+
+        <div class="kpi-card kpi-card-orange">
+            <div class="kpi-top">
+                <span class="kpi-label">Egresos Hoy</span>
+                <div class="kpi-icon kpi-icon-orange">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M17 13l-5 5m0 0l-5-5m5 5V6"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="kpi-value" style="font-size:1.4rem">S/ {{ egresosHoy() | number:'1.2-2' }}</div>
+            <div class="kpi-sub">movimientos EGRESO</div>
+        </div>
+
+        <div class="kpi-card" [class.kpi-card-yellow]="pagosPendientes() > 0" [class.kpi-card-green]="pagosPendientes() === 0">
+            <div class="kpi-top">
+                <span class="kpi-label">Pagos Pendientes</span>
+                <div class="kpi-icon" [class.kpi-icon-yellow]="pagosPendientes() > 0" [class.kpi-icon-green]="pagosPendientes() === 0">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="kpi-value">{{ pagosPendientes() }}</div>
+            <div class="kpi-sub">por aprobar</div>
+        </div>
+    </div>
+
+    @if (cargando()) {
+        <div class="loading-container"><div class="spinner"></div></div>
+    } @else {
+        <!-- Charts row -->
+        <div class="dash-row dash-row-2-1 mb-5">
+            <!-- Área: Flujo de caja 7 días -->
+            <div class="chart-card">
+                <div class="chart-card-header">
+                    <span class="chart-card-title">Flujo de Caja — Últimos 7 días</span>
+                    <a routerLink="/tesoreria/flujo-caja" style="font-size:0.8125rem;color:var(--color-primary)">Ver completo →</a>
+                </div>
+                <div class="chart-card-body">
+                    <apx-chart
+                        [series]="areaSeries"
+                        [chart]="areaChart"
+                        [xaxis]="areaXAxis"
+                        [yaxis]="areaYAxis"
+                        [fill]="areaFill"
+                        [stroke]="areaStroke"
+                        [grid]="areaGrid"
+                        [colors]="areaColors"
+                        [legend]="areaLegend"
+                        [dataLabels]="{ enabled: false }"
+                        [tooltip]="areaTooltip">
+                    </apx-chart>
+                </div>
+            </div>
+
+            <!-- Donut: Distribución por método -->
+            <div class="chart-card">
+                <div class="chart-card-header">
+                    <span class="chart-card-title">Por Método de Pago</span>
+                </div>
+                <div class="chart-card-body">
+                    <apx-chart
+                        [series]="donutSeries"
+                        [chart]="donutChart"
+                        [labels]="donutLabels"
+                        [colors]="donutColors"
+                        [plotOptions]="donutPlot"
+                        [legend]="donutLegend"
+                        [dataLabels]="{ enabled: false }"
+                        [tooltip]="{ theme: 'dark' }">
+                    </apx-chart>
+                </div>
+            </div>
+        </div>
+
+        <!-- Estado de cajas + Pagos recientes -->
+        <div class="dash-row dash-row-1-1 mb-5">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Estado de Cajas</h3>
+                    <a routerLink="/tesoreria/cajas" class="btn btn-secondary" style="font-size:0.8rem;padding:4px 10px">Ver todas</a>
+                </div>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th class="table-header-cell">Caja</th>
+                            <th class="table-header-cell text-right">Saldo</th>
+                            <th class="table-header-cell">Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (caja of cajas().slice(0, 6); track caja.id ?? $index) {
+                            <tr class="table-row">
+                                <td class="table-cell font-semibold">{{ caja.nombre }}</td>
+                                <td class="table-cell text-right" style="font-variant-numeric:tabular-nums">
+                                    S/ {{ caja.saldoActual | number:'1.2-2' }}
+                                </td>
+                                <td class="table-cell">
+                                    <span [class]="caja.estado === 'ABIERTA' ? 'badge badge-success' : 'badge badge-neutral'">
+                                        {{ caja.estado }}
+                                    </span>
+                                </td>
+                            </tr>
+                        }
+                        @if (cajas().length === 0) {
+                            <tr class="table-row">
+                                <td colspan="3" class="table-cell text-center text-subtle" style="padding:var(--space-lg)">
+                                    Sin cajas registradas
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Pagos Recientes</h3>
+                    <a routerLink="/tesoreria/pagos" class="btn btn-secondary" style="font-size:0.8rem;padding:4px 10px">Ver todos</a>
+                </div>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th class="table-header-cell">Beneficiario</th>
+                            <th class="table-header-cell text-right">Monto</th>
+                            <th class="table-header-cell">Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (pago of pagosRecientes().slice(0, 6); track pago.id ?? $index) {
+                            <tr class="table-row">
+                                <td class="table-cell">
+                                    <div class="font-semibold" style="font-size:0.875rem">{{ pago.beneficiarioNombre }}</div>
+                                    <div class="text-subtle" style="font-size:0.75rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px">{{ pago.concepto }}</div>
+                                </td>
+                                <td class="table-cell text-right" style="font-variant-numeric:tabular-nums">
+                                    S/ {{ pago.monto | number:'1.2-2' }}
+                                </td>
+                                <td class="table-cell">
+                                    <span [class]="badgePago(pago.estado)">{{ pago.estado }}</span>
+                                </td>
+                            </tr>
+                        }
+                        @if (pagosRecientes().length === 0) {
+                            <tr class="table-row">
+                                <td colspan="3" class="table-cell text-center text-subtle" style="padding:var(--space-lg)">Sin pagos registrados</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Últimos movimientos -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Últimos Movimientos Financieros</h3>
+                <a routerLink="/tesoreria/flujo-caja" class="btn btn-secondary" style="font-size:0.8rem;padding:4px 10px">Flujo completo</a>
+            </div>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th class="table-header-cell">Fecha</th>
+                        <th class="table-header-cell">Tipo</th>
+                        <th class="table-header-cell">Descripción</th>
+                        <th class="table-header-cell">Origen</th>
+                        <th class="table-header-cell text-right">Monto</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (mov of movimientos().slice(0, 8); track mov.id ?? $index) {
+                        <tr class="table-row">
+                            <td class="table-cell text-subtle" style="white-space:nowrap">{{ mov.fecha | date:'dd/MM/yyyy' }}</td>
+                            <td class="table-cell"><span [class]="badgeMovimiento(mov.tipoMovimiento)">{{ mov.tipoMovimiento }}</span></td>
+                            <td class="table-cell">{{ mov.descripcion }}</td>
+                            <td class="table-cell text-subtle" style="font-size:0.875rem">{{ mov.origen }}</td>
+                            <td class="table-cell text-right font-bold" style="white-space:nowrap;font-variant-numeric:tabular-nums"
+                                [style.color]="mov.tipoMovimiento === 'INGRESO' ? 'var(--color-success)' : 'var(--color-warning)'">
+                                {{ mov.tipoMovimiento === 'EGRESO' ? '-' : '+' }}S/ {{ mov.monto | number:'1.2-2' }}
+                            </td>
+                        </tr>
+                    }
+                    @if (movimientos().length === 0) {
+                        <tr class="table-row">
+                            <td colspan="5" class="table-cell text-center text-subtle" style="padding:var(--space-lg)">Sin movimientos registrados</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

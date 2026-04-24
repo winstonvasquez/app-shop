@@ -1,0 +1,145 @@
+<div class="page-container">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Dashboard Ventas</h1>
+            <p class="page-subtitle">Resumen de rendimiento del módulo de ventas</p>
+        </div>
+        <app-button
+            label="Actualizar"
+            icon="refresh-cw"
+            variant="primary"
+            (click)="cargar()">
+        </app-button>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="kpi-grid kpi-grid-5">
+        <div class="kpi-card kpi-card-green">
+            <div class="kpi-top">
+                <span class="kpi-label">Ventas Hoy</span>
+                <div class="kpi-icon kpi-icon-green">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="kpi-value">S/ {{ ventasHoy().toFixed(0) }}</div>
+            <div class="kpi-trend trend-up">▲ del día en curso</div>
+        </div>
+
+        <div class="kpi-card kpi-card-yellow">
+            <div class="kpi-top">
+                <span class="kpi-label">Pendientes</span>
+                <div class="kpi-icon kpi-icon-yellow">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="kpi-value">{{ pedidosPendientes() }}</div>
+            <div class="kpi-trend trend-neutral">por procesar</div>
+        </div>
+
+        <div class="kpi-card kpi-card-red">
+            <div class="kpi-top">
+                <span class="kpi-label">Monto Total</span>
+                <div class="kpi-icon kpi-icon-red">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="kpi-value" style="font-size:1.5rem">S/ {{ montoTotalMes().toFixed(0) }}</div>
+            <div class="kpi-trend trend-neutral">cargados este mes</div>
+        </div>
+
+        <div class="kpi-card kpi-card-blue">
+            <div class="kpi-top">
+                <span class="kpi-label">Total Pedidos</span>
+                <div class="kpi-icon kpi-icon-blue">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="kpi-value">{{ totalPedidos() }}</div>
+            <div class="kpi-trend trend-neutral">{{ pedidosPagados() }} pagados</div>
+        </div>
+
+        <div class="kpi-card kpi-card-orange">
+            <div class="kpi-top">
+                <span class="kpi-label">Ticket Promedio</span>
+                <div class="kpi-icon kpi-icon-orange">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="kpi-value">S/ {{ ticketPromedio().toFixed(0) }}</div>
+            <div class="kpi-trend trend-up">▲ por pedido</div>
+        </div>
+    </div>
+
+    <!-- Charts row -->
+    <div class="dash-row dash-row-2-1" style="margin-bottom:1.25rem">
+        <div class="chart-card">
+            <div class="chart-card-header">
+                <span class="chart-card-title">Ventas Diarias del Mes</span>
+                <span style="font-size:0.75rem;color:var(--color-text-muted)">últimos 28 días</span>
+            </div>
+            <div class="chart-card-body">
+                <apx-chart
+                    [series]="areaSeries"
+                    [chart]="areaChart"
+                    [xaxis]="areaXAxis"
+                    [yaxis]="areaYAxis"
+                    [fill]="areaFill"
+                    [stroke]="areaStroke"
+                    [grid]="areaGrid"
+                    [tooltip]="areaTooltip"
+                    [colors]="areaColors"
+                    [dataLabels]="{ enabled: false }">
+                </apx-chart>
+            </div>
+        </div>
+
+        <div class="chart-card">
+            <div class="chart-card-header">
+                <span class="chart-card-title">Estado de Pedidos</span>
+            </div>
+            <div class="chart-card-body">
+                <apx-chart
+                    [series]="donutSeries"
+                    [chart]="donutChart"
+                    [labels]="donutLabels"
+                    [colors]="donutColors"
+                    [plotOptions]="donutPlot"
+                    [legend]="donutLegend"
+                    [dataLabels]="donutDataLabels"
+                    [tooltip]="{ theme: 'dark' }">
+                </apx-chart>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla Últimos Pedidos -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Últimos Pedidos</h2>
+        </div>
+        <div class="card-body" style="padding:0">
+            <app-data-table
+                [data]="pedidos()"
+                [columns]="columns"
+                [loading]="cargando()"
+                [totalElements]="pedidos().length"
+                [pageSize]="20">
+            </app-data-table>
+        </div>
+    </div>
+</div>

@@ -1,15 +1,22 @@
-import { Component, inject, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, inject, OnInit, signal } from '@angular/core';
+import { DecimalPipe } from '@angular/common';
 import { Router } from '@angular/router';
 import { CartService } from '@features/cart/services/cart.service';
 import { ConfigService, MedioPago, Certificacion } from '@core/services/config.service';
 import { TranslateModule } from '@ngx-translate/core';
 import { toSignal } from '@angular/core/rxjs-interop';
+import { BreadcrumbComponent, BreadcrumbItem } from '@shared/components/breadcrumb/breadcrumb.component';
+import { ButtonComponent } from '@shared/components';
 
 @Component({
     selector: 'app-cart-page',
     standalone: true,
-    imports: [CommonModule, TranslateModule],
+    imports: [
+    TranslateModule,
+    BreadcrumbComponent,
+    DecimalPipe,
+    ButtonComponent,
+  ],
     templateUrl: './cart-page.component.html'
 })
 export class CartPageComponent implements OnInit {
@@ -17,11 +24,18 @@ export class CartPageComponent implements OnInit {
     configService = inject(ConfigService);
     router = inject(Router);
 
+    readonly breadcrumbItems: BreadcrumbItem[] = [
+        { label: 'Inicio', route: ['/home'] },
+        { label: 'Carrito' }
+    ];
+
     cartItems = this.cartService.cartItems;
     cartTotal = this.cartService.cartTotal;
 
     mediosPago = toSignal(this.configService.getMediosPago(), { initialValue: [] as MedioPago[] });
     certificaciones = toSignal(this.configService.getCertificaciones(), { initialValue: [] as Certificacion[] });
+
+    isCheckingOut = signal(false);
 
     ngOnInit() {
         // Component initialization if needed
@@ -45,6 +59,10 @@ export class CartPageComponent implements OnInit {
     }
 
     checkout() {
-        this.router.navigate(['/checkout']);
+        if (this.isCheckingOut()) return;
+        this.isCheckingOut.set(true);
+        this.router.navigate(['/checkout']).finally(() => {
+            this.isCheckingOut.set(false);
+        });
     }
 }

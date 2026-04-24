@@ -1,0 +1,142 @@
+<app-page-header
+    title="Puestos"
+    subtitle="Cargos, requisitos y rangos salariales"
+    [breadcrumbs]="breadcrumbs">
+    <div actions>
+        <app-button icon="plus" label="Nuevo Puesto" variant="primary" (click)="openCreateModal()" />
+    </div>
+</app-page-header>
+
+@if (error()) {
+    <app-alert type="error" [message]="error()!" />
+}
+
+<!-- Filtros -->
+<div class="filters-bar">
+    <div class="search-box">
+        <svg class="search-box-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z" clip-rule="evenodd" />
+        </svg>
+        <input
+            type="text"
+            placeholder="Buscar por código o nombre..."
+            [value]="searchQuery()"
+            (input)="onSearch($event)" />
+    </div>
+
+    <select class="form-input" style="width: auto; min-width: 180px"
+            [value]="filterDepartment()"
+            (change)="onFilterDepartment($event)">
+        <option value="">Todos los departamentos</option>
+        @for (dept of departments(); track dept.id) {
+            <option [value]="dept.id">{{ dept.nombre }}</option>
+        }
+    </select>
+</div>
+
+<!-- Tabla -->
+<app-data-table
+    [data]="pagedData()"
+    [columns]="columns"
+    [actions]="actions"
+    [loading]="loading()"
+    [exportable]="true"
+    exportFileName="puestos"
+    [hidePagination]="true" />
+
+<!-- Paginación -->
+@if (totalElements() > 0) {
+    <app-pagination
+        [currentPage]="currentPage()"
+        [totalPages]="totalPages()"
+        [totalElements]="totalElements()"
+        [pageSize]="pageSize()"
+        (pageChange)="onPaginationChange($event)" />
+}
+
+<!-- Drawer: Crear / Editar Puesto -->
+<app-drawer
+    [isOpen]="showModal()"
+    [title]="editMode() ? 'Editar Puesto' : 'Nuevo Puesto'"
+    size="md"
+    [hasFooter]="true"
+    (closed)="closeModal()">
+
+    <form [formGroup]="positionForm" (ngSubmit)="onSubmit()">
+
+        @if (submitError()) {
+            <app-alert type="error" [message]="submitError()!" />
+        }
+
+        <div class="grid grid-cols-2 gap-4">
+            <app-form-field
+                label="Código"
+                [control]="getControl('codigo')"
+                placeholder="Ej: GER-GEN"
+                [required]="true" />
+
+            <app-form-field
+                label="Nombre"
+                [control]="getControl('nombre')"
+                placeholder="Ej: Gerente General"
+                [required]="true" />
+        </div>
+
+        <div style="margin-top: var(--space-md)">
+            <label class="input-label">Departamento <span style="color:var(--color-error)">*</span></label>
+            <select class="form-input" formControlName="departmentId">
+                <option [ngValue]="null">— Seleccionar departamento —</option>
+                @for (dept of departments(); track dept.id) {
+                    <option [ngValue]="dept.id">{{ dept.nombre }}</option>
+                }
+            </select>
+        </div>
+
+        <div style="margin-top: var(--space-md)">
+            <app-form-field
+                label="Descripción"
+                [control]="getControl('descripcion')"
+                placeholder="Descripción del puesto" />
+        </div>
+
+        <div class="grid grid-cols-2 gap-4 mt-4">
+            <app-form-field
+                label="Nivel"
+                [control]="getControl('nivel')"
+                placeholder="Ej: Senior, Junior" />
+
+            <div></div>
+
+            <app-form-field
+                label="Salario Mínimo (S/)"
+                [control]="getControl('salarioMinimo')"
+                type="number"
+                placeholder="0.00" />
+
+            <app-form-field
+                label="Salario Máximo (S/)"
+                [control]="getControl('salarioMaximo')"
+                type="number"
+                placeholder="0.00" />
+        </div>
+
+        <div style="margin-top: var(--space-md)">
+            <app-form-field
+                label="Requisitos"
+                [control]="getControl('requisitos')"
+                placeholder="Requisitos del puesto" />
+        </div>
+
+    </form>
+
+    <div slot="footer" class="flex justify-end gap-2">
+        <app-button icon="x" label="Cancelar" variant="secondary" type="button" (click)="closeModal()" />
+        <!-- btn-migration: SKIP — label dinámico con ternario (submitting/editMode) -->
+        <button class="btn btn-primary" type="button"
+                [disabled]="submitting()"
+                (click)="onSubmit()">
+            {{ submitting() ? 'Guardando...' : (editMode() ? 'Actualizar' : 'Crear Puesto') }}
+        </button>
+    </div>
+
+</app-drawer>

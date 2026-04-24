@@ -35,7 +35,7 @@ export interface OcReciente {
 @Injectable({ providedIn: 'root' })
 export class DashboardService {
     private http = inject(HttpClient);
-    private baseUrl = `${environment.apiUrl}/purchases/api/dashboard`;
+    private baseUrl = `${environment.apiUrls.purchases}/api/dashboard`;
 
     getDashboardCompras(): Observable<DashboardCompras> {
         return this.http.get<DashboardCompras>(`${this.baseUrl}/compras`);

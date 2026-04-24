@@ -1,0 +1,148 @@
+<div class="dashboard-compras-page">
+    <app-page-header
+        title="Dashboard de Compras"
+        [subtitle]="'Resumen del mes de ' + currentMonth"
+        [breadcrumbs]="breadcrumbs">
+    </app-page-header>
+
+    <!-- KPI Cards -->
+    <div class="kpi-grid kpi-grid-4" style="margin-bottom:1.25rem">
+        <div class="kpi-card kpi-card-red">
+            <div class="kpi-top">
+                <span class="kpi-label">Total Compras</span>
+                <div class="kpi-icon kpi-icon-red">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="kpi-value" style="font-size:1.5rem">S/ {{ (dashboard()?.totalComprasMes ?? 0).toFixed(0) }}</div>
+            <div class="kpi-sub">Trimestre: S/ {{ (dashboard()?.comprasTrimestre ?? 0).toFixed(0) }}</div>
+        </div>
+
+        <div class="kpi-card kpi-card-blue">
+            <div class="kpi-top">
+                <span class="kpi-label">OC Emitidas</span>
+                <div class="kpi-icon kpi-icon-blue">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="kpi-value">{{ dashboard()?.ocEmitidas ?? 0 }}</div>
+            <div class="kpi-sub">{{ dashboard()?.ocAprobadas ?? 0 }} aprobadas</div>
+        </div>
+
+        <div class="kpi-card kpi-card-yellow">
+            <div class="kpi-top">
+                <span class="kpi-label">Pendientes</span>
+                <div class="kpi-icon kpi-icon-yellow">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="kpi-value">{{ dashboard()?.ocPendientes ?? 0 }}</div>
+            <div class="kpi-sub">Por aprobar</div>
+        </div>
+
+        <div class="kpi-card kpi-card-teal">
+            <div class="kpi-top">
+                <span class="kpi-label">Proveedores</span>
+                <div class="kpi-icon kpi-icon-teal">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="kpi-value">{{ dashboard()?.totalProveedores ?? 0 }}</div>
+            <div class="kpi-sub">{{ dashboard()?.proveedoresNuevos ?? 0 }} nuevos este mes</div>
+        </div>
+    </div>
+
+    <!-- Charts row -->
+    <div class="dash-row dash-row-2-1" style="margin-bottom:1.25rem">
+        <!-- Bar: Top Proveedores -->
+        <div class="chart-card">
+            <div class="chart-card-header">
+                <span class="chart-card-title">Top Proveedores por Monto</span>
+            </div>
+            <div class="chart-card-body">
+                <apx-chart
+                    [series]="barSeries"
+                    [chart]="barChart"
+                    [xaxis]="barXAxis"
+                    [yaxis]="barYAxis"
+                    [plotOptions]="barPlot"
+                    [grid]="barGrid"
+                    [colors]="barColors"
+                    [dataLabels]="barDataLabels"
+                    [tooltip]="barTooltip">
+                </apx-chart>
+            </div>
+        </div>
+
+        <!-- Donut: Estado OC -->
+        <div class="chart-card">
+            <div class="chart-card-header">
+                <span class="chart-card-title">Estado de Órdenes</span>
+            </div>
+            <div class="chart-card-body">
+                <apx-chart
+                    [series]="donutSeries"
+                    [chart]="donutChart"
+                    [labels]="donutLabels"
+                    [colors]="donutColors"
+                    [plotOptions]="donutPlot"
+                    [legend]="donutLegend"
+                    [dataLabels]="donutDataLabels"
+                    [tooltip]="donutTooltip">
+                </apx-chart>
+            </div>
+        </div>
+    </div>
+
+    <!-- Últimas OC -->
+    <div class="card">
+        <div class="card-header">
+            <span class="card-title">Últimas Órdenes de Compra</span>
+            <a routerLink="/admin/compras/ordenes" class="btn btn-secondary" style="padding:4px 12px;font-size:0.8rem">
+                Ver todas →
+            </a>
+        </div>
+        @if ((dashboard()?.ultimasOC ?? []).length > 0) {
+            <div class="table-erp-container">
+                <table class="table-erp">
+                    <thead>
+                        <tr>
+                            <th>OC #</th>
+                            <th>Fecha</th>
+                            <th>Proveedor</th>
+                            <th class="text-right">Total</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (oc of dashboard()?.ultimasOC; track oc.id) {
+                            <tr>
+                                <td class="font-mono text-sm">{{ oc.codigo }}</td>
+                                <td class="text-subtle">{{ oc.fechaEmision | date:'dd/MM/yyyy' }}</td>
+                                <td>{{ oc.proveedorNombre }}</td>
+                                <td class="text-right font-medium">S/ {{ oc.total.toFixed(2) }}</td>
+                                <td>
+                                    <span class="badge badge-{{ badgeEstado(oc.estado) }}">{{ oc.estado }}</span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        } @else {
+            <div class="p-lg text-center text-subtle">No hay órdenes de compra registradas</div>
+        }
+    </div>
+</div>

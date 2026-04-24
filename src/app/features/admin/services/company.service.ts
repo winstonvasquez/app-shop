@@ -6,7 +6,10 @@ import { environment } from '@env/environment';
 import {
     CompanyResponse,
     CompanyRequest,
-    UserCompanyResponse
+    UserCompanyResponse,
+    CompanyUserResponse,
+    CompanySubscriptionResponse,
+    CompanyModuleResponse
 } from '@features/admin/models/company.model';
 
 @Injectable({
@@ -88,9 +91,34 @@ export class CompanyService {
             .pipe(catchError(this.handleError));
     }
 
-    /**
-     * Get companies for a specific user
-     */
+    getCompanyModules(companyId: number): Observable<CompanyModuleResponse[]> {
+        return this.http
+            .get<CompanyModuleResponse[]>(`${this.baseUrl}/${companyId}/modules`)
+            .pipe(catchError(this.handleError));
+    }
+
+    getCompanyUsers(companyId: number): Observable<CompanyUserResponse[]> {
+        return this.http
+            .get<CompanyUserResponse[]>(`${this.baseUrl}/${companyId}/users`)
+            .pipe(catchError(this.handleError));
+    }
+
+    getCompanySubscription(companyId: number): Observable<CompanySubscriptionResponse | null> {
+        return this.http
+            .get<CompanySubscriptionResponse>(`${this.baseUrl}/${companyId}/subscription`)
+            .pipe(catchError(() => {
+                return [null] as unknown as Observable<CompanySubscriptionResponse | null>;
+            }));
+    }
+
+    toggleModule(companyId: number, moduleId: number, enabled: boolean): Observable<void> {
+        return this.http
+            .put<void>(`${this.baseUrl}/${companyId}/modules/${moduleId}`, null, {
+                params: { enabled: enabled.toString() }
+            })
+            .pipe(catchError(this.handleError));
+    }
+
     getUserCompanies(userId: number): Observable<UserCompanyResponse[]> {
         return this.http
             .get<UserCompanyResponse[]>(`${this.userCompanyUrl}/user/${userId}`)

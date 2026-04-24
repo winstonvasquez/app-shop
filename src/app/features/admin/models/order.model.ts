@@ -28,10 +28,10 @@ export interface OrderStatusUpdate {
 }
 
 // Helpers
-export const ORDER_STATUSES: { value: OrderStatus, label: string, color: string }[] = [
-    { value: 'PENDIENTE', label: 'Pendiente', color: 'gray' },
-    { value: 'PAGADO', label: 'Pagado', color: 'blue' },
-    { value: 'ENVIADO', label: 'Enviado', color: 'indigo' },
-    { value: 'ENTREGADO', label: 'Entregado', color: 'green' },
-    { value: 'CANCELADO', label: 'Cancelado', color: 'red' }
+export const ORDER_STATUSES: { value: OrderStatus, label: string, badge: string }[] = [
+    { value: 'PENDIENTE', label: 'Pendiente', badge: 'badge-warning' },
+    { value: 'PAGADO',    label: 'Pagado',    badge: 'badge-accent'  },
+    { value: 'ENVIADO',   label: 'Enviado',   badge: 'badge-accent'  },
+    { value: 'ENTREGADO', label: 'Entregado', badge: 'badge-success' },
+    { value: 'CANCELADO', label: 'Cancelado', badge: 'badge-error'   },
 ];

@@ -1,0 +1,106 @@
+<div class="page-container">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">KPIs & Reportes de Compras</h1>
+            <p class="page-subtitle">Indicadores clave del módulo de compras</p>
+        </div>
+        <app-button label="Actualizar" variant="secondary" icon="refresh-cw" (click)="cargar()" />
+    </div>
+
+    @if (error()) {
+        <div class="badge badge-error" style="margin-bottom:1rem">{{ error() }}</div>
+    }
+
+    @if (cargando()) {
+        <div class="loading-container"><div class="spinner"></div></div>
+    } @else {
+        <!-- KPI Cards -->
+        @if (kpi(); as k) {
+            <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:1rem; margin-bottom:1.5rem">
+                <div class="card card-body text-center">
+                    <div class="text-[1.6rem] font-bold text-[var(--color-primary)]">{{ k.totalOrdenes }}</div>
+                    <div class="text-[0.82rem] text-[var(--color-text-subtle)]">Órdenes de Compra</div>
+                </div>
+                <div class="card card-body text-center">
+                    <div class="text-[1.6rem] font-bold text-[var(--color-primary)]">{{ k.totalProveedores }}</div>
+                    <div class="text-[0.82rem] text-[var(--color-text-subtle)]">Proveedores Activos</div>
+                </div>
+                <div class="card card-body text-center">
+                    <div class="text-[1.6rem] font-bold text-[var(--color-error)]">{{ k.facturasVencidas }}</div>
+                    <div class="text-[0.82rem] text-[var(--color-text-subtle)]">Facturas Vencidas</div>
+                </div>
+                <div class="card card-body text-center">
+                    <div class="text-[1.6rem] font-bold text-[var(--color-text-on)]">{{ k.totalDevoluciones }}</div>
+                    <div class="text-[0.82rem] text-[var(--color-text-subtle)]">Devoluciones</div>
+                </div>
+                <div class="card card-body text-center">
+                    <div class="text-[1.4rem] font-bold text-[var(--color-primary)]">S/ {{ k.totalFacturado | number:'1.0-0' }}</div>
+                    <div class="text-[0.82rem] text-[var(--color-text-subtle)]">Total Facturado</div>
+                </div>
+            </div>
+        }
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem">
+            <!-- KPI por proveedor -->
+            <div class="card">
+                <div class="card-header"><h3 class="card-title">Top Proveedores</h3></div>
+                <div class="card-body" style="padding:0">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th class="table-header-cell">Proveedor</th>
+                                <th class="table-header-cell">OC</th>
+                                <th class="table-header-cell">Monto</th>
+                                <th class="table-header-cell">F. Pend.</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (p of proveedores(); track p.proveedorId) {
+                                <tr class="table-row">
+                                    <td class="table-cell text-[0.83rem]">{{ p.proveedorNombre }}</td>
+                                    <td class="table-cell">{{ p.totalOrdenes }}</td>
+                                    <td class="table-cell">S/ {{ p.montoTotal | number:'1.0-0' }}</td>
+                                    <td class="table-cell">
+                                        @if (p.facturasPendientes > 0) {
+                                            <span class="badge badge-warning">{{ p.facturasPendientes }}</span>
+                                        } @else {
+                                            <span class="badge badge-success">0</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                            @if (proveedores().length === 0) {
+                                <tr><td class="table-cell text-center" colspan="4">Sin datos</td></tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Presupuesto -->
+            <div class="card">
+                <div class="card-header"><h3 class="card-title">Ejecución Presupuestal</h3></div>
+                <div class="card-body">
+                    @for (p of presupuesto(); track p.presupuestoId) {
+                        <div class="mb-4">
+                            <div class="flex justify-between mb-1">
+                                <span class="text-[0.85rem] text-[var(--color-text-on)]">{{ p.categoria }}</span>
+                                <span class="badge {{ pctClass(p.porcentajeEjecucion) }}">{{ p.porcentajeEjecucion }}%</span>
+                            </div>
+                            <div class="bg-[var(--color-surface-raised)] rounded h-2 overflow-hidden">
+                                <div style="height:100%; background:var(--color-primary); width:{{ p.porcentajeEjecucion }}%; border-radius:4px"></div>
+                            </div>
+                            <div class="flex justify-between text-[0.75rem] text-[var(--color-text-muted)] mt-1">
+                                <span>S/ {{ p.montoEjecutado | number:'1.0-0' }}</span>
+                                <span>S/ {{ p.montoAsignado | number:'1.0-0' }}</span>
+                            </div>
+                        </div>
+                    }
+                    @if (presupuesto().length === 0) {
+                        <p class="text-[var(--color-text-muted)] text-center">Sin presupuestos registrados</p>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+</div>

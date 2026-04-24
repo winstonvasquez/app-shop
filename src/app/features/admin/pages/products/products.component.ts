@@ -1,26 +1,29 @@
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
 import { FormBuilder, ReactiveFormsModule, Validators, FormGroup, FormControl } from '@angular/forms';
 import { ProductService, ProductRequest, ProductFilter } from '@core/services/product.service';
 import { ProductResponse } from '@core/models/product.model';
-import { PaginationConfig, PageResponse } from '@core/models/pagination.model';
+import { PaginationConfig, PageResponse, pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 import { DataTableComponent, TableColumn, TableAction, PaginationEvent, SortEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
-import { ModalComponent } from '@shared/ui/modals/modal/modal.component';
+import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
+import { ButtonComponent } from '@shared/components';
 
 @Component({
   selector: 'app-products',
   standalone: true,
   imports: [
-    CommonModule,
+    
     ReactiveFormsModule,
     DataTableComponent,
     FormFieldComponent,
-    ModalComponent,
+    DrawerComponent,
     PageHeaderComponent,
-    AlertComponent
+    AlertComponent,
+    ButtonComponent
   ],
   templateUrl: './products.component.html',
   styleUrl: './products.component.scss'
@@ -56,6 +59,8 @@ export class ProductsComponent implements OnInit {
 
   // Product form with validations
   productForm: FormGroup;
+
+  private readonly searchInput$ = new Subject<string>();
 
   // Breadcrumbs
   breadcrumbs: Breadcrumb[] = [
@@ -93,7 +98,7 @@ export class ProductsComponent implements OnInit {
       key: 'categorias',
       label: 'Categorías',
       render: (row) => row.categorias && row.categorias.length > 0
-        ? row.categorias.map((c: any) => c.nombre).join(', ')
+        ? row.categorias.map((c: { nombre: string }) => c.nombre).join(', ')
         : 'Sin categorías'
     }
   ];
@@ -137,6 +142,14 @@ export class ProductsComponent implements OnInit {
       ]],
       categoriaIds: [[]]
     });
+
+    this.searchInput$
+      .pipe(debounceTime(300), distinctUntilChanged(), takeUntilDestroyed())
+      .subscribe(value => {
+        this.searchQuery.set(value);
+        this.currentPage.set(0);
+        this.loadProducts();
+      });
   }
 
   ngOnInit(): void {
@@ -166,8 +179,8 @@ export class ProductsComponent implements OnInit {
     this.productService.getAllProductsFiltered(pagination, filter).subscribe({
       next: (response: PageResponse<ProductResponse>) => {
         this.products.set(response.content);
-        this.totalElements.set(response.totalElements);
-        this.totalPages.set(response.totalPages);
+        this.totalElements.set(pageTotalElements(response));
+        this.totalPages.set(pageTotalPages(response));
         this.loading.set(false);
       },
       error: (err: Error) => {
@@ -178,13 +191,11 @@ export class ProductsComponent implements OnInit {
   }
 
   /**
-   * Handle search input
+   * Handle search input (debounced 300ms via searchInput$)
    */
   onSearch(event: Event): void {
     const input = event.target as HTMLInputElement;
-    this.searchQuery.set(input.value);
-    this.currentPage.set(0); // Reset to first page
-    this.loadProducts();
+    this.searchInput$.next(input.value);
   }
 
   /**
@@ -238,7 +249,7 @@ export class ProductsComponent implements OnInit {
       precioBase: product.precioBase,
       marca: product.marca,
       companyId: product.companyId,
-      categoriaIds: product.categorias?.map((c: any) => c.id) || []
+      categoriaIds: product.categorias?.map((c: { id: number }) => c.id) || []
     });
 
     this.showModal.set(true);

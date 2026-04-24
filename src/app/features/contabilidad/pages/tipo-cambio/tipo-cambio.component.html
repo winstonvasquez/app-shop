@@ -1,0 +1,105 @@
+<div class="page-container">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">{{ 'contabilidad.tipo_cambio.title' | translate }}</h1>
+            <p class="page-subtitle">{{ 'contabilidad.tipo_cambio.subtitle' | translate }}</p>
+        </div>
+    </div>
+
+    <div class="card max-w-2xl">
+        <div class="card-header">
+            <h3 class="card-title">{{ 'contabilidad.tipo_cambio.card_title' | translate }}</h3>
+        </div>
+        <div class="card-body space-y-4">
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="input-label">{{ 'contabilidad.tipo_cambio.fecha' | translate }}</label>
+                    <input type="date" class="form-input"
+                           [ngModel]="fecha()" (ngModelChange)="fecha.set($event)" />
+                </div>
+                <div>
+                    <label class="input-label">{{ 'contabilidad.tipo_cambio.moneda' | translate }}</label>
+                    <select class="form-input" [ngModel]="moneda()" (ngModelChange)="moneda.set($event)">
+                        @for (m of monedas; track m) {
+                            <option [value]="m">{{ m }}</option>
+                        }
+                    </select>
+                </div>
+            </div>
+            <app-button
+                [label]="cargando() ? ('contabilidad.tipo_cambio.consultando' | translate) : ('contabilidad.tipo_cambio.consultar' | translate)"
+                variant="secondary"
+                icon="arrow-right-left"
+                [loading]="cargando()"
+                [disabled]="cargando()"
+                (click)="consultar()">
+            </app-button>
+
+            <div class="border-t border-[var(--color-border)] pt-4 space-y-4">
+                @if (resultado()) {
+                    <div class="badge badge-success">
+                        {{ resultado()!.fuente }} · {{ resultado()!.fecha | date:'dd/MM/yyyy' }}
+                    </div>
+                } @else if (!cargando()) {
+                    <div class="badge badge-warning">{{ 'contabilidad.tipo_cambio.sin_registro' | translate }}</div>
+                }
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="input-label">{{ 'contabilidad.tipo_cambio.compra' | translate }}</label>
+                        <input type="number" class="form-input font-mono"
+                               step="0.0001" min="0"
+                               [ngModel]="compra()" (ngModelChange)="compra.set($event)" />
+                    </div>
+                    <div>
+                        <label class="input-label">{{ 'contabilidad.tipo_cambio.venta' | translate }}</label>
+                        <input type="number" class="form-input font-mono"
+                               step="0.0001" min="0"
+                               [ngModel]="venta()" (ngModelChange)="venta.set($event)" />
+                    </div>
+                </div>
+
+                @if (error()) {
+                    <div class="badge badge-error">{{ error() }}</div>
+                }
+                @if (exito()) {
+                    <div class="badge badge-success">{{ exito() }}</div>
+                }
+
+                <app-button
+                    [label]="guardando() ? ('contabilidad.tipo_cambio.guardando' | translate) : ('contabilidad.tipo_cambio.registrar' | translate)"
+                    variant="primary"
+                    icon="save"
+                    [loading]="guardando()"
+                    [disabled]="guardando() || !compra() || !venta()"
+                    (click)="registrar()">
+                </app-button>
+            </div>
+        </div>
+    </div>
+
+    @if (resultado()) {
+        <div class="card max-w-2xl mt-4">
+            <div class="card-body">
+                <div class="grid grid-cols-3 gap-6 text-center">
+                    <div>
+                        <p class="text-muted text-sm">{{ 'contabilidad.tipo_cambio.col_moneda' | translate }}</p>
+                        <p class="text-2xl font-bold text-on">{{ resultado()!.moneda }}</p>
+                    </div>
+                    <div>
+                        <p class="text-muted text-sm">{{ 'contabilidad.tipo_cambio.col_compra' | translate }}</p>
+                        <p class="text-2xl font-mono font-bold" style="color:var(--color-success)">
+                            S/ {{ resultado()!.compra | number:'1.4-4' }}
+                        </p>
+                    </div>
+                    <div>
+                        <p class="text-muted text-sm">{{ 'contabilidad.tipo_cambio.col_venta' | translate }}</p>
+                        <p class="text-2xl font-mono font-bold" style="color:var(--color-warning)">
+                            S/ {{ resultado()!.venta | number:'1.4-4' }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>

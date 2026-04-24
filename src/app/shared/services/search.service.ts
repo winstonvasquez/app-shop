@@ -4,8 +4,9 @@ import { Injectable, signal, inject } from '@angular/core';
     providedIn: 'root'
 })
 export class SearchService {
-    private searchQuerySignal = signal<string>('');
+    private searchQuerySignal  = signal<string>('');
     private recentSearchesSignal = signal<string[]>([]);
+    private categoryIdSignal   = signal<number | null>(null);
 
     popularSearches = [
         { title: 'vestido de mujer', icon: '🔥', image: 'https://placehold.co/40' },
@@ -23,12 +24,12 @@ export class SearchService {
         this.loadRecentSearches();
     }
 
-    get searchQuery() {
-        return this.searchQuerySignal;
-    }
+    get searchQuery()   { return this.searchQuerySignal; }
+    get recentSearches(){ return this.recentSearchesSignal; }
+    get categoryId()    { return this.categoryIdSignal; }
 
-    get recentSearches() {
-        return this.recentSearchesSignal;
+    setCategoryId(id: number | null) {
+        this.categoryIdSignal.set(id);
     }
 
     setSearchQuery(query: string) {

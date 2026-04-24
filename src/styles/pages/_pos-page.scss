@@ -94,9 +94,7 @@
         padding: 0;
     }
 
-    font-family: 'Inter',
-    system-ui,
-    sans-serif;
+    font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
 
     display: flex;
@@ -235,7 +233,7 @@
     }
 
     .pos-clock-time {
-        font-family: 'JetBrains Mono', monospace;
+        font-family: var(--font-mono);
         font-size: 16px;
         font-weight: 600;
         color: var(--color-text-primary);
@@ -320,6 +318,14 @@
         background: var(--surface);
     }
 
+    /* Pantalla genérica scrolleable (devoluciones, reportes, etc.) */
+    .pos-panel-scroll {
+        flex: 1;
+        overflow-y: auto;
+        padding: var(--sp4) var(--sp4);
+        background: var(--surface);
+    }
+
     /* ── Sidenav ── */
     .pos-sidenav {
         width: 64px;
@@ -329,7 +335,7 @@
         padding: var(--sp3) 0;
         gap: var(--sp1);
         background: var(--nav2);
-        border-right: 1px solid rgba(255, 255, 255, .05);
+        border-right: 1px solid var(--border);
         flex-shrink: 0;
     }
 
@@ -343,14 +349,14 @@
         border-radius: 10px;
         border: none;
         background: transparent;
-        color: rgba(255, 255, 255, .4);
+        color: var(--text3);
         cursor: pointer;
         transition: all var(--dur) var(--ease);
     }
 
     .pos-sidenav-btn:hover {
-        background: rgba(255, 255, 255, .07);
-        color: rgba(255, 255, 255, .8);
+        background: color-mix(in oklch, var(--text) 8%, transparent);
+        color: var(--text);
     }
 
     .pos-sidenav-btn--active {
@@ -366,7 +372,7 @@
         height: 16px;
         border-radius: 50%;
         background: var(--brand);
-        color: var(--color-text-primary);
+        color: #fff;
         font-size: 9px;
         font-weight: 700;
         display: flex;
@@ -377,7 +383,7 @@
     .sidenav-divider {
         width: 32px;
         height: 1px;
-        background: rgba(255, 255, 255, .08);
+        background: var(--border);
         margin: var(--sp2) 0;
     }
 
@@ -730,7 +736,7 @@
     .product-sku {
         font-size: 10px;
         color: var(--text3);
-        font-family: 'JetBrains Mono', monospace;
+        font-family: var(--font-mono);
     }
 
     .product-footer {
@@ -1136,7 +1142,7 @@
         font-size: 15px;
         font-weight: 700;
         color: var(--text);
-        font-family: 'JetBrains Mono', monospace;
+        font-family: var(--font-mono);
     }
 
     .order-item-unit-price {
@@ -1183,7 +1189,7 @@
         color: var(--text);
         min-width: 24px;
         text-align: center;
-        font-family: 'JetBrains Mono', monospace;
+        font-family: var(--font-mono);
     }
 
     .order-item-remove {
@@ -1291,7 +1297,7 @@
         font-size: 32px;
         font-weight: 900;
         color: var(--text);
-        font-family: 'JetBrains Mono', monospace;
+        font-family: var(--font-mono);
         letter-spacing: -1px;
     }
 
@@ -1354,15 +1360,15 @@
     }
 
     .pay-btn--yape.pay-btn--active {
-        border-color: #7c3aed;
-        background: rgba(124, 58, 237, .08);
-        color: #7c3aed;
+        border-color: var(--color-yape);
+        background: color-mix(in oklch, var(--color-yape) 8%, transparent);
+        color: var(--color-yape);
     }
 
     .pay-btn--plin.pay-btn--active {
-        border-color: #059669;
-        background: rgba(5, 150, 105, .08);
-        color: #059669;
+        border-color: var(--color-plin);
+        background: color-mix(in oklch, var(--color-plin) 8%, transparent);
+        color: var(--color-plin-text);
     }
 
     .payment-amounts {
@@ -1413,7 +1419,7 @@
         color: var(--text);
         font-size: 14px;
         font-weight: 700;
-        font-family: 'JetBrains Mono', monospace;
+        font-family: var(--font-mono);
         padding: 0 var(--sp2);
         outline: none;
         width: 100%;
@@ -1429,7 +1435,7 @@
         border: 1.5px solid var(--border);
         font-size: 16px;
         font-weight: 800;
-        font-family: 'JetBrains Mono', monospace;
+        font-family: var(--font-mono);
         color: var(--text3);
         background: var(--surface);
     }
@@ -1545,7 +1551,7 @@
     .checkout-amount {
         font-size: 18px;
         font-weight: 900;
-        font-family: 'JetBrains Mono', monospace;
+        font-family: var(--font-mono);
     }
 
     /* ── Historial ── */
@@ -1595,7 +1601,7 @@
         font-size: 22px;
         font-weight: 800;
         color: var(--text);
-        font-family: 'JetBrains Mono', monospace;
+        font-family: var(--font-mono);
     }
 
     .kpi-card--primary .kpi-value {
@@ -1663,7 +1669,7 @@
     }
 
     .mono {
-        font-family: 'JetBrains Mono', monospace;
+        font-family: var(--font-mono);
     }
 
     .fw-bold {
@@ -1758,9 +1764,9 @@
 
     .badge-pago--yape,
     .pago-badge--yape {
-        background: rgba(124, 58, 237, .08);
-        color: #7c3aed;
-        border-color: rgba(124, 58, 237, .25);
+        background: color-mix(in oklch, var(--color-yape) 8%, transparent);
+        color: var(--color-yape);
+        border-color: color-mix(in oklch, var(--color-yape) 25%, transparent);
     }
 
     .badge-pago--plin,
@@ -1933,7 +1939,7 @@
     .turno-total-amount {
         font-size: 24px;
         font-weight: 900;
-        font-family: 'JetBrains Mono', monospace;
+        font-family: var(--font-mono);
         color: var(--brand);
     }
 
@@ -2114,7 +2120,7 @@
         font-size: 36px;
         font-weight: 900;
         color: var(--color-text-primary);
-        font-family: 'JetBrains Mono', monospace;
+        font-family: var(--font-mono);
         margin: var(--sp1) 0;
     }
 
@@ -2141,7 +2147,7 @@
         font-size: 30px;
         font-weight: 800;
         color: var(--text);
-        font-family: 'JetBrains Mono', monospace;
+        font-family: var(--font-mono);
         text-align: right;
         border: 1.5px solid var(--border);
         border-radius: 10px;
@@ -2247,7 +2253,7 @@
     }
 
     .numpad-change-amount {
-        font-family: 'JetBrains Mono', monospace;
+        font-family: var(--font-mono);
         font-weight: 800;
     }
 
@@ -2397,7 +2403,7 @@
     }
 
     .receipt-meta-mono {
-        font-family: 'JetBrains Mono', monospace;
+        font-family: var(--font-mono);
         font-weight: 700;
         color: var(--text);
     }
@@ -2450,7 +2456,7 @@
         font-size: 14px;
         font-weight: 700;
         color: var(--text);
-        font-family: 'JetBrains Mono', monospace;
+        font-family: var(--font-mono);
         flex-shrink: 0;
         margin-left: var(--sp3);
     }
@@ -2501,7 +2507,7 @@
         font-size: 28px;
         font-weight: 900;
         color: var(--text);
-        font-family: 'JetBrains Mono', monospace;
+        font-family: var(--font-mono);
     }
 
     .receipt-payment-detail {
@@ -2533,6 +2539,15 @@
     .receipt-qr-label {
         font-size: 10px;
         color: var(--text3);
+    }
+
+    .receipt-qr-data {
+        font-size: 8px;
+        font-family: var(--font-mono);
+        color: var(--text3);
+        word-break: break-all;
+        text-align: center;
+        max-width: 220px;
     }
 
     .receipt-footer {
@@ -2778,4 +2793,441 @@
     }
 }
 
-/* end .pos-layout */
+    /* ── Favorites Grid ── */
+
+    .fav-grid-wrap {
+        height: 100%;
+        overflow-y: auto;
+        padding: var(--sp3);
+    }
+
+    .fav-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        gap: var(--sp2);
+    }
+
+    .fav-tile {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: var(--sp1);
+        padding: var(--sp3) var(--sp2);
+        background: var(--card);
+        border: 1.5px solid var(--border);
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 180ms var(--ease);
+        overflow: hidden;
+        text-align: center;
+    }
+
+    .fav-tile:hover:not(:disabled) {
+        border-color: var(--fav-accent, var(--brand));
+        box-shadow: 0 0 0 3px color-mix(in oklch, var(--fav-accent, var(--brand)) 14%, transparent);
+        transform: translateY(-1px);
+    }
+
+    .fav-tile:active:not(:disabled) {
+        transform: scale(0.97);
+    }
+
+    .fav-tile--no-stock {
+        opacity: 0.4;
+        cursor: not-allowed;
+    }
+
+    .fav-tile-accent {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: var(--fav-accent, var(--brand));
+    }
+
+    .fav-tile-initial {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        font-weight: 700;
+        color: white;
+        text-transform: uppercase;
+        flex-shrink: 0;
+    }
+
+    .fav-tile-name {
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--text);
+        line-height: 1.2;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        max-width: 100%;
+    }
+
+    .fav-tile-price {
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--text);
+    }
+
+    .fav-tile-stock {
+        font-size: 9px;
+        font-weight: 600;
+        color: var(--success);
+        background: var(--success-bg);
+        padding: 1px 6px;
+        border-radius: 999px;
+    }
+
+    .fav-tile-stock--low {
+        color: var(--warning);
+        background: var(--warning-bg);
+    }
+
+    .fav-skeleton {
+        height: 120px;
+        border-radius: 12px;
+        background: var(--card);
+        border: 1.5px solid var(--border);
+    }
+
+    .fav-empty {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: var(--sp2);
+        padding: var(--sp6) var(--sp4);
+        text-align: center;
+    }
+
+    /* Context menu */
+    .fav-context-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 999;
+    }
+
+    .fav-context-menu {
+        position: fixed;
+        z-index: 1000;
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        box-shadow: var(--shadow-md);
+        padding: var(--sp1);
+        min-width: 180px;
+    }
+
+    .fav-context-item {
+        display: flex;
+        align-items: center;
+        gap: var(--sp2);
+        width: 100%;
+        padding: var(--sp2) var(--sp3);
+        font-size: 13px;
+        color: var(--danger);
+        border-radius: 6px;
+        background: none;
+        border: none;
+        cursor: pointer;
+        transition: background 120ms;
+    }
+
+    .fav-context-item:hover {
+        background: var(--danger-bg);
+    }
+
+    /* Catalog/favorites tab toggle */
+    .catalog-view-toggle {
+        display: flex;
+        gap: 2px;
+        padding: 2px;
+        background: color-mix(in oklch, var(--border) 50%, transparent);
+        border-radius: 8px;
+        flex-shrink: 0;
+    }
+
+    .catalog-view-toggle button {
+        display: flex;
+        align-items: center;
+        gap: var(--sp1);
+        padding: 4px 10px;
+        font-size: 11px;
+        font-weight: 600;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        color: var(--text3);
+        background: transparent;
+        transition: all 150ms var(--ease);
+        white-space: nowrap;
+    }
+
+    .catalog-view-toggle button.active {
+        background: var(--card);
+        color: var(--text);
+        box-shadow: var(--shadow-sm);
+    }
+
+    /* ── Held Orders Panel ── */
+
+    .held-panel {
+        padding: var(--sp4);
+    }
+
+    .held-header {
+        display: flex;
+        align-items: center;
+        gap: var(--sp2);
+        margin-bottom: var(--sp4);
+    }
+
+    .held-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 22px;
+        height: 22px;
+        padding: 0 6px;
+        border-radius: 999px;
+        background: var(--brand);
+        color: white;
+        font-size: 11px;
+        font-weight: 700;
+    }
+
+    .held-empty {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: var(--sp2);
+        padding: var(--sp6);
+        text-align: center;
+    }
+
+    .held-list {
+        display: flex;
+        flex-direction: column;
+        gap: var(--sp3);
+    }
+
+    .held-card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: var(--sp3);
+        display: flex;
+        flex-direction: column;
+        gap: var(--sp1);
+    }
+
+    .held-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .held-card-actions {
+        display: flex;
+        gap: var(--sp2);
+        margin-top: var(--sp2);
+    }
+
+    /* ── Denomination Counter ── */
+
+    .denom-panel {
+        padding: var(--sp4);
+        max-width: 400px;
+        margin: 0 auto;
+    }
+
+    .denom-grid {
+        display: flex;
+        flex-direction: column;
+        gap: var(--sp1);
+    }
+
+    .denom-section-label {
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: var(--text3);
+        margin-top: var(--sp2);
+        margin-bottom: var(--sp1);
+    }
+
+    .denom-row {
+        display: grid;
+        grid-template-columns: 70px 80px 1fr;
+        align-items: center;
+        gap: var(--sp2);
+    }
+
+    .denom-label {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text);
+    }
+
+    .denom-input {
+        width: 100%;
+        text-align: center;
+        font-size: 14px;
+        font-weight: 600;
+        padding: 4px 8px;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        background: var(--card);
+        color: var(--text);
+    }
+
+    .denom-input:focus {
+        border-color: var(--brand);
+        outline: none;
+        box-shadow: 0 0 0 2px color-mix(in oklch, var(--brand) 20%, transparent);
+    }
+
+    .denom-subtotal {
+        font-size: 13px;
+        color: var(--text2);
+        text-align: right;
+    }
+
+    .denom-total {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: var(--sp4);
+        padding-top: var(--sp3);
+        border-top: 2px solid var(--border);
+    }
+
+    /* ── Report Viewer ── */
+
+    .report-panel {
+        padding: var(--sp4);
+        max-width: 500px;
+        margin: 0 auto;
+    }
+
+    .report-empty {
+        text-align: center;
+        padding: var(--sp6);
+    }
+
+    .report-content {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .report-header {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        margin-bottom: var(--sp3);
+        padding-bottom: var(--sp3);
+        border-bottom: 1px solid var(--border);
+    }
+
+    .report-dates {
+        display: flex;
+        gap: var(--sp4);
+        margin-bottom: var(--sp3);
+    }
+
+    .report-dates > div {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .report-kpis {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--sp2);
+    }
+
+    .report-kpi {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: var(--sp3);
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .report-kpi-label {
+        font-size: 11px;
+        color: var(--text3);
+        font-weight: 500;
+    }
+
+    .report-kpi-value {
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--text);
+    }
+
+    .report-methods {
+        display: flex;
+        flex-direction: column;
+        gap: var(--sp1);
+    }
+
+    .report-method-row {
+        display: flex;
+        justify-content: space-between;
+        font-size: 13px;
+        color: var(--text2);
+    }
+
+    /* ── Customer Lookup ── */
+
+    .customer-lookup {
+        display: flex;
+        flex-direction: column;
+        gap: var(--sp2);
+    }
+
+    .customer-selected {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: var(--sp2) var(--sp3);
+        background: var(--brand-light);
+        border: 1px solid var(--brand);
+        border-radius: 8px;
+    }
+
+    .customer-selected > div {
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+    }
+
+    @media print {
+        .pos-sidenav,
+        .pos-topbar,
+        .pos-toast,
+        .btn-secondary,
+        .btn-primary {
+            display: none !important;
+        }
+
+        .report-panel {
+            max-width: 100%;
+            padding: 0;
+        }
+    }

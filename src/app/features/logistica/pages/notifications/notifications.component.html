@@ -1,0 +1,83 @@
+<div class="p-6 max-w-3xl mx-auto">
+  <!-- Header -->
+  <div class="mb-6 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <h1 class="text-2xl font-semibold text-gray-800">Notificaciones</h1>
+      @if (unreadCount() > 0) {
+        <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-error text-white text-xs font-bold">
+          {{ unreadCount() }}
+        </span>
+      }
+    </div>
+    <div class="flex gap-2">
+      <app-button icon="refresh-cw" variant="ghost" size="sm" label="Actualizar" (clicked)="loadNotifications()" />
+      @if (unreadCount() > 0) {
+        <app-button icon="check" variant="success" size="sm"
+          [label]="markingAll() ? 'Marcando...' : 'Marcar todas leidas'"
+          [disabled]="markingAll()"
+          (clicked)="markAllRead()" />
+      }
+    </div>
+  </div>
+
+  <!-- Error -->
+  @if (error()) {
+    <div class="mb-4 bg-error/10 border border-error/30 text-error rounded-lg p-3 text-sm">
+      {{ error() }}
+    </div>
+  }
+
+  <!-- Loading -->
+  @if (loading()) {
+    <div class="text-center py-12 text-gray-400">Cargando notificaciones...</div>
+  }
+
+  <!-- Lista -->
+  @if (!loading()) {
+    @if (notifications().length === 0) {
+      <div class="text-center py-16 text-gray-400">
+        <p class="text-lg">No hay notificaciones pendientes</p>
+      </div>
+    } @else {
+      <div class="space-y-3">
+        @for (notif of notifications(); track notif.id) {
+          <div class="bg-white rounded-xl border p-4 flex gap-4 transition-all
+            {{ notif.read ? 'border-gray-100 opacity-70' : 'border-indigo-100 shadow-sm' }}">
+            <!-- Indicador no leida -->
+            <div class="pt-1 shrink-0">
+              @if (!notif.read) {
+                <span class="inline-block w-2 h-2 rounded-full bg-indigo-500"></span>
+              } @else {
+                <span class="inline-block w-2 h-2 rounded-full bg-gray-200"></span>
+              }
+            </div>
+
+            <!-- Contenido -->
+            <div class="flex-1 min-w-0">
+              <div class="flex items-start justify-between gap-2 mb-1">
+                <p class="text-sm font-semibold text-gray-800">{{ notif.title }}</p>
+                <span class="text-xs font-medium px-2 py-0.5 rounded-full shrink-0 {{ typeClass(notif.type) }}">
+                  {{ notif.type }}
+                </span>
+              </div>
+              <p class="text-sm text-gray-600 mb-2">{{ notif.message }}</p>
+              <p class="text-xs text-gray-400">
+                {{ notif.createdAt | date:'dd/MM/yyyy HH:mm':'':'es-PE' }}
+              </p>
+            </div>
+
+            <!-- Accion -->
+            @if (!notif.read) {
+              <div class="shrink-0">
+                <app-button icon="check" variant="ghost" size="sm"
+                  [label]="markingId() === notif.id ? '...' : 'Leida'"
+                  [disabled]="markingId() === notif.id"
+                  (clicked)="markRead(notif.id)" />
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+  }
+</div>

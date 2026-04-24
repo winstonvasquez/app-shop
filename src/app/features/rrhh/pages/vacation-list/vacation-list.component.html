@@ -1,52 +1,169 @@
-<div class="card-erp">
-    <div class="header">
-        <h1>Solicitudes de Vacaciones</h1>
+<app-page-header
+    title="Vacaciones y Licencias"
+    subtitle="Gestión de solicitudes de descanso del personal"
+    [breadcrumbs]="breadcrumbs">
+    <div actions>
+        <app-button icon="plus" label="Nueva Solicitud" variant="primary" (click)="openCreateModal()" />
+    </div>
+</app-page-header>
+
+@if (error()) {
+    <app-alert type="error" [message]="error()!" />
+}
+
+<!-- Filtros -->
+<div class="filters-bar">
+    <div class="search-box">
+        <svg class="search-box-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z" clip-rule="evenodd" />
+        </svg>
+        <input
+            type="text"
+            placeholder="Buscar por nombre de empleado..."
+            [value]="searchQuery()"
+            (input)="onSearch($event)" />
     </div>
 
-    @if (loading()) {
-    <div class="text-subtle text-center py-xl">Cargando solicitudes...</div>
-    } @else {
-    <div class="table-erp-container">
-        <table class="table-erp">
-            <thead>
-                <tr>
-                    <th>Empleado</th>
-                    <th>Fecha Inicio</th>
-                    <th>Fecha Fin</th>
-                    <th>Días</th>
-                    <th>Estado</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                @for (vacation of vacations(); track vacation.id) {
-                <tr>
-                    <td>{{ getEmployeeName(vacation.employeeId) }}</td>
-                    <td>{{ vacation.fechaInicio | date:'dd/MM/yyyy' }}</td>
-                    <td>{{ vacation.fechaFin | date:'dd/MM/yyyy' }}</td>
-                    <td>{{ vacation.dias }}</td>
-                    <td>
-                        <span
-                            [class]="'badge-erp ' + (vacation.estado === 'SOLICITADO' ? 'badge-warning' : vacation.estado === 'APROBADO' ? 'badge-success' : 'badge-danger')">
-                            {{ vacation.estado }}
-                        </span>
-                    </td>
-                    <td>
-                        @if (vacation.estado === 'SOLICITADO') {
-                        <button class="icon-btn-sm text-[var(--color-success)]" (click)="approveVacation(vacation.id)"
-                            title="Aprobar">
-                            ✓
-                        </button>
-                        <button class="icon-btn-sm text-[var(--color-danger)]" (click)="rejectVacation(vacation.id)"
-                            title="Rechazar">
-                            ✗
-                        </button>
-                        }
-                    </td>
-                </tr>
-                }
-            </tbody>
-        </table>
-    </div>
-    }
+    <select class="form-input" style="width: auto; min-width: 180px"
+            [value]="filterEstado()"
+            (change)="onFilterEstado($event)">
+        <option value="">Todos los estados</option>
+        <option value="SOLICITADO">Solicitado</option>
+        <option value="APROBADO">Aprobado</option>
+        <option value="RECHAZADO">Rechazado</option>
+        <option value="TOMADO">Tomado</option>
+        <option value="CANCELADO">Cancelado</option>
+    </select>
 </div>
+
+<!-- Tabla -->
+<app-data-table
+    [data]="pagedData()"
+    [columns]="columns"
+    [actions]="actions"
+    [loading]="loading()"
+    [exportable]="true"
+    exportFileName="vacaciones"
+    [hidePagination]="true" />
+
+<!-- Paginación -->
+@if (totalElements() > 0) {
+    <app-pagination
+        [currentPage]="currentPage()"
+        [totalPages]="totalPages()"
+        [totalElements]="totalElements()"
+        [pageSize]="pageSize()"
+        (pageChange)="onPaginationChange($event)" />
+}
+
+<!-- ── Drawer: Nueva Solicitud ─────────────────────────────────────────── -->
+<app-drawer
+    [isOpen]="showModal()"
+    title="Nueva Solicitud de Vacaciones"
+    size="md"
+    [hasFooter]="true"
+    (closed)="closeModal()">
+
+    <form [formGroup]="vacacionForm" (ngSubmit)="onSubmit()">
+
+        @if (submitError()) {
+            <app-alert type="error" [message]="submitError()!" />
+        }
+
+        <p class="text-subtle text-sm font-semibold mb-2 mt-1">Datos de la Solicitud</p>
+        <hr style="border-color: var(--color-border); margin-bottom: var(--space-md)">
+
+        <!-- Empleado -->
+        <div style="margin-bottom: var(--space-md)">
+            <label class="input-label">
+                Empleado <span style="color: var(--color-error)">*</span>
+            </label>
+            <select class="form-input" formControlName="employeeId">
+                <option [ngValue]="null">— Seleccione un empleado —</option>
+                @for (emp of employees(); track emp.id) {
+                    <option [ngValue]="emp.id">{{ emp.nombres }} {{ emp.apellidos }}</option>
+                }
+            </select>
+            @if (getControl('vacation','employeeId').invalid && getControl('vacation','employeeId').touched) {
+                <span class="input-error-message">Seleccione un empleado</span>
+            }
+        </div>
+
+        <!-- Fechas -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md); margin-bottom: var(--space-md)">
+            <app-date-input
+                label="Fecha Inicio"
+                [required]="true"
+                formControlName="fechaInicio" />
+
+            <app-date-input
+                label="Fecha Fin"
+                [required]="true"
+                formControlName="fechaFin" />
+        </div>
+
+        <!-- Días -->
+        <div style="margin-bottom: var(--space-md)">
+            <app-form-field
+                label="Días de descanso"
+                [control]="getControl('vacation','dias')"
+                type="number"
+                placeholder="Se calcula automáticamente"
+                hint="Se recalcula al cambiar las fechas"
+                [required]="true" />
+        </div>
+
+        <!-- Motivo -->
+        <div>
+            <label class="input-label">Motivo (opcional)</label>
+            <textarea
+                class="form-input"
+                rows="3"
+                placeholder="Describa el motivo de la solicitud..."
+                formControlName="motivo"
+                style="resize: vertical"></textarea>
+        </div>
+
+    </form>
+
+    <div slot="footer" style="display: flex; justify-content: flex-end; gap: var(--space-sm)">
+        <app-button icon="x" label="Cancelar" variant="secondary" type="button" (click)="closeModal()" />
+        <app-button icon="save" [label]="submitting() ? 'Enviando...' : 'Enviar Solicitud'" variant="primary" type="button" [loading]="submitting()" (click)="onSubmit()" />
+    </div>
+
+</app-drawer>
+
+<!-- ── Drawer: Motivo de Rechazo ───────────────────────────────────────── -->
+<app-drawer
+    [isOpen]="showRejectModal()"
+    title="Rechazar Solicitud"
+    size="sm"
+    [hasFooter]="true"
+    (closed)="closeRejectModal()">
+
+    <form [formGroup]="rejectForm">
+        <p class="text-subtle text-sm mb-3">
+            Indique el motivo por el cual rechaza esta solicitud de vacaciones.
+        </p>
+        <div>
+            <label class="input-label">
+                Motivo del rechazo <span style="color: var(--color-error)">*</span>
+            </label>
+            <textarea
+                class="form-input"
+                rows="4"
+                placeholder="Explique el motivo del rechazo..."
+                formControlName="comentarios"
+                style="resize: vertical"></textarea>
+            @if (getControl('reject','comentarios').invalid && getControl('reject','comentarios').touched) {
+                <span class="input-error-message">El motivo es obligatorio</span>
+            }
+        </div>
+    </form>
+
+    <div slot="footer" style="display: flex; justify-content: flex-end; gap: var(--space-sm)">
+        <app-button icon="x" label="Cancelar" variant="secondary" type="button" (click)="closeRejectModal()" />
+        <app-button icon="x-circle" [label]="submitting() ? 'Rechazando...' : 'Rechazar Solicitud'" variant="danger" type="button" [loading]="submitting()" (click)="onRejectSubmit()" />
+    </div>
+
+</app-drawer>

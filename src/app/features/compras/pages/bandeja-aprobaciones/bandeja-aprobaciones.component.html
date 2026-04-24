@@ -1,0 +1,111 @@
+<div class="page-container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Bandeja de Aprobaciones</h1>
+      <p class="page-subtitle">Órdenes de compra pendientes de tu aprobación</p>
+    </div>
+    <app-button label="Actualizar" variant="secondary" icon="refresh-cw" (click)="cargarPendientes()" />
+  </div>
+
+  @if (loading()) {
+    <div class="loading-container">
+      <div class="spinner"></div>
+    </div>
+  } @else if (aprobaciones().length === 0) {
+    <div class="card">
+      <div class="card-body" style="text-align:center; padding: 2rem;">
+        <p class="text-muted">No tienes aprobaciones pendientes</p>
+      </div>
+    </div>
+  } @else {
+    <div class="card">
+      <div class="card-body" style="padding:0">
+        <table class="table">
+          <thead class="table-header">
+            <tr>
+              <th class="table-header-cell">OC</th>
+              <th class="table-header-cell">Proveedor</th>
+              <th class="table-header-cell">Monto Total</th>
+              <th class="table-header-cell">Nivel</th>
+              <th class="table-header-cell">Solicitado</th>
+              <th class="table-header-cell">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of aprobaciones(); track item.id) {
+              <tr class="table-row">
+                <td class="table-cell">
+                  <span style="font-weight:600">{{ item.ordenCompraCodigo }}</span>
+                </td>
+                <td class="table-cell">{{ item.proveedorNombre }}</td>
+                <td class="table-cell">
+                  <span style="font-weight:600; color: var(--color-primary)">
+                    {{ formatMonto(item.ordenCompraTotal) }}
+                  </span>
+                </td>
+                <td class="table-cell">
+                  <span class="badge badge-warning">{{ item.nivelNombre }}</span>
+                </td>
+                <td class="table-cell">
+                  {{ item.fechaSolicitud | date:'dd/MM/yyyy HH:mm' }}
+                </td>
+                <td class="table-cell">
+                  <div style="display:flex; gap:0.5rem">
+                    <app-button label="Aprobar" variant="success" icon="check-circle" size="sm" (click)="abrirAprobar(item.id)" />
+                    <app-button label="Rechazar" variant="danger" icon="x-circle" size="sm" (click)="abrirRechazar(item.id)" />
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+</div>
+
+<!-- Modal Aprobar -->
+@if (showAprobarModal()) {
+  <div class="modal-overlay" (click)="cerrarModales()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3 class="modal-title">Confirmar Aprobación</h3>
+        <button class="modal-close-btn" (click)="cerrarModales()">✕</button>
+      </div>
+      <div class="modal-body">
+        <label class="input-label">Comentario (opcional)</label>
+        <textarea class="form-input" rows="3"
+          [value]="comentario()"
+          (input)="comentario.set($any($event.target).value)"
+          placeholder="Ingresa un comentario..."></textarea>
+      </div>
+      <div class="modal-footer">
+        <app-button label="Cancelar" variant="secondary" icon="x" (click)="cerrarModales()" />
+        <app-button label="Aprobar" variant="primary" icon="check-circle" (click)="confirmarAprobacion()" />
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Modal Rechazar -->
+@if (showRechazarModal()) {
+  <div class="modal-overlay" (click)="cerrarModales()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3 class="modal-title">Rechazar Orden de Compra</h3>
+        <button class="modal-close-btn" (click)="cerrarModales()">✕</button>
+      </div>
+      <div class="modal-body">
+        <label class="input-label">Motivo del rechazo <span style="color:var(--color-error)">*</span></label>
+        <textarea class="form-input" rows="3"
+          [value]="motivo()"
+          (input)="motivo.set($any($event.target).value)"
+          placeholder="Indica el motivo..."></textarea>
+      </div>
+      <div class="modal-footer">
+        <app-button label="Cancelar" variant="secondary" icon="x" (click)="cerrarModales()" />
+        <app-button label="Rechazar" variant="danger" icon="x-circle" [disabled]="!motivo()" (click)="confirmarRechazo()" />
+      </div>
+    </div>
+  </div>
+}

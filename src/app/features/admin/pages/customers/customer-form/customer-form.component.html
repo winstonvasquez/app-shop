@@ -1,0 +1,166 @@
+<app-drawer
+    [isOpen]="isOpen()"
+    [title]="customer() ? 'Editar Cliente' : 'Nuevo Cliente'"
+    size="lg"
+    (closed)="cancel.emit()">
+
+    <form [formGroup]="form" (ngSubmit)="onSubmit()">
+        <app-admin-form-layout
+            [errorMessage]="submitError() ?? ''"
+            [stickyActions]="true">
+
+            <!-- Sección: Tipo de Cliente -->
+            <app-admin-form-section title="Tipo de Cliente" [columns]="1">
+                <div class="form-group">
+                    <label class="input-label">Tipo de Cliente</label>
+                    <select class="form-input" formControlName="tipoCliente"
+                            (change)="onTipoClienteChange($any($event.target).value)">
+                        @for (opt of tipoClienteOptions; track opt.value) {
+                            <option [value]="opt.value">{{ opt.label }}</option>
+                        }
+                    </select>
+                </div>
+            </app-admin-form-section>
+
+            <!-- Sección: Datos del Documento -->
+            <app-admin-form-section title="Documento" [columns]="2">
+                <div class="form-group">
+                    <label class="input-label">Tipo Doc.</label>
+                    <select class="form-input" formControlName="tipoDocumento">
+                        @for (opt of tipoDocumentoOptions; track opt.value) {
+                            <option [value]="opt.value">{{ opt.label }}</option>
+                        }
+                    </select>
+                    @if (err('tipoDocumento')) {
+                        <span class="input-error-message">{{ err('tipoDocumento') }}</span>
+                    }
+                </div>
+                <div class="form-group">
+                    <label class="input-label">Nro. Documento <span class="required-indicator">*</span></label>
+                    <input type="text" class="form-input" formControlName="numeroDocumento"
+                           placeholder="Ingrese el número">
+                    @if (err('numeroDocumento')) {
+                        <span class="input-error-message">{{ err('numeroDocumento') }}</span>
+                    }
+                </div>
+            </app-admin-form-section>
+
+            <!-- Sección: Datos Persona Natural -->
+            @if (!isJuridica()) {
+                <app-admin-form-section title="Datos Principales" [columns]="2">
+                    <div class="form-group">
+                        <label class="input-label">Nombres <span class="required-indicator">*</span></label>
+                        <input type="text" class="form-input" formControlName="nombres">
+                        @if (err('nombres')) {
+                            <span class="input-error-message">{{ err('nombres') }}</span>
+                        }
+                    </div>
+                    <div class="form-group">
+                        <label class="input-label">Apellidos</label>
+                        <input type="text" class="form-input" formControlName="apellidos">
+                        @if (err('apellidos')) {
+                            <span class="input-error-message">{{ err('apellidos') }}</span>
+                        }
+                    </div>
+                </app-admin-form-section>
+            }
+
+            <!-- Sección: Datos Persona Jurídica -->
+            @if (isJuridica()) {
+                <app-admin-form-section title="Datos Principales" [columns]="1">
+                    <div class="form-group">
+                        <label class="input-label">Razón Social <span class="required-indicator">*</span></label>
+                        <input type="text" class="form-input" formControlName="razonSocial">
+                        @if (err('razonSocial')) {
+                            <span class="input-error-message">{{ err('razonSocial') }}</span>
+                        }
+                    </div>
+                    <div class="form-group">
+                        <label class="input-label">Nombre Comercial</label>
+                        <input type="text" class="form-input" formControlName="nombreComercial">
+                        @if (err('nombreComercial')) {
+                            <span class="input-error-message">{{ err('nombreComercial') }}</span>
+                        }
+                    </div>
+                    <div class="form-group">
+                        <label class="input-label">Contacto Principal <span class="required-indicator">*</span></label>
+                        <input type="text" class="form-input" formControlName="nombres"
+                               placeholder="Nombre del contacto principal">
+                        @if (err('nombres')) {
+                            <span class="input-error-message">{{ err('nombres') }}</span>
+                        }
+                    </div>
+                </app-admin-form-section>
+            }
+
+            <!-- Sección: Contacto -->
+            <app-admin-form-section title="Contacto" [columns]="2">
+                <div class="form-group" style="grid-column: 1 / -1;">
+                    <label class="input-label">Email</label>
+                    <input type="email" class="form-input" formControlName="email"
+                           placeholder="correo@ejemplo.com">
+                    @if (err('email')) {
+                        <span class="input-error-message">{{ err('email') }}</span>
+                    }
+                </div>
+                <div class="form-group">
+                    <label class="input-label">Teléfono</label>
+                    <input type="tel" class="form-input" formControlName="telefono"
+                           placeholder="01-XXXXXXX">
+                </div>
+                <div class="form-group">
+                    <label class="input-label">Celular</label>
+                    <input type="tel" class="form-input" formControlName="celular"
+                           placeholder="9XX XXX XXX">
+                </div>
+            </app-admin-form-section>
+
+            <!-- Sección: Comercial -->
+            <app-admin-form-section title="Comercial" [columns]="2">
+                <div class="form-group">
+                    <label class="input-label">Condición de Pago</label>
+                    <select class="form-input" formControlName="condicionPago">
+                        @for (opt of condicionPagoOptions; track opt.value) {
+                            <option [value]="opt.value">{{ opt.label }}</option>
+                        }
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="input-label">Límite de Crédito (S/)</label>
+                    <input type="number" class="form-input" formControlName="limiteCredito"
+                           min="0" step="100">
+                    @if (err('limiteCredito')) {
+                        <span class="input-error-message">{{ err('limiteCredito') }}</span>
+                    }
+                </div>
+            </app-admin-form-section>
+
+            <!-- Sección: Notas -->
+            <app-admin-form-section title="Notas" [columns]="1">
+                <div class="form-group">
+                    <label class="input-label">Observaciones</label>
+                    <textarea class="form-input" formControlName="notas" rows="3"
+                              placeholder="Observaciones adicionales"></textarea>
+                </div>
+            </app-admin-form-section>
+
+            <!-- Acciones -->
+            <div slot="actions">
+                <app-button
+                    label="Cancelar"
+                    variant="secondary"
+                    icon="x"
+                    type="button"
+                    (click)="cancel.emit()" />
+                <app-button
+                    [label]="customer() ? 'Actualizar' : 'Crear'"
+                    variant="primary"
+                    icon="save"
+                    type="submit"
+                    [loading]="submitting()"
+                    [disabled]="form.invalid || submitting()" />
+            </div>
+
+        </app-admin-form-layout>
+    </form>
+</app-drawer>

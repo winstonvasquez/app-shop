@@ -3,10 +3,27 @@
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
-    "start": "ng serve",
-    "build": "ng build",
+    "start": "ng serve --project=app-shop",
+    "start:mfe-pos": "ng serve --project=mfe-pos --port=4201",
+    "start:mfe-rrhh": "ng serve --project=mfe-rrhh --port=4205",
+    "start:mfe-finanzas": "ng serve --project=mfe-finanzas --port=4204",
+    "start:mfe-operaciones": "ng serve --project=mfe-operaciones --port=4203",
+    "start:mfe-platform": "ng serve --project=mfe-platform --port=4206",
+    "start:mfe-comercial": "ng serve --project=mfe-comercial --port=4202",
+    "start:all": "concurrently \"npm run start:mfe-pos\" \"npm run start:mfe-rrhh\" \"npm run start:mfe-finanzas\" \"npm run start:mfe-operaciones\" \"npm run start:mfe-platform\" \"npm run start:mfe-comercial\" \"npm run start\"",
+    "build": "ng build --project=app-shop",
+    "build:mfe-pos": "ng build --project=mfe-pos",
+    "build:mfe-rrhh": "ng build --project=mfe-rrhh",
+    "build:mfe-finanzas": "ng build --project=mfe-finanzas",
+    "build:mfe-operaciones": "ng build --project=mfe-operaciones",
+    "build:mfe-platform": "ng build --project=mfe-platform",
+    "build:mfe-comercial": "ng build --project=mfe-comercial",
+    "build:all": "npm run build:mfe-pos && npm run build:mfe-rrhh && npm run build:mfe-finanzas && npm run build:mfe-operaciones && npm run build:mfe-platform && npm run build:mfe-comercial && npm run build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test",
+    "e2e": "playwright test",
+    "e2e:ui": "playwright test --ui",
+    "e2e:report": "playwright show-report"
   },
   "prettier": {
     "printWidth": 100,
@@ -21,9 +38,10 @@
     ]
   },
   "private": true,
-  "packageManager": "bun@1.2.8",
   "dependencies": {
     "@abacritt/angularx-social-login": "^2.5.1",
+    "@angular/animations": "^21.1.0",
+    "@angular/cdk": "^21.2.4",
     "@angular/common": "^21.1.0",
     "@angular/compiler": "^21.1.0",
     "@angular/core": "^21.1.0",
@@ -32,22 +50,33 @@
     "@angular/router": "^21.1.0",
     "@ngx-translate/core": "^17.0.0",
     "@ngx-translate/http-loader": "^17.0.0",
+    "@softarc/native-federation-node": "^3.3.4",
     "@types/crypto-js": "^4.2.2",
+    "apexcharts": "^5.10.4",
     "crypto-js": "^4.2.0",
+    "es-module-shims": "^1.5.12",
+    "lucide-angular": "^1.0.0",
+    "ng-apexcharts": "^2.3.0",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0"
   },
   "devDependencies": {
+    "@angular-architects/native-federation": "^21.2.2",
+    "@angular-devkit/build-angular": "^21.1.3",
     "@angular/build": "^21.1.3",
     "@angular/cli": "^21.1.3",
     "@angular/compiler-cli": "^21.1.0",
+    "@playwright/test": "^1.58.2",
     "@tailwindcss/postcss": "^4.2.1",
     "autoprefixer": "^10.4.27",
     "concurrently": "^9.2.1",
     "cross-env": "^10.1.0",
+    "jsdom": "^28.0.0",
+    "ng-packagr": "^21.2.0",
     "postcss-import": "^16.1.1",
     "postcss-loader": "^8.2.1",
     "tailwindcss": "^4.2.1",
-    "typescript": "~5.9.2"
+    "typescript": "~5.9.2",
+    "vitest": "^4.0.8"
   }
 }

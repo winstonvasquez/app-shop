@@ -1,5 +1,8 @@
-import { Component, input, output, computed, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, input, output, computed, inject, ChangeDetectionStrategy } from '@angular/core';
+import { AsyncPipe } from '@angular/common';
+import { Observable } from 'rxjs';
+import { ExportService } from '@shared/services/export.service';
+import { PaginationComponent, PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
 
 export interface TableColumn<T = any> {
     key: string;
@@ -8,6 +11,8 @@ export interface TableColumn<T = any> {
     width?: string;
     align?: 'left' | 'center' | 'right';
     render?: (row: T) => string;
+    /** Set to true when render() returns an HTML string (e.g. badge spans) */
+    html?: boolean;
 }
 
 export interface TableAction<T = any> {
@@ -28,10 +33,21 @@ export interface SortEvent {
     direction: 'asc' | 'desc';
 }
 
+export interface FilterConfig {
+    field: string;
+    label: string;
+    options: Observable<{ value: string | number; label: string }[]>;
+}
+
+export interface FilterChangeEvent {
+    field: string;
+    value: string | number | null;
+}
+
 @Component({
     selector: 'app-data-table',
     standalone: true,
-    imports: [CommonModule],
+    imports: [AsyncPipe, PaginationComponent],
     templateUrl: './data-table.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -39,21 +55,32 @@ export class DataTableComponent<T = any> {
     data = input.required<T[]>();
     columns = input.required<TableColumn<T>[]>();
     actions = input<TableAction<T>[]>([]);
-    
+
     loading = input<boolean>(false);
     selectable = input<boolean>(false);
-    
+
     currentPage = input<number>(0);
     pageSize = input<number>(10);
     totalElements = input<number>(0);
     totalPages = input<number>(0);
-    
+
     sortField = input<string>('');
     sortDirection = input<'asc' | 'desc'>('asc');
-    
+
+    searchable = input<boolean>(false);
+    searchPlaceholder = input<string>('Buscar...');
+    filters = input<FilterConfig[]>([]);
+    exportable = input<boolean>(false);
+    exportFileName = input<string>('export');
+    hidePagination = input<boolean>(false);
+
     pageChange = output<PaginationEvent>();
     sortChange = output<SortEvent>();
     rowSelect = output<T>();
+    searchChange = output<string>();
+    filterChange = output<FilterChangeEvent>();
+
+    private readonly exportService = inject(ExportService);
     
     selectedRows = new Set<T>();
     
@@ -62,7 +89,7 @@ export class DataTableComponent<T = any> {
         return Array.from({ length: total }, (_, i) => i);
     });
     
-    isEmpty = computed(() => !this.loading() && this.data().length === 0);
+    isEmpty = computed(() => !this.loading() && (this.data() ?? []).length === 0);
     
     hasActions = computed(() => this.actions().length > 0);
     
@@ -72,6 +99,10 @@ export class DataTableComponent<T = any> {
         if (page >= 0 && page < this.totalPages()) {
             this.pageChange.emit({ page, size: this.pageSize() });
         }
+    }
+
+    onPaginationChange(event: PaginationChangeEvent): void {
+        this.pageChange.emit(event);
     }
     
     onSort(column: TableColumn<T>): void {
@@ -123,10 +154,63 @@ export class DataTableComponent<T = any> {
     
     getSortIcon(column: TableColumn<T>): string {
         if (!column.sortable) return '';
-        
+
         const isActive = this.sortField() === column.key;
         if (!isActive) return '↕';
-        
+
         return this.sortDirection() === 'asc' ? '↑' : '↓';
+    }
+
+    /** Maps action icon string to a canonical type for SVG rendering */
+    getIconType(icon: string): 'edit' | 'delete' | 'view' | 'check' | 'x' | 'pin' | 'text' {
+        const norm = icon.trim();
+        if (['✏️', '✏', 'edit'].includes(norm))             return 'edit';
+        if (['🗑️', '🗑', 'trash', 'delete'].includes(norm)) return 'delete';
+        if (['👁️', '👁', 'view'].includes(norm))            return 'view';
+        if (['✓', '✔️', '✔', 'check', 'approve'].includes(norm)) return 'check';
+        if (['✗', '✕', 'x', 'close', '🚫', 'ban', 'reject'].includes(norm)) return 'x';
+        if (['📍', 'pin', 'location'].includes(norm))        return 'pin';
+        return 'text';
+    }
+
+    /** Returns the CSS class(es) for an action button */
+    getButtonClass(action: TableAction<T>): string {
+        const cls = action.class || '';
+        // Explicit class overrides take priority
+        if (cls.includes('btn-icon-edit'))   return 'btn-icon btn-icon-edit';
+        if (cls.includes('btn-icon-delete')) return 'btn-icon btn-icon-delete';
+        if (cls.includes('btn-view'))        return 'btn-icon btn-view';
+        if (cls.includes('btn-delete'))      return 'btn-icon btn-icon-delete';
+        if (cls.includes('btn-edit'))        return 'btn-icon btn-icon-edit';
+        // Fall back to icon type detection
+        const type = this.getIconType(action.icon || '');
+        if (type === 'edit')   return 'btn-icon btn-icon-edit';
+        if (type === 'delete') return 'btn-icon btn-icon-delete';
+        if (type === 'view')   return 'btn-icon btn-view';
+        if (type === 'check')  return 'btn-icon btn-icon-edit';
+        if (type === 'x')      return 'btn-icon btn-icon-delete';
+        if (type === 'pin')    return 'btn-icon btn-view';
+        return `btn-icon ${cls}`.trim();
+    }
+
+    onSearchInput(event: Event): void {
+        this.searchChange.emit((event.target as HTMLInputElement).value);
+    }
+
+    onFilterChange(field: string, event: Event): void {
+        const val = (event.target as HTMLSelectElement).value;
+        this.filterChange.emit({ field, value: val === '' ? null : val });
+    }
+
+    onExportCsv(): void {
+        const headers = this.columns().map(c => c.label);
+        const rows = this.data().map(row => this.columns().map(col => this.getCellValue(row, col)));
+        this.exportService.exportCsv([headers, ...rows], this.exportFileName());
+    }
+
+    onExportExcel(): void {
+        const headers = this.columns().map(c => c.label);
+        const rows = this.data().map(row => this.columns().map(col => this.getCellValue(row, col)));
+        this.exportService.exportExcel(headers, rows, this.exportFileName());
     }
 }

@@ -1,6 +1,6 @@
 import { inject } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpBackend } from '@angular/common/http';
-import { TranslateLoader } from '@ngx-translate/core';
+import { TranslateLoader, TranslationObject } from '@ngx-translate/core';
 import { Observable, of } from 'rxjs';
 import { tap, catchError } from 'rxjs/operators';
 
@@ -17,7 +17,7 @@ export class CustomTranslateLoader implements TranslateLoader {
         this.http = new HttpClient(handler);
     }
 
-    getTranslation(lang: string): Observable<any> {
+    getTranslation(lang: string): Observable<TranslationObject> {
         // Deep aggressive cache buster using Math.random and timestamp
         const cacheBuster = new Date().getTime() + '_' + Math.random().toString(36).substring(7);
 
@@ -28,8 +28,8 @@ export class CustomTranslateLoader implements TranslateLoader {
             'Expires': '0'
         });
 
-        return this.http.get(`/assets/i18n/${lang}.json?cb=${cacheBuster}`, { headers }).pipe(
-            tap(res => console.log(`[TranslateLoader] Loaded ${lang}.json from server bypass:`, Object.keys(res as any || {}).length > 0 ? 'Success' : 'Empty')),
+        return this.http.get<TranslationObject>(`/assets/i18n/${lang}.json?cb=${cacheBuster}`, { headers }).pipe(
+            tap(res => console.log(`[TranslateLoader] Loaded ${lang}.json from server bypass:`, Object.keys(res ?? {}).length > 0 ? 'Success' : 'Empty')),
             catchError(error => {
                 console.error(`[TranslateLoader] Failed to load ${lang}.json:`, error);
                 return of({}); // Return empty object so ngx-translate doesn't crash but logs the error

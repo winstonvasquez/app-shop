@@ -1,22 +1,36 @@
 <div
-    class="bg-[var(--color-secondary)] text-[var(--color-text-primary)] py-4 relative z-50 shadow-md w-full border-b border-[var(--color-border)]">
+    class="bg-[var(--color-header-main-bg)] text-white py-4 relative z-50 shadow-md w-full border-b border-white/10">
     <div class="w-full max-w-[1200px] mx-auto flex items-center justify-between gap-4 px-4 md:px-8">
 
         <!-- Logo -->
-        <a routerLink="/" class="flex-shrink-0 flex flex-col items-center leading-none">
+        <a routerLink="/" class="flex-shrink-0 flex flex-col items-center leading-none" (click)="closeMobileMenu()">
             <div class="text-3xl font-black tracking-tighter font-display">APP <span
-                    class="text-[var(--color-primary)]">SHOP</span></div>
+                    class="text-[var(--color-accent)]">SHOP</span></div>
             <span class="text-[10px] uppercase tracking-[0.25em] text-white/70">{{ saveMore() }}</span>
         </a>
 
-        <!-- Search Bar — Priority Centered -->
-        <div class="flex-1 flex justify-center px-4">
+        <!-- Botón hamburguesa (solo mobile) -->
+        <button class="md:hidden p-2 rounded-lg hover:bg-[var(--color-surface-raised)] transition-colors ml-2 min-w-[44px] min-h-[44px] flex items-center justify-center"
+                (click)="toggleMobileMenu()" [attr.aria-expanded]="mobileMenuOpen()" aria-label="Menú">
+            @if (!mobileMenuOpen()) {
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                </svg>
+            } @else {
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            }
+        </button>
+
+        <!-- Search Bar — Priority Centered (oculto en mobile) -->
+        <div class="flex-1 hidden md:flex justify-center px-4">
             <app-header-search-dropdown class="w-full max-w-[650px]"></app-header-search-dropdown>
         </div>
 
         <!-- Right Actions -->
         <div class="flex items-center gap-6 flex-shrink-0">
-            <div class="relative" (mouseleave)="closeUserMenu()">
+            <div class="relative" (mouseenter)="openUserMenu()" (mouseleave)="closeUserMenu()">
                 <!-- User Trigger -->
                 <div class="flex items-center gap-2 cursor-pointer hover:opacity-90 py-[6px]"
                     (click)="handleUserMenuClick()">
@@ -47,43 +61,81 @@
                     <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12" />
                 </svg>
                 <span
-                    class="absolute -top-1.5 -right-2 bg-[var(--color-primary)] text-white text-[11px] font-black px-1.5 py-[1px] rounded-full shadow-sm border-[1.5px] border-[var(--color-secondary)] min-w-[20px] text-center">{{
+                    class="absolute -top-1.5 -right-2 bg-[var(--color-primary)] text-on-primary text-[11px] font-black px-1.5 py-[1px] rounded-full shadow-sm border-[1.5px] border-[var(--color-on-secondary)] min-w-[20px] text-center">{{
                     cartCount() > 9 ? '9+' : cartCount() }}</span>
             </div>
         </div>
     </div>
 
-    <!-- Mobile Search (visible only on mobile) -->
-    <div class="container mx-auto px-4 mt-3 md:hidden max-w-[1200px]">
-        <app-header-search-dropdown class="w-full"></app-header-search-dropdown>
-    </div>
+    <!-- Menú móvil desplegable -->
+    @if (mobileMenuOpen()) {
+        <div class="absolute top-full left-0 right-0 bg-[var(--color-surface)] border-b border-[var(--color-border)] shadow-lg md:hidden z-50">
+            <nav class="flex flex-col p-4 gap-1">
+                <a [routerLink]="['/home']" (click)="closeMobileMenu()"
+                   class="flex items-center min-h-[44px] px-4 py-3 rounded-lg hover:bg-[var(--color-surface-raised)] transition-colors text-[var(--color-text-primary)]">Inicio</a>
+                <a [routerLink]="['/products']" (click)="closeMobileMenu()"
+                   class="flex items-center min-h-[44px] px-4 py-3 rounded-lg hover:bg-[var(--color-surface-raised)] transition-colors text-[var(--color-text-primary)]">Productos</a>
+                <a [routerLink]="['/products']" [queryParams]="{sort:'sales'}" (click)="closeMobileMenu()"
+                   class="flex items-center gap-2 min-h-[44px] px-4 py-3 rounded-lg hover:bg-[var(--color-surface-raised)] transition-colors text-[var(--color-text-primary)]">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="currentColor" class="text-accent">
+                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                    </svg>
+                    {{ bestSellers() }}
+                </a>
+                <a [routerLink]="['/products']" [queryParams]="{rating:'5'}" (click)="closeMobileMenu()"
+                   class="flex items-center gap-2 min-h-[44px] px-4 py-3 rounded-lg hover:bg-[var(--color-surface-raised)] transition-colors text-[var(--color-text-primary)]">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="currentColor" class="text-accent">
+                        <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
+                    </svg>
+                    {{ fiveStars() }}
+                </a>
+                <a [routerLink]="['/products']" [queryParams]="{new:'true'}" (click)="closeMobileMenu()"
+                   class="flex items-center min-h-[44px] px-4 py-3 rounded-lg hover:bg-[var(--color-surface-raised)] transition-colors text-[var(--color-text-primary)]">{{ whatsNew() }}</a>
+                <a [routerLink]="['/products']" [queryParams]="{categories:'all'}" (click)="closeMobileMenu()"
+                   class="flex items-center gap-2 min-h-[44px] px-4 py-3 rounded-lg hover:bg-[var(--color-surface-raised)] transition-colors text-[var(--color-text-primary)]">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="opacity-70">
+                        <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+                    </svg>
+                    {{ categories() }}</a>
+                <a [routerLink]="['/cart']" (click)="closeMobileMenu()"
+                   class="flex items-center min-h-[44px] px-4 py-3 rounded-lg hover:bg-[var(--color-surface-raised)] transition-colors text-[var(--color-text-primary)]">Carrito ({{ cartCount() }})</a>
+            </nav>
+        </div>
+    }
+
+    <!-- Mobile Search (visible only on mobile, when menu is closed) -->
+    @if (!mobileMenuOpen()) {
+        <div class="container mx-auto px-4 mt-3 md:hidden max-w-[1200px]">
+            <app-header-search-dropdown class="w-full"></app-header-search-dropdown>
+        </div>
+    }
 
     <!-- Secondary Nav -->
     <div
         class="container mx-auto px-4 mt-2 hidden md:flex items-center justify-center gap-6 text-sm font-medium max-w-[1200px]">
-        <div class="flex items-center gap-1 cursor-pointer hover:opacity-80">
+        <a [routerLink]="['/products']" [queryParams]="{sort: 'sales'}"
+            class="flex items-center gap-1 cursor-pointer hover:opacity-80 no-underline text-inherit"
+            title="Los más vendidos">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"
                 class="text-accent">
                 <path
                     d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
             </svg>
             {{ bestSellers() }}
-        </div>
-        <div class="flex items-center gap-1 cursor-pointer hover:opacity-80">
+        </a>
+        <a [routerLink]="['/products']" [queryParams]="{rating: '5'}"
+            class="flex items-center gap-1 cursor-pointer hover:opacity-80 no-underline text-inherit"
+            title="Mejor valorados">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"
                 class="text-accent">
                 <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
             </svg>
             {{ fiveStars() }}
-        </div>
-        <div class="hover:opacity-80 cursor-pointer">{{ whatsNew() }}</div>
-        <div class="flex items-center gap-1 hover:opacity-80 cursor-pointer">
-            {{ categories() }}
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="m6 9 6 6 6-6" />
-            </svg>
-        </div>
+        </a>
+        <a [routerLink]="['/products']" [queryParams]="{new: 'true'}"
+            class="hover:opacity-80 cursor-pointer no-underline text-inherit"
+            title="Novedades">{{ whatsNew() }}</a>
+        <app-category-mega-menu></app-category-mega-menu>
     </div>
 
 </div>

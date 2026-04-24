@@ -1,6 +1,18 @@
-<div class="flex items-center gap-3 py-2 cursor-pointer text-sm text-[var(--color-text-primary)] transition-colors w-full group">
-    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-subtle group-hover:text-[var(--color-text-primary)]">
+<a routerLink="/account/credit"
+    class="flex items-center gap-3 py-2 px-4 text-sm transition-colors w-full group hover:bg-[var(--color-surface-raised)]"
+    style="color: var(--color-text-primary)">
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+        class="flex-shrink-0" style="color: var(--color-text-muted)">
         <rect width="20" height="14" x="2" y="5" rx="2"/><path d="M2 10h20"/>
     </svg>
-    <span class="group-hover:underline underline-offset-4 decoration-1 decoration-[var(--color-border)] font-medium">Saldo de crédito</span>
-</div>
+    <span class="font-medium">Saldo de crédito</span>
+    @if (creditService.balance(); as bal) {
+        @if (bal.balance > 0) {
+            <span class="ml-auto text-xs font-bold px-1.5 py-0.5 rounded-full"
+                style="background: var(--color-primary); color: white">
+                S/ {{ bal.balance | number:'1.2-2' }}
+            </span>
+        }
+    }
+</a>

@@ -1,199 +1,121 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, inject, OnInit, signal, ChangeDetectionStrategy } from '@angular/core';
+import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { DashboardService, DashboardCompras, ProveedorMonto, OcReciente } from '../../services/dashboard.service';
+import { NgApexchartsModule } from 'ng-apexcharts';
+import { DashboardService, DashboardCompras } from '../../services/dashboard.service';
+import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
+import { ChartDefaultsService, CHART_COLORS } from '@shared/services/chart-defaults.service';
+import {
+    ApexAxisChartSeries, ApexChart, ApexDataLabels, ApexGrid,
+    ApexNonAxisChartSeries, ApexPlotOptions, ApexLegend, ApexTooltip, ApexXAxis, ApexYAxis
+} from 'ng-apexcharts';
 
 @Component({
     selector: 'app-dashboard-compras',
     standalone: true,
-    imports: [CommonModule, RouterLink],
-    template: `
-        <div class="page-header">
-            <div>
-                <h1 class="page-title">📦 Dashboard de Compras</h1>
-                <p class="page-subtitle">Resumen de compras · {{ currentMonth }}</p>
-            </div>
-            <div class="page-actions">
-                <select class="select-filter" (change)="onPeriodChange($event)">
-                    <option value="mes">Este mes</option>
-                    <option value="trimestre">Trimestre</option>
-                    <option value="año">Este año</option>
-                </select>
-            </div>
-        </div>
-
-        <div class="kpi-grid mb-lg">
-            <div class="kpi-card">
-                <div class="kpi-top">
-                    <span class="kpi-label">Total Compras</span>
-                    <div class="kpi-icon kpi-icon-warning">📦</div>
-                </div>
-                <div class="kpi-value">{{ dashboard()?.totalComprasMes | currency:'S/' }}</div>
-                <div class="kpi-trend" [class.trend-up]="comprasTrend() > 0" [class.trend-down]="comprasTrend() < 0">
-                    {{ comprasTrend() > 0 ? '▲' : '▼' }} {{ Math.abs(comprasTrend()) }}% vs mes anterior
-                </div>
-            </div>
-            <div class="kpi-card">
-                <div class="kpi-top">
-                    <span class="kpi-label">OC Emitidas</span>
-                    <div class="kpi-icon kpi-icon-info">📋</div>
-                </div>
-                <div class="kpi-value">{{ dashboard()?.ocEmitidas || 0 }}</div>
-                <div class="kpi-trend trend-up">▲ {{ dashboard()?.ocAprobadas || 0 }} aprobadas</div>
-            </div>
-            <div class="kpi-card">
-                <div class="kpi-top">
-                    <span class="kpi-label">OC Pendientes</span>
-                    <div class="kpi-icon kpi-icon-danger">⏳</div>
-                </div>
-                <div class="kpi-value">{{ dashboard()?.ocPendientes || 0 }}</div>
-                <div class="kpi-trend trend-down">Por aprobar: {{ dashboard()?.ocPendientes || 0 }}</div>
-            </div>
-            <div class="kpi-card">
-                <div class="kpi-top">
-                    <span class="kpi-label">Proveedores</span>
-                    <div class="kpi-icon kpi-icon-success">🏭</div>
-                </div>
-                <div class="kpi-value">{{ dashboard()?.totalProveedores || 0 }}</div>
-                <div class="kpi-trend trend-up">▲ {{ dashboard()?.proveedoresNuevos || 0 }} nuevos</div>
-            </div>
-        </div>
-
-        <div class="charts-row mb-lg">
-            <div class="chart-card">
-                <div class="chart-title">Compras por proveedor</div>
-                @if (dashboard()?.topProveedores?.length) {
-                    <div class="bar-chart">
-                        @for (item of dashboard()?.topProveedores; track item.nombre) {
-                            <div class="bar-group">
-                                <div class="bar bar-warning" [style.height.%]="item.porcentaje"></div>
-                                <span class="bar-label">{{ item.nombre | slice:0:12 }}</span>
-                            </div>
-                        }
-                    </div>
-                } @else {
-                    <div class="text-muted text-center p-lg">Sin datos disponibles</div>
-                }
-            </div>
-            <div class="chart-card">
-                <div class="chart-title">Top Proveedores por Monto</div>
-                @if (dashboard()?.topProveedores?.length) {
-                    <ul class="top-list">
-                        @for (item of dashboard()?.topProveedores; track item.nombre; let i = $index) {
-                            <li>
-                                <div class="rank">{{ i + 1 }}</div>
-                                <div class="flex-1">
-                                    <div class="text-[13px] font-medium">{{ item.nombre | slice:0:25 }}</div>
-                                    <div class="text-muted text-sm">RUC: {{ item.ruc }}</div>
-                                </div>
-                                <span class="money money-highlight">{{ item.monto | currency:'S/' }}</span>
-                            </li>
-                        }
-                    </ul>
-                } @else {
-                    <div class="text-muted text-center p-lg">Sin datos disponibles</div>
-                }
-            </div>
-        </div>
-
-        <div class="card">
-            <div class="card-header">
-                <span class="card-title">Últimas Órdenes de Compra</span>
-                <a routerLink="/admin/compras/ordenes" class="btn btn-secondary btn-sm">Ver todas →</a>
-            </div>
-            @if (dashboard()?.ultimasOC?.length) {
-                <table>
-                    <thead>
-                        <tr>
-                            <th>OC #</th>
-                            <th>Fecha</th>
-                            <th>Proveedor</th>
-                            <th>Total</th>
-                            <th>Estado</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @for (oc of dashboard()?.ultimasOC; track oc.id) {
-                            <tr>
-                                <td class="font-mono">{{ oc.codigo }}</td>
-                                <td class="text-muted">{{ oc.fechaEmision | date:'dd/MM/yyyy' }}</td>
-                                <td>{{ oc.proveedorNombre }}</td>
-                                <td class="money">{{ oc.total | currency:'S/' }}</td>
-                                <td>
-                                    <span class="badge" [class.badge-primary]="oc.estado === 'APROBADA'" 
-                                          [class.badge-warning]="oc.estado === 'PENDIENTE'"
-                                          [class.badge-success]="oc.estado === 'RECIBIDA'"
-                                          [class.badge-gray]="oc.estado === 'BORRADOR'">
-                                        {{ oc.estado }}
-                                    </span>
-                                </td>
-                                <td>
-                                    <div class="actions-cell">
-                                        <button class="icon-btn">👁</button>
-                                        <button class="icon-btn">✏️</button>
-                                    </div>
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            } @else {
-                <div class="text-muted text-center p-lg">No hay órdenes de compra registradas</div>
-            }
-        </div>
-    `,
-    styles: [`
-        :host { display: block; }
-    `]
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    imports: [
+    RouterLink,
+    PageHeaderComponent,
+    NgApexchartsModule,
+    DatePipe
+  ],
+    templateUrl: './dashboard-compras.component.html'
 })
 export class DashboardComprasComponent implements OnInit {
-    private dashboardService = inject(DashboardService);
+    private readonly dashboardService = inject(DashboardService);
+    private readonly chartDefaults = inject(ChartDefaultsService);
 
     dashboard = signal<DashboardCompras | null>(null);
-    comprasTrend = signal<number>(0);
-    Math = Math;
+    loading = signal(false);
+    readonly Math = Math;
+
+    breadcrumbs: Breadcrumb[] = [
+        { label: 'Admin', url: '/admin' },
+        { label: 'Compras' }
+    ];
 
     get currentMonth(): string {
-        const months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-            'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-        return months[new Date().getMonth()] + ' ' + new Date().getFullYear();
+        const months = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
+            'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+        return `${months[new Date().getMonth()]} ${new Date().getFullYear()}`;
     }
 
-    ngOnInit(): void {
-        this.loadDashboard();
-    }
+    /* ── Chart: Top Proveedores (bar horizontal) ──────────────── */
+    barChart: ApexChart = { ...this.chartDefaults.barChart(true, 240), type: 'bar' };
+    barSeries: ApexAxisChartSeries = [{ name: 'Monto (S/)', data: [45200, 38700, 29400, 22800, 18100] }];
+    barXAxis: ApexXAxis = {
+        categories: ['Prov. A', 'Prov. B', 'Prov. C', 'Prov. D', 'Prov. E'],
+        labels: { style: { colors: this.chartDefaults.textColor, fontSize: '12px' } },
+        axisBorder: { show: false }, axisTicks: { show: false },
+    };
+    barYAxis: ApexYAxis = { labels: { style: { colors: this.chartDefaults.textColor } } };
+    barPlot: ApexPlotOptions = this.chartDefaults.barPlotOptions(true, 6);
+    barGrid: ApexGrid = this.chartDefaults.grid(3);
+    barColors = [CHART_COLORS[0]];
+    barDataLabels: ApexDataLabels = {
+        enabled: true,
+        formatter: (val) => `S/ ${Number(val).toLocaleString('es-PE')}`,
+        style: { colors: ['oklch(0.96 0 0)'], fontSize: '11px' },
+        offsetX: -8,
+    };
+
+    /* ── Chart: Estado OC (donut) ─────────────────────────────── */
+    donutChart: ApexChart = this.chartDefaults.donutChart(220);
+    donutSeries: ApexNonAxisChartSeries = [0, 0, 0, 0];
+    donutLabels = ['Borradores', 'Pendientes', 'Aprobadas', 'Recibidas'];
+    donutColors = [CHART_COLORS[6], CHART_COLORS[1], CHART_COLORS[2], CHART_COLORS[3]];
+    donutPlot: ApexPlotOptions = this.chartDefaults.donutPlotOptions('60%');
+    donutLegend: ApexLegend = { ...this.chartDefaults.legend(), position: 'bottom' };
+    donutDataLabels: ApexDataLabels = { enabled: false };
+    donutTooltip: ApexTooltip = { theme: 'dark' };
+    barTooltip: ApexTooltip = { theme: 'dark', y: { formatter: (v: number) => 'S/ ' + v.toLocaleString('es-PE') } };
+
+    ngOnInit(): void { this.loadDashboard(); }
 
     loadDashboard(): void {
+        this.loading.set(true);
         this.dashboardService.getDashboardCompras().subscribe({
             next: (data) => {
                 this.dashboard.set(data);
-                this.comprasTrend.set(this.calculateTrend(data.totalComprasMes, data.totalComprasMes * 0.97));
+                this.loading.set(false);
+                this._updateCharts(data);
             },
             error: () => {
-                this.dashboard.set({
-                    totalComprasMes: 0,
-                    ocEmitidas: 0,
-                    ocPendientes: 0,
-                    ocAprobadas: 0,
-                    ocRecibidas: 0,
-                    totalProveedores: 0,
-                    proveedoresNuevos: 0,
-                    comprasTrimestre: 0,
-                    topProveedores: [],
-                    ultimasOC: []
-                });
+                const empty: DashboardCompras = {
+                    totalComprasMes: 0, ocEmitidas: 0, ocPendientes: 0,
+                    ocAprobadas: 0, ocRecibidas: 0, totalProveedores: 0,
+                    proveedoresNuevos: 0, comprasTrimestre: 0,
+                    topProveedores: [], ultimasOC: []
+                };
+                this.dashboard.set(empty);
+                this.loading.set(false);
             }
         });
     }
 
-    calculateTrend(actual: number, previous: number): number {
-        if (previous === 0) return 0;
-        return Math.round(((actual - previous) / previous) * 100);
+    private _updateCharts(data: DashboardCompras): void {
+        if (data.topProveedores?.length) {
+            this.barSeries = [{ name: 'Monto (S/)', data: data.topProveedores.slice(0, 5).map(p => p.monto) }];
+            this.barXAxis = {
+                ...this.barXAxis,
+                categories: data.topProveedores.slice(0, 5).map(p => p.nombre.slice(0, 18)),
+            };
+        }
+        const borradores = (data.ocEmitidas ?? 0) - (data.ocAprobadas ?? 0) - (data.ocPendientes ?? 0);
+        this.donutSeries = [
+            Math.max(0, borradores),
+            data.ocPendientes ?? 0,
+            data.ocAprobadas ?? 0,
+            data.ocRecibidas ?? 0,
+        ];
     }
 
-    onPeriodChange(event: Event): void {
-        const period = (event.target as HTMLSelectElement).value;
-        console.log('Period changed:', period);
+    badgeEstado(estado: string): string {
+        const map: Record<string, string> = {
+            APROBADA: 'success', PENDIENTE: 'warning', RECIBIDA: 'success',
+            BORRADOR: 'neutral', ENVIADA: 'accent', CANCELADA: 'error'
+        };
+        return map[estado] ?? 'neutral';
     }
 }

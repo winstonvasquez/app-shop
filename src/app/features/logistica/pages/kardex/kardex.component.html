@@ -1,0 +1,133 @@
+<div class="p-6">
+  <div class="mb-6">
+    <h1 class="text-2xl font-semibold text-gray-800">Kardex de Inventario</h1>
+    <p class="text-sm text-gray-500 mt-1">Historial de movimientos por producto y almacén</p>
+  </div>
+
+  <!-- Filtros -->
+  <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 mb-6">
+    <form [formGroup]="filterForm" (ngSubmit)="buscar()" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Producto ID *</label>
+        <input
+          type="text"
+          formControlName="productoId"
+          placeholder="ID del producto"
+          class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Almacén ID</label>
+        <input
+          type="text"
+          formControlName="almacenId"
+          placeholder="ID del almacén (opcional)"
+          class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Desde</label>
+        <input
+          type="date"
+          formControlName="fromDate"
+          class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Hasta</label>
+        <input
+          type="date"
+          formControlName="toDate"
+          class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+      </div>
+      <div>
+        <app-button
+          type="submit"
+          variant="primary"
+          icon="search"
+          [label]="loading() ? 'Buscando...' : 'Buscar'"
+          [loading]="loading()"
+          class="w-full" />
+      </div>
+    </form>
+  </div>
+
+  <!-- Error -->
+  @if (error()) {
+    <div class="mb-4 bg-error/10 border border-error/30 text-error rounded-lg p-3 text-sm">
+      {{ error() }}
+    </div>
+  }
+
+  @if (searched()) {
+    <!-- Resumen -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6">
+      <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+        <p class="text-xs text-gray-500 uppercase tracking-wide mb-1">Movimientos</p>
+        <p class="text-2xl font-bold text-gray-800">{{ entries().length }}</p>
+      </div>
+      <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+        <p class="text-xs text-gray-500 uppercase tracking-wide mb-1">Saldo Final (Qty)</p>
+        <p class="text-2xl font-bold text-indigo-600">{{ saldoFinal() | number }}</p>
+      </div>
+      <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+        <p class="text-xs text-gray-500 uppercase tracking-wide mb-1">Valor Final</p>
+        <p class="text-2xl font-bold text-success">S/ {{ valorFinal() | number:'1.2-2' }}</p>
+      </div>
+    </div>
+
+    <!-- Tabla kardex -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+      <div class="p-4 border-b border-gray-50">
+        <h2 class="text-base font-semibold text-gray-700">Movimientos</h2>
+      </div>
+      @if (entries().length === 0) {
+        <div class="text-center py-10 text-gray-400 text-sm">No se encontraron movimientos para los filtros aplicados</div>
+      } @else {
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="bg-gray-50 text-left text-xs text-gray-500 uppercase tracking-wide">
+                <th class="px-4 py-3">Fecha</th>
+                <th class="px-4 py-3">Tipo</th>
+                <th class="px-4 py-3">Descripción</th>
+                <th class="px-4 py-3 text-right">Entrada</th>
+                <th class="px-4 py-3 text-right">Salida</th>
+                <th class="px-4 py-3 text-right">Saldo</th>
+                <th class="px-4 py-3 text-right">Costo Unit.</th>
+                <th class="px-4 py-3 text-right">Costo Total</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-50">
+              @for (entry of entries(); track entry.id) {
+                <tr class="hover:bg-gray-50 transition-colors">
+                  <td class="px-4 py-3 text-gray-600">{{ entry.fecha | date:'dd/MM/yyyy' }}</td>
+                  <td class="px-4 py-3">
+                    <span class="text-xs font-medium px-2 py-1 rounded-full {{ tipoClass(entry.tipo) }}">
+                      {{ entry.tipo }}
+                    </span>
+                  </td>
+                  <td class="px-4 py-3 text-gray-700">{{ entry.descripcion }}</td>
+                  <td class="px-4 py-3 text-right text-success font-medium">
+                    @if (entry.tipo === 'ENTRADA') { {{ entry.cantidad | number }} } @else { - }
+                  </td>
+                  <td class="px-4 py-3 text-right text-error font-medium">
+                    @if (entry.tipo === 'SALIDA') { {{ entry.cantidad | number }} } @else { - }
+                  </td>
+                  <td class="px-4 py-3 text-right font-semibold text-gray-800">{{ entry.saldoCantidad | number }}</td>
+                  <td class="px-4 py-3 text-right text-gray-600">S/ {{ entry.costoUnitario | number:'1.2-2' }}</td>
+                  <td class="px-4 py-3 text-right text-gray-600">S/ {{ entry.costoTotal | number:'1.2-2' }}</td>
+                </tr>
+              }
+            </tbody>
+            <tfoot>
+              <tr class="bg-gray-50 font-semibold text-gray-700">
+                <td colspan="5" class="px-4 py-3 text-right text-xs uppercase tracking-wide">Saldo Final:</td>
+                <td class="px-4 py-3 text-right text-indigo-700">{{ saldoFinal() | number }}</td>
+                <td colspan="1" class="px-4 py-3 text-right text-xs uppercase tracking-wide">Valor Final:</td>
+                <td class="px-4 py-3 text-right text-success">S/ {{ valorFinal() | number:'1.2-2' }}</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      }
+    </div>
+  }
+</div>

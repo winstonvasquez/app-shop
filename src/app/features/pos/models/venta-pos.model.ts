@@ -1,6 +1,25 @@
 // models/venta-pos.model.ts
 
-export type MetodoPagoPos = 'EFECTIVO' | 'TARJETA' | 'YAPE' | 'PLIN';
+export type MetodoPagoPos = 'EFECTIVO' | 'TARJETA' | 'YAPE' | 'PLIN' | 'MIXTO' | 'GIFT_CARD';
+
+export interface GiftCard {
+    id: number;
+    companyId: number;
+    codigo: string;
+    saldoInicial: number;
+    saldoActual: number;
+    moneda: string;
+    estado: string;
+    fechaExpiracion?: string;
+    clienteId?: number;
+    clienteNombre?: string;
+    fechaCreacion: string;
+}
+
+export interface PagoMixto {
+    metodo: Exclude<MetodoPagoPos, 'MIXTO'>;
+    monto: number;
+}
 export type TipoCpe = 'BOLETA' | 'FACTURA' | 'SIN_CPE';
 export type EstadoVentaPos = 'COMPLETADA' | 'ANULADA';
 
@@ -12,6 +31,14 @@ export interface DetalleVentaPosResponse {
     cantidad: number;
     precioUnitario: number;
     subtotalLinea: number;
+    descuentoTipo: string;
+    descuentoValor: number;
+    descuentoMonto: number;
+}
+
+export interface PagoMixtoResponse {
+    metodo: string;
+    monto: number;
 }
 
 export interface VentaPosResponse {
@@ -26,6 +53,7 @@ export interface VentaPosResponse {
     igv: number;
     descuento: number;
     total: number;
+    totalIcbper: number;
     montoRecibido?: number;
     vuelto: number;
     estado: EstadoVentaPos;
@@ -34,11 +62,20 @@ export interface VentaPosResponse {
     cajeroNombre: string;
     turnoId: number;
     detalles: DetalleVentaPosResponse[];
+    pagos: PagoMixtoResponse[];
+    qrData?: string;
+    moneda?: string;
+    tipoCambio?: number;
+    totalMonedaExtranjera?: number;
 }
 
 export interface VentaPosItemRequest {
     varianteId: number;
     cantidad: number;
+    descuentoTipo?: string;
+    descuentoValor?: number;
+    autorizadoPor?: number;
+    bolsas?: number;
 }
 
 export interface VentaPosRequest {
@@ -50,6 +87,22 @@ export interface VentaPosRequest {
     clienteNombre?: string;
     descuento?: number;
     montoRecibido?: number;
+    pagos?: PagoMixto[];
+    moneda?: string;
+    puntosACanjear?: number;
+}
+
+// ── Tipo de Cambio ─────────────────────────────────────────────
+
+export interface TipoCambio {
+    id: number;
+    companyId: number;
+    monedaOrigen: string;
+    monedaDestino: string;
+    tasaCompra: number;
+    tasaVenta: number;
+    fechaVigencia: string;
+    fuente: string;
 }
 
 export interface PageResponse<T> {
@@ -58,4 +111,45 @@ export interface PageResponse<T> {
     totalPages: number;
     size: number;
     number: number;
+}
+
+// ── Devoluciones ────────────────────────────────────────────────
+
+export interface DevolucionPosRequest {
+    motivo: string;
+    observaciones?: string;
+    lineas: { detalleVentaPosId: number; cantidadDevuelta: number }[];
+}
+
+export interface DevolucionPosResponse {
+    id: number;
+    ventaPosId: number;
+    numeroNc: string;
+    motivo: string;
+    observaciones?: string;
+    totalDevuelto: number;
+    estado: string;
+    fechaCreacion: string;
+    lineas: {
+        detalleVentaPosId: number;
+        sku: string;
+        nombreProducto: string;
+        cantidadDevuelta: number;
+        montoDevuelto: number;
+    }[];
+}
+
+// ── Sucursales ──────────────────────────────────────────────────
+
+export interface Sucursal {
+    id: number;
+    companyId: number;
+    nombre: string;
+    direccion?: string;
+    ubigeo?: string;
+    telefono?: string;
+    serieBoleta?: string;
+    serieFactura?: string;
+    almacenId?: number;
+    activo: boolean;
 }

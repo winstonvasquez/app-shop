@@ -1,0 +1,117 @@
+<div class="page-container">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Reporte de Inventario</h1>
+            <p class="page-subtitle">Estado del stock y almacenes</p>
+        </div>
+        <div class="page-actions no-print flex gap-2">
+            <app-button label="Exportar CSV" icon="download" variant="secondary"
+                [disabled]="cargando() || stockBajo().length === 0"
+                (click)="onExportarCsv()">
+            </app-button>
+            <app-button label="Exportar Excel" icon="download" variant="secondary"
+                [disabled]="cargando() || stockBajo().length === 0"
+                (click)="exportarExcel()">
+            </app-button>
+            <app-button label="Imprimir / PDF" icon="printer" variant="secondary"
+                [disabled]="cargando()"
+                (click)="imprimir()">
+            </app-button>
+            <app-button label="Actualizar" icon="refresh-cw" variant="primary"
+                [disabled]="cargando()"
+                [loading]="cargando()"
+                (click)="cargar()">
+            </app-button>
+        </div>
+    </div>
+
+    @if (error()) {
+        <div class="card border-l-[3px] border-l-[var(--color-warning)] p-[var(--space-md)] mb-[var(--space-lg)]">
+            <p class="text-[var(--color-text-muted)] text-sm">
+                Servicio de inventario no disponible. Verifique que microshoplogistica esté corriendo en puerto 8090.
+            </p>
+        </div>
+    }
+
+    @if (cargando()) {
+        <div class="loading-container"><div class="spinner"></div></div>
+    } @else if (dashboard()) {
+        <!-- KPIs -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div class="card">
+                <div class="card-body">
+                    <p class="text-[0.75rem] text-[var(--color-text-muted)]">ALMACENES ACTIVOS</p>
+                    <p class="text-[2rem] font-bold text-[var(--color-primary)]">{{ dashboard()!.almacenesActivos }}</p>
+                    <p class="text-[0.75rem] text-[var(--color-text-muted)]">de {{ dashboard()!.totalAlmacenes }} total</p>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-body">
+                    <p class="text-[0.75rem] text-[var(--color-text-muted)]">STOCK BAJO</p>
+                    <p class="text-[2rem] font-bold"
+                       [style.color]="dashboard()!.productosStockBajo > 0 ? 'var(--color-warning)' : 'var(--color-success)'">
+                        {{ dashboard()!.productosStockBajo }}
+                    </p>
+                    <p class="text-[0.75rem] text-[var(--color-text-muted)]">productos bajo mínimo</p>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-body">
+                    <p class="text-[0.75rem] text-[var(--color-text-muted)]">NECESITAN REORDEN</p>
+                    <p class="text-[2rem] font-bold"
+                       [style.color]="dashboard()!.productosNecesitanReorden > 0 ? 'var(--color-warning)' : 'var(--color-success)'">
+                        {{ dashboard()!.productosNecesitanReorden }}
+                    </p>
+                    <p class="text-[0.75rem] text-[var(--color-text-muted)]">ítems a reabastecer</p>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-body">
+                    <p class="text-[0.75rem] text-[var(--color-text-muted)]">MOVIMIENTOS HOY</p>
+                    <p class="text-[2rem] font-bold">{{ dashboard()!.movimientosHoy }}</p>
+                    <p class="text-[0.75rem] text-[var(--color-text-muted)]">entradas / salidas</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stock bajo -->
+        @if (stockBajo().length > 0) {
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Productos con stock bajo</h3>
+                    <span class="badge badge-warning">{{ stockBajo().length }} alertas</span>
+                </div>
+                <table class="table">
+                    <thead class="table-header">
+                        <tr>
+                            <th class="table-header-cell">Producto ID</th>
+                            <th class="table-header-cell">Almacén ID</th>
+                            <th class="table-header-cell text-right">Stock actual</th>
+                            <th class="table-header-cell text-right">Stock mínimo</th>
+                            <th class="table-header-cell">Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (item of stockBajo(); track item.productoId) {
+                            <tr class="table-row">
+                                <td class="table-cell font-mono">{{ item.productoId }}</td>
+                                <td class="table-cell font-mono">{{ item.almacenId }}</td>
+                                <td class="table-cell text-right font-bold text-[var(--color-warning)]">{{ item.cantidadActual }}</td>
+                                <td class="table-cell text-right">{{ item.stockMinimo }}</td>
+                                <td class="table-cell"><span class="badge badge-warning">STOCK BAJO</span></td>
+                            </tr>
+                        } @empty {
+                            <tr><td colspan="5" class="table-cell text-center p-6 text-[var(--color-text-muted)]">Sin datos</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        } @else {
+            <div class="card">
+                <div class="card-body text-center p-[var(--space-lg)]">
+                    <p class="text-[var(--color-text-muted)]">Todos los productos tienen stock suficiente.</p>
+                </div>
+            </div>
+        }
+    }
+</div>

@@ -1,0 +1,191 @@
+<div class="page-container">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Dashboard Ejecutivo</h1>
+            <p class="page-subtitle">KPIs consolidados de todos los módulos — {{ dashboard()?.periodo ?? 'Cargando...' }}</p>
+        </div>
+        <div class="page-actions no-print flex gap-2">
+            <app-button label="Exportar CSV" variant="secondary" icon="download"
+                        [disabled]="cargando() || !dashboard()" (click)="onExportarCsv()" />
+            <app-button label="Exportar Excel" variant="secondary" icon="download"
+                        [disabled]="cargando() || !dashboard()" (click)="exportarExcel()" />
+            <app-button label="Imprimir / PDF" variant="secondary" icon="printer"
+                        [disabled]="cargando()" (click)="imprimir()" />
+            <app-button label="Actualizar" variant="primary" icon="refresh-cw"
+                        [loading]="cargando()" (click)="cargar()" />
+        </div>
+    </div>
+
+    @if (error()) {
+        <div class="card border-l-[3px] border-l-[var(--color-warning)] p-[var(--space-md)] mb-[var(--space-lg)]">
+            <p class="text-[var(--color-text-muted)] text-sm">
+                Servicio de analítica no disponible — mostrando datos de servicios individuales.
+                Verifique que microshoprepoanalitica esté corriendo en puerto 8087.
+            </p>
+        </div>
+    }
+
+    @if (cargando()) {
+        <div class="loading-container"><div class="spinner"></div></div>
+    } @else if (dashboard()) {
+        <!-- KPIs principales -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-[var(--space-md)] mb-[var(--space-lg)]">
+            <div class="card">
+                <div class="card-body">
+                    <p class="text-[0.75rem] text-[var(--color-text-muted)]">VENTAS DEL PERÍODO</p>
+                    <p class="text-[1.75rem] font-bold text-[var(--color-primary)]">
+                        S/ {{ dashboard()!.ventas.montoTotal | number:'1.2-2' }}
+                    </p>
+                    <p class="text-[0.75rem] text-[var(--color-text-muted)]">
+                        {{ dashboard()!.ventas.totalVentas }} transacciones
+                    </p>
+                    <p class="text-[0.75rem] mt-1">
+                        Ticket promedio: <strong>S/ {{ dashboard()!.ventas.ticketPromedio | number:'1.2-2' }}</strong>
+                    </p>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-body">
+                    <p class="text-[0.75rem] text-[var(--color-text-muted)]">COMPRAS DEL PERÍODO</p>
+                    <p class="text-[1.75rem] font-bold text-[var(--color-accent)]">
+                        S/ {{ dashboard()!.compras.montoTotal | number:'1.2-2' }}
+                    </p>
+                    <p class="text-[0.75rem] text-[var(--color-text-muted)]">
+                        {{ dashboard()!.compras.totalOrdenes }} órdenes en total
+                    </p>
+                    <p class="text-[0.75rem] mt-1">
+                        Aprobadas: <strong>{{ dashboard()!.compras.ordenesAprobadas }}</strong>
+                    </p>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-body">
+                    <p class="text-[0.75rem] text-[var(--color-text-muted)]">EMPLEADOS ACTIVOS</p>
+                    <p class="text-[1.75rem] font-bold">{{ dashboard()!.rrhh.empleadosActivos }}</p>
+                    <p class="text-[0.75rem] text-[var(--color-text-muted)]">trabajadores en planilla</p>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-body">
+                    <p class="text-[0.75rem] text-[var(--color-text-muted)]">SALDO EN CAJAS</p>
+                    <p class="text-[1.75rem] font-bold text-[var(--color-success)]">
+                        S/ {{ dashboard()!.tesoreria.saldoTotal | number:'1.2-2' }}
+                    </p>
+                    <p class="text-[0.75rem] text-[var(--color-text-muted)]">
+                        {{ dashboard()!.tesoreria.cajasAbiertas }} caja(s) abierta(s)
+                    </p>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-body">
+                    <p class="text-[0.75rem] text-[var(--color-text-muted)]">PRODUCTOS CON STOCK</p>
+                    <p class="text-[1.75rem] font-bold">{{ dashboard()!.inventario.productosConStock }}</p>
+                    <p class="text-[0.75rem] text-[var(--color-text-muted)]">ítems en inventario</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Estado módulos + Top productos -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-[var(--space-md)] mb-[var(--space-lg)]">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Estado de Módulos</h3>
+                </div>
+                <table class="table">
+                    <thead class="table-header">
+                        <tr>
+                            <th class="table-header-cell">Módulo</th>
+                            <th class="table-header-cell text-right">Valor</th>
+                            <th class="table-header-cell">Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="table-row">
+                            <td class="table-cell font-bold">Ventas (POS)</td>
+                            <td class="table-cell text-right font-mono">{{ dashboard()!.ventas.totalVentas }} trans.</td>
+                            <td class="table-cell"><span class="badge badge-success">OPERATIVO</span></td>
+                        </tr>
+                        <tr class="table-row">
+                            <td class="table-cell font-bold">Compras</td>
+                            <td class="table-cell text-right font-mono">{{ dashboard()!.compras.totalOrdenes }} órdenes</td>
+                            <td class="table-cell"><span class="badge badge-success">OPERATIVO</span></td>
+                        </tr>
+                        <tr class="table-row">
+                            <td class="table-cell font-bold">RRHH</td>
+                            <td class="table-cell text-right font-mono">{{ dashboard()!.rrhh.empleadosActivos }} emp.</td>
+                            <td class="table-cell"><span class="badge badge-success">OPERATIVO</span></td>
+                        </tr>
+                        <tr class="table-row">
+                            <td class="table-cell font-bold">Tesorería</td>
+                            <td class="table-cell text-right font-mono">{{ dashboard()!.tesoreria.cajasAbiertas }} cajas</td>
+                            <td class="table-cell"><span class="badge badge-success">OPERATIVO</span></td>
+                        </tr>
+                        <tr class="table-row">
+                            <td class="table-cell font-bold">Inventario</td>
+                            <td class="table-cell text-right font-mono">{{ dashboard()!.inventario.productosConStock }} items</td>
+                            <td class="table-cell"><span class="badge badge-success">OPERATIVO</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Top Productos Vendidos</h3>
+                    <span class="badge badge-neutral">por monto</span>
+                </div>
+                @if (topProductos().length === 0) {
+                    <div class="card-body text-center p-[var(--space-lg)] text-[var(--color-text-muted)]">
+                        Sin datos de ventas disponibles
+                    </div>
+                } @else {
+                    <table class="table">
+                        <thead class="table-header">
+                            <tr>
+                                <th class="table-header-cell">#</th>
+                                <th class="table-header-cell">Producto</th>
+                                <th class="table-header-cell text-right">Und.</th>
+                                <th class="table-header-cell text-right">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (p of topProductos(); track p.sku; let i = $index) {
+                                <tr class="table-row">
+                                    <td class="table-cell text-[var(--color-text-muted)] font-mono">{{ i + 1 }}</td>
+                                    <td class="table-cell">
+                                        <div class="text-sm font-medium">{{ p.nombre }}</div>
+                                        <div class="text-[0.75rem] text-[var(--color-text-muted)] font-mono">{{ p.sku }}</div>
+                                    </td>
+                                    <td class="table-cell text-right font-mono">{{ p.cantidadVendida }}</td>
+                                    <td class="table-cell text-right font-semibold">S/ {{ p.totalVendido | number:'1.2-2' }}</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+
+        <!-- Tendencia de ventas -->
+        @if (tendencias().length > 0) {
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Tendencia de Ventas — Últimos 6 meses</h3>
+                </div>
+                <div class="card-body">
+                    <div class="flex items-end gap-3 h-32 justify-around">
+                        @for (t of tendencias(); track t.periodo) {
+                            <div class="flex flex-col items-center gap-1 flex-1">
+                                <span class="text-[0.75rem] text-[var(--color-text-muted)]">S/ {{ t.montoTotal | number:'1.0-0' }}</span>
+                                <div class="w-full rounded-tl-sm rounded-tr-sm bg-[var(--color-primary)] opacity-80 transition-[height] duration-300"
+                                     [style.height.%]="tendenciaMax() > 0 ? Math.max(5, (t.montoTotal / tendenciaMax()) * 100) : 5">
+                                </div>
+                                <span class="text-[0.75rem] text-[var(--color-text-muted)]">{{ t.periodo.substring(5) }}/{{ t.periodo.substring(2,4) }}</span>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    }
+</div>

@@ -35,7 +35,7 @@ export interface VacationApprovalDto {
 @Injectable({ providedIn: 'root' })
 export class VacationService {
     private readonly http = inject(HttpClient);
-    private readonly baseUrl = `${environment.apiUrl}/hr/api/vacations`;
+    private readonly baseUrl = `${environment.apiUrls.hr}/api/vacations`;
 
     private readonly _vacations = signal<VacationRequest[]>([]);
     private readonly _loading = signal(false);

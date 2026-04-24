@@ -1,0 +1,131 @@
+<div class="page-container">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Libro Mayor</h1>
+            <p class="page-subtitle">Saldos por cuenta PCGE 2020</p>
+        </div>
+        <div class="page-actions">
+            <app-button
+                label="Generar PLE"
+                variant="secondary"
+                icon="file-plus"
+                [disabled]="true">
+            </app-button>
+        </div>
+    </div>
+
+    <div class="card mb-lg">
+        <div class="filters-bar" style="flex-wrap:wrap">
+            <select class="form-input" style="min-width:260px"
+                    [value]="cuentaSeleccionada()"
+                    (change)="cambiarCuenta($any($event.target).value)">
+                <option value="">— Seleccionar cuenta PCGE —</option>
+                @for (c of cuentas(); track c.id) {
+                    <option [value]="c.id">{{ c.codigo }} — {{ c.nombre }}</option>
+                }
+            </select>
+            <select class="form-input"
+                    [value]="periodoSeleccionado()"
+                    (change)="cambiarPeriodo($any($event.target).value)">
+                <option value="">— Periodo —</option>
+                @for (p of periodos(); track p.id) {
+                    <option [value]="p.id">{{ p.nombre }}</option>
+                }
+            </select>
+            <app-button
+                label="Ver Mayor"
+                variant="primary"
+                icon="book-open"
+                [disabled]="!cuentaSeleccionada() || !periodoSeleccionado()"
+                (click)="cargarMayor()">
+            </app-button>
+        </div>
+    </div>
+
+    @if (cuentaInfo()) {
+        <div class="card mb-lg">
+            <div class="card-body">
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:var(--space-md)">
+                    <div>
+                        <div class="input-label">Cuenta</div>
+                        <div class="font-bold font-mono">{{ cuentaInfo()!.codigo }}</div>
+                        <div class="text-sm">{{ cuentaInfo()!.nombre }}</div>
+                    </div>
+                    <div>
+                        <div class="input-label">Saldo Deudor</div>
+                        <div class="font-bold" style="color:var(--color-primary)">{{ totalDebe() | number:'1.2-2' }}</div>
+                    </div>
+                    <div>
+                        <div class="input-label">Saldo Acreedor</div>
+                        <div class="font-bold" style="color:var(--color-success)">{{ totalHaber() | number:'1.2-2' }}</div>
+                    </div>
+                    <div>
+                        <div class="input-label">Saldo Neto</div>
+                        <div class="font-bold">{{ (totalDebe() - totalHaber()) | number:'1.2-2' }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <div class="card">
+        @if (cargando()) {
+            <div class="loading-container"><div class="spinner"></div></div>
+        } @else if (error()) {
+            <div class="card-body" style="color:var(--color-error);text-align:center">
+                {{ error() }}
+            </div>
+        } @else {
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th class="table-header-cell">Fecha</th>
+                        <th class="table-header-cell">N° Asiento</th>
+                        <th class="table-header-cell">Descripción</th>
+                        <th class="table-header-cell text-right">Debe</th>
+                        <th class="table-header-cell text-right">Haber</th>
+                        <th class="table-header-cell text-right">Saldo acumulado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (m of movimientosPaginados(); track $index) {
+                        <tr class="table-row">
+                            <td class="table-cell font-mono">{{ m.fecha | date:'dd/MM/yyyy' }}</td>
+                            <td class="table-cell font-mono font-bold">{{ m.codigoAsiento }}</td>
+                            <td class="table-cell">{{ m.glosa }}</td>
+                            <td class="table-cell text-right font-mono">
+                                @if (m.debe > 0) { {{ m.debe | number:'1.2-2' }} }
+                            </td>
+                            <td class="table-cell text-right font-mono">
+                                @if (m.haber > 0) { {{ m.haber | number:'1.2-2' }} }
+                            </td>
+                            <td class="table-cell text-right font-mono"
+                                [style.color]="m.saldo < 0 ? 'var(--color-error)' : ''">
+                                {{ m.saldo | number:'1.2-2' }}
+                            </td>
+                        </tr>
+                    } @empty {
+                        <tr>
+                            <td colspan="6" class="table-cell text-center text-sm text-[var(--color-text-muted)]">
+                                @if (cuentaSeleccionada() && periodoSeleccionado()) {
+                                    No hay movimientos para esta cuenta en el periodo
+                                } @else {
+                                    Selecciona una cuenta y un periodo para ver el mayor
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            <div class="mt-4">
+                <app-pagination
+                    [currentPage]="currentPage()"
+                    [totalPages]="totalPagesLocal()"
+                    [totalElements]="movimientos().length"
+                    [pageSize]="pageSize()"
+                    (pageChange)="onPageChange($event)">
+                </app-pagination>
+            </div>
+        }
+    </div>
+</div>

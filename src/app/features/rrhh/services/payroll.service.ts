@@ -7,7 +7,7 @@ import { Payroll, PayrollRequest } from '../models/payroll.model';
 @Injectable({ providedIn: 'root' })
 export class PayrollService {
     private readonly http = inject(HttpClient);
-    private readonly baseUrl = `${environment.apiUrl}/hr/api/payroll`;
+    private readonly baseUrl = `${environment.apiUrls.hr}/api/payroll`;
 
     private readonly _payrolls = signal<Payroll[]>([]);
     private readonly _loading = signal(false);

@@ -1,8 +1,12 @@
 
 import { Injectable, computed, effect, signal, inject } from '@angular/core';
+import { AnalyticsService } from '@core/services/analytics.service';
 
 export interface CartItem {
     productId: number;
+    variantId?: number;
+    sku?: string;
+    variantName?: string;
     name: string;
     description?: string;
     price: number;
@@ -16,6 +20,7 @@ export interface CartItem {
     providedIn: 'root'
 })
 export class CartService {
+    private readonly analyticsService = inject(AnalyticsService);
     cartItems = signal<CartItem[]>([]);
     isDrawerOpen = signal(false);
 
@@ -53,25 +58,47 @@ export class CartService {
         });
     }
 
-    addToCart(product: any) {
+    addToCart(product: {
+        id: number;
+        variantId?: number;
+        sku?: string;
+        variantName?: string;
+        name: string;
+        description?: string;
+        price: number;
+        quantity?: number;
+        stock?: number;
+        image: string;
+    }) {
         this.cartItems.update(items => {
-            const existingItem = items.find(item => item.productId === product.id);
+            const isSameItem = (item: CartItem) =>
+                product.variantId !== undefined
+                    ? item.variantId === product.variantId
+                    : item.productId === product.id && item.variantId === undefined;
+
+            const existingItem = items.find(isSameItem);
             if (existingItem) {
                 return items.map(item =>
-                    item.productId === product.id
-                        ? { ...item, quantity: item.quantity + 1, selected: true } // Auto-select on add
+                    isSameItem(item)
+                        ? { ...item, quantity: item.quantity + (product.quantity ?? 1), selected: true }
                         : item
                 );
             }
             return [...items, {
                 productId: product.id,
+                variantId: product.variantId,
+                sku: product.sku,
+                variantName: product.variantName,
                 name: product.name,
+                description: product.description,
                 price: product.price,
-                quantity: 1,
+                quantity: product.quantity ?? 1,
+                stock: product.stock,
                 image: product.image,
                 selected: true
             }];
         });
+        this.analyticsService.trackAddToCart(product.id, product.name, product.price, product.quantity ?? 1);
     }
 
     removeFromCart(productId: number) {

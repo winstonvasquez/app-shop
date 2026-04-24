@@ -8,7 +8,7 @@
 
     /* --- BUTTONS --- */
     .btn-base {
-        @apply inline-flex items-center justify-center font-sans font-bold text-[14px] rounded-md transition-colors duration-200 px-lg py-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed;
+        @apply inline-flex items-center justify-center gap-2 font-sans font-bold text-[14px] rounded-md transition-colors duration-200 px-lg py-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed;
     }
 
     .btn {
@@ -19,12 +19,19 @@
 
         &-secondary {
             @extend .btn-base;
-            @apply bg-transparent border border-gray-600 text-on hover:bg-white/5 active:bg-white/10;
+            @apply bg-transparent text-on;
+            border: var(--border-width) solid var(--color-border-strong);
+
+            &:hover:not(:disabled)  { background: var(--color-hover-overlay); }
+            &:active:not(:disabled) { background: var(--color-active-overlay); }
         }
 
         &-ghost {
             @extend .btn-base;
-            @apply bg-transparent text-on hover:bg-white/10 active:bg-white/20;
+            @apply bg-transparent text-on;
+
+            &:hover:not(:disabled)  { background: var(--color-hover-overlay); }
+            &:active:not(:disabled) { background: var(--color-active-overlay); }
         }
 
         &-danger {
@@ -36,6 +43,23 @@
             @extend .btn-base;
             @apply bg-[var(--color-success)] text-white hover:brightness-110 active:brightness-90;
         }
+
+        /* Variant premium: gradient + shadow + uppercase (login / landings) */
+        &-primary-gradient {
+            @extend .btn-base;
+            @apply rounded-xl px-4 py-4 uppercase tracking-wider shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 transition-all;
+        }
+    }
+
+    /* Button size variants */
+    .btn-sm {
+        padding: var(--spacing-xs) var(--spacing-sm);
+        font-size: var(--text-xs);
+    }
+
+    .btn-lg {
+        padding: var(--spacing-sm) var(--spacing-xl);
+        font-size: var(--text-base);
     }
 
     /* --- CIRCULAR ICON BUTTONS --- */
@@ -46,12 +70,18 @@
     .icon-btn {
         @extend .icon-btn-base;
         /* Default 40x40px */
-        @apply w-[40px] h-[40px] text-on bg-transparent hover:bg-white/10 active:bg-white/20;
+        @apply w-[40px] h-[40px] text-on bg-transparent;
+
+        &:hover:not(:disabled)  { background: var(--color-hover-overlay); }
+        &:active:not(:disabled) { background: var(--color-active-overlay); }
 
         &-sm {
             @extend .icon-btn-base;
             /* Small 32x32px */
-            @apply w-[32px] h-[32px] text-on bg-transparent hover:bg-white/10 active:bg-white/20;
+            @apply w-[32px] h-[32px] text-on bg-transparent;
+
+            &:hover:not(:disabled)  { background: var(--color-hover-overlay); }
+            &:active:not(:disabled) { background: var(--color-active-overlay); }
         }
 
         /* Icon Button Variations */
@@ -62,6 +92,21 @@
         &-primary {
             @apply text-[var(--color-primary)] hover:bg-[var(--color-primary)]/10 active:bg-[var(--color-primary)]/20;
         }
+    }
+
+    /* --- CARD PARTS (generic, used by kpi-card, chart-card, card-erp) --- */
+    .card-header {
+        @apply flex items-center justify-between border-b border-[var(--color-border)];
+        padding: var(--spacing-md) var(--spacing-lg);
+    }
+
+    .card-body {
+        padding: var(--spacing-lg);
+    }
+
+    .card-footer {
+        @apply flex items-center justify-end gap-3 border-t border-[var(--color-border)];
+        padding: var(--spacing-md) var(--spacing-lg);
     }
 
     /* --- CARDS --- */
@@ -118,7 +163,8 @@
         }
 
         tbody tr {
-            @apply hover:bg-white/5 transition-colors;
+            @apply transition-colors;
+            &:hover { background: var(--color-hover-overlay); }
         }
     }
 
@@ -129,7 +175,8 @@
         }
 
         &-field {
-            @apply w-full bg-background border border-gray-600 rounded-md text-sm text-on px-md py-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed placeholder:text-muted;
+            @apply w-full bg-background rounded-md text-sm text-on px-md py-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed placeholder:text-muted;
+            border: var(--border-width) solid var(--color-border-strong);
 
             &-error {
                 @apply border-[var(--color-danger)] focus:border-[var(--color-danger)] focus:ring-[var(--color-danger)];

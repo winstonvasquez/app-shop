@@ -1,6 +1,18 @@
 /* Custom Utilities - Project-Specific Patterns */
 
 /* ============================================
+   FOCUS RING
+   ============================================ */
+
+.focus-ring {
+    &:focus-visible {
+        outline: 2px solid var(--color-primary);
+        outline-offset: 2px;
+        box-shadow: 0 0 0 4px var(--color-focus-ring);
+    }
+}
+
+/* ============================================
    TEMU-STYLE GRADIENTS
    ============================================ */
 
@@ -55,6 +67,20 @@
     animation: fade-in-up 0.5s var(--ease-out);
 }
 
+@keyframes slide-in-left {
+    from {
+        transform: translateX(-100%);
+    }
+
+    to {
+        transform: translateX(0);
+    }
+}
+
+.animate-slide-in-left {
+    animation: slide-in-left 0.25s ease-out;
+}
+
 /* ============================================
    CUSTOM SHADOWS
    ============================================ */
@@ -76,15 +102,15 @@
    ============================================ */
 
 .glass {
-    background: rgba(255, 255, 255, 0.8);
+    background: oklch(1 0 0 / 0.8);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border: 1px solid oklch(1 0 0 / 0.2);
 }
 
 .dark .glass {
-    background: rgba(0, 0, 0, 0.4);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: oklch(0 0 0 / 0.4);
+    border: 1px solid oklch(1 0 0 / 0.1);
 }
 
 /* ============================================

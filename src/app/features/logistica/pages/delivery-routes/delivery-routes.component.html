@@ -1,0 +1,85 @@
+<div class="p-6">
+  <div class="mb-6 flex items-center justify-between">
+    <div>
+      <h1 class="text-2xl font-semibold text-gray-800">Rutas de Entrega</h1>
+      <p class="text-sm text-gray-500 mt-1">Gestión de rutas de despacho y distribución</p>
+    </div>
+    <app-button icon="refresh-cw" variant="ghost" size="sm" label="Actualizar" (clicked)="loadRoutes()" />
+  </div>
+
+  <!-- Mensajes -->
+  @if (error()) {
+    <div class="mb-4 bg-error/10 border border-error/30 text-error rounded-lg p-3 text-sm">
+      {{ error() }}
+    </div>
+  }
+  @if (successMsg()) {
+    <div class="mb-4 bg-success/10 border border-success/30 text-success rounded-lg p-3 text-sm">
+      {{ successMsg() }}
+    </div>
+  }
+
+  <!-- Tabla de rutas -->
+  <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+    <div class="p-4 border-b border-gray-50">
+      <h2 class="text-base font-semibold text-gray-700">Rutas Activas y Recientes</h2>
+    </div>
+
+    @if (loading()) {
+      <div class="text-center py-10 text-gray-400 text-sm">Cargando rutas...</div>
+    } @else {
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="bg-gray-50 text-left text-xs text-gray-500 uppercase tracking-wide">
+              <th class="px-4 py-3">ID</th>
+              <th class="px-4 py-3">Fecha Creación</th>
+              <th class="px-4 py-3">Conductor</th>
+              <th class="px-4 py-3">Estado</th>
+              <th class="px-4 py-3 text-right">Paradas</th>
+              <th class="px-4 py-3">Iniciado</th>
+              <th class="px-4 py-3">Completado</th>
+              <th class="px-4 py-3">Acciones</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-50">
+            @for (route of routes(); track route.id) {
+              <tr class="hover:bg-gray-50 transition-colors">
+                <td class="px-4 py-3 font-mono text-xs text-gray-500">{{ route.id.slice(0, 8) }}...</td>
+                <td class="px-4 py-3 text-gray-600">{{ route.createdAt | date:'dd/MM/yyyy HH:mm' }}</td>
+                <td class="px-4 py-3 text-gray-700">{{ route.driverId ?? '-' }}</td>
+                <td class="px-4 py-3">
+                  <span class="text-xs font-medium px-2 py-1 rounded-full {{ statusClass(route.status) }}">
+                    {{ statusLabel(route.status) }}
+                  </span>
+                </td>
+                <td class="px-4 py-3 text-right text-gray-700">{{ route.stops.length }}</td>
+                <td class="px-4 py-3 text-gray-500">{{ route.startedAt ? (route.startedAt | date:'dd/MM HH:mm') : '-' }}</td>
+                <td class="px-4 py-3 text-gray-500">{{ route.completedAt ? (route.completedAt | date:'dd/MM HH:mm') : '-' }}</td>
+                <td class="px-4 py-3">
+                  <div class="flex gap-2">
+                    @if (route.status === 'PLANNED') {
+                      <app-button icon="truck" variant="ghost" size="sm" label="Iniciar"
+                        [disabled]="actionId() === route.id"
+                        (clicked)="startRoute(route.id)" />
+                    }
+                    @if (route.status === 'IN_PROGRESS') {
+                      <app-button icon="check" variant="success" size="sm" label="Completar"
+                        [disabled]="actionId() === route.id"
+                        (clicked)="completeRoute(route.id)" />
+                    }
+                  </div>
+                </td>
+              </tr>
+            }
+            @if (routes().length === 0) {
+              <tr>
+                <td colspan="8" class="text-center py-10 text-gray-400">No hay rutas registradas</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+</div>

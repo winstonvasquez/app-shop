@@ -5,9 +5,12 @@
         subtitle="Organiza tu catálogo con categorías jerárquicas"
         [breadcrumbs]="breadcrumbs">
         <div actions>
-            <button class="btn btn-primary" (click)="openCreateModal()">
-                + Nueva Categoría
-            </button>
+            <app-button
+                label="Nueva Categoría"
+                variant="primary"
+                icon="plus"
+                (click)="openCreateModal()">
+            </app-button>
         </div>
     </app-page-header>
 
@@ -148,15 +151,16 @@
     </div>
     }
 
-    <!-- Modal for Create/Edit Category -->
-    <app-modal
+    <!-- Drawer for Create/Edit Category -->
+    <app-drawer
         [isOpen]="showModal()"
         [title]="editMode() ? 'Editar Categoría' : 'Nueva Categoría'"
-        size="md"
-        (close)="closeModal()">
-        
-        <form [formGroup]="categoryForm" (ngSubmit)="onSubmit()" body>
-            <!-- Submit Error -->
+        size="lg"
+        side="right"
+        [hasFooter]="true"
+        (closed)="closeModal()">
+
+        <form [formGroup]="categoryForm" (ngSubmit)="onSubmit()">
             @if (submitError()) {
                 <app-alert
                     type="error"
@@ -166,7 +170,6 @@
                 </app-alert>
             }
 
-            <!-- Nombre -->
             <app-form-field
                 label="Nombre"
                 [control]="getControl('nombre')"
@@ -175,19 +178,17 @@
                 [required]="true">
             </app-form-field>
 
-            <!-- Descripción -->
             <div class="form-group">
                 <label for="descripcion">Descripción</label>
-                <textarea 
-                    id="descripcion" 
-                    formControlName="descripcion" 
-                    class="form-control" 
+                <textarea
+                    id="descripcion"
+                    formControlName="descripcion"
+                    class="form-input"
                     rows="3"
                     placeholder="Descripción de la categoría">
                 </textarea>
             </div>
 
-            <!-- Imagen URL -->
             <app-form-field
                 label="URL de Imagen"
                 [control]="getControl('imagenUrl')"
@@ -196,10 +197,9 @@
                 hint="URL completa de la imagen (http:// o https://)">
             </app-form-field>
 
-            <!-- Nivel -->
             <div class="form-group">
                 <label for="nivel">Nivel Jerárquico <span class="required">*</span></label>
-                <select id="nivel" formControlName="nivel" class="form-control">
+                <select id="nivel" formControlName="nivel" class="form-input">
                     @for (option of levelOptions; track option.value) {
                         <option [value]="option.value">{{ option.label }}</option>
                     }
@@ -208,25 +208,24 @@
             </div>
         </form>
 
-        <div footer>
-            <button 
-                type="button" 
-                class="btn btn-secondary" 
-                (click)="closeModal()" 
-                [disabled]="submitting()">
-                Cancelar
-            </button>
-            <button 
-                type="submit" 
-                class="btn btn-primary" 
-                (click)="onSubmit()"
-                [disabled]="submitting() || categoryForm.invalid">
-                @if (submitting()) {
-                    Guardando...
-                } @else {
-                    {{ editMode() ? 'Actualizar' : 'Crear' }} Categoría
-                }
-            </button>
+        <div slot="footer">
+            <app-button
+                label="Cancelar"
+                variant="secondary"
+                icon="x"
+                type="button"
+                [disabled]="submitting()"
+                (click)="closeModal()">
+            </app-button>
+            <app-button
+                [label]="editMode() ? 'Actualizar Categoría' : 'Crear Categoría'"
+                variant="primary"
+                icon="save"
+                type="button"
+                [loading]="submitting()"
+                [disabled]="submitting() || categoryForm.invalid"
+                (click)="onSubmit()">
+            </app-button>
         </div>
-    </app-modal>
+    </app-drawer>
 </div>

@@ -1,0 +1,57 @@
+<div class="page-container">
+    <app-breadcrumb [items]="breadcrumbItems" />
+    <div class="page-header">
+        <h1 class="page-title">Seguridad de la cuenta</h1>
+        <p class="page-subtitle">Cambia tu contraseña</p>
+    </div>
+
+    <div class="card max-w-md">
+        <div class="card-body">
+            @if (successMsg()) {
+                <app-alert type="success" [message]="successMsg()" />
+            }
+
+            <form [formGroup]="passwordForm" (ngSubmit)="onSubmit()">
+                <app-admin-form-layout [errorMessage]="errorMsg()">
+
+                    <app-admin-form-section [columns]="1">
+                        <app-form-field
+                            label="Contraseña actual"
+                            [required]="true"
+                            [error]="err('currentPassword')">
+                            <input class="form-input" type="password" formControlName="currentPassword"
+                                placeholder="••••••••" autocomplete="current-password" />
+                        </app-form-field>
+
+                        <app-form-field
+                            label="Nueva contraseña"
+                            [required]="true"
+                            [error]="err('newPassword')">
+                            <input class="form-input" type="password" formControlName="newPassword"
+                                placeholder="Mínimo 8 caracteres" autocomplete="new-password" />
+                        </app-form-field>
+
+                        <app-form-field
+                            label="Confirmar nueva contraseña"
+                            [required]="true"
+                            [error]="err('confirmPassword')">
+                            <input class="form-input" type="password" formControlName="confirmPassword"
+                                placeholder="Repite la contraseña" autocomplete="new-password" />
+                        </app-form-field>
+                    </app-admin-form-section>
+
+                    <div slot="actions">
+                        <app-button
+                            [label]="saving() ? 'Guardando...' : 'Cambiar contraseña'"
+                            variant="primary"
+                            icon="key"
+                            type="submit"
+                            [loading]="saving()"
+                            [disabled]="saving() || passwordForm.invalid" />
+                    </div>
+
+                </app-admin-form-layout>
+            </form>
+        </div>
+    </div>
+</div>

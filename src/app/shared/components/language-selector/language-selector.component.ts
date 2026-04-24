@@ -1,5 +1,4 @@
 import { Component, signal, inject, HostListener } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { TranslateModule } from '@ngx-translate/core';
 import { LanguageService } from '@core/i18n/language.service';
 
@@ -13,7 +12,7 @@ import { LanguageService } from '@core/i18n/language.service';
 @Component({
     selector: 'app-language-selector',
     standalone: true,
-    imports: [CommonModule, TranslateModule],
+    imports: [TranslateModule],
     templateUrl: './language-selector.component.html'
 })
 export class LanguageSelectorComponent {

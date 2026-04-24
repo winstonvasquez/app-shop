@@ -1,0 +1,191 @@
+<div class="page-container">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Reglas de Asiento Automático</h1>
+            <p class="page-subtitle">Configura qué cuentas PCGE se afectan por tipo de transacción</p>
+        </div>
+        <div class="page-actions">
+            <app-button label="Nueva Regla" icon="plus" variant="primary" (click)="abrirNueva()" />
+        </div>
+    </div>
+
+    @if (error()) {
+        <div class="badge badge-error mb-4 block">{{ error() }}</div>
+    }
+
+    @if (cargando()) {
+        <div class="loading-container"><div class="spinner"></div></div>
+    }
+
+    @if (!cargando()) {
+        <div class="card">
+            <div class="card-body p-0">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th class="table-header-cell">Tipo Transacción</th>
+                            <th class="table-header-cell">Nombre</th>
+                            <th class="table-header-cell">Líneas</th>
+                            <th class="table-header-cell">Estado</th>
+                            <th class="table-header-cell">Creado</th>
+                            <th class="table-header-cell">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (r of reglas(); track r.id) {
+                            <tr class="table-row">
+                                <td class="table-cell">
+                                    <span class="badge badge-neutral">{{ r.transactionType }}</span>
+                                </td>
+                                <td class="table-cell">
+                                    <div class="font-medium text-on">{{ r.nombre }}</div>
+                                    @if (r.descripcion) {
+                                        <div class="text-muted text-sm">{{ r.descripcion }}</div>
+                                    }
+                                </td>
+                                <td class="table-cell">{{ r.detalles.length }} línea(s)</td>
+                                <td class="table-cell">
+                                    @if (r.activo) {
+                                        <span class="badge badge-success">Activa</span>
+                                    } @else {
+                                        <span class="badge badge-neutral">Inactiva</span>
+                                    }
+                                </td>
+                                <td class="table-cell">{{ r.createdAt | date:'dd/MM/yyyy' }}</td>
+                                <td class="table-cell">
+                                    <div class="flex gap-2">
+                                        @if (r.activo) {
+                                            <app-button icon="pencil" [iconOnly]="true" variant="ghost"
+                                                    ariaLabel="Editar"
+                                                    (click)="abrirEditar(r)" />
+                                            <app-button icon="power" [iconOnly]="true" variant="danger"
+                                                    ariaLabel="Desactivar"
+                                                    (click)="desactivar(r.id)" />
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        } @empty {
+                            <tr>
+                                <td colspan="6" class="table-cell text-center text-muted py-8">
+                                    No hay reglas configuradas
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- ── DRAWER FORMULARIO ──────────────────────────────────────────── -->
+<app-drawer
+    [isOpen]="mostrarForm()"
+    [title]="editandoId() ? 'Editar Regla' : 'Nueva Regla de Asiento'"
+    size="lg"
+    side="right"
+    [hasFooter]="true"
+    (closed)="cerrarForm()">
+
+    @if (errorForm()) {
+        <div class="badge badge-error mb-4 block">{{ errorForm() }}</div>
+    }
+
+    <div class="grid grid-cols-2 gap-4 mb-4">
+        <div>
+            <label class="input-label">Tipo de transacción *</label>
+            <select class="form-input" [ngModel]="tipoTransaccion()" (ngModelChange)="tipoTransaccion.set($event)">
+                @for (t of tiposTransaccion; track t) {
+                    <option [value]="t">{{ t }}</option>
+                }
+            </select>
+        </div>
+        <div>
+            <label class="input-label">Nombre *</label>
+            <input class="form-input" type="text" placeholder="Ej: Venta gravada con IGV"
+                   [ngModel]="nombre()" (ngModelChange)="nombre.set($event)" />
+        </div>
+        <div class="col-span-2">
+            <label class="input-label">Descripción</label>
+            <input class="form-input" type="text" placeholder="Descripción opcional"
+                   [ngModel]="descripcion()" (ngModelChange)="descripcion.set($event)" />
+        </div>
+    </div>
+
+    <!-- Líneas de detalle -->
+    <div class="mb-4">
+        <div class="flex items-center justify-between mb-2">
+            <label class="input-label mb-0">Líneas de asiento *</label>
+            <app-button label="Línea" icon="plus" variant="secondary" (click)="agregarDetalle()" />
+        </div>
+        <div class="overflow-x-auto">
+            <table class="table text-sm">
+                <thead>
+                    <tr>
+                        <th class="table-header-cell">Cód. PCGE</th>
+                        <th class="table-header-cell">Campo origen</th>
+                        <th class="table-header-cell">Movimiento</th>
+                        <th class="table-header-cell">% Aplicar</th>
+                        <th class="table-header-cell w-10"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (d of detalles(); track $index; let i = $index) {
+                        <tr class="table-row">
+                            <td class="table-cell">
+                                <input class="form-input py-1" type="text"
+                                       placeholder="Ej: 121101"
+                                       [ngModel]="d.codigoCuenta"
+                                       (ngModelChange)="actualizarDetalle(i, 'codigoCuenta', $event)" />
+                            </td>
+                            <td class="table-cell">
+                                <select class="form-input py-1"
+                                        [ngModel]="d.campoOrigen"
+                                        (ngModelChange)="actualizarDetalle(i, 'campoOrigen', $event)">
+                                    @for (c of camposOrigen; track c) {
+                                        <option [value]="c">{{ c }}</option>
+                                    }
+                                </select>
+                            </td>
+                            <td class="table-cell">
+                                <select class="form-input py-1"
+                                        [ngModel]="d.movimientoTipo"
+                                        (ngModelChange)="actualizarDetalle(i, 'movimientoTipo', $event)">
+                                    <option value="DEBE">DEBE</option>
+                                    <option value="HABER">HABER</option>
+                                </select>
+                            </td>
+                            <td class="table-cell">
+                                <input class="form-input py-1 w-20"
+                                       type="number" min="1" max="100"
+                                       [ngModel]="d.porcentaje"
+                                       (ngModelChange)="actualizarDetalle(i, 'porcentaje', +$event)" />
+                            </td>
+                            <td class="table-cell">
+                                @if (detalles().length > 2) {
+                                    <app-button icon="trash-2" [iconOnly]="true" variant="danger"
+                                            ariaLabel="Eliminar línea"
+                                            (click)="eliminarDetalle(i)" />
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <ng-container slot="footer">
+        <div class="flex gap-3 justify-end">
+            <app-button label="Cancelar" icon="x" variant="secondary"
+                    [disabled]="guardando()"
+                    (click)="cerrarForm()" />
+            <app-button [label]="guardando() ? 'Guardando...' : 'Guardar'"
+                    icon="save" variant="primary"
+                    [loading]="guardando()"
+                    [disabled]="guardando() || !nombre()"
+                    (click)="guardar()" />
+        </div>
+    </ng-container>
+</app-drawer>

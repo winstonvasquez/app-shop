@@ -1,0 +1,76 @@
+<div class="page-container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Alertas de Compras</h1>
+      <p class="page-subtitle">
+        Reorden de stock, presupuestos sobreejecutados, facturas vencidas
+        @if (noLeidas() > 0) {
+          <span class="badge badge-error ml-2">{{ noLeidas() }} sin leer</span>
+        }
+      </p>
+    </div>
+    <div class="flex gap-2">
+      <app-button label="Marcar todas leídas" variant="secondary" icon="check"
+                  [disabled]="noLeidas() === 0" (click)="marcarTodasLeidas()" />
+      <app-button label="Generar alertas" variant="primary" icon="search"
+                  [loading]="generando()" [disabled]="generando()" (click)="generarAlertas()" />
+    </div>
+  </div>
+
+  <!-- Filtro -->
+  <div class="filters-bar mb-4">
+    <div class="flex gap-2">
+      <button class="btn" [class.btn-primary]="filtroLeidas() === 'no-leidas'"
+              [class.btn-secondary]="filtroLeidas() !== 'no-leidas'"
+              (click)="filtroLeidas.set('no-leidas'); cargar()">
+        No leídas
+      </button>
+      <button class="btn" [class.btn-primary]="filtroLeidas() === 'todas'"
+              [class.btn-secondary]="filtroLeidas() !== 'todas'"
+              (click)="filtroLeidas.set('todas'); cargar()">
+        Todas
+      </button>
+    </div>
+  </div>
+
+  <!-- Lista de alertas -->
+  @if (loading()) {
+    <div class="loading-container"><div class="spinner"></div></div>
+  } @else if (alertas().length === 0) {
+    <div class="card p-8 text-center text-muted">
+      @if (filtroLeidas() === 'no-leidas') {
+        ✅ No hay alertas pendientes
+      } @else {
+        No hay alertas registradas — usa "Generar alertas" para escanear
+      }
+    </div>
+  } @else {
+    <div class="flex flex-col gap-3">
+      @for (alerta of alertas(); track alerta.id) {
+        <div class="card" [class.opacity-60]="alerta.leida">
+          <div class="card-body flex items-start gap-4">
+            <div class="text-2xl">{{ tipoIcon(alerta.tipo) }}</div>
+            <div class="flex-1">
+              <div class="flex items-center gap-2 mb-1">
+                <span [class]="nivelClass(alerta.nivel)">{{ alerta.nivel }}</span>
+                <span class="badge badge-neutral text-xs">{{ alerta.tipo }}</span>
+                <span class="text-muted text-xs ml-auto">{{ alerta.createdAt | date:'dd/MM/yyyy HH:mm' }}</span>
+              </div>
+              <p class="font-semibold text-on">{{ alerta.titulo }}</p>
+              @if (alerta.descripcion) {
+                <p class="text-muted text-sm mt-1">{{ alerta.descripcion }}</p>
+              }
+              @if (alerta.leida && alerta.leidaEn) {
+                <p class="text-muted text-xs mt-1">Leída el {{ alerta.leidaEn | date:'dd/MM/yyyy HH:mm' }}</p>
+              }
+            </div>
+            @if (!alerta.leida) {
+              <button class="btn btn-secondary btn-icon text-xs" title="Marcar como leída"
+                      (click)="marcarLeida(alerta.id)">✓</button>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>

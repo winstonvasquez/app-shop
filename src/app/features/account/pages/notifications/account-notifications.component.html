@@ -1,0 +1,79 @@
+<div class="page-container">
+    <app-breadcrumb [items]="breadcrumbItems" />
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Notificaciones</h1>
+            <p class="page-subtitle">Tus alertas y avisos importantes</p>
+        </div>
+        @if (notifications().length > 0) {
+            <app-button
+                [label]="markingAll() ? 'Marcando...' : 'Marcar todas como leídas'"
+                variant="secondary"
+                icon="check"
+                [loading]="markingAll()"
+                [disabled]="markingAll()"
+                (click)="markAllRead()" />
+        }
+    </div>
+
+    @if (loading() && notifications().length === 0) {
+        <div class="loading-container"><div class="spinner"></div></div>
+    } @else if (isEmpty()) {
+        <div class="flex flex-col items-center justify-center py-16 gap-4" style="color: var(--color-text-muted)">
+            <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+                style="opacity: 0.4">
+                <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/>
+                <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
+            </svg>
+            <p class="text-base font-medium">No tienes notificaciones</p>
+            <p class="text-sm" style="opacity: 0.7">Te avisaremos aquí cuando haya novedades sobre tus pedidos u ofertas.</p>
+        </div>
+    } @else {
+        <div class="card">
+            @for (n of notifications(); track n.id) {
+                <div
+                    class="flex items-start gap-3 p-4 border-b cursor-pointer transition-colors"
+                    style="border-color: var(--color-border)"
+                    [style.background]="n.read ? 'transparent' : 'color-mix(in srgb, var(--color-primary) 5%, transparent)'"
+                    (click)="markRead(n)"
+                >
+                    <!-- Indicador no leído -->
+                    <div class="flex-shrink-0 w-2 h-2 rounded-full mt-2"
+                        [style.background]="n.read ? 'transparent' : 'var(--color-primary)'">
+                    </div>
+
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-medium" style="color: var(--color-text-primary)">{{ n.title }}</p>
+                        @if (n.body) {
+                            <p class="text-xs mt-0.5" style="color: var(--color-text-muted)">{{ n.body }}</p>
+                        }
+                        <p class="text-xs mt-1" style="color: var(--color-text-muted); opacity: 0.7">
+                            {{ n.createdAt | date:'dd/MM/yyyy HH:mm' }}
+                        </p>
+                    </div>
+
+                    <app-button
+                        label="Eliminar"
+                        variant="danger"
+                        size="xs"
+                        icon="trash-2"
+                        [iconOnly]="true"
+                        ariaLabel="Eliminar notificación"
+                        (click)="remove(n.id, $event)" />
+                </div>
+            }
+        </div>
+
+        @if (hasMore()) {
+            <div class="flex justify-center mt-4">
+                <app-button
+                    [label]="loading() ? 'Cargando...' : 'Cargar más'"
+                    variant="secondary"
+                    [loading]="loading()"
+                    [disabled]="loading()"
+                    (click)="loadMore()" />
+            </div>
+        }
+    }
+</div>

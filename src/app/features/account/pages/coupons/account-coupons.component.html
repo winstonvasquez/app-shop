@@ -1,0 +1,93 @@
+<div class="page-container">
+    <app-breadcrumb [items]="breadcrumbItems" />
+    <div class="page-header">
+        <h1 class="page-title">Cupones y ofertas</h1>
+        <p class="page-subtitle">Tus descuentos disponibles</p>
+    </div>
+
+    <!-- Tabs -->
+    <div class="flex gap-1 mb-4 p-1 rounded-xl" style="background: var(--color-surface-raised)">
+        @for (tab of [['ACTIVE', 'Activos'], ['USED', 'Usados'], ['EXPIRED', 'Expirados']]; track tab[0]) {
+            <button
+                class="flex-1 py-1.5 text-sm font-medium rounded-lg transition-colors"
+                [style.background]="activeTab() === tab[0] ? 'var(--color-surface)' : 'transparent'"
+                [style.color]="activeTab() === tab[0] ? 'var(--color-text-primary)' : 'var(--color-text-muted)'"
+                (click)="setTab($any(tab[0]))">
+                {{ tab[1] }}
+            </button>
+        }
+    </div>
+
+    @if (loading()) {
+        <div class="loading-container"><div class="spinner"></div></div>
+    } @else if (filtered().length === 0) {
+        <div class="flex flex-col items-center justify-center py-12 gap-3" style="color: var(--color-text-muted)">
+            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="1.5" style="opacity: 0.4">
+                <path d="M9 7H6a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2v-3"/>
+                <path d="M9 15h3l8.5-8.5a1.5 1.5 0 0 0-3-3L9 12v3"/>
+                <line x1="16" y1="5" x2="19" y2="8"/>
+            </svg>
+            <p class="text-sm">No tienes cupones en esta categoría</p>
+        </div>
+    } @else {
+        <div class="flex flex-col gap-3">
+            @for (cupon of filtered(); track cupon.id) {
+                <div class="card">
+                    <div class="card-body">
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="flex-1 min-w-0">
+                                <!-- Badge descuento -->
+                                <span class="badge badge-accent text-xs font-bold mb-2 inline-block">
+                                    {{ formatDiscount(cupon) }}
+                                </span>
+                                <p class="text-sm font-semibold" style="color: var(--color-text-primary)">
+                                    {{ cupon.nombre }}
+                                </p>
+                                @if (cupon.descripcion) {
+                                    <p class="text-xs mt-0.5" style="color: var(--color-text-secondary)">
+                                        {{ cupon.descripcion }}
+                                    </p>
+                                }
+                                <p class="text-xs mt-1" style="color: var(--color-text-muted)">
+                                    Vence: {{ cupon.fechaFin | date:'dd/MM/yyyy' }}
+                                </p>
+                            </div>
+
+                            <!-- Código y acciones -->
+                            <div class="flex flex-col items-end gap-2 flex-shrink-0">
+                                @if (cupon.codigo && cupon.status === 'ACTIVE') {
+                                    <div class="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-mono font-bold"
+                                        style="background: var(--color-surface-raised); color: var(--color-primary); border: 1px dashed var(--color-primary)">
+                                        {{ cupon.codigo }}
+                                    </div>
+                                    <div class="flex gap-1">
+                                        <app-button
+                                            [label]="copiedId() === cupon.id ? '¡Copiado!' : 'Copiar'"
+                                            variant="secondary"
+                                            icon="copy"
+                                            size="xs"
+                                            (click)="copyCode(cupon)" />
+                                        <a routerLink="/cart" [queryParams]="{coupon: cupon.codigo}"
+                                            class="btn btn-primary text-xs py-1 px-2">
+                                            Usar
+                                        </a>
+                                    </div>
+                                } @else if (cupon.status === 'USED') {
+                                    <span class="badge badge-neutral text-xs">Usado</span>
+                                    @if (cupon.usedAt) {
+                                        <p class="text-xs" style="color: var(--color-text-muted)">
+                                            {{ cupon.usedAt | date:'dd/MM/yyyy' }}
+                                        </p>
+                                    }
+                                } @else {
+                                    <span class="badge badge-error text-xs">Expirado</span>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>

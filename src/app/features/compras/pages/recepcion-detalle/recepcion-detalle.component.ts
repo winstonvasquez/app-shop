@@ -1,88 +1,96 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
-import { CommonModule, DatePipe } from '@angular/common';
-import { RouterLink, ActivatedRoute } from '@angular/router';
-import { RecepcionService, Recepcion } from '../../services/recepcion.service';
+import { Component, OnInit, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import { DatePipe } from '@angular/common';
+import { Router, ActivatedRoute } from '@angular/router';
+import { RecepcionService } from '../../services/recepcion.service';
+import { Recepcion } from '../../models/orden-compra.model';
+import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
+import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
+import { LoadingSpinnerComponent } from '@shared/ui/feedback/loading-spinner/loading-spinner.component';
+import { ButtonComponent } from '@shared/components';
 
 @Component({
     selector: 'app-recepcion-detalle',
     standalone: true,
-    imports: [CommonModule, RouterLink, DatePipe],
-    template: `
-        <div class="breadcrumb">
-            <a routerLink="/admin/compras/recepcion">Recepciones</a>
-            <span class="sep">›</span>
-            <span>Detalle de Recepción</span>
-        </div>
-
-        <div class="page-header">
-            <div>
-                <h1 class="page-title">📥 Recepción de Mercadería</h1>
-                <p class="page-subtitle mono">{{ recepcion()?.ordenCompraCodigo ?? '...' }}</p>
-            </div>
-            @if (recepcion()?.estado === 'PENDIENTE') {
-                <div class="page-actions">
-                    <button class="btn btn-success" (click)="confirmar()">✅ Confirmar recepción</button>
-                </div>
-            }
-        </div>
-
-        @if (recepcion(); as r) {
-            <div class="form-card max-w-[900px]">
-                <div class="form-card-title">📋 Datos de la recepción</div>
-
-                <div class="grid grid-cols-2 gap-3 mb-4">
-                    <div class="info-row"><span class="lbl">OC Referencia:</span><strong class="mono">{{ r.ordenCompraCodigo ?? '—' }}</strong></div>
-                    <div class="info-row"><span class="lbl">N° Guía:</span><strong class="mono">{{ r.numeroGuia ?? '—' }}</strong></div>
-                    <div class="info-row"><span class="lbl">Transportista:</span><span>{{ r.transportista ?? '—' }}</span></div>
-                    <div class="info-row"><span class="lbl">Fecha recepción:</span><span>{{ r.fechaRecepcion | date:'dd/MM/yyyy' }}</span></div>
-                    <div class="info-row"><span class="lbl">Responsable:</span><span>{{ r.responsable ?? '—' }}</span></div>
-                    <div class="info-row"><span class="lbl">Almacén:</span><span>{{ r.almacenDestino }}</span></div>
-                    <div class="info-row"><span class="lbl">Estado:</span>
-                        <span class="badge"
-                            [class.badge-warning]="r.estado === 'PENDIENTE'"
-                            [class.badge-success]="r.estado === 'CONFORME'"
-                            [class.badge-danger]="r.estado === 'DIFERENCIA'">
-                            {{ r.estado }}
-                        </span>
-                    </div>
-                </div>
-
-                @if (r.observaciones) {
-                    <div class="info-box mb-md">
-                        <strong>Observaciones:</strong> {{ r.observaciones }}
-                    </div>
-                }
-            </div>
-        } @else {
-            <div class="text-muted text-center p-12">
-                ⏳ Cargando recepción...
-            </div>
-        }
-    `,
-    styles: [`:host { display: block; }`]
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    imports: [
+    PageHeaderComponent,
+    AlertComponent,
+    LoadingSpinnerComponent,
+    DatePipe,
+    ButtonComponent
+  ],
+    templateUrl: './recepcion-detalle.component.html'
 })
 export class RecepcionDetalleComponent implements OnInit {
-    private recepcionService = inject(RecepcionService);
-    private route = inject(ActivatedRoute);
+    private readonly recepcionService = inject(RecepcionService);
+    private readonly router = inject(Router);
+    private readonly route = inject(ActivatedRoute);
 
     recepcion = signal<Recepcion | null>(null);
+    loading = signal(true);
+    error = signal<string | null>(null);
+    confirming = signal(false);
+    confirmError = signal<string | null>(null);
+
+    breadcrumbs: Breadcrumb[] = [
+        { label: 'Admin', url: '/admin' },
+        { label: 'Compras', url: '/admin/compras/dashboard' },
+        { label: 'Recepción', url: '/admin/compras/recepcion' },
+        { label: 'Detalle' }
+    ];
 
     ngOnInit(): void {
         const id = this.route.snapshot.paramMap.get('id');
-        if (id) {
-            this.recepcionService.getRecepcionById(id).subscribe({
-                next: (r) => this.recepcion.set(r),
-                error: () => this.recepcion.set(null)
-            });
+        if (!id) {
+            this.router.navigate(['/admin/compras/recepcion']);
+            return;
         }
+        this.loadRecepcion(id);
     }
 
-    confirmar(): void {
-        const id = this.route.snapshot.paramMap.get('id');
-        if (id && confirm('¿Confirmar la recepción de mercadería?')) {
-            this.recepcionService.confirmarRecepcion(id).subscribe({
-                next: (r) => this.recepcion.set(r)
-            });
-        }
+    private loadRecepcion(id: string): void {
+        this.loading.set(true);
+        this.recepcionService.getRecepcionById(id).subscribe({
+            next: (rec) => {
+                this.recepcion.set(rec);
+                this.loading.set(false);
+            },
+            error: (err: Error) => {
+                this.error.set(err.message ?? 'No se pudo cargar el detalle.');
+                this.loading.set(false);
+            }
+        });
+    }
+
+    confirmarRecepcion(): void {
+        const rec = this.recepcion();
+        if (!rec?.id) return;
+        this.confirming.set(true);
+        this.confirmError.set(null);
+        this.recepcionService.confirmarRecepcion(rec.id).subscribe({
+            next: (updated) => {
+                this.recepcion.set(updated);
+                this.confirming.set(false);
+            },
+            error: (err: Error) => {
+                this.confirmError.set(err.message);
+                this.confirming.set(false);
+            }
+        });
+    }
+
+    onVolver(): void {
+        this.router.navigate(['/admin/compras/recepcion']);
+    }
+
+    badgeEstado(estado: string): string {
+        const map: Record<string, string> = {
+            PENDIENTE: 'warning',
+            CONFORME: 'success',
+            CON_DIFERENCIAS: 'error',
+            DIFERENCIA: 'error',
+            COMPLETADA: 'success'
+        };
+        return map[estado] ?? 'neutral';
     }
 }

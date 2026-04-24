@@ -1,0 +1,73 @@
+<div class="page-container">
+    <app-breadcrumb [items]="breadcrumbItems" />
+    <div class="page-header">
+        <h1 class="page-title">Mis permisos</h1>
+        <p class="page-subtitle">Roles y accesos asignados a tu cuenta</p>
+    </div>
+
+    @if (loading()) {
+        <div class="loading-container"><div class="spinner"></div></div>
+    } @else if (error()) {
+        <div class="card max-w-md">
+            <div class="card-body">
+                <p class="text-sm" style="color: var(--color-text-muted)">{{ error() }}</p>
+            </div>
+        </div>
+    } @else if (permissions()) {
+        <div class="card max-w-lg mb-4">
+            <div class="card-header">
+                <h3 class="card-title">Rol asignado</h3>
+                <span class="badge badge-accent">{{ permissions()!.rolNombre }}</span>
+            </div>
+            @if (permissions()!.rolDescripcion) {
+                <div class="card-body">
+                    <p class="text-sm" style="color: var(--color-text-muted)">{{ permissions()!.rolDescripcion }}</p>
+                </div>
+            }
+        </div>
+
+        @if (permissions()!.isStandardCustomer) {
+            <div class="card max-w-lg">
+                <div class="card-body" style="text-align: center; padding: var(--space-xl)">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin: 0 auto var(--space-md); color: var(--color-text-muted)">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                    <p class="font-medium" style="color: var(--color-text-primary); margin-bottom: var(--space-xs)">Acceso estándar de cliente</p>
+                    <p class="text-sm" style="color: var(--color-text-muted)">Puedes comprar, gestionar tus pedidos y actualizar tu perfil.</p>
+                </div>
+            </div>
+        } @else if (permissions()!.permissions.length > 0) {
+            <div class="card max-w-lg">
+                <div class="card-header">
+                    <h3 class="card-title">Políticas de acceso</h3>
+                    <span class="badge badge-neutral">{{ permissions()!.permissions.length }}</span>
+                </div>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th class="table-header-cell">Política</th>
+                            <th class="table-header-cell">Efecto</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (p of permissions()!.permissions; track p.codigo) {
+                            <tr class="table-row">
+                                <td class="table-cell">
+                                    <p class="font-medium text-sm" style="color: var(--color-text-primary)">{{ p.nombre }}</p>
+                                    <p class="text-xs" style="color: var(--color-text-muted)">{{ p.codigo }}</p>
+                                </td>
+                                <td class="table-cell">
+                                    @if (p.efecto === 'ALLOW') {
+                                        <span class="badge badge-success">Permitido</span>
+                                    } @else {
+                                        <span class="badge badge-error">Denegado</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    }
+</div>

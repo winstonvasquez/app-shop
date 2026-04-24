@@ -1,32 +1,39 @@
-import { Component, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, inject, signal } from '@angular/core';
+import { AuthService } from '@core/auth/auth.service';
 
 @Component({
   selector: 'app-admin-header',
   standalone: true,
-  imports: [CommonModule],
+  imports: [],
   templateUrl: './admin-header.component.html',
   styleUrl: './admin-header.component.scss'
 })
 export class AdminHeaderComponent {
+  private authService = inject(AuthService);
+
   searchQuery = signal('');
   hasNotifications = signal(true);
   userName = signal('Admin');
   userRole = signal('Administrador');
+  isUserMenuOpen = signal(false);
 
   onSearch(event: Event): void {
     const input = event.target as HTMLInputElement;
     this.searchQuery.set(input.value);
-    // Implement search logic here
   }
 
-  onNotificationClick(): void {
-    // Implement notification logic here
-    console.log('Notifications clicked');
+  onNotificationClick(): void {}
+
+  toggleUserMenu(): void {
+    this.isUserMenuOpen.update(v => !v);
   }
 
-  onUserMenuClick(): void {
-    // Implement user menu logic here
-    console.log('User menu clicked');
+  closeUserMenu(): void {
+    this.isUserMenuOpen.set(false);
+  }
+
+  logout(): void {
+    this.closeUserMenu();
+    this.authService.logout();
   }
 }

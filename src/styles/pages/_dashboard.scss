@@ -1,0 +1,311 @@
+/* ============================================================
+ * Dashboard — KPI cards coloreadas + layout grid
+ * Usa tokens del design system dark (--color-*)
+ * ============================================================ */
+
+/* ── KPI Card base ─────────────────────────────────────────── */
+.kpi-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 16px;
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+    &:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-lg);
+    }
+
+    /* Borde superior coloreado */
+    &::before {
+        content: '';
+        position: absolute;
+        inset: 0 0 auto 0;
+        height: 3px;
+        border-radius: 16px 16px 0 0;
+        background: var(--kpi-accent, var(--color-primary));
+    }
+}
+
+.kpi-card-red    { --kpi-accent: var(--color-primary); }
+.kpi-card-orange { --kpi-accent: var(--color-accent); }
+.kpi-card-green  { --kpi-accent: var(--color-success); }
+.kpi-card-yellow { --kpi-accent: var(--color-warning); }
+.kpi-card-blue   { --kpi-accent: var(--color-info); }
+.kpi-card-purple { --kpi-accent: oklch(0.60 0.22 300); }
+.kpi-card-teal   { --kpi-accent: oklch(0.70 0.18 185); }
+
+/* Header dentro del KPI: label + icono */
+.kpi-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.25rem;
+}
+
+.kpi-label {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+/* Icono en esquina superior derecha */
+.kpi-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+
+    svg { width: 18px; height: 18px; }
+}
+
+.kpi-icon-red    { background: color-mix(in oklch, var(--color-primary) 18%, transparent); color: var(--color-primary); }
+.kpi-icon-orange { background: color-mix(in oklch, var(--color-accent) 18%, transparent); color: var(--color-accent); }
+.kpi-icon-green  { background: color-mix(in oklch, var(--color-success) 18%, transparent); color: var(--color-success); }
+.kpi-icon-yellow { background: color-mix(in oklch, var(--color-warning) 18%, transparent); color: var(--color-warning); }
+.kpi-icon-blue   { background: color-mix(in oklch, var(--color-info) 18%, transparent); color: var(--color-info); }
+.kpi-icon-purple { background: color-mix(in oklch, oklch(0.60 0.22 300) 18%, transparent); color: oklch(0.60 0.22 300); }
+.kpi-icon-teal   { background: color-mix(in oklch, oklch(0.70 0.18 185) 18%, transparent); color: oklch(0.70 0.18 185); }
+.kpi-icon-danger { background: color-mix(in oklch, var(--color-danger) 18%, transparent); color: var(--color-danger); }
+.kpi-icon-success { background: color-mix(in oklch, var(--color-success) 18%, transparent); color: var(--color-success); }
+.kpi-icon-primary { background: color-mix(in oklch, var(--color-primary) 18%, transparent); color: var(--color-primary); }
+
+.kpi-value {
+    font-size: 1.875rem;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--color-text-primary);
+    margin: 0.25rem 0;
+}
+
+.kpi-sub {
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+}
+
+.kpi-trend {
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-top: auto;
+}
+
+.trend-up    { color: var(--color-success); }
+.trend-down  { color: var(--color-danger); }
+.trend-neutral { color: var(--color-text-muted); }
+
+/* ── Acceso rápido card (RRHH, etc.) ──────────────────────── */
+.quick-link-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 14px;
+    overflow: hidden;
+    text-decoration: none;
+    display: block;
+    transition: transform 0.2s, box-shadow 0.2s;
+
+    &:hover {
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-lg);
+    }
+
+    .quick-link-accent {
+        height: 4px;
+        background: var(--kpi-accent, var(--color-primary));
+    }
+
+    .quick-link-body {
+        padding: 1rem 1.25rem 1.25rem;
+    }
+
+    .quick-link-title {
+        font-size: 0.9375rem;
+        font-weight: 700;
+        color: var(--color-text-primary);
+        margin-bottom: 0.375rem;
+    }
+
+    .quick-link-desc {
+        font-size: 0.8125rem;
+        color: var(--color-text-muted);
+        line-height: 1.4;
+    }
+}
+
+/* ── Chart card ────────────────────────────────────────────── */
+.chart-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 16px;
+    overflow: hidden;
+    padding: 0;
+
+    .chart-card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--color-border);
+    }
+
+    .chart-card-title {
+        font-size: 0.9375rem;
+        font-weight: 700;
+        color: var(--color-text-primary);
+    }
+
+    .chart-card-body {
+        padding: 0.75rem 0.5rem;
+    }
+}
+
+/* ── KPI Grid helpers ──────────────────────────────────────── */
+.kpi-grid {
+    display: grid;
+    gap: 1.25rem;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    margin-bottom: 1.5rem;
+}
+
+.kpi-grid-2 { grid-template-columns: repeat(2, 1fr); }
+.kpi-grid-3 { grid-template-columns: repeat(3, 1fr); }
+.kpi-grid-4 { grid-template-columns: repeat(4, 1fr); }
+.kpi-grid-5 { grid-template-columns: repeat(5, 1fr); }
+
+@media (max-width: 1200px) {
+    .kpi-grid-5 { grid-template-columns: repeat(3, 1fr); }
+    .kpi-grid-4 { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 768px) {
+    .kpi-grid, .kpi-grid-2, .kpi-grid-3, .kpi-grid-4, .kpi-grid-5 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .kpi-value { font-size: 1.5rem; }
+}
+@media (max-width: 480px) {
+    .kpi-grid, .kpi-grid-2, .kpi-grid-3, .kpi-grid-4, .kpi-grid-5 {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ── Dashboard section gap ─────────────────────────────────── */
+.dash-row {
+    display: grid;
+    gap: 1.25rem;
+    margin-bottom: 1.25rem;
+}
+
+.dash-row-2-1 { grid-template-columns: 2fr 1fr; }
+.dash-row-1-1 { grid-template-columns: 1fr 1fr; }
+.dash-row-1-1-1 { grid-template-columns: 1fr 1fr 1fr; }
+
+@media (max-width: 1024px) {
+    .dash-row-2-1, .dash-row-1-1, .dash-row-1-1-1 {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ── Stat mini (dentro de cards) ──────────────────────────── */
+.stat-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.625rem 0;
+    border-bottom: 1px solid var(--color-border);
+
+    &:last-child { border-bottom: none; }
+
+    .stat-row-label {
+        font-size: 0.875rem;
+        color: var(--color-text-secondary);
+    }
+
+    .stat-row-value {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: var(--color-text-primary);
+    }
+}
+
+/* ── Progress bar ──────────────────────────────────────────── */
+.progress-bar {
+    height: 6px;
+    background: var(--color-surface-raised);
+    border-radius: 99px;
+    overflow: hidden;
+    margin-top: 0.375rem;
+
+    .progress-fill {
+        height: 100%;
+        border-radius: 99px;
+        background: var(--color-primary);
+        transition: width 0.6s ease;
+    }
+}
+
+/* ── Movimiento item (logística, tesorería) ────────────────── */
+.mov-item {
+    display: flex;
+    align-items: center;
+    gap: 0.875rem;
+    padding: 0.625rem 0.75rem;
+    border-radius: 10px;
+    background: var(--color-surface-raised);
+    margin-bottom: 0.5rem;
+
+    &:last-child { margin-bottom: 0; }
+
+    .mov-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 9px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        font-size: 1rem;
+    }
+
+    .mov-info {
+        flex: 1;
+        min-width: 0;
+
+        .mov-title {
+            font-size: 0.8125rem;
+            font-weight: 600;
+            color: var(--color-text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .mov-sub {
+            font-size: 0.75rem;
+            color: var(--color-text-muted);
+        }
+    }
+
+    .mov-date {
+        font-size: 0.75rem;
+        color: var(--color-text-muted);
+        white-space: nowrap;
+    }
+
+    .mov-amount {
+        font-size: 0.875rem;
+        font-weight: 700;
+        white-space: nowrap;
+
+        &.ingreso { color: var(--color-success); }
+        &.egreso  { color: var(--color-warning); }
+    }
+}

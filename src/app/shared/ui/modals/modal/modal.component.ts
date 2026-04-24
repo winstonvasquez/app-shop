@@ -1,10 +1,9 @@
 import { Component, input, output, ChangeDetectionStrategy, effect, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
 
 @Component({
     selector: 'app-modal',
     standalone: true,
-    imports: [CommonModule],
+    imports: [],
     templateUrl: './modal.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
 })

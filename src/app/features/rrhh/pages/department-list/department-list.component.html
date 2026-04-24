@@ -1,0 +1,125 @@
+<app-page-header
+    title="Departamentos"
+    subtitle="Estructura organizacional de la empresa"
+    [breadcrumbs]="breadcrumbs">
+    <div actions>
+        <app-button label="Nuevo Departamento" icon="plus" variant="primary" (click)="openCreateModal()" />
+    </div>
+</app-page-header>
+
+@if (error()) {
+    <app-alert type="error" [message]="error()!" />
+}
+
+<!-- Filtros -->
+<div class="filters-bar">
+    <div class="search-box">
+        <svg class="search-box-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z" clip-rule="evenodd" />
+        </svg>
+        <input
+            type="text"
+            placeholder="Buscar por código o nombre..."
+            [value]="searchQuery()"
+            (input)="onSearch($event)" />
+    </div>
+
+    <select class="form-input" style="width: auto; min-width: 160px"
+            [value]="filterActivo()"
+            (change)="onFilterActivo($event)">
+        <option value="">Todos</option>
+        <option value="true">Activos</option>
+        <option value="false">Inactivos</option>
+    </select>
+</div>
+
+<!-- Tabla -->
+<app-data-table
+    [data]="pagedData()"
+    [columns]="columns"
+    [actions]="actions"
+    [loading]="loading()"
+    [exportable]="true"
+    exportFileName="departamentos"
+    [hidePagination]="true" />
+
+<!-- Paginación -->
+@if (totalElements() > 0) {
+    <app-pagination
+        [currentPage]="currentPage()"
+        [totalPages]="totalPages()"
+        [totalElements]="totalElements()"
+        [pageSize]="pageSize()"
+        (pageChange)="onPaginationChange($event)" />
+}
+
+<!-- Drawer: Crear / Editar Departamento -->
+<app-drawer
+    [isOpen]="showModal()"
+    [title]="editMode() ? 'Editar Departamento' : 'Nuevo Departamento'"
+    size="md"
+    [hasFooter]="true"
+    (closed)="closeModal()">
+
+    <form [formGroup]="departmentForm" (ngSubmit)="onSubmit()">
+
+        @if (submitError()) {
+            <app-alert type="error" [message]="submitError()!" />
+        }
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <app-form-field
+                label="Código"
+                [control]="getControl('codigo')"
+                placeholder="Ej: ADMIN"
+                [required]="true" />
+
+            <app-form-field
+                label="Nombre"
+                [control]="getControl('nombre')"
+                placeholder="Ej: Administración"
+                [required]="true" />
+        </div>
+
+        <div style="margin-top: var(--space-md)">
+            <app-form-field
+                label="Descripción"
+                [control]="getControl('descripcion')"
+                placeholder="Descripción del departamento" />
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+            <div>
+                <label class="input-label">Departamento Padre</label>
+                <select class="form-input" formControlName="parentId">
+                    <option [ngValue]="null">— Ninguno (raíz) —</option>
+                    @for (dept of parentOptions(); track dept.id) {
+                        <option [ngValue]="dept.id">{{ dept.nombre }}</option>
+                    }
+                </select>
+            </div>
+
+            <div>
+                <label class="input-label">Jefe / Gerente</label>
+                <select class="form-input" formControlName="managerId">
+                    <option [ngValue]="null">— Sin asignar —</option>
+                    @for (emp of employees(); track emp.id) {
+                        <option [ngValue]="emp.id">{{ emp.nombres }} {{ emp.apellidos }}</option>
+                    }
+                </select>
+            </div>
+        </div>
+
+    </form>
+
+    <div slot="footer" class="flex justify-end gap-2">
+        <app-button label="Cancelar" icon="x" variant="secondary" type="button" (click)="closeModal()" />
+        <!-- btn-migration: SKIP — label condicional multi-línea (submitting ? 'Guardando...' : editMode ? 'Actualizar' : 'Crear Departamento') -->
+        <button class="btn btn-primary" type="button"
+                [disabled]="submitting()"
+                (click)="onSubmit()">
+            {{ submitting() ? 'Guardando...' : (editMode() ? 'Actualizar' : 'Crear Departamento') }}
+        </button>
+    </div>
+
+</app-drawer>

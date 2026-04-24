@@ -1,0 +1,222 @@
+<app-page-header title="Detalle de Cliente" [breadcrumbs]="breadcrumbs">
+    <a actions routerLink="/admin/customers" class="btn btn-secondary">Volver</a>
+</app-page-header>
+
+<div class="page-container">
+    @if (loading()) {
+        <div class="loading-container"><div class="spinner"></div></div>
+    }
+
+    @if (customer(); as c) {
+        <!-- Tabs nav -->
+        <nav class="flex gap-1 border-b border-[var(--color-border)] mb-6">
+            <button
+                type="button"
+                class="tab-btn"
+                [class.tab-btn--active]="activeTab() === 'general'"
+                (click)="setTab('general')">
+                General
+            </button>
+            <button
+                type="button"
+                class="tab-btn"
+                [class.tab-btn--active]="activeTab() === 'direcciones'"
+                (click)="setTab('direcciones')">
+                Direcciones
+            </button>
+            @if (c.tipoCliente === 'PERSONA_JURIDICA') {
+                <button
+                    type="button"
+                    class="tab-btn"
+                    [class.tab-btn--active]="activeTab() === 'contactos'"
+                    (click)="setTab('contactos')">
+                    Contactos
+                </button>
+            }
+        </nav>
+
+        <!-- ── Tab: General ─────────────────────────────────────────────── -->
+        @if (activeTab() === 'general') {
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Datos del Cliente</h3>
+                    <span class="badge"
+                          [class.badge-accent]="c.tipoCliente === 'PERSONA_JURIDICA'"
+                          [class.badge-neutral]="c.tipoCliente === 'PERSONA_NATURAL'">
+                        {{ c.tipoCliente === 'PERSONA_JURIDICA' ? 'Empresa' : 'Persona Natural' }}
+                    </span>
+                </div>
+                <div class="card-body">
+                    <div class="form-group-2col">
+                        <div class="form-group">
+                            <p class="input-label">Documento</p>
+                            <p class="text-on">{{ c.tipoDocumento }} {{ c.numeroDocumento }}</p>
+                        </div>
+                        <div class="form-group">
+                            <p class="input-label">Nombre / Razón Social</p>
+                            <p class="text-on font-medium">{{ c.nombreCompleto }}</p>
+                        </div>
+                        @if (c.nombreComercial) {
+                            <div class="form-group">
+                                <p class="input-label">Nombre Comercial</p>
+                                <p class="text-on">{{ c.nombreComercial }}</p>
+                            </div>
+                        }
+                        <div class="form-group">
+                            <p class="input-label">Email</p>
+                            <p class="text-on">{{ c.email || '-' }}</p>
+                        </div>
+                        <div class="form-group">
+                            <p class="input-label">Teléfono</p>
+                            <p class="text-on">{{ c.telefono || '-' }}{{ c.celular ? ' / ' + c.celular : '' }}</p>
+                        </div>
+                        <div class="form-group">
+                            <p class="input-label">Condición de Pago</p>
+                            <span class="badge badge-neutral">{{ c.condicionPago }}</span>
+                        </div>
+                        <div class="form-group">
+                            <p class="input-label">Crédito</p>
+                            <p class="text-on">S/ {{ c.saldoCredito.toFixed(2) }} / {{ c.limiteCredito.toFixed(2) }}</p>
+                        </div>
+                    </div>
+                    @if (c.notas) {
+                        <div class="form-group mt-4">
+                            <p class="input-label">Notas</p>
+                            <p class="text-on">{{ c.notas }}</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+
+        <!-- ── Tab: Direcciones ─────────────────────────────────────────── -->
+        @if (activeTab() === 'direcciones') {
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Direcciones</h3>
+                    @if (!showDirForm()) {
+                        <app-button label="Agregar" variant="primary" size="sm" icon="plus"
+                                    (click)="openDirForm()" />
+                    }
+                </div>
+
+                @if (showDirForm()) {
+                    <div class="card-body border-b border-[var(--color-border)]">
+                        <form [formGroup]="dirForm" (ngSubmit)="saveDireccion()">
+                            <app-admin-form-layout [errorMessage]="dirSaveError()">
+                                <app-admin-form-section [columns]="3">
+                                    <app-form-field label="Tipo" [required]="true" [error]="errDir('tipoDireccion')">
+                                        <select class="form-input" formControlName="tipoDireccion">
+                                            @for (opt of tipoDireccionOptions; track opt.value) {
+                                                <option [value]="opt.value">{{ opt.label }}</option>
+                                            }
+                                        </select>
+                                    </app-form-field>
+                                    <app-form-field label="Departamento" [required]="true" [error]="errDir('departamento')">
+                                        <input type="text" class="form-input" formControlName="departamento" />
+                                    </app-form-field>
+                                    <app-form-field label="Provincia" [required]="true" [error]="errDir('provincia')">
+                                        <input type="text" class="form-input" formControlName="provincia" />
+                                    </app-form-field>
+                                </app-admin-form-section>
+
+                                <app-admin-form-section [columns]="2">
+                                    <app-form-field label="Distrito" [required]="true" [error]="errDir('distrito')">
+                                        <input type="text" class="form-input" formControlName="distrito" />
+                                    </app-form-field>
+                                    <app-form-field label="Dirección" [required]="true" [error]="errDir('direccion')">
+                                        <input type="text" class="form-input" formControlName="direccion" />
+                                    </app-form-field>
+                                </app-admin-form-section>
+
+                                <app-admin-form-section [columns]="1">
+                                    <label class="flex items-center gap-2 cursor-pointer text-sm">
+                                        <input type="checkbox" formControlName="esPrincipal" />
+                                        <span>Marcar como principal</span>
+                                    </label>
+                                </app-admin-form-section>
+
+                                <div slot="actions">
+                                    <app-button label="Cancelar" variant="secondary" icon="x"
+                                                (click)="cancelDirForm()" />
+                                    <app-button label="Guardar" variant="primary" icon="save"
+                                                type="submit" [loading]="dirSaving()"
+                                                [disabled]="dirForm.invalid || dirSaving()" />
+                                </div>
+                            </app-admin-form-layout>
+                        </form>
+                    </div>
+                }
+
+                <div class="card-body p-0">
+                    <app-data-table
+                        [data]="direcciones()"
+                        [columns]="dirColumns"
+                        [actions]="dirActions"
+                        [hidePagination]="true">
+                    </app-data-table>
+                </div>
+            </div>
+        }
+
+        <!-- ── Tab: Contactos (B2B) ─────────────────────────────────────── -->
+        @if (activeTab() === 'contactos') {
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Contactos</h3>
+                    @if (!showCtForm()) {
+                        <app-button label="Agregar" variant="primary" size="sm" icon="plus"
+                                    (click)="openCtForm()" />
+                    }
+                </div>
+
+                @if (showCtForm()) {
+                    <div class="card-body border-b border-[var(--color-border)]">
+                        <form [formGroup]="ctForm" (ngSubmit)="saveContacto()">
+                            <app-admin-form-layout [errorMessage]="ctSaveError()">
+                                <app-admin-form-section [columns]="2">
+                                    <app-form-field label="Nombre Completo" [required]="true" [error]="errCt('nombreCompleto')">
+                                        <input type="text" class="form-input" formControlName="nombreCompleto" />
+                                    </app-form-field>
+                                    <app-form-field label="Cargo" [error]="errCt('cargo')">
+                                        <input type="text" class="form-input" formControlName="cargo" />
+                                    </app-form-field>
+                                    <app-form-field label="Email" [error]="errCt('email')">
+                                        <input type="email" class="form-input" formControlName="email" />
+                                    </app-form-field>
+                                    <app-form-field label="Teléfono" [error]="errCt('telefono')">
+                                        <input type="text" class="form-input" formControlName="telefono" />
+                                    </app-form-field>
+                                </app-admin-form-section>
+
+                                <app-admin-form-section [columns]="1">
+                                    <label class="flex items-center gap-2 cursor-pointer text-sm">
+                                        <input type="checkbox" formControlName="esPrincipal" />
+                                        <span>Marcar como principal</span>
+                                    </label>
+                                </app-admin-form-section>
+
+                                <div slot="actions">
+                                    <app-button label="Cancelar" variant="secondary" icon="x"
+                                                (click)="cancelCtForm()" />
+                                    <app-button label="Guardar" variant="primary" icon="save"
+                                                type="submit" [loading]="ctSaving()"
+                                                [disabled]="ctForm.invalid || ctSaving()" />
+                                </div>
+                            </app-admin-form-layout>
+                        </form>
+                    </div>
+                }
+
+                <div class="card-body p-0">
+                    <app-data-table
+                        [data]="contactos()"
+                        [columns]="ctColumns"
+                        [actions]="ctActions"
+                        [hidePagination]="true">
+                    </app-data-table>
+                </div>
+            </div>
+        }
+    }
+</div>

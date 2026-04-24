@@ -5,21 +5,27 @@
             <span class="required-indicator">*</span>
         }
     </label>
-    
-    <input
-        [id]="id()"
-        [type]="type()"
-        [formControl]="control()"
-        [placeholder]="placeholder()"
-        [disabled]="disabled()"
-        [class.error]="hasError()"
-        class="form-input"
-    />
-    
+
+    @if (control()) {
+        <!-- Modo 1: auto-render con FormControl -->
+        <input
+            [id]="id()"
+            [type]="type()"
+            [formControl]="control()!"
+            [placeholder]="placeholder()"
+            [attr.disabled]="disabled() ? true : null"
+            [class.error]="hasError()"
+            class="form-input"
+        />
+    } @else {
+        <!-- Modo 2: content projection — el padre proyecta el <input> o <select> -->
+        <ng-content />
+    }
+
     @if (hint() && !hasError()) {
         <p class="form-hint">{{ hint() }}</p>
     }
-    
+
     @if (hasError()) {
         <p class="form-error">{{ errorMessage() }}</p>
     }

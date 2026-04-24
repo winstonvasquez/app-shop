@@ -1,34 +1,43 @@
-import { Component, OnInit, inject, signal, computed } from '@angular/core';
-import { CommonModule, DatePipe, CurrencyPipe } from '@angular/common';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Component, OnInit, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
+import { DatePipe, CurrencyPipe } from '@angular/common';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { OrderService } from '@core/services/order.service';
 import { OrderResponse } from '@core/models/order.model';
-import { OrderStatus, ORDER_STATUSES, OrderDetail } from '@features/admin/models/order.model';
-import { PaginationConfig, PageResponse } from '@core/models/pagination.model';
+import { OrderStatus, OrderDetail } from '@features/admin/models/order.model';
+import { VentasParametrosService } from '../../services/ventas-parametros.service';
+import { PaginationConfig } from '@core/models/pagination.model';
 import { DataTableComponent, TableColumn, TableAction, PaginationEvent, SortEvent } from '@shared/ui/tables/data-table/data-table.component';
-import { ModalComponent } from '@shared/ui/modals/modal/modal.component';
+import { PaginationComponent, PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
+import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { LoadingSpinnerComponent } from '@shared/ui/feedback/loading-spinner/loading-spinner.component';
+import { ButtonComponent } from '@shared/components';
 
 @Component({
   selector: 'app-orders',
   standalone: true,
   imports: [
-    CommonModule,
-    ReactiveFormsModule,
     DatePipe,
     CurrencyPipe,
+    TranslateModule,
     DataTableComponent,
-    ModalComponent,
+    PaginationComponent,
+    DrawerComponent,
     PageHeaderComponent,
     AlertComponent,
-    LoadingSpinnerComponent
+    LoadingSpinnerComponent,
+    ButtonComponent
   ],
-  templateUrl: './orders.component.html'
+  templateUrl: './orders.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class OrdersComponent implements OnInit {
   private readonly orderService = inject(OrderService);
+  private readonly translate = inject(TranslateService);
+  private readonly parametros = inject(VentasParametrosService);
 
   // Data Signals
   orders = signal<OrderResponse[]>([]);
@@ -39,6 +48,7 @@ export class OrdersComponent implements OnInit {
   loadingDetails = signal(false); // Para el modal
   error = signal<string | null>(null);
   showModal = signal(false);
+  searchQuery = signal('');
 
   // Pagination
   currentPage = signal(0);
@@ -46,53 +56,17 @@ export class OrdersComponent implements OnInit {
   totalElements = signal(0);
   totalPages = signal(0);
 
-  // Constants
-  orderStatuses = ORDER_STATUSES;
-
   // Breadcrumbs
   breadcrumbs: Breadcrumb[] = [
     { label: 'Admin', url: '/admin' },
     { label: 'Pedidos' }
   ];
 
-  // Table columns configuration
-  columns: TableColumn<OrderResponse>[] = [
-    { key: 'id', label: 'ID', sortable: true, width: '80px' },
-    {
-      key: 'fechaPedido',
-      label: 'Fecha',
-      sortable: true,
-      render: (row) => new Date(row.fechaPedido).toLocaleDateString('es-ES')
-    },
-    {
-      key: 'userId',
-      label: 'Cliente',
-      render: (row) => `Usuario #${row.userId}`
-    },
-    {
-      key: 'total',
-      label: 'Total',
-      sortable: true,
-      align: 'right',
-      render: (row) => `$${row.total.toFixed(2)}`
-    },
-    {
-      key: 'estado',
-      label: 'Estado',
-      sortable: true,
-      render: (row) => this.getStatusLabel(row.estado)
-    }
-  ];
+  // Table columns configuration — labels initialized in ngOnInit() with translations
+  columns: TableColumn<OrderResponse>[] = [];
 
-  // Table actions configuration
-  actions: TableAction<OrderResponse>[] = [
-    {
-      label: 'Ver Detalles',
-      icon: '👁️',
-      onClick: (row) => this.openDetails(row.id),
-      class: 'btn-view'
-    }
-  ];
+  // Table actions configuration — label initialized in ngOnInit() with translations
+  actions: TableAction<OrderResponse>[] = [];
 
   // Sort state
   sortField = signal('fechaPedido');
@@ -102,8 +76,61 @@ export class OrdersComponent implements OnInit {
   hasOrders = computed(() => this.orders().length > 0);
   isEmpty = computed(() => !this.loading() && !this.hasOrders());
 
+  private readonly searchInput$ = new Subject<string>();
+
+  constructor() {
+    this.searchInput$
+      .pipe(debounceTime(300), distinctUntilChanged(), takeUntilDestroyed())
+      .subscribe(value => {
+        this.searchQuery.set(value);
+        this.currentPage.set(0);
+        this.loadOrders();
+      });
+  }
+
   ngOnInit(): void {
+    this.columns = [
+      { key: 'id', label: this.translate.instant('admin.orders.colId'), sortable: true, width: '80px' },
+      {
+        key: 'fechaPedido',
+        label: this.translate.instant('admin.orders.colFecha'),
+        sortable: true,
+        render: (row) => new Date(row.fechaPedido).toLocaleDateString('es-PE')
+      },
+      {
+        key: 'usuarioId',
+        label: this.translate.instant('admin.orders.colCliente'),
+        render: (row) => `Usuario #${row.usuarioId}`
+      },
+      {
+        key: 'total',
+        label: this.translate.instant('admin.orders.colTotal'),
+        sortable: true,
+        align: 'right',
+        render: (row) => `S/ ${row.total.toFixed(2)}`
+      },
+      {
+        key: 'estado',
+        label: this.translate.instant('admin.orders.colEstado'),
+        sortable: true,
+        html: true,
+        render: (row) => `<span class="badge ${this.parametros.getBadgeEstadoPedido(row.estado)}">${this.parametros.getLabelEstadoPedido(row.estado)}</span>`
+      }
+    ];
+    this.actions = [
+      {
+        label: this.translate.instant('admin.orders.verDetalles'),
+        icon: '👁️',
+        onClick: (row) => this.openDetails(row.id),
+        class: 'btn-view'
+      }
+    ];
     this.loadOrders();
+  }
+
+  onSearch(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.searchInput$.next(input.value);
   }
 
   loadOrders(): void {
@@ -116,11 +143,13 @@ export class OrdersComponent implements OnInit {
       sort: { field: 'fechaPedido', direction: 'desc' }
     };
 
-    this.orderService.getAll(pagination).subscribe({
+    this.orderService.getAll(pagination, this.searchQuery() || undefined).subscribe({
       next: (response) => {
         this.orders.set(response.content);
-        this.totalElements.set(response.totalElements);
-        this.totalPages.set(response.totalPages);
+        // Spring Boot 3.3+ puede anidar metadatos en "page": { totalElements, totalPages }
+        const raw = response as { page?: { totalElements?: number; totalPages?: number } };
+        this.totalElements.set(response.totalElements ?? raw.page?.totalElements ?? 0);
+        this.totalPages.set(response.totalPages ?? raw.page?.totalPages ?? 0);
         this.loading.set(false);
       },
       error: (err) => {
@@ -140,16 +169,17 @@ export class OrdersComponent implements OnInit {
     this.loadOrders();
   }
 
+  onPaginationChange(event: PaginationChangeEvent): void {
+    this.currentPage.set(event.page);
+    this.pageSize.set(event.size);
+    this.loadOrders();
+  }
+
   onSort(event: SortEvent): void {
     this.sortField.set(event.field);
     this.sortDirection.set(event.direction);
     this.currentPage.set(0);
     this.loadOrders();
-  }
-
-  getStatusLabel(status: string): string {
-    const statusObj = this.orderStatuses.find(s => s.value === status);
-    return statusObj?.label || status;
   }
 
   openDetails(orderId: number): void {

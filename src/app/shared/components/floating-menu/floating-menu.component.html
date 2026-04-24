@@ -1,4 +1,6 @@
-<div class="fixed bottom-8 right-8 z-50 flex flex-col items-end gap-4">
+<!-- safe-area-inset-bottom aplicado via padding-bottom para iOS -->
+<div class="fixed bottom-8 right-8 z-50 flex flex-col items-end gap-4"
+     style="padding-bottom: env(safe-area-inset-bottom, 0px)">
 
     <!-- Speed Dial Options (Expandable) -->
     <div class="flex flex-col gap-3 transition-all duration-300 ease-out origin-bottom" [class.opacity-0]="!isOpen()"
@@ -8,10 +10,10 @@
             class="relative w-12 h-12 rounded-full bg-surface text-on shadow-lg border border-border flex items-center justify-center hover:bg-surface-raised hover:scale-110 transition-all duration-200 group"
             [attr.aria-label]="item.label" (click)="item.action()">
             <span class="text-xl">{{ item.icon }}</span>
-            @if (item.badge) {
+            @if (getBadge(item)) {
             <span
                 class="absolute -top-1 -right-1 bg-error text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow-sm">{{
-                item.badge }}</span>
+                getBadge(item) }}</span>
             }
             <!-- Tooltip -->
             <span

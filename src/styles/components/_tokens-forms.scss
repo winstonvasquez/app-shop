@@ -1,0 +1,132 @@
+/* ============================================
+ * Design Tokens — Formularios
+ * ============================================
+ * Tokens canónicos para spacing y layout de formularios.
+ * Usar estos tokens en componentes (no hardcodear rem/px).
+ * Auditoría 2026-04-21: resuelve inconsistencias de grid/gap/label
+ * reportadas en customer-facing y admin.
+ */
+
+:root {
+    /* Spacing interno de formularios */
+    --form-gap: 0.75rem; /* 12px — gap entre campos del mismo form-group */
+    --form-gap-section: 1.25rem; /* 20px — gap entre secciones del form */
+    --form-gap-row: 1rem; /* 16px — gap vertical entre filas (flex-col) */
+    --label-margin-bottom: 0.375rem; /* 6px — bajo el label */
+    --input-padding-x: 1rem; /* 16px horizontal input */
+    --input-padding-y: 0.75rem; /* 12px vertical input */
+    --input-height: 2.75rem; /* 44px altura estándar input */
+    --form-section-header-mb: 0.75rem; /* 12px bajo título de sección */
+}
+
+/* ============================================
+ * Utility classes canónicas
+ * ============================================
+ * Úsalas en lugar de duplicar clases Tailwind en cada form.
+ */
+
+@layer components {
+    /* Contenedor de campo (label + input + error/hint en stack vertical) */
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    /* Row de 2 columnas responsive — colapsa a 1 col en mobile */
+    .form-group-2col {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: var(--form-gap);
+    }
+
+    @media (min-width: 640px) {
+        .form-group-2col {
+            grid-template-columns: 1fr 1fr;
+        }
+    }
+
+    /* Row de 3 columnas responsive — colapsa a 1 col en mobile, 2 en tablet */
+    .form-group-3col {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: var(--form-gap);
+    }
+
+    @media (min-width: 640px) {
+        .form-group-3col {
+            grid-template-columns: 1fr 1fr;
+        }
+    }
+
+    @media (min-width: 1024px) {
+        .form-group-3col {
+            grid-template-columns: 1fr 1fr 1fr;
+        }
+    }
+
+    /* Stack vertical de filas con gap uniforme entre secciones/campos */
+    .form-stack {
+        display: flex;
+        flex-direction: column;
+        gap: var(--form-gap-row);
+    }
+
+    .form-stack-tight {
+        display: flex;
+        flex-direction: column;
+        gap: var(--form-gap);
+    }
+
+    /* Label canónico — usar en todo <label> de formulario */
+    .input-label {
+        display: block;
+        font-size: 0.875rem; /* 14px */
+        font-weight: 500;
+        color: var(--color-text-secondary);
+        margin-bottom: var(--label-margin-bottom);
+    }
+
+    /* Mensaje de error — canónico bajo el input */
+    .input-error-message {
+        font-size: 0.75rem; /* 12px */
+        font-weight: 500;
+        color: var(--color-error);
+        margin-top: 0.25rem;
+    }
+
+    /* Hint/ayuda — canónico bajo el input cuando no hay error */
+    .input-hint {
+        font-size: 0.75rem;
+        color: var(--color-text-muted);
+        margin-top: 0.25rem;
+    }
+
+    /* Header de sección dentro del form (ej: "Datos principales", "Contacto") */
+    .form-section-header {
+        font-size: 0.875rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--color-text-secondary);
+        margin-bottom: var(--form-section-header-mb);
+    }
+
+    /* Barra de acciones (submit/cancel) canónica */
+    .form-actions {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        gap: var(--form-gap);
+        padding-top: var(--form-gap-section);
+        border-top: 1px solid var(--color-border);
+        margin-top: var(--form-gap-section);
+    }
+
+    .form-actions-sticky {
+        position: sticky;
+        bottom: 0;
+        background: var(--color-surface);
+        z-index: 10;
+    }
+}

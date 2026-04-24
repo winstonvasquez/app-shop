@@ -1,0 +1,51 @@
+<div class="page-container">
+  <app-page-header
+    title="Inventario"
+    subtitle="Stock de productos por almacén"
+    [breadcrumbs]="breadcrumbs">
+  </app-page-header>
+
+  @if (error()) {
+    <app-alert type="error" [message]="error()!" (dismiss)="error.set(null)" [dismissible]="true" />
+  }
+
+  <!-- Filtros -->
+  <form [formGroup]="filterForm" class="filters-bar" (ngSubmit)="aplicarFiltros()">
+    <select class="form-input" style="width:220px"
+            formControlName="almacen"
+            (change)="aplicarFiltros()">
+      <option value="">Todos los almacenes</option>
+      @for (alm of almacenes(); track alm.id) {
+        <option [value]="alm.id">{{ alm.nombre }}</option>
+      }
+    </select>
+
+    <div class="search-box">
+      <svg class="search-box-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor">
+        <circle cx="9" cy="9" r="6" stroke-width="1.5"/>
+        <path d="M13.5 13.5l3 3" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+      <input class="form-input" style="padding-left:2.25rem" type="text"
+             placeholder="Buscar producto o SKU..."
+             formControlName="busqueda"
+             (keydown.enter)="aplicarFiltros()">
+    </div>
+
+    <app-button type="submit" variant="primary" icon="search" label="Buscar" />
+  </form>
+
+  <!-- Tabla -->
+  <app-data-table
+    [data]="items()"
+    [columns]="columns"
+    [actions]="actions"
+    [loading]="loading()"
+    [currentPage]="currentPage()"
+    [pageSize]="pageSize()"
+    [totalElements]="totalElements()"
+    [totalPages]="totalPages()"
+    [exportable]="true"
+    exportFileName="inventario-export"
+    (pageChange)="onPaginationChange($event)">
+  </app-data-table>
+</div>

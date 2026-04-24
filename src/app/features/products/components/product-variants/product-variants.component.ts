@@ -3,6 +3,14 @@ import { Variant } from '@features/products/models/variant.model';
 import { NgClass } from '@angular/common';
 import { TranslateModule } from '@ngx-translate/core';
 
+export interface ProductVariantsMeta {
+    timerEndTime?: string;
+    sizingFitPercentage?: number;
+    deliveryTimeframe?: string;
+    carriers?: string;
+    returnPolicyText?: string;
+}
+
 @Component({
   selector: 'app-product-variants',
   standalone: true,
@@ -10,7 +18,7 @@ import { TranslateModule } from '@ngx-translate/core';
   templateUrl: './product-variants.component.html'
 })
 export class ProductVariantsComponent {
-  product = input<any>();
+  product = input<ProductVariantsMeta>();
   variants = input.required<Variant[]>();
   addToCart = output<{ variant: Variant, quantity: number }>();
 

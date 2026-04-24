@@ -1,0 +1,31 @@
+<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/80" (click)="close.emit()">
+    <div class="bg-[var(--color-surface)] rounded-xl border border-[var(--color-border)] p-4 w-full max-w-md shadow-xl"
+        (click)="$event.stopPropagation()">
+        <div class="flex justify-between items-center mb-3">
+            <h3 class="text-base font-bold text-on">Escanear Código</h3>
+            <button class="text-muted hover:text-on" (click)="close.emit()">
+                <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
+                    <path fill-rule="evenodd"
+                        d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                        clip-rule="evenodd" />
+                </svg>
+            </button>
+        </div>
+
+        <div #videoContainer class="relative w-full aspect-[4/3] bg-black rounded-lg overflow-hidden mb-3">
+            <video #videoEl class="w-full h-full object-cover" autoplay playsinline></video>
+            <div class="absolute inset-0 border-2 border-dashed border-white/30 rounded-lg pointer-events-none"></div>
+        </div>
+
+        @if (error()) {
+        <p class="text-sm text-[var(--color-error)] text-center">{{ error() }}</p>
+        }
+
+        @if (lastScanned()) {
+        <div class="text-center">
+            <span class="text-xs text-muted">Código detectado:</span>
+            <span class="text-sm font-bold text-on ml-1">{{ lastScanned() }}</span>
+        </div>
+        }
+    </div>
+</div>

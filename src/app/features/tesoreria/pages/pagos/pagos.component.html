@@ -1,0 +1,148 @@
+<div class="page-container">
+
+  <app-page-header
+    title="Gestión de Pagos"
+    subtitle="Flujo de aprobación: Pendiente → Aprobado → Pagado">
+    <div actions>
+      <app-button icon="plus" label="Nuevo Pago" variant="primary" (click)="openCreateDrawer()" />
+    </div>
+  </app-page-header>
+
+  <!-- KPIs -->
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <div class="card">
+      <div class="card-body">
+        <div class="text-sm text-[var(--color-text-muted)]">Pendientes</div>
+        <div class="font-bold text-[2rem] text-[var(--color-warning)]">{{ countPendientes() }}</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-body">
+        <div class="text-sm text-[var(--color-text-muted)]">Aprobados</div>
+        <div class="font-bold text-[2rem] text-[var(--color-accent)]">{{ countAprobados() }}</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-body">
+        <div class="text-sm text-[var(--color-text-muted)]">Pagados</div>
+        <div class="font-bold text-[2rem] text-[var(--color-success)]">{{ countPagados() }}</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-body">
+        <div class="text-sm text-[var(--color-text-muted)]">Total Comprometido</div>
+        <div class="font-bold text-[1.5rem] text-[var(--color-primary)]">
+          S/ {{ totalComprometido() | number:'1.2-2' }}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabla -->
+  <div class="card">
+    <app-data-table
+      [data]="pagos()"
+      [columns]="columns"
+      [actions]="actions"
+      [loading]="cargando()"
+      [currentPage]="currentPage()"
+      [pageSize]="pageSize()"
+      [totalElements]="totalElements()"
+      [totalPages]="totalPages()"
+      (pageChange)="onPageChange($event)">
+    </app-data-table>
+  </div>
+
+</div>
+
+<!-- Drawer: Nuevo Pago -->
+<app-drawer
+  [isOpen]="showCreateDrawer()"
+  title="Registrar Nuevo Pago"
+  size="lg"
+  side="right"
+  [hasFooter]="true"
+  (closed)="showCreateDrawer.set(false)">
+
+  @if (errorMsg()) {
+    <div class="bg-[var(--color-error-subtle,color-mix(in_oklch,var(--color-primary)_10%,transparent))] border border-[var(--color-error)] rounded-lg p-[var(--space-sm)] mb-[var(--space-md)] text-[var(--color-error)] text-sm">
+      {{ errorMsg() }}
+    </div>
+  }
+
+  <form [formGroup]="pagoForm" class="flex flex-col gap-4">
+
+    <div class="grid grid-cols-2 gap-3">
+      <div>
+        <label class="input-label">Tipo de Pago <span class="text-[var(--color-error)]">*</span></label>
+        <select class="form-input" formControlName="tipoPago">
+          @for (opt of tipoPagoOptions; track opt.value) {
+            <option [value]="opt.value">{{ opt.label }}</option>
+          }
+        </select>
+        @if (getControl('tipoPago').invalid && getControl('tipoPago').touched) {
+          <span class="input-error-message">Campo requerido</span>
+        }
+      </div>
+      <div>
+        <label class="input-label">Método de Pago <span class="text-[var(--color-error)]">*</span></label>
+        <select class="form-input" formControlName="metodoPago">
+          @for (opt of metodoPagoOptions; track opt.value) {
+            <option [value]="opt.value">{{ opt.label }}</option>
+          }
+        </select>
+        @if (getControl('metodoPago').invalid && getControl('metodoPago').touched) {
+          <span class="input-error-message">Campo requerido</span>
+        }
+      </div>
+    </div>
+
+    <app-form-field
+      label="Beneficiario"
+      [control]="getControl('beneficiarioNombre')"
+      type="text"
+      placeholder="Nombre del proveedor o empleado"
+      [required]="true">
+    </app-form-field>
+
+    <app-form-field
+      label="RUC / DNI del Beneficiario"
+      [control]="getControl('beneficiarioDocumento')"
+      type="text"
+      placeholder="20123456789"
+      hint="Opcional">
+    </app-form-field>
+
+    <app-form-field
+      label="Concepto / Descripción"
+      [control]="getControl('concepto')"
+      type="text"
+      placeholder="Ej: Pago factura 001-001234"
+      [required]="true">
+    </app-form-field>
+
+    <div class="grid grid-cols-2 gap-3">
+      <app-form-field
+        label="Monto (S/)"
+        [control]="getControl('monto')"
+        type="number"
+        placeholder="0.00"
+        [required]="true">
+      </app-form-field>
+
+      <app-date-picker
+        label="Fecha de Solicitud"
+        [control]="getControl('fechaSolicitud')"
+        [required]="true">
+      </app-date-picker>
+    </div>
+
+  </form>
+
+  <div slot="footer">
+    <app-button icon="x" label="Cancelar" variant="secondary"
+        [disabled]="guardando()" (click)="showCreateDrawer.set(false)" />
+    <app-button icon="save" label="Registrar Pago" variant="primary"
+        [loading]="guardando()" [disabled]="guardando() || pagoForm.invalid" (click)="registrarPago()" />
+  </div>
+</app-drawer>

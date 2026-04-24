@@ -7,10 +7,15 @@ import { Subject, Subscription } from 'rxjs';
 import { debounceTime } from 'rxjs/operators';
 import { ProductoCatalogoPOS } from '../../models/catalogo-pos.model';
 import { PosCarritoService } from '../../services/pos-carrito.service';
+import { PosFavoritesGridComponent } from '../pos-favorites-grid/pos-favorites-grid.component';
+import { PosFavorito } from '../../services/pos-favoritos.service';
+
+export type CatalogView = 'catalogo' | 'favoritos';
 
 @Component({
     selector: 'app-pos-catalog',
     standalone: true,
+    imports: [PosFavoritesGridComponent],
     templateUrl: './pos-catalog.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -24,8 +29,11 @@ export class PosCatalogComponent implements OnInit, AfterViewInit, OnDestroy {
     readonly items = input.required<ProductoCatalogoPOS[]>();
     readonly isLoading = input(false);
     readonly isSearching = input(false);
+    readonly favoritos = input<PosFavorito[]>([]);
+    readonly favoritosLoading = input(false);
 
     // ── Internal UI State ─────────────────────────────────────────
+    readonly activeView = signal<CatalogView>('catalogo');
     readonly searchQuery = signal('');
     readonly selectedCategoria = signal<string | null>(null);
     readonly categoriasExpandidas = signal(false);   // chips en múltiples líneas
@@ -39,6 +47,9 @@ export class PosCatalogComponent implements OnInit, AfterViewInit, OnDestroy {
     readonly productSelected = output<ProductoCatalogoPOS>();
     /** Emite el término de búsqueda (debounceado) para que pos-page llame al backend */
     readonly searchChanged = output<string>();
+    readonly favoritoSelected = output<PosFavorito>();
+    readonly favoritoRemoved = output<PosFavorito>();
+    readonly addToFavorites = output<ProductoCatalogoPOS>();
 
     // ── Computed ──────────────────────────────────────────────────
     readonly categorias = computed(() =>
@@ -100,9 +111,25 @@ export class PosCatalogComponent implements OnInit, AfterViewInit, OnDestroy {
         if (this.categoriasPlegadas()) this.categoriasExpandidas.set(false);
     }
 
+    setView(view: CatalogView): void {
+        this.activeView.set(view);
+    }
+
     addToCart(p: ProductoCatalogoPOS): void {
         if (p.stockActual <= 0) return;
         this.productSelected.emit(p);
+    }
+
+    onFavoritoSelected(fav: PosFavorito): void {
+        this.favoritoSelected.emit(fav);
+    }
+
+    onFavoritoRemoved(fav: PosFavorito): void {
+        this.favoritoRemoved.emit(fav);
+    }
+
+    onAddToFavorites(p: ProductoCatalogoPOS): void {
+        this.addToFavorites.emit(p);
     }
 
     isJustAdded(varianteId: number): boolean {

@@ -1,0 +1,78 @@
+<!-- Floating Button -->
+<button (click)="togglePanel()"
+    class="fixed bottom-6 right-6 z-[100] h-14 w-14 rounded-full bg-[var(--color-surface-raised)] border border-[var(--color-border)] shadow-xl flex items-center justify-center text-[var(--color-text-primary)] hover:scale-110 active:scale-95 transition-all duration-300 group"
+    aria-label="Toggle Theme Menu">
+
+    <!-- Brush / Palette Icon -->
+    <svg xmlns="http://www.w3.org/2000/svg"
+        class="w-6 h-6 text-[var(--color-primary)] group-hover:rotate-12 transition-transform duration-300" fill="none"
+        viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+            d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+    </svg>
+
+</button>
+
+<!-- Backdrop -->
+@if (isPanelOpen()) {
+<div (click)="closePanel()" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-[110] transition-opacity duration-300">
+</div>
+}
+
+<!-- Slide-out Side Panel -->
+<div class="fixed top-0 right-0 h-full w-80 bg-[var(--color-surface)] border-l border-[var(--color-border)] shadow-2xl z-[120] transform transition-transform duration-300 ease-in-out flex flex-col"
+    [class.translate-x-0]="isPanelOpen()" [class.translate-x-full]="!isPanelOpen()">
+
+    <!-- Panel Header -->
+    <div class="flex items-center justify-between p-6 border-b border-[var(--color-border)]">
+        <h3 class="text-xl font-bold text-[var(--color-text-primary)]">Theme Options</h3>
+        <button (click)="closePanel()"
+            class="p-2 rounded-full hover:bg-[var(--color-surface-raised)] transition-colors text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+        </button>
+    </div>
+
+    <!-- Panel Body: Theme List -->
+    <div class="p-6 flex-1 overflow-y-auto space-y-4">
+        <p class="text-sm text-[var(--color-text-muted)] mb-4">Choose your preferred workspace look and feel.</p>
+
+        @for (theme of themes; track theme.id) {
+        <button (click)="themeService.setTheme(theme.id)"
+            class="w-full flex items-center justify-between p-4 rounded-xl border transition-all duration-200"
+            [class.border-[var(--color-primary)]]="themeService.currentTheme() === theme.id"
+            [class.bg-[var(--color-surface-raised)]]="themeService.currentTheme() === theme.id"
+            [class.border-[var(--color-border)]]="themeService.currentTheme() !== theme.id"
+            [class.hover:border-[var(--color-text-muted)]]="themeService.currentTheme() !== theme.id">
+
+            <div class="flex items-center gap-4">
+                <!-- Theme Preview Bubble -->
+                <div class="w-10 h-10 rounded-full border border-[var(--color-border)] flex items-center justify-center shrink-0"
+                    [style.background-color]="theme.bgColor">
+                    <div class="w-4 h-4 rounded-full" [style.background-color]="theme.color"></div>
+                </div>
+
+                <!-- Theme Name -->
+                <span class="font-medium text-[var(--color-text-primary)]">
+                    {{ theme.name }}
+                </span>
+            </div>
+
+            <!-- Active Check -->
+            @if (themeService.currentTheme() === theme.id) {
+            <div
+                class="w-6 h-6 rounded-full bg-[var(--color-primary)]/20 text-[var(--color-primary)] flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd"
+                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                        clip-rule="evenodd" />
+                </svg>
+            </div>
+            }
+        </button>
+        }
+
+    </div>
+</div>

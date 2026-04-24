@@ -1,4 +1,35 @@
 <div class="data-table-container">
+    <!-- Toolbar: búsqueda, filtros combo y exportación -->
+    @if (searchable() || filters().length > 0 || exportable()) {
+        <div class="table-toolbar">
+            @if (searchable()) {
+                <div class="table-search">
+                    <input
+                        type="text"
+                        class="input-field"
+                        [placeholder]="searchPlaceholder()"
+                        (input)="onSearchInput($event)" />
+                </div>
+            }
+            @for (filter of filters(); track filter.field) {
+                <div class="table-filter">
+                    <select class="input-field" (change)="onFilterChange(filter.field, $event)">
+                        <option value="">{{ filter.label }}</option>
+                        @for (opt of filter.options | async; track opt.value) {
+                            <option [value]="opt.value">{{ opt.label }}</option>
+                        }
+                    </select>
+                </div>
+            }
+            @if (exportable()) {
+                <div class="table-export-buttons">
+                    <button type="button" class="btn btn-secondary" (click)="onExportCsv()">CSV</button>
+                    <button type="button" class="btn btn-secondary" (click)="onExportExcel()">Excel</button>
+                </div>
+            }
+        </div>
+    }
+
     <!-- Loading State -->
     @if (loading()) {
         <div class="loading-overlay">
@@ -67,7 +98,11 @@
                             
                             @for (column of columns(); track column.key) {
                                 <td [style.text-align]="column.align || 'left'">
-                                    {{ getCellValue(row, column) }}
+                                    @if (column.html) {
+                                        <span [innerHTML]="getCellValue(row, column)"></span>
+                                    } @else {
+                                        {{ getCellValue(row, column) }}
+                                    }
                                 </td>
                             }
                             
@@ -76,14 +111,57 @@
                                     <div class="action-buttons">
                                         @for (action of actions(); track action.label) {
                                             @if (shouldShowAction(action, row)) {
-                                                <button 
+                                                <button
                                                     type="button"
-                                                    [class]="'action-btn ' + (action.class || '')"
+                                                    [class]="getButtonClass(action)"
+                                                    [title]="action.label"
+                                                    [attr.aria-label]="action.label"
                                                     (click)="$event.stopPropagation(); action.onClick(row)">
-                                                    @if (action.icon) {
-                                                        <span class="icon">{{ action.icon }}</span>
+                                                    @switch (getIconType(action.icon || '')) {
+                                                        @case ('edit') {
+                                                            <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                            </svg>
+                                                        }
+                                                        @case ('delete') {
+                                                            <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                            </svg>
+                                                        }
+                                                        @case ('view') {
+                                                            <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                            </svg>
+                                                        }
+                                                        @case ('check') {
+                                                            <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                                    d="M5 13l4 4L19 7" />
+                                                            </svg>
+                                                        }
+                                                        @case ('x') {
+                                                            <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                                    d="M6 18L18 6M6 6l12 12" />
+                                                            </svg>
+                                                        }
+                                                        @case ('pin') {
+                                                            <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                                    d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                            </svg>
+                                                        }
+                                                        @default {
+                                                            <span class="icon">{{ action.icon }}</span>
+                                                        }
                                                     }
-                                                    {{ action.label }}
                                                 </button>
                                             }
                                         }
@@ -97,46 +175,14 @@
         </table>
     </div>
 
-    <!-- Pagination -->
-    @if (totalPages() > 1) {
-        <div class="pagination">
-            <div class="pagination-info">
-                Mostrando {{ (currentPage() * pageSize()) + 1 }} - 
-                {{ Math.min((currentPage() + 1) * pageSize(), totalElements()) }} 
-                de {{ totalElements() }} registros
-            </div>
-            
-            <div class="pagination-controls">
-                <button 
-                    type="button"
-                    class="pagination-btn"
-                    [disabled]="currentPage() === 0"
-                    (click)="onPageChange(currentPage() - 1)">
-                    Anterior
-                </button>
-                
-                @for (page of pages(); track page) {
-                    @if (page < 3 || page >= totalPages() - 3 || Math.abs(page - currentPage()) <= 1) {
-                        <button 
-                            type="button"
-                            class="pagination-btn"
-                            [class.active]="page === currentPage()"
-                            (click)="onPageChange(page)">
-                            {{ page + 1 }}
-                        </button>
-                    } @else if (page === 3 || page === totalPages() - 4) {
-                        <span class="pagination-ellipsis">...</span>
-                    }
-                }
-                
-                <button 
-                    type="button"
-                    class="pagination-btn"
-                    [disabled]="currentPage() === totalPages() - 1"
-                    (click)="onPageChange(currentPage() + 1)">
-                    Siguiente
-                </button>
-            </div>
-        </div>
+    <!-- Pagination (se puede desactivar con [hidePagination]="true" para usar app-pagination standalone) -->
+    @if (!hidePagination()) {
+        <app-pagination
+            [currentPage]="currentPage()"
+            [totalPages]="totalPages()"
+            [totalElements]="totalElements()"
+            [pageSize]="pageSize()"
+            (pageChange)="onPaginationChange($event)">
+        </app-pagination>
     }
 </div>

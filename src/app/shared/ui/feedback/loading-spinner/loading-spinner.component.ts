@@ -1,10 +1,9 @@
 import { Component, input, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule } from '@angular/common';
 
 @Component({
     selector: 'app-loading-spinner',
     standalone: true,
-    imports: [CommonModule],
+    imports: [],
     templateUrl: './loading-spinner.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
 })

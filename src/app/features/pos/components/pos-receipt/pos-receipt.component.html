@@ -27,23 +27,23 @@
             <!-- Metadata -->
             <div class="receipt-meta-card">
                 <div class="receipt-meta-row">
-                    <span>Comprobante</span>
+                    <span>{{ 'pos.receipt.title' | translate }}</span>
                     <strong class="receipt-meta-mono">{{ v.numeroCpe ?? '—' }}</strong>
                 </div>
                 <div class="receipt-meta-row">
-                    <span>Ticket interno</span>
+                    <span>{{ 'pos.receipt.ticketTitle' | translate }}</span>
                     <strong class="receipt-meta-mono">{{ v.numeroTicket }}</strong>
                 </div>
                 <div class="receipt-meta-row">
-                    <span>Fecha y hora</span>
+                    <span>{{ 'pos.receipt.dateTime' | translate }}</span>
                     <strong>{{ v.fechaCreacion | date:'dd/MM/yyyy HH:mm' }}</strong>
                 </div>
                 <div class="receipt-meta-row">
-                    <span>Cliente</span>
+                    <span>{{ 'pos.receipt.customer' | translate }}</span>
                     <strong>{{ v.clienteNombre ?? 'Público general' }}</strong>
                 </div>
                 <div class="receipt-meta-row">
-                    <span>Cajero</span>
+                    <span>{{ 'pos.receipt.cashier' | translate }}</span>
                     <strong>{{ v.cajeroNombre }}</strong>
                 </div>
             </div>
@@ -51,8 +51,8 @@
             <!-- Líneas de detalle -->
             <div class="receipt-items">
                 <div class="receipt-items-header">
-                    <span>Descripción</span>
-                    <span class="text-right">Importe</span>
+                    <span>{{ 'pos.receipt.description' | translate }}</span>
+                    <span class="text-right">{{ 'pos.receipt.amount' | translate }}</span>
                 </div>
                 @for (d of v.detalles; track d.id) {
                 <div class="receipt-line">
@@ -69,17 +69,23 @@
             <!-- Totales -->
             <div class="receipt-totals">
                 <div class="receipt-total-row">
-                    <span>Op. gravadas</span>
+                    <span>{{ 'pos.receipt.subtotal' | translate }}</span>
                     <span class="mono">S/{{ fmt(v.subtotal) }}</span>
                 </div>
                 <div class="receipt-total-row">
-                    <span>IGV 18%</span>
+                    <span>{{ 'pos.receipt.igv' | translate }}</span>
                     <span class="mono">S/{{ fmt(v.igv) }}</span>
                 </div>
                 @if (v.descuento > 0) {
                 <div class="receipt-total-row receipt-total-row--discount">
-                    <span>Descuento</span>
+                    <span>{{ 'pos.receipt.discount' | translate }}</span>
                     <span class="mono">−S/{{ fmt(v.descuento) }}</span>
+                </div>
+                }
+                @if (v.totalIcbper > 0) {
+                <div class="receipt-total-row">
+                    <span>ICBPER (bolsas)</span>
+                    <span class="mono">S/{{ fmt(v.totalIcbper) }}</span>
                 </div>
                 }
             </div>
@@ -89,35 +95,64 @@
 
             <!-- Total final -->
             <div class="receipt-grand-total">
-                <span class="receipt-grand-label">TOTAL</span>
+                <span class="receipt-grand-label">{{ 'pos.receipt.total' | translate }}</span>
                 <span class="receipt-grand-amount">S/{{ fmt(v.total) }}</span>
             </div>
 
+            <!-- Dual currency (multi-moneda) -->
+            @if (v.moneda && v.moneda !== 'PEN' && v.totalMonedaExtranjera) {
+            <div class="receipt-dual-currency">
+                <div class="receipt-total-row">
+                    <span>Total en {{ v.moneda }}</span>
+                    <span class="mono">{{ v.moneda === 'USD' ? 'US$' : v.moneda }} {{ fmt(v.totalMonedaExtranjera) }}</span>
+                </div>
+                @if (v.tipoCambio) {
+                <div class="receipt-total-row text-muted" style="font-size: 11px;">
+                    <span>T.C. {{ v.moneda }}/PEN</span>
+                    <span class="mono">{{ v.tipoCambio | number:'1.4-4' }}</span>
+                </div>
+                }
+            </div>
+            }
+
             <!-- Forma de pago -->
             <div class="receipt-payment-detail">
+                @if (v.metodoPago === 'MIXTO' && v.pagos.length > 0) {
+                    @for (pago of v.pagos; track pago.metodo) {
+                    <div class="receipt-total-row">
+                        <span>{{ pago.metodo }}</span>
+                        <span class="mono">S/{{ fmt(pago.monto) }}</span>
+                    </div>
+                    }
+                } @else {
                 <div class="receipt-total-row">
-                    <span>{{ v.metodoPago }} recibido</span>
+                    <span>{{ v.metodoPago }} {{ 'pos.receipt.received' | translate }}</span>
                     <span class="mono">S/{{ fmt(v.montoRecibido) }}</span>
                 </div>
+                }
                 @if (v.vuelto > 0) {
                 <div class="receipt-total-row receipt-total-row--change">
-                    <span>Vuelto</span>
+                    <span>{{ 'pos.receipt.change' | translate }}</span>
                     <span class="mono">S/{{ fmt(v.vuelto) }}</span>
                 </div>
                 }
             </div>
 
             <!-- QR SUNAT -->
+            @if (v.qrData) {
             <div class="receipt-qr-section">
-                <div class="receipt-qr-placeholder">QR</div>
+                <div class="receipt-qr-placeholder"
+                     [title]="v.qrData">QR</div>
                 <p class="receipt-qr-label">Verifica en: sunat.gob.pe</p>
+                <p class="receipt-qr-data">{{ v.qrData }}</p>
             </div>
+            }
 
         </div>
 
         <!-- Footer thermal -->
         <div class="receipt-footer">
-            ¡Gracias por su compra! · Conserve su comprobante
+            {{ 'pos.receipt.thanks' | translate }} · Conserve su comprobante
         </div>
 
     </div>
@@ -130,7 +165,7 @@
                     d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 3H6.28l-.31-1.243A1 1 0 005 1H3z" />
                 <path d="M16 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM6.5 18a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" />
             </svg>
-            Nueva venta
+            {{ 'pos.receipt.newSale' | translate }}
         </button>
         <button class="btn-secondary flex-[0.8] gap-2 !h-12 !rounded-xl !text-[14px]" (click)="imprimirRecibo.emit()">
             <svg viewBox="0 0 20 20" fill="currentColor" width="15" height="15">
@@ -138,16 +173,24 @@
                     d="M5 4v3H4a2 2 0 00-2 2v3a2 2 0 002 2h1v2a1 1 0 001 1h8a1 1 0 001-1v-2h1a2 2 0 002-2V9a2 2 0 00-2-2h-1V4a1 1 0 00-1-1H6a1 1 0 00-1 1zm2 0h6v3H7V4zm-1 9H5v-2H4v3h12v-3h-1v2H6v-2zm8-5a1 1 0 100 2 1 1 0 000-2z"
                     clip-rule="evenodd" />
             </svg>
-            Imprimir
+            {{ 'pos.receipt.printSend' | translate }}
         </button>
-        <button class="btn-primary flex-[0.8] gap-2 !h-12 !rounded-xl !text-[14px]">
-            <svg viewBox="0 0 20 20" fill="currentColor" width="15" height="15">
+    </div>
+
+    <!-- Enviar por email -->
+    <form [formGroup]="emailForm" class="flex gap-2 mt-3" (ngSubmit)="enviarEmail()">
+        <input class="input-field flex-1 !h-10 !text-sm" formControlName="email"
+               placeholder="cliente@email.com" type="email">
+        <button type="submit" class="btn-primary !h-10 !px-4 !text-sm gap-1.5"
+                [disabled]="emailSending() || !(emailForm.value.email ?? '').trim()"
+                (click)="enviarEmail()">
+            <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14">
                 <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
                 <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
             </svg>
-            Enviar
+            @if (emailSending()) { Enviando... } @else if (emailSent()) { Enviado } @else { Enviar }
         </button>
-    </div>
+    </form>
 
     } @else {
     <div class="receipt-empty">
@@ -156,8 +199,8 @@
             <path stroke-linecap="round" stroke-linejoin="round"
                 d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
         </svg>
-        <p class="receipt-empty-title">Sin comprobante</p>
-        <p class="receipt-empty-sub">Realiza una venta para ver el recibo</p>
+        <p class="receipt-empty-title">{{ 'pos.receipt.noReceipt' | translate }}</p>
+        <p class="receipt-empty-sub">{{ 'pos.receipt.empty' | translate }}</p>
     </div>
     }
 

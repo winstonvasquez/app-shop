@@ -1,0 +1,31 @@
+<div class="customer-lookup">
+    <div class="relative">
+        <svg class="absolute left-3 top-1/2 -translate-y-1/2 text-muted" viewBox="0 0 20 20" fill="currentColor"
+            width="14" height="14">
+            <path fill-rule="evenodd"
+                d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
+        </svg>
+        <input type="text" class="input-field !pl-9 !h-9 !text-sm" placeholder="DNI, RUC o nombre del cliente..."
+            [value]="query()" (input)="onSearch($any($event.target).value)" autocomplete="off">
+        @if (query().length > 0) {
+        <button class="absolute right-2 top-1/2 -translate-y-1/2 text-muted hover:text-on"
+            (click)="clear()">
+            <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14">
+                <path fill-rule="evenodd"
+                    d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                    clip-rule="evenodd" />
+            </svg>
+        </button>
+        }
+    </div>
+
+    @if (selectedClient()) {
+    <div class="customer-selected">
+        <div>
+            <span class="text-sm font-semibold text-on">{{ selectedClient()!.nombre }}</span>
+            <span class="text-xs text-muted">{{ selectedClient()!.tipoDoc }}: {{ selectedClient()!.numDoc }}</span>
+        </div>
+        <button class="text-xs text-[var(--color-error)]" (click)="clearSelection()">Quitar</button>
+    </div>
+    }
+</div>

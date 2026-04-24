@@ -1,0 +1,135 @@
+<app-page-header
+    title="Capacitaciones"
+    subtitle="Gestión de programas de capacitación y formación"
+    [breadcrumbs]="breadcrumbs">
+    <div actions>
+        <app-button icon="plus" label="Nueva Capacitación" variant="primary" (click)="openCreate()" />
+    </div>
+</app-page-header>
+
+<!-- KPIs -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <div class="card">
+        <div class="card-body">
+            <div class="text-muted" style="font-size: 0.875rem">Planificadas</div>
+            <div style="font-size: 2.5rem; font-weight: 700; color: var(--color-warning)">{{ planificadas() }}</div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-body">
+            <div class="text-muted" style="font-size: 0.875rem">En Curso</div>
+            <div style="font-size: 2.5rem; font-weight: 700; color: var(--color-accent)">{{ enCurso() }}</div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-body">
+            <div class="text-muted" style="font-size: 0.875rem">Completadas</div>
+            <div style="font-size: 2.5rem; font-weight: 700; color: var(--color-success)">{{ completadas() }}</div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-body">
+            <div class="text-muted" style="font-size: 0.875rem">Horas Formación</div>
+            <div style="font-size: 2.5rem; font-weight: 700; color: var(--color-primary)">{{ totalHoras() }}</div>
+        </div>
+    </div>
+</div>
+
+<!-- Filtros -->
+<div class="filters-bar">
+    <select class="form-input" style="width: auto; min-width: 200px"
+            [value]="filtroEstado()"
+            (change)="onFilterEstado($event)">
+        <option value="">Todos los estados</option>
+        @for (opt of estadoOptions; track opt.value) {
+            <option [value]="opt.value">{{ opt.label }}</option>
+        }
+    </select>
+</div>
+
+<!-- Tabla -->
+<app-data-table
+    [data]="pagedData()"
+    [columns]="columns"
+    [actions]="actions"
+    [exportable]="true"
+    exportFileName="capacitaciones"
+    [hidePagination]="true" />
+
+@if (totalElements() > 0) {
+    <app-pagination
+        [currentPage]="currentPage()"
+        [totalPages]="totalPages()"
+        [totalElements]="totalElements()"
+        [pageSize]="pageSize()"
+        (pageChange)="onPaginationChange($event)" />
+}
+
+<!-- ── Drawer: Crear/Editar Capacitación ────────────────────────────────── -->
+<app-drawer
+    [isOpen]="showDrawer()"
+    [title]="editMode() ? 'Editar Capacitación' : 'Nueva Capacitación'"
+    size="md"
+    [hasFooter]="true"
+    (closed)="closeDrawer()">
+
+    <form [formGroup]="form" (ngSubmit)="guardar()">
+
+        @if (submitError()) {
+            <app-alert type="error" [message]="submitError()!" />
+        }
+
+        <p class="text-subtle text-sm font-semibold mb-2 mt-1">Datos de la Capacitación</p>
+        <hr style="border-color: var(--color-border); margin-bottom: var(--space-md)">
+
+        <div class="flex flex-col gap-4">
+
+            <app-form-field
+                label="Nombre del Curso"
+                [control]="getControl('nombre')"
+                placeholder="Ej: Seguridad y Salud en el Trabajo"
+                [required]="true" />
+
+            <app-form-field
+                label="Descripción"
+                [control]="getControl('descripcion')"
+                placeholder="Descripción breve del programa" />
+
+            <app-form-field
+                label="Instructor"
+                [control]="getControl('instructor')"
+                placeholder="Nombre del instructor" />
+
+            <div class="grid grid-cols-2 gap-4">
+                <app-date-input
+                    label="Fecha Inicio"
+                    [required]="true"
+                    formControlName="fechaInicio" />
+
+                <app-date-input
+                    label="Fecha Fin"
+                    formControlName="fechaFin" />
+            </div>
+
+            <div style="max-width: 200px">
+                <label class="input-label">
+                    Horas Totales <span style="color: var(--color-error)">*</span>
+                </label>
+                <input
+                    type="number"
+                    class="form-input"
+                    formControlName="duracionHoras"
+                    min="1"
+                    placeholder="0" />
+                @if (getControl('duracionHoras').invalid && getControl('duracionHoras').touched) {
+                    <span class="input-error-message">Ingrese al menos 1 hora</span>
+                }
+            </div>
+        </div>
+    </form>
+
+    <div slot="footer" class="flex justify-end gap-2">
+        <app-button icon="x" label="Cancelar" variant="secondary" type="button" (click)="closeDrawer()" />
+        <app-button icon="save" [label]="editMode() ? 'Actualizar' : 'Crear Capacitación'" variant="primary" type="button" [loading]="submitting()" (click)="guardar()" />
+    </div>
+</app-drawer>

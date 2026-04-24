@@ -1,34 +1,52 @@
-import { Component, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, inject, signal, computed } from '@angular/core';
+import { ChatService } from '@core/services/chat/chat.service';
 
 interface MenuItem {
-  label: string;
-  icon: string;
-  badge: string | null;
-  action: () => void;
+    label: string;
+    icon: string;
+    badge: (() => string | null) | null;
+    action: () => void;
 }
 
 @Component({
-  selector: 'app-floating-menu',
-  standalone: true,
-  imports: [CommonModule],
-  templateUrl: './floating-menu.component.html'
+    selector: 'app-floating-menu',
+    standalone: true,
+    imports: [],
+    templateUrl: './floating-menu.component.html'
 })
 export class FloatingMenuComponent {
-  isOpen = signal(true);
+    readonly chatService = inject(ChatService);
 
-  menuItems: MenuItem[] = [
-    { label: 'Mensajes', icon: '💬', badge: '22', action: () => { } },
-    { label: 'Comentarios', icon: '📝', badge: null, action: () => { } },
-    { label: 'Ir arriba', icon: '⬆️', badge: null, action: () => this.scrollToTop() }
-  ];
+    isOpen = signal(true);
 
-  toggleMenu() {
-    this.isOpen.update(val => !val);
-  }
+    menuItems: MenuItem[] = [
+        {
+            label: 'Mensajes',
+            icon: '💬',
+            badge: () => {
+                const count = this.chatService.unreadCount();
+                return count > 0 ? String(count) : null;
+            },
+            action: () => this.chatService.open()
+        },
+        {
+            label: 'Ir arriba',
+            icon: '⬆️',
+            badge: null,
+            action: () => this.scrollToTop()
+        }
+    ];
 
-  scrollToTop(): void {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-    this.isOpen.set(false);
-  }
+    toggleMenu(): void {
+        this.isOpen.update(val => !val);
+    }
+
+    scrollToTop(): void {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        this.isOpen.set(false);
+    }
+
+    getBadge(item: MenuItem): string | null {
+        return typeof item.badge === 'function' ? item.badge() : item.badge;
+    }
 }

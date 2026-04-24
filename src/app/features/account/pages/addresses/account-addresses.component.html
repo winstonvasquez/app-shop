@@ -1,0 +1,95 @@
+<div class="page-container">
+    <app-breadcrumb [items]="breadcrumbItems" />
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Mis Direcciones</h1>
+            <p class="page-subtitle">Gestiona tus direcciones de envío</p>
+        </div>
+        <div class="card-action">
+            <app-button label="Agregar dirección" icon="plus" variant="primary" (click)="openAddForm()" />
+        </div>
+    </div>
+
+    @if (loading()) {
+        <div class="loading-container"><div class="spinner"></div></div>
+    } @else {
+
+        <!-- Formulario de agregar/editar -->
+        @if (showForm()) {
+            <div class="card max-w-lg mb-6">
+                <div class="card-header">
+                    <h2 class="card-title">{{ editingId() ? 'Editar dirección' : 'Nueva dirección' }}</h2>
+                </div>
+                <div class="card-body">
+                    <form [formGroup]="addressForm" (ngSubmit)="onSubmit()">
+                        <app-admin-form-layout [errorMessage]="submitError()">
+
+                            <app-admin-form-section [columns]="2">
+                                <app-form-field label="Destinatario" [required]="true" [error]="err('nombreDestinatario')">
+                                    <input class="form-input" type="text" formControlName="nombreDestinatario" placeholder="Nombre completo" />
+                                </app-form-field>
+                                <app-form-field label="Teléfono" [required]="true" [error]="err('telefono')">
+                                    <input class="form-input" type="tel" formControlName="telefono" placeholder="999 999 999" />
+                                </app-form-field>
+                            </app-admin-form-section>
+
+                            <app-admin-form-section [columns]="1">
+                                <app-form-field label="Dirección" [required]="true" [error]="err('direccion')">
+                                    <input class="form-input" type="text" formControlName="direccion" placeholder="Av. Ejemplo 123, Dpto 4B" />
+                                </app-form-field>
+                            </app-admin-form-section>
+
+                            <app-admin-form-section [columns]="2">
+                                <app-form-field label="Ciudad" [required]="true" [error]="err('ciudad')">
+                                    <input class="form-input" type="text" formControlName="ciudad" placeholder="Lima" />
+                                </app-form-field>
+                                <app-form-field label="Región" [error]="err('region')">
+                                    <input class="form-input" type="text" formControlName="region" placeholder="Lima Metropolitana" />
+                                </app-form-field>
+                            </app-admin-form-section>
+
+                            <div slot="actions">
+                                <app-button type="button" label="Cancelar" icon="x" variant="secondary" (click)="cancelForm()" />
+                                <app-button type="submit" [label]="saving() ? 'Guardando...' : 'Guardar'" icon="save" variant="primary" [loading]="saving()" [disabled]="addressForm.invalid" />
+                            </div>
+
+                        </app-admin-form-layout>
+                    </form>
+                </div>
+            </div>
+        }
+
+        <!-- Lista de direcciones -->
+        @if (addresses().length === 0) {
+            <div class="card">
+                <div class="card-body text-center py-10 text-[var(--color-text-muted)]">
+                    <p>No tienes direcciones guardadas.</p>
+                </div>
+            </div>
+        } @else {
+            <div class="flex flex-col gap-4">
+                @for (addr of addresses(); track addr.id) {
+                    <div class="card">
+                        <div class="card-body flex items-start justify-between gap-4">
+                            <div>
+                                <p class="font-bold text-sm">{{ addr.nombreDestinatario }}</p>
+                                <p class="text-sm text-[var(--color-text-muted)]">{{ addr.direccion }}</p>
+                                <p class="text-sm text-[var(--color-text-muted)]">{{ addr.ciudad }}{{ addr.region ? ', ' + addr.region : '' }}</p>
+                                @if (addr.telefono) {
+                                    <p class="text-xs text-[var(--color-text-muted)] mt-1">Tel: {{ addr.telefono }}</p>
+                                }
+                                @if (addr.predeterminada) {
+                                    <span class="badge badge-success text-xs mt-1">Predeterminada</span>
+                                }
+                            </div>
+                            <div class="flex gap-2 flex-shrink-0">
+                                <app-button icon="pencil" variant="ghost" [iconOnly]="true" ariaLabel="Editar" size="sm" (click)="openEditForm(addr)" />
+                                <app-button icon="trash-2" variant="danger" [iconOnly]="true" ariaLabel="Eliminar" size="sm" (click)="deleteAddress(addr.id)" />
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    }
+</div>

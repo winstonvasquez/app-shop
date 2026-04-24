@@ -1,0 +1,79 @@
+<div class="page-container">
+    <app-breadcrumb [items]="breadcrumbItems" />
+    <div class="page-header">
+        <h1 class="page-title">Mis Favoritos</h1>
+        <p class="page-subtitle">Productos que guardaste para después</p>
+    </div>
+
+    @if (loading()) {
+        <div class="loading-container"><div class="spinner"></div></div>
+    } @else if (items().length === 0) {
+        <div class="flex flex-col items-center justify-center py-16 gap-4" style="color: var(--color-text-muted)">
+            <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+                style="opacity: 0.4">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+            </svg>
+            <p class="text-base font-medium">Aún no tienes productos favoritos</p>
+            <a routerLink="/products" class="btn btn-primary text-sm">Explorar productos</a>
+        </div>
+    } @else {
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            @for (item of items(); track item.id) {
+                <div class="card flex flex-col overflow-hidden">
+                    <!-- Imagen del producto -->
+                    <a [routerLink]="['/products', item.productoId]"
+                        class="block aspect-[1/1] overflow-hidden bg-[var(--color-hover-overlay)]">
+                        @if (item.productoImagen) {
+                            <img [src]="item.productoImagen" [alt]="item.productoNombre"
+                                class="w-full h-full object-contain p-4 hover:scale-105 transition-transform duration-300" />
+                        } @else {
+                            <div class="w-full h-full flex items-center justify-center text-muted text-xs">
+                                Sin imagen
+                            </div>
+                        }
+                    </a>
+
+                    <!-- Info del producto -->
+                    <div class="card-body flex flex-col gap-2 flex-grow">
+                        <a [routerLink]="['/products', item.productoId]"
+                            class="text-sm font-semibold line-clamp-2 hover:text-primary transition-colors"
+                            style="color: var(--color-text-primary)">
+                            {{ item.productoNombre }}
+                        </a>
+
+                        @if (item.varianteNombre) {
+                            <p class="text-xs text-muted">{{ item.varianteNombre }}</p>
+                        }
+
+                        <p class="text-primary font-black text-base mt-auto">
+                            S/ {{ item.precioBase.toFixed(2) }}
+                        </p>
+                    </div>
+
+                    <!-- Acciones -->
+                    <div class="card-footer flex gap-2">
+                        <app-button
+                            label="Mover al carrito"
+                            variant="primary"
+                            size="xs"
+                            icon="shopping-cart"
+                            [loading]="addingToCart() === item.productoId"
+                            [disabled]="addingToCart() === item.productoId"
+                            (click)="addToCart(item)" />
+                        <app-button
+                            label="Quitar de favoritos"
+                            variant="ghost"
+                            size="xs"
+                            icon="heart-off"
+                            [iconOnly]="true"
+                            ariaLabel="Quitar de favoritos"
+                            [loading]="removing() === item.productoId"
+                            [disabled]="removing() === item.productoId"
+                            (click)="remove(item.productoId)" />
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>

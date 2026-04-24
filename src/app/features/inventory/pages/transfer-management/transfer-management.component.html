@@ -1,0 +1,118 @@
+<div class="page-container">
+
+  <app-page-header
+    title="Transferencias"
+    subtitle="Gestiona el traslado de stock entre almacenes"
+    [breadcrumbs]="breadcrumbs">
+    <div actions>
+      <app-button icon="plus" label="Nueva Transferencia" variant="primary" (click)="openCreate()" />
+    </div>
+  </app-page-header>
+
+  <div class="filters-bar">
+    <div class="filter-field">
+      <label class="input-label">Estado</label>
+      <select class="form-input" style="min-width:180px" (change)="onFilterStatus($event)">
+        <option value="">Todos</option>
+        <option value="PENDIENTE">Pendiente</option>
+        <option value="ENVIADA">Enviada</option>
+        <option value="RECIBIDA">Recibida</option>
+        <option value="CANCELADA">Cancelada</option>
+      </select>
+    </div>
+  </div>
+
+  @if (error()) {
+    <app-alert type="error" [message]="error()!" [dismissible]="true" (dismiss)="error.set(null)" />
+  }
+
+  <app-data-table
+    [data]="transfers()"
+    [columns]="columns"
+    [actions]="actions"
+    [loading]="loading()"
+    [currentPage]="currentPage()"
+    [pageSize]="pageSize()"
+    [totalElements]="totalElements()"
+    [totalPages]="totalPages()"
+    (pageChange)="onPageChange($event)">
+  </app-data-table>
+
+</div>
+
+<!-- Drawer: Nueva Transferencia -->
+<app-drawer
+  [isOpen]="showDrawer()"
+  title="Nueva Transferencia"
+  size="lg" side="right" [hasFooter]="true"
+  (closed)="closeDrawer()">
+
+  <form [formGroup]="form">
+    @if (submitError()) {
+      <app-alert type="error" [message]="submitError()!" [dismissible]="true"
+                 (dismiss)="submitError.set(null)" />
+    }
+
+    <div class="drawer-form-grid">
+      <div>
+        <label class="input-label">Almacén Origen <span class="text-error">*</span></label>
+        <select class="form-input" formControlName="sourceWarehouseId">
+          <option [value]="null">Seleccionar...</option>
+          @for (w of warehouses(); track w.id) {
+            <option [value]="w.id">{{ w.name }}</option>
+          }
+        </select>
+      </div>
+
+      <div>
+        <label class="input-label">Almacén Destino <span class="text-error">*</span></label>
+        <select class="form-input" formControlName="destinationWarehouseId">
+          <option [value]="null">Seleccionar...</option>
+          @for (w of warehouses(); track w.id) {
+            <option [value]="w.id">{{ w.name }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="col-span-2">
+        <app-date-input label="Fecha Solicitud" formControlName="requestDate" [required]="true" />
+      </div>
+
+      <div class="col-span-2">
+        <app-form-field label="Notas" [control]="getCtrl('notes')"
+          type="text" placeholder="Observaciones opcionales" />
+      </div>
+    </div>
+
+    <!-- Ítems dinámicos -->
+    <div class="items-section">
+      <div class="items-header">
+        <span class="input-label">Productos a transferir</span>
+        <app-button icon="plus" label="Agregar" variant="secondary" type="button" (click)="addDetail()" />
+      </div>
+
+      <div formArrayName="details">
+        @for (detail of details.controls; track $index; let i = $index) {
+          <div class="item-row" [formGroupName]="i">
+            <app-form-field label="Producto ID" [control]="getDetailCtrl(i, 'productId')"
+              type="number" placeholder="ID" [required]="true" />
+            <app-form-field label="Cantidad" [control]="getDetailCtrl(i, 'requestedQuantity')"
+              type="number" placeholder="1" [required]="true" />
+            <app-form-field label="Notas" [control]="getDetailCtrl(i, 'notes')"
+              type="text" placeholder="Opcional" />
+            @if (details.length > 1) {
+              <app-button [iconOnly]="true" icon="x" variant="danger" size="sm" ariaLabel="Eliminar ítem" type="button" (click)="removeDetail(i)" />
+            }
+          </div>
+        }
+      </div>
+    </div>
+  </form>
+
+  <div slot="footer">
+    <app-button icon="x" label="Cancelar" variant="secondary" type="button" (click)="closeDrawer()" />
+    <app-button icon="save" label="Crear Transferencia" variant="primary" type="button"
+                [loading]="submitting()" [disabled]="submitting() || form.invalid"
+                (click)="onSubmit()" />
+  </div>
+</app-drawer>

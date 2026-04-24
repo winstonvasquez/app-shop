@@ -1,0 +1,140 @@
+<div class="page-container">
+
+    <!-- Header -->
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Devoluciones</h1>
+            <p class="page-subtitle">Gestión de solicitudes de devolución y notas de crédito</p>
+        </div>
+        <app-button label="Nueva Devolución" variant="primary" icon="plus" (click)="abrirNueva()" />
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="grid grid-cols-2 gap-[var(--card-gap)] md:grid-cols-4 mb-[var(--section-gap)]">
+        <div class="card-metric">
+            <span class="card-metric-label">Total Devoluciones</span>
+            <span class="card-metric-value">{{ totalDevoluciones() }}</span>
+        </div>
+        <div class="card-metric">
+            <span class="card-metric-label">Pendientes Revisión</span>
+            <span class="card-metric-value">{{ devPendientes() }}</span>
+        </div>
+        <div class="card-metric">
+            <span class="card-metric-label">Aprobadas</span>
+            <span class="card-metric-value">{{ devAprobadas() }}</span>
+        </div>
+        <div class="card-metric">
+            <span class="card-metric-label">Monto Reembolsado</span>
+            <span class="card-metric-value">S/ {{ montoReembolsado().toFixed(2) }}</span>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="filters-bar mb-[var(--form-gap)]" [formGroup]="filterForm">
+        <select class="form-input" formControlName="filtroEstado">
+            @for (opt of estadoOptions(); track opt.value) {
+                <option [value]="opt.value">{{ opt.label }}</option>
+            }
+        </select>
+    </div>
+
+    <!-- Tabla -->
+    <div class="card">
+        <div class="card-body" style="padding:0">
+            <app-data-table
+                [data]="devolucionesFiltradas()"
+                [columns]="columns"
+                [actions]="actions"
+                [totalElements]="devolucionesFiltradas().length"
+                [pageSize]="20">
+            </app-data-table>
+        </div>
+    </div>
+
+</div>
+
+<!-- Drawer: Registrar / Ver Devolución -->
+<app-drawer
+    [isOpen]="showModal()"
+    [title]="editMode() ? 'Detalle de Devolución' : 'Nueva Devolución'"
+    size="lg"
+    side="right"
+    [hasFooter]="false"
+    (closed)="cerrarModal()">
+
+    <form [formGroup]="returnForm" (ngSubmit)="guardar()">
+        <app-admin-form-layout
+            [errorMessage]="submitError()"
+            [stickyActions]="true">
+
+            <!-- Sección: Datos de la devolución -->
+            <app-admin-form-section title="Datos de la devolución" [columns]="2">
+
+                <app-form-field label="N° de Pedido / Orden" [required]="true" [error]="err('numeroOrden')">
+                    <input formControlName="numeroOrden" type="text" class="form-input"
+                           placeholder="Ej: #1234 o OC-001" />
+                </app-form-field>
+
+                <app-form-field label="Nombre del Cliente" [error]="err('clienteNombre')">
+                    <input formControlName="clienteNombre" type="text" class="form-input"
+                           placeholder="Nombre del cliente" />
+                </app-form-field>
+
+                <app-form-field label="Monto (S/)" [required]="true" [error]="err('monto')">
+                    <input formControlName="monto" type="number" class="form-input"
+                           min="0" step="0.01" placeholder="0.00" />
+                </app-form-field>
+
+                <app-form-field label="Fecha Solicitud" [required]="true" [error]="err('fechaSolicitud')">
+                    <app-date-input
+                        formControlName="fechaSolicitud"
+                        [required]="true">
+                    </app-date-input>
+                </app-form-field>
+
+            </app-admin-form-section>
+
+            <!-- Sección: Motivo y resolución -->
+            <app-admin-form-section title="Motivo y resolución" [columns]="2">
+
+                <app-form-field label="Motivo" [required]="true" [error]="err('motivo')">
+                    <select formControlName="motivo" class="form-input">
+                        @for (opt of motivoOptions(); track opt.value) {
+                            <option [value]="opt.value">{{ opt.label }}</option>
+                        }
+                    </select>
+                </app-form-field>
+
+                <app-form-field label="Tipo de Resolución" [error]="err('tipoResolucion')">
+                    <select formControlName="tipoResolucion" class="form-input">
+                        @for (opt of resolucionOptions(); track opt.value) {
+                            <option [value]="opt.value">{{ opt.label }}</option>
+                        }
+                    </select>
+                </app-form-field>
+
+            </app-admin-form-section>
+
+            <!-- Sección: Observaciones -->
+            <app-admin-form-section title="Observaciones">
+
+                <app-form-field label="Observaciones" [error]="err('observaciones')">
+                    <textarea formControlName="observaciones" class="form-input" rows="3"
+                              placeholder="Detalles adicionales sobre la devolución..."></textarea>
+                </app-form-field>
+
+            </app-admin-form-section>
+
+            <div slot="actions">
+                <app-button label="Cancelar" variant="secondary" icon="x" type="button" (click)="cerrarModal()" />
+                @if (!editMode()) {
+                    <app-button label="Registrar Devolución" variant="primary" icon="save" type="submit"
+                                [disabled]="returnForm.invalid"
+                                [loading]="guardando()" />
+                }
+            </div>
+
+        </app-admin-form-layout>
+    </form>
+
+</app-drawer>

@@ -1,0 +1,50 @@
+<div class="page-container">
+
+  <app-page-header
+    title="Stock"
+    subtitle="Consulta el nivel de stock por almacén"
+    [breadcrumbs]="breadcrumbs">
+    <div actions>
+      <!-- btn-migration: SKIP — label dinámico condicional (Ver todo / Solo stock bajo) -->
+      <button class="btn btn-secondary" (click)="toggleLowStock()">
+        {{ showLowStockOnly() ? 'Ver todo' : 'Solo stock bajo' }}
+      </button>
+      <app-button icon="download" label="Exportar CSV" variant="secondary"
+        [disabled]="!stock().length" (click)="exportCsv()" />
+    </div>
+  </app-page-header>
+
+  <div class="filters-bar">
+    <div class="filter-field">
+      <label class="input-label">Almacén</label>
+      <select class="form-input" (change)="onWarehouseChange($event)" style="min-width:260px">
+        <option value="">Seleccionar almacén...</option>
+        @for (w of warehouses(); track w.id) {
+          <option [value]="w.id">{{ w.code }} — {{ w.name }}</option>
+        }
+      </select>
+    </div>
+  </div>
+
+  @if (error()) {
+    <app-alert type="error" [message]="error()!" [dismissible]="true" (dismiss)="error.set(null)" />
+  }
+
+  @if (!selectedWarehouseId() && !loading()) {
+    <div class="card card-body" style="text-align:center; color:var(--color-text-secondary); padding:3rem 1rem">
+      Selecciona un almacén para ver el stock.
+    </div>
+  } @else {
+    <app-data-table
+      [data]="stock()"
+      [columns]="columns"
+      [loading]="loading()"
+      [currentPage]="currentPage()"
+      [pageSize]="pageSize()"
+      [totalElements]="totalElements()"
+      [totalPages]="totalPages()"
+      (pageChange)="onPageChange($event)">
+    </app-data-table>
+  }
+
+</div>

@@ -1,0 +1,186 @@
+<div class="proveedores-page">
+    <app-page-header
+        title="Proveedores"
+        subtitle="Gestión de proveedores y datos de contacto"
+        [breadcrumbs]="breadcrumbs">
+        <div actions>
+            <app-button
+                variant="primary"
+                icon="plus"
+                label="Nuevo Proveedor"
+                (click)="openCreateModal()">
+            </app-button>
+        </div>
+    </app-page-header>
+
+    <!-- Filters -->
+    <div class="mb-lg" style="display:flex;gap:var(--space-sm);flex-wrap:wrap;align-items:center">
+        <div class="search-box" style="max-width:380px">
+            <svg class="search-box-icon" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input type="text" placeholder="Buscar por RUC o razón social..."
+                [value]="searchQuery()" (input)="onSearch($event)" />
+        </div>
+        <select class="form-input" style="width:180px" [value]="filterEstado()" (change)="onFilterEstado($event)">
+            <option value="">Todos los estados</option>
+            <option value="ACTIVO">Activo</option>
+            <option value="INACTIVO">Inactivo</option>
+        </select>
+    </div>
+
+    @if (error()) {
+        <app-alert type="error" [message]="error()!" [dismissible]="true" (dismiss)="error.set(null)"></app-alert>
+    }
+
+    @if (loading() && !hasProveedores()) {
+        <div class="loading-container">
+            <div class="spinner"></div>
+            <p>Cargando proveedores...</p>
+        </div>
+    }
+
+    @if (isEmpty()) {
+        <div class="text-center py-2xl text-subtle">
+            <svg class="mx-auto text-muted mb-md" width="64" height="64" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+            </svg>
+            <h3 class="text-lg font-bold text-on mb-xs">No hay proveedores registrados</h3>
+            <p>Agrega tu primer proveedor con el botón de arriba.</p>
+        </div>
+    }
+
+    @if (hasProveedores() && !loading() || (hasProveedores() && loading())) {
+        <app-data-table
+            [data]="proveedores()"
+            [columns]="columns"
+            [actions]="actions"
+            [loading]="loading()"
+            [currentPage]="currentPage()"
+            [pageSize]="pageSize()"
+            [totalElements]="totalElements()"
+            [totalPages]="totalPages()"
+            [sortField]="sortField()"
+            [sortDirection]="sortDirection()"
+            [hidePagination]="true"
+            (sortChange)="onSort($event)">
+        </app-data-table>
+    }
+
+    @if (!loading() && totalPages() > 0) {
+        <app-pagination
+            [currentPage]="currentPage()"
+            [totalPages]="totalPages()"
+            [totalElements]="totalElements()"
+            [pageSize]="pageSize()"
+            (pageChange)="onPaginationChange($event)">
+        </app-pagination>
+    }
+
+    <!-- Drawer: Create / Edit Proveedor -->
+    <app-drawer
+        [isOpen]="showModal()"
+        [title]="editMode() ? 'Editar Proveedor' : 'Nuevo Proveedor'"
+        size="lg"
+        side="right"
+        [hasFooter]="true"
+        (closed)="closeModal()">
+
+        <form [formGroup]="proveedorForm" (ngSubmit)="onSubmit()">
+            @if (submitError()) {
+                <app-alert type="error" [message]="submitError()!" [dismissible]="true"
+                    (dismiss)="submitError.set(null)"></app-alert>
+            }
+
+            <!-- Sección: Datos generales -->
+            <h3 class="text-sm font-bold text-subtle uppercase tracking-wide mb-sm mt-xs">Datos Generales</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-sm mb-md">
+                <app-form-field label="RUC" [control]="getControl('ruc')" type="text"
+                    placeholder="20XXXXXXXXX" hint="11 dígitos" [required]="true">
+                </app-form-field>
+                <app-form-field label="Razón Social" [control]="getControl('razonSocial')" type="text"
+                    placeholder="Ej: IMPORTACIONES SAC" [required]="true">
+                </app-form-field>
+                <app-form-field label="Nombre Comercial" [control]="getControl('nombreComercial')" type="text"
+                    placeholder="Nombre con que opera">
+                </app-form-field>
+                <div>
+                    <label class="input-label">Condición SUNAT</label>
+                    <select class="form-input" formControlName="condicionSunat">
+                        <option value="HABIDO">HABIDO</option>
+                        <option value="NO HABIDO">NO HABIDO</option>
+                    </select>
+                </div>
+                <div class="md:col-span-2">
+                    <app-form-field label="Domicilio Fiscal" [control]="getControl('domicilioFiscal')" type="text"
+                        placeholder="Av. ...">
+                    </app-form-field>
+                </div>
+            </div>
+
+            <!-- Sección: Contacto -->
+            <h3 class="text-sm font-bold text-subtle uppercase tracking-wide mb-sm">Datos de Contacto</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-sm mb-md">
+                <app-form-field label="Nombre Contacto" [control]="getControl('contactoNombre')" type="text"
+                    placeholder="Nombre completo">
+                </app-form-field>
+                <app-form-field label="Teléfono" [control]="getControl('contactoTelefono')" type="tel"
+                    placeholder="+51 999 999 999">
+                </app-form-field>
+                <div class="md:col-span-2">
+                    <app-form-field label="Email" [control]="getControl('contactoEmail')" type="email"
+                        placeholder="contacto@empresa.com">
+                    </app-form-field>
+                </div>
+            </div>
+
+            <!-- Sección: Financiero -->
+            <h3 class="text-sm font-bold text-subtle uppercase tracking-wide mb-sm">Datos Financieros</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-sm">
+                <app-form-field label="Banco" [control]="getControl('banco')" type="text"
+                    placeholder="BCP, BBVA, Interbank...">
+                </app-form-field>
+                <app-form-field label="N° Cuenta / CCI" [control]="getControl('cuentaBanco')" type="text"
+                    placeholder="00-000-000000-0-00">
+                </app-form-field>
+                <div>
+                    <label class="input-label">Condición de Pago</label>
+                    <select class="form-input" formControlName="condicionPago">
+                        <option value="CONTADO">Contado</option>
+                        <option value="CREDITO_15">Crédito 15 días</option>
+                        <option value="CREDITO_30">Crédito 30 días</option>
+                        <option value="CREDITO_60">Crédito 60 días</option>
+                        <option value="CREDITO_90">Crédito 90 días</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="input-label">Moneda Preferida</label>
+                    <select class="form-input" formControlName="monedaPreferida">
+                        <option value="PEN">Soles (PEN)</option>
+                        <option value="USD">Dólares (USD)</option>
+                    </select>
+                </div>
+            </div>
+        </form>
+
+        <div slot="footer">
+            <app-button
+                variant="secondary"
+                icon="x"
+                label="Cancelar"
+                [disabled]="submitting()"
+                (click)="closeModal()">
+            </app-button>
+            <app-button
+                variant="primary"
+                icon="save"
+                [label]="submitting() ? 'Guardando...' : (editMode() ? 'Actualizar' : 'Guardar')"
+                [loading]="submitting()"
+                [disabled]="proveedorForm.invalid"
+                (click)="onSubmit()">
+            </app-button>
+        </div>
+    </app-drawer>
+</div>

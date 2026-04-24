@@ -1,11 +1,11 @@
-import { Component, OnInit, inject, signal, computed } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators, FormGroup } from '@angular/forms';
 import { UserService } from '@features/admin/services/user.service';
 import { RolService } from '@features/admin/services/rol.service';
 import { UserListComponent } from '@features/admin/pages/users/components/user-list/user-list.component';
 import { UserFormComponent } from '@features/admin/pages/users/components/user-form/user-form.component';
-import { ChangeDetectionStrategy } from '@angular/core';
+import { PaginationComponent, PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
+import { ButtonComponent } from '@shared/components';
 import {
   UserResponse,
   UserRequest,
@@ -17,7 +17,7 @@ import { PaginationConfig, PageResponse } from '@features/admin/models/product.m
 @Component({
   selector: 'app-users',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, UserListComponent, UserFormComponent],
+  imports: [ReactiveFormsModule, UserListComponent, UserFormComponent, PaginationComponent, ButtonComponent],
   templateUrl: './users.component.html',
   styleUrl: './users.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -45,8 +45,8 @@ export class UsersComponent implements OnInit {
   sortField = signal('id');
   sortDirection = signal<'asc' | 'desc'>('asc');
 
-  // Modal state
-  showModal = signal(false);
+  // Drawer state
+  showDrawer = signal(false);
   editMode = signal(false);
   selectedUserId = signal<number | null>(null);
 
@@ -60,10 +60,6 @@ export class UsersComponent implements OnInit {
   // Computed values
   hasUsers = computed(() => this.users().length > 0);
   isEmpty = computed(() => !this.loading() && !this.hasUsers());
-  pages = computed(() => {
-    const total = this.totalPages();
-    return Array.from({ length: total }, (_, i) => i);
-  });
 
   // Constants
   tipoDocumentoOptions = TIPO_DOCUMENTO_OPTIONS;
@@ -109,9 +105,9 @@ export class UsersComponent implements OnInit {
 
     this.userService.getAll(pagination).subscribe({
       next: (response: PageResponse<UserResponse>) => {
-        this.users.set(response.content);
-        this.totalElements.set(response.page.totalElements);
-        this.totalPages.set(response.page.totalPages);
+        this.users.set(response?.content ?? []);
+        this.totalElements.set(response?.page?.totalElements ?? 0);
+        this.totalPages.set(response?.page?.totalPages ?? 0);
         this.loading.set(false);
       },
       error: (err: Error) => {
@@ -121,22 +117,15 @@ export class UsersComponent implements OnInit {
     });
   }
 
-  onSearch(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    this.searchQuery.set(input.value);
+  onSearch(query: string): void {
+    this.searchQuery.set(query);
     this.currentPage.set(0);
     this.loadUsers();
   }
 
-  onPageChange(page: number): void {
-    this.currentPage.set(page);
-    this.loadUsers();
-  }
-
-  onPageSizeChange(event: Event): void {
-    const select = event.target as HTMLSelectElement;
-    this.pageSize.set(parseInt(select.value, 10));
-    this.currentPage.set(0);
+  onPaginationChange(event: PaginationChangeEvent): void {
+    this.currentPage.set(event.page);
+    this.pageSize.set(event.size);
     this.loadUsers();
   }
 
@@ -145,7 +134,8 @@ export class UsersComponent implements OnInit {
     this.selectedUserId.set(null);
     this.userForm.reset({ tipoDocumento: 'DNI' });
     this.userForm.get('password')?.setValidators([Validators.required, Validators.minLength(6)]);
-    this.showModal.set(true);
+    this.userForm.get('password')?.updateValueAndValidity();
+    this.showDrawer.set(true);
     this.submitError.set(null);
   }
 
@@ -169,12 +159,12 @@ export class UsersComponent implements OnInit {
     this.userForm.get('password')?.clearValidators();
     this.userForm.get('password')?.updateValueAndValidity();
 
-    this.showModal.set(true);
+    this.showDrawer.set(true);
     this.submitError.set(null);
   }
 
   closeModal(): void {
-    this.showModal.set(false);
+    this.showDrawer.set(false);
     this.userForm.reset();
   }
 

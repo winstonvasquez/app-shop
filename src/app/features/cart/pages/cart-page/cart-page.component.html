@@ -1,3 +1,6 @@
+<div class="container max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-0 bg-[var(--color-background)]">
+    <app-breadcrumb [items]="breadcrumbItems" />
+</div>
 <div
     class="container max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col lg:flex-row gap-8 min-h-screen text-[var(--color-text-primary)] bg-[var(--color-background)]">
 
@@ -25,17 +28,11 @@
                     [checked]="cartService.allSelected()" (change)="toggleAll($event)">
                 <span class="font-bold text-lg">Seleccionar todo ({{ cartService.cartCount() }})</span>
             </label>
-            <button class="text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
-                    stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-            </button>
         </div>
 
         <!-- Cart Items List -->
         <div class="space-y-6">
-            <ng-container *ngFor="let item of cartItems()">
+            @for (item of cartItems(); track item.productId) {
                 <div class="flex flex-col sm:flex-row gap-4 pt-4 relative group">
                     <!-- Selection Checkbox -->
                     <div class="pt-2 sm:pt-14 absolute left-0 z-10">
@@ -48,10 +45,11 @@
                     <div
                         class="relative w-32 h-32 ml-8 flex-shrink-0 bg-[var(--color-surface-raised)] rounded-md overflow-hidden border border-[var(--color-border)]">
                         <img [src]="item.image" [alt]="item.name" class="w-full h-full object-cover">
-                        <div *ngIf="item.stock !== undefined && item.stock < 10"
-                            class="absolute bottom-0 left-0 right-0 bg-black/70 text-white text-[10px] font-bold text-center py-1 truncate">
-                            CASI AGOTADO(S)
-                        </div>
+                        @if (item.stock !== undefined && item.stock < 10) {
+                            <div class="absolute bottom-0 left-0 right-0 bg-black/70 text-white text-[10px] font-bold text-center py-1 truncate">
+                                CASI AGOTADO(S)
+                            </div>
+                        }
                     </div>
 
                     <!-- Product Details -->
@@ -61,25 +59,20 @@
                             <p class="text-xs text-[var(--color-text-muted)] mt-1 line-clamp-1 overflow-hidden"
                                 [title]="item.description">{{ item.description }}</p>
 
-                            <button (click)="cartService.removeFromCart(item.productId)"
-                                class="absolute top-4 right-0 text-[var(--color-text-muted)] hover:text-[var(--color-error)] transition-colors"
-                                title="{{ 'cart.remove' | translate }}">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
-                                    stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                </svg>
-                            </button>
+                            <app-button
+                                [iconOnly]="true"
+                                icon="trash-2"
+                                variant="ghost"
+                                size="sm"
+                                [ariaLabel]="'cart.remove' | translate"
+                                (click)="cartService.removeFromCart(item.productId)"
+                                class="absolute top-4 right-0" />
                         </div>
 
                         <div class="flex items-end justify-between mt-4">
                             <div class="flex items-center gap-2">
                                 <span class="text-xl font-bold text-[var(--color-accent)]">S/ {{ item.price | number:'1.2-2'
                                     }}</span>
-                                <span class="text-xs text-[var(--color-text-muted)] line-through">S/ {{ (item.price * 1.48) |
-                                    number:'1.2-2' }}</span>
-                                <span
-                                    class="text-xs border border-[var(--color-accent)] text-[var(--color-accent)] px-1 py-0.5 rounded leading-none">48%</span>
                             </div>
 
                             <div
@@ -87,9 +80,11 @@
                                 <select
                                     class="appearance-none bg-transparent pl-3 pr-8 py-1 text-sm font-medium text-[var(--color-text-primary)] outline-none w-full h-full cursor-pointer"
                                     [value]="item.quantity" (change)="onQuantityChange(item.productId, $event)">
-                                    <option *ngFor="let qty of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]" [value]="qty">
-                                        Cant. {{ qty }}
-                                    </option>
+                                    @for (qty of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]; track qty) {
+                                        <option [value]="qty">
+                                            Cant. {{ qty }}
+                                        </option>
+                                    }
                                 </select>
                                 <div
                                     class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-[var(--color-text-muted)]">
@@ -103,43 +98,15 @@
                         </div>
                     </div>
                 </div>
-            </ng-container>
+            }
 
-            <div *ngIf="cartItems().length === 0" class="text-center py-12 text-[var(--color-text-muted)]">
-                {{ 'cart.empty' | translate }}
-            </div>
+            @if (cartItems().length === 0) {
+                <div class="text-center py-12 text-[var(--color-text-muted)]">
+                    {{ 'cart.empty' | translate }}
+                </div>
+            }
         </div>
 
-        <!-- Recommendations Placeholder -->
-        <div class="pt-8">
-            <h2 class="text-lg font-bold mb-4">Artículos que tal vez quieras agregar</h2>
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div class="border border-[var(--color-border)] rounded p-2 hover:shadow-md transition-shadow">
-                    <div class="bg-[var(--color-surface-raised)] w-full h-32 rounded mb-2"></div>
-                    <div class="h-4 bg-[var(--color-surface-raised)] rounded w-3/4 mb-1"></div>
-                    <div class="flex justify-between items-center">
-                        <span class="font-bold text-[var(--color-accent)]">S/ 25.60</span>
-                        <button class="border border-[var(--color-border)] rounded-full p-1 hover:border-[var(--color-text-muted)] transition-colors"><svg xmlns="http://www.w3.org/2000/svg"
-                                class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-                            </svg></button>
-                    </div>
-                </div>
-                <div class="border border-[var(--color-border)] rounded p-2 hover:shadow-md transition-shadow">
-                    <div class="bg-[var(--color-surface-raised)] w-full h-32 rounded mb-2"></div>
-                    <div class="h-4 bg-[var(--color-surface-raised)] rounded w-3/4 mb-1"></div>
-                    <div class="flex justify-between items-center">
-                        <span class="font-bold text-[var(--color-accent)]">S/ 20.03</span>
-                        <button class="border border-[var(--color-border)] rounded-full p-1 hover:border-[var(--color-text-muted)] transition-colors"><svg xmlns="http://www.w3.org/2000/svg"
-                                class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-                            </svg></button>
-                    </div>
-                </div>
-            </div>
-        </div>
     </div>
 
     <!-- Right Column: Order Summary (Sticky) -->
@@ -150,11 +117,7 @@
             <div class="space-y-3 text-sm mb-6">
                 <div class="flex justify-between text-[var(--color-text-secondary)]">
                     <span>Total de artículos:</span>
-                    <span class="line-through">S/ {{ (cartTotal() * 1.48) | number:'1.2-2' }}</span>
-                </div>
-                <div class="flex justify-between text-[var(--color-text-secondary)]">
-                    <span>Descuento de artículo(s):</span>
-                    <span class="text-[var(--color-accent)]">-S/ {{ (cartTotal() * 0.48) | number:'1.2-2' }}</span>
+                    <span>S/ {{ cartTotal() | number:'1.2-2' }}</span>
                 </div>
 
                 <div class="flex justify-between items-end pt-4 border-t border-[var(--color-border)]">
@@ -164,8 +127,15 @@
                 <div class="text-[10px] text-[var(--color-text-muted)]">Consulta el monto final de tu pago real.</div>
             </div>
 
-            <button (click)="checkout()" [disabled]="cartService.selectedCount() === 0"
-                class="w-full bg-accent hover:brightness-110 text-white font-bold py-3 px-4 rounded-full transition-all flex flex-col items-center justify-center leading-tight mb-4 disabled:opacity-50 disabled:cursor-not-allowed">
+            <!-- btn-migration: SKIP — botón multi-línea con subtítulo dinámico, no cubierto por variants de <app-button> -->
+            <button (click)="checkout()" [disabled]="cartService.selectedCount() === 0 || isCheckingOut()"
+                class="btn btn-primary w-full rounded-full flex flex-col items-center justify-center leading-tight mb-4">
+                @if (isCheckingOut()) {
+                <span class="flex items-center justify-center gap-2 text-base">
+                    <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    Preparando pedido...
+                </span>
+                } @else {
                 <span class="text-base">Hacer pedido ({{ cartService.selectedCount() }})</span>
                 <span class="text-xs font-normal flex items-center gap-1">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
@@ -175,6 +145,7 @@
                     </svg>
                     1 casi agotado
                 </span>
+                }
             </button>
 
             <div class="text-[10px] text-[var(--color-text-muted)] mb-6 flex items-start gap-1">
@@ -216,16 +187,19 @@
 
                     <p class="text-[11px] font-medium text-[var(--color-text-secondary)] mb-2">1. Métodos de pago</p>
                     <div class="flex flex-wrap gap-2">
-                        <ng-container *ngFor="let m of mediosPago()">
+                        @for (m of mediosPago(); track m.codigo) {
                             <div class="h-6 w-10 bg-[var(--color-surface)] border border-[var(--color-border)] rounded overflow-hidden flex items-center justify-center p-0.5"
                                 [title]="m.nombre">
-                                <img *ngIf="m.iconoUrl" [src]="m.iconoUrl" [alt]="m.nombre"
-                                    class="h-full object-contain"
-                                    fallback="https://via.placeholder.com/40x24?text=Method">
-                                <span *ngIf="!m.iconoUrl" class="text-[8px] text-[var(--color-text-primary)] font-bold truncate">{{
-                                    m.codigo }}</span>
+                                @if (m.iconoUrl) {
+                                    <img [src]="m.iconoUrl" [alt]="m.nombre"
+                                        class="h-full object-contain"
+                                        fallback="https://via.placeholder.com/40x24?text=Method">
+                                } @else {
+                                    <span class="text-[8px] text-[var(--color-text-primary)] font-bold truncate">{{
+                                        m.codigo }}</span>
+                                }
                             </div>
-                        </ng-container>
+                        }
                     </div>
                 </div>
 
@@ -233,16 +207,19 @@
                 <div>
                     <p class="text-[11px] font-medium text-[var(--color-text-secondary)] mb-2">2. Certificación de seguridad</p>
                     <div class="flex flex-wrap gap-2">
-                        <ng-container *ngFor="let c of certificaciones()">
+                        @for (c of certificaciones(); track c.codigo) {
                             <div class="h-6 bg-[var(--color-surface)] border border-[var(--color-border)] rounded overflow-hidden flex items-center justify-center px-1"
                                 [title]="c.nombre">
-                                <img *ngIf="c.iconoUrl" [src]="c.iconoUrl" [alt]="c.nombre"
-                                    class="h-full object-contain"
-                                    fallback="https://via.placeholder.com/60x24?text=Cert">
-                                <span *ngIf="!c.iconoUrl" class="text-[8px] text-[var(--color-text-primary)] font-bold truncate">{{
-                                    c.codigo }}</span>
+                                @if (c.iconoUrl) {
+                                    <img [src]="c.iconoUrl" [alt]="c.nombre"
+                                        class="h-full object-contain"
+                                        fallback="https://via.placeholder.com/60x24?text=Cert">
+                                } @else {
+                                    <span class="text-[8px] text-[var(--color-text-primary)] font-bold truncate">{{
+                                        c.codigo }}</span>
+                                }
                             </div>
-                        </ng-container>
+                        }
                     </div>
                 </div>
 

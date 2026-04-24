@@ -1,0 +1,74 @@
+<div class="page-container">
+    <app-breadcrumb [items]="breadcrumbItems" />
+    <div class="page-header">
+        <h1 class="page-title">Mi Perfil</h1>
+        <p class="page-subtitle">Actualiza tus datos personales</p>
+    </div>
+
+    @if (loading()) {
+        <div class="loading-container"><div class="spinner"></div></div>
+    } @else {
+        <div class="card max-w-lg">
+            <div class="card-body">
+                @if (successMsg()) {
+                    <app-alert type="success" [message]="successMsg()" />
+                }
+
+                <form [formGroup]="profileForm" (ngSubmit)="onSubmit()">
+                    <app-admin-form-layout [errorMessage]="submitError()">
+
+                        <app-admin-form-section title="Datos personales" [columns]="2">
+                            <app-form-field label="Nombres" [required]="true" [error]="err('nombres')">
+                                <input class="form-input" type="text" formControlName="nombres" placeholder="Nombres" autocomplete="given-name" />
+                            </app-form-field>
+                            <app-form-field label="Apellidos" [required]="true" [error]="err('apellidos')">
+                                <input class="form-input" type="text" formControlName="apellidos" placeholder="Apellidos" autocomplete="family-name" />
+                            </app-form-field>
+                        </app-admin-form-section>
+
+                        <app-admin-form-section title="Contacto" [columns]="1">
+                            <app-form-field
+                                label="Correo electrónico"
+                                hint="El correo no puede cambiarse desde aquí.">
+                                <input class="form-input opacity-60" type="email" formControlName="email" readonly />
+                            </app-form-field>
+                            <app-form-field label="Teléfono" [error]="err('telefono')">
+                                <input class="form-input" type="tel" formControlName="telefono" placeholder="Ej: 999 999 999" autocomplete="tel" />
+                            </app-form-field>
+                        </app-admin-form-section>
+
+                        <app-admin-form-section title="Documento de identidad" [columns]="2">
+                            <app-form-field label="Tipo de documento" [error]="err('tipoDocumento')">
+                                <select class="form-input" formControlName="tipoDocumento">
+                                    <option value="DNI">DNI</option>
+                                    <option value="CE">Carnet de Extranjería</option>
+                                    <option value="PASAPORTE">Pasaporte</option>
+                                </select>
+                            </app-form-field>
+                            <app-form-field label="N° Documento" [error]="err('numeroDocumento')">
+                                <input class="form-input" type="text" formControlName="numeroDocumento" placeholder="12345678" />
+                            </app-form-field>
+                        </app-admin-form-section>
+
+                        <app-admin-form-section [columns]="1">
+                            <app-form-field label="Fecha de nacimiento" [error]="err('fechaNacimiento')">
+                                <input class="form-input" type="date" formControlName="fechaNacimiento" />
+                            </app-form-field>
+                        </app-admin-form-section>
+
+                        <div slot="actions">
+                            <app-button
+                                [label]="saving() ? 'Guardando...' : 'Guardar cambios'"
+                                variant="primary"
+                                icon="save"
+                                type="submit"
+                                [loading]="saving()"
+                                [disabled]="saving() || profileForm.invalid" />
+                        </div>
+
+                    </app-admin-form-layout>
+                </form>
+            </div>
+        </div>
+    }
+</div>

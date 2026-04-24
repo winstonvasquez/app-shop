@@ -1,0 +1,174 @@
+<app-page-header
+    title="Evaluaciones de Desempeño"
+    subtitle="Gestión de evaluaciones 360 por período y tipo"
+    [breadcrumbs]="breadcrumbs">
+    <div actions>
+        <app-button icon="plus" label="Nueva Evaluación" variant="primary" (click)="openCreate()" />
+    </div>
+</app-page-header>
+
+<!-- KPIs -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+    <div class="card">
+        <div class="card-body">
+            <div class="text-muted" style="font-size: 0.875rem">Borradores</div>
+            <div style="font-size: 2.5rem; font-weight: 700"
+                 [style.color]="borradores() > 0 ? 'var(--color-warning)' : 'var(--color-text-muted)'">
+                {{ borradores() }}
+            </div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-body">
+            <div class="text-muted" style="font-size: 0.875rem">Completadas / Aprobadas</div>
+            <div style="font-size: 2.5rem; font-weight: 700; color: var(--color-success)">{{ completadas() }}</div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-body">
+            <div class="text-muted" style="font-size: 0.875rem">Total</div>
+            <div style="font-size: 2.5rem; font-weight: 700; color: var(--color-primary)">{{ evaluations().length }}</div>
+        </div>
+    </div>
+</div>
+
+<!-- Filtros -->
+<div class="filters-bar">
+    <select class="form-input" style="width: auto; min-width: 180px"
+            [value]="filtroEstado()"
+            (change)="onFilterEstado($event)">
+        <option value="">Todos los estados</option>
+        @for (opt of estadoOptions; track opt.value) {
+            <option [value]="opt.value">{{ opt.label }}</option>
+        }
+    </select>
+    <select class="form-input" style="width: auto; min-width: 180px"
+            [value]="filtroTipo()"
+            (change)="onFilterTipo($event)">
+        <option value="">Todos los tipos</option>
+        @for (opt of tipoOptions; track opt.value) {
+            <option [value]="opt.value">{{ opt.label }}</option>
+        }
+    </select>
+</div>
+
+<!-- Tabla -->
+<app-data-table
+    [data]="pagedData()"
+    [columns]="columns"
+    [actions]="actions"
+    [exportable]="true"
+    exportFileName="evaluaciones"
+    [hidePagination]="true" />
+
+@if (totalElements() > 0) {
+    <app-pagination
+        [currentPage]="currentPage()"
+        [totalPages]="totalPages()"
+        [totalElements]="totalElements()"
+        [pageSize]="pageSize()"
+        (pageChange)="onPaginationChange($event)" />
+}
+
+<!-- ── Drawer: Crear/Editar Evaluación ─────────────────────────────────── -->
+<app-drawer
+    [isOpen]="showDrawer()"
+    [title]="editMode() ? 'Editar Evaluación' : 'Nueva Evaluación'"
+    size="md"
+    [hasFooter]="true"
+    (closed)="closeDrawer()">
+
+    <form [formGroup]="evaluationForm" (ngSubmit)="guardar()">
+
+        @if (submitError()) {
+            <app-alert type="error" [message]="submitError()!" />
+        }
+
+        <p class="text-subtle text-sm font-semibold mb-2 mt-1">Datos de la Evaluación</p>
+        <hr style="border-color: var(--color-border); margin-bottom: var(--space-md)">
+
+        <div class="flex flex-col gap-4">
+
+            <div class="grid grid-cols-2 gap-4">
+                <app-form-field
+                    label="ID Empleado"
+                    [control]="getControl('employeeId')"
+                    type="number"
+                    placeholder="ID del empleado"
+                    [required]="true" />
+
+                <app-form-field
+                    label="ID Evaluador"
+                    [control]="getControl('evaluadorId')"
+                    type="number"
+                    placeholder="ID del evaluador"
+                    [required]="true" />
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <app-form-field
+                    label="Período"
+                    [control]="getControl('periodo')"
+                    placeholder="YYYY-MM"
+                    [required]="true" />
+
+                <app-date-input
+                    label="Fecha Evaluación"
+                    [required]="true"
+                    formControlName="fechaEvaluacion" />
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="input-label">Tipo de Evaluación</label>
+                    <select class="form-input" formControlName="tipoEvaluacion">
+                        @for (opt of tipoOptions; track opt.value) {
+                            <option [value]="opt.value">{{ opt.label }}</option>
+                        }
+                    </select>
+                </div>
+
+                <app-form-field
+                    label="Puntaje (0-100)"
+                    [control]="getControl('puntaje')"
+                    type="number"
+                    [required]="true" />
+            </div>
+
+            <app-form-field
+                label="Comentarios"
+                [control]="getControl('comentarios')"
+                placeholder="Comentarios generales..." />
+
+            <app-form-field
+                label="Fortalezas"
+                [control]="getControl('fortalezas')"
+                placeholder="Fortalezas identificadas..." />
+
+            <app-form-field
+                label="Áreas de Mejora"
+                [control]="getControl('areasMejora')"
+                placeholder="Áreas de mejora..." />
+
+            <div>
+                <label class="input-label">Plan de Mejora</label>
+                <textarea
+                    class="form-input"
+                    rows="3"
+                    placeholder="Plan de mejora..."
+                    formControlName="planMejora"
+                    style="resize: vertical"></textarea>
+            </div>
+        </div>
+    </form>
+
+    <div slot="footer" class="flex justify-end gap-2">
+        <app-button icon="x" label="Cancelar" variant="secondary" type="button" (click)="closeDrawer()" />
+        <!-- btn-migration: SKIP — label dinámico con ternario (submitting/editMode) -->
+        <button class="btn btn-primary" type="button"
+                [disabled]="submitting()"
+                (click)="guardar()">
+            {{ submitting() ? 'Guardando...' : (editMode() ? 'Actualizar' : 'Crear Evaluación') }}
+        </button>
+    </div>
+</app-drawer>

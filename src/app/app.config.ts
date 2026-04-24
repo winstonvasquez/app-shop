@@ -1,10 +1,21 @@
 import { ApplicationConfig, provideBrowserGlobalErrorListeners, importProvidersFrom, APP_INITIALIZER } from '@angular/core';
+import {
+  LUCIDE_ICONS, LucideIconProvider,
+  X, CircleCheck, CircleAlert, TriangleAlert, Info,
+  ArrowLeft, ArrowRightCircle, ArrowRightLeft, Ban, BookOpen, Check, CheckCircle,
+  ClipboardCheck, Clock, Copy, DoorOpen, DoorClosed, Download, Eye, FilePlus,
+  FileSearch, FileText, Filter, GitCompare, HeartOff, Key, Layers, Link, Lock,
+  LockOpen, LogIn, MapPin, PackageCheck, Pencil, Percent, Play, Plus, Power,
+  Printer, Receipt, RefreshCw, RotateCcw, Save, Search, Send, ShoppingBag,
+  ShoppingCart, Ticket, Trash2, Truck, UserMinus, Wallet, XCircle
+} from 'lucide-angular';
 import { provideRouter } from '@angular/router';
 import { provideHttpClient, withInterceptors, withFetch, HttpClient, HttpBackend } from '@angular/common/http';
 import { TranslateModule, TranslateLoader } from '@ngx-translate/core';
 import { authInterceptor } from '@core/auth/auth.interceptor';
 import { languageInterceptor } from '@core/interceptors/language.interceptor';
 import { tenantInterceptor } from '@core/interceptors/tenant.interceptor';
+import { httpErrorInterceptor } from '@core/interceptors/http-error.interceptor';
 import { HttpLoaderFactory } from '@core/i18n/custom-translate-loader';
 import { LanguageService } from '@core/i18n/language.service';
 import { lastValueFrom } from 'rxjs';
@@ -15,6 +26,8 @@ import { environment } from '@env/environment';
 import { routes } from './app.routes';
 
 import { SystemParameterService } from '@core/services/system-parameter.service';
+import { StoreConfigService } from '@core/services/store-config.service';
+import { WishlistService } from '@core/services/wishlist.service';
 
 /**
  * APP_INITIALIZER factory: returns a Promise Angular awaits before rendering.
@@ -30,12 +43,25 @@ export function initSystemParameters(systemParameterService: SystemParameterServ
   return (): Promise<unknown> => lastValueFrom(systemParameterService.loadParameters());
 }
 
+export function initStoreConfig(storeConfigService: StoreConfigService) {
+  return (): Promise<unknown> => {
+    const savedLang = localStorage.getItem('app-language') || 'es';
+    return lastValueFrom(storeConfigService.loadConfig(savedLang));
+  };
+}
+
+export function initWishlist(wishlistService: WishlistService) {
+  return (): void => {
+    wishlistService.loadWishlist();
+  };
+}
+
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     provideRouter(routes),
     provideHttpClient(
-      withInterceptors([authInterceptor, languageInterceptor, tenantInterceptor]),
+      withInterceptors([authInterceptor, languageInterceptor, tenantInterceptor, httpErrorInterceptor]),
       withFetch()
     ),
     importProvidersFrom(
@@ -61,6 +87,31 @@ export const appConfig: ApplicationConfig = {
       multi: true
     },
     {
+      provide: APP_INITIALIZER,
+      useFactory: initStoreConfig,
+      deps: [StoreConfigService],
+      multi: true
+    },
+    {
+      provide: APP_INITIALIZER,
+      useFactory: initWishlist,
+      deps: [WishlistService],
+      multi: true
+    },
+    {
+      provide: LUCIDE_ICONS,
+      useValue: new LucideIconProvider({
+        X, CircleCheck, CircleAlert, TriangleAlert, Info,
+        ArrowLeft, ArrowRightCircle, ArrowRightLeft, Ban, BookOpen, Check, CheckCircle,
+        ClipboardCheck, Clock, Copy, DoorOpen, DoorClosed, Download, Eye, FilePlus,
+        FileSearch, FileText, Filter, GitCompare, HeartOff, Key, Layers, Link, Lock,
+        LockOpen, LogIn, MapPin, PackageCheck, Pencil, Percent, Play, Plus, Power,
+        Printer, Receipt, RefreshCw, RotateCcw, Save, Search, Send, ShoppingBag,
+        ShoppingCart, Ticket, Trash2, Truck, UserMinus, Wallet, XCircle
+      }),
+      multi: true
+    },
+    {
       provide: SOCIAL_AUTH_CONFIG,
       useValue: {
         autoLogin: false,
@@ -77,7 +128,7 @@ export const appConfig: ApplicationConfig = {
             provider: new FacebookLoginProvider(environment.socialAuth.facebookAppId)
           }
         ],
-        onError: (err: any) => {
+        onError: (err: unknown) => {
           console.error('Social Login Config Error', err);
         }
       } as SocialAuthServiceConfig,

@@ -1,0 +1,202 @@
+<div class="page-container">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Asientos Recurrentes</h1>
+            <p class="page-subtitle">Depreciación, alquileres, seguros y otros asientos periódicos automáticos</p>
+        </div>
+        <div class="page-actions">
+            <app-button label="Nuevo" icon="plus" variant="primary" (click)="abrirForm()" />
+        </div>
+    </div>
+
+    <!-- Error de carga -->
+    @if (error()) {
+        <div class="badge badge-error mb-4">{{ error() }}</div>
+    }
+
+    <!-- Loading -->
+    @if (cargando()) {
+        <div class="loading-container">
+            <div class="spinner"></div>
+        </div>
+    }
+
+    <!-- Tabla -->
+    @if (!cargando()) {
+        <div class="card">
+            <div class="card-body p-0">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th class="table-header-cell">Nombre</th>
+                            <th class="table-header-cell">Frecuencia</th>
+                            <th class="table-header-cell">Día ejecución</th>
+                            <th class="table-header-cell">Próxima ejecución</th>
+                            <th class="table-header-cell">Última ejecución</th>
+                            <th class="table-header-cell">Estado</th>
+                            <th class="table-header-cell">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (r of recurrentes(); track r.id) {
+                            <tr class="table-row">
+                                <td class="table-cell">
+                                    <div class="font-medium text-on">{{ r.name }}</div>
+                                    @if (r.description) {
+                                        <div class="text-muted text-sm">{{ r.description }}</div>
+                                    }
+                                </td>
+                                <td class="table-cell">{{ frecuenciaLabel(r.frequency) }}</td>
+                                <td class="table-cell">Día {{ r.executionDay }}</td>
+                                <td class="table-cell">{{ r.nextExecution | date:'dd/MM/yyyy' }}</td>
+                                <td class="table-cell">
+                                    {{ r.lastExecution ? (r.lastExecution | date:'dd/MM/yyyy') : '—' }}
+                                </td>
+                                <td class="table-cell">
+                                    @if (r.active) {
+                                        <span class="badge badge-success">Activo</span>
+                                    } @else {
+                                        <span class="badge badge-neutral">Inactivo</span>
+                                    }
+                                </td>
+                                <td class="table-cell">
+                                    <div class="flex gap-2">
+                                        @if (r.active) {
+                                            <app-button icon="play" [iconOnly]="true" variant="primary"
+                                                    ariaLabel="Ejecutar ahora"
+                                                    (click)="ejecutarAhora(r.id)" />
+                                            <app-button icon="power" [iconOnly]="true" variant="danger"
+                                                    ariaLabel="Desactivar"
+                                                    (click)="desactivar(r.id)" />
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        } @empty {
+                            <tr>
+                                <td colspan="7" class="table-cell text-center text-muted py-8">
+                                    No hay asientos recurrentes configurados
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- ── DRAWER NUEVO ASIENTO RECURRENTE ─────────────────────────────────── -->
+<app-drawer
+    [isOpen]="mostrarForm()"
+    title="Nuevo Asiento Recurrente"
+    size="lg"
+    side="right"
+    (closed)="cerrarForm()">
+
+    <form [formGroup]="form" (ngSubmit)="onSubmit()">
+        <app-admin-form-layout
+            [errorMessage]="submitError()"
+            [stickyActions]="true">
+
+            <!-- Sección: Identificación -->
+            <app-admin-form-section title="Identificación" [columns]="1">
+                <app-form-field label="Nombre" [required]="true" [error]="err('nombre')">
+                    <input class="form-input" formControlName="nombre"
+                           placeholder="Ej: Depreciación maquinaria" />
+                </app-form-field>
+                <app-form-field label="Descripción" [error]="err('descripcion')">
+                    <input class="form-input" formControlName="descripcion"
+                           placeholder="Descripción opcional" />
+                </app-form-field>
+            </app-admin-form-section>
+
+            <!-- Sección: Programación -->
+            <app-admin-form-section title="Programación" [columns]="2">
+                <app-form-field label="Frecuencia" [required]="true" [error]="err('frecuencia')">
+                    <select class="form-input" formControlName="frecuencia">
+                        @for (f of frecuencias; track f) {
+                            <option [value]="f">{{ frecuenciaLabel(f) }}</option>
+                        }
+                    </select>
+                </app-form-field>
+                <app-form-field label="Día del mes (1–31)" [required]="true" [error]="err('diaEjecucion')">
+                    <input class="form-input" type="number" min="1" max="31"
+                           formControlName="diaEjecucion" />
+                </app-form-field>
+                <app-form-field label="Fecha inicio" [required]="true" [error]="err('fechaInicio')">
+                    <input class="form-input" type="date" formControlName="fechaInicio" />
+                </app-form-field>
+                <app-form-field label="Fecha fin (vacío = sin fin)" [error]="err('fechaFin')">
+                    <input class="form-input" type="date" formControlName="fechaFin" />
+                </app-form-field>
+            </app-admin-form-section>
+
+            <!-- Sección: Contabilidad -->
+            <app-admin-form-section title="Contabilidad" [columns]="1">
+                <app-form-field label="Glosa del asiento" [required]="true" [error]="err('glosa')">
+                    <input class="form-input" formControlName="glosa"
+                           placeholder="Ej: Depreciación mensual activo fijo" />
+                </app-form-field>
+            </app-admin-form-section>
+
+            <!-- Sección: Líneas contables -->
+            <app-admin-form-section
+                title="Líneas contables"
+                description="La suma de DEBE debe igualar la suma de HABER.">
+
+                <div formArrayName="lineas" class="flex flex-col gap-2">
+                    @for (linea of lineasArray.controls; track $index; let i = $index) {
+                        <div [formGroupName]="i"
+                             class="grid grid-cols-[2fr_1fr_1fr_auto] gap-2 items-end">
+                            <app-form-field label="Código cuenta" [required]="true"
+                                            [error]="errLinea(i, 'accountCode')">
+                                <input class="form-input" formControlName="accountCode"
+                                       placeholder="Ej: 336101" />
+                            </app-form-field>
+                            <app-form-field label="Tipo" [required]="true"
+                                            [error]="errLinea(i, 'movementType')">
+                                <select class="form-input" formControlName="movementType">
+                                    <option value="DEBE">DEBE</option>
+                                    <option value="HABER">HABER</option>
+                                </select>
+                            </app-form-field>
+                            <app-form-field label="Monto S/" [required]="true"
+                                            [error]="errLinea(i, 'amount')">
+                                <input class="form-input" type="number" step="0.01" min="0.01"
+                                       formControlName="amount" placeholder="0.00" />
+                            </app-form-field>
+                            <div class="pb-0">
+                                @if (lineasArray.length > 2) {
+                                    <app-button type="button" icon="trash-2" [iconOnly]="true" variant="danger"
+                                            ariaLabel="Eliminar línea"
+                                            (click)="removeLinea(i)" />
+                                }
+                            </div>
+                        </div>
+                    }
+                    <app-button type="button" label="Agregar línea" icon="plus" variant="secondary"
+                            (click)="addLinea()" />
+                </div>
+
+                @if (balanceError()) {
+                    <p class="input-error-message mt-2">
+                        DEBE y HABER deben igualarse (diferencia: S/ {{ balanceDiff() }})
+                    </p>
+                }
+            </app-admin-form-section>
+
+            <!-- Acciones -->
+            <div slot="actions">
+                <app-button type="button" label="Cancelar" icon="x" variant="secondary"
+                        [disabled]="guardando()"
+                        (click)="cerrarForm()" />
+                <app-button type="submit" [label]="guardando() ? 'Guardando...' : 'Guardar'"
+                        icon="save" variant="primary"
+                        [loading]="guardando()"
+                        [disabled]="form.invalid || guardando()" />
+            </div>
+
+        </app-admin-form-layout>
+    </form>
+</app-drawer>

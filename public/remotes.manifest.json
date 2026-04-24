@@ -1,0 +1,8 @@
+{
+  "mfe-pos": "http://localhost:4201/remoteEntry.json",
+  "mfe-comercial": "http://localhost:4202/remoteEntry.json",
+  "mfe-operaciones": "http://localhost:4203/remoteEntry.json",
+  "mfe-finanzas": "http://localhost:4204/remoteEntry.json",
+  "mfe-rrhh": "http://localhost:4205/remoteEntry.json",
+  "mfe-platform": "http://localhost:4206/remoteEntry.json"
+}

@@ -1,0 +1,323 @@
+<div class="page-container">
+    <app-page-header
+        title="Solicitudes de Compra"
+        subtitle="Gestión del ciclo de aprobación de solicitudes internas"
+        [breadcrumbs]="breadcrumbs">
+        <div actions>
+            <app-button label="Nueva Solicitud" icon="file-plus" variant="primary" (click)="openCreateForm()"></app-button>
+        </div>
+    </app-page-header>
+
+    <!-- Filtro por estado -->
+    <div class="mb-lg">
+        <select class="form-input" style="width:220px" [value]="filterEstado()" (change)="onFilterEstado($event)">
+            <option value="">Todos los estados</option>
+            @for (opt of estadoOptions; track opt.value) {
+                <option [value]="opt.value">{{ opt.label }}</option>
+            }
+        </select>
+    </div>
+
+    @if (error()) {
+        <app-alert type="error" [message]="error()!" [dismissible]="true" (dismiss)="error.set(null)"></app-alert>
+    }
+
+    @if (loading() && !hasSolicitudes()) {
+        <app-loading-spinner message="Cargando solicitudes..."></app-loading-spinner>
+    }
+
+    @if (isEmpty()) {
+        <div class="text-center py-2xl text-subtle">
+            <h3 class="text-lg font-bold text-on mb-xs">No hay solicitudes de compra</h3>
+            <p>Crea tu primera solicitud haciendo clic en el botón superior.</p>
+        </div>
+    }
+
+    @if (hasSolicitudes()) {
+        <div class="card">
+            <div class="card-body" style="padding:0">
+                <table class="table">
+                    <thead class="table-header">
+                        <tr>
+                            <th class="table-header-cell">Código</th>
+                            <th class="table-header-cell">Solicitante</th>
+                            <th class="table-header-cell">Departamento</th>
+                            <th class="table-header-cell">Prioridad</th>
+                            <th class="table-header-cell">Fecha Requerida</th>
+                            <th class="table-header-cell">Estado</th>
+                            <th class="table-header-cell">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (sol of solicitudes(); track sol.id) {
+                            <tr class="table-row">
+                                <td class="table-cell font-mono text-sm">{{ sol.codigo }}</td>
+                                <td class="table-cell">{{ sol.solicitanteNombre }}</td>
+                                <td class="table-cell">{{ sol.departamento || '—' }}</td>
+                                <td class="table-cell">{{ sol.prioridad }}</td>
+                                <td class="table-cell">{{ sol.fechaRequerida || '—' }}</td>
+                                <td class="table-cell">
+                                    <span [class]="getBadgeClass(sol.estado)">{{ getEstadoLabel(sol.estado) }}</span>
+                                </td>
+                                <td class="table-cell">
+                                    <button class="btn-icon" title="Ver detalle" (click)="openDetail(sol)">
+                                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0zm6 0c0 6-9 9-9 9s-9-3-9-9 9-9 9-9 9 3 9 9z"/>
+                                        </svg>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        @if (totalPages() > 0) {
+            <app-pagination
+                [currentPage]="currentPage()"
+                [totalPages]="totalPages()"
+                [totalElements]="totalElements()"
+                [pageSize]="pageSize()"
+                (pageChange)="onPageChange($event)">
+            </app-pagination>
+        }
+    }
+</div>
+
+<!-- Drawer: Crear solicitud -->
+<app-drawer title="Nueva Solicitud de Compra" [isOpen]="showForm()" (closed)="closeForm()">
+    <form [formGroup]="solicitudForm" (ngSubmit)="createSolicitud()">
+        @if (submitError()) {
+            <app-alert type="error" [message]="submitError()!" [dismissible]="true" (dismiss)="submitError.set(null)"></app-alert>
+        }
+
+        <div class="mb-md">
+            <label class="input-label">Justificación *</label>
+            <textarea class="form-input" formControlName="justificacion" rows="3" placeholder="Motivo de la solicitud"></textarea>
+        </div>
+
+        <div class="mb-md">
+            <label class="input-label">Departamento</label>
+            <input class="form-input" type="text" formControlName="departamento" placeholder="Ej: Operaciones">
+        </div>
+
+        <div class="mb-md" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div>
+                <label class="input-label">Prioridad</label>
+                <select class="form-input" formControlName="prioridad">
+                    @for (opt of prioridadOptions; track opt.value) {
+                        <option [value]="opt.value">{{ opt.label }}</option>
+                    }
+                </select>
+            </div>
+            <div>
+                <label class="input-label">Fecha Requerida</label>
+                <input class="form-input" type="date" formControlName="fechaRequerida">
+            </div>
+        </div>
+
+        <!-- Items -->
+        <div class="mb-md">
+            <div class="card-header" style="padding:0 0 8px 0">
+                <span class="card-title">Ítems solicitados</span>
+                <app-button label="Agregar ítem" icon="plus" variant="secondary" size="sm" type="button" (click)="addItem()"></app-button>
+            </div>
+
+            @for (item of itemsArray.controls; track $index; let i = $index) {
+                <div [formGroupName]="i" class="card mb-2 p-3">
+                    <div style="display:grid;grid-template-columns:1fr auto;align-items:start;gap:8px">
+                        <div>
+                            <label class="input-label">Producto / Descripción *</label>
+                            <input class="form-input" type="text" formControlName="productoNombre" placeholder="Nombre del producto">
+                        </div>
+                        @if (itemsArray.length > 1) {
+                            <button type="button" class="btn-icon btn-icon-delete" style="margin-top:24px" (click)="removeItem(i)">
+                                <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                </svg>
+                            </button>
+                        }
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px">
+                        <div>
+                            <label class="input-label">Cantidad *</label>
+                            <input class="form-input" type="number" min="1" formControlName="cantidad">
+                        </div>
+                        <div>
+                            <label class="input-label">Unidad</label>
+                            <input class="form-input" type="text" formControlName="unidadMedida" placeholder="UNIDAD">
+                        </div>
+                        <div>
+                            <label class="input-label">Precio Estimado (S/)</label>
+                            <input class="form-input" type="number" step="0.01" formControlName="precioEstimado">
+                        </div>
+                    </div>
+                    <div style="margin-top:8px">
+                        <label class="input-label">Observaciones</label>
+                        <input class="form-input" type="text" formControlName="observaciones">
+                    </div>
+                </div>
+            }
+        </div>
+
+        <div style="display:flex;gap:8px;justify-content:flex-end">
+            <app-button label="Cancelar" icon="x" variant="secondary" type="button" (click)="closeForm()"></app-button>
+            <app-button label="Crear Solicitud" icon="save" variant="primary" type="submit"
+                [loading]="submitting()"
+                [disabled]="submitting() || solicitudForm.invalid"></app-button>
+        </div>
+    </form>
+</app-drawer>
+
+<!-- Drawer: Detalle / acciones -->
+<app-drawer title="Detalle de Solicitud" [isOpen]="showDetail()" (closed)="closeDetail()">
+    @if (selectedSolicitud(); as sol) {
+        @if (actionError()) {
+            <app-alert type="error" [message]="actionError()!" [dismissible]="true" (dismiss)="actionError.set(null)"></app-alert>
+        }
+
+        <div class="mb-lg">
+            <span [class]="getBadgeClass(sol.estado)" style="font-size:14px">{{ getEstadoLabel(sol.estado) }}</span>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+            <div>
+                <p class="input-label">Código</p>
+                <p class="font-mono">{{ sol.codigo }}</p>
+            </div>
+            <div>
+                <p class="input-label">Solicitante</p>
+                <p>{{ sol.solicitanteNombre }}</p>
+            </div>
+            <div>
+                <p class="input-label">Departamento</p>
+                <p>{{ sol.departamento || '—' }}</p>
+            </div>
+            <div>
+                <p class="input-label">Prioridad</p>
+                <p>{{ sol.prioridad }}</p>
+            </div>
+            <div>
+                <p class="input-label">Fecha Requerida</p>
+                <p>{{ sol.fechaRequerida || '—' }}</p>
+            </div>
+        </div>
+
+        <div class="mb-md">
+            <p class="input-label">Justificación</p>
+            <p>{{ sol.justificacion }}</p>
+        </div>
+
+        @if (sol.motivoRechazo) {
+            <div class="mb-md">
+                <p class="input-label">Motivo de Rechazo</p>
+                <p class="text-error">{{ sol.motivoRechazo }}</p>
+            </div>
+        }
+
+        <!-- Ítems -->
+        @if (sol.items && sol.items.length > 0) {
+            <div class="mb-md">
+                <p class="input-label mb-xs">Ítems Solicitados</p>
+                <table class="table" style="font-size:13px">
+                    <thead class="table-header">
+                        <tr>
+                            <th class="table-header-cell">Producto</th>
+                            <th class="table-header-cell">Cant.</th>
+                            <th class="table-header-cell">Unidad</th>
+                            <th class="table-header-cell">Precio Est.</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (item of sol.items; track item.id) {
+                            <tr class="table-row">
+                                <td class="table-cell">{{ item.productoNombre }}</td>
+                                <td class="table-cell">{{ item.cantidad }}</td>
+                                <td class="table-cell">{{ item.unidadMedida }}</td>
+                                <td class="table-cell">{{ item.precioEstimado ? ('S/ ' + item.precioEstimado) : '—' }}</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+
+        <!-- Acciones por estado -->
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:16px">
+            @if (sol.estado === 'BORRADOR') {
+                <app-button label="Enviar a Aprobación" icon="send" variant="primary" (click)="enviarSolicitud(sol.id!)"></app-button>
+                <app-button label="Cancelar" icon="ban" variant="danger" (click)="cancelarSolicitud(sol.id!)"></app-button>
+            }
+            @if (sol.estado === 'PENDIENTE_APROBACION') {
+                <app-button label="Aprobar" icon="check-circle" variant="success" (click)="aprobarSolicitud(sol.id!)"></app-button>
+                <app-button label="Rechazar" icon="x-circle" variant="danger" (click)="openRechazarModal()"></app-button>
+                <app-button label="Cancelar" icon="ban" variant="secondary" (click)="cancelarSolicitud(sol.id!)"></app-button>
+            }
+            @if (sol.estado === 'APROBADA') {
+                <app-button label="Convertir a OC" icon="arrow-right-circle" variant="primary" (click)="openConvertirModal()"></app-button>
+            }
+        </div>
+    }
+</app-drawer>
+
+<!-- Modal: Rechazar -->
+@if (showRechazarModal()) {
+    <div class="modal-overlay" (click)="closeRechazarModal()">
+        <div class="modal-content" (click)="$event.stopPropagation()">
+            <div class="modal-header">
+                <h3 class="modal-title">Rechazar Solicitud</h3>
+                <button class="modal-close-btn" (click)="closeRechazarModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <form [formGroup]="rechazarForm">
+                    <label class="input-label">Motivo de Rechazo *</label>
+                    <textarea class="form-input" formControlName="motivoRechazo" rows="4" placeholder="Indique el motivo del rechazo"></textarea>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <app-button label="Cancelar" icon="x" variant="secondary" (click)="closeRechazarModal()"></app-button>
+                <app-button label="Confirmar Rechazo" icon="x-circle" variant="danger"
+                    [disabled]="rechazarForm.invalid" (click)="confirmarRechazo()"></app-button>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Modal: Convertir a OC -->
+@if (showConvertirModal()) {
+    <div class="modal-overlay" (click)="closeConvertirModal()">
+        <div class="modal-content" (click)="$event.stopPropagation()">
+            <div class="modal-header">
+                <h3 class="modal-title">Convertir a Orden de Compra</h3>
+                <button class="modal-close-btn" (click)="closeConvertirModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <form [formGroup]="convertirForm">
+                    <div class="mb-md">
+                        <label class="input-label">ID Proveedor *</label>
+                        <input class="form-input" type="text" formControlName="proveedorId" placeholder="UUID del proveedor">
+                    </div>
+                    <div class="mb-md">
+                        <label class="input-label">Condición de Pago *</label>
+                        <select class="form-input" formControlName="condicionPago">
+                            <option value="CONTADO">Contado</option>
+                            <option value="CREDITO_30">Crédito 30 días</option>
+                            <option value="CREDITO_60">Crédito 60 días</option>
+                            <option value="CREDITO_90">Crédito 90 días</option>
+                        </select>
+                    </div>
+                    <div class="mb-md">
+                        <label class="input-label">Almacén Destino</label>
+                        <input class="form-input" type="text" formControlName="almacenDestino" placeholder="Opcional">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <app-button label="Cancelar" icon="x" variant="secondary" (click)="closeConvertirModal()"></app-button>
+                <app-button label="Crear Orden de Compra" icon="arrow-right-circle" variant="primary"
+                    [disabled]="convertirForm.invalid" (click)="confirmarConversion()"></app-button>
+            </div>
+        </div>
+    </div>
+}

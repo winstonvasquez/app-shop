@@ -35,3 +35,18 @@ export interface Category {
     imagenUrl: string;
     nivel: number;
 }
+
+export interface MegaMenuProductoItem {
+    id: number;
+    nombre: string;
+    imagenUrl: string | null;
+    precio: number;
+    badge: string | null;
+}
+
+export interface MegaMenuCategoriaDto {
+    id: number;
+    nombre: string;
+    imagenUrl: string | null;
+    productos: MegaMenuProductoItem[];
+}

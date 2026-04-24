@@ -5,7 +5,7 @@
     </div>
 
     <!-- Drawer Panel -->
-    <div class="absolute top-0 right-0 h-full w-[360px] bg-[var(--color-surface)] shadow-2xl transition-transform duration-300 ease-in-out flex flex-col z-[9999]"
+    <div class="absolute top-0 right-0 h-full w-full sm:w-[360px] bg-[var(--color-surface)] shadow-2xl transition-transform duration-300 ease-in-out flex flex-col z-[9999]"
         [class.translate-x-full]="!isOpen()" [class.translate-x-0]="isOpen()">
 
         <!-- Header (Close Button Only) -->
@@ -135,7 +135,7 @@
 
                         <!-- Delete Overlay Trigger -->
                         <button (click)="removeItem(item.productId)"
-                            class="absolute top-2 right-2 bg-[var(--color-surface)] text-[var(--color-text-muted)] hover:text-[var(--color-error)] p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-all shadow-sm hover:shadow-md cursor-pointer border border-[var(--color-border)] scale-90 group-hover:scale-100">
+                            class="absolute top-2 right-2 bg-[var(--color-surface)] text-[var(--color-text-muted)] hover:text-[var(--color-error)] p-2.5 min-w-[44px] min-h-[44px] rounded-full opacity-0 group-hover:opacity-100 transition-all shadow-sm hover:shadow-md cursor-pointer border border-[var(--color-border)] scale-90 group-hover:scale-100 flex items-center justify-center">
                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
                                 fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                                 stroke-linejoin="round">

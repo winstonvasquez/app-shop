@@ -1,0 +1,124 @@
+<div class="page-container">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Reporte de RRHH</h1>
+            <p class="page-subtitle">Estado del personal registrado en el sistema</p>
+        </div>
+        <div class="page-actions no-print flex gap-2">
+            <app-button label="Exportar CSV" icon="download" variant="secondary"
+                [disabled]="cargando() || empleados().length === 0"
+                (click)="onExportarCsv()">
+            </app-button>
+            <app-button label="Exportar Excel" icon="download" variant="secondary"
+                [disabled]="cargando() || empleados().length === 0"
+                (click)="exportarExcel()">
+            </app-button>
+            <app-button label="Imprimir / PDF" icon="printer" variant="secondary"
+                [disabled]="cargando()"
+                (click)="imprimir()">
+            </app-button>
+            <app-button label="Actualizar" icon="refresh-cw" variant="primary"
+                [disabled]="cargando()"
+                [loading]="cargando()"
+                (click)="cargar()">
+            </app-button>
+        </div>
+    </div>
+
+    @if (error()) {
+        <div class="card border-l-[3px] border-l-[var(--color-warning)] p-[var(--space-md)] mb-[var(--space-lg)]">
+            <p class="text-[var(--color-text-muted)] text-sm">
+                Servicio RRHH no disponible. Verifique que microshopusers esté corriendo en puerto 8080.
+            </p>
+        </div>
+    }
+
+    <!-- KPIs -->
+    <div class="grid gap-4 mb-6 [grid-template-columns:repeat(auto-fit,minmax(180px,1fr))]">
+        <div class="card">
+            <div class="card-body">
+                <p class="text-[0.75rem] text-[var(--color-text-muted)]">EMPLEADOS ACTIVOS</p>
+                <p class="text-[2rem] font-bold text-[var(--color-success)]">{{ totalActivos() }}</p>
+                <p class="text-[0.75rem] text-[var(--color-text-muted)]">en planilla</p>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-body">
+                <p class="text-[0.75rem] text-[var(--color-text-muted)]">EMPLEADOS INACTIVOS</p>
+                <p class="text-[2rem] font-bold">{{ totalInactivos() }}</p>
+                <p class="text-[0.75rem] text-[var(--color-text-muted)]">desvinculados</p>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-body">
+                <p class="text-[0.75rem] text-[var(--color-text-muted)]">AREAS DISTINTAS</p>
+                <p class="text-[2rem] font-bold text-[var(--color-primary)]">{{ areasDistintas() }}</p>
+                <p class="text-[0.75rem] text-[var(--color-text-muted)]">departamentos</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Personal</h3>
+        </div>
+        <div class="filters-bar no-print" [formGroup]="filterForm">
+            <div class="search-box">
+                <span class="search-box-icon">&#128269;</span>
+                <input type="text" class="form-input pl-8" placeholder="Buscar por nombre, código o área..."
+                       formControlName="busqueda">
+            </div>
+            <select class="form-input w-auto" formControlName="filtroArea">
+                <option value="">Todas las áreas</option>
+                @for (area of areasUnicas(); track area) {
+                    <option [value]="area">{{ area }}</option>
+                }
+            </select>
+        </div>
+
+        @if (cargando()) {
+            <div class="loading-container"><div class="spinner"></div></div>
+        } @else {
+            <table class="table">
+                <thead class="table-header">
+                    <tr>
+                        <th class="table-header-cell">Código</th>
+                        <th class="table-header-cell">Nombres y Apellidos</th>
+                        <th class="table-header-cell">DNI</th>
+                        <th class="table-header-cell">Cargo</th>
+                        <th class="table-header-cell">Área</th>
+                        <th class="table-header-cell">Estado</th>
+                        <th class="table-header-cell">Fecha Ingreso</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (e of empleadosFiltrados(); track e.id) {
+                        <tr class="table-row">
+                            <td class="table-cell font-mono text-sm">{{ e.codigoEmpleado }}</td>
+                            <td class="table-cell font-bold">{{ e.nombres }} {{ e.apellidos }}</td>
+                            <td class="table-cell font-mono text-sm">{{ e.documentoIdentidad }}</td>
+                            <td class="table-cell text-[var(--color-text-muted)]">{{ e.cargo ?? '—' }}</td>
+                            <td class="table-cell">
+                                @if (e.area) {
+                                    <span class="badge badge-neutral">{{ e.area }}</span>
+                                } @else {
+                                    <span class="text-[var(--color-text-muted)]">—</span>
+                                }
+                            </td>
+                            <td class="table-cell">
+                                <span [class]="e.estado === 'ACTIVO' ? 'badge badge-success' : 'badge badge-error'">
+                                    {{ e.estado }}
+                                </span>
+                            </td>
+                            <td class="table-cell text-sm text-[var(--color-text-muted)]">
+                                {{ e.fechaIngreso | date:'dd/MM/yyyy' }}
+                            </td>
+                        </tr>
+                    } @empty {
+                        <tr><td colspan="7" class="table-cell text-center p-6 text-[var(--color-text-muted)]">Sin resultados</td></tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+</div>

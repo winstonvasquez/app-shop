@@ -1,0 +1,337 @@
+<div class="page-container">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Conciliación Bancaria</h1>
+            <p class="page-subtitle">Reconciliación de movimientos bancarios vs libro contable</p>
+        </div>
+        @if (vista() === 'lista') {
+            <app-button
+                icon="plus"
+                variant="primary"
+                label="Nueva Conciliación"
+                (click)="abrirNueva()" />
+        }
+        @if (vista() !== 'lista') {
+            <app-button
+                icon="x"
+                variant="secondary"
+                label="Volver"
+                (click)="cancelar()" />
+        }
+    </div>
+
+    @if (error()) {
+        <div class="badge badge-error mb-4 w-full text-left py-2 px-3">{{ error() }}</div>
+    }
+
+    <!-- LISTA -->
+    @if (vista() === 'lista') {
+        <div class="card">
+            <div class="card-body">
+                @if (cargando()) {
+                    <div class="loading-container"><div class="spinner"></div></div>
+                } @else if (conciliaciones().length === 0) {
+                    <p class="text-muted text-center py-8">No hay conciliaciones registradas.</p>
+                } @else {
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th class="table-header-cell">Banco / Cuenta</th>
+                                <th class="table-header-cell">Período</th>
+                                <th class="table-header-cell">Saldo Libro</th>
+                                <th class="table-header-cell">Saldo Banco</th>
+                                <th class="table-header-cell">Diferencia</th>
+                                <th class="table-header-cell">Estado</th>
+                                <th class="table-header-cell">Partidas</th>
+                                <th class="table-header-cell">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (c of conciliaciones(); track c.id) {
+                                <tr class="table-row">
+                                    <td class="table-cell">
+                                        <div class="font-medium">{{ c.banco }}</div>
+                                        <div class="text-muted text-sm">{{ c.numeroCuenta }}</div>
+                                    </td>
+                                    <td class="table-cell">{{ c.periodo }}</td>
+                                    <td class="table-cell text-right">S/ {{ c.saldoLibroFin | number:'1.2-2' }}</td>
+                                    <td class="table-cell text-right">S/ {{ c.saldoBancoFin | number:'1.2-2' }}</td>
+                                    <td class="table-cell text-right">
+                                        <span [ngClass]="c.diferencia === 0 ? 'badge badge-success' : 'badge badge-error'">
+                                            S/ {{ c.diferencia | number:'1.2-2' }}
+                                        </span>
+                                    </td>
+                                    <td class="table-cell">
+                                        <span [ngClass]="c.estado === 'CONCILIADO' ? 'badge badge-success' : 'badge badge-warning'">
+                                            {{ c.estado }}
+                                        </span>
+                                    </td>
+                                    <td class="table-cell text-sm">
+                                        <span class="text-on">{{ c.partidasConciliadas }} ok</span>
+                                        @if (c.partidasPendientes > 0) {
+                                            / <span class="badge badge-warning">{{ c.partidasPendientes }} pendientes</span>
+                                        }
+                                    </td>
+                                    <td class="table-cell">
+                                        <app-button
+                                            icon="eye"
+                                            variant="ghost"
+                                            [iconOnly]="true"
+                                            ariaLabel="Ver detalle"
+                                            (click)="abrirDetalle(c)" />
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+    }
+
+    <!-- NUEVA CONCILIACIÓN -->
+    @if (vista() === 'nueva') {
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">Nueva Conciliación Bancaria</h2>
+            </div>
+            <div class="card-body">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="input-label">Cuenta Bancaria</label>
+                        <select class="form-input" [ngModel]="nuevaCuentaId()" (ngModelChange)="nuevaCuentaId.set($event)">
+                            <option value="">-- Seleccionar --</option>
+                            @for (c of cuentas(); track c.id) {
+                                <option [value]="c.id">{{ c.banco }} - {{ c.numeroCuenta }}</option>
+                            }
+                        </select>
+                    </div>
+                    <div>
+                        <label class="input-label">Período Contable</label>
+                        <select class="form-input" [ngModel]="nuevaPeriodoId()" (ngModelChange)="nuevaPeriodoId.set($event)">
+                            <option value="">-- Seleccionar --</option>
+                            @for (p of periodos(); track p.id) {
+                                <option [value]="p.id">{{ p.nombre }}</option>
+                            }
+                        </select>
+                    </div>
+                    <div>
+                        <label class="input-label">Fecha Inicio</label>
+                        <input class="form-input" type="date" [ngModel]="nuevaFechaInicio()" (ngModelChange)="nuevaFechaInicio.set($event)">
+                    </div>
+                    <div>
+                        <label class="input-label">Fecha Fin</label>
+                        <input class="form-input" type="date" [ngModel]="nuevaFechaFin()" (ngModelChange)="nuevaFechaFin.set($event)">
+                    </div>
+                    <div>
+                        <label class="input-label">Saldo Banco Inicio (S/)</label>
+                        <input class="form-input" type="number" step="0.01"
+                            [ngModel]="nuevaSaldoBancoInicio()" (ngModelChange)="nuevaSaldoBancoInicio.set(+$event)">
+                    </div>
+                    <div>
+                        <label class="input-label">Saldo Banco Fin (S/)</label>
+                        <input class="form-input" type="number" step="0.01"
+                            [ngModel]="nuevaSaldoBancoFin()" (ngModelChange)="nuevaSaldoBancoFin.set(+$event)">
+                    </div>
+                </div>
+                <div class="flex gap-3 mt-6">
+                    <app-button
+                        icon="link"
+                        variant="primary"
+                        label="Crear Conciliación"
+                        [loading]="cargando()"
+                        [disabled]="cargando() || !nuevaCuentaId() || !nuevaPeriodoId()"
+                        (click)="crear()" />
+                    <app-button
+                        icon="x"
+                        variant="secondary"
+                        label="Cancelar"
+                        (click)="cancelar()" />
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- DETALLE -->
+    @if (vista() === 'detalle' && seleccionada()) {
+        <!-- KPIs -->
+        <div class="grid grid-cols-4 gap-4 mb-6">
+            <div class="card">
+                <div class="card-body text-center">
+                    <p class="text-muted text-sm">Saldo Libro</p>
+                    <p class="text-on text-xl font-bold">S/ {{ seleccionada()!.saldoLibroFin | number:'1.2-2' }}</p>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-body text-center">
+                    <p class="text-muted text-sm">Saldo Banco</p>
+                    <p class="text-on text-xl font-bold">S/ {{ seleccionada()!.saldoBancoFin | number:'1.2-2' }}</p>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-body text-center">
+                    <p class="text-muted text-sm">Diferencia</p>
+                    <p class="text-xl font-bold" [ngClass]="diferencia() === 0 ? 'text-success' : 'text-error'">
+                        S/ {{ diferencia() | number:'1.2-2' }}
+                    </p>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-body text-center">
+                    <p class="text-muted text-sm">Estado</p>
+                    <span [ngClass]="estaConciliado() ? 'badge badge-success' : 'badge badge-warning'">
+                        {{ seleccionada()!.estado }}
+                    </span>
+                    @if (pendientes() > 0) {
+                        <p class="text-muted text-xs mt-1">{{ pendientes() }} partidas pendientes</p>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Partidas lado a lado: BANCO | LIBRO -->
+        <div class="grid grid-cols-2 gap-4 mb-4">
+            <!-- Columna BANCO -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Extracto Bancario</h3>
+                    <span class="badge badge-neutral">BANCO</span>
+                </div>
+                <div class="card-body">
+                    @if (partidasBanco().length === 0) {
+                        <p class="text-muted text-center py-4 text-sm">Sin partidas bancarias</p>
+                    } @else {
+                        <div class="space-y-2">
+                            @for (p of partidasBanco(); track p.id) {
+                                <div class="flex items-center gap-3 py-2 border-b border-[var(--color-border)]">
+                                    <input type="checkbox" [checked]="p.conciliado"
+                                        [disabled]="p.conciliado || estaConciliado()"
+                                        (change)="marcarConciliada(p)"
+                                        class="w-4 h-4 accent-[var(--color-primary)]">
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-on text-sm truncate">{{ p.descripcion }}</p>
+                                        <p class="text-muted text-xs">{{ p.fecha | date:'dd/MM/yyyy' }} · {{ p.referencia }}</p>
+                                    </div>
+                                    <div class="text-right">
+                                        <p class="text-sm font-medium" [ngClass]="p.tipoMovimiento === 'CREDITO' ? 'text-success' : 'text-error'">
+                                            {{ p.tipoMovimiento === 'CREDITO' ? '+' : '-' }}S/ {{ p.monto | number:'1.2-2' }}
+                                        </p>
+                                        @if (p.conciliado) {
+                                            <span class="badge badge-success text-xs">✓</span>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Columna LIBRO -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Libro Contable</h3>
+                    <span class="badge badge-neutral">LIBRO</span>
+                </div>
+                <div class="card-body">
+                    @if (partidasLibro().length === 0) {
+                        <p class="text-muted text-center py-4 text-sm">Sin partidas de libro</p>
+                    } @else {
+                        <div class="space-y-2">
+                            @for (p of partidasLibro(); track p.id) {
+                                <div class="flex items-center gap-3 py-2 border-b border-[var(--color-border)]">
+                                    <input type="checkbox" [checked]="p.conciliado"
+                                        [disabled]="p.conciliado || estaConciliado()"
+                                        (change)="marcarConciliada(p)"
+                                        class="w-4 h-4 accent-[var(--color-primary)]">
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-on text-sm truncate">{{ p.descripcion }}</p>
+                                        <p class="text-muted text-xs">{{ p.fecha | date:'dd/MM/yyyy' }} · {{ p.referencia }}</p>
+                                    </div>
+                                    <div class="text-right">
+                                        <p class="text-sm font-medium" [ngClass]="p.tipoMovimiento === 'CREDITO' ? 'text-success' : 'text-error'">
+                                            {{ p.tipoMovimiento === 'CREDITO' ? '+' : '-' }}S/ {{ p.monto | number:'1.2-2' }}
+                                        </p>
+                                        @if (p.conciliado) {
+                                            <span class="badge badge-success text-xs">✓</span>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Acciones -->
+        <div class="card">
+            <div class="card-body flex gap-3 flex-wrap">
+                @if (!estaConciliado()) {
+                    <app-button
+                        icon="plus"
+                        variant="secondary"
+                        [label]="mostrarFormPartida() ? 'Cancelar partida' : 'Agregar Partida'"
+                        (click)="mostrarFormPartida.set(!mostrarFormPartida())" />
+                    <app-button
+                        icon="link"
+                        variant="primary"
+                        label="Cerrar Conciliación"
+                        [loading]="cargando()"
+                        [disabled]="cargando() || pendientes() > 0"
+                        [ariaLabel]="pendientes() > 0 ? 'Existen partidas pendientes de conciliar' : 'Cerrar Conciliación'"
+                        (click)="cerrar()" />
+                }
+            </div>
+
+            <!-- Formulario agregar partida inline -->
+            @if (mostrarFormPartida()) {
+                <div class="card-body border-t border-[var(--color-border)]">
+                    <h4 class="text-on font-medium mb-3">Nueva Partida</h4>
+                    <div class="grid grid-cols-3 gap-3">
+                        <div>
+                            <label class="input-label">Origen</label>
+                            <select class="form-input" [ngModel]="partidaOrigen()" (ngModelChange)="partidaOrigen.set($event)">
+                                <option value="BANCO">Banco</option>
+                                <option value="LIBRO">Libro</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="input-label">Tipo</label>
+                            <select class="form-input" [ngModel]="partidaTipoMovimiento()" (ngModelChange)="partidaTipoMovimiento.set($event)">
+                                <option value="DEBITO">Débito</option>
+                                <option value="CREDITO">Crédito</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="input-label">Fecha</label>
+                            <input class="form-input" type="date" [ngModel]="partidaFecha()" (ngModelChange)="partidaFecha.set($event)">
+                        </div>
+                        <div>
+                            <label class="input-label">Descripción</label>
+                            <input class="form-input" type="text" [ngModel]="partidaDescripcion()" (ngModelChange)="partidaDescripcion.set($event)">
+                        </div>
+                        <div>
+                            <label class="input-label">Referencia</label>
+                            <input class="form-input" type="text" [ngModel]="partidaReferencia()" (ngModelChange)="partidaReferencia.set($event)">
+                        </div>
+                        <div>
+                            <label class="input-label">Monto (S/)</label>
+                            <input class="form-input" type="number" step="0.01"
+                                [ngModel]="partidaMonto()" (ngModelChange)="partidaMonto.set(+$event)">
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <app-button
+                            icon="save"
+                            variant="primary"
+                            label="Guardar Partida"
+                            [loading]="cargando()"
+                            [disabled]="cargando() || !partidaFecha() || !partidaDescripcion() || partidaMonto() <= 0"
+                            (click)="agregarPartida()" />
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>

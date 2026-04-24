@@ -1,0 +1,119 @@
+<app-page-header
+    title="Analytics RRHH"
+    subtitle="Dashboard analítico con métricas clave del capital humano"
+    [breadcrumbs]="breadcrumbs">
+</app-page-header>
+
+@if (data(); as d) {
+    <!-- KPI Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+        <div class="card">
+            <div class="card-body">
+                <div class="text-muted" style="font-size: 0.8rem">Empleados Activos</div>
+                <div style="font-size: 2.5rem; font-weight: 700; color: var(--color-success)">{{ d.activeEmployees }}</div>
+                <div class="text-muted" style="font-size: 0.75rem">de {{ d.totalEmployees }} totales</div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-body">
+                <div class="text-muted" style="font-size: 0.8rem">Asistencia Hoy</div>
+                <div style="font-size: 2.5rem; font-weight: 700; color: var(--color-primary)">{{ d.attendanceRate }}%</div>
+                <div class="text-muted" style="font-size: 0.75rem">{{ d.todayAttendance }} presentes</div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-body">
+                <div class="text-muted" style="font-size: 0.8rem">Prom. Evaluación</div>
+                <div style="font-size: 2.5rem; font-weight: 700; color: var(--color-accent)">{{ d.averageScore }}/100</div>
+                <div class="text-muted" style="font-size: 0.75rem">{{ d.completedEvaluations }} completadas</div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-body">
+                <div class="text-muted" style="font-size: 0.8rem">Capacitaciones</div>
+                <div style="font-size: 2.5rem; font-weight: 700; color: var(--color-warning)">{{ d.activeTrainings }}</div>
+                <div class="text-muted" style="font-size: 0.75rem">{{ d.totalTrainingHours }}h formación</div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-body">
+                <div class="text-muted" style="font-size: 0.8rem">Contratos por Vencer</div>
+                <div style="font-size: 2.5rem; font-weight: 700"
+                     [style.color]="d.expiringContracts30Days > 0 ? 'var(--color-error)' : 'var(--color-success)'">
+                    {{ d.expiringContracts30Days }}
+                </div>
+                <div class="text-muted" style="font-size: 0.75rem">en próximos 30 días</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Headcount por Departamento</h3>
+            </div>
+            <div class="card-body">
+                @if (donutSeries.length > 0) {
+                    <apx-chart
+                        [series]="donutSeries"
+                        [chart]="donutChart"
+                        [labels]="donutLabels"
+                        [colors]="donutColors"
+                        [legend]="donutLegend"
+                        [dataLabels]="donutDataLabels" />
+                } @else {
+                    <p class="text-muted">Sin datos de departamentos</p>
+                }
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Resumen Operativo</h3>
+            </div>
+            <div class="card-body">
+                @if (barSeries.length > 0) {
+                    <apx-chart
+                        [series]="barSeries"
+                        [chart]="barChart"
+                        [xaxis]="barXAxis"
+                        [yaxis]="barYAxis"
+                        [plotOptions]="barPlot"
+                        [grid]="barGrid"
+                        [dataLabels]="barDataLabels"
+                        [tooltip]="barTooltip" />
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Additional metrics -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div class="card">
+            <div class="card-body">
+                <div class="text-muted" style="font-size: 0.8rem">Vacaciones Pendientes</div>
+                <div style="font-size: 1.8rem; font-weight: 700; color: var(--color-warning)">{{ d.pendingVacationRequests }}</div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-body">
+                <div class="text-muted" style="font-size: 0.8rem">Metas Activas</div>
+                <div style="font-size: 1.8rem; font-weight: 700; color: var(--color-accent)">{{ d.activeGoals }}</div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-body">
+                <div class="text-muted" style="font-size: 0.8rem">Metas Completadas</div>
+                <div style="font-size: 1.8rem; font-weight: 700; color: var(--color-success)">{{ d.completedGoals }}</div>
+            </div>
+        </div>
+    </div>
+} @else {
+    <div class="card">
+        <div class="card-body" style="text-align: center; padding: var(--space-xl)">
+            <div class="spinner"></div>
+            <p class="text-muted" style="margin-top: var(--space-md)">Cargando métricas...</p>
+        </div>
+    </div>
+}

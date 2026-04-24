@@ -3,10 +3,35 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { environment } from '@env/environment';
 import { Asiento, AsientoRequest } from '../models/asiento.model';
 
+export interface LibroDiarioEntry {
+    fecha: string;
+    numero: string;
+    glosa: string;
+    debe: number;
+    haber: number;
+    [key: string]: unknown;
+}
+
+export interface LibroMayorEntry {
+    cuenta: string;
+    codigoCuenta: string;
+    debe: number;
+    haber: number;
+    saldo: number;
+    [key: string]: unknown;
+}
+
+export interface BalanceComprobacion {
+    cuentas: LibroMayorEntry[];
+    totalDebe: number;
+    totalHaber: number;
+    [key: string]: unknown;
+}
+
 @Injectable({ providedIn: 'root' })
 export class AsientoService {
     private http = inject(HttpClient);
-    private baseUrl = environment.apiUrls.accounting;
+    private baseUrl = `${environment.apiUrls.accounting}/api/v1/contabilidad`;
 
     crearAsiento(asiento: AsientoRequest) {
         return this.http.post<Asiento>(`${this.baseUrl}/asientos`, asiento);
@@ -27,22 +52,30 @@ export class AsientoService {
         return this.http.put<void>(`${this.baseUrl}/asientos/${id}/cerrar`, {});
     }
 
+    extornarAsiento(id: string, motivo: string) {
+        return this.http.post<Asiento>(`${this.baseUrl}/asientos/${id}/extorno`, { motivo });
+    }
+
+    anularAsiento(id: string, motivo: string) {
+        return this.http.put<Asiento>(`${this.baseUrl}/asientos/${id}/anular`, { motivo });
+    }
+
     obtenerLibroDiario(periodoId: string, fechaDesde: string, fechaHasta: string) {
         const params = new HttpParams()
             .set('periodo', periodoId)
             .set('fechaDesde', fechaDesde)
             .set('fechaHasta', fechaHasta);
-        return this.http.get<any>(`${this.baseUrl}/libro-diario`, { params });
+        return this.http.get<LibroDiarioEntry[]>(`${this.baseUrl}/libro-diario`, { params });
     }
 
     obtenerLibroMayor(periodoId: string, cuentaId?: string) {
         let params = new HttpParams().set('periodo', periodoId);
         if (cuentaId) params = params.set('cuenta', cuentaId);
-        return this.http.get<any>(`${this.baseUrl}/libro-mayor`, { params });
+        return this.http.get<LibroMayorEntry[]>(`${this.baseUrl}/libro-mayor`, { params });
     }
 
     obtenerBalanceComprobacion(periodoId: string) {
-        return this.http.get<any>(`${this.baseUrl}/balance-comprobacion`, {
+        return this.http.get<BalanceComprobacion>(`${this.baseUrl}/balance-comprobacion`, {
             params: new HttpParams().set('periodo', periodoId)
         });
     }

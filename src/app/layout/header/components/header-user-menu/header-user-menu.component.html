@@ -1,4 +1,7 @@
-<div class="absolute top-full -right-4 mt-2 w-[280px] bg-[var(--color-surface)] rounded-lg shadow-xl border border-[var(--color-border)] py-2 transition-all duration-300 z-50 custom-scrollbar text-[var(--color-text-primary)] before:content-[''] before:absolute before:-top-2 before:right-6 before:border-8 before:border-transparent before:border-b-[var(--color-surface)]"
+<!-- Invisible bridge to prevent mouseleave gap -->
+<div class="absolute top-full -right-4 w-[280px] pt-2 z-50"
+    [class.pointer-events-none]="!isOpen()" [class.pointer-events-auto]="isOpen()">
+<div class="w-full bg-[var(--color-surface)] rounded-lg shadow-xl border border-[var(--color-border)] py-2 transition-all duration-300 custom-scrollbar text-[var(--color-text-primary)]"
     [class.opacity-0]="!isOpen()" [class.invisible]="!isOpen()" [class.opacity-100]="isOpen()"
     [class.visible]="isOpen()">
     <!-- Header del Menú -->
@@ -15,21 +18,34 @@
 
     <!-- Opciones del Menú -->
     <div class="max-h-[60vh] overflow-y-auto custom-scrollbar">
+        <!-- Siempre activos (Core) -->
         <app-menu-orders></app-menu-orders>
+        <app-menu-wishlist></app-menu-wishlist>
         <app-menu-reviews></app-menu-reviews>
         <app-menu-profile></app-menu-profile>
-        <app-menu-coupons></app-menu-coupons>
-        <app-menu-credit></app-menu-credit>
-        <app-menu-followed-stores></app-menu-followed-stores>
         <app-menu-browsing-history></app-menu-browsing-history>
         <app-menu-addresses></app-menu-addresses>
         <app-menu-security></app-menu-security>
         <app-menu-permissions></app-menu-permissions>
         <app-menu-notifications></app-menu-notifications>
 
+        <!-- Módulos opcionales por tenant -->
+        @if (hasCoupons()) {
+            <app-menu-coupons></app-menu-coupons>
+        }
+        @if (hasCredit()) {
+            <app-menu-credit></app-menu-credit>
+        }
+        @if (hasStoreFollows()) {
+            <app-menu-followed-stores></app-menu-followed-stores>
+        }
+
         <div class="my-2 border-t border-[var(--color-border)] mx-4"></div>
 
-        <app-menu-switch-account></app-menu-switch-account>
+        @if (hasSwitchAccount()) {
+            <app-menu-switch-account></app-menu-switch-account>
+        }
         <app-menu-logout></app-menu-logout>
     </div>
+</div>
 </div>

@@ -38,6 +38,21 @@ export const logisticaRoutes: Routes = [
         path: 'tracking',
         loadComponent: () => import('./pages/tracking/tracking-page/tracking-page.component')
           .then(m => m.TrackingPageComponent)
+      },
+      {
+        path: 'transportistas',
+        loadComponent: () => import('./pages/transportistas/transportistas-page.component')
+          .then(m => m.TransportistasPageComponent)
+      },
+      {
+        path: 'envios',
+        loadComponent: () => import('./pages/envios/envios-page.component')
+          .then(m => m.EnviosPageComponent)
+      },
+      {
+        path: 'devoluciones',
+        loadComponent: () => import('./pages/devoluciones/devoluciones-page.component')
+          .then(m => m.DevolucionesPageComponent)
       }
     ]
   }

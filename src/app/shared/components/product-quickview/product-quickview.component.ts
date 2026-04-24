@@ -1,5 +1,5 @@
 import { Component, inject, signal, effect } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { DecimalPipe, UpperCasePipe } from '@angular/common';
 import { QuickviewService } from '@shared/services/quickview.service';
 import { ProductDetailService } from '@features/products/services/product-detail.service';
 import { CartService } from '@features/cart/services/cart.service';
@@ -12,7 +12,12 @@ import { TranslateModule } from '@ngx-translate/core';
 @Component({
     selector: 'app-product-quickview',
     standalone: true,
-    imports: [CommonModule, ProductVariantsComponent, TranslateModule],
+    imports: [
+    ProductVariantsComponent,
+    TranslateModule,
+    DecimalPipe,
+    UpperCasePipe
+  ],
     templateUrl: './product-quickview.component.html'
 })
 export class ProductQuickviewComponent {

@@ -1,0 +1,105 @@
+<div class="page-container">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Reporte de Ventas POS</h1>
+            <p class="page-subtitle">Transacciones registradas en el punto de venta</p>
+        </div>
+        <div class="page-actions no-print flex gap-2">
+            <app-button label="Exportar CSV" icon="download" variant="secondary"
+                [disabled]="cargando() || ventas().length === 0"
+                (click)="onExportarCsv()">
+            </app-button>
+            <app-button label="Exportar Excel" icon="download" variant="secondary"
+                [disabled]="cargando() || ventas().length === 0"
+                (click)="exportarExcel()">
+            </app-button>
+            <app-button label="Imprimir / PDF" icon="printer" variant="secondary"
+                [disabled]="cargando()"
+                (click)="imprimir()">
+            </app-button>
+            <app-button label="Actualizar" icon="refresh-cw" variant="primary"
+                [disabled]="cargando()"
+                [loading]="cargando()"
+                (click)="cargar()">
+            </app-button>
+        </div>
+    </div>
+
+    @if (error()) {
+        <div class="card border-l-[3px] border-l-[var(--color-warning)] p-[var(--space-md)] mb-[var(--space-lg)]">
+            <p class="text-[var(--color-text-muted)] text-sm">
+                Servicio POS no disponible. Verifique que microshopventas esté corriendo.
+            </p>
+        </div>
+    }
+
+    <!-- KPIs -->
+    <div class="grid gap-4 mb-6 [grid-template-columns:repeat(auto-fit,minmax(180px,1fr))]">
+        <div class="card">
+            <div class="card-body">
+                <p class="text-[0.75rem] text-[var(--color-text-muted)]">TOTAL VENTAS</p>
+                <p class="text-[2rem] font-bold text-[var(--color-primary)]">{{ totalVentas() }}</p>
+                <p class="text-[0.75rem] text-[var(--color-text-muted)]">transacciones</p>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-body">
+                <p class="text-[0.75rem] text-[var(--color-text-muted)]">MONTO TOTAL</p>
+                <p class="text-[1.5rem] font-bold text-[var(--color-success)]">S/ {{ montoTotal() | number:'1.2-2' }}</p>
+                <p class="text-[0.75rem] text-[var(--color-text-muted)]">en ventas</p>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-body">
+                <p class="text-[0.75rem] text-[var(--color-text-muted)]">TICKET PROMEDIO</p>
+                <p class="text-[1.5rem] font-bold">S/ {{ ticketPromedio() | number:'1.2-2' }}</p>
+                <p class="text-[0.75rem] text-[var(--color-text-muted)]">por venta</p>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-body">
+                <p class="text-[0.75rem] text-[var(--color-text-muted)]">COMPLETADAS</p>
+                <p class="text-[2rem] font-bold text-[var(--color-success)]">{{ ventasCompletadas() }}</p>
+                <p class="text-[0.75rem] text-[var(--color-text-muted)]">transacciones</p>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-body">
+                <p class="text-[0.75rem] text-[var(--color-text-muted)]">IGV TOTAL</p>
+                <p class="text-[1.5rem] font-bold">S/ {{ igvTotal() | number:'1.2-2' }}</p>
+                <p class="text-[0.75rem] text-[var(--color-text-muted)]">18% recaudado</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Transacciones POS</h3>
+        </div>
+        <div class="filters-bar no-print" [formGroup]="filterForm">
+            <div class="search-box">
+                <span class="search-box-icon">&#128269;</span>
+                <input type="text" class="form-input pl-8" placeholder="Buscar por ticket o cajero..."
+                       formControlName="busqueda">
+            </div>
+            <select class="form-input w-auto" formControlName="filtroEstado">
+                <option value="">Todos los estados</option>
+                @for (opt of estadoOptions; track opt.value) {
+                    <option [value]="opt.value">{{ opt.label }}</option>
+                }
+            </select>
+        </div>
+
+        <app-data-table
+            [data]="ventasFiltradas()"
+            [columns]="columns"
+            [actions]="actions"
+            [loading]="cargando()"
+            [currentPage]="pagina()"
+            [pageSize]="100"
+            [totalElements]="totalElements()"
+            [totalPages]="totalPages()"
+            (pageChange)="irPagina($event.page)">
+        </app-data-table>
+    </div>
+</div>

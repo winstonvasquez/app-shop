@@ -1,0 +1,136 @@
+<div class="page-container">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Flujo de Efectivo</h1>
+            <p class="page-subtitle">Estado de flujos — actividades operativas, de inversión y de financiamiento</p>
+        </div>
+        <div class="page-actions">
+            <select class="form-input"
+                    [value]="anno()"
+                    (change)="cambiarAnno(+$any($event.target).value)">
+                @for (a of [2024, 2025, 2026, 2027]; track a) {
+                    <option [value]="a">{{ a }}</option>
+                }
+            </select>
+        </div>
+    </div>
+
+    @if (error()) {
+        <div class="badge badge-error mb-4 block">{{ error() }}</div>
+    }
+
+    @if (cargando()) {
+        <div class="loading-container"><div class="spinner"></div></div>
+    }
+
+    @if (!cargando() && flujo()) {
+        <!-- KPI Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div class="card">
+                <div class="card-body">
+                    <p class="text-muted text-sm mb-1">Flujo Neto Total</p>
+                    <p class="text-2xl font-bold"
+                       [class.text-[var(--color-success,#16a34a)]]="esPositivo()"
+                       [class.text-[var(--color-error)]]="!esPositivo()">
+                        S/ {{ flujoNeto() | number:'1.2-2' }}
+                    </p>
+                    <p class="text-sm mt-1" [class.text-[var(--color-success,#16a34a)]]="esPositivo()" [class.text-[var(--color-error)]]="!esPositivo()">
+                        @if (esPositivo()) { ▲ Superávit } @else { ▼ Déficit }
+                    </p>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    <p class="text-muted text-sm mb-1">Actividades Operativas</p>
+                    <p class="text-xl font-bold">S/ {{ flujo()!.flujoOperativo | number:'1.2-2' }}</p>
+                    <p class="text-muted text-sm mt-1">Operaciones del negocio</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    <p class="text-muted text-sm mb-1">Actividades de Inversión</p>
+                    <p class="text-xl font-bold">S/ {{ flujo()!.flujoInversion | number:'1.2-2' }}</p>
+                    <p class="text-muted text-sm mt-1">Compra/venta de activos</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    <p class="text-muted text-sm mb-1">Actividades de Financiamiento</p>
+                    <p class="text-xl font-bold">S/ {{ flujo()!.flujoFinanciamiento | number:'1.2-2' }}</p>
+                    <p class="text-muted text-sm mt-1">Préstamos y capital</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gráfico + Detalle -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Distribución de Flujos</h3>
+                </div>
+                <div class="card-body">
+                    <apx-chart
+                        [series]="chartSeries()"
+                        [chart]="chartOptions"
+                        [labels]="chartLabels"
+                        [colors]="chartColors"
+                        [dataLabels]="chartDataLabels"
+                        [legend]="chartLegend"
+                        [tooltip]="chartTooltip">
+                    </apx-chart>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Resumen Año {{ anno() }}</h3>
+                </div>
+                <div class="card-body">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th class="table-header-cell">Actividad</th>
+                                <th class="table-header-cell text-right">Monto S/</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="table-row">
+                                <td class="table-cell">Actividades Operativas</td>
+                                <td class="table-cell text-right">{{ flujo()!.flujoOperativo | number:'1.2-2' }}</td>
+                            </tr>
+                            <tr class="table-row">
+                                <td class="table-cell">Actividades de Inversión</td>
+                                <td class="table-cell text-right">{{ flujo()!.flujoInversion | number:'1.2-2' }}</td>
+                            </tr>
+                            <tr class="table-row">
+                                <td class="table-cell">Actividades de Financiamiento</td>
+                                <td class="table-cell text-right">{{ flujo()!.flujoFinanciamiento | number:'1.2-2' }}</td>
+                            </tr>
+                            <tr class="table-row font-bold">
+                                <td class="table-cell">
+                                    <strong>Flujo Neto Total</strong>
+                                </td>
+                                <td class="table-cell text-right"
+                                    [class.text-[var(--color-success,#16a34a)]]="esPositivo()"
+                                    [class.text-[var(--color-error)]]="!esPositivo()">
+                                    <strong>{{ flujoNeto() | number:'1.2-2' }}</strong>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (!cargando() && !flujo() && !error()) {
+        <div class="card">
+            <div class="card-body text-center py-8 text-muted">
+                Selecciona un año para ver el flujo de efectivo
+            </div>
+        </div>
+    }
+</div>

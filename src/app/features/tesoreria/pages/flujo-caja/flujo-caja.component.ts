@@ -1,114 +1,184 @@
-import { Component, inject, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { MovimientosFinancierosService } from '../../services/movimientos-financieros.service';
-import { FinancialMovement } from '../../models/tesoreria.model';
+import {
+    Component, DestroyRef, OnInit, inject, signal, computed, ChangeDetectionStrategy
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, FormControl } from '@angular/forms';
+import { DecimalPipe } from '@angular/common';
+import { DrawerComponent } from '@shared/components/drawer/drawer.component';
+import { DataTableComponent, TableColumn } from '@shared/ui/tables/data-table/data-table.component';
+import { PageHeaderComponent } from '@shared/ui/layout/page-header/page-header.component';
+import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
+import { DatePickerComponent } from '@shared/ui/forms/date-picker/date-picker.component';
+import { ButtonComponent } from '@shared/components';
+import { MovimientosFinancierosService, FinancialMovementRequest } from '../../services/movimientos-financieros.service';
+import { AuthService } from '@core/auth/auth.service';
+import { FinancialMovement, Page } from '../../models/tesoreria.model';
 
 @Component({
     selector: 'app-flujo-caja',
     standalone: true,
-    imports: [CommonModule, FormsModule],
-    template: `
-    <div class="p-4">
-      <h2 class="text-2xl font-bold mb-4">Flujo de Caja y Movimientos</h2>
-      
-      <!-- Panel de Resumen Flujo -->
-      <div class="bg-surface p-6 shadow rounded-lg mb-6 border-t-4 border-primary flex flex-col md:flex-row md:items-end justify-between gap-4">
-        <div class="flex flex-wrap gap-4 items-end">
-          <div>
-            <label class="block text-sm font-medium text-on">Fecha Inicio</label>
-            <input type="date" [(ngModel)]="fechaInicio" class="mt-1 block rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-indigo-500 sm:text-sm">
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-on">Fecha Fin</label>
-            <input type="date" [(ngModel)]="fechaFin" class="mt-1 block rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-indigo-500 sm:text-sm">
-          </div>
-          <button (click)="loadData()" class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 shadow-sm">
-            Consultar
-          </button>
-        </div>
-        
-        <div class="bg-surface-raised px-6 py-4 rounded-lg flex flex-col items-end min-w-[200px]">
-          <span class="text-xs uppercase font-bold text-subtle tracking-wider">Flujo de Caja Neto</span>
-          <span class="text-3xl font-bold" [ngClass]="flujoCajaNeto >= 0 ? 'text-success-hover' : 'text-error-hover'">
-            {{ flujoCajaNeto | currency:'USD' }}
-          </span>
-        </div>
-      </div>
-
-      <!-- Tabla de Movimientos -->
-      <div class="bg-surface shadow rounded-lg overflow-hidden">
-        <table class="min-w-full divide-y divide-border">
-          <thead class="bg-surface-raised">
-            <tr>
-              <th class="px-6 py-3 text-left text-xs font-medium text-subtle uppercase tracking-wider">Fecha</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-subtle uppercase tracking-wider">Tipo</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-subtle uppercase tracking-wider">Origen</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-subtle uppercase tracking-wider">Descripción</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-subtle uppercase tracking-wider text-right">Monto</th>
-            </tr>
-          </thead>
-          <tbody class="bg-surface divide-y divide-border">
-            <tr *ngFor="let m of movimientos">
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-subtle">{{ m.fecha | date:'short' }}</td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                <span [ngClass]="{
-                  'bg-success/20 text-green-800': m.tipoMovimiento === 'INGRESO',
-                  'bg-error/20 text-red-800': m.tipoMovimiento === 'EGRESO',
-                  'bg-blue-100 text-blue-800': m.tipoMovimiento === 'TRANSFERENCIA'
-                }" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full">
-                  {{ m.tipoMovimiento }}
-                </span>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">{{ m.origen }}</td>
-              <td class="px-6 py-4 text-sm text-subtle max-w-sm truncate" title="{{m.descripcion}}">
-                {{ m.descripcion }}
-                <div *ngIf="m.numeroOperacion" class="text-xs text-gray-400">Op: {{m.numeroOperacion}}</div>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-right" [ngClass]="m.tipoMovimiento === 'INGRESO' ? 'text-success-hover' : (m.tipoMovimiento === 'EGRESO' ? 'text-error-hover' : 'text-on')">
-                {{ m.tipoMovimiento === 'INGRESO' ? '+' : (m.tipoMovimiento === 'EGRESO' ? '-' : '') }}{{ m.monto | currency:m.moneda }}
-              </td>
-            </tr>
-            <tr *ngIf="movimientos.length === 0">
-              <td colspan="5" class="px-6 py-4 text-center text-subtle">No hay movimientos en este periodo</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  `
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    imports: [
+        DecimalPipe, ReactiveFormsModule,
+        DrawerComponent, DataTableComponent, PageHeaderComponent, FormFieldComponent, DatePickerComponent,
+        ButtonComponent
+    ],
+    templateUrl: './flujo-caja.component.html'
 })
 export class FlujoCajaComponent implements OnInit {
-    private movService = inject(MovimientosFinancierosService);
+    private movService  = inject(MovimientosFinancierosService);
+    private auth        = inject(AuthService);
+    private fb          = inject(FormBuilder);
+    private destroyRef  = inject(DestroyRef);
 
-    movimientos: FinancialMovement[] = [];
-    flujoCajaNeto: number = 0;
+    movimientos      = signal<FinancialMovement[]>([]);
+    cargando         = signal(false);
+    guardando        = signal(false);
+    errorMsg         = signal<string | null>(null);
+    showCreateDrawer = signal(false);
+    flujoCajaNeto    = signal<number>(0);
 
-    fechaInicio: string = '';
-    fechaFin: string = '';
+    currentPage   = signal(0);
+    pageSize      = signal(10);
+    totalElements = signal(0);
+    totalPages    = signal(0);
+
+    fechaInicio = signal<string>('');
+    fechaFin    = signal<string>('');
+
+    movimientoForm: FormGroup = this.fb.group({
+        tipoMovimiento: ['INGRESO', Validators.required],
+        origen:         ['', Validators.required],
+        descripcion:    ['', [Validators.required, Validators.minLength(3)]],
+        monto:          [null, [Validators.required, Validators.min(0.01)]],
+        moneda:         ['PEN'],
+        fecha:          ['', Validators.required],
+        cajaId:         [null],
+    });
+
+    readonly tipoOptions = [
+        { value: 'INGRESO',       label: 'Ingreso' },
+        { value: 'EGRESO',        label: 'Egreso' },
+        { value: 'TRANSFERENCIA', label: 'Transferencia' },
+    ];
+
+    ingresos = computed(() =>
+        this.movimientos()
+            .filter(m => m.tipoMovimiento === 'INGRESO')
+            .reduce((s, m) => s + (m.monto ?? 0), 0)
+    );
+
+    egresos = computed(() =>
+        this.movimientos()
+            .filter(m => m.tipoMovimiento === 'EGRESO')
+            .reduce((s, m) => s + (m.monto ?? 0), 0)
+    );
+
+    columns: TableColumn<FinancialMovement>[] = [
+        { key: 'fecha', label: 'Fecha',
+          render: r => r.fecha ? new Date(r.fecha).toLocaleDateString('es-PE') : '—' },
+        { key: 'tipoMovimiento', label: 'Tipo', html: true,
+          render: r => `<span class="${this.badgeMovimiento(r.tipoMovimiento)}">${r.tipoMovimiento}</span>` },
+        { key: 'origen',     label: 'Origen',      render: r => r.origen ?? '—' },
+        { key: 'descripcion', label: 'Descripción', render: r => r.descripcion ?? '—' },
+        { key: 'monto', label: 'Monto', align: 'right',
+          render: r => {
+              const sign = r.tipoMovimiento === 'INGRESO' ? '+' : r.tipoMovimiento === 'EGRESO' ? '-' : '';
+              return `${sign}S/ ${(r.monto ?? 0).toFixed(2)}`;
+          }
+        },
+        { key: 'moneda', label: 'Moneda', align: 'center', render: r => r.moneda ?? 'PEN' },
+    ];
 
     ngOnInit(): void {
-        // Iniciar el mes actual
-        const today = new Date();
+        const today    = new Date();
         const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
-
-        this.fechaFin = today.toISOString().split('T')[0];
-        this.fechaInicio = firstDay.toISOString().split('T')[0];
-
+        this.fechaFin.set(today.toISOString().split('T')[0]);
+        this.fechaInicio.set(firstDay.toISOString().split('T')[0]);
         this.loadData();
     }
 
-    loadData() {
-        // Cargar flujo neto
-        this.movService.getFlujoCaja(this.fechaInicio, this.fechaFin).subscribe({
-            next: (val) => this.flujoCajaNeto = val,
-            error: (err) => console.error('Error cargando flujo', err)
-        });
+    loadData(): void {
+        this.cargando.set(true);
 
-        // Cargar movimientos
-        this.movService.getAll(this.fechaInicio, this.fechaFin).subscribe({
-            next: (res) => this.movimientos = res.content || res,
-            error: (err) => console.error('Error cargando movimientos', err)
-        });
+        this.movService.getFlujoCaja(this.fechaInicio(), this.fechaFin())
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe({
+                next: (val) => this.flujoCajaNeto.set(val),
+                error: () => this.cargando.set(false)
+            });
+
+        this.movService.getAll(this.fechaInicio(), this.fechaFin(), this.currentPage(), this.pageSize())
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe({
+                next: (res: Page<FinancialMovement> | FinancialMovement[]) => {
+                    const data = Array.isArray(res) ? res : (res as Page<FinancialMovement>).content;
+                    this.movimientos.set(data);
+                    this.totalElements.set(Array.isArray(res) ? data.length : (res as Page<FinancialMovement>).totalElements);
+                    this.totalPages.set(Array.isArray(res) ? 1 : (res as Page<FinancialMovement>).totalPages);
+                    this.cargando.set(false);
+                },
+                error: () => this.cargando.set(false)
+            });
+    }
+
+    onPageChange(event: { page: number; size: number }): void {
+        this.currentPage.set(event.page);
+        this.pageSize.set(event.size);
+        this.loadData();
+    }
+
+    consultar(): void {
+        this.currentPage.set(0);
+        this.loadData();
+    }
+
+    openCreateDrawer(): void {
+        const today = new Date().toISOString().split('T')[0];
+        this.movimientoForm.reset({ tipoMovimiento: 'INGRESO', moneda: 'PEN', fecha: today, monto: null, origen: '', descripcion: '', cajaId: null });
+        this.errorMsg.set(null);
+        this.showCreateDrawer.set(true);
+    }
+
+    registrarMovimiento(): void {
+        if (this.movimientoForm.invalid) { this.movimientoForm.markAllAsTouched(); return; }
+        this.guardando.set(true);
+        const v = this.movimientoForm.value;
+        const req: FinancialMovementRequest = {
+            tenantId:       this.auth.currentUser()?.activeCompanyId ?? 1,
+            tipoMovimiento: v.tipoMovimiento,
+            origen:         v.origen,
+            monto:          v.monto,
+            moneda:         v.moneda ?? 'PEN',
+            fecha:          v.fecha,
+            descripcion:    v.descripcion,
+            cajaId:         v.cajaId ?? undefined,
+        };
+        this.movService.registerMovement(req)
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe({
+                next: () => {
+                    this.showCreateDrawer.set(false);
+                    this.guardando.set(false);
+                    this.loadData();
+                },
+                error: (err: { error?: { detail?: string } }) => {
+                    this.errorMsg.set(err?.error?.detail ?? 'Error al registrar movimiento');
+                    this.guardando.set(false);
+                }
+            });
+    }
+
+    getControl(name: string): FormControl {
+        return this.movimientoForm.get(name) as FormControl;
+    }
+
+    badgeMovimiento(tipo: string): string {
+        const map: Record<string, string> = {
+            INGRESO:       'badge badge-success',
+            EGRESO:        'badge badge-warning',
+            TRANSFERENCIA: 'badge badge-accent',
+        };
+        return map[tipo] ?? 'badge badge-neutral';
     }
 }

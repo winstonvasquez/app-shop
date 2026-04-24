@@ -6,7 +6,8 @@ import { environment } from '@env/environment';
 import {
     CategoryResponse,
     CategoryRequest,
-    CategoryFilter
+    CategoryFilter,
+    MegaMenuCategoriaDto
 } from '@core/models/category.model';
 import { PageResponse, PaginationConfig } from '@core/models/pagination.model';
 
@@ -98,6 +99,12 @@ export class CategoryService {
         pagination: PaginationConfig
     ): Observable<PageResponse<CategoryResponse>> {
         return this.getAll(pagination, { nivel });
+    }
+
+    getMegaMenu(): Observable<MegaMenuCategoriaDto[]> {
+        return this.http
+            .get<MegaMenuCategoriaDto[]>(`${this.baseUrl}/megamenu`)
+            .pipe(catchError(this.handleError));
     }
 
     private handleError(error: HttpErrorResponse): Observable<never> {

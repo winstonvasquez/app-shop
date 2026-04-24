@@ -1,0 +1,102 @@
+<div class="report-panel">
+    @if (!reporte()) {
+    <div class="report-empty">
+        <p class="text-sm text-muted">Cargando reporte...</p>
+    </div>
+    } @else {
+    <div class="report-content">
+        <div class="report-header">
+            <h3 class="text-lg font-bold text-on">Reporte {{ reporte()!.tipo }}</h3>
+            <span class="text-xs text-muted">Turno #{{ reporte()!.turnoId }} &middot; {{ reporte()!.cajeroNombre }}</span>
+        </div>
+
+        <div class="report-dates">
+            <div>
+                <span class="text-xs text-subtle">Apertura</span>
+                <span class="text-sm text-on">{{ formatDate(reporte()!.fechaApertura) }}</span>
+            </div>
+            @if (reporte()!.fechaCierre) {
+            <div>
+                <span class="text-xs text-subtle">Cierre</span>
+                <span class="text-sm text-on">{{ formatDate(reporte()!.fechaCierre!) }}</span>
+            </div>
+            }
+        </div>
+
+        <!-- KPIs -->
+        <div class="report-kpis">
+            <div class="report-kpi">
+                <span class="report-kpi-label">Total Ventas</span>
+                <span class="report-kpi-value">S/ {{ fmt(reporte()!.totalVentas) }}</span>
+            </div>
+            <div class="report-kpi">
+                <span class="report-kpi-label">Transacciones</span>
+                <span class="report-kpi-value">{{ reporte()!.totalTransacciones }}</span>
+            </div>
+            <div class="report-kpi">
+                <span class="report-kpi-label">Boletas</span>
+                <span class="report-kpi-value">{{ reporte()!.boletasEmitidas }}</span>
+            </div>
+            <div class="report-kpi">
+                <span class="report-kpi-label">Facturas</span>
+                <span class="report-kpi-value">{{ reporte()!.facturasEmitidas }}</span>
+            </div>
+        </div>
+
+        <!-- Desglose por método -->
+        <h4 class="text-sm font-semibold text-on mt-4 mb-2">Desglose por Método</h4>
+        <div class="report-methods">
+            <div class="report-method-row">
+                <span>Efectivo</span><span>S/ {{ fmt(reporte()!.totalEfectivo) }}</span>
+            </div>
+            <div class="report-method-row">
+                <span>Tarjeta</span><span>S/ {{ fmt(reporte()!.totalTarjeta) }}</span>
+            </div>
+            <div class="report-method-row">
+                <span>Yape</span><span>S/ {{ fmt(reporte()!.totalYape) }}</span>
+            </div>
+            <div class="report-method-row">
+                <span>Plin</span><span>S/ {{ fmt(reporte()!.totalPlin) }}</span>
+            </div>
+        </div>
+
+        <!-- Movimientos de caja -->
+        <h4 class="text-sm font-semibold text-on mt-4 mb-2">Movimientos de Caja</h4>
+        <div class="report-methods">
+            <div class="report-method-row">
+                <span>Apertura</span><span>S/ {{ fmt(reporte()!.montoApertura) }}</span>
+            </div>
+            <div class="report-method-row text-[var(--color-success)]">
+                <span>+ Ingresos</span><span>S/ {{ fmt(reporte()!.totalIngresosEfectivo) }}</span>
+            </div>
+            <div class="report-method-row text-[var(--color-error)]">
+                <span>- Retiros</span><span>S/ {{ fmt(reporte()!.totalRetirosEfectivo) }}</span>
+            </div>
+            <div class="report-method-row text-[var(--color-error)]">
+                <span>Anulaciones</span><span>S/ {{ fmt(reporte()!.totalAnulaciones) }}</span>
+            </div>
+            <div class="report-method-row font-bold border-t border-[var(--color-border)] pt-2 mt-2">
+                <span>Esperado en caja</span><span>S/ {{ fmt(reporte()!.montoEsperadoEnCaja) }}</span>
+            </div>
+        </div>
+
+        @if (reporte()!.montoCierreContado != null) {
+        <div class="report-methods mt-2">
+            <div class="report-method-row">
+                <span>Contado</span><span>S/ {{ fmt(reporte()!.montoCierreContado!) }}</span>
+            </div>
+            <div class="report-method-row font-bold"
+                [class.text-[var(--color-success)]]="reporte()!.diferenciaArqueo! >= 0"
+                [class.text-[var(--color-error)]]="reporte()!.diferenciaArqueo! < 0">
+                <span>Diferencia</span><span>S/ {{ fmt(reporte()!.diferenciaArqueo!) }}</span>
+            </div>
+        </div>
+        }
+
+        <div class="flex gap-2 mt-4">
+            <button class="btn-secondary flex-1" (click)="close.emit()">Cerrar</button>
+            <button class="btn-primary flex-1" (click)="printReport()">Imprimir</button>
+        </div>
+    </div>
+    }
+</div>

@@ -1,0 +1,160 @@
+<div class="page-container">
+  <app-page-header
+    title="Devoluciones"
+    subtitle="Gestión de solicitudes de devolución y reembolso"
+    [breadcrumbs]="breadcrumbs">
+  </app-page-header>
+
+  @if (error()) {
+    <app-alert type="error" [message]="error()!" (dismiss)="error.set(null)" [dismissible]="true" />
+  }
+
+  <!-- Filtros -->
+  <div class="filters-bar">
+    <select class="form-input" style="width:220px" (change)="onFilterStatus($event)">
+      <option value="">Todos los estados</option>
+      @for (opt of statusOptions; track opt.value) {
+        <option [value]="opt.value">{{ opt.label }}</option>
+      }
+    </select>
+  </div>
+
+  <!-- Tabla -->
+  <app-data-table
+    [data]="devoluciones()"
+    [columns]="columns"
+    [actions]="actions"
+    [loading]="loading()"
+    [currentPage]="currentPage()"
+    [pageSize]="pageSize()"
+    [totalElements]="totalElements()"
+    [totalPages]="totalPages()"
+    [exportable]="true"
+    exportFileName="devoluciones-export"
+    (pageChange)="onPaginationChange($event)">
+  </app-data-table>
+</div>
+
+<!-- Drawer Detalle + Workflow -->
+<app-drawer
+  [isOpen]="showDetail()"
+  title="Gestionar Devolución"
+  size="md"
+  side="right"
+  (closed)="closeDetail()">
+
+  @if (selected()) {
+    <div style="display:flex;flex-direction:column;gap:var(--space-lg)">
+
+      <!-- Info de la devolución -->
+      <div class="card">
+        <div class="card-body">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-sm)">
+            <div>
+              <p class="input-label">Estado actual</p>
+              <span class="badge" [class]="badgeStatus(selected()!.status)">
+                {{ statusLabels[selected()!.status] }}
+              </span>
+            </div>
+            <div>
+              <p class="input-label">Solicitado el</p>
+              <p>{{ selected()!.requestedAt | date:'dd/MM/yyyy':'':'es-PE' }}</p>
+            </div>
+            <div style="grid-column:1/-1">
+              <p class="input-label">Motivo</p>
+              <p>{{ selected()!.reason }}</p>
+            </div>
+            @if (selected()!.description) {
+              <div style="grid-column:1/-1">
+                <p class="input-label">Descripción</p>
+                <p>{{ selected()!.description }}</p>
+              </div>
+            }
+            @if (selected()!.refundAmount != null) {
+              <div>
+                <p class="input-label">Monto reembolso</p>
+                <p style="font-weight:600">S/ {{ selected()!.refundAmount!.toFixed(2) }}</p>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+
+      @if (actionError()) {
+        <app-alert type="error" [message]="actionError()!" (dismiss)="actionError.set(null)" [dismissible]="true" />
+      }
+
+      <!-- Workflow — acciones según estado -->
+      <div style="display:flex;flex-direction:column;gap:var(--space-md)">
+
+        @if (selected()!.status === 'REQUESTED') {
+          <div class="card">
+            <div class="card-body">
+              <p class="card-title" style="margin-bottom:var(--space-md)">Revisar solicitud</p>
+              <div style="display:flex;gap:var(--space-sm)">
+                <app-button label="Aprobar" variant="success" icon="check-circle"
+                  [loading]="actionLoading()" (click)="aprobar()" />
+                <app-button label="Rechazar" variant="danger" icon="x-circle"
+                  [loading]="actionLoading()" (click)="rechazar()" />
+              </div>
+            </div>
+          </div>
+        }
+
+        @if (selected()!.status === 'APPROVED') {
+          <div class="card">
+            <div class="card-body">
+              <p class="card-title" style="margin-bottom:var(--space-md)">Mercadería devuelta</p>
+              <app-button label="Marcar como recibida" variant="primary" icon="undo-2"
+                [loading]="actionLoading()" (click)="marcarRecibida()" />
+            </div>
+          </div>
+        }
+
+        @if (selected()!.status === 'RECEIVED') {
+          <form [formGroup]="actionForm">
+            <div class="card">
+              <div class="card-body">
+                <p class="card-title" style="margin-bottom:var(--space-md)">Inspección de mercadería</p>
+                <div class="form-field-wrapper" style="margin-bottom:var(--space-md)">
+                  <label class="input-label">Notas de inspección</label>
+                  <textarea class="form-input" rows="3" formControlName="inspectionNotes"
+                            placeholder="Estado del producto, daños encontrados..."
+                            style="resize:vertical"></textarea>
+                </div>
+                <app-button label="Registrar inspección" variant="primary" icon="eye"
+                  [loading]="actionLoading()" (click)="registrarInspeccion()" />
+              </div>
+            </div>
+          </form>
+        }
+
+        @if (selected()!.status === 'INSPECTED') {
+          <form [formGroup]="actionForm">
+            <div class="card">
+              <div class="card-body">
+                <p class="card-title" style="margin-bottom:var(--space-md)">Procesar reembolso</p>
+                <div class="form-field-wrapper" style="margin-bottom:var(--space-md)">
+                  <label class="input-label">Monto a reembolsar (S/)</label>
+                  <input class="form-input" type="number" min="0" step="0.01"
+                         formControlName="refundAmount" placeholder="0.00">
+                </div>
+                <app-button label="Registrar reembolso" variant="primary" icon="save"
+                  [loading]="actionLoading()" (click)="registrarReembolso()" />
+              </div>
+            </div>
+          </form>
+        }
+
+        @if (selected()!.status === 'REFUNDED' || selected()!.status === 'REJECTED') {
+          <div class="card">
+            <div class="card-body" style="text-align:center;padding:var(--space-lg)">
+              <p class="text-muted">Esta devolución ya fue procesada.</p>
+            </div>
+          </div>
+        }
+      </div>
+
+    </div>
+  }
+</app-drawer>

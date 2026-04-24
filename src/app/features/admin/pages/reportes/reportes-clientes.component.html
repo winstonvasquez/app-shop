@@ -1,0 +1,118 @@
+<div class="page-container">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Reporte de Clientes</h1>
+            <p class="page-subtitle">Base de usuarios registrados en el sistema</p>
+        </div>
+        <div class="page-actions no-print flex gap-2">
+            <app-button label="Exportar CSV" variant="secondary" icon="download"
+                [disabled]="cargando() || usuarios().length === 0"
+                (click)="onExportarCsv()"></app-button>
+            <app-button label="Exportar Excel" variant="secondary" icon="download"
+                [disabled]="cargando() || usuarios().length === 0"
+                (click)="exportarExcel()"></app-button>
+            <app-button label="Imprimir / PDF" variant="secondary" icon="printer"
+                [disabled]="cargando()"
+                (click)="imprimir()"></app-button>
+            <app-button label="Actualizar" variant="primary" icon="refresh-cw"
+                [loading]="cargando()"
+                (click)="cargar()"></app-button>
+        </div>
+    </div>
+
+    @if (error()) {
+        <div class="card border-l-[3px] border-l-[var(--color-warning)] p-[var(--space-md)] mb-[var(--space-lg)]">
+            <p class="text-[var(--color-text-muted)] text-sm">
+                Servicio de usuarios no disponible. Verifique que microshopusers esté corriendo en puerto 8080.
+            </p>
+        </div>
+    }
+
+    <!-- KPIs -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div class="card">
+            <div class="card-body">
+                <p class="text-[0.75rem] text-[var(--color-text-muted)]">TOTAL USUARIOS</p>
+                <p class="text-[2rem] font-bold text-[var(--color-primary)]">{{ totalElements() }}</p>
+                <p class="text-[0.75rem] text-[var(--color-text-muted)]">registrados</p>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-body">
+                <p class="text-[0.75rem] text-[var(--color-text-muted)]">ACTIVOS</p>
+                <p class="text-[2rem] font-bold text-[var(--color-success)]">{{ activos() }}</p>
+                <p class="text-[0.75rem] text-[var(--color-text-muted)]">con acceso</p>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-body">
+                <p class="text-[0.75rem] text-[var(--color-text-muted)]">INACTIVOS</p>
+                <p class="text-[2rem] font-bold">{{ totalElements() - activos() }}</p>
+                <p class="text-[0.75rem] text-[var(--color-text-muted)]">suspendidos</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Usuarios registrados</h3>
+        </div>
+        <div class="filters-bar no-print" [formGroup]="filterForm">
+            <div class="search-box">
+                <span class="search-box-icon">&#128269;</span>
+                <input type="text" class="form-input" placeholder="Buscar por nombre o email..."
+                       formControlName="busqueda" class="pl-8">
+            </div>
+        </div>
+
+        @if (cargando()) {
+            <div class="loading-container"><div class="spinner"></div></div>
+        } @else {
+            <table class="table">
+                <thead class="table-header">
+                    <tr>
+                        <th class="table-header-cell">ID</th>
+                        <th class="table-header-cell">Usuario</th>
+                        <th class="table-header-cell">Email</th>
+                        <th class="table-header-cell">Nombre</th>
+                        <th class="table-header-cell">Estado</th>
+                        <th class="table-header-cell">Registro</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (u of usuariosFiltrados(); track u.id) {
+                        <tr class="table-row">
+                            <td class="table-cell font-mono text-sm">{{ u.id }}</td>
+                            <td class="table-cell font-bold">{{ u.username }}</td>
+                            <td class="table-cell text-[var(--color-text-muted)]">{{ u.email }}</td>
+                            <td class="table-cell">{{ (u.nombre ?? '') + ' ' + (u.apellido ?? '') || '—' }}</td>
+                            <td class="table-cell">
+                                <span [class]="u.activo ? 'badge badge-success' : 'badge badge-error'">
+                                    {{ u.activo ? 'ACTIVO' : 'INACTIVO' }}
+                                </span>
+                            </td>
+                            <td class="table-cell text-sm text-[var(--color-text-muted)]">
+                                {{ u.fechaCreacion ? (u.fechaCreacion | date:'dd/MM/yyyy') : '—' }}
+                            </td>
+                        </tr>
+                    } @empty {
+                        <tr><td colspan="6" class="table-cell text-center p-6 text-[var(--color-text-muted)]">Sin resultados</td></tr>
+                    }
+                </tbody>
+            </table>
+
+            @if (totalPages() > 1) {
+                <div class="pagination no-print">
+                    <span class="pagination-info">Mostrando {{ usuarios().length }} de {{ totalElements() }}</span>
+                    <div class="pagination-controls">
+                        <button class="btn-page" [disabled]="pagina() === 0" (click)="irPagina(pagina() - 1)">&#8249;</button>
+                        @for (p of pages(); track p) {
+                            <button class="btn-page" [class.active]="p === pagina()" (click)="irPagina(p)">{{ p + 1 }}</button>
+                        }
+                        <button class="btn-page" [disabled]="pagina() === totalPages() - 1" (click)="irPagina(pagina() + 1)">&#8250;</button>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+</div>

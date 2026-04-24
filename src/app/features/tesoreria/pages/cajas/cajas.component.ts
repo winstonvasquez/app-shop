@@ -1,76 +1,154 @@
-import { Component, inject, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import {
+    Component, DestroyRef, OnInit, inject, signal, computed, ChangeDetectionStrategy
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, FormControl } from '@angular/forms';
+import { DecimalPipe } from '@angular/common';
+import { DrawerComponent } from '@shared/components/drawer/drawer.component';
+import { DataTableComponent, TableColumn, TableAction } from '@shared/ui/tables/data-table/data-table.component';
+import { PageHeaderComponent } from '@shared/ui/layout/page-header/page-header.component';
+import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
+import { ButtonComponent } from '@shared/components';
 import { CajasService } from '../../services/cajas.service';
-import { CashRegister } from '../../models/tesoreria.model';
+import { CashRegister, Page } from '../../models/tesoreria.model';
 
 @Component({
     selector: 'app-cajas',
     standalone: true,
-    imports: [CommonModule],
-    template: `
-    <div class="p-4">
-      <h2 class="text-2xl font-bold mb-4">Control de Cajas</h2>
-      
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <div *ngFor="let c of cajas" class="bg-surface rounded-lg shadow p-6 border-t-4" [ngClass]="c.estado === 'ABIERTA' ? 'border-green-500' : 'border-gray-400'">
-          <div class="flex justify-between items-start mb-4">
-            <div>
-              <h3 class="text-lg font-bold text-on">{{ c.nombre }}</h3>
-              <p class="text-sm text-subtle">ID: {{ c.id }}</p>
-            </div>
-            <span [ngClass]="c.estado === 'ABIERTA' ? 'bg-success/20 text-green-800' : 'bg-surface-sunken text-on'" class="px-2 py-1 text-xs font-semibold rounded-full">
-              {{ c.estado }}
-            </span>
-          </div>
-          
-          <div class="mb-4">
-            <p class="text-sm font-medium text-subtle uppercase">Saldo Actual</p>
-            <p class="text-3xl font-bold text-on">{{ c.saldoActual | currency:'USD' }}</p>
-          </div>
-          
-          <div class="text-xs text-subtle mb-6 space-y-1">
-            <p *ngIf="c.fechaApertura">Abierta: {{ c.fechaApertura | date:'short' }}</p>
-            <p *ngIf="c.fechaCierre">Cerrada: {{ c.fechaCierre | date:'short' }}</p>
-          </div>
-          
-          <div class="flex gap-2 w-full justify-end border-t pt-4">
-            <button *ngIf="c.estado === 'CERRADA'" (click)="openRegister(c)" class="bg-indigo-600 text-white px-3 py-1.5 rounded text-sm hover:bg-indigo-700 w-full">Abrir Caja (Base: $100)</button>
-            <button *ngIf="c.estado === 'ABIERTA'" (click)="closeRegister(c)" class="bg-red-600 text-white px-3 py-1.5 rounded text-sm hover:bg-red-700 w-full">Cerrar Caja</button>
-          </div>
-        </div>
-      </div>
-      
-      <div *ngIf="cajas.length === 0" class="bg-surface-raised p-6 rounded-lg text-center border">
-        <p class="text-subtle">No hay cajas registradas. Crea una desde la API.</p>
-      </div>
-    </div>
-  `
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    imports: [
+        DecimalPipe, ReactiveFormsModule,
+        DrawerComponent, DataTableComponent, PageHeaderComponent, FormFieldComponent,
+        ButtonComponent
+    ],
+    templateUrl: './cajas.component.html'
 })
 export class CajasComponent implements OnInit {
     private cajasService = inject(CajasService);
-    cajas: CashRegister[] = [];
+    private fb           = inject(FormBuilder);
+    private destroyRef   = inject(DestroyRef);
 
-    ngOnInit(): void {
-        this.loadCajas();
+    cajas         = signal<CashRegister[]>([]);
+    cargando      = signal(false);
+    guardando     = signal(false);
+    errorMsg      = signal<string | null>(null);
+    actionErrorMsg = signal<string | null>(null);
+
+    currentPage   = signal(0);
+    pageSize      = signal(10);
+    totalElements = signal(0);
+    totalPages    = signal(0);
+
+    showCreateDrawer = signal(false);
+    showActionDrawer = signal(false);
+    selectedCaja     = signal<CashRegister | null>(null);
+    actionType       = signal<'abrir' | 'cerrar'>('abrir');
+
+    createForm: FormGroup = this.fb.group({
+        nombre:       ['', [Validators.required, Validators.minLength(2), Validators.maxLength(50)]],
+        saldoInicial: [0,  [Validators.required, Validators.min(0)]]
+    });
+
+    actionForm: FormGroup = this.fb.group({
+        saldoInicial: [0, [Validators.required, Validators.min(0)]]
+    });
+
+    cajasAbiertas = computed(() => this.cajas().filter(c => c.estado === 'ABIERTA').length);
+    cajasCerradas = computed(() => this.cajas().filter(c => c.estado !== 'ABIERTA').length);
+    saldoTotal    = computed(() =>
+        this.cajas().filter(c => c.estado === 'ABIERTA').reduce((s, c) => s + (c.saldoActual ?? 0), 0)
+    );
+
+    columns: TableColumn<CashRegister>[] = [
+        { key: 'nombre',        label: 'Nombre',        sortable: true },
+        { key: 'estado',        label: 'Estado',        align: 'center', html: true,
+          render: r => `<span class="${r.estado === 'ABIERTA' ? 'badge badge-success' : 'badge badge-neutral'}">${r.estado}</span>` },
+        { key: 'saldoActual',   label: 'Saldo Actual',  align: 'right',
+          render: r => `S/ ${(r.saldoActual ?? 0).toFixed(2)}` },
+        { key: 'saldoInicial',  label: 'Saldo Inicial', align: 'right',
+          render: r => `S/ ${(r.saldoInicial ?? 0).toFixed(2)}` },
+        { key: 'fechaApertura', label: 'Apertura',
+          render: r => r.fechaApertura ? new Date(r.fechaApertura).toLocaleDateString('es-PE') : '—' },
+    ];
+
+    actions: TableAction<CashRegister>[] = [
+        { label: 'Abrir',  icon: '🔓', class: 'btn-view',
+          show: r => r.estado !== 'ABIERTA',
+          onClick: r => this.openActionDrawer(r, 'abrir') },
+        { label: 'Cerrar', icon: '🔒', class: 'btn-view',
+          show: r => r.estado === 'ABIERTA',
+          onClick: r => this.openActionDrawer(r, 'cerrar') },
+    ];
+
+    ngOnInit(): void { this.load(); }
+
+    load(): void {
+        this.cargando.set(true);
+        this.cajasService.getAll(this.currentPage(), this.pageSize())
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe({
+                next: (res: Page<CashRegister> | CashRegister[]) => {
+                    const data = Array.isArray(res) ? res : (res as Page<CashRegister>).content;
+                    this.cajas.set(data);
+                    this.totalElements.set(Array.isArray(res) ? data.length : (res as Page<CashRegister>).totalElements);
+                    this.totalPages.set(Array.isArray(res) ? 1 : (res as Page<CashRegister>).totalPages);
+                    this.cargando.set(false);
+                },
+                error: () => this.cargando.set(false)
+            });
     }
 
-    loadCajas() {
-        this.cajasService.getAll().subscribe({
-            next: (res) => this.cajas = res.content || res,
-            error: (err) => console.error('Error loading cajas', err)
+    onPageChange(event: { page: number; size: number }): void {
+        this.currentPage.set(event.page);
+        this.pageSize.set(event.size);
+        this.load();
+    }
+
+    openCreateDrawer(): void {
+        this.createForm.reset({ nombre: '', saldoInicial: 0 });
+        this.errorMsg.set(null);
+        this.showCreateDrawer.set(true);
+    }
+
+    openActionDrawer(caja: CashRegister, tipo: 'abrir' | 'cerrar'): void {
+        this.selectedCaja.set(caja);
+        this.actionType.set(tipo);
+        this.actionForm.reset({ saldoInicial: 0 });
+        this.actionErrorMsg.set(null);
+        this.showActionDrawer.set(true);
+    }
+
+    crearCaja(): void {
+        if (this.createForm.invalid) { this.createForm.markAllAsTouched(); return; }
+        this.guardando.set(true);
+        this.cajasService.create(this.createForm.value)
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe({
+                next: () => { this.showCreateDrawer.set(false); this.guardando.set(false); this.load(); },
+                error: (err: { error?: { detail?: string } }) => {
+                    this.errorMsg.set(err?.error?.detail ?? 'Error al crear caja');
+                    this.guardando.set(false);
+                }
+            });
+    }
+
+    ejecutarAccion(): void {
+        const caja = this.selectedCaja();
+        if (!caja?.id) return;
+        this.guardando.set(true);
+        const op = this.actionType() === 'abrir'
+            ? this.cajasService.open(caja.id, this.actionForm.value.saldoInicial ?? 0)
+            : this.cajasService.close(caja.id);
+        op.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+            next: () => { this.showActionDrawer.set(false); this.guardando.set(false); this.load(); },
+            error: (err: { error?: { detail?: string } }) => {
+                this.actionErrorMsg.set(err?.error?.detail ?? 'Error al ejecutar operación');
+                this.guardando.set(false);
+            }
         });
     }
 
-    openRegister(c: CashRegister) {
-        if (c.id) {
-            // Simulating base amount of 100 for aperture
-            this.cajasService.open(c.id, 100.0).subscribe(() => this.loadCajas());
-        }
-    }
-
-    closeRegister(c: CashRegister) {
-        if (c.id) {
-            this.cajasService.close(c.id).subscribe(() => this.loadCajas());
-        }
+    getControl(form: FormGroup, name: string): FormControl {
+        return form.get(name) as FormControl;
     }
 }

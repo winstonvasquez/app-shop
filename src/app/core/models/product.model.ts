@@ -1,3 +1,20 @@
+export interface ProductImagen {
+    url: string;
+    esPrincipal?: boolean;
+    orden?: number;
+}
+
+export interface ProductCategoria {
+    id: number;
+    nombre: string;
+}
+
+export interface ProductVendedor {
+    id: number;
+    nombre: string;
+    ruc?: string;
+}
+
 export interface ProductResponse {
     id: number;
     nombre: string;
@@ -15,9 +32,9 @@ export interface ProductResponse {
     timerEndTime?: string;
     features?: string;
     starSeller?: boolean;
-    vendedor?: any;
-    imagenes?: any[];
-    categorias?: any[];
+    vendedor?: ProductVendedor;
+    imagenes?: ProductImagen[];
+    categorias?: ProductCategoria[];
 }
 
 export interface Page<T> {

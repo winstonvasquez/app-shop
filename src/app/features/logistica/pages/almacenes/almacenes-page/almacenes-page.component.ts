@@ -1,182 +1,166 @@
 import { Component, inject, signal, OnInit, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule, Validators, FormGroup } from '@angular/forms';
 import { AlmacenService } from '../../../services/almacen.service';
 import { Almacen, CreateAlmacenDto } from '../../../models/almacen.model';
+import { AuthService } from '../../../../../core/auth/auth.service';
+import { DataTableComponent, TableColumn, TableAction } from '@shared/ui/tables/data-table/data-table.component';
+import { DrawerComponent } from '@shared/components/drawer/drawer.component';
+import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
+import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
+import { PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
+import { ButtonComponent } from '@shared/components';
+import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 
 @Component({
-  selector: 'app-almacenes-page',
-  standalone: true,
-  imports: [CommonModule, RouterModule, ReactiveFormsModule],
-  template: `
-    <div class="page-header">
-      <div>
-        <h1 class="page-title">Almacenes</h1>
-        <p class="page-subtitle">{{ almacenes().length }} almacenes registrados</p>
-      </div>
-      <div class="page-actions">
-        <button class="btn btn-primary" (click)="showModal.set(true)">
-          + Nuevo Almacén
-        </button>
-      </div>
-    </div>
-
-    <div class="table-container">
-      <table>
-        <thead>
-          <tr>
-            <th>Código</th>
-            <th>Nombre</th>
-            <th>Dirección</th>
-            <th>Teléfono</th>
-            <th>Items</th>
-            <th>Estado</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (almacen of almacenes(); track almacen.id) {
-            <tr>
-              <td class="font-mono">{{ almacen.codigo }}</td>
-              <td>{{ almacen.nombre }}</td>
-              <td class="text-muted">{{ almacen.direccion || '-' }}</td>
-              <td>{{ almacen.telefono || '-' }}</td>
-              <td class="text-right">{{ almacen.totalItems || 0 }}</td>
-              <td>
-                <span class="badge badge-success">{{ almacen.estado }}</span>
-              </td>
-              <td>
-                <button class="btn btn-secondary btn-sm">Editar</button>
-              </td>
-            </tr>
-          } @empty {
-            <tr>
-              <td colspan="7" class="text-center text-muted">
-                No hay almacenes. Crea el primero.
-              </td>
-            </tr>
-          }
-        </tbody>
-      </table>
-    </div>
-
-    @if (showModal()) {
-      <div class="modal-overlay" (click)="showModal.set(false)">
-        <div class="modal" (click)="$event.stopPropagation()">
-          <div class="modal-header">
-            <h3>Nuevo Almacén</h3>
-            <button class="close-btn" (click)="showModal.set(false)">×</button>
-          </div>
-          <div class="modal-body">
-            <form [formGroup]="almacenForm">
-              <div class="form-group">
-                <label class="form-label">Código *</label>
-                <input class="form-control" formControlName="codigo" placeholder="ALM1">
-              </div>
-              <div class="form-group">
-                <label class="form-label">Nombre *</label>
-                <input class="form-control" formControlName="nombre" placeholder="Almacén Principal">
-              </div>
-              <div class="form-group">
-                <label class="form-label">Dirección</label>
-                <input class="form-control" formControlName="direccion">
-              </div>
-              <div class="form-group">
-                <label class="form-label">Teléfono</label>
-                <input class="form-control" formControlName="telefono">
-              </div>
-            </form>
-          </div>
-          <div class="modal-footer">
-            <button class="btn btn-secondary" (click)="showModal.set(false)">Cancelar</button>
-            <button class="btn btn-primary" (click)="createAlmacen()">Crear</button>
-          </div>
-        </div>
-      </div>
-    }
-  `,
-  styles: [`
-    .modal-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0,0,0,0.5);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-    }
-    .modal {
-      background: white;
-      border-radius: 12px;
-      width: 480px;
-      max-width: 90vw;
-    }
-    .modal-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 16px 20px;
-      border-bottom: 1px solid var(--color-border);
-    }
-    .modal-header h3 { margin: 0; }
-    .close-btn {
-      background: none;
-      border: none;
-      font-size: 24px;
-      cursor: pointer;
-    }
-    .modal-body { padding: 20px; }
-    .modal-footer {
-      padding: 16px 20px;
-      border-top: 1px solid var(--color-border);
-      display: flex;
-      justify-content: flex-end;
-      gap: 12px;
-    }
-    .form-group { margin-bottom: 16px; }
-  `],
-  changeDetection: ChangeDetectionStrategy.OnPush
+    selector: 'app-almacenes-page',
+    standalone: true,
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    imports: [
+        ReactiveFormsModule,
+        DataTableComponent,
+        DrawerComponent,
+        AlertComponent,
+        PageHeaderComponent,
+        ButtonComponent
+    ],
+    templateUrl: './almacenes-page.component.html'
 })
 export class AlmacenesPageComponent implements OnInit {
-  private readonly almacenService = inject(AlmacenService);
-  private readonly fb = inject(FormBuilder);
-  
-  readonly almacenes = signal<Almacen[]>([]);
-  readonly showModal = signal(false);
-  readonly companyId = 'demo-company';
-  readonly trackByAlmacenId = (index: number, almacen: Almacen) => almacen.id;
+    private readonly almacenService = inject(AlmacenService);
+    private readonly authService    = inject(AuthService);
+    private readonly fb             = inject(FormBuilder);
 
-  almacenForm: FormGroup = this.fb.group({
-    codigo: ['', Validators.required],
-    nombre: ['', Validators.required],
-    direccion: [''],
-    telefono: ['']
-  });
+    // Data
+    almacenes = signal<Almacen[]>([]);
+    selected  = signal<Almacen | null>(null);
 
-  ngOnInit() {
-    this.loadAlmacenes();
-  }
+    // UI state
+    loading     = signal(false);
+    error       = signal<string | null>(null);
+    showForm    = signal(false);
+    editMode    = signal(false);
+    submitting  = signal(false);
+    submitError = signal<string | null>(null);
 
-  loadAlmacenes() {
-    this.almacenService.getAlmacenes(this.companyId).subscribe({
-      next: (res) => this.almacenes.set(res.content),
-      error: () => this.almacenes.set([])
+    // Pagination
+    currentPage   = signal(0);
+    pageSize      = signal(10);
+    totalElements = signal(0);
+    totalPages    = signal(0);
+
+    breadcrumbs: Breadcrumb[] = [
+        { label: 'Inicio',    url: '/admin/dashboard' },
+        { label: 'Logística', url: '/logistica/dashboard' },
+        { label: 'Almacenes' }
+    ];
+
+    columns: TableColumn<Almacen>[] = [
+        { key: 'codigo',     label: 'Código',      width: '100px' },
+        { key: 'nombre',     label: 'Nombre' },
+        { key: 'direccion',  label: 'Dirección',   render: (r) => r.direccion || '—' },
+        { key: 'telefono',   label: 'Teléfono',    render: (r) => r.telefono  || '—' },
+        { key: 'totalItems', label: 'Items',       align: 'right',
+          render: (r) => `${r.totalItems ?? 0}` },
+        { key: 'estado', label: 'Estado', html: true,
+          render: (r) => r.estado === 'ACTIVO'
+            ? '<span class="badge badge-success">Activo</span>'
+            : '<span class="badge badge-neutral">Inactivo</span>' }
+    ];
+
+    actions: TableAction<Almacen>[] = [
+        {
+            label: 'Editar', icon: '✏️', class: 'btn-view',
+            onClick: (row) => this.openEditForm(row)
+        }
+    ];
+
+    form: FormGroup = this.fb.group({
+        codigo:    ['', Validators.required],
+        nombre:    ['', Validators.required],
+        direccion: [''],
+        telefono:  ['']
     });
-  }
 
-  createAlmacen() {
-    if (this.almacenForm.invalid) return;
-    
-    this.almacenService.createAlmacen(this.almacenForm.value, this.companyId).subscribe({
-      next: () => {
-        this.showModal.set(false);
-        this.almacenForm.reset();
+    private get companyId(): string {
+        return String(this.authService.currentUser()?.activeCompanyId ?? 1);
+    }
+
+    ngOnInit() {
         this.loadAlmacenes();
-      }
-    });
-  }
+    }
+
+    loadAlmacenes() {
+        this.loading.set(true);
+        this.error.set(null);
+        this.almacenService.getAlmacenes(this.companyId, {
+            page: this.currentPage(),
+            size: this.pageSize()
+        }).subscribe({
+            next: (res) => {
+                this.almacenes.set(res.content);
+                this.totalElements.set(pageTotalElements(res));
+                this.totalPages.set(pageTotalPages(res));
+                this.loading.set(false);
+            },
+            error: (err: Error) => {
+                this.error.set(err.message ?? 'Error al cargar almacenes.');
+                this.loading.set(false);
+            }
+        });
+    }
+
+    onPaginationChange(event: PaginationChangeEvent) {
+        this.currentPage.set(event.page);
+        this.pageSize.set(event.size);
+        this.loadAlmacenes();
+    }
+
+    openCreateForm() {
+        this.editMode.set(false);
+        this.selected.set(null);
+        this.form.reset();
+        this.submitError.set(null);
+        this.showForm.set(true);
+    }
+
+    openEditForm(almacen: Almacen) {
+        this.editMode.set(true);
+        this.selected.set(almacen);
+        this.form.patchValue({
+            codigo:    almacen.codigo,
+            nombre:    almacen.nombre,
+            direccion: almacen.direccion ?? '',
+            telefono:  almacen.telefono  ?? ''
+        });
+        this.submitError.set(null);
+        this.showForm.set(true);
+    }
+
+    closeForm() {
+        this.showForm.set(false);
+        this.form.reset();
+    }
+
+    onSubmit() {
+        if (this.form.invalid) { this.form.markAllAsTouched(); return; }
+        this.submitting.set(true);
+        this.submitError.set(null);
+
+        const dto: CreateAlmacenDto = this.form.value;
+        const op = this.editMode()
+            ? this.almacenService.updateAlmacen(this.selected()!.id, dto, this.companyId)
+            : this.almacenService.createAlmacen(dto, this.companyId);
+
+        op.subscribe({
+            next: () => {
+                this.submitting.set(false);
+                this.closeForm();
+                this.loadAlmacenes();
+            },
+            error: (err: Error) => {
+                this.submitError.set(err.message ?? 'Error al guardar almacén.');
+                this.submitting.set(false);
+            }
+        });
+    }
 }

@@ -10,13 +10,18 @@ export interface LoginResponse {
     activeCompanyId: number;
     availableCompanyIds: number[];
     isNewUser?: boolean;
+    enabledModules?: string[];
 }
+
+export type UserRole = 'CUSTOMER' | 'ADMIN' | 'EMPLOYEE' | string;
 
 export interface User {
     userId: number;
     username: string;
     activeCompanyId: number;
     availableCompanyIds: number[];
+    enabledModules: string[];
+    role?: UserRole;
 }
 
 export interface CheckEmailResponse {

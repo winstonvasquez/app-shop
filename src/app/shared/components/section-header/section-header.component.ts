@@ -1,10 +1,9 @@
 import { Component, input } from '@angular/core';
-import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-section-header',
   standalone: true,
-  imports: [CommonModule],
+  imports: [],
   templateUrl: './section-header.component.html'
 })
 export class SectionHeaderComponent {

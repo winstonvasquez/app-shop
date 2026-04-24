@@ -1,79 +1,79 @@
 import { HttpInterceptorFn, HttpErrorResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { catchError, throwError } from 'rxjs';
-import { NotificationService } from '@shared/services/notification.service';
-import { TranslationService } from '@shared/services/translation.service';
-import { HTTP_STATUS } from '@shared/constants/app.constants';
-import { API_ERRORS } from '@shared/constants/api.constants';
+import { ToastService } from '@shared/services/toast.service';
+import { AuthService } from '@core/auth/auth.service';
 
 export const httpErrorInterceptor: HttpInterceptorFn = (req, next) => {
-  const notificationService = inject(NotificationService);
-  const translationService = inject(TranslationService);
+    const toast = inject(ToastService);
+    const authService = inject(AuthService);
 
-  return next(req).pipe(
-    catchError((error: HttpErrorResponse) => {
-      let messageKey = 'errors.unknown';
-      let errorType: typeof API_ERRORS[keyof typeof API_ERRORS] = API_ERRORS.unknown;
+    return next(req).pipe(
+        catchError((error: HttpErrorResponse) => {
+            // Errores 404 silenciosos en endpoints de parámetros opcionales
+            if (error.status === 404 && req.url.includes('/parametros')) {
+                return throwError(() => error);
+            }
 
-      if (error.error instanceof ErrorEvent) {
-        // Error del lado del cliente
-        messageKey = 'errors.network';
-        errorType = API_ERRORS.network;
-      } else {
-        // Error del lado del servidor
-        switch (error.status) {
-          case HTTP_STATUS.unauthorized:
-            messageKey = 'errors.unauthorized';
-            errorType = API_ERRORS.unauthorized;
-            break;
-          case HTTP_STATUS.forbidden:
-            messageKey = 'errors.forbidden';
-            errorType = API_ERRORS.forbidden;
-            break;
-          case HTTP_STATUS.notFound:
-            messageKey = 'errors.notFound';
-            errorType = API_ERRORS.notFound;
-            break;
-          case HTTP_STATUS.badRequest:
-            messageKey = 'errors.validation';
-            errorType = API_ERRORS.validationError;
-            break;
-          case HTTP_STATUS.internalServerError:
-          case HTTP_STATUS.serviceUnavailable:
-            messageKey = 'errors.server';
-            errorType = API_ERRORS.serverError;
-            break;
-          case 0:
-            messageKey = 'errors.timeout';
-            errorType = API_ERRORS.timeout;
-            break;
-          default:
-            messageKey = 'errors.unknown';
-            errorType = API_ERRORS.unknown;
-        }
-      }
+            // Si el usuario ya no está autenticado, los 401/403 son esperados
+            // (polling en background, requests en vuelo al cerrar sesión) — no mostrar toast
+            if ((error.status === 401 || error.status === 403) && !authService.isAuthenticated()) {
+                return throwError(() => error);
+            }
 
-      // Si el backend devuelve un mensaje traducido, usarlo
-      const backendMessage = error.error?.messageTranslated || error.error?.message;
-      const backendMessageKey = error.error?.messageKey;
+            let title = 'Error';
+            let message: string | undefined;
 
-      if (backendMessageKey) {
-        messageKey = backendMessageKey;
-      }
+            // Mensaje personalizado del backend (ProblemDetail RFC 7807)
+            const backendDetail: string | undefined =
+                error.error?.detail ?? error.error?.message ?? error.error?.messageTranslated;
 
-      // Mostrar notificación de error
-      notificationService.showError(
-        messageKey,
-        backendMessage || translationService.instant(messageKey)
-      );
+            if (error.error instanceof ErrorEvent) {
+                title = 'Error de red';
+                message = 'No se pudo conectar con el servidor';
+            } else {
+                switch (error.status) {
+                    case 400:
+                        title = 'Datos inválidos';
+                        message = backendDetail ?? 'Verifica los campos del formulario';
+                        break;
+                    case 401:
+                        title = 'No autorizado';
+                        message = backendDetail ?? 'Tu sesión expiró, inicia sesión nuevamente';
+                        break;
+                    case 403:
+                        title = 'Sin permiso';
+                        message = backendDetail ?? 'No tienes acceso a este recurso';
+                        break;
+                    case 404:
+                        title = 'No encontrado';
+                        message = backendDetail ?? 'El recurso solicitado no existe';
+                        break;
+                    case 409:
+                        title = 'Conflicto';
+                        message = backendDetail ?? 'Ya existe un registro con esos datos';
+                        break;
+                    case 422:
+                        title = 'Error de validación';
+                        message = backendDetail ?? 'Los datos enviados no son válidos';
+                        break;
+                    case 500:
+                    case 503:
+                        title = 'Error del servidor';
+                        message = backendDetail ?? 'Ocurrió un error interno, intenta más tarde';
+                        break;
+                    case 0:
+                        title = 'Sin conexión';
+                        message = 'Verifica tu conexión a internet';
+                        break;
+                    default:
+                        title = `Error ${error.status}`;
+                        message = backendDetail ?? 'Ocurrió un error inesperado';
+                }
+            }
 
-      // Re-lanzar el error con información adicional
-      return throwError(() => ({
-        ...error,
-        errorType,
-        messageKey,
-        messageTranslated: backendMessage || translationService.instant(messageKey),
-      }));
-    })
-  );
+            toast.error(title, message);
+            return throwError(() => error);
+        })
+    );
 };
