@@ -46,6 +46,7 @@ export class OrdersComponent implements OnInit {
   loadingDetails = signal(false); // Para el modal
   error = signal<string | null>(null);
   showModal = signal(false);
+  searchQuery = signal('');
 
   // Pagination
   currentPage = signal(0);
@@ -113,6 +114,13 @@ export class OrdersComponent implements OnInit {
     this.loadOrders();
   }
 
+  onSearch(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.searchQuery.set(input.value);
+    this.currentPage.set(0);
+    this.loadOrders();
+  }
+
   loadOrders(): void {
     this.loading.set(true);
     this.error.set(null);
@@ -123,7 +131,7 @@ export class OrdersComponent implements OnInit {
       sort: { field: 'fechaPedido', direction: 'desc' }
     };
 
-    this.orderService.getAll(pagination).subscribe({
+    this.orderService.getAll(pagination, this.searchQuery() || undefined).subscribe({
       next: (response) => {
         this.orders.set(response.content);
         // Spring Boot 3.3+ puede anidar metadatos en "page": { totalElements, totalPages }

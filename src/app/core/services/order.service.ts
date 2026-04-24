@@ -19,7 +19,7 @@ export class OrderService {
     private readonly http = inject(HttpClient);
     private readonly baseUrl = `${environment.apiUrls.sales}/api/pedidos`;
 
-    getAll(pagination: PaginationConfig): Observable<PageResponse<OrderResponse>> {
+    getAll(pagination: PaginationConfig, search?: string): Observable<PageResponse<OrderResponse>> {
         let params = new HttpParams()
             .set('page', pagination.page.toString())
             .set('size', pagination.size.toString());
@@ -29,6 +29,10 @@ export class OrderService {
                 'sort',
                 `${pagination.sort.field},${pagination.sort.direction}`
             );
+        }
+
+        if (search) {
+            params = params.set('search', search);
         }
 
         return this.http
