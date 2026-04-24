@@ -13,6 +13,7 @@ import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/p
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { LoadingSpinnerComponent } from '@shared/ui/feedback/loading-spinner/loading-spinner.component';
 import { ButtonComponent } from '@shared/components';
+import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 
 export interface OcItemForm {
     productoNombre: string;
@@ -175,8 +176,8 @@ export class OrdenesCompraComponent implements OnInit {
         ).subscribe({
             next: (res) => {
                 this.ordenes.set(res.content);
-                this.totalElements.set(res.totalElements);
-                this.totalPages.set(res.totalPages);
+                this.totalElements.set(pageTotalElements(res));
+                this.totalPages.set(pageTotalPages(res));
                 this.loading.set(false);
             },
             error: (err: Error) => {

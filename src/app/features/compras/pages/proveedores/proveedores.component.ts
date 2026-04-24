@@ -9,6 +9,7 @@ import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.compo
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { ButtonComponent } from '@shared/components';
+import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 
 @Component({
     selector: 'app-proveedores',
@@ -135,8 +136,8 @@ export class ProveedoresComponent implements OnInit {
         ).subscribe({
             next: (res) => {
                 this.proveedores.set(res.content);
-                this.totalElements.set(res.totalElements);
-                this.totalPages.set(res.totalPages);
+                this.totalElements.set(pageTotalElements(res));
+                this.totalPages.set(pageTotalPages(res));
                 this.loading.set(false);
             },
             error: (err: Error) => {

@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { DatePipe, NgClass } from '@angular/common';
 import { AuditLogService, AuditLog } from '../../services/audit-log.service';
 import { ButtonComponent } from '@shared/components';
+import { pageTotalElements } from '@core/models/pagination.model';
 
 @Component({
     selector: 'app-auditoria',
@@ -44,7 +45,7 @@ export class AuditoriaComponent implements OnInit {
         }).subscribe({
             next: res => {
                 this.logs.set(res.content);
-                this.totalElements.set(res.totalElements);
+                this.totalElements.set(pageTotalElements(res));
                 this.cargando.set(false);
             },
             error: () => this.cargando.set(false),

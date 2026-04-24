@@ -4,7 +4,7 @@ import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
 import { FormBuilder, ReactiveFormsModule, Validators, FormGroup, FormControl } from '@angular/forms';
 import { ProductService, ProductRequest, ProductFilter } from '@core/services/product.service';
 import { ProductResponse } from '@core/models/product.model';
-import { PaginationConfig, PageResponse } from '@core/models/pagination.model';
+import { PaginationConfig, PageResponse, pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 import { DataTableComponent, TableColumn, TableAction, PaginationEvent, SortEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
@@ -179,8 +179,8 @@ export class ProductsComponent implements OnInit {
     this.productService.getAllProductsFiltered(pagination, filter).subscribe({
       next: (response: PageResponse<ProductResponse>) => {
         this.products.set(response.content);
-        this.totalElements.set(response.totalElements);
-        this.totalPages.set(response.totalPages);
+        this.totalElements.set(pageTotalElements(response));
+        this.totalPages.set(pageTotalPages(response));
         this.loading.set(false);
       },
       error: (err: Error) => {

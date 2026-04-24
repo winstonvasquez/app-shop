@@ -10,6 +10,7 @@ import { DateInputComponent } from '@shared/ui/forms/date-input/date-input.compo
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
+import { pageTotalElements } from '@core/models/pagination.model';
 
 const MOTIVOS_TRASLADO: { codigo: string; descripcion: string }[] = [
     { codigo: '01', descripcion: '01 — Venta' },
@@ -168,7 +169,7 @@ export class GuiasPageComponent implements OnInit {
             next: (res) => {
                 this.guias.set(res.content);
                 this.guiasFiltradas.set(res.content);
-                this.totalElements.set(res.totalElements);
+                this.totalElements.set(pageTotalElements(res));
                 this.loading.set(false);
             },
             error: () => {

@@ -9,6 +9,7 @@ import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
+import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 
 @Component({
     selector: 'app-transportistas-page',
@@ -119,8 +120,8 @@ export class TransportistasPageComponent implements OnInit {
         this.service.getTransportistas(this.companyId, this.currentPage(), this.pageSize()).subscribe({
             next: (res) => {
                 this.items.set(res.content);
-                this.totalElements.set(res.totalElements);
-                this.totalPages.set(res.totalPages);
+                this.totalElements.set(pageTotalElements(res));
+                this.totalPages.set(pageTotalPages(res));
                 this.loading.set(false);
             },
             error: (err: Error) => {

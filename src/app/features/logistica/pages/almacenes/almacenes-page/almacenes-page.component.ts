@@ -9,6 +9,7 @@ import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
 import { ButtonComponent } from '@shared/components';
+import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 
 @Component({
     selector: 'app-almacenes-page',
@@ -97,8 +98,8 @@ export class AlmacenesPageComponent implements OnInit {
         }).subscribe({
             next: (res) => {
                 this.almacenes.set(res.content);
-                this.totalElements.set(res.totalElements);
-                this.totalPages.set(res.totalPages);
+                this.totalElements.set(pageTotalElements(res));
+                this.totalPages.set(pageTotalPages(res));
                 this.loading.set(false);
             },
             error: (err: Error) => {

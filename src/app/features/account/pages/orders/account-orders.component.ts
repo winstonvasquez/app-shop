@@ -6,7 +6,7 @@ import { ButtonComponent } from '@shared/components';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { environment } from '@env/environment';
 import { OrderResponse } from '@core/models/order.model';
-import { PageResponse } from '@core/models/pagination.model';
+import { PageResponse, pageTotalPages } from '@core/models/pagination.model';
 
 @Component({
   selector: 'app-account-orders',
@@ -52,7 +52,7 @@ export class AccountOrdersComponent implements OnInit {
     this.http.get<PageResponse<OrderResponse>>(this.baseUrl, { params }).subscribe({
       next: (response) => {
         this.orders.set(response.content ?? []);
-        this.totalPages.set(response.totalPages);
+        this.totalPages.set(pageTotalPages(response));
         this.currentPage.set(response.number);
         this.loading.set(false);
       },

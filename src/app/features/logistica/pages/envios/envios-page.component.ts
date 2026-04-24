@@ -13,6 +13,7 @@ import { DateInputComponent } from '@shared/ui/forms/date-input/date-input.compo
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { LoadingSpinnerComponent } from '@shared/ui/feedback/loading-spinner/loading-spinner.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
+import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 import { PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
 
 const STATUS_MAP: Record<EnvioStatus, string> = {
@@ -150,8 +151,8 @@ export class EnviosPageComponent implements OnInit {
         ).subscribe({
             next: (res) => {
                 this.envios.set(res.content);
-                this.totalElements.set(res.totalElements);
-                this.totalPages.set(res.totalPages);
+                this.totalElements.set(pageTotalElements(res));
+                this.totalPages.set(pageTotalPages(res));
                 this.loading.set(false);
             },
             error: (err: Error) => {

@@ -10,6 +10,7 @@ import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
+import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 
 const STATUS_LABELS: Record<DevolucionStatus, string> = {
     REQUESTED: 'Solicitada',
@@ -130,8 +131,8 @@ export class DevolucionesPageComponent implements OnInit {
         ).subscribe({
             next: (res) => {
                 this.devoluciones.set(res.content);
-                this.totalElements.set(res.totalElements);
-                this.totalPages.set(res.totalPages);
+                this.totalElements.set(pageTotalElements(res));
+                this.totalPages.set(pageTotalPages(res));
                 this.loading.set(false);
             },
             error: (err: Error) => {
