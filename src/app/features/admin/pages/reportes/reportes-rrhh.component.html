@@ -34,7 +34,7 @@
     }
 
     <!-- KPIs -->
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:var(--space-md);margin-bottom:var(--space-lg)">
+    <div class="grid gap-4 mb-6 [grid-template-columns:repeat(auto-fit,minmax(180px,1fr))]">
         <div class="card">
             <div class="card-body">
                 <p class="text-[0.75rem] text-[var(--color-text-muted)]">EMPLEADOS ACTIVOS</p>
@@ -65,10 +65,10 @@
         <div class="filters-bar no-print" [formGroup]="filterForm">
             <div class="search-box">
                 <span class="search-box-icon">&#128269;</span>
-                <input type="text" class="form-input" placeholder="Buscar por nombre, código o área..."
-                       formControlName="busqueda" style="padding-left:2rem">
+                <input type="text" class="form-input pl-8" placeholder="Buscar por nombre, código o área..."
+                       formControlName="busqueda">
             </div>
-            <select class="form-input" formControlName="filtroArea" style="width:auto">
+            <select class="form-input w-auto" formControlName="filtroArea">
                 <option value="">Todas las áreas</option>
                 @for (area of areasUnicas(); track area) {
                     <option [value]="area">{{ area }}</option>

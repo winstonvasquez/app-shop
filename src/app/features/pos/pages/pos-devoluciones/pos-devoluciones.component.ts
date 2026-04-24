@@ -1,6 +1,6 @@
 import { Component, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
 import { DecimalPipe, DatePipe } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { PosVentaService } from '../../services/pos-venta.service';
 import { VentaPosResponse, DetalleVentaPosResponse, DevolucionPosResponse } from '../../models/venta-pos.model';
 
@@ -25,7 +25,7 @@ interface LineaDevolucion {
 @Component({
     selector: 'app-pos-devoluciones',
     standalone: true,
-    imports: [DecimalPipe, DatePipe, FormsModule],
+    imports: [DecimalPipe, DatePipe, ReactiveFormsModule],
     changeDetection: ChangeDetectionStrategy.OnPush,
     template: `
     <!-- Header -->
@@ -35,21 +35,21 @@ interface LineaDevolucion {
     </div>
 
     <!-- Buscador -->
-    <div class="flex gap-3 items-end mb-4">
+    <form [formGroup]="formBusqueda" class="flex gap-3 items-end mb-4">
       <div class="flex-1">
         <label class="text-xs font-semibold text-subtle uppercase tracking-wide mb-1 block">N° Ticket / ID de Venta</label>
-        <input class="input-field !h-10" [(ngModel)]="busqueda"
+        <input class="input-field !h-10" formControlName="busqueda"
                placeholder="Ej: TICK-001000 o ID numerico"
                (keydown.enter)="buscarVenta()">
       </div>
       <div class="w-36">
         <label class="text-xs font-semibold text-subtle uppercase tracking-wide mb-1 block">Buscar por</label>
-        <select class="input-field !h-10" [(ngModel)]="tipoBusqueda">
+        <select class="input-field !h-10" formControlName="tipoBusqueda">
           <option value="ticket">N° Ticket</option>
           <option value="id">ID de Venta</option>
         </select>
       </div>
-      <button class="btn-primary !h-10 !px-5 shrink-0" (click)="buscarVenta()" [disabled]="buscando() || !busqueda.trim()">
+      <button type="button" class="btn-primary !h-10 !px-5 shrink-0" (click)="buscarVenta()" [disabled]="buscando() || !puedeBuscar()">
         @if (buscando()) {
           <svg class="animate-spin" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
             <path d="M10 3a7 7 0 017 7" stroke-linecap="round" />
@@ -58,7 +58,7 @@ interface LineaDevolucion {
           Buscar
         }
       </button>
-    </div>
+    </form>
 
     <!-- Error -->
     @if (errorBusqueda()) {
@@ -168,10 +168,10 @@ interface LineaDevolucion {
         </div>
 
         <!-- Formulario de devolucion -->
-        <div class="p-4 border-t border-[var(--color-border)] flex flex-col gap-4">
+        <form [formGroup]="formDevolucion" class="p-4 border-t border-[var(--color-border)] flex flex-col gap-4">
           <div>
             <label class="text-xs font-semibold text-subtle uppercase tracking-wide mb-1 block">Motivo *</label>
-            <select class="input-field !h-10" [(ngModel)]="motivo">
+            <select class="input-field !h-10" formControlName="motivo">
               <option value="">Seleccionar motivo...</option>
               @for (m of motivos; track m.valor) {
                 <option [value]="m.valor">{{ m.etiqueta }}</option>
@@ -180,7 +180,7 @@ interface LineaDevolucion {
           </div>
           <div>
             <label class="text-xs font-semibold text-subtle uppercase tracking-wide mb-1 block">Observaciones</label>
-            <textarea class="input-field" [(ngModel)]="observaciones" rows="2"
+            <textarea class="input-field" formControlName="observaciones" rows="2"
                       placeholder="Descripcion adicional..."></textarea>
           </div>
 
@@ -198,12 +198,12 @@ interface LineaDevolucion {
           }
 
           <div class="flex justify-end gap-3">
-            <button class="btn-secondary !h-9 !px-4" (click)="limpiar()">Cancelar</button>
-            <button class="!h-9 !px-5 rounded-xl text-sm font-semibold text-white transition-colors"
-                [class]="!motivo || !haySeleccion() || procesando() || procesado()
+            <button type="button" class="btn-secondary !h-9 !px-4" (click)="limpiar()">Cancelar</button>
+            <button type="button" class="!h-9 !px-5 rounded-xl text-sm font-semibold text-white transition-colors"
+                [class]="!motivoSeleccionado() || !haySeleccion() || procesando() || procesado()
                   ? 'bg-[var(--color-border)] cursor-not-allowed'
                   : 'bg-[var(--color-error)] hover:brightness-110 active:brightness-90'"
-                [disabled]="!motivo || !haySeleccion() || procesando() || procesado()"
+                [disabled]="!motivoSeleccionado() || !haySeleccion() || procesando() || procesado()"
                 (click)="confirmarDevolucion()">
               @if (procesando()) {
                 <svg class="animate-spin inline mr-1" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
@@ -215,7 +215,7 @@ interface LineaDevolucion {
               }
             </button>
           </div>
-        </div>
+        </form>
         } @else {
           <div class="p-6 text-center border-t border-[var(--color-border)]">
             <p class="text-muted text-sm">Esta venta ya fue anulada previamente.</p>
@@ -261,11 +261,17 @@ interface LineaDevolucion {
 })
 export class PosDevolucionesComponent {
     private readonly ventaService = inject(PosVentaService);
+    private readonly fb = inject(FormBuilder);
 
-    busqueda = '';
-    tipoBusqueda: 'ticket' | 'id' = 'ticket';
-    motivo = '';
-    observaciones = '';
+    readonly formBusqueda: FormGroup = this.fb.group({
+        busqueda: [''],
+        tipoBusqueda: ['ticket' as 'ticket' | 'id'],
+    });
+
+    readonly formDevolucion: FormGroup = this.fb.group({
+        motivo: [''],
+        observaciones: [''],
+    });
 
     readonly motivos = MOTIVOS;
     buscando = signal(false);
@@ -287,17 +293,28 @@ export class PosDevolucionesComponent {
         this.lineasDevolucion().some(l => l.seleccionada && l.cantidadDevuelta > 0)
     );
 
+    /** Helpers reactivos para deshabilitar botones desde el template (OnPush). */
+    puedeBuscar(): boolean {
+        return !!String(this.formBusqueda.value.busqueda ?? '').trim();
+    }
+
+    motivoSeleccionado(): boolean {
+        return !!this.formDevolucion.value.motivo;
+    }
+
     buscarVenta(): void {
-        if (!this.busqueda.trim()) return;
+        const busqueda = String(this.formBusqueda.value.busqueda ?? '');
+        const tipoBusqueda: 'ticket' | 'id' = this.formBusqueda.value.tipoBusqueda ?? 'ticket';
+        if (!busqueda.trim()) return;
         this.buscando.set(true);
         this.errorBusqueda.set(null);
         this.ventaSeleccionada.set(null);
         this.procesado.set(false);
         this.lineasDevolucion.set([]);
 
-        const obs = this.tipoBusqueda === 'id'
+        const obs = tipoBusqueda === 'id'
             ? (() => {
-                  const id = parseInt(this.busqueda, 10);
+                  const id = parseInt(busqueda, 10);
                   if (isNaN(id)) {
                       this.errorBusqueda.set('Ingrese un ID numerico valido.');
                       this.buscando.set(false);
@@ -305,10 +322,12 @@ export class PosDevolucionesComponent {
                   }
                   return this.ventaService.getRecibo(id);
               })()
-            : this.ventaService.buscarPorTicket(this.busqueda.trim());
+            : this.ventaService.buscarPorTicket(busqueda.trim());
 
         if (!obs) return;
 
+        const tipoOriginal = tipoBusqueda;
+        const busquedaOriginal = busqueda;
         obs.subscribe({
             next: (v) => {
                 this.ventaSeleccionada.set(v);
@@ -317,9 +336,9 @@ export class PosDevolucionesComponent {
             },
             error: () => {
                 this.errorBusqueda.set(
-                    this.tipoBusqueda === 'id'
-                        ? 'No se encontro ninguna venta con ID ' + this.busqueda
-                        : 'No se encontro ninguna venta con ticket "' + this.busqueda.trim() + '"'
+                    tipoOriginal === 'id'
+                        ? 'No se encontro ninguna venta con ID ' + busquedaOriginal
+                        : 'No se encontro ninguna venta con ticket "' + busquedaOriginal.trim() + '"'
                 );
                 this.buscando.set(false);
             }
@@ -374,7 +393,9 @@ export class PosDevolucionesComponent {
 
     confirmarDevolucion(): void {
         const venta = this.ventaSeleccionada();
-        if (!venta || !this.motivo) return;
+        const motivo = String(this.formDevolucion.value.motivo ?? '');
+        const observaciones = String(this.formDevolucion.value.observaciones ?? '');
+        if (!venta || !motivo) return;
 
         const lineas = this.lineasDevolucion()
             .filter(l => l.seleccionada && l.cantidadDevuelta > 0)
@@ -387,8 +408,8 @@ export class PosDevolucionesComponent {
         this.procesando.set(true);
 
         this.ventaService.procesarDevolucion(venta.id, {
-            motivo: this.motivo,
-            observaciones: this.observaciones || undefined,
+            motivo,
+            observaciones: observaciones || undefined,
             lineas,
         }).subscribe({
             next: (resp) => {
@@ -414,9 +435,8 @@ export class PosDevolucionesComponent {
     }
 
     limpiar(): void {
-        this.busqueda = '';
-        this.motivo = '';
-        this.observaciones = '';
+        this.formBusqueda.reset({ busqueda: '', tipoBusqueda: 'ticket' });
+        this.formDevolucion.reset({ motivo: '', observaciones: '' });
         this.ventaSeleccionada.set(null);
         this.errorBusqueda.set(null);
         this.procesado.set(false);
@@ -424,6 +444,7 @@ export class PosDevolucionesComponent {
     }
 
     private motivoEtiqueta(): string {
-        return MOTIVOS.find(m => m.valor === this.motivo)?.etiqueta ?? this.motivo;
+        const motivo = String(this.formDevolucion.value.motivo ?? '');
+        return MOTIVOS.find(m => m.valor === motivo)?.etiqueta ?? motivo;
     }
 }
