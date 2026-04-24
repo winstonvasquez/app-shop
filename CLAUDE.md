@@ -78,7 +78,7 @@ node node_modules/typescript/bin/tsc --noEmit -p tsconfig.app.json
 ### Build / compilación
 - `ng build` en bash falla con "Unsupported package manager: bun" (hook pre-commit GGA, no código roto)
 - Imports `[]` sobrantes → **NG8113** → cancela MFE builds — eliminar siempre los que no se usen en template
-- `PageResponse<T>`: meta bajo `res.page.totalElements` / `res.page.totalPages` (NO en `res.totalElements`)
+- `PageResponse<T>`: meta bajo `res.page.totalElements` / `res.page.totalPages` (NO en `res.totalElements`). **Usar siempre helpers** `pageTotalElements(res)` y `pageTotalPages(res)` desde `@core/models/pagination.model` — soportan ambos shapes (legacy flat + Boot 3 nested) con fallback a 0
 
 ### Temas y estilos
 - `styles.scss` es el único entry point — partials no incluidos con `@use` son invisibles en runtime
