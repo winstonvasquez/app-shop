@@ -3,6 +3,7 @@ import { AuthService } from '@core/auth/auth.service';
 import { SocialAuthService, SocialUser, GoogleSigninButtonModule } from '@abacritt/angularx-social-login';
 import { GoogleLoginProvider, FacebookLoginProvider } from '@abacritt/angularx-social-login';
 import { RegisterFormComponent, RegisterData } from './register-form.component';
+import { DsButtonComponent } from '@shared/ui/ds';
 import { environment } from '../../../../environments/environment';
 
 type AuthStep = 'select' | 'email' | 'otp' | 'register';
@@ -10,7 +11,7 @@ type AuthStep = 'select' | 'email' | 'otp' | 'register';
 @Component({
   selector: 'app-auth-modal',
   standalone: true,
-  imports: [GoogleSigninButtonModule, RegisterFormComponent],
+  imports: [GoogleSigninButtonModule, RegisterFormComponent, DsButtonComponent],
   templateUrl: './auth-modal.component.html',
   styleUrl: './auth-modal.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

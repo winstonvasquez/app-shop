@@ -8,25 +8,11 @@
         <!-- Back / Close buttons -->
         <div class="flex items-center justify-between px-6 pt-5">
             @if (step() !== 'select') {
-            <button (click)="goBack()"
-                class="flex items-center gap-1 text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="15 18 9 12 15 6"></polyline>
-                </svg>
-                Atrás
-            </button>
+                <ds-button variant="ghost" size="sm" icon="chevron-left" (click)="goBack()">Atrás</ds-button>
             } @else {
-            <span></span>
+                <span></span>
             }
-            <button (click)="closeModal()"
-                class="text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors p-1 ml-auto">
-                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
-            </button>
+            <ds-button variant="ghost" size="sm" icon="x" (click)="closeModal()"/>
         </div>
 
         <div class="px-8 pb-8 pt-2">
@@ -90,10 +76,9 @@
                         placeholder="Ingresa tu email"
                         class="w-full border border-[var(--color-border)] bg-[var(--color-surface-raised)] text-[var(--color-text-primary)] rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] mb-3 placeholder:text-[var(--color-text-muted)]"
                         (keydown.enter)="isValidEmailOrPhone(email()) ? goToEmail() : null" />
-                    <button (click)="goToEmail()" [disabled]="!isValidEmailOrPhone(email())"
-                        class="w-full bg-accent hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-full py-3 transition-all text-sm">
-                        Continuar
-                    </button>
+                    <ds-button variant="accent" size="lg" [full]="true" iconRight="arrow-right"
+                               [disabled]="!isValidEmailOrPhone(email())"
+                               (click)="goToEmail()">Continuar</ds-button>
                     <div class="mt-6 text-center text-xs text-[var(--color-text-muted)]">
                         <a href="#" class="hover:underline text-[var(--color-primary)]">¿Problemas al iniciar
                             sesión?</a>
@@ -168,16 +153,10 @@
                         (keydown.enter)="onEmailSubmit()" />
                 </div>
 
-                <button (click)="onEmailSubmit()" [disabled]="loading()"
-                    class="w-full bg-accent hover:brightness-110 disabled:opacity-60 text-white font-semibold rounded-full py-3 transition-all text-sm flex items-center justify-center gap-2">
-                    @if (loading()) {
-                    <svg class="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-                    </svg>
-                    }
-                    Continuar
-                </button>
+                <ds-button variant="accent" size="lg" [full]="true"
+                           [iconRight]="loading() ? 'loader-2' : 'arrow-right'"
+                           [disabled]="loading()"
+                           (click)="onEmailSubmit()">Continuar</ds-button>
             </div>
             }
 
@@ -194,19 +173,13 @@
                     class="w-full border-2 border-[var(--color-border)] bg-[var(--color-surface-raised)] text-[var(--color-text-primary)] rounded-xl px-4 py-4 text-center text-2xl font-bold tracking-[0.5em] focus:outline-none focus:border-[var(--color-accent)] placeholder:text-[var(--color-text-muted)]"
                     (keydown.enter)="onOtpSubmit()" />
 
-                <button (click)="onOtpSubmit()" [disabled]="loading()"
-                    class="w-full bg-accent hover:brightness-110 disabled:opacity-60 text-white font-semibold rounded-full py-3 transition-all text-sm flex items-center justify-center gap-2">
-                    @if (loading()) {
-                    <svg class="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-                    </svg>
-                    }
-                    Verificar código
-                </button>
+                <ds-button variant="accent" size="lg" [full]="true"
+                           [iconRight]="loading() ? 'loader-2' : 'check'"
+                           [disabled]="loading()"
+                           (click)="onOtpSubmit()">Verificar código</ds-button>
 
-                <button (click)="resendOtp()" [disabled]="loading()"
-                    class="text-[var(--color-accent)] hover:underline text-xs text-center disabled:opacity-50">
+                <button type="button" (click)="resendOtp()" [disabled]="loading()"
+                    class="text-[var(--color-accent)] hover:underline text-xs text-center disabled:opacity-50 cursor-pointer">
                     ¿No lo recibiste? Reenviar código
                 </button>
             </div>

@@ -21,6 +21,8 @@ import {
   Award, Star, Sparkles, Flame, Zap, Bolt, Shield, ShieldCheck, Settings,
   // Tiempo
   Timer,
+  // Loading
+  Loader2,
   // Misc DS
   MessageCircle, MessageCircleQuestion
 } from 'lucide-angular';
@@ -136,6 +138,8 @@ export const appConfig: ApplicationConfig = {
         Award, Star, Sparkles, Flame, Zap, Bolt, Shield, ShieldCheck, Settings,
         // Tiempo
         Timer,
+        // Loading
+        Loader2,
         // Misc
         MessageCircle, MessageCircleQuestion
       }),
