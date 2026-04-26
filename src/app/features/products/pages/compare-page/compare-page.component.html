@@ -1,75 +1,130 @@
-<app-breadcrumb [items]="breadcrumbItems" />
+<app-breadcrumb [items]="breadcrumbItems"/>
 
-<div class="page-container">
-  <div class="page-header">
-    <div>
-      <h1 class="page-title">Comparar productos</h1>
-      <p class="page-subtitle">{{ compareService.count() }} de 4 productos seleccionados</p>
-    </div>
-    <button class="btn btn-secondary" (click)="clearAll()">Limpiar comparación</button>
-  </div>
+<div class="max-w-[1280px] mx-auto px-6 py-5 pb-10" style="background: var(--c-bg);">
 
-  @if (compareService.count() === 0) {
-    <div class="card" style="text-align:center; padding: 3rem;">
-      <p class="text-muted">No hay productos para comparar.</p>
-      <a routerLink="/products" class="btn btn-primary" style="margin-top:1rem;">Ver productos</a>
+    <!-- Header: título + acciones -->
+    <div class="flex flex-col md:flex-row md:justify-between md:items-end gap-3 mb-5">
+        <div>
+            <h1 class="text-3xl font-extrabold tracking-tight m-0"
+                style="font-family: var(--f-display); color: var(--c-text);">
+                Comparar productos
+            </h1>
+            <span class="text-sm" style="color: var(--c-muted);">
+                {{ compareService.count() }} de {{ MAX_SLOTS }} productos seleccionados
+            </span>
+        </div>
+        @if (compareService.count() > 0) {
+            <ds-button variant="ghost" size="md" icon="trash-2" (click)="clearAll()">
+                Limpiar comparación
+            </ds-button>
+        }
     </div>
-  } @else {
-    <div style="overflow-x: auto;">
-      <table class="table" style="min-width: 600px;">
-        <!-- Imágenes y nombres -->
-        <thead>
-          <tr class="table-header">
-            <th class="table-header-cell" style="width:180px;">Característica</th>
-            @for (product of compareService.items(); track product.id) {
-              <th class="table-header-cell" style="text-align:center; min-width:160px;">
-                <div style="display:flex; flex-direction:column; align-items:center; gap:0.5rem;">
-                  <img [src]="product.image" [alt]="product.name"
-                       style="width:80px; height:80px; object-fit:cover; border-radius:8px;" />
-                  <span style="font-size:0.85rem; font-weight:600;">{{ product.name }}</span>
-                  <button class="btn btn-secondary" style="font-size:0.75rem; padding:0.25rem 0.5rem;"
-                          (click)="removeProduct(product.id)">Quitar</button>
+
+    @if (compareService.count() === 0) {
+        <!-- Empty state -->
+        <div class="rounded-[var(--r-lg)] border p-12 text-center"
+             style="background: var(--c-surface); border-color: var(--c-border);">
+            <p class="text-base mb-4" style="color: var(--c-muted);">
+                No hay productos para comparar.
+            </p>
+            <ds-button variant="primary" size="md" icon="arrow-left" (click)="goToProducts()">
+                Ver productos
+            </ds-button>
+        </div>
+    } @else {
+        <!-- Grid de comparación -->
+        <div class="overflow-x-auto rounded-[var(--r-lg)] border"
+             style="background: var(--c-surface); border-color: var(--c-border);">
+
+            <div class="grid"
+                 [style.grid-template-columns]="gridTemplateColumns()"
+                 [style.min-width.px]="180 + (compareService.count() + emptySlots()) * 200">
+
+                <!-- Fila Header: label vacío + cards de producto + slots vacíos -->
+                <div class="p-4" style="background: var(--c-surface2);"></div>
+
+                @for (product of compareService.items(); track product.id; let first = $first) {
+                    <div class="p-4 relative" style="border-left: 1px solid var(--c-border);">
+                        @if (first) {
+                            <div class="absolute top-2 right-2">
+                                <ds-badge tone="success" size="sm">Mejor opción</ds-badge>
+                            </div>
+                        }
+                        <div class="flex flex-col items-center gap-2">
+                            <img [src]="product.image" [alt]="product.name"
+                                 class="w-20 h-20 object-cover rounded-[var(--r-md)]"/>
+                            <h3 class="text-sm font-semibold text-center min-h-[38px] m-0"
+                                style="color: var(--c-text);">
+                                {{ product.name }}
+                            </h3>
+                            <ds-stars [rating]="4.7" [size]="11" [showValue]="false"/>
+                            <ds-price [now]="product.price" size="md"/>
+                            <ds-button variant="primary" size="sm" icon="shopping-cart" [full]="true"
+                                       (click)="addToCart(product)">
+                                Agregar
+                            </ds-button>
+                            <button type="button"
+                                    class="text-xs underline mt-1 transition-colors"
+                                    style="color: var(--c-muted);"
+                                    (click)="removeProduct(product.id)">
+                                Quitar
+                            </button>
+                        </div>
+                    </div>
+                }
+
+                @for (_ of emptySlotsArr(); track $index) {
+                    <div class="p-4 flex flex-col items-center justify-center text-center"
+                         style="border-left: 1px dashed var(--c-border); background: var(--c-surface2); color: var(--c-muted);">
+                        <div class="w-14 h-14 rounded-full inline-flex items-center justify-center mb-2"
+                             style="background: var(--c-surface); border: 2px dashed var(--c-border);">
+                            <span class="text-2xl leading-none" style="color: var(--c-muted);">+</span>
+                        </div>
+                        <span class="text-sm font-semibold">Agregar producto</span>
+                        <span class="text-xs mt-1">Hasta {{ MAX_SLOTS }} a la vez</span>
+                    </div>
+                }
+
+                <!-- Filas dinámicas de atributos (zebra stripes) -->
+                @for (key of attributeKeys(); track key; let idx = $index) {
+                    <div class="px-4 py-3 text-xs font-bold uppercase tracking-wide"
+                         [style.background]="idx % 2 ? 'var(--c-surface2)' : 'var(--c-surface)'"
+                         [style.border-top]="'1px solid var(--c-border)'"
+                         style="color: var(--c-muted);">
+                        {{ key }}
+                    </div>
+                    @for (product of compareService.items(); track product.id) {
+                        <div class="px-4 py-3 text-sm"
+                             [style.background]="idx % 2 ? 'var(--c-surface2)' : 'var(--c-surface)'"
+                             style="color: var(--c-text); border-left: 1px solid var(--c-border); border-top: 1px solid var(--c-border);">
+                            {{ product.attributes?.[key] ?? '—' }}
+                        </div>
+                    }
+                    @for (_ of emptySlotsArr(); track $index) {
+                        <div [style.background]="idx % 2 ? 'var(--c-surface2)' : 'var(--c-surface)'"
+                             style="border-left: 1px dashed var(--c-border); border-top: 1px solid var(--c-border);"></div>
+                    }
+                }
+
+                <!-- Fila Precio (siempre presente) -->
+                <div class="px-4 py-3 text-xs font-bold uppercase tracking-wide"
+                     [style.background]="attributeKeys().length % 2 ? 'var(--c-surface2)' : 'var(--c-surface)'"
+                     style="color: var(--c-muted); border-top: 1px solid var(--c-border);">
+                    Precio
                 </div>
-              </th>
-            }
-          </tr>
-        </thead>
-        <tbody>
-          <!-- Precio -->
-          <tr class="table-row">
-            <td class="table-cell" style="font-weight:600;">Precio</td>
-            @for (product of compareService.items(); track product.id) {
-              <td class="table-cell" style="text-align:center; color: var(--color-primary); font-weight:700; font-size:1.1rem;">
-                S/ {{ product.price | number:'1.2-2' }}
-              </td>
-            }
-          </tr>
+                @for (product of compareService.items(); track product.id) {
+                    <div class="px-4 py-3 text-base font-bold text-center"
+                         [style.background]="attributeKeys().length % 2 ? 'var(--c-surface2)' : 'var(--c-surface)'"
+                         style="color: var(--c-brand); border-left: 1px solid var(--c-border); border-top: 1px solid var(--c-border);">
+                        S/ {{ product.price | number:'1.2-2' }}
+                    </div>
+                }
+                @for (_ of emptySlotsArr(); track $index) {
+                    <div [style.background]="attributeKeys().length % 2 ? 'var(--c-surface2)' : 'var(--c-surface)'"
+                         style="border-left: 1px dashed var(--c-border); border-top: 1px solid var(--c-border);"></div>
+                }
 
-          <!-- Atributos dinámicos -->
-          @for (key of allAttributeKeys; track key) {
-            <tr class="table-row">
-              <td class="table-cell" style="font-weight:600; text-transform:capitalize;">{{ key }}</td>
-              @for (product of compareService.items(); track product.id) {
-                <td class="table-cell" style="text-align:center;">
-                  {{ product.attributes?.[key] ?? '—' }}
-                </td>
-              }
-            </tr>
-          }
-
-          <!-- Acciones -->
-          <tr class="table-row">
-            <td class="table-cell"></td>
-            @for (product of compareService.items(); track product.id) {
-              <td class="table-cell" style="text-align:center;">
-                <button class="btn btn-primary" (click)="addToCart(product)">
-                  Agregar al carrito
-                </button>
-              </td>
-            }
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  }
+            </div>
+        </div>
+    }
 </div>

@@ -80,11 +80,26 @@ node node_modules/typescript/bin/tsc --noEmit -p tsconfig.app.json
 - Imports `[]` sobrantes → **NG8113** → cancela MFE builds — eliminar siempre los que no se usen en template
 - `PageResponse<T>`: meta bajo `res.page.totalElements` / `res.page.totalPages` (NO en `res.totalElements`). **Usar siempre helpers** `pageTotalElements(res)` y `pageTotalPages(res)` desde `@core/models/pagination.model` — soportan ambos shapes (legacy flat + Boot 3 nested) con fallback a 0
 
-### Temas y estilos
+### Sistema de Diseño "Confianza" (tema único)
+Bundle de referencia: `../sistemadisenio/` y `../.agent/design-system-v2/` (handoff Claude Design 2026-04-24).
+
 - `styles.scss` es el único entry point — partials no incluidos con `@use` son invisibles en runtime
-- Nuevo tema requiere 3 archivos: `_professional-themes.scss` + `theme.ts` + `store-theme.component.ts`
-- `ThemeService.applyThemeToDocument`: `'dark'` remueve `data-theme`; otros temas lo setean en `<html>`
-- **NO usar azul** (#3b82f6) en admin/ERP
+- **Tema único**: 3 variantes vía `data-theme` en `<html>`:
+  - `confianza` (default storefront — Ink Blue #0B3D91 + Signal Orange #F08C00 + parchment #F7F6F3)
+  - `confianza-dark` (storefront opcional — además agrega clase `.dark` para Tailwind variants)
+  - `confianza-erp` (admin/POS — sidebar #0E1B2C + densidad alta)
+- Tokens estructurales (spacing 4px, radii rounded 4–20px, sombras soft, type Inter+Source Serif 4) viven en `_design-system-tokens.scss` — NO duplicar en componentes
+- Paleta y semánticas viven en `themes/_default.scss` — los 3 `data-theme` están ahí
+- Tailwind v4 `@theme` en `_tailwind.scss` expone primitives (font-sans, spacing, radii, color-*)
+- Variables consumibles desde componentes: `var(--color-primary)` / `var(--c-brand)` (alias corto)
+- `ThemeService.applyThemeToDocument`: setea `data-theme` siempre; añade `.dark` solo en `confianza-dark`
+
+#### Componentes ds-* (storefront atoms — `@shared/ui/ds`)
+13 átomos del bundle: `ds-button`, `ds-product-card`, `ds-shop-header`, `ds-shop-footer`, `ds-top-bar`, `ds-badge`, `ds-price`, `ds-stars`, `ds-thumb`, `ds-category-nav`, `ds-category-tile`, `ds-account-shell`, `ds-wordmark`. Showcase en `/design-system`.
+
+- **Storefront/auth/account/checkout** → siempre `ds-*`
+- **ERP/admin/POS/módulos backend** → `<app-button>` legacy es válido (consume `--color-primary` y respeta `confianza-erp`); arquitectura "shared tokens, distinct themes" del propio bundle
+- **NO usar Tailwind blue genérico** (`bg-blue-500`, `#3b82f6`) — usar siempre `var(--color-primary)` o `bg-primary`
 
 ### POS module
 - `ViewEncapsulation.None` — sub-componentes NO usar clases admin; usar Tailwind con tokens POS
