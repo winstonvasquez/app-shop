@@ -1,7 +1,7 @@
 // Design System v2 — Confianza
-// Port 1:1 de .agent/design-system-v2/project/*.jsx
+// Port 1:1 de sistemadisenio/*.jsx (handoff Claude Design)
 // Todos los componentes son standalone + OnPush y consumen tokens --c-* / --r-* / --s-*
-// que se definen en _confianza-theme.scss.
+// definidos en src/styles/themes/_default.scss + _design-system-tokens.scss.
 
 export { DsBadgeComponent } from './ds-badge/ds-badge.component';
 export type { DsBadgeTone, DsBadgeSize } from './ds-badge/ds-badge.component';
@@ -15,6 +15,9 @@ export { DsThumbComponent } from './ds-thumb/ds-thumb.component';
 
 export { DsButtonComponent } from './ds-button/ds-button.component';
 export type { DsButtonVariant, DsButtonSize } from './ds-button/ds-button.component';
+
+export { DsInputComponent } from './ds-input/ds-input.component';
+export type { DsInputSize, DsInputType } from './ds-input/ds-input.component';
 
 export { DsWordmarkComponent } from './ds-wordmark/ds-wordmark.component';
 

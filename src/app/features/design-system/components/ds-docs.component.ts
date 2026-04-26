@@ -2,6 +2,7 @@ import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { LucideAngularModule } from 'lucide-angular';
 import {
     DsButtonComponent, DsBadgeComponent, DsPriceComponent, DsStarsComponent,
+    DsInputComponent,
 } from '@shared/ui/ds';
 
 interface Swatch { name: string; hex: string; cssVar: string; }
@@ -18,6 +19,7 @@ interface Swatch { name: string; hex: string; cssVar: string; }
     imports: [
         LucideAngularModule,
         DsButtonComponent, DsBadgeComponent, DsPriceComponent, DsStarsComponent,
+        DsInputComponent,
     ],
     template: `
         <section class="docs">
@@ -132,22 +134,19 @@ interface Swatch { name: string; hex: string; cssVar: string; }
                     </div>
                 </div>
 
-                <!-- Inputs -->
+                <!-- Inputs (ds-input — 3 sizes + estados) -->
                 <div class="lib-section">
-                    <div class="eyebrow eyebrow-bold">Inputs</div>
+                    <div class="eyebrow eyebrow-bold">Inputs · tamaños</div>
                     <div class="inputs-grid">
-                        <div class="input-wrap">
-                            <lucide-icon name="search" [size]="14"/>
-                            <input type="text" placeholder="Buscar productos…"/>
-                        </div>
-                        <div class="input-wrap">
-                            <lucide-icon name="mail" [size]="14"/>
-                            <input type="email" placeholder="tu@correo.pe"/>
-                        </div>
-                        <div class="input-wrap error">
-                            <lucide-icon name="x" [size]="14"/>
-                            <input type="text" placeholder="Error" value="email-invalido"/>
-                        </div>
+                        <ds-input size="sm" placeholder="Small" icon="search" [full]="true"/>
+                        <ds-input size="md" placeholder="Medium (default)" icon="mail" [full]="true"/>
+                        <ds-input size="lg" placeholder="Large" icon="user" [full]="true"/>
+                    </div>
+                    <div class="eyebrow eyebrow-bold mt">Inputs · estados</div>
+                    <div class="inputs-grid">
+                        <ds-input placeholder="Default" [full]="true"/>
+                        <ds-input placeholder="Con suffix" icon="search" suffix="x" [full]="true"/>
+                        <ds-input placeholder="Error" [error]="true" icon="x" [full]="true"/>
                     </div>
                 </div>
 
@@ -292,31 +291,6 @@ interface Swatch { name: string; hex: string; cssVar: string; }
             display: grid; grid-template-columns: repeat(3, 1fr);
             gap: 8px; margin-top: 8px;
         }
-        .input-wrap {
-            display: inline-flex; align-items: center; gap: 8px;
-            padding: 0 12px; height: 40px;
-            border: 1px solid var(--c-border);
-            border-radius: var(--r-md);
-            background: var(--c-surface);
-            color: var(--c-muted);
-            transition: border-color 120ms;
-        }
-        .input-wrap:focus-within {
-            border-color: var(--c-brand);
-            box-shadow: 0 0 0 3px var(--color-focus-ring);
-        }
-        .input-wrap.error {
-            border-color: var(--c-danger);
-        }
-        .input-wrap.error:focus-within {
-            box-shadow: 0 0 0 3px color-mix(in srgb, var(--c-danger) 30%, transparent);
-        }
-        .input-wrap input {
-            flex: 1; border: none; outline: none; background: transparent;
-            font-size: 14px; color: var(--c-text);
-            font-family: var(--f-sans);
-        }
-        .input-wrap input::placeholder { color: var(--c-subtle, var(--c-muted)); }
 
         .state {
             padding: 4px 10px;
