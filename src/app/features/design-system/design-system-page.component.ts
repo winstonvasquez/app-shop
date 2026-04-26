@@ -6,6 +6,7 @@ import {
     DsButtonComponent,
     DsProduct, DsCategoryTile,
 } from '@shared/ui/ds';
+import { DsDocsComponent } from './components/ds-docs.component';
 
 /**
  * Design System v2 — showcase/demo page.
@@ -25,6 +26,7 @@ import {
         DsTopBarComponent, DsShopHeaderComponent, DsShopFooterComponent,
         DsBadgeComponent, DsProductCardComponent, DsCategoryTileComponent,
         DsButtonComponent,
+        DsDocsComponent,
     ],
     template: `
         <div class="page">
@@ -137,6 +139,11 @@ import {
                     }
                 </div>
             </div>
+
+            <!-- ════════════════════════════════════════════════════════
+                 DOCS — Tokens · Tipografía · Biblioteca de componentes
+                 ════════════════════════════════════════════════════════ -->
+            <app-ds-docs/>
 
             <ds-shop-footer/>
         </div>
