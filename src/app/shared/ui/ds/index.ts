@@ -19,6 +19,15 @@ export type { DsButtonVariant, DsButtonSize } from './ds-button/ds-button.compon
 export { DsInputComponent } from './ds-input/ds-input.component';
 export type { DsInputSize, DsInputType } from './ds-input/ds-input.component';
 
+export { DsCardComponent } from './ds-card/ds-card.component';
+export type { DsCardElevation } from './ds-card/ds-card.component';
+
+export { DsDividerComponent } from './ds-divider/ds-divider.component';
+
+export { DsSectionComponent } from './ds-section/ds-section.component';
+
+export { DsProductRowComponent } from './ds-product-row/ds-product-row.component';
+
 export { DsWordmarkComponent } from './ds-wordmark/ds-wordmark.component';
 
 export { DsTopBarComponent } from './ds-top-bar/ds-top-bar.component';
