@@ -9,6 +9,7 @@ export interface OrderResponse {
     fechaPedido: string; // Fecha del pedido
     detalles?: OrderDetail[];
     direccionEnvio?: DireccionEnvio;
+    metodoPago?: string;
 }
 
 export interface OrderDetail {

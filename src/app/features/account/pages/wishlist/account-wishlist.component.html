@@ -1,79 +1,109 @@
-<div class="page-container">
-    <app-breadcrumb [items]="breadcrumbItems" />
-    <div class="page-header">
-        <h1 class="page-title">Mis Favoritos</h1>
-        <p class="page-subtitle">Productos que guardaste para después</p>
-    </div>
+<ds-account-shell title="Mis favoritos" subtitle="Productos guardados para más tarde" [userName]="userName()">
 
     @if (loading()) {
-        <div class="loading-container"><div class="spinner"></div></div>
+        <div class="state"><span class="spinner"></span> Cargando…</div>
     } @else if (items().length === 0) {
-        <div class="flex flex-col items-center justify-center py-16 gap-4" style="color: var(--color-text-muted)">
-            <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
-                style="opacity: 0.4">
-                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-            </svg>
-            <p class="text-base font-medium">Aún no tienes productos favoritos</p>
-            <a routerLink="/products" class="btn btn-primary text-sm">Explorar productos</a>
+        <div class="empty">
+            <lucide-icon name="heart" [size]="48"/>
+            <h3>Sin favoritos por ahora</h3>
+            <p>Agrega productos a tu lista para encontrarlos rápido.</p>
+            <ds-button variant="primary" size="md" routerLink="/products">Explorar productos</ds-button>
         </div>
     } @else {
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            @for (item of items(); track item.id) {
-                <div class="card flex flex-col overflow-hidden">
-                    <!-- Imagen del producto -->
-                    <a [routerLink]="['/products', item.productoId]"
-                        class="block aspect-[1/1] overflow-hidden bg-[var(--color-hover-overlay)]">
-                        @if (item.productoImagen) {
-                            <img [src]="item.productoImagen" [alt]="item.productoNombre"
-                                class="w-full h-full object-contain p-4 hover:scale-105 transition-transform duration-300" />
+        <div class="grid">
+            @for (it of items(); track it.productoId) {
+                <article class="item">
+                    <a class="thumb" [routerLink]="['/products', it.productoId]">
+                        @if (it.productoImagen) {
+                            <img [src]="it.productoImagen" [alt]="it.productoNombre"/>
                         } @else {
-                            <div class="w-full h-full flex items-center justify-center text-muted text-xs">
-                                Sin imagen
+                            <div class="placeholder">
+                                <lucide-icon name="package" [size]="32"/>
                             </div>
                         }
                     </a>
-
-                    <!-- Info del producto -->
-                    <div class="card-body flex flex-col gap-2 flex-grow">
-                        <a [routerLink]="['/products', item.productoId]"
-                            class="text-sm font-semibold line-clamp-2 hover:text-primary transition-colors"
-                            style="color: var(--color-text-primary)">
-                            {{ item.productoNombre }}
-                        </a>
-
-                        @if (item.varianteNombre) {
-                            <p class="text-xs text-muted">{{ item.varianteNombre }}</p>
-                        }
-
-                        <p class="text-primary font-black text-base mt-auto">
-                            S/ {{ item.precioBase.toFixed(2) }}
-                        </p>
+                    <div class="body">
+                        <a class="name" [routerLink]="['/products', it.productoId]">{{ it.productoNombre }}</a>
+                        <ds-price [now]="it.precioBase" size="md"/>
+                        <div class="actions">
+                            <ds-button variant="primary" size="sm" icon="shopping-cart"
+                                [disabled]="addingToCart() === it.productoId"
+                                (click)="addToCart(it)">
+                                Agregar
+                            </ds-button>
+                            <ds-button variant="ghost" size="sm" icon="heart-off"
+                                [disabled]="removing() === it.productoId"
+                                (click)="remove(it.productoId)">
+                                Quitar
+                            </ds-button>
+                        </div>
                     </div>
-
-                    <!-- Acciones -->
-                    <div class="card-footer flex gap-2">
-                        <app-button
-                            label="Mover al carrito"
-                            variant="primary"
-                            size="xs"
-                            icon="shopping-cart"
-                            [loading]="addingToCart() === item.productoId"
-                            [disabled]="addingToCart() === item.productoId"
-                            (click)="addToCart(item)" />
-                        <app-button
-                            label="Quitar de favoritos"
-                            variant="ghost"
-                            size="xs"
-                            icon="heart-off"
-                            [iconOnly]="true"
-                            ariaLabel="Quitar de favoritos"
-                            [loading]="removing() === item.productoId"
-                            [disabled]="removing() === item.productoId"
-                            (click)="remove(item.productoId)" />
-                    </div>
-                </div>
+                </article>
             }
         </div>
     }
-</div>
+
+</ds-account-shell>
+
+<style>
+    .state, .empty {
+        background: var(--c-surface);
+        border: 1px solid var(--c-border);
+        border-radius: var(--r-lg);
+        padding: 48px 24px; text-align: center; color: var(--c-muted);
+        display: flex; flex-direction: column; align-items: center; gap: 12px;
+    }
+    .empty { gap: 16px; }
+    .empty h3 { color: var(--c-text); margin: 0; font-family: var(--f-display); font-size: 18px; }
+    .spinner {
+        width: 16px; height: 16px;
+        border: 2px solid var(--c-surface2);
+        border-top-color: var(--c-brand);
+        border-radius: 999px;
+        animation: spin 800ms linear infinite;
+        display: inline-block; vertical-align: middle; margin-right: 8px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .grid {
+        display: grid; gap: 12px;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    }
+    .item {
+        background: var(--c-surface);
+        border: 1px solid var(--c-border);
+        border-radius: var(--r-lg);
+        overflow: hidden;
+        display: flex; flex-direction: column;
+        transition: box-shadow 120ms;
+    }
+    .item:hover { box-shadow: var(--s-md); }
+    .thumb {
+        display: block;
+        aspect-ratio: 1;
+        background: var(--c-surface2);
+        overflow: hidden;
+    }
+    .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .placeholder {
+        width: 100%; height: 100%;
+        display: flex; align-items: center; justify-content: center;
+        color: var(--c-muted);
+    }
+    .body {
+        padding: 12px;
+        display: flex; flex-direction: column; gap: 8px;
+        flex: 1;
+    }
+    .name {
+        font-size: 13px; font-weight: 500;
+        color: var(--c-text); text-decoration: none;
+        line-height: 1.35;
+        display: -webkit-box;
+        -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+        overflow: hidden; min-height: 36px;
+    }
+    .name:hover { color: var(--c-brand); }
+    .actions { display: flex; gap: 6px; margin-top: auto; }
+    .actions ds-button { flex: 1; }
+</style>

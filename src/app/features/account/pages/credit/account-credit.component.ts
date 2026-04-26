@@ -1,24 +1,22 @@
-import { Component, inject, OnInit, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, OnInit, signal, computed, ChangeDetectionStrategy } from '@angular/core';
 import { DatePipe, DecimalPipe } from '@angular/common';
+import { LucideAngularModule } from 'lucide-angular';
+import { AuthService } from '@core/auth/auth.service';
 import { CreditService, CreditTransaction } from '@core/services/credit.service';
-import { BreadcrumbComponent, BreadcrumbItem } from '@shared/components/breadcrumb/breadcrumb.component';
-import { ButtonComponent } from '@shared/components';
+import { DsAccountShellComponent, DsButtonComponent } from '@shared/ui/ds';
 
 @Component({
     selector: 'app-account-credit',
     standalone: true,
-    imports: [DatePipe, DecimalPipe, BreadcrumbComponent, ButtonComponent],
+    imports: [DatePipe, DecimalPipe, LucideAngularModule, DsAccountShellComponent, DsButtonComponent],
     templateUrl: './account-credit.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AccountCreditComponent implements OnInit {
+    private authService = inject(AuthService);
     readonly creditService = inject(CreditService);
 
-    readonly breadcrumbItems: BreadcrumbItem[] = [
-        { label: 'Inicio', route: ['/home'] },
-        { label: 'Mi Cuenta' },
-        { label: 'Saldo de crédito' },
-    ];
+    userName = computed(() => this.authService.currentUser()?.username ?? '');
 
     history = signal<CreditTransaction[]>([]);
     loadingHistory = signal(false);

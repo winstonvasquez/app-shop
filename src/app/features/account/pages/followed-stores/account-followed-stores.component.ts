@@ -1,25 +1,23 @@
-import { Component, inject, OnInit, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, OnInit, signal, computed, ChangeDetectionStrategy } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { DatePipe } from '@angular/common';
+import { LucideAngularModule } from 'lucide-angular';
+import { AuthService } from '@core/auth/auth.service';
 import { StoreFollowService, FollowedStoreResponse } from '@core/services/store-follow.service';
-import { BreadcrumbComponent, BreadcrumbItem } from '@shared/components/breadcrumb/breadcrumb.component';
-import { ButtonComponent } from '@shared/components';
+import { DsAccountShellComponent, DsButtonComponent } from '@shared/ui/ds';
 
 @Component({
     selector: 'app-account-followed-stores',
     standalone: true,
-    imports: [RouterLink, DatePipe, BreadcrumbComponent, ButtonComponent],
+    imports: [RouterLink, DatePipe, LucideAngularModule, DsAccountShellComponent, DsButtonComponent],
     templateUrl: './account-followed-stores.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AccountFollowedStoresComponent implements OnInit {
+    private authService = inject(AuthService);
     private storeFollowService = inject(StoreFollowService);
 
-    readonly breadcrumbItems: BreadcrumbItem[] = [
-        { label: 'Inicio', route: ['/home'] },
-        { label: 'Mi Cuenta' },
-        { label: 'Tiendas que sigues' },
-    ];
+    userName = computed(() => this.authService.currentUser()?.username ?? '');
 
     stores = signal<FollowedStoreResponse[]>([]);
     loading = signal(true);

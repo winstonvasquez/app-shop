@@ -1,68 +1,106 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
-import { DecimalPipe } from '@angular/common';
-import { Router } from '@angular/router';
+import { Component, inject, OnInit, signal, computed } from '@angular/core';
+import { Router, RouterLink } from '@angular/router';
+import { TranslateModule } from '@ngx-translate/core';
+import { LucideAngularModule } from 'lucide-angular';
+import { toSignal } from '@angular/core/rxjs-interop';
+
 import { CartService } from '@features/cart/services/cart.service';
 import { ConfigService, MedioPago, Certificacion } from '@core/services/config.service';
-import { TranslateModule } from '@ngx-translate/core';
-import { toSignal } from '@angular/core/rxjs-interop';
-import { BreadcrumbComponent, BreadcrumbItem } from '@shared/components/breadcrumb/breadcrumb.component';
-import { ButtonComponent } from '@shared/components';
+
+import {
+    DsButtonComponent,
+    DsBadgeComponent,
+    DsPriceComponent,
+    DsThumbComponent,
+} from '@shared/ui/ds';
+
+const FREE_SHIPPING_THRESHOLD = 99;
 
 @Component({
     selector: 'app-cart-page',
     standalone: true,
     imports: [
-    TranslateModule,
-    BreadcrumbComponent,
-    DecimalPipe,
-    ButtonComponent,
-  ],
-    templateUrl: './cart-page.component.html'
+        TranslateModule,
+        LucideAngularModule,
+        RouterLink,
+        DsButtonComponent,
+        DsBadgeComponent,
+        DsPriceComponent,
+        DsThumbComponent,
+    ],
+    templateUrl: './cart-page.component.html',
 })
 export class CartPageComponent implements OnInit {
-    cartService = inject(CartService);
+    cartService   = inject(CartService);
     configService = inject(ConfigService);
-    router = inject(Router);
-
-    readonly breadcrumbItems: BreadcrumbItem[] = [
-        { label: 'Inicio', route: ['/home'] },
-        { label: 'Carrito' }
-    ];
+    router        = inject(Router);
 
     cartItems = this.cartService.cartItems;
     cartTotal = this.cartService.cartTotal;
+    cartCount = this.cartService.cartCount;
 
-    mediosPago = toSignal(this.configService.getMediosPago(), { initialValue: [] as MedioPago[] });
+    mediosPago      = toSignal(this.configService.getMediosPago(),      { initialValue: [] as MedioPago[] });
     certificaciones = toSignal(this.configService.getCertificaciones(), { initialValue: [] as Certificacion[] });
 
     isCheckingOut = signal(false);
+    coupon        = signal<string>('');
 
-    ngOnInit() {
-        // Component initialization if needed
+    /** Subtotal de los items seleccionados. */
+    readonly subtotal = computed(() => this.cartTotal());
+
+    /** Ahorro respecto al precio "stock" (no manejamos originalPrice por item, así que 0 por ahora). */
+    readonly savings = signal<number>(0);
+
+    /** Cuánto falta para envío gratis premium (S/ 99). */
+    readonly missingForFree = computed(() => Math.max(0, FREE_SHIPPING_THRESHOLD - this.subtotal()));
+    readonly freeProgress   = computed(() => {
+        const ratio = this.subtotal() / FREE_SHIPPING_THRESHOLD;
+        return Math.min(100, Math.max(0, ratio * 100));
+    });
+
+    /** Cupón aplicado fijo de demo S/ 30 si > 100 (placeholder hasta que el backend lo retorne). */
+    readonly couponDiscount = computed(() => 0);
+
+    readonly total = computed(() => Math.max(0, this.subtotal() - this.savings() - this.couponDiscount()));
+
+    /** 12 cuotas sin interés. */
+    readonly installment = computed(() => +(this.total() / 12).toFixed(2));
+
+    ngOnInit(): void {
+        // No data fetching needed — cart vive en CartService (signal).
     }
 
-    onQuantityChange(productId: number, event: Event) {
-        const selectElement = event.target as HTMLSelectElement;
-        const newQuantity = parseInt(selectElement.value, 10);
-        if (!isNaN(newQuantity)) {
-            this.cartService.updateQuantity(productId, newQuantity);
+    onQuantityChange(productId: number, delta: number): void {
+        const item = this.cartItems().find(i => i.productId === productId);
+        if (!item) return;
+        const next = Math.max(1, Math.min(item.stock ?? 99, item.quantity + delta));
+        this.cartService.updateQuantity(productId, next);
+    }
+
+    setQuantity(productId: number, value: number): void {
+        if (Number.isFinite(value) && value > 0) {
+            this.cartService.updateQuantity(productId, value);
         }
     }
 
-    toggleSelection(id: number) {
-        this.cartService.toggleSelection(id);
+    toggleSelection(id: number): void { this.cartService.toggleSelection(id); }
+
+    toggleAll(checked: boolean): void { this.cartService.toggleAll(checked); }
+
+    removeFromCart(id: number): void {
+        const m = this.cartService as unknown as { removeFromCart?: (id: number) => void };
+        m.removeFromCart?.(id);
     }
 
-    toggleAll(event: Event) {
-        const checked = (event.target as HTMLInputElement).checked;
-        this.cartService.toggleAll(checked);
-    }
+    onCouponInput(value: string): void { this.coupon.set(value); }
+    applyCoupon(): void { /* hook a backend cuando esté disponible */ }
 
-    checkout() {
+    checkout(): void {
         if (this.isCheckingOut()) return;
         this.isCheckingOut.set(true);
-        this.router.navigate(['/checkout']).finally(() => {
-            this.isCheckingOut.set(false);
-        });
+        this.router.navigate(['/checkout']).finally(() => this.isCheckingOut.set(false));
     }
+
+    /** Trick para acceder a paymentMethods + certificaciones desde el template sin pipes async. */
+    paymentLogos = computed(() => this.mediosPago().slice(0, 6));
 }

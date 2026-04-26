@@ -3,11 +3,13 @@ import { FormBuilder, ReactiveFormsModule, Validators, AbstractControl, Validati
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { TranslateModule } from '@ngx-translate/core';
+import { LucideAngularModule } from 'lucide-angular';
 import { environment } from '@env/environment';
 
-/** Validador que comprueba que newPassword y confirmPassword coincidan. */
+import { DsButtonComponent, DsWordmarkComponent } from '@shared/ui/ds';
+
 function passwordsMatchValidator(control: AbstractControl): ValidationErrors | null {
-    const newPassword = control.get('newPassword')?.value as string | null;
+    const newPassword     = control.get('newPassword')?.value as string | null;
     const confirmPassword = control.get('confirmPassword')?.value as string | null;
     if (newPassword && confirmPassword && newPassword !== confirmPassword) {
         return { passwordsMismatch: true };
@@ -18,156 +20,218 @@ function passwordsMatchValidator(control: AbstractControl): ValidationErrors | n
 @Component({
     selector: 'app-reset-password',
     standalone: true,
-    imports: [ReactiveFormsModule, RouterLink, TranslateModule],
+    imports: [
+        ReactiveFormsModule,
+        RouterLink,
+        TranslateModule,
+        LucideAngularModule,
+        DsButtonComponent,
+        DsWordmarkComponent,
+    ],
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: { class: 'block w-full min-h-screen' },
     template: `
-<main class="login-layout min-h-screen flex items-center justify-center bg-[var(--color-background)] p-6">
-    <div class="w-full sm:w-[420px]">
+<main class="ds-recover">
+    <div class="card">
+        <div class="brand"><ds-wordmark [size]="24"/></div>
 
-        <!-- Header -->
-        <header class="mb-10 text-center">
-            <div class="flex items-center justify-center gap-2 mb-6">
-                <span class="text-3xl font-black tracking-tighter text-[var(--color-text-primary)]">APP</span>
-                <span class="text-3xl font-black tracking-tighter text-[var(--color-primary)]">SHOP</span>
-            </div>
-            <h1 class="text-3xl font-extrabold text-[var(--color-text-primary)] tracking-tight">
-                Nueva contraseña
-            </h1>
-            <p class="mt-3 text-[var(--color-text-muted)] text-sm">
-                Ingresa y confirma tu nueva contraseña.
-            </p>
-        </header>
+        <div class="ic-wrap" [class.is-success]="success()">
+            <lucide-icon [name]="success() ? 'check-circle' : 'key-round'" [size]="26"/>
+        </div>
 
-        <!-- Token ausente -->
-        @if (!token) {
-        <div class="p-5 bg-[var(--color-error)]/10 border border-[var(--color-error)]/30 rounded-xl text-center">
-            <p class="text-[var(--color-error)] font-semibold">Enlace inválido</p>
-            <p class="text-[var(--color-text-muted)] text-sm mt-2">
+        <h1 class="title">{{ success() ? '¡Contraseña actualizada!' : 'Nueva contraseña' }}</h1>
+        <p class="sub">
+            @if (success()) {
+                Tu contraseña fue cambiada exitosamente. Te redirigimos al inicio de sesión.
+            } @else if (!token) {
                 El enlace de recuperación no es válido. Solicita uno nuevo.
-            </p>
-            <a [routerLink]="['/auth/forgot-password']"
-                class="inline-block mt-4 text-sm font-semibold text-[var(--color-primary)] hover:text-[var(--color-primary-dark)] transition-colors">
+            } @else {
+                Ingresa y confirma tu nueva contraseña.
+            }
+        </p>
+
+        @if (!token) {
+            <ds-button variant="primary" size="md" [full]="true" routerLink="/auth/forgot-password">
                 Solicitar nuevo enlace
-            </a>
-        </div>
+            </ds-button>
         }
 
-        <!-- Éxito -->
-        @if (success()) {
-        <div class="p-5 bg-[var(--color-success)]/10 border border-[var(--color-success)]/30 rounded-xl text-center">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10 mx-auto mb-3 text-[var(--color-success)]"
-                fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <p class="text-[var(--color-success)] font-semibold text-base">
-                ¡Contraseña actualizada!
-            </p>
-            <p class="text-[var(--color-text-muted)] text-sm mt-2">
-                Tu contraseña fue cambiada exitosamente. Redirigiendo al inicio de sesión...
-            </p>
-        </div>
-        }
-
-        <!-- Error -->
-        @if (error()) {
-        <div class="mb-6 p-4 bg-[var(--color-error)]/10 border border-[var(--color-error)]/20 text-[var(--color-error)] rounded-xl text-sm font-medium flex items-center gap-3">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24"
-                stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            {{ error() }}
-        </div>
-        }
-
-        <!-- Formulario -->
         @if (token && !success()) {
-        <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
-
-            <!-- Nueva contraseña -->
-            <div class="mb-5">
-                <label for="newPassword" class="block mb-2 text-sm font-medium text-[var(--color-text-secondary)]">
-                    Nueva contraseña
-                </label>
-                <input
-                    id="newPassword"
-                    type="password"
-                    formControlName="newPassword"
-                    placeholder="Mínimo 8 caracteres"
-                    class="block w-full rounded-xl bg-[var(--color-surface-raised)] py-3.5 px-4 text-[var(--color-text-primary)] ring-1 ring-inset ring-[var(--color-border)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[var(--color-primary)] transition-shadow text-base" />
-                @if (form.get('newPassword')?.invalid && form.get('newPassword')?.touched) {
-                <p class="mt-1.5 text-xs text-[var(--color-error)]">
-                    La contraseña debe tener al menos 8 caracteres.
-                </p>
+            <form [formGroup]="form" (ngSubmit)="onSubmit()" class="form">
+                @if (error()) {
+                    <div class="alert err">
+                        <lucide-icon name="alert-triangle" [size]="16"/>
+                        {{ error() }}
+                    </div>
                 }
-            </div>
 
-            <!-- Confirmar contraseña -->
-            <div class="mb-6">
-                <label for="confirmPassword" class="block mb-2 text-sm font-medium text-[var(--color-text-secondary)]">
-                    Confirmar contraseña
-                </label>
-                <input
-                    id="confirmPassword"
-                    type="password"
-                    formControlName="confirmPassword"
-                    placeholder="Repite tu nueva contraseña"
-                    class="block w-full rounded-xl bg-[var(--color-surface-raised)] py-3.5 px-4 text-[var(--color-text-primary)] ring-1 ring-inset ring-[var(--color-border)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[var(--color-primary)] transition-shadow text-base" />
-                @if (form.hasError('passwordsMismatch') && form.get('confirmPassword')?.touched) {
-                <p class="mt-1.5 text-xs text-[var(--color-error)]">
-                    Las contraseñas no coinciden.
-                </p>
-                }
-            </div>
+                <div class="field">
+                    <label class="lbl">Nueva contraseña <span class="req">*</span></label>
+                    <label class="input-wrap"
+                        [class.is-error]="form.get('newPassword')?.invalid && form.get('newPassword')?.touched">
+                        <lucide-icon name="lock" [size]="16" class="ic"/>
+                        <input formControlName="newPassword"
+                            [type]="show1() ? 'text' : 'password'"
+                            placeholder="Mínimo 8 caracteres"
+                            autocomplete="new-password"/>
+                        <button type="button" class="toggle" (click)="show1.set(!show1())" aria-label="Mostrar/ocultar">
+                            <lucide-icon [name]="show1() ? 'eye-off' : 'eye'" [size]="16"/>
+                        </button>
+                    </label>
+                    @if (form.get('newPassword')?.invalid && form.get('newPassword')?.touched) {
+                        <span class="hint err">La contraseña debe tener al menos 8 caracteres.</span>
+                    }
+                </div>
 
-            <!-- Submit -->
-            <button
-                type="submit"
-                [disabled]="form.invalid || isSaving()"
-                class="btn btn-primary btn-lg w-full gap-3 rounded-xl uppercase tracking-wider hover:-translate-y-0.5 active:translate-y-0">
-                @if (isSaving()) {
-                <div class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                <span>Guardando...</span>
-                } @else {
-                <span>Cambiar contraseña</span>
-                }
-            </button>
+                <div class="field">
+                    <label class="lbl">Confirmar contraseña <span class="req">*</span></label>
+                    <label class="input-wrap"
+                        [class.is-error]="form.hasError('passwordsMismatch') && form.get('confirmPassword')?.touched">
+                        <lucide-icon name="lock" [size]="16" class="ic"/>
+                        <input formControlName="confirmPassword"
+                            [type]="show2() ? 'text' : 'password'"
+                            placeholder="Repite tu nueva contraseña"
+                            autocomplete="new-password"/>
+                        <button type="button" class="toggle" (click)="show2.set(!show2())" aria-label="Mostrar/ocultar">
+                            <lucide-icon [name]="show2() ? 'eye-off' : 'eye'" [size]="16"/>
+                        </button>
+                    </label>
+                    @if (form.hasError('passwordsMismatch') && form.get('confirmPassword')?.touched) {
+                        <span class="hint err">Las contraseñas no coinciden.</span>
+                    }
+                </div>
 
-        </form>
+                <ds-button variant="primary" size="lg" type="submit" [full]="true"
+                    [disabled]="form.invalid || isSaving()">
+                    @if (isSaving()) { Guardando… } @else { Cambiar contraseña }
+                </ds-button>
 
-        <!-- Volver al login -->
-        <div class="mt-8 text-center text-sm">
-            <a [routerLink]="['/auth/login']"
-                class="font-semibold text-[var(--color-primary)] hover:text-[var(--color-primary-dark)] transition-colors">
-                ← Volver al inicio de sesión
-            </a>
-        </div>
+                <a routerLink="/auth/login" class="back-link">← Volver al inicio de sesión</a>
+            </form>
         }
-
     </div>
 </main>
-    `
+
+<style>
+    .ds-recover {
+        background: var(--c-bg, var(--color-background));
+        min-height: 100vh;
+        display: flex; align-items: center; justify-content: center;
+        font-family: var(--f-sans);
+        color: var(--c-text);
+        padding: 24px;
+    }
+    .card {
+        width: 100%; max-width: 440px;
+        background: var(--c-surface);
+        border: 1px solid var(--c-border);
+        border-radius: var(--r-xl);
+        box-shadow: var(--s-lg);
+        padding: 36px;
+    }
+    .brand { display: flex; justify-content: center; margin-bottom: 20px; }
+    .ic-wrap {
+        width: 56px; height: 56px;
+        border-radius: var(--r-lg);
+        background: color-mix(in srgb, var(--c-brand) 12%, var(--c-surface));
+        color: var(--c-brand);
+        display: inline-flex; align-items: center; justify-content: center;
+        margin: 0 auto 16px;
+        transition: background 200ms, color 200ms;
+    }
+    .ic-wrap.is-success {
+        background: color-mix(in srgb, var(--c-success) 12%, var(--c-surface));
+        color: var(--c-success);
+    }
+    .title {
+        font-family: var(--f-display);
+        font-size: 24px; font-weight: 700;
+        margin: 0 0 6px; color: var(--c-text);
+        text-align: center; letter-spacing: -0.02em;
+    }
+    .sub {
+        font-size: 14px; color: var(--c-muted);
+        margin: 0 0 24px;
+        text-align: center; line-height: 1.5;
+    }
+    .form { display: flex; flex-direction: column; gap: 16px; }
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    .lbl { font-size: 12px; font-weight: 600; color: var(--c-text); }
+    .req { color: var(--c-danger); }
+    .input-wrap {
+        display: flex; align-items: center;
+        height: 44px; padding: 0 14px; gap: 8px;
+        background: var(--c-surface);
+        border: 1px solid var(--c-border);
+        border-radius: var(--r-md);
+        transition: border-color 120ms, box-shadow 120ms;
+    }
+    .input-wrap:focus-within {
+        border-color: var(--c-brand);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--c-brand) 25%, transparent);
+    }
+    .input-wrap.is-error { border-color: var(--c-danger); }
+    .input-wrap input {
+        flex: 1; border: none; outline: none;
+        font-size: 14px; color: var(--c-text);
+        background: transparent; font-family: inherit;
+    }
+    .input-wrap .ic { color: var(--c-muted); }
+    .toggle {
+        background: none; border: none; padding: 4px;
+        color: var(--c-muted); cursor: pointer;
+        display: inline-flex;
+    }
+    .toggle:hover { color: var(--c-text); }
+
+    .hint { font-size: 12px; }
+    .hint.err { color: var(--c-danger); }
+
+    .alert {
+        display: flex; gap: 8px; align-items: center;
+        padding: 10px 14px;
+        border-radius: var(--r-md);
+        font-size: 13px;
+    }
+    .alert.err {
+        background: color-mix(in srgb, var(--c-danger) 12%, var(--c-surface));
+        border: 1px solid color-mix(in srgb, var(--c-danger) 30%, var(--c-border));
+        color: var(--c-danger);
+    }
+
+    .back-link {
+        text-align: center; font-size: 13px;
+        color: var(--c-brand); font-weight: 600;
+        text-decoration: none; cursor: pointer;
+    }
+    .back-link:hover { filter: brightness(1.1); }
+
+    @media (max-width: 640px) {
+        .card { padding: 24px; }
+    }
+</style>
+    `,
 })
 export class ResetPasswordComponent implements OnInit {
-    private readonly fb = inject(FormBuilder);
-    private readonly http = inject(HttpClient);
+    private readonly fb     = inject(FormBuilder);
+    private readonly http   = inject(HttpClient);
     private readonly router = inject(Router);
-    private readonly route = inject(ActivatedRoute);
+    private readonly route  = inject(ActivatedRoute);
 
     isSaving = signal(false);
-    success = signal(false);
-    error = signal<string | null>(null);
+    success  = signal(false);
+    error    = signal<string | null>(null);
+    show1    = signal(false);
+    show2    = signal(false);
 
     token: string | null = null;
 
     form = this.fb.group(
         {
-            newPassword: ['', [Validators.required, Validators.minLength(8)]],
-            confirmPassword: ['', [Validators.required]]
+            newPassword:     ['', [Validators.required, Validators.minLength(8)]],
+            confirmPassword: ['', [Validators.required]],
         },
-        { validators: passwordsMatchValidator }
+        { validators: passwordsMatchValidator },
     );
 
     ngOnInit(): void {
@@ -187,7 +251,7 @@ export class ResetPasswordComponent implements OnInit {
 
         this.http.post<void>(
             `${environment.apiUrls.users}/api/auth/reset-password`,
-            { token: this.token, newPassword }
+            { token: this.token, newPassword },
         ).subscribe({
             next: () => {
                 this.isSaving.set(false);
@@ -198,15 +262,13 @@ export class ResetPasswordComponent implements OnInit {
                 this.isSaving.set(false);
                 const httpErr = err as { status?: number; error?: { detail?: string } };
                 if (httpErr.status === 400) {
-                    this.error.set(
-                        httpErr.error?.detail ?? 'Token inválido o expirado. Solicita un nuevo enlace.'
-                    );
+                    this.error.set(httpErr.error?.detail ?? 'Token inválido o expirado. Solicita un nuevo enlace.');
                 } else if (httpErr.status === 0) {
                     this.error.set('No se pudo conectar con el servidor. Intenta más tarde.');
                 } else {
                     this.error.set('Ocurrió un error inesperado. Intenta nuevamente.');
                 }
-            }
+            },
         });
     }
 }

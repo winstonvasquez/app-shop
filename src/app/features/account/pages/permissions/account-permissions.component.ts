@@ -1,7 +1,9 @@
-import { Component, inject, signal, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, signal, computed, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { LucideAngularModule } from 'lucide-angular';
+import { AuthService } from '@core/auth/auth.service';
 import { environment } from '@env/environment';
-import { BreadcrumbComponent, BreadcrumbItem } from '@shared/components/breadcrumb/breadcrumb.component';
+import { DsAccountShellComponent, DsBadgeComponent } from '@shared/ui/ds';
 
 interface PermissionItem {
     codigo: string;
@@ -19,18 +21,15 @@ interface UserPermissions {
 @Component({
     selector: 'app-account-permissions',
     standalone: true,
-    imports: [BreadcrumbComponent],
+    imports: [LucideAngularModule, DsAccountShellComponent, DsBadgeComponent],
     templateUrl: './account-permissions.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AccountPermissionsComponent implements OnInit {
     private http = inject(HttpClient);
+    private authService = inject(AuthService);
 
-    readonly breadcrumbItems: BreadcrumbItem[] = [
-        { label: 'Inicio', route: ['/home'] },
-        { label: 'Mi Cuenta' },
-        { label: 'Permisos' }
-    ];
+    userName = computed(() => this.authService.currentUser()?.username ?? '');
 
     permissions = signal<UserPermissions | null>(null);
     loading = signal(true);

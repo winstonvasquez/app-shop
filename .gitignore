@@ -48,3 +48,9 @@ Thumbs.db
 build-*.log
 capture-*.mjs
 
+# Playwright artefactos generados
+/playwright-report
+/playwright-screenshots
+/test-results
+/test-*.js
+

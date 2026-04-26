@@ -1,13 +1,28 @@
 import { ApplicationConfig, provideBrowserGlobalErrorListeners, importProvidersFrom, APP_INITIALIZER } from '@angular/core';
 import {
   LUCIDE_ICONS, LucideIconProvider,
-  X, CircleCheck, CircleAlert, TriangleAlert, Info,
-  ArrowLeft, ArrowRightCircle, ArrowRightLeft, Ban, BookOpen, Check, CheckCircle,
-  ClipboardCheck, Clock, Copy, DoorOpen, DoorClosed, Download, Eye, FilePlus,
-  FileSearch, FileText, Filter, GitCompare, HeartOff, Key, Layers, Link, Lock,
-  LockOpen, LogIn, MapPin, PackageCheck, Pencil, Percent, Play, Plus, Power,
-  Printer, Receipt, RefreshCw, RotateCcw, Save, Search, Send, ShoppingBag,
-  ShoppingCart, Ticket, Trash2, Truck, UserMinus, Wallet, XCircle
+  // Estado / feedback
+  X, CircleCheck, CircleAlert, TriangleAlert, AlertTriangle, Info, CheckCircle, XCircle,
+  // Navegación
+  ArrowLeft, ArrowRight, ArrowRightCircle, ArrowRightLeft,
+  ChevronDown, ChevronLeft, ChevronRight, ChevronUp,
+  // Acciones / formularios
+  Ban, BookOpen, Check, ClipboardCheck, Clock, Copy, DoorOpen, DoorClosed, Download,
+  Eye, EyeOff, FilePlus, FileSearch, FileText, Filter, SlidersHorizontal,
+  GitCompare, HeartOff, Heart, Key, KeyRound, Layers, Link, Lock, LockOpen, LogIn,
+  Pencil, Percent, Play, Plus, Minus, Power, Printer, Receipt, RefreshCw, RotateCcw,
+  Save, Search, Send, Trash2, UserMinus, Wallet,
+  // Comercio / shop DS
+  Package, PackageCheck, PackageSearch, ShoppingBag, ShoppingCart, Ticket, Tag,
+  Truck, MapPin, Mail, Phone, User, Home, Bell, Box,
+  // Layout / catalogo
+  LayoutGrid, List, Grid3x3,
+  // Marca / destacados
+  Award, Star, Sparkles, Flame, Zap, Bolt, Shield, ShieldCheck, Settings,
+  // Tiempo
+  Timer,
+  // Misc DS
+  MessageCircle, MessageCircleQuestion
 } from 'lucide-angular';
 import { provideRouter } from '@angular/router';
 import { provideHttpClient, withInterceptors, withFetch, HttpClient, HttpBackend } from '@angular/common/http';
@@ -101,13 +116,28 @@ export const appConfig: ApplicationConfig = {
     {
       provide: LUCIDE_ICONS,
       useValue: new LucideIconProvider({
-        X, CircleCheck, CircleAlert, TriangleAlert, Info,
-        ArrowLeft, ArrowRightCircle, ArrowRightLeft, Ban, BookOpen, Check, CheckCircle,
-        ClipboardCheck, Clock, Copy, DoorOpen, DoorClosed, Download, Eye, FilePlus,
-        FileSearch, FileText, Filter, GitCompare, HeartOff, Key, Layers, Link, Lock,
-        LockOpen, LogIn, MapPin, PackageCheck, Pencil, Percent, Play, Plus, Power,
-        Printer, Receipt, RefreshCw, RotateCcw, Save, Search, Send, ShoppingBag,
-        ShoppingCart, Ticket, Trash2, Truck, UserMinus, Wallet, XCircle
+        // Estado / feedback
+        X, CircleCheck, CircleAlert, TriangleAlert, AlertTriangle, Info, CheckCircle, XCircle,
+        // Navegación
+        ArrowLeft, ArrowRight, ArrowRightCircle, ArrowRightLeft,
+        ChevronDown, ChevronLeft, ChevronRight, ChevronUp,
+        // Acciones / formularios
+        Ban, BookOpen, Check, ClipboardCheck, Clock, Copy, DoorOpen, DoorClosed, Download,
+        Eye, EyeOff, FilePlus, FileSearch, FileText, Filter, SlidersHorizontal,
+        GitCompare, HeartOff, Heart, Key, KeyRound, Layers, Link, Lock, LockOpen, LogIn,
+        Pencil, Percent, Play, Plus, Minus, Power, Printer, Receipt, RefreshCw, RotateCcw,
+        Save, Search, Send, Trash2, UserMinus, Wallet,
+        // Comercio / shop DS
+        Package, PackageCheck, PackageSearch, ShoppingBag, ShoppingCart, Ticket, Tag,
+        Truck, MapPin, Mail, Phone, User, Home, Bell, Box,
+        // Layout / catálogo
+        LayoutGrid, List, Grid3x3,
+        // Marca / destacados
+        Award, Star, Sparkles, Flame, Zap, Bolt, Shield, ShieldCheck, Settings,
+        // Tiempo
+        Timer,
+        // Misc
+        MessageCircle, MessageCircleQuestion
       }),
       multi: true
     },

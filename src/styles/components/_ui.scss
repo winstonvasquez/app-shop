@@ -1,237 +1,212 @@
-/* ============================================
- * LAYER 2: UI COMPONENTS
- * ============================================
- * Reusable classes mapping Tailwind/Tokens to semantic components.
- * ============================================ */
+/* ============================================================
+ *  CONFIANZA — UI Components (botones, cards, badges, tables, inputs)
+ *  Port 1:1 de sistemadisenio/primitives.jsx, expresado en SCSS
+ *  para uso global vía clases utilitarias.
+ * ============================================================ */
 
 @layer components {
 
-    /* --- BUTTONS --- */
-    .btn-base {
-        @apply inline-flex items-center justify-center gap-2 font-sans font-bold text-[14px] rounded-md transition-colors duration-200 px-lg py-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed;
-    }
-
+    /* ── BUTTONS ─────────────────────────────────────────── */
     .btn {
-        &-primary {
-            @extend .btn-base;
-            @apply bg-primary text-white hover:brightness-110 active:brightness-90;
-        }
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-family: var(--f-sans);
+        font-weight: var(--fw-semi);
+        white-space: nowrap;
+        cursor: pointer;
+        border-radius: var(--r-md);
+        border: 1px solid transparent;
+        transition:
+            background var(--transition-fast) var(--ease-out),
+            color      var(--transition-fast) var(--ease-out),
+            transform  80ms var(--ease-out),
+            box-shadow var(--transition-fast) var(--ease-out);
 
+        &:disabled { opacity: .5; cursor: not-allowed; }
+        &:not(:disabled):active { transform: translateY(1px); }
+
+        /* Sizes */
+        &.btn-sm { height: 32px; padding: 0 12px; font-size: var(--fs-sm); gap: var(--s-2); }
+        &.btn-md { height: 40px; padding: 0 16px; font-size: var(--fs-base); gap: var(--s-2); }
+        &.btn-lg { height: 48px; padding: 0 20px; font-size: var(--fs-md); gap: 10px; }
+        &.btn-xl { height: 56px; padding: 0 28px; font-size: 17px; gap: 10px; }
+
+        /* Variants */
+        &-primary {
+            background: var(--color-primary);
+            color: var(--color-primary-contrast);
+            &:hover:not(:disabled) { background: var(--color-primary-dark); }
+        }
+        &-accent {
+            background: var(--color-accent);
+            color: #1a1a1a;
+            &:hover:not(:disabled) { background: var(--color-accent-dark); }
+        }
         &-secondary {
-            @extend .btn-base;
-            @apply bg-transparent text-on;
-            border: var(--border-width) solid var(--color-border-strong);
-
-            &:hover:not(:disabled)  { background: var(--color-hover-overlay); }
-            &:active:not(:disabled) { background: var(--color-active-overlay); }
+            background: var(--color-surface);
+            color: var(--color-text-primary);
+            border-color: var(--color-border);
+            &:hover:not(:disabled) { background: var(--color-surface-raised); }
         }
-
         &-ghost {
-            @extend .btn-base;
-            @apply bg-transparent text-on;
-
-            &:hover:not(:disabled)  { background: var(--color-hover-overlay); }
-            &:active:not(:disabled) { background: var(--color-active-overlay); }
+            background: transparent;
+            color: var(--color-text-primary);
+            &:hover:not(:disabled) { background: var(--color-surface-raised); }
         }
-
+        &-outline {
+            background: transparent;
+            color: var(--color-primary);
+            border-color: var(--color-primary);
+            &:hover:not(:disabled) { background: var(--color-surface-raised); }
+        }
         &-danger {
-            @extend .btn-base;
-            @apply bg-[var(--color-danger)] text-white hover:brightness-110 active:brightness-90;
-        }
-
-        &-success {
-            @extend .btn-base;
-            @apply bg-[var(--color-success)] text-white hover:brightness-110 active:brightness-90;
-        }
-
-        /* Variant premium: gradient + shadow + uppercase (login / landings) */
-        &-primary-gradient {
-            @extend .btn-base;
-            @apply rounded-xl px-4 py-4 uppercase tracking-wider shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 transition-all;
+            background: var(--color-danger);
+            color: #fff;
+            &:hover:not(:disabled) { filter: brightness(1.06); }
         }
     }
 
-    /* Button size variants */
-    .btn-sm {
-        padding: var(--spacing-xs) var(--spacing-sm);
-        font-size: var(--text-xs);
-    }
+    /* Compat con versiones anteriores */
+    .btn-base { @extend .btn; @extend .btn-md; }
 
-    .btn-lg {
-        padding: var(--spacing-sm) var(--spacing-xl);
-        font-size: var(--text-base);
-    }
-
-    /* --- CIRCULAR ICON BUTTONS --- */
-    .icon-btn-base {
-        @apply inline-flex items-center justify-center rounded-full transition-colors duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0;
-    }
-
-    .icon-btn {
-        @extend .icon-btn-base;
-        /* Default 40x40px */
-        @apply w-[40px] h-[40px] text-on bg-transparent;
-
-        &:hover:not(:disabled)  { background: var(--color-hover-overlay); }
-        &:active:not(:disabled) { background: var(--color-active-overlay); }
-
-        &-sm {
-            @extend .icon-btn-base;
-            /* Small 32x32px */
-            @apply w-[32px] h-[32px] text-on bg-transparent;
-
-            &:hover:not(:disabled)  { background: var(--color-hover-overlay); }
-            &:active:not(:disabled) { background: var(--color-active-overlay); }
-        }
-
-        /* Icon Button Variations */
-        &-danger {
-            @apply text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10 active:bg-[var(--color-danger)]/20;
-        }
-
-        &-primary {
-            @apply text-[var(--color-primary)] hover:bg-[var(--color-primary)]/10 active:bg-[var(--color-primary)]/20;
-        }
-    }
-
-    /* --- CARD PARTS (generic, used by kpi-card, chart-card, card-erp) --- */
-    .card-header {
-        @apply flex items-center justify-between border-b border-[var(--color-border)];
-        padding: var(--spacing-md) var(--spacing-lg);
-    }
-
-    .card-body {
-        padding: var(--spacing-lg);
-    }
-
-    .card-footer {
-        @apply flex items-center justify-end gap-3 border-t border-[var(--color-border)];
-        padding: var(--spacing-md) var(--spacing-lg);
-    }
-
-    /* --- CARDS --- */
+    /* ── CARDS ───────────────────────────────────────────── */
     .card {
-        &-erp {
-            @apply bg-surface rounded-lg shadow-md border border-[var(--color-border)] p-xl overflow-hidden flex flex-col gap-md;
-        }
+        display: flex;
+        flex-direction: column;
+        background: var(--color-surface);
+        border: 1px solid var(--color-border);
+        border-radius: var(--r-lg);
+        box-shadow: var(--s-md);
+        padding: var(--s-4);
 
-        &-product {
-            @apply bg-surface rounded-xl shadow-sm border border-[var(--color-border)] overflow-hidden flex flex-col transition-all duration-300 hover:shadow-xl hover:shadow-primary/5 hover:-translate-y-1 gap-sm;
-
-            /* Glossy effect */
-            background: linear-gradient(145deg, var(--color-surface), color-mix(in oklch, var(--color-surface) 95%, white));
-            position: relative;
-
-            &::before {
-                content: '';
-                position: absolute;
-                inset: 0;
-                background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, transparent 50%);
-                pointer-events: none;
-            }
+        &.hoverable {
+            transition: box-shadow var(--transition-base) var(--ease-out);
+            &:hover { box-shadow: var(--s-lg); }
         }
     }
 
-    /* --- GLASSMORPHISM / GLOSSY UTILITIES --- */
-    .glass-effect {
-        @apply backdrop-blur-md bg-white/5 border border-white/10 shadow-lg;
+    .card-erp {
+        @extend .card;
+        padding: var(--s-7);
+        border-radius: var(--r-md);
     }
 
-    .glass-effect-dark {
-        @apply backdrop-blur-md bg-black/20 border border-white/5 shadow-xl;
+    .card-product {
+        @extend .card;
+        padding: 0;
+        gap: var(--s-2);
+        overflow: hidden;
+        border-radius: var(--r-lg);
+        transition: transform var(--transition-slow) var(--ease-out),
+                    box-shadow var(--transition-slow) var(--ease-out);
+        &:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--s-xl);
+        }
     }
 
-    .glossy-panel {
-        background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%);
-        @apply backdrop-blur-lg border border-white/10 shadow-2xl;
+    /* ── BADGES ──────────────────────────────────────────── */
+    .badge-ds {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-family: var(--f-sans);
+        font-weight: var(--fw-bold);
+        letter-spacing: .04em;
+        text-transform: uppercase;
+        line-height: 1;
+        border-radius: var(--r-sm);
+
+        &.badge-xs { height: 18px; padding: 0 5px; font-size: 10px; }
+        &.badge-sm { height: 22px; padding: 0 8px; font-size: 11px; }
+        &.badge-md { height: 26px; padding: 0 10px; font-size: 12px; }
     }
 
-    /* --- TABLES --- */
+    .badge {
+        @extend .badge-ds;
+        @extend .badge-sm;
+
+        &-neutral { background: var(--color-surface-raised); color: var(--color-text-primary); }
+        &-success { background: var(--color-success); color: #fff; }
+        &-warning,
+        &-warn    { background: var(--color-warning); color: #fff; }
+        &-danger,
+        &-error   { background: var(--color-danger); color: #fff; }
+        &-info    { background: var(--color-info);    color: #fff; }
+        &-brand,
+        &-primary { background: var(--color-primary); color: var(--color-primary-contrast); }
+        &-accent  { background: var(--color-accent);  color: #1a1a1a; }
+        &-outline {
+            background: transparent;
+            color: var(--color-text-primary);
+            border: 1px solid var(--color-border);
+        }
+    }
+
+    /* ── TABLES (ERP sibling) ────────────────────────────── */
     .table-erp-container {
-        @apply w-full overflow-x-auto rounded-lg border border-[var(--color-border)];
+        width: 100%;
+        overflow-x: auto;
+        border: 1px solid var(--color-border);
+        border-radius: var(--r-md);
     }
 
     .table-erp {
-        @apply w-full text-left border-collapse;
+        width: 100%;
+        text-align: left;
+        border-collapse: collapse;
+        font-family: var(--f-sans);
 
         th {
-            @apply bg-background/50 text-subtle text-xs font-bold uppercase tracking-wider py-md px-lg border-b border-[var(--color-border)];
+            background: var(--color-background);
+            color: var(--color-text-muted);
+            font-size: 11px;
+            font-weight: var(--fw-bold);
+            text-transform: uppercase;
+            letter-spacing: .04em;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--color-border);
         }
 
         td {
-            @apply py-md px-lg border-b border-[var(--color-border)] text-sm text-on;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--color-border);
+            font-size: var(--fs-base);
+            color: var(--color-text-primary);
         }
 
         tbody tr {
-            @apply transition-colors;
-            &:hover { background: var(--color-hover-overlay); }
+            transition: background var(--transition-fast) var(--ease-out);
+            &:hover { background: var(--color-surface-raised); }
         }
     }
 
-    /* --- INPUTS --- */
-    .input {
-        &-label {
-            @apply block text-xs font-bold text-on mb-sm;
-        }
-
-        &-field {
-            @apply w-full bg-background rounded-md text-sm text-on px-md py-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed placeholder:text-muted;
-            border: var(--border-width) solid var(--color-border-strong);
-
-            &-error {
-                @apply border-[var(--color-danger)] focus:border-[var(--color-danger)] focus:ring-[var(--color-danger)];
-            }
-        }
-
-        &-error-msg {
-            @apply text-[var(--color-danger)] text-xs mt-xs block;
-        }
-    }
-
-    /* --- BADGES --- */
-    .badge {
-        &-erp {
-            @apply inline-flex items-center px-sm py-xs rounded-full text-xs font-bold;
-        }
-
-        &-success {
-            @extend .badge-erp;
-            @apply bg-[var(--color-success)]/10 text-[var(--color-success)];
-        }
-
-        &-warning {
-            @extend .badge-erp;
-            @apply bg-[var(--color-warning)]/10 text-[var(--color-warning)];
-        }
-
-        &-danger {
-            @extend .badge-erp;
-            @apply bg-[var(--color-danger)]/10 text-[var(--color-danger)];
-        }
-
-        &-info {
-            @extend .badge-erp;
-            @apply bg-[var(--color-info)]/10 text-[var(--color-info)];
-        }
-    }
-
-    /* --- SPECIFIC BADGES / PILLS --- */
-    .label-primary {
-        background: color-mix(in oklch, var(--color-primary) 10%, var(--color-surface));
-        color: var(--color-primary);
-        border: 1px solid color-mix(in oklch, var(--color-primary) 22%, transparent);
-    }
-
-    .category-pill {
-        border: 1px solid var(--color-border);
+    /* ── INPUTS ──────────────────────────────────────────── */
+    .input-field {
+        width: 100%;
+        height: 40px;
+        padding: 0 16px;
+        font-size: var(--fs-base);
+        font-family: var(--f-sans);
+        color: var(--color-text-primary);
         background: var(--color-surface);
-        color: var(--color-text-secondary);
-        transition: background 200ms, color 200ms, border-color 200ms;
+        border: 1px solid var(--color-border);
+        border-radius: var(--r-md);
+        transition: border-color var(--transition-fast) var(--ease-out),
+                    box-shadow var(--transition-fast) var(--ease-out);
 
-        &:hover {
-            background: var(--color-primary);
-            color: white;
+        &::placeholder { color: var(--color-text-muted); }
+        &:focus {
+            outline: none;
             border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px var(--color-focus-ring);
+        }
+        &:disabled { opacity: .5; cursor: not-allowed; }
+
+        &.error {
+            border-color: var(--color-danger);
+            &:focus { box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-danger) 25%, transparent); }
         }
     }
 

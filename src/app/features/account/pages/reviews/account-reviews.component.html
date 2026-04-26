@@ -1,81 +1,157 @@
-<div class="page-container">
-    <app-breadcrumb [items]="breadcrumbItems" />
-    <div class="page-header">
-        <h1 class="page-title">Tus reseñas</h1>
-        <p class="page-subtitle">Opiniones que has escrito sobre productos</p>
-    </div>
+<ds-account-shell title="Tus reseñas" subtitle="Opiniones que has escrito sobre productos" [userName]="userName()">
 
     @if (loading()) {
-        <div class="loading-container"><div class="spinner"></div></div>
+        <div class="loading"><span class="spinner"></span></div>
     } @else if (isEmpty()) {
-        <div class="flex flex-col items-center justify-center py-16 gap-4" style="color: var(--color-text-muted)">
-            <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
-                style="opacity: 0.4">
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-                <circle cx="8" cy="10" r="1"/><circle cx="12" cy="10" r="1"/><circle cx="16" cy="10" r="1"/>
-            </svg>
-            <p class="text-base font-medium">Aún no has escrito reseñas</p>
-            <a routerLink="/products" class="btn btn-primary text-sm">Explorar productos</a>
+        <div class="empty">
+            <lucide-icon name="message-square" [size]="56" class="empty-icon"/>
+            <p class="empty-title">Aún no has escrito reseñas</p>
+            <a routerLink="/products" class="explore-link">Explorar productos</a>
         </div>
     } @else {
-        <div class="flex flex-col gap-4">
+        <div class="review-list">
             @for (review of reviews(); track review.id) {
-                <div class="card">
-                    <div class="card-body">
-                        <div class="flex items-start justify-between gap-3">
-                            <div class="flex-1 min-w-0">
-                                <p class="text-sm font-semibold mb-1" style="color: var(--color-text-primary)">
-                                    {{ review.productoNombre }}
-                                </p>
+                <div class="review-card">
 
-                                @if (editing() !== review.id) {
-                                    <!-- Vista de lectura -->
-                                    <div class="flex items-center gap-1 mb-2">
-                                        @for (star of starsArray(review.calificacion); track $index) {
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
-                                                [attr.fill]="star ? 'currentColor' : 'none'"
-                                                stroke="currentColor" stroke-width="1.5"
-                                                style="color: var(--color-accent)">
-                                                <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
-                                            </svg>
-                                        }
-                                    </div>
-                                    @if (review.comentario) {
-                                        <p class="text-sm mb-1" style="color: var(--color-text-secondary)">{{ review.comentario }}</p>
-                                    }
-                                    <p class="text-xs" style="color: var(--color-text-muted)">
-                                        {{ review.fechaResena | date:'dd/MM/yyyy' }}
-                                    </p>
-                                } @else {
-                                    <!-- Formulario de edición inline -->
-                                    <form [formGroup]="editForm" (ngSubmit)="saveEdit(review)" class="flex flex-col gap-3 mt-2">
-                                        <div>
-                                            <label class="input-label">Calificación (1–5)</label>
-                                            <input type="number" class="form-input" formControlName="calificacion" min="1" max="5">
-                                        </div>
-                                        <div>
-                                            <label class="input-label">Comentario</label>
-                                            <textarea class="form-input" formControlName="comentario" rows="3" style="resize: vertical"></textarea>
-                                        </div>
-                                        <div class="flex gap-2">
-                                            <app-button type="submit" [label]="saving() ? 'Guardando...' : 'Guardar'" icon="save" variant="primary" [loading]="saving()" [disabled]="editForm.invalid" />
-                                            <app-button type="button" label="Cancelar" icon="x" variant="secondary" (click)="cancelEdit()" />
-                                        </div>
-                                    </form>
-                                }
+                    <div class="review-header">
+                        <p class="review-product">{{ review.productoNombre }}</p>
+
+                        @if (editing() !== review.id) {
+                            <div class="review-actions">
+                                <ds-button variant="ghost" size="sm" icon="pencil"
+                                    ariaLabel="Editar"
+                                    (click)="startEdit(review)">
+                                </ds-button>
+                                <ds-button variant="danger" size="sm" icon="trash-2"
+                                    ariaLabel="Eliminar"
+                                    [disabled]="deleting() === review.id"
+                                    (click)="deleteReview(review.id)">
+                                </ds-button>
                             </div>
+                        }
+                    </div>
 
-                            @if (editing() !== review.id) {
-                                <div class="flex gap-1 flex-shrink-0">
-                                    <app-button icon="pencil" variant="ghost" [iconOnly]="true" ariaLabel="Editar" size="sm" (click)="startEdit(review)" />
-                                    <app-button icon="trash-2" variant="danger" [iconOnly]="true" ariaLabel="Eliminar" size="sm" [loading]="deleting() === review.id" (click)="deleteReview(review.id)" />
-                                </div>
+                    @if (editing() !== review.id) {
+                        <!-- Vista de lectura -->
+                        <div class="stars">
+                            @for (star of starsArray(review.calificacion); track $index) {
+                                <lucide-icon name="star" [size]="14"
+                                    [class.star-filled]="star"
+                                    [class.star-empty]="!star"/>
                             }
                         </div>
-                    </div>
+                        @if (review.comentario) {
+                            <p class="review-comment">{{ review.comentario }}</p>
+                        }
+                        <p class="review-date">{{ review.fechaResena | date:'dd/MM/yyyy' }}</p>
+
+                    } @else {
+                        <!-- Formulario de edición inline -->
+                        <form [formGroup]="editForm" (ngSubmit)="saveEdit(review)" class="edit-form">
+                            <div class="field">
+                                <label class="lbl">Calificación (1–5)</label>
+                                <input type="number" class="input" formControlName="calificacion" min="1" max="5"/>
+                            </div>
+                            <div class="field">
+                                <label class="lbl">Comentario</label>
+                                <textarea class="input textarea" formControlName="comentario" rows="3"></textarea>
+                            </div>
+                            <div class="edit-actions">
+                                <ds-button variant="primary" size="sm" icon="save" type="submit"
+                                    [disabled]="saving() || editForm.invalid">
+                                    {{ saving() ? 'Guardando...' : 'Guardar' }}
+                                </ds-button>
+                                <ds-button variant="secondary" size="sm" icon="x" type="button"
+                                    (click)="cancelEdit()">
+                                    Cancelar
+                                </ds-button>
+                            </div>
+                        </form>
+                    }
+
                 </div>
             }
         </div>
     }
-</div>
+
+</ds-account-shell>
+
+<style>
+    .loading {
+        display: flex; justify-content: center; padding: 40px;
+    }
+    .spinner {
+        width: 24px; height: 24px;
+        border: 2px solid var(--c-border);
+        border-top-color: var(--c-brand);
+        border-radius: 999px;
+        animation: spin 700ms linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .empty {
+        display: flex; flex-direction: column; align-items: center;
+        gap: 12px; padding: 60px 24px;
+        color: var(--c-muted);
+    }
+    .empty-icon { opacity: 0.35; }
+    .empty-title { font-size: 15px; font-weight: 600; color: var(--c-text); margin: 0; }
+    .explore-link {
+        font-size: 13px; font-weight: 600;
+        color: var(--c-brand); text-decoration: none;
+        padding: 8px 20px;
+        border: 1px solid var(--c-brand);
+        border-radius: var(--r-md);
+        transition: background 120ms;
+    }
+    .explore-link:hover { background: color-mix(in srgb, var(--c-brand) 8%, transparent); }
+
+    .review-list { display: flex; flex-direction: column; gap: 12px; }
+    .review-card {
+        background: var(--c-surface);
+        border: 1px solid var(--c-border);
+        border-radius: var(--r-lg);
+        padding: 18px 20px;
+        display: flex; flex-direction: column; gap: 8px;
+    }
+
+    .review-header {
+        display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+    }
+    .review-product {
+        font-size: 14px; font-weight: 600;
+        color: var(--c-text); margin: 0;
+        flex: 1; min-width: 0;
+    }
+    .review-actions { display: flex; gap: 4px; flex-shrink: 0; }
+
+    .stars { display: flex; gap: 3px; }
+    .star-filled { color: var(--c-accent); }
+    .star-empty { color: var(--c-border); }
+
+    .review-comment { font-size: 13px; color: var(--c-text); margin: 0; line-height: 1.5; }
+    .review-date { font-size: 12px; color: var(--c-muted); margin: 0; }
+
+    /* Formulario edición */
+    .edit-form { display: flex; flex-direction: column; gap: 12px; }
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    .lbl { font-size: 12px; font-weight: 600; color: var(--c-text); }
+    .input {
+        height: 40px;
+        padding: 0 12px;
+        background: var(--c-surface);
+        border: 1px solid var(--c-border);
+        border-radius: var(--r-md);
+        font-size: 14px;
+        color: var(--c-text);
+        font-family: inherit;
+        transition: border-color 120ms;
+    }
+    .input:focus {
+        outline: none;
+        border-color: var(--c-brand);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--c-brand) 20%, transparent);
+    }
+    .textarea { height: auto; padding: 10px 12px; resize: vertical; }
+    .edit-actions { display: flex; gap: 8px; }
+</style>

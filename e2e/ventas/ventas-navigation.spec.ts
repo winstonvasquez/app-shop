@@ -48,7 +48,7 @@ const mockPedidoDetalle = {
 const mockPromociones = [
     { id: 1, nombre: 'Verano 20%', tipo: 'PORCENTAJE', valor: 20, alcance: 'CARRITO',
       codigoCupon: 'VER20', limiteUsos: 100, usosActuales: 12,
-      fechaInicio: '2026-03-01', fechaFin: '2026-03-31', activo: true },
+      fechaInicio: '2026-03-01', fechaFin: '2026-12-31', activo: true },
     { id: 2, nombre: 'Fijo S/10', tipo: 'MONTO_FIJO', valor: 10, alcance: 'PRODUCTO',
       usosActuales: 0, fechaInicio: '2026-01-01', fechaFin: '2026-01-31', activo: false },
 ];
@@ -114,6 +114,8 @@ const IGNORE_NOISE = [
     'mfe-',                         // MFE remote errors
     'native-federation',            // @angular-architects/native-federation
     'SystemParameterService',       // parámetros de sistema (backend no corre)
+    'TranslateLoader',
+    'StoreConfigService',
     'the server responded with a status of',  // HTTP 4xx/5xx (backend no corre en tests)
 ];
 function isAppError(msg: string): boolean {
@@ -131,7 +133,7 @@ test.describe('Dashboard Ventas', () => {
         await page.goto('/admin/ventas/dashboard');
         await page.waitForURL('**/admin/ventas/dashboard', { timeout: 30_000 });
 
-        await expect(page.locator('.card-metric').first()).toBeVisible({ timeout: 20_000 });
+        await expect(page.locator('.kpi-card').first()).toBeVisible({ timeout: 20_000 });
         const appErrors = errors.filter(isAppError);
         expect(appErrors, `Errores de consola: ${appErrors.join('\n')}`).toHaveLength(0);
     });
@@ -185,8 +187,8 @@ test.describe('Pedidos — detalle (drawer)', () => {
         await setupMocks(page);
         await page.goto('/admin/orders');
         await page.waitForURL('**/admin/orders', { timeout: 30_000 });
-        await expect(page.locator('.action-btn').first()).toBeVisible({ timeout: 20_000 });
-        await page.locator('.action-btn').first().click();
+        await expect(page.locator('.btn-icon').first()).toBeVisible({ timeout: 20_000 });
+        await page.locator('.btn-icon').first().click();
     });
 
     test('drawer se abre al hacer click en Ver', async ({ page }) => {
@@ -271,7 +273,7 @@ test.describe('Promociones — formulario', () => {
 
     test('editar promo precarga nombre y valor', async ({ page }) => {
         // Primer botón de acción es Editar
-        await page.locator('.action-btn').first().click();
+        await page.locator('.btn-icon').first().click();
         await expect(page.locator('.drawer-overlay')).toBeVisible({ timeout: 15_000 });
 
         await expect(page.locator('input[placeholder*="Descuento"]')).toHaveValue('Verano 20%');

@@ -7,10 +7,14 @@ export interface CuponResponse {
     id: number;
     codigo: string | null;
     nombre: string;
+    /** Alias visual usado en templates */
+    titulo?: string;
     descripcion: string | null;
     tipo: string;
     valor: number;
     fechaFin: string;
+    /** Alias de fechaFin usado en templates */
+    fechaExpiracion?: string;
     status: 'ACTIVE' | 'USED' | 'EXPIRED';
     usedAt: string | null;
 }

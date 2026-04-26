@@ -3,12 +3,10 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { TranslateModule } from '@ngx-translate/core';
+import { LucideAngularModule } from 'lucide-angular';
 import { environment } from '@env/environment';
-import {
-    FormFieldComponent,
-    AdminFormSectionComponent,
-    AdminFormLayoutComponent,
-} from '@shared/ui';
+
+import { DsButtonComponent, DsWordmarkComponent } from '@shared/ui/ds';
 
 @Component({
     selector: 'app-forgot-password',
@@ -17,117 +15,197 @@ import {
         ReactiveFormsModule,
         RouterLink,
         TranslateModule,
-        FormFieldComponent,
-        AdminFormSectionComponent,
-        AdminFormLayoutComponent,
+        LucideAngularModule,
+        DsButtonComponent,
+        DsWordmarkComponent,
     ],
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: { class: 'block w-full min-h-screen' },
     template: `
-<main class="login-layout min-h-screen flex items-center justify-center bg-[var(--color-background)] p-6">
-    <div class="w-full sm:w-[420px]">
+<main class="ds-recover">
+    <div class="card">
+        <div class="brand"><ds-wordmark [size]="24"/></div>
 
-        <!-- Header -->
-        <header class="mb-10 text-center">
-            <div class="flex items-center justify-center gap-2 mb-6">
-                <span class="text-3xl font-black tracking-tighter text-[var(--color-text-primary)]">APP</span>
-                <span class="text-3xl font-black tracking-tighter text-[var(--color-primary)]">SHOP</span>
-            </div>
-            <h1 class="text-3xl font-extrabold text-[var(--color-text-primary)] tracking-tight">
-                Recuperar contraseña
-            </h1>
-            <p class="mt-3 text-[var(--color-text-muted)] text-sm">
-                Ingresa tu correo y te enviaremos un enlace para restablecer tu contraseña.
-            </p>
-        </header>
+        <div class="ic-wrap">
+            <lucide-icon name="mail" [size]="26"/>
+        </div>
 
-        <!-- Éxito -->
+        <h1 class="title">Recuperar contraseña</h1>
+        <p class="sub">Ingresa tu correo y te enviaremos un enlace seguro para restablecerla.</p>
+
         @if (sent()) {
-        <div class="p-5 bg-[var(--color-success)]/10 border border-[var(--color-success)]/30 rounded-xl text-center">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10 mx-auto mb-3 text-[var(--color-success)]"
-                fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <p class="text-[var(--color-success)] font-semibold text-base">
-                ¡Enlace enviado!
-            </p>
-            <p class="text-[var(--color-text-muted)] text-sm mt-2">
-                Revisa tu correo, te enviamos un enlace para restablecer tu contraseña.
-                Si no lo ves, revisa tu carpeta de spam.
-            </p>
-            <a [routerLink]="['/auth/login']"
-                class="inline-block mt-5 text-sm font-semibold text-[var(--color-primary)] hover:text-[var(--color-primary-dark)] transition-colors">
-                Volver al inicio de sesión
-            </a>
-        </div>
-        }
-
-        <!-- Formulario canónico -->
-        @if (!sent()) {
-        <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
-            <app-admin-form-layout [errorMessage]="error() ?? ''">
-                <app-admin-form-section [columns]="1">
-                    <app-form-field
-                        label="Correo electrónico"
-                        [required]="true"
-                        [error]="emailError()">
-                        <input
-                            id="email"
-                            type="email"
-                            formControlName="email"
-                            placeholder="tu@correo.com"
-                            class="form-input"
-                            autocomplete="email" />
-                    </app-form-field>
-                </app-admin-form-section>
-
-                <div slot="actions" class="w-full">
-                    <button
-                        type="submit"
-                        [disabled]="form.invalid || isSending()"
-                        class="flex w-full justify-center items-center gap-3 btn-primary-gradient rounded-xl px-4 py-4 text-sm font-bold text-white shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 transition-all uppercase tracking-wider disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0">
-                        @if (isSending()) {
-                            <div class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                            <span>Enviando...</span>
-                        } @else {
-                            <span>Enviar enlace</span>
-                        }
-                    </button>
+            <div class="alert ok">
+                <lucide-icon name="check-circle" [size]="18"/>
+                <div>
+                    <strong>¡Enlace enviado!</strong>
+                    <p>Revisa tu correo. Si no lo ves, mira tu carpeta de spam.</p>
                 </div>
-            </app-admin-form-layout>
-        </form>
-
-        <!-- Volver al login -->
-        <div class="mt-8 text-center text-sm">
-            <a [routerLink]="['/auth/login']"
-                class="font-semibold text-[var(--color-primary)] hover:text-[var(--color-primary-dark)] transition-colors">
-                ← Volver al inicio de sesión
-            </a>
-        </div>
+            </div>
+            <ds-button variant="secondary" size="md" [full]="true" routerLink="/auth/login" icon="arrow-left">
+                Volver al inicio de sesión
+            </ds-button>
         }
 
+        @if (!sent()) {
+            <form [formGroup]="form" (ngSubmit)="onSubmit()" class="form">
+                @if (error()) {
+                    <div class="alert err">
+                        <lucide-icon name="alert-triangle" [size]="16"/>
+                        {{ error() }}
+                    </div>
+                }
+
+                <div class="field">
+                    <label class="lbl">Correo electrónico <span class="req">*</span></label>
+                    <label class="input-wrap" [class.is-error]="!!emailError()">
+                        <lucide-icon name="mail" [size]="16" class="ic"/>
+                        <input formControlName="email" type="email" placeholder="tu@correo.pe" autocomplete="email"/>
+                    </label>
+                    @if (emailError()) {
+                        <span class="hint err">{{ emailError() }}</span>
+                    }
+                </div>
+
+                <ds-button variant="primary" size="lg" type="submit" [full]="true"
+                    [disabled]="form.invalid || isSending()">
+                    @if (isSending()) { Enviando… } @else { Enviar enlace de recuperación }
+                </ds-button>
+
+                <div class="info">
+                    <lucide-icon name="shield" [size]="14" class="info-ic"/>
+                    <span>Por tu seguridad, el enlace expira en 30 minutos. Si no lo recibes, revisa tu carpeta de spam.</span>
+                </div>
+
+                <a routerLink="/auth/login" class="back-link">← Volver al inicio de sesión</a>
+            </form>
+        }
     </div>
 </main>
-    `
+
+<style>
+    .ds-recover {
+        background: var(--c-bg, var(--color-background));
+        min-height: 100vh;
+        display: flex; align-items: center; justify-content: center;
+        font-family: var(--f-sans);
+        color: var(--c-text);
+        padding: 24px;
+    }
+    .card {
+        width: 100%; max-width: 440px;
+        background: var(--c-surface);
+        border: 1px solid var(--c-border);
+        border-radius: var(--r-xl);
+        box-shadow: var(--s-lg);
+        padding: 36px;
+    }
+    .brand { display: flex; justify-content: center; margin-bottom: 20px; }
+    .ic-wrap {
+        width: 56px; height: 56px;
+        border-radius: var(--r-lg);
+        background: color-mix(in srgb, var(--c-brand) 12%, var(--c-surface));
+        color: var(--c-brand);
+        display: inline-flex; align-items: center; justify-content: center;
+        margin: 0 auto 16px;
+    }
+    .title {
+        font-family: var(--f-display);
+        font-size: 24px; font-weight: 700;
+        margin: 0 0 6px; color: var(--c-text);
+        text-align: center; letter-spacing: -0.02em;
+    }
+    .sub {
+        font-size: 14px; color: var(--c-muted);
+        margin: 0 0 24px;
+        text-align: center; line-height: 1.5;
+    }
+    .form { display: flex; flex-direction: column; gap: 16px; }
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    .lbl { font-size: 12px; font-weight: 600; color: var(--c-text); }
+    .req { color: var(--c-danger); }
+    .input-wrap {
+        display: flex; align-items: center;
+        height: 44px; padding: 0 14px; gap: 8px;
+        background: var(--c-surface);
+        border: 1px solid var(--c-border);
+        border-radius: var(--r-md);
+        transition: border-color 120ms, box-shadow 120ms;
+    }
+    .input-wrap:focus-within {
+        border-color: var(--c-brand);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--c-brand) 25%, transparent);
+    }
+    .input-wrap.is-error { border-color: var(--c-danger); }
+    .input-wrap input {
+        flex: 1; border: none; outline: none;
+        font-size: 14px; color: var(--c-text);
+        background: transparent; font-family: inherit;
+    }
+    .input-wrap .ic { color: var(--c-muted); }
+
+    .hint { font-size: 12px; }
+    .hint.err { color: var(--c-danger); }
+
+    .alert {
+        display: flex; gap: 10px; align-items: flex-start;
+        padding: 12px;
+        border-radius: var(--r-md);
+        font-size: 13px;
+        margin-bottom: 4px;
+    }
+    .alert.err {
+        background: color-mix(in srgb, var(--c-danger) 12%, var(--c-surface));
+        border: 1px solid color-mix(in srgb, var(--c-danger) 30%, var(--c-border));
+        color: var(--c-danger);
+    }
+    .alert.ok {
+        background: color-mix(in srgb, var(--c-success) 12%, var(--c-surface));
+        border: 1px solid color-mix(in srgb, var(--c-success) 30%, var(--c-border));
+        color: var(--c-success);
+        margin-bottom: 16px;
+    }
+    .alert.ok p { margin: 4px 0 0; color: var(--c-text); font-size: 13px; }
+
+    .info {
+        background: color-mix(in srgb, var(--c-info) 8%, var(--c-surface));
+        border: 1px solid color-mix(in srgb, var(--c-info) 25%, var(--c-border));
+        border-radius: var(--r-md);
+        padding: 12px;
+        font-size: 12px; color: var(--c-muted);
+        display: flex; gap: 8px; align-items: flex-start;
+    }
+    .info-ic { color: var(--c-info); flex-shrink: 0; margin-top: 1px; }
+
+    .back-link {
+        text-align: center; font-size: 13px;
+        color: var(--c-brand); font-weight: 600;
+        text-decoration: none; cursor: pointer;
+    }
+    .back-link:hover { filter: brightness(1.1); }
+
+    @media (max-width: 640px) {
+        .card { padding: 24px; }
+    }
+</style>
+    `,
 })
 export class ForgotPasswordComponent {
-    private readonly fb = inject(FormBuilder);
+    private readonly fb   = inject(FormBuilder);
     private readonly http = inject(HttpClient);
 
     isSending = signal(false);
-    sent = signal(false);
-    error = signal<string | null>(null);
+    sent      = signal(false);
+    error     = signal<string | null>(null);
 
     form = this.fb.group({
-        email: ['', [Validators.required, Validators.email]]
+        email: ['', [Validators.required, Validators.email]],
     });
 
     emailError(): string {
         const c = this.form.get('email');
         if (!c || c.pristine || c.valid) return '';
         if (c.hasError('required')) return 'Correo electrónico requerido.';
-        if (c.hasError('email')) return 'Ingresa un correo electrónico válido.';
+        if (c.hasError('email'))    return 'Ingresa un correo electrónico válido.';
         return 'Campo inválido.';
     }
 
@@ -144,7 +222,7 @@ export class ForgotPasswordComponent {
 
         this.http.post<void>(
             `${environment.apiUrls.users}/api/auth/forgot-password`,
-            { email }
+            { email },
         ).subscribe({
             next: () => {
                 this.isSending.set(false);
@@ -153,12 +231,11 @@ export class ForgotPasswordComponent {
             error: (err: unknown) => {
                 this.isSending.set(false);
                 const httpErr = err as { status?: number };
-                this.error.set(
-                    httpErr.status === 0
-                        ? 'No se pudo conectar con el servidor. Intenta más tarde.'
-                        : 'Ocurrió un error al procesar tu solicitud. Intenta nuevamente.'
+                this.error.set(httpErr.status === 0
+                    ? 'No se pudo conectar con el servidor. Intenta más tarde.'
+                    : 'Ocurrió un error al procesar tu solicitud. Intenta nuevamente.',
                 );
-            }
+            },
         });
     }
 }

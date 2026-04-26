@@ -1,58 +1,100 @@
-<div class="page-container">
-    <app-breadcrumb [items]="breadcrumbItems" />
-    <div class="page-header">
-        <h1 class="page-title">Tiendas que sigues</h1>
-        <p class="page-subtitle">Tus tiendas favoritas en un solo lugar</p>
-    </div>
+<ds-account-shell title="Tiendas que sigues" subtitle="Tus tiendas favoritas en un solo lugar" [userName]="userName()">
 
     @if (loading()) {
-        <div class="loading-container"><div class="spinner"></div></div>
+        <div class="loading"><span class="spinner"></span></div>
     } @else if (stores().length === 0) {
-        <div class="flex flex-col items-center justify-center py-16 gap-4" style="color: var(--color-text-muted)">
-            <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
-                style="opacity: 0.4">
-                <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-                <polyline points="9 22 9 12 15 12 15 22"/>
-            </svg>
-            <p class="text-base font-medium">Aún no sigues ninguna tienda</p>
-            <a routerLink="/products" class="btn btn-primary text-sm">Explorar tiendas</a>
+        <div class="empty">
+            <lucide-icon name="shopping-bag" [size]="56" class="empty-icon"/>
+            <p class="empty-title">Aún no sigues ninguna tienda</p>
+            <a routerLink="/products" class="explore-link">Explorar tiendas</a>
         </div>
     } @else {
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div class="grid">
             @for (store of stores(); track store.companyId) {
-                <div class="card">
-                    <div class="card-body flex items-center justify-between gap-3">
-                        <div class="flex items-center gap-3 min-w-0">
-                            <div class="flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center text-lg font-bold"
-                                style="background: var(--color-surface-raised); color: var(--color-primary)">
-                                {{ store.name.charAt(0).toUpperCase() }}
-                            </div>
-                            <div class="min-w-0">
-                                <p class="text-sm font-semibold truncate" style="color: var(--color-text-primary)">
-                                    {{ store.name }}
-                                </p>
-                                @if (store.domain) {
-                                    <p class="text-xs truncate" style="color: var(--color-text-muted)">
-                                        {{ store.domain }}
-                                    </p>
-                                }
-                                <p class="text-xs mt-0.5" style="color: var(--color-text-muted)">
-                                    Desde {{ store.followedAt | date:'dd/MM/yyyy' }}
-                                </p>
-                            </div>
+                <div class="store-card">
+                    <div class="store-info">
+                        <div class="avatar">{{ store.name.charAt(0).toUpperCase() }}</div>
+                        <div class="store-text">
+                            <p class="store-name">{{ store.name }}</p>
+                            @if (store.domain) {
+                                <p class="store-domain">{{ store.domain }}</p>
+                            }
+                            <p class="store-since">Desde {{ store.followedAt | date:'dd/MM/yyyy' }}</p>
                         </div>
-                        <app-button
-                            label="Dejar de seguir"
-                            variant="secondary"
-                            icon="user-minus"
-                            size="xs"
-                            [loading]="unfollowing() === store.companyId"
-                            [disabled]="unfollowing() === store.companyId"
-                            (click)="unfollow(store.companyId)" />
                     </div>
+                    <ds-button variant="secondary" size="sm" icon="user-minus"
+                        [disabled]="unfollowing() === store.companyId"
+                        (click)="unfollow(store.companyId)">
+                        Dejar de seguir
+                    </ds-button>
                 </div>
             }
         </div>
     }
-</div>
+
+</ds-account-shell>
+
+<style>
+    .loading {
+        display: flex; justify-content: center; padding: 40px;
+    }
+    .spinner {
+        width: 24px; height: 24px;
+        border: 2px solid var(--c-border);
+        border-top-color: var(--c-brand);
+        border-radius: 999px;
+        animation: spin 700ms linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .empty {
+        display: flex; flex-direction: column; align-items: center;
+        gap: 12px; padding: 60px 24px;
+        color: var(--c-muted);
+    }
+    .empty-icon { opacity: 0.35; }
+    .empty-title { font-size: 15px; font-weight: 600; color: var(--c-text); margin: 0; }
+    .explore-link {
+        font-size: 13px; font-weight: 600;
+        color: var(--c-brand); text-decoration: none;
+        padding: 8px 20px;
+        border: 1px solid var(--c-brand);
+        border-radius: var(--r-md);
+        transition: background 120ms;
+    }
+    .explore-link:hover { background: color-mix(in srgb, var(--c-brand) 8%, transparent); }
+
+    .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 12px;
+    }
+    .store-card {
+        background: var(--c-surface);
+        border: 1px solid var(--c-border);
+        border-radius: var(--r-lg);
+        padding: 16px;
+        display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    }
+    .store-info { display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .avatar {
+        flex-shrink: 0;
+        width: 40px; height: 40px;
+        border-radius: var(--r-md);
+        background: color-mix(in srgb, var(--c-brand) 12%, var(--c-surface2));
+        color: var(--c-brand);
+        font-size: 17px; font-weight: 700;
+        display: flex; align-items: center; justify-content: center;
+    }
+    .store-text { min-width: 0; }
+    .store-name {
+        font-size: 14px; font-weight: 600;
+        color: var(--c-text); margin: 0 0 2px;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .store-domain {
+        font-size: 12px; color: var(--c-muted); margin: 0 0 2px;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .store-since { font-size: 12px; color: var(--c-muted); margin: 0; }
+</style>

@@ -1,108 +1,127 @@
-<!-- ════════════════════════════════════════════
-     FLASH DEALS STRIP + PRODUCT GRID
-     ════════════════════════════════════════════ -->
-<div>
+<!--
+    FLASH DEALS — DS Confianza
+    Strip horizontal scrollable + grid de productos restantes
+-->
+<div class="ds-flash">
 
-    <!-- ── Elevated product strip card ── -->
-    <div class="rounded-2xl overflow-hidden bg-surface/70 backdrop-blur-sm border border-border shadow-[0_4px_24px_rgba(0,0,0,0.4)]">
+    <div class="strip" #stripWrap>
+        <button (click)="scroll(-1)" class="nav-btn left" aria-label="Anterior">
+            <lucide-icon name="chevron-left" [size]="16"/>
+        </button>
 
-        <!-- Strip header -->
-        <div class="flex items-center justify-between px-4 pt-4 pb-3 border-b border-border bg-surface/70">
-            <div class="flex items-center gap-2">
-                <svg class="w-3.5 h-3.5 flex-shrink-0 text-primary" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
-                </svg>
-                <span class="text-[13px] font-bold text-on">
-                    {{ 'home.flashDeals' | translate }}
-                </span>
-                <span class="text-[10px] font-semibold px-2 py-0.5 rounded bg-primary/15 text-primary">
-                    {{ 'home.limitedTime' | translate }}
-                </span>
-            </div>
-            <!-- Ver todos → ahora navega a /products -->
-            <a routerLink="/products"
-                class="text-[12px] font-semibold text-primary hover:underline">
-                {{ 'home.viewAll' | translate }} →
-            </a>
-        </div>
-
-        <!-- Scroll row con flechas de navegación -->
-        <div class="relative group/scroll">
-
-            <!-- Flecha izquierda — DENTRO del contenedor, no cortada -->
-            <button (click)="scroll(-1)"
-                class="absolute left-2 top-1/2 -translate-y-1/2 z-10
-                       w-8 h-8 flex items-center justify-center
-                       rounded-full bg-surface border border-border text-on shadow-lg
-                       opacity-0 group-hover/scroll:opacity-100 transition-opacity
-                       focus:outline-none">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7" />
-                </svg>
-            </button>
-
-            <!-- Horizontal scroll row -->
-            <div #scrollContainer
-                class="flex gap-2.5 overflow-x-auto p-3 bg-transparent
-                       [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-
-                @for (product of featuredProducts(); track product.id) {
-                <div class="flex-shrink-0 snap-start w-[148px]">
-                    <app-product-card [product]="product" />
+        <div #scrollContainer class="scroll-row">
+            @for (product of featuredProducts(); track product.id) {
+                <div class="card-wrap">
+                    <ds-product-card [p]="product" (cardClick)="onCardClick($event)"/>
                 </div>
-                }
+            }
 
-                <!-- Loading skeletons -->
-                @if (loading() && featuredProducts().length === 0) {
+            @if (loading() && featuredProducts().length === 0) {
                 @for (n of [1,2,3,4,5,6]; track n) {
-                <div class="flex-shrink-0 rounded-xl animate-pulse bg-surface-raised/70 w-[148px] h-[210px]"></div>
+                    <div class="skeleton"></div>
                 }
-                }
-            </div>
-
-            <!-- Flecha derecha — simétrica a la izquierda -->
-            <button (click)="scroll(1)"
-                class="absolute right-2 top-1/2 -translate-y-1/2 z-10
-                       w-8 h-8 flex items-center justify-center
-                       rounded-full bg-surface border border-border text-on shadow-lg
-                       opacity-0 group-hover/scroll:opacity-100 transition-opacity
-                       focus:outline-none">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7" />
-                </svg>
-            </button>
-
-        </div>
-    </div>
-
-    <!-- ── Full Product Grid (below the strip) ── -->
-    @if (remainingProducts().length > 0 || (loading() && products().length > 0)) {
-    <div class="mt-6">
-        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-            @for (product of remainingProducts(); track product.id) {
-            <app-product-card [product]="product" />
             }
         </div>
+
+        <button (click)="scroll(1)" class="nav-btn right" aria-label="Siguiente">
+            <lucide-icon name="chevron-right" [size]="16"/>
+        </button>
     </div>
+
+    @if (remainingProducts().length > 0) {
+        <div class="grid">
+            @for (product of remainingProducts(); track product.id) {
+                <ds-product-card [p]="product" (cardClick)="onCardClick($event)"/>
+            }
+        </div>
     }
 
-    <!-- Load more / spinner -->
-    <div class="flex justify-center mt-8 min-h-[48px]">
+    <div class="actions">
         @if (loading()) {
-        <div class="flex items-center gap-2 text-[13px] text-muted">
-            <svg class="animate-spin w-4 h-4 flex-shrink-0 text-primary" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-                <path class="opacity-75" fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-            </svg>
-            {{ 'common.loading' | translate }}
-        </div>
+            <span class="loading-row">
+                <span class="spinner"></span>
+                {{ 'common.loading' | translate }}
+            </span>
         } @else if (hasMore()) {
-        <button (click)="loadProducts()"
-            class="btn btn-primary rounded-full px-10 text-[13px] uppercase tracking-wide hover:-translate-y-0.5 active:scale-95 shadow-lg">
-            {{ 'home.viewAll' | translate }}
-        </button>
+            <button class="more-btn" (click)="loadProducts()">
+                {{ 'home.viewAll' | translate }}
+            </button>
         }
     </div>
-
 </div>
+
+<style>
+    .ds-flash { font-family: var(--f-sans); }
+    .strip { position: relative; }
+    .nav-btn {
+        position: absolute; top: 50%; transform: translateY(-50%);
+        z-index: 2; width: 32px; height: 32px;
+        background: var(--c-surface);
+        border: 1px solid var(--c-border);
+        border-radius: 999px;
+        color: var(--c-text); cursor: pointer;
+        display: inline-flex; align-items: center; justify-content: center;
+        box-shadow: var(--s-md);
+        opacity: 0; transition: opacity 120ms;
+    }
+    .nav-btn.left  { left: -8px; }
+    .nav-btn.right { right: -8px; }
+    .strip:hover .nav-btn { opacity: 1; }
+
+    .scroll-row {
+        display: flex; gap: 12px;
+        overflow-x: auto; padding: 4px 4px 12px;
+        scroll-snap-type: x mandatory;
+        scrollbar-width: none;
+    }
+    .scroll-row::-webkit-scrollbar { display: none; }
+    .card-wrap {
+        flex-shrink: 0; width: 196px;
+        scroll-snap-align: start;
+    }
+    .skeleton {
+        flex-shrink: 0; width: 196px; height: 280px;
+        background: var(--c-surface2);
+        border-radius: var(--r-lg);
+        animation: pulse 1.4s ease-in-out infinite;
+    }
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .55; } }
+
+    .grid {
+        margin-top: 16px;
+        display: grid; gap: 12px;
+        grid-template-columns: repeat(6, 1fr);
+    }
+
+    .actions {
+        display: flex; justify-content: center;
+        margin-top: 16px; min-height: 40px;
+    }
+    .loading-row {
+        display: inline-flex; align-items: center; gap: 8px;
+        font-size: 13px; color: var(--c-muted);
+    }
+    .spinner {
+        width: 16px; height: 16px;
+        border: 2px solid var(--c-surface2);
+        border-top-color: var(--c-brand);
+        border-radius: 999px;
+        animation: spin 800ms linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .more-btn {
+        height: 40px; padding: 0 20px;
+        background: var(--c-brand); color: var(--c-onBrand, #fff);
+        border: none; border-radius: var(--r-md);
+        font-family: var(--f-sans);
+        font-size: 13px; font-weight: 700;
+        text-transform: uppercase; letter-spacing: .04em;
+        cursor: pointer;
+        transition: filter 120ms;
+    }
+    .more-btn:hover { filter: brightness(1.06); }
+
+    @media (max-width: 1024px) { .grid { grid-template-columns: repeat(4, 1fr); } }
+    @media (max-width: 640px)  { .grid { grid-template-columns: repeat(2, 1fr); } .card-wrap { width: 160px; } }
+</style>

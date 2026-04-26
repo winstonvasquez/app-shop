@@ -1,95 +1,228 @@
-<div class="page-container">
-    <app-breadcrumb [items]="breadcrumbItems" />
-    <div class="page-header">
-        <div>
-            <h1 class="page-title">Mis Direcciones</h1>
-            <p class="page-subtitle">Gestiona tus direcciones de envío</p>
-        </div>
-        <div class="card-action">
-            <app-button label="Agregar dirección" icon="plus" variant="primary" (click)="openAddForm()" />
-        </div>
+<ds-account-shell title="Mis direcciones" subtitle="Administra tus direcciones de envío" [userName]="userName()">
+
+    <div class="head-actions">
+        @if (!showForm()) {
+            <ds-button variant="primary" size="md" icon="plus" (click)="openAddForm()">
+                Nueva dirección
+            </ds-button>
+        }
     </div>
 
     @if (loading()) {
-        <div class="loading-container"><div class="spinner"></div></div>
-    } @else {
+        <div class="state"><span class="spinner"></span> Cargando…</div>
+    }
 
-        <!-- Formulario de agregar/editar -->
-        @if (showForm()) {
-            <div class="card max-w-lg mb-6">
-                <div class="card-header">
-                    <h2 class="card-title">{{ editingId() ? 'Editar dirección' : 'Nueva dirección' }}</h2>
-                </div>
-                <div class="card-body">
-                    <form [formGroup]="addressForm" (ngSubmit)="onSubmit()">
-                        <app-admin-form-layout [errorMessage]="submitError()">
-
-                            <app-admin-form-section [columns]="2">
-                                <app-form-field label="Destinatario" [required]="true" [error]="err('nombreDestinatario')">
-                                    <input class="form-input" type="text" formControlName="nombreDestinatario" placeholder="Nombre completo" />
-                                </app-form-field>
-                                <app-form-field label="Teléfono" [required]="true" [error]="err('telefono')">
-                                    <input class="form-input" type="tel" formControlName="telefono" placeholder="999 999 999" />
-                                </app-form-field>
-                            </app-admin-form-section>
-
-                            <app-admin-form-section [columns]="1">
-                                <app-form-field label="Dirección" [required]="true" [error]="err('direccion')">
-                                    <input class="form-input" type="text" formControlName="direccion" placeholder="Av. Ejemplo 123, Dpto 4B" />
-                                </app-form-field>
-                            </app-admin-form-section>
-
-                            <app-admin-form-section [columns]="2">
-                                <app-form-field label="Ciudad" [required]="true" [error]="err('ciudad')">
-                                    <input class="form-input" type="text" formControlName="ciudad" placeholder="Lima" />
-                                </app-form-field>
-                                <app-form-field label="Región" [error]="err('region')">
-                                    <input class="form-input" type="text" formControlName="region" placeholder="Lima Metropolitana" />
-                                </app-form-field>
-                            </app-admin-form-section>
-
-                            <div slot="actions">
-                                <app-button type="button" label="Cancelar" icon="x" variant="secondary" (click)="cancelForm()" />
-                                <app-button type="submit" [label]="saving() ? 'Guardando...' : 'Guardar'" icon="save" variant="primary" [loading]="saving()" [disabled]="addressForm.invalid" />
-                            </div>
-
-                        </app-admin-form-layout>
-                    </form>
-                </div>
-            </div>
-        }
-
-        <!-- Lista de direcciones -->
+    @if (!loading() && !showForm()) {
         @if (addresses().length === 0) {
-            <div class="card">
-                <div class="card-body text-center py-10 text-[var(--color-text-muted)]">
-                    <p>No tienes direcciones guardadas.</p>
-                </div>
+            <div class="empty">
+                <lucide-icon name="map-pin" [size]="48"/>
+                <h3>Sin direcciones registradas</h3>
+                <p>Agrega una dirección para acelerar tus compras.</p>
+                <ds-button variant="primary" size="md" icon="plus" (click)="openAddForm()">
+                    Agregar dirección
+                </ds-button>
             </div>
         } @else {
-            <div class="flex flex-col gap-4">
-                @for (addr of addresses(); track addr.id) {
-                    <div class="card">
-                        <div class="card-body flex items-start justify-between gap-4">
-                            <div>
-                                <p class="font-bold text-sm">{{ addr.nombreDestinatario }}</p>
-                                <p class="text-sm text-[var(--color-text-muted)]">{{ addr.direccion }}</p>
-                                <p class="text-sm text-[var(--color-text-muted)]">{{ addr.ciudad }}{{ addr.region ? ', ' + addr.region : '' }}</p>
-                                @if (addr.telefono) {
-                                    <p class="text-xs text-[var(--color-text-muted)] mt-1">Tel: {{ addr.telefono }}</p>
-                                }
-                                @if (addr.predeterminada) {
-                                    <span class="badge badge-success text-xs mt-1">Predeterminada</span>
-                                }
-                            </div>
-                            <div class="flex gap-2 flex-shrink-0">
-                                <app-button icon="pencil" variant="ghost" [iconOnly]="true" ariaLabel="Editar" size="sm" (click)="openEditForm(addr)" />
-                                <app-button icon="trash-2" variant="danger" [iconOnly]="true" ariaLabel="Eliminar" size="sm" (click)="deleteAddress(addr.id)" />
-                            </div>
+            <div class="grid">
+                @for (a of addresses(); track a.id) {
+                    <article class="addr">
+                        <header class="addr-head">
+                            <strong>{{ a.nombreDestinatario }}</strong>
+                            @if (a.predeterminada) {
+                                <ds-badge tone="success" size="xs">Predeterminada</ds-badge>
+                            }
+                        </header>
+                        <div class="addr-body">
+                            <div class="line"><lucide-icon name="map-pin" [size]="14"/> {{ a.direccion }}</div>
+                            <div class="line muted">{{ a.ciudad }}@if (a.region) {, {{ a.region }}}@if (a.codigoPostal) { · {{ a.codigoPostal }}}</div>
+                            <div class="line muted"><lucide-icon name="phone" [size]="14"/> {{ a.telefono }}</div>
                         </div>
-                    </div>
+                        <footer class="addr-foot">
+                            <ds-button variant="secondary" size="sm" icon="pencil" (click)="openEditForm(a)">
+                                Editar
+                            </ds-button>
+                            <ds-button variant="ghost" size="sm" icon="trash-2" (click)="deleteAddress(a.id)">
+                                Eliminar
+                            </ds-button>
+                        </footer>
+                    </article>
                 }
             </div>
         }
     }
-</div>
+
+    @if (showForm()) {
+        <form class="card" [formGroup]="addressForm" (ngSubmit)="onSubmit()">
+            <h3 class="card-h">{{ editingId() ? 'Editar' : 'Nueva' }} dirección</h3>
+
+            @if (submitError()) {
+                <div class="alert err">
+                    <lucide-icon name="alert-triangle" [size]="16"/>
+                    {{ submitError() }}
+                </div>
+            }
+
+            <div class="grid-2">
+                <div class="field">
+                    <label class="lbl">Nombre del destinatario <span class="req">*</span></label>
+                    <input formControlName="nombreDestinatario" class="input"
+                        [class.is-error]="!!err('nombreDestinatario')"
+                        placeholder="Ej: María Lucía Vásquez"/>
+                    @if (err('nombreDestinatario')) { <span class="hint err">{{ err('nombreDestinatario') }}</span> }
+                </div>
+                <div class="field">
+                    <label class="lbl">Teléfono <span class="req">*</span></label>
+                    <input formControlName="telefono" type="tel" class="input"
+                        [class.is-error]="!!err('telefono')"
+                        placeholder="+51 999 999 999"/>
+                    @if (err('telefono')) { <span class="hint err">{{ err('telefono') }}</span> }
+                </div>
+            </div>
+
+            <div class="field">
+                <label class="lbl">Dirección <span class="req">*</span></label>
+                <input formControlName="direccion" class="input"
+                    [class.is-error]="!!err('direccion')"
+                    placeholder="Av. Javier Prado Este 4200"/>
+                @if (err('direccion')) { <span class="hint err">{{ err('direccion') }}</span> }
+            </div>
+
+            <div class="grid-3">
+                <div class="field">
+                    <label class="lbl">Ciudad / Distrito <span class="req">*</span></label>
+                    <input formControlName="ciudad" class="input"
+                        [class.is-error]="!!err('ciudad')"
+                        placeholder="San Borja"/>
+                    @if (err('ciudad')) { <span class="hint err">{{ err('ciudad') }}</span> }
+                </div>
+                <div class="field">
+                    <label class="lbl">Región</label>
+                    <input formControlName="region" class="input" placeholder="Lima"/>
+                </div>
+                <div class="field">
+                    <label class="lbl">Código postal</label>
+                    <input formControlName="codigoPostal" class="input" placeholder="15036"/>
+                </div>
+            </div>
+
+            <div class="actions">
+                <ds-button variant="ghost" size="md" (click)="cancelForm()">Cancelar</ds-button>
+                <ds-button variant="primary" size="md" type="submit"
+                    icon="save" [disabled]="saving() || addressForm.invalid">
+                    {{ saving() ? 'Guardando…' : 'Guardar dirección' }}
+                </ds-button>
+            </div>
+        </form>
+    }
+
+</ds-account-shell>
+
+<style>
+    .head-actions { display: flex; justify-content: flex-end; }
+
+    .state, .empty {
+        background: var(--c-surface);
+        border: 1px solid var(--c-border);
+        border-radius: var(--r-lg);
+        padding: 48px 24px;
+        text-align: center;
+        color: var(--c-muted);
+        display: flex; flex-direction: column; align-items: center; gap: 12px;
+    }
+    .empty { gap: 16px; }
+    .empty h3 { color: var(--c-text); margin: 0; font-family: var(--f-display); font-size: 18px; }
+    .empty p { margin: 0; }
+    .spinner {
+        width: 16px; height: 16px;
+        border: 2px solid var(--c-surface2);
+        border-top-color: var(--c-brand);
+        border-radius: 999px;
+        animation: spin 800ms linear infinite;
+        display: inline-block; vertical-align: middle; margin-right: 8px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .grid {
+        display: grid; gap: 12px;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    }
+    .addr {
+        background: var(--c-surface);
+        border: 1px solid var(--c-border);
+        border-radius: var(--r-lg);
+        padding: 16px;
+        display: flex; flex-direction: column; gap: 12px;
+    }
+    .addr-head {
+        display: flex; align-items: center; justify-content: space-between;
+        gap: 8px;
+    }
+    .addr-head strong { font-size: 14px; color: var(--c-text); }
+    .addr-body { display: flex; flex-direction: column; gap: 6px; font-size: 13px; }
+    .line { display: flex; align-items: center; gap: 6px; color: var(--c-text); }
+    .line.muted { color: var(--c-muted); padding-left: 20px; }
+    .line.muted lucide-icon { margin-left: -20px; }
+    .addr-foot {
+        display: flex; gap: 8px; justify-content: flex-end;
+        padding-top: 12px;
+        border-top: 1px solid var(--c-border);
+    }
+
+    .card {
+        background: var(--c-surface);
+        border: 1px solid var(--c-border);
+        border-radius: var(--r-lg);
+        padding: 24px;
+        display: flex; flex-direction: column; gap: 16px;
+        max-width: 720px;
+    }
+    .card-h {
+        font-family: var(--f-display);
+        font-size: 18px; font-weight: 700;
+        color: var(--c-text); margin: 0;
+        padding-bottom: 12px;
+        border-bottom: 1px solid var(--c-border);
+    }
+
+    .alert {
+        display: flex; gap: 8px; align-items: center;
+        padding: 10px 14px;
+        border-radius: var(--r-md);
+        font-size: 13px;
+    }
+    .alert.err {
+        background: color-mix(in srgb, var(--c-danger) 12%, var(--c-surface));
+        border: 1px solid color-mix(in srgb, var(--c-danger) 30%, var(--c-border));
+        color: var(--c-danger);
+    }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .grid-3 { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 12px; }
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    .lbl { font-size: 12px; font-weight: 600; color: var(--c-text); }
+    .req { color: var(--c-danger); }
+    .input {
+        height: 40px; padding: 0 14px;
+        background: var(--c-surface);
+        border: 1px solid var(--c-border);
+        border-radius: var(--r-md);
+        font-size: 14px; color: var(--c-text); font-family: inherit;
+        transition: border-color 120ms, box-shadow 120ms;
+    }
+    .input:focus {
+        outline: none; border-color: var(--c-brand);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--c-brand) 25%, transparent);
+    }
+    .input.is-error { border-color: var(--c-danger); }
+    .hint { font-size: 12px; color: var(--c-muted); }
+    .hint.err { color: var(--c-danger); }
+    .actions {
+        display: flex; gap: 8px; justify-content: flex-end;
+        padding-top: 12px; border-top: 1px solid var(--c-border);
+    }
+
+    @media (max-width: 640px) {
+        .grid-2, .grid-3 { grid-template-columns: 1fr; }
+        .card { padding: 16px; }
+    }
+</style>

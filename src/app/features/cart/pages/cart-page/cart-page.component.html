@@ -1,255 +1,469 @@
-<div class="container max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-0 bg-[var(--color-background)]">
-    <app-breadcrumb [items]="breadcrumbItems" />
-</div>
-<div
-    class="container max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col lg:flex-row gap-8 min-h-screen text-[var(--color-text-primary)] bg-[var(--color-background)]">
+<!--
+    CART — DS Confianza
+    Layout: 2-col (items 1fr + summary 380px sticky).
+    Items: progress de envío gratis · select-all · filas con qty + remove · subtotal por línea.
+    Summary: subtotal + descuentos + cupón + envío + total + CTA.
+-->
+<div class="ds-cart">
 
-    <!-- Left Column: Cart Items and Recommendations -->
-    <div class="flex-1 space-y-6">
-        <!-- Free Shipping Banner -->
-        <div
-            class="bg-[color-mix(in_oklch,var(--color-success)_12%,var(--color-surface))] border border-[color-mix(in_oklch,var(--color-success)_30%,transparent)] text-[var(--color-success)] px-4 py-3 rounded-md flex items-center justify-between font-medium">
-            <div class="flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd"
-                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                        clip-rule="evenodd" />
-                </svg>
-                <span>Envío gratis especial para ti</span>
-            </div>
-            <span class="text-xs font-semibold bg-[color-mix(in_oklch,var(--color-success)_20%,var(--color-surface))] px-2 py-1 rounded">Oferta exclusiva</span>
-        </div>
+    <!-- ── Heading ────────────────────────────────────────── -->
+    <div class="cart-head">
+        <h1 class="cart-title">
+            Mi carrito
+            <span class="cart-meta">({{ cartCount() }})</span>
+        </h1>
+    </div>
 
-        <!-- Select All / Item Count -->
-        <div class="flex items-center justify-between pb-2 border-b border-[var(--color-border)]">
-            <label class="flex items-center gap-3 cursor-pointer">
-                <input type="checkbox"
-                    class="w-5 h-5 accent-[var(--color-text-primary)] rounded focus:ring-0 cursor-pointer"
-                    [checked]="cartService.allSelected()" (change)="toggleAll($event)">
-                <span class="font-bold text-lg">Seleccionar todo ({{ cartService.cartCount() }})</span>
-            </label>
-        </div>
+    <div class="cols">
 
-        <!-- Cart Items List -->
-        <div class="space-y-6">
-            @for (item of cartItems(); track item.productId) {
-                <div class="flex flex-col sm:flex-row gap-4 pt-4 relative group">
-                    <!-- Selection Checkbox -->
-                    <div class="pt-2 sm:pt-14 absolute left-0 z-10">
-                        <input type="checkbox"
-                            class="w-5 h-5 accent-[var(--color-text-primary)] rounded focus:ring-0 cursor-pointer"
-                            [checked]="item.selected" (change)="toggleSelection(item.productId)">
-                    </div>
+        <!-- ─── Lista de items ─── -->
+        <div class="left">
 
-                    <!-- Product Image -->
-                    <div
-                        class="relative w-32 h-32 ml-8 flex-shrink-0 bg-[var(--color-surface-raised)] rounded-md overflow-hidden border border-[var(--color-border)]">
-                        <img [src]="item.image" [alt]="item.name" class="w-full h-full object-cover">
-                        @if (item.stock !== undefined && item.stock < 10) {
-                            <div class="absolute bottom-0 left-0 right-0 bg-black/70 text-white text-[10px] font-bold text-center py-1 truncate">
-                                CASI AGOTADO(S)
-                            </div>
-                        }
-                    </div>
-
-                    <!-- Product Details -->
-                    <div class="flex-1 flex flex-col justify-between ml-8 sm:ml-0">
-                        <div>
-                            <h3 class="text-sm font-medium text-[var(--color-text-primary)] leading-tight">{{ item.name }}</h3>
-                            <p class="text-xs text-[var(--color-text-muted)] mt-1 line-clamp-1 overflow-hidden"
-                                [title]="item.description">{{ item.description }}</p>
-
-                            <app-button
-                                [iconOnly]="true"
-                                icon="trash-2"
-                                variant="ghost"
-                                size="sm"
-                                [ariaLabel]="'cart.remove' | translate"
-                                (click)="cartService.removeFromCart(item.productId)"
-                                class="absolute top-4 right-0" />
+            <!-- Free shipping progress -->
+            @if (cartItems().length > 0) {
+                <div class="free-strip" [class.is-complete]="missingForFree() === 0">
+                    <lucide-icon name="truck" [size]="20" class="strip-ic"/>
+                    <div class="strip-body">
+                        <div class="strip-title">
+                            @if (missingForFree() === 0) {
+                                ¡Envío gratis premium aplicado!
+                            } @else {
+                                ¡Te faltan
+                                <strong>S/ {{ missingForFree().toFixed(2) }}</strong>
+                                para envío gratis premium!
+                            }
                         </div>
+                        <div class="strip-track">
+                            <div class="strip-fill" [style.width.%]="freeProgress()"></div>
+                        </div>
+                    </div>
+                    @if (missingForFree() > 0) {
+                        <ds-button variant="ghost" size="sm" routerLink="/products">Agregar productos</ds-button>
+                    }
+                </div>
+            }
 
-                        <div class="flex items-end justify-between mt-4">
-                            <div class="flex items-center gap-2">
-                                <span class="text-xl font-bold text-[var(--color-accent)]">S/ {{ item.price | number:'1.2-2'
-                                    }}</span>
+            <!-- Empty state -->
+            @if (!cartItems().length) {
+                <div class="empty">
+                    <lucide-icon name="shopping-cart" [size]="48"/>
+                    <h3>{{ 'cart.empty' | translate }}</h3>
+                    <p>Explora el catálogo y empieza a llenar tu carrito.</p>
+                    <ds-button variant="primary" size="md" routerLink="/products">Ver productos</ds-button>
+                </div>
+            }
+
+            <!-- Items card -->
+            @if (cartItems().length > 0) {
+                <section class="items-card">
+                    <header class="items-head">
+                        <label class="check-row">
+                            <span class="check" [class.is-on]="cartService.allSelected()">
+                                @if (cartService.allSelected()) {
+                                    <lucide-icon name="check" [size]="11"/>
+                                }
+                            </span>
+                            <input type="checkbox" hidden
+                                [checked]="cartService.allSelected()"
+                                (change)="toggleAll($any($event.target).checked)"/>
+                            Seleccionar todo ({{ cartItems().length }})
+                        </label>
+                        <span class="muted">App Shop · vendedor verificado</span>
+                    </header>
+
+                    @for (item of cartItems(); track item.productId; let i = $index) {
+                        <div class="row" [class.is-first]="i === 0">
+                            <label class="check-col">
+                                <span class="check" [class.is-on]="item.selected">
+                                    @if (item.selected) { <lucide-icon name="check" [size]="11"/> }
+                                </span>
+                                <input type="checkbox" hidden
+                                    [checked]="item.selected"
+                                    (change)="toggleSelection(item.productId)"/>
+                            </label>
+
+                            <div class="thumb-col">
+                                @if (item.image) {
+                                    <img [src]="item.image" [alt]="item.name"/>
+                                } @else {
+                                    <ds-thumb [label]="item.name" [tone]="i" [ratio]="1"/>
+                                }
                             </div>
 
-                            <div
-                                class="relative border border-[var(--color-border)] rounded overflow-hidden bg-[var(--color-surface-raised)] hover:border-[var(--color-text-muted)] transition-colors h-8">
-                                <select
-                                    class="appearance-none bg-transparent pl-3 pr-8 py-1 text-sm font-medium text-[var(--color-text-primary)] outline-none w-full h-full cursor-pointer"
-                                    [value]="item.quantity" (change)="onQuantityChange(item.productId, $event)">
-                                    @for (qty of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]; track qty) {
-                                        <option [value]="qty">
-                                            Cant. {{ qty }}
-                                        </option>
-                                    }
-                                </select>
-                                <div
-                                    class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-[var(--color-text-muted)]">
-                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                                        xmlns="http://www.w3.org/2000/svg">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M19 9l-7 7-7-7"></path>
-                                    </svg>
+                            <div class="info-col">
+                                <h4 class="row-name">{{ item.name }}</h4>
+                                @if (item.variantName) {
+                                    <div class="row-variant">{{ item.variantName }}</div>
+                                }
+                                @if (item.price >= 99) {
+                                    <ds-badge tone="success" size="xs">Envío gratis</ds-badge>
+                                }
+                                <div class="row-controls">
+                                    <div class="qty-mini">
+                                        <button (click)="onQuantityChange(item.productId, -1)"
+                                            [disabled]="item.quantity <= 1" type="button" aria-label="Disminuir">
+                                            <lucide-icon name="minus" [size]="12"/>
+                                        </button>
+                                        <span class="qty-val">{{ item.quantity }}</span>
+                                        <button (click)="onQuantityChange(item.productId, 1)"
+                                            [disabled]="item.stock !== undefined && item.quantity >= item.stock"
+                                            type="button" aria-label="Aumentar">
+                                            <lucide-icon name="plus" [size]="12"/>
+                                        </button>
+                                    </div>
+                                    <button class="link-btn" type="button">
+                                        <lucide-icon name="heart" [size]="12"/> Mover a favoritos
+                                    </button>
+                                    <button class="link-btn danger" (click)="removeFromCart(item.productId)" type="button">
+                                        Eliminar
+                                    </button>
                                 </div>
                             </div>
+
+                            <div class="price-col">
+                                <ds-price [now]="item.price * item.quantity" size="md"/>
+                                @if (item.stock !== undefined && item.stock < 10) {
+                                    <div class="stock-warn">
+                                        <lucide-icon name="alert-triangle" [size]="11"/>
+                                        Casi agotado · {{ item.stock }} u
+                                    </div>
+                                }
+                            </div>
                         </div>
-                    </div>
-                </div>
+                    }
+                </section>
             }
 
-            @if (cartItems().length === 0) {
-                <div class="text-center py-12 text-[var(--color-text-muted)]">
-                    {{ 'cart.empty' | translate }}
-                </div>
-            }
         </div>
 
-    </div>
+        <!-- ─── Summary aside ─── -->
+        <aside class="right">
 
-    <!-- Right Column: Order Summary (Sticky) -->
-    <div class="lg:w-80 flex-shrink-0">
-        <div class="sticky top-6">
-            <h2 class="text-lg font-bold mb-4">Resumen del pedido</h2>
+            <section class="summary-card">
+                <h3 class="summary-title">Resumen del pedido</h3>
 
-            <div class="space-y-3 text-sm mb-6">
-                <div class="flex justify-between text-[var(--color-text-secondary)]">
-                    <span>Total de artículos:</span>
-                    <span>S/ {{ cartTotal() | number:'1.2-2' }}</span>
-                </div>
-
-                <div class="flex justify-between items-end pt-4 border-t border-[var(--color-border)]">
-                    <span class="font-bold text-[var(--color-text-primary)]">Total</span>
-                    <span class="font-bold text-2xl text-[var(--color-text-primary)]">S/ {{ cartTotal() | number:'1.2-2' }}</span>
-                </div>
-                <div class="text-[10px] text-[var(--color-text-muted)]">Consulta el monto final de tu pago real.</div>
-            </div>
-
-            <!-- btn-migration: SKIP — botón multi-línea con subtítulo dinámico, no cubierto por variants de <app-button> -->
-            <button (click)="checkout()" [disabled]="cartService.selectedCount() === 0 || isCheckingOut()"
-                class="btn btn-primary w-full rounded-full flex flex-col items-center justify-center leading-tight mb-4">
-                @if (isCheckingOut()) {
-                <span class="flex items-center justify-center gap-2 text-base">
-                    <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                    Preparando pedido...
-                </span>
-                } @else {
-                <span class="text-base">Hacer pedido ({{ cartService.selectedCount() }})</span>
-                <span class="text-xs font-normal flex items-center gap-1">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd"
-                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                            clip-rule="evenodd" />
-                    </svg>
-                    1 casi agotado
-                </span>
-                }
-            </button>
-
-            <div class="text-[10px] text-[var(--color-text-muted)] mb-6 flex items-start gap-1">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mt-0.5 flex-shrink-0" fill="none"
-                    viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                La disponibilidad y el precio de los artículos no están garantizados hasta que se finalice el pago.
-            </div>
-
-            <div class="flex items-center gap-2 text-xs text-[var(--color-text-secondary)] mb-6 font-medium">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-[var(--color-success)]" viewBox="0 0 20 20"
-                    fill="currentColor">
-                    <path fill-rule="evenodd"
-                        d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
-                        clip-rule="evenodd" />
-                </svg>
-                No se te cobrará hasta que revises este pedido en la página siguiente
-            </div>
-
-            <div class="bg-[var(--color-surface-raised)] rounded-lg p-4 space-y-6 border border-[var(--color-border)]">
-                <!-- Opciones de pago seguro -->
-                <div>
-                    <div class="flex items-center gap-2 font-bold text-sm text-[var(--color-text-primary)] mb-1">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-[var(--color-success)]" viewBox="0 0 20 20"
-                            fill="currentColor">
-                            <path fill-rule="evenodd"
-                                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                                clip-rule="evenodd" />
-                        </svg>
-                        Opciones de pago seguro
+                <div class="sum-list">
+                    <div class="sum-row">
+                        <span class="muted">Productos ({{ cartService.selectedCount() }})</span>
+                        <span>S/ {{ subtotal().toFixed(2) }}</span>
                     </div>
-                    <p class="text-[11px] text-[var(--color-success)] font-medium mb-2">MyStore se compromete a proteger tu
-                        información de pago.</p>
-                    <p class="text-[11px] text-[var(--color-text-muted)] mb-3 leading-relaxed">Seguimos los estándares PCI DSS,
-                        utilizamos un encriptado sólido y realizamos revisiones periódicas del sistema para proteger tu
-                        privacidad.</p>
+                    @if (savings() > 0) {
+                        <div class="sum-row">
+                            <span class="muted">Descuentos</span>
+                            <span class="ok">− S/ {{ savings().toFixed(2) }}</span>
+                        </div>
+                    }
+                    @if (couponDiscount() > 0) {
+                        <div class="sum-row">
+                            <span class="muted">Cupón</span>
+                            <span class="ok">− S/ {{ couponDiscount().toFixed(2) }}</span>
+                        </div>
+                    }
+                    <div class="sum-row">
+                        <span class="muted">Envío</span>
+                        <span class="ok strong">{{ missingForFree() === 0 ? 'GRATIS' : 'A calcular' }}</span>
+                    </div>
+                </div>
 
-                    <p class="text-[11px] font-medium text-[var(--color-text-secondary)] mb-2">1. Métodos de pago</p>
-                    <div class="flex flex-wrap gap-2">
-                        @for (m of mediosPago(); track m.codigo) {
-                            <div class="h-6 w-10 bg-[var(--color-surface)] border border-[var(--color-border)] rounded overflow-hidden flex items-center justify-center p-0.5"
-                                [title]="m.nombre">
-                                @if (m.iconoUrl) {
-                                    <img [src]="m.iconoUrl" [alt]="m.nombre"
-                                        class="h-full object-contain"
-                                        fallback="https://via.placeholder.com/40x24?text=Method">
-                                } @else {
-                                    <span class="text-[8px] text-[var(--color-text-primary)] font-bold truncate">{{
-                                        m.codigo }}</span>
-                                }
-                            </div>
+                <div class="divider"></div>
+
+                <div class="total-row">
+                    <span class="total-lbl">Total</span>
+                    <ds-price [now]="total()" size="xl"/>
+                </div>
+                <div class="installments">
+                    o 12 cuotas sin interés de
+                    <strong>S/ {{ installment().toFixed(2) }}</strong>
+                </div>
+
+                <div class="cta-stack">
+                    <ds-button variant="primary" size="lg" [full]="true" icon="lock"
+                        [disabled]="cartService.selectedCount() === 0 || isCheckingOut()"
+                        (click)="checkout()">
+                        @if (isCheckingOut()) {
+                            Preparando…
+                        } @else {
+                            Continuar al pago ({{ cartService.selectedCount() }})
                         }
-                    </div>
+                    </ds-button>
+                    <ds-button variant="secondary" size="md" [full]="true" routerLink="/products">
+                        Seguir comprando
+                    </ds-button>
                 </div>
+            </section>
 
-                <!-- Certificación de seguridad -->
-                <div>
-                    <p class="text-[11px] font-medium text-[var(--color-text-secondary)] mb-2">2. Certificación de seguridad</p>
-                    <div class="flex flex-wrap gap-2">
-                        @for (c of certificaciones(); track c.codigo) {
-                            <div class="h-6 bg-[var(--color-surface)] border border-[var(--color-border)] rounded overflow-hidden flex items-center justify-center px-1"
-                                [title]="c.nombre">
-                                @if (c.iconoUrl) {
-                                    <img [src]="c.iconoUrl" [alt]="c.nombre"
-                                        class="h-full object-contain"
-                                        fallback="https://via.placeholder.com/60x24?text=Cert">
-                                } @else {
-                                    <span class="text-[8px] text-[var(--color-text-primary)] font-bold truncate">{{
-                                        c.codigo }}</span>
-                                }
-                            </div>
-                        }
-                    </div>
+            <!-- Cupón -->
+            <section class="coupon-card">
+                <div class="coupon-row">
+                    <input class="coupon-input"
+                        type="text"
+                        placeholder="Cupón de descuento"
+                        [value]="coupon()"
+                        (input)="onCouponInput($any($event.target).value)"/>
+                    <ds-button variant="secondary" size="md" (click)="applyCoupon()">Aplicar</ds-button>
                 </div>
+            </section>
 
-                <!-- Privacidad segura -->
-                <div>
-                    <div class="flex items-center gap-2 font-bold text-sm text-[var(--color-text-primary)] mb-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-[var(--color-success)]" viewBox="0 0 20 20"
-                            fill="currentColor">
-                            <path fill-rule="evenodd"
-                                d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
-                                clip-rule="evenodd" />
-                        </svg>
-                        Privacidad segura
-                    </div>
-                    <p class="text-[11px] text-[var(--color-text-muted)] leading-relaxed mb-1">
-                        Proteger tu privacidad es muy importante para nosotros. Ten la seguridad de que tu información
-                        se mantendrá segura y libre de riesgos. No vendemos tu información personal por dinero y solo
-                        utilizaremos tu información de acuerdo con nuestra política de privacidad y cookies para
-                        proporcionar y mejorar nuestros servicios.
-                    </p>
-                    <a href="#" class="text-[11px] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] flex items-center gap-1 group">
-                        Más información
-                        <svg xmlns="http://www.w3.org/2000/svg"
-                            class="h-3 w-3 group-hover:translate-x-0.5 transition-transform" fill="none"
-                            viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                        </svg>
-                    </a>
+            <!-- Trust card -->
+            <section class="trust-card">
+                <div class="trust-row">
+                    <lucide-icon name="shield-check" [size]="14" class="trust-ic"/>
+                    <span>Pago protegido con cifrado bancario. Si tu pedido no llega, te reembolsamos al 100%.</span>
                 </div>
-            </div>
-        </div>
+                <div class="pays">
+                    @for (m of paymentLogos(); track m.codigo) {
+                        <span class="pay" [title]="m.nombre">
+                            @if (m.iconoUrl) {
+                                <img [src]="m.iconoUrl" [alt]="m.nombre"/>
+                            } @else {
+                                {{ m.codigo }}
+                            }
+                        </span>
+                    }
+                </div>
+            </section>
+
+        </aside>
     </div>
 </div>
+
+<style>
+    .ds-cart {
+        background: var(--c-bg);
+        font-family: var(--f-sans);
+        color: var(--c-text);
+        min-height: 100%;
+    }
+
+    .cart-head {
+        max-width: 1280px; margin: 0 auto;
+        padding: 20px 24px 0;
+    }
+    .cart-title {
+        font-family: var(--f-display);
+        font-size: 28px; font-weight: 800;
+        margin: 0; color: var(--c-text);
+        letter-spacing: -0.02em;
+    }
+    .cart-meta { color: var(--c-muted); font-weight: 500; }
+
+    .cols {
+        max-width: 1280px; margin: 0 auto;
+        padding: 16px 24px 40px;
+        display: grid; grid-template-columns: 1fr 380px; gap: 24px;
+    }
+
+    /* ── LEFT ──────────────────────────────────────────── */
+    .left { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+
+    .free-strip {
+        display: flex; gap: 12px;
+        padding: 12px 16px;
+        background: color-mix(in srgb, var(--c-success) 12%, var(--c-surface));
+        border: 1px solid color-mix(in srgb, var(--c-success) 30%, var(--c-border));
+        border-radius: var(--r-md);
+        align-items: center;
+    }
+    .free-strip.is-complete {
+        background: color-mix(in srgb, var(--c-success) 18%, var(--c-surface));
+    }
+    .strip-ic { color: var(--c-success); flex-shrink: 0; }
+    .strip-body { flex: 1; min-width: 0; }
+    .strip-title { font-size: 13px; font-weight: 700; color: var(--c-text); }
+    .strip-track {
+        height: 4px; background: var(--c-surface);
+        border-radius: 2px; margin-top: 6px; overflow: hidden;
+    }
+    .strip-fill { height: 100%; background: var(--c-success); transition: width 200ms; }
+
+    .empty {
+        background: var(--c-surface);
+        border: 1px solid var(--c-border);
+        border-radius: var(--r-lg);
+        padding: 64px 24px;
+        text-align: center; color: var(--c-muted);
+        display: flex; flex-direction: column; align-items: center; gap: 16px;
+    }
+    .empty h3 { color: var(--c-text); font-family: var(--f-display); margin: 0; font-size: 20px; }
+    .empty p { margin: 0; }
+
+    /* Items card */
+    .items-card {
+        background: var(--c-surface);
+        border: 1px solid var(--c-border);
+        border-radius: var(--r-lg);
+        overflow: hidden;
+    }
+    .items-head {
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--c-border);
+        display: flex; align-items: center; gap: 10px;
+        font-size: 13px;
+    }
+
+    .check-row {
+        display: inline-flex; align-items: center; gap: 8px;
+        font-weight: 600; color: var(--c-text); cursor: pointer;
+        font-family: inherit;
+    }
+    .check-col { display: inline-flex; align-items: flex-start; padding-top: 4px; cursor: pointer; }
+    .check {
+        width: 18px; height: 18px; border-radius: 4px;
+        border: 1.5px solid var(--c-border);
+        background: transparent;
+        display: inline-flex; align-items: center; justify-content: center;
+        color: #fff;
+        transition: border-color 120ms, background 120ms;
+        flex-shrink: 0;
+    }
+    .check.is-on { border-color: var(--c-brand); background: var(--c-brand); }
+
+    .row {
+        display: grid;
+        grid-template-columns: 24px 100px 1fr auto;
+        gap: 16px;
+        padding: 16px;
+        border-top: 1px solid var(--c-border);
+        align-items: flex-start;
+    }
+    .row.is-first { border-top: none; }
+    .thumb-col {
+        width: 100px; height: 100px;
+        border-radius: var(--r-md);
+        overflow: hidden;
+        background: var(--c-surface2);
+        border: 1px solid var(--c-border);
+    }
+    .thumb-col img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .info-col { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+    .row-name {
+        font-size: 14px; font-weight: 600;
+        margin: 0; color: var(--c-text);
+        line-height: 1.35;
+    }
+    .row-variant { font-size: 12px; color: var(--c-muted); }
+    .row-controls {
+        display: flex; align-items: center; gap: 12px; margin-top: 8px; flex-wrap: wrap;
+    }
+
+    .qty-mini {
+        display: inline-flex;
+        border: 1px solid var(--c-border);
+        border-radius: var(--r-md);
+        overflow: hidden;
+    }
+    .qty-mini button {
+        width: 28px; height: 30px;
+        background: var(--c-surface); border: none;
+        cursor: pointer; color: var(--c-text);
+        display: inline-flex; align-items: center; justify-content: center;
+        transition: background 120ms;
+    }
+    .qty-mini button:hover:not(:disabled) { background: var(--c-surface2); }
+    .qty-mini button:disabled { opacity: .4; cursor: not-allowed; }
+    .qty-val {
+        width: 32px; height: 30px;
+        display: inline-flex; align-items: center; justify-content: center;
+        font-weight: 600; color: var(--c-text); font-size: 13px;
+        border-left: 1px solid var(--c-border);
+        border-right: 1px solid var(--c-border);
+    }
+
+    .link-btn {
+        background: none; border: none;
+        color: var(--c-muted); font-size: 12px;
+        cursor: pointer; font-family: inherit;
+        display: inline-flex; align-items: center; gap: 4px;
+        transition: color 120ms;
+    }
+    .link-btn:hover { color: var(--c-brand); }
+    .link-btn.danger { color: var(--c-danger); }
+    .link-btn.danger:hover { filter: brightness(1.1); }
+
+    .price-col { text-align: right; display: flex; flex-direction: column; gap: 6px; align-items: flex-end; }
+    .stock-warn {
+        font-size: 11px; color: var(--c-warning, var(--c-warn, #B45309));
+        font-weight: 600;
+        display: inline-flex; align-items: center; gap: 4px;
+    }
+
+    /* ── RIGHT (summary) ───────────────────────────────── */
+    .right { position: sticky; top: 16px; align-self: flex-start; display: flex; flex-direction: column; gap: 12px; }
+
+    .summary-card {
+        background: var(--c-surface);
+        border: 1px solid var(--c-border);
+        border-radius: var(--r-lg);
+        padding: 20px;
+        display: flex; flex-direction: column;
+    }
+    .summary-title {
+        font-size: 16px; font-weight: 700;
+        margin: 0 0 16px; color: var(--c-text);
+    }
+    .sum-list { display: flex; flex-direction: column; gap: 10px; font-size: 13px; }
+    .sum-row { display: flex; justify-content: space-between; align-items: center; }
+    .sum-row .ok { color: var(--c-success); }
+    .sum-row .ok.strong { font-weight: 700; }
+    .muted { color: var(--c-muted); }
+    .divider { height: 1px; background: var(--c-border); margin: 12px 0; }
+    .total-row { display: flex; justify-content: space-between; align-items: baseline; }
+    .total-lbl { font-size: 14px; color: var(--c-muted); }
+    .installments { font-size: 11px; color: var(--c-muted); margin-top: 4px; }
+    .installments strong { color: var(--c-text); }
+    .cta-stack { display: flex; flex-direction: column; gap: 8px; margin-top: 16px; }
+
+    /* Coupon */
+    .coupon-card {
+        background: var(--c-surface);
+        border: 1px solid var(--c-border);
+        border-radius: var(--r-lg);
+        padding: 16px;
+    }
+    .coupon-row { display: flex; gap: 8px; }
+    .coupon-input {
+        flex: 1; height: 40px;
+        padding: 0 14px;
+        border: 1px solid var(--c-border);
+        border-radius: var(--r-md);
+        background: var(--c-surface);
+        font-size: 14px; color: var(--c-text);
+        font-family: inherit;
+    }
+    .coupon-input:focus { outline: none; border-color: var(--c-brand); box-shadow: 0 0 0 3px var(--color-focus-ring); }
+
+    /* Trust */
+    .trust-card {
+        background: var(--c-surface2);
+        border-radius: var(--r-md);
+        padding: 14px;
+        font-size: 12px; color: var(--c-muted);
+        display: flex; flex-direction: column; gap: 8px;
+    }
+    .trust-row { display: flex; gap: 8px; align-items: flex-start; }
+    .trust-ic { color: var(--c-success); flex-shrink: 0; margin-top: 1px; }
+    .pays { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+    .pay {
+        padding: 2px 6px;
+        border: 1px solid var(--c-border);
+        border-radius: 4px;
+        font-size: 9px; font-weight: 700;
+        background: var(--c-surface);
+        color: var(--c-text);
+        display: inline-flex; align-items: center;
+        height: 22px;
+    }
+    .pay img { height: 14px; }
+
+    /* ── Responsive ────────────────────────────────────── */
+    @media (max-width: 1024px) {
+        .cols { grid-template-columns: 1fr; }
+        .right { position: static; }
+    }
+    @media (max-width: 640px) {
+        .row { grid-template-columns: 22px 80px 1fr; gap: 12px; }
+        .price-col { grid-column: 2 / -1; text-align: left; align-items: flex-start; }
+        .cols { padding: 12px 16px 32px; }
+        .cart-head { padding: 16px 16px 0; }
+    }
+</style>

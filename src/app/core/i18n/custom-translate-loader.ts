@@ -2,7 +2,7 @@ import { inject } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpBackend } from '@angular/common/http';
 import { TranslateLoader, TranslationObject } from '@ngx-translate/core';
 import { Observable, of } from 'rxjs';
-import { tap, catchError } from 'rxjs/operators';
+import { catchError } from 'rxjs/operators';
 
 /**
  * Custom HTTP loader for translations
@@ -29,10 +29,9 @@ export class CustomTranslateLoader implements TranslateLoader {
         });
 
         return this.http.get<TranslationObject>(`/assets/i18n/${lang}.json?cb=${cacheBuster}`, { headers }).pipe(
-            tap(res => console.log(`[TranslateLoader] Loaded ${lang}.json from server bypass:`, Object.keys(res ?? {}).length > 0 ? 'Success' : 'Empty')),
             catchError(error => {
                 console.error(`[TranslateLoader] Failed to load ${lang}.json:`, error);
-                return of({}); // Return empty object so ngx-translate doesn't crash but logs the error
+                return of({});
             })
         );
     }

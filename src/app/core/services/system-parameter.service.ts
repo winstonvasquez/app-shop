@@ -68,13 +68,10 @@ export class SystemParameterService {
         const url = `${environment.apiUrls.users}/api/system/parameters`;
 
         return this.http.get<SystemParameters>(url).pipe(
-            tap(params => {
-                this.parametersSignal.set(params);
-                console.log('[SystemParameterService] Parameters loaded:', params);
-            }),
+            tap(params => this.parametersSignal.set(params)),
             catchError(error => {
                 console.error('[SystemParameterService] Error loading parameters, using defaults.', error);
-                return of({}); // default empty params
+                return of({});
             })
         );
     }

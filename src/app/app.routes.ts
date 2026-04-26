@@ -74,6 +74,13 @@ export const routes: Routes = [
         component: AuthLayoutComponent,
         loadChildren: () => import('./features/auth/auth.routes').then(m => m.AUTH_ROUTES)
     },
+    // Design System v2 (Confianza) — preview standalone con chrome propio
+    {
+        path: 'design-system',
+        loadComponent: () =>
+            import('./features/design-system/design-system-page.component')
+                .then(m => m.DesignSystemPageComponent),
+    },
     {
         path: 'admin',
         canActivate: [authGuard],

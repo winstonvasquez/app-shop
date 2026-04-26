@@ -1,28 +1,29 @@
-<div class="bg-[var(--color-background)] min-h-screen pb-10">
+<div class="ds-checkout">
     <div class="container mx-auto px-4 max-w-[1200px] pt-6">
 
         <app-breadcrumb [items]="breadcrumbItems" />
 
-        <!-- Stepper visual -->
-        <div class="flex items-center justify-center gap-0 mb-8 mt-2">
-            @for (step of [{n:1,label:'Dirección'},{n:2,label:'Pago'},{n:3,label:'Confirmar'}]; track step.n) {
-                <div class="flex items-center">
-                    <div class="flex flex-col items-center gap-1">
-                        <div class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors"
-                             [class.bg-primary]="checkoutStep() >= step.n"
-                             [class.text-white]="checkoutStep() >= step.n"
-                             [class.bg-surface-raised]="checkoutStep() < step.n"
-                             [class.text-muted]="checkoutStep() < step.n">
+        <!-- Stepper DS Confianza · Carrito → Dirección → Pago → Confirmar -->
+        <div class="ds-stepper">
+            @for (step of [
+                {n:1,label:'Carrito',  done:true,                              active:false},
+                {n:2,label:'Dirección',done:checkoutStep() > 1,                active:checkoutStep() === 1},
+                {n:3,label:'Pago',     done:checkoutStep() > 2,                active:checkoutStep() === 2},
+                {n:4,label:'Confirmar',done:false,                             active:checkoutStep() === 3}
+            ]; track step.n; let last = $last) {
+                <div class="ds-step" [class.is-done]="step.done" [class.is-active]="step.active">
+                    <span class="ds-step-num">
+                        @if (step.done) {
+                            <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 10.5 8 14.5 16 5.5"/></svg>
+                        } @else {
                             {{ step.n }}
-                        </div>
-                        <span class="text-xs" [class.text-primary]="checkoutStep() >= step.n" [class.text-muted]="checkoutStep() < step.n">
-                            {{ step.label }}
-                        </span>
-                    </div>
-                    @if (step.n < 3) {
-                        <div class="w-16 h-0.5 mb-5 mx-1" [class.bg-primary]="checkoutStep() > step.n" [class.bg-border]="checkoutStep() <= step.n"></div>
-                    }
+                        }
+                    </span>
+                    <span class="ds-step-label">{{ step.label }}</span>
                 </div>
+                @if (!last) {
+                    <div class="ds-step-line" [class.is-done]="step.done"></div>
+                }
             }
         </div>
 
@@ -360,13 +361,12 @@
                                     (input)="couponCode.set($any($event.target).value)"
                                     placeholder="Introduce cod. cupón"
                                     class="flex-grow border border-[var(--color-border)] bg-[var(--color-surface-raised)] text-[var(--color-text-primary)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[var(--color-accent)] placeholder:text-[var(--color-text-muted)]">
-                                <app-button
-                                    label="Aplicar"
+                                <ds-button
                                     variant="secondary"
                                     size="sm"
                                     icon="ticket"
-                                    [loading]="couponApplying()"
-                                    (click)="applyCoupon()" />
+                                    [disabled]="couponApplying()"
+                                    (click)="applyCoupon()">Aplicar</ds-button>
                             </div>
                             @if (couponError()) {
                             <p class="text-xs text-[var(--color-error)] mt-1">{{ couponError() }}</p>
@@ -538,11 +538,11 @@
                 }
 
                 <div class="w-full">
-                    <app-button
-                        label="Agregar nueva dirección"
+                    <ds-button
                         variant="secondary"
                         icon="plus"
-                        (click)="openNewAddressForm()" />
+                        [full]="true"
+                        (click)="openNewAddressForm()">Agregar nueva dirección</ds-button>
                 </div>
             } @else {
                 <!-- Formulario nueva dirección -->
@@ -586,21 +586,20 @@
                     </div>
                     <div class="flex gap-3 pt-4">
                         <div class="flex-1">
-                            <app-button
-                                label="Cancelar"
+                            <ds-button
                                 variant="secondary"
                                 icon="x"
                                 type="button"
-                                (click)="showAddressForm.set(false)" />
+                                [full]="true"
+                                (click)="showAddressForm.set(false)">Cancelar</ds-button>
                         </div>
                         <div class="flex-1">
-                            <app-button
-                                label="Guardar dirección"
+                            <ds-button
                                 variant="primary"
                                 icon="save"
                                 type="submit"
-                                [loading]="savingAddress()"
-                                [disabled]="addressForm.invalid" />
+                                [full]="true"
+                                [disabled]="savingAddress() || addressForm.invalid">Guardar dirección</ds-button>
                         </div>
                     </div>
                 </form>
@@ -609,3 +608,53 @@
     </div>
 </div>
 }
+
+<style>
+    .ds-checkout {
+        background: var(--c-bg, var(--color-background));
+        font-family: var(--f-sans);
+        color: var(--c-text);
+        min-height: 100vh; padding-bottom: 40px;
+    }
+
+    /* ── Stepper DS Confianza ────────────────────────────── */
+    .ds-stepper {
+        display: flex; align-items: center; justify-content: center;
+        gap: 12px; margin: 16px 0 32px;
+        flex-wrap: wrap;
+    }
+    .ds-step { display: flex; align-items: center; gap: 8px; }
+    .ds-step-num {
+        width: 28px; height: 28px;
+        border-radius: 999px;
+        display: inline-flex; align-items: center; justify-content: center;
+        font-size: 12px; font-weight: 800;
+        background: var(--c-surface2);
+        color: var(--c-muted);
+        transition: background 120ms, color 120ms;
+    }
+    .ds-step.is-active .ds-step-num,
+    .ds-step.is-done   .ds-step-num {
+        background: var(--c-brand);
+        color: var(--c-onBrand, #fff);
+    }
+    .ds-step-label {
+        font-size: 13px; font-weight: 500;
+        color: var(--c-muted);
+        font-family: var(--f-sans);
+        transition: color 120ms, font-weight 120ms;
+    }
+    .ds-step.is-active .ds-step-label { color: var(--c-text); font-weight: 700; }
+    .ds-step.is-done   .ds-step-label { color: var(--c-text); }
+    .ds-step-line {
+        width: 60px; height: 2px;
+        background: var(--c-border);
+        transition: background 120ms;
+    }
+    .ds-step-line.is-done { background: var(--c-brand); }
+
+    @media (max-width: 640px) {
+        .ds-step-line { width: 24px; }
+        .ds-step-label { display: none; }
+    }
+</style>

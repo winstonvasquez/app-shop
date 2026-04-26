@@ -1,26 +1,24 @@
 import { Component, inject, signal, computed, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { Router } from '@angular/router';
+import { LucideAngularModule } from 'lucide-angular';
+import { AuthService } from '@core/auth/auth.service';
 import { NotificationService, Notification } from '@core/services/notification.service';
-import { BreadcrumbComponent, BreadcrumbItem } from '@shared/components/breadcrumb/breadcrumb.component';
-import { ButtonComponent } from '@shared/components';
+import { DsAccountShellComponent, DsButtonComponent } from '@shared/ui/ds';
 
 @Component({
     selector: 'app-account-notifications',
     standalone: true,
-    imports: [BreadcrumbComponent, DatePipe, ButtonComponent],
+    imports: [DatePipe, LucideAngularModule, DsAccountShellComponent, DsButtonComponent],
     templateUrl: './account-notifications.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AccountNotificationsComponent implements OnInit {
     private router = inject(Router);
+    private authService = inject(AuthService);
     readonly notificationService = inject(NotificationService);
 
-    readonly breadcrumbItems: BreadcrumbItem[] = [
-        { label: 'Inicio', route: ['/home'] },
-        { label: 'Mi Cuenta' },
-        { label: 'Notificaciones' }
-    ];
+    userName = computed(() => this.authService.currentUser()?.username ?? '');
 
     notifications = signal<Notification[]>([]);
     loading = signal(true);

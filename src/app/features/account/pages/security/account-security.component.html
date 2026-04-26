@@ -1,57 +1,160 @@
-<div class="page-container">
-    <app-breadcrumb [items]="breadcrumbItems" />
-    <div class="page-header">
-        <h1 class="page-title">Seguridad de la cuenta</h1>
-        <p class="page-subtitle">Cambia tu contraseña</p>
+<ds-account-shell title="Seguridad" subtitle="Administra tu contraseña y la seguridad de tu cuenta" [userName]="userName()">
+
+    <div class="card">
+        <h3 class="card-h">Cambiar contraseña</h3>
+
+        @if (successMsg()) {
+            <div class="alert ok">
+                <lucide-icon name="check-circle" [size]="16"/>
+                {{ successMsg() }}
+            </div>
+        }
+        @if (errorMsg()) {
+            <div class="alert err">
+                <lucide-icon name="alert-triangle" [size]="16"/>
+                {{ errorMsg() }}
+            </div>
+        }
+
+        <form [formGroup]="passwordForm" (ngSubmit)="onSubmit()" class="form">
+
+            <div class="field">
+                <label class="lbl">Contraseña actual <span class="req">*</span></label>
+                <label class="input-wrap" [class.is-error]="!!err('currentPassword')">
+                    <lucide-icon name="lock" [size]="16" class="ic"/>
+                    <input formControlName="currentPassword"
+                        [type]="show1() ? 'text' : 'password'"
+                        autocomplete="current-password"/>
+                    <button type="button" class="toggle" (click)="show1.set(!show1())" aria-label="Mostrar/ocultar">
+                        <lucide-icon [name]="show1() ? 'eye-off' : 'eye'" [size]="16"/>
+                    </button>
+                </label>
+                @if (err('currentPassword')) { <span class="hint err">{{ err('currentPassword') }}</span> }
+            </div>
+
+            <div class="field">
+                <label class="lbl">Nueva contraseña <span class="req">*</span></label>
+                <label class="input-wrap" [class.is-error]="!!err('newPassword')">
+                    <lucide-icon name="key-round" [size]="16" class="ic"/>
+                    <input formControlName="newPassword"
+                        [type]="show2() ? 'text' : 'password'"
+                        placeholder="Mínimo 8 caracteres"
+                        autocomplete="new-password"/>
+                    <button type="button" class="toggle" (click)="show2.set(!show2())" aria-label="Mostrar/ocultar">
+                        <lucide-icon [name]="show2() ? 'eye-off' : 'eye'" [size]="16"/>
+                    </button>
+                </label>
+                @if (err('newPassword')) { <span class="hint err">{{ err('newPassword') }}</span> }
+            </div>
+
+            <div class="field">
+                <label class="lbl">Confirmar nueva contraseña <span class="req">*</span></label>
+                <label class="input-wrap" [class.is-error]="!!err('confirmPassword')">
+                    <lucide-icon name="key-round" [size]="16" class="ic"/>
+                    <input formControlName="confirmPassword"
+                        [type]="show3() ? 'text' : 'password'"
+                        autocomplete="new-password"/>
+                    <button type="button" class="toggle" (click)="show3.set(!show3())" aria-label="Mostrar/ocultar">
+                        <lucide-icon [name]="show3() ? 'eye-off' : 'eye'" [size]="16"/>
+                    </button>
+                </label>
+                @if (err('confirmPassword')) { <span class="hint err">{{ err('confirmPassword') }}</span> }
+            </div>
+
+            <div class="info">
+                <lucide-icon name="shield" [size]="14" class="info-ic"/>
+                <span>Por seguridad, deberás iniciar sesión nuevamente en tus otros dispositivos.</span>
+            </div>
+
+            <div class="actions">
+                <ds-button variant="primary" size="lg" type="submit"
+                    icon="lock" [disabled]="saving() || passwordForm.invalid">
+                    {{ saving() ? 'Guardando…' : 'Cambiar contraseña' }}
+                </ds-button>
+            </div>
+        </form>
     </div>
 
-    <div class="card max-w-md">
-        <div class="card-body">
-            @if (successMsg()) {
-                <app-alert type="success" [message]="successMsg()" />
-            }
+</ds-account-shell>
 
-            <form [formGroup]="passwordForm" (ngSubmit)="onSubmit()">
-                <app-admin-form-layout [errorMessage]="errorMsg()">
+<style>
+    .card {
+        background: var(--c-surface);
+        border: 1px solid var(--c-border);
+        border-radius: var(--r-lg);
+        padding: 24px;
+        max-width: 520px;
+        display: flex; flex-direction: column; gap: 16px;
+    }
+    .card-h {
+        font-family: var(--f-display);
+        font-size: 18px; font-weight: 700;
+        color: var(--c-text); margin: 0 0 4px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid var(--c-border);
+    }
+    .alert {
+        display: flex; gap: 8px; align-items: center;
+        padding: 10px 14px; border-radius: var(--r-md);
+        font-size: 13px;
+    }
+    .alert.ok  {
+        background: color-mix(in srgb, var(--c-success) 12%, var(--c-surface));
+        border: 1px solid color-mix(in srgb, var(--c-success) 30%, var(--c-border));
+        color: var(--c-success);
+    }
+    .alert.err {
+        background: color-mix(in srgb, var(--c-danger) 12%, var(--c-surface));
+        border: 1px solid color-mix(in srgb, var(--c-danger) 30%, var(--c-border));
+        color: var(--c-danger);
+    }
 
-                    <app-admin-form-section [columns]="1">
-                        <app-form-field
-                            label="Contraseña actual"
-                            [required]="true"
-                            [error]="err('currentPassword')">
-                            <input class="form-input" type="password" formControlName="currentPassword"
-                                placeholder="••••••••" autocomplete="current-password" />
-                        </app-form-field>
+    .form { display: flex; flex-direction: column; gap: 14px; }
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    .lbl { font-size: 12px; font-weight: 600; color: var(--c-text); }
+    .req { color: var(--c-danger); }
 
-                        <app-form-field
-                            label="Nueva contraseña"
-                            [required]="true"
-                            [error]="err('newPassword')">
-                            <input class="form-input" type="password" formControlName="newPassword"
-                                placeholder="Mínimo 8 caracteres" autocomplete="new-password" />
-                        </app-form-field>
+    .input-wrap {
+        display: flex; align-items: center;
+        height: 44px; padding: 0 14px; gap: 8px;
+        background: var(--c-surface);
+        border: 1px solid var(--c-border);
+        border-radius: var(--r-md);
+        transition: border-color 120ms, box-shadow 120ms;
+    }
+    .input-wrap:focus-within {
+        border-color: var(--c-brand);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--c-brand) 25%, transparent);
+    }
+    .input-wrap.is-error { border-color: var(--c-danger); }
+    .input-wrap input {
+        flex: 1; border: none; outline: none;
+        font-size: 14px; color: var(--c-text);
+        background: transparent; font-family: inherit;
+    }
+    .input-wrap .ic { color: var(--c-muted); }
+    .toggle {
+        background: none; border: none; padding: 4px;
+        color: var(--c-muted); cursor: pointer;
+        display: inline-flex;
+    }
+    .toggle:hover { color: var(--c-text); }
 
-                        <app-form-field
-                            label="Confirmar nueva contraseña"
-                            [required]="true"
-                            [error]="err('confirmPassword')">
-                            <input class="form-input" type="password" formControlName="confirmPassword"
-                                placeholder="Repite la contraseña" autocomplete="new-password" />
-                        </app-form-field>
-                    </app-admin-form-section>
+    .hint { font-size: 12px; }
+    .hint.err { color: var(--c-danger); }
 
-                    <div slot="actions">
-                        <app-button
-                            [label]="saving() ? 'Guardando...' : 'Cambiar contraseña'"
-                            variant="primary"
-                            icon="key"
-                            type="submit"
-                            [loading]="saving()"
-                            [disabled]="saving() || passwordForm.invalid" />
-                    </div>
+    .info {
+        background: color-mix(in srgb, var(--c-info) 8%, var(--c-surface));
+        border: 1px solid color-mix(in srgb, var(--c-info) 25%, var(--c-border));
+        border-radius: var(--r-md);
+        padding: 12px;
+        font-size: 12px; color: var(--c-muted);
+        display: flex; gap: 8px; align-items: flex-start;
+    }
+    .info-ic { color: var(--c-info); flex-shrink: 0; margin-top: 1px; }
 
-                </app-admin-form-layout>
-            </form>
-        </div>
-    </div>
-</div>
+    .actions {
+        display: flex; justify-content: flex-end;
+        padding-top: 8px; border-top: 1px solid var(--c-border);
+    }
+</style>

@@ -1,18 +1,35 @@
-<div class="min-h-screen flex flex-col bg-[var(--color-background)]">
-    <app-header></app-header>
-    <app-flash-sale-banner />
+<div class="min-h-screen flex flex-col" style="background: var(--c-bg, var(--color-background));">
+
+    <ds-top-bar/>
+
+    <ds-shop-header
+        [cartCount]="cartCount()"
+        [isAuthenticated]="isAuthenticated()"
+        [userName]="userName()"
+        [categories]="headerCategories"
+        (userClick)="onUserClick()"
+        (cartClick)="onCartClick()"
+        (search)="onSearch($event)"
+        (categorySelect)="onCategorySelect($event)"
+        (openCategoryMenu)="onOpenCategoryMenu()"/>
+
+    <app-flash-sale-banner/>
+
     <main class="flex-grow w-full">
-        <router-outlet></router-outlet>
+        <router-outlet/>
     </main>
-    <app-footer></app-footer>
-    <app-floating-menu></app-floating-menu>
-    <app-floating-chat></app-floating-chat>
-    <app-cart-drawer></app-cart-drawer>
-    <app-product-quickview></app-product-quickview>
+
+    <ds-shop-footer/>
+
+    <app-floating-menu/>
+    <app-floating-chat/>
+    <app-cart-drawer/>
+    <app-product-quickview/>
 </div>
 
-<app-auth-modal [isOpen]="modalState.isAuthModalOpen()" (close)="modalState.closeAuthModal()"
-    (loginSuccess)="onAuthModalLoginSuccess()">
-</app-auth-modal>
+<app-auth-modal
+    [isOpen]="modalState.isAuthModalOpen()"
+    (close)="modalState.closeAuthModal()"
+    (loginSuccess)="onAuthModalLoginSuccess()"/>
 
-<app-toast-container />
+<app-toast-container/>

@@ -1,79 +1,114 @@
-<div class="page-container">
-    <app-breadcrumb [items]="breadcrumbItems" />
-    <div class="page-header">
-        <div>
-            <h1 class="page-title">Notificaciones</h1>
-            <p class="page-subtitle">Tus alertas y avisos importantes</p>
-        </div>
-        @if (notifications().length > 0) {
-            <app-button
-                [label]="markingAll() ? 'Marcando...' : 'Marcar todas como leídas'"
-                variant="secondary"
-                icon="check"
-                [loading]="markingAll()"
+<ds-account-shell title="Notificaciones" subtitle="Tus alertas y avisos importantes" [userName]="userName()">
+
+    <!-- Acción header -->
+    @if (notifications().length > 0) {
+        <div class="top-action">
+            <ds-button variant="secondary" size="sm" icon="check"
                 [disabled]="markingAll()"
-                (click)="markAllRead()" />
-        }
-    </div>
+                (click)="markAllRead()">
+                {{ markingAll() ? 'Marcando...' : 'Marcar todas como leídas' }}
+            </ds-button>
+        </div>
+    }
 
     @if (loading() && notifications().length === 0) {
-        <div class="loading-container"><div class="spinner"></div></div>
+        <div class="loading"><span class="spinner"></span></div>
     } @else if (isEmpty()) {
-        <div class="flex flex-col items-center justify-center py-16 gap-4" style="color: var(--color-text-muted)">
-            <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
-                style="opacity: 0.4">
-                <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/>
-                <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
-            </svg>
-            <p class="text-base font-medium">No tienes notificaciones</p>
-            <p class="text-sm" style="opacity: 0.7">Te avisaremos aquí cuando haya novedades sobre tus pedidos u ofertas.</p>
+        <div class="empty">
+            <lucide-icon name="bell" [size]="56" class="empty-icon"/>
+            <p class="empty-title">No tienes notificaciones</p>
+            <p class="empty-sub">Te avisaremos aquí cuando haya novedades sobre tus pedidos u ofertas.</p>
         </div>
     } @else {
-        <div class="card">
+        <div class="notif-list">
             @for (n of notifications(); track n.id) {
-                <div
-                    class="flex items-start gap-3 p-4 border-b cursor-pointer transition-colors"
-                    style="border-color: var(--color-border)"
-                    [style.background]="n.read ? 'transparent' : 'color-mix(in srgb, var(--color-primary) 5%, transparent)'"
-                    (click)="markRead(n)"
-                >
-                    <!-- Indicador no leído -->
-                    <div class="flex-shrink-0 w-2 h-2 rounded-full mt-2"
-                        [style.background]="n.read ? 'transparent' : 'var(--color-primary)'">
-                    </div>
-
-                    <div class="flex-1 min-w-0">
-                        <p class="text-sm font-medium" style="color: var(--color-text-primary)">{{ n.title }}</p>
+                <div class="notif-row"
+                    [class.unread]="!n.read"
+                    (click)="markRead(n)">
+                    <div class="notif-dot" [class.dot-active]="!n.read"></div>
+                    <div class="notif-content">
+                        <p class="notif-title">{{ n.title }}</p>
                         @if (n.body) {
-                            <p class="text-xs mt-0.5" style="color: var(--color-text-muted)">{{ n.body }}</p>
+                            <p class="notif-body">{{ n.body }}</p>
                         }
-                        <p class="text-xs mt-1" style="color: var(--color-text-muted); opacity: 0.7">
-                            {{ n.createdAt | date:'dd/MM/yyyy HH:mm' }}
-                        </p>
+                        <p class="notif-date">{{ n.createdAt | date:'dd/MM/yyyy HH:mm' }}</p>
                     </div>
-
-                    <app-button
-                        label="Eliminar"
-                        variant="danger"
-                        size="xs"
-                        icon="trash-2"
-                        [iconOnly]="true"
+                    <ds-button variant="danger" size="sm" icon="trash-2"
                         ariaLabel="Eliminar notificación"
-                        (click)="remove(n.id, $event)" />
+                        (click)="remove(n.id, $event)">
+                    </ds-button>
                 </div>
             }
         </div>
 
         @if (hasMore()) {
-            <div class="flex justify-center mt-4">
-                <app-button
-                    [label]="loading() ? 'Cargando...' : 'Cargar más'"
-                    variant="secondary"
-                    [loading]="loading()"
+            <div class="load-more">
+                <ds-button variant="secondary" size="md"
                     [disabled]="loading()"
-                    (click)="loadMore()" />
+                    (click)="loadMore()">
+                    {{ loading() ? 'Cargando...' : 'Cargar más' }}
+                </ds-button>
             </div>
         }
     }
-</div>
+
+</ds-account-shell>
+
+<style>
+    .top-action {
+        display: flex; justify-content: flex-end;
+    }
+    .loading {
+        display: flex; justify-content: center; padding: 40px;
+    }
+    .spinner {
+        width: 24px; height: 24px;
+        border: 2px solid var(--c-border);
+        border-top-color: var(--c-brand);
+        border-radius: 999px;
+        animation: spin 700ms linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .empty {
+        display: flex; flex-direction: column; align-items: center;
+        gap: 10px; padding: 60px 24px;
+        color: var(--c-muted); text-align: center;
+    }
+    .empty-icon { opacity: 0.35; }
+    .empty-title { font-size: 15px; font-weight: 600; color: var(--c-text); margin: 0; }
+    .empty-sub { font-size: 13px; color: var(--c-muted); margin: 0; max-width: 320px; }
+
+    .notif-list {
+        background: var(--c-surface);
+        border: 1px solid var(--c-border);
+        border-radius: var(--r-lg);
+        overflow: hidden;
+    }
+    .notif-row {
+        display: flex; align-items: flex-start; gap: 12px;
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--c-border);
+        cursor: pointer;
+        transition: background 120ms;
+    }
+    .notif-row:last-child { border-bottom: none; }
+    .notif-row:hover { background: var(--c-surface2); }
+    .notif-row.unread {
+        background: color-mix(in srgb, var(--c-brand) 4%, var(--c-surface));
+    }
+    .notif-dot {
+        flex-shrink: 0;
+        width: 8px; height: 8px;
+        border-radius: 999px;
+        background: transparent;
+        margin-top: 6px;
+    }
+    .notif-dot.dot-active { background: var(--c-brand); }
+    .notif-content { flex: 1; min-width: 0; }
+    .notif-title { font-size: 13px; font-weight: 600; color: var(--c-text); margin: 0 0 3px; }
+    .notif-body { font-size: 12px; color: var(--c-muted); margin: 0 0 4px; }
+    .notif-date { font-size: 11px; color: var(--c-muted); opacity: 0.7; margin: 0; }
+
+    .load-more { display: flex; justify-content: center; }
+</style>

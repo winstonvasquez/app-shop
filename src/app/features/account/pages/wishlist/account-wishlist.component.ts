@@ -1,36 +1,42 @@
-import { Component, inject, OnInit, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, OnInit, signal, computed, ChangeDetectionStrategy } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { LucideAngularModule } from 'lucide-angular';
 import { WishlistService, WishlistItem } from '@core/services/wishlist.service';
 import { CartService } from '@features/cart/services/cart.service';
-import { BreadcrumbComponent, BreadcrumbItem } from '@shared/components/breadcrumb/breadcrumb.component';
-import { ButtonComponent } from '@shared/components';
+import { AuthService } from '@core/auth/auth.service';
+import {
+    DsAccountShellComponent,
+    DsButtonComponent,
+    DsPriceComponent,
+} from '@shared/ui/ds';
 
 @Component({
     selector: 'app-account-wishlist',
     standalone: true,
-    imports: [RouterLink, BreadcrumbComponent, ButtonComponent],
+    imports: [
+        RouterLink,
+        LucideAngularModule,
+        DsAccountShellComponent,
+        DsButtonComponent,
+        DsPriceComponent,
+    ],
     templateUrl: './account-wishlist.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AccountWishlistComponent implements OnInit {
     private wishlistService = inject(WishlistService);
-    private cartService = inject(CartService);
+    private cartService     = inject(CartService);
+    private authService     = inject(AuthService);
 
-    readonly breadcrumbItems: BreadcrumbItem[] = [
-        { label: 'Inicio', route: ['/home'] },
-        { label: 'Mi Cuenta' },
-        { label: 'Mis Favoritos' },
-    ];
+    userName = computed(() => this.authService.currentUser()?.username ?? '');
 
-    items = this.wishlistService.wishlistItems;
-    loading = signal(true);
-    removing = signal<number | null>(null);
+    items        = this.wishlistService.wishlistItems;
+    loading      = signal(true);
+    removing     = signal<number | null>(null);
     addingToCart = signal<number | null>(null);
 
     ngOnInit(): void {
         this.wishlistService.loadWishlist();
-        // Marcar carga como completada después de llamar al servicio
-        // Los ítems se cargan de forma asíncrona; el signal se actualiza solo
         this.loading.set(false);
     }
 

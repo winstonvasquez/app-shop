@@ -28,8 +28,9 @@ const mockPedidos = {
 test.describe('Módulo Devoluciones', () => {
     test.beforeEach(async ({ page }) => {
         await page.route('**/api/pedidos**', route => route.fulfill({ json: mockPedidos }));
+        await page.route('**/api/v1/parametros**', route => route.fulfill({ status: 404, body: '' }));
         await page.addInitScript(() => {
-            localStorage.setItem('auth_token', 'mock-token');
+            localStorage.setItem('auth_token', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiIsInVzZXJJZCI6MSwiY29tcGFueUlkIjoxLCJyb2xlIjoiQURNSU4iLCJleHAiOjk5OTk5OTk5OTksIm1vZHVsZXMiOiJWRU5UQVMsQ09NUFJBUyxMT0dJU1RJQ0EsQ09OVEFCSUxJREFELFJSSEgifQ==.sig');
             localStorage.setItem('user', JSON.stringify({ id: 1, username: 'admin', companyId: 1 }));
         });
         await page.goto('/admin/returns');
@@ -37,7 +38,7 @@ test.describe('Módulo Devoluciones', () => {
 
     test('muestra página de devoluciones (no Próximamente)', async ({ page }) => {
         await expect(page.getByText('Próximamente')).not.toBeVisible();
-        await expect(page.getByText(/[Dd]evoluciones/)).toBeVisible();
+        await expect(page.getByRole('heading', { name: 'Devoluciones' })).toBeVisible();
     });
 
     test('muestra 4 tarjetas KPI', async ({ page }) => {
@@ -54,7 +55,7 @@ test.describe('Módulo Devoluciones', () => {
         await expect(newBtn).toBeVisible();
         await newBtn.click();
 
-        await expect(page.locator('app-drawer')).toBeVisible();
+        await expect(page.locator('.drawer-overlay')).toBeVisible();
     });
 
     test('drawer de nueva devolución tiene campo de fecha', async ({ page }) => {
@@ -67,15 +68,15 @@ test.describe('Módulo Devoluciones', () => {
     test('drawer de nueva devolución tiene selector de motivo', async ({ page }) => {
         await page.getByRole('button', { name: /Nueva Devolución/i }).click();
 
-        await expect(page.locator('select').filter({ hasText: /DEFECTO|CAMBIO|ERROR/i })).toBeVisible();
+        await expect(page.locator('select[formControlName="motivo"]')).toBeVisible();
     });
 
     test('botón cancelar cierra el drawer', async ({ page }) => {
         await page.getByRole('button', { name: /Nueva Devolución/i }).click();
-        await expect(page.locator('app-drawer')).toBeVisible();
+        await expect(page.locator('.drawer-overlay')).toBeVisible();
 
         await page.getByRole('button', { name: /Cancelar/i }).click();
-        await expect(page.locator('app-drawer[ng-reflect-is-open="true"]')).not.toBeVisible();
+        await expect(page.locator('.drawer-overlay')).not.toBeVisible();
     });
 
     test('devolución en estado EN_REVISION muestra botones aprobar y rechazar', async ({ page }) => {

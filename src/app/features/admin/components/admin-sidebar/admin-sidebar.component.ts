@@ -172,12 +172,11 @@ export class AdminSidebarComponent {
 
   readonly themePickerOpen = signal(false);
 
-  /** Temas disponibles agrupados por categoría para el picker del sidebar. */
+  /** Variantes del DS Confianza disponibles desde el sidebar. */
   readonly themeGroups = [
-      { label: 'Tienda (claros)',    themes: AVAILABLE_THEMES.filter(t => t.category === 'default'   && t.mode === 'light') },
-      { label: 'Estacionales',       themes: AVAILABLE_THEMES.filter(t => t.category === 'seasonal') },
-      { label: 'Profesionales',      themes: AVAILABLE_THEMES.filter(t => t.category === 'professional') },
-      { label: 'Oscuros',            themes: AVAILABLE_THEMES.filter(t => t.category === 'default'   && t.mode === 'dark') },
+      { label: 'Tienda',  themes: AVAILABLE_THEMES.filter(t => t.category === 'storefront' && t.mode === 'light') },
+      { label: 'Oscuros', themes: AVAILABLE_THEMES.filter(t => t.category === 'storefront' && t.mode === 'dark')  },
+      { label: 'ERP',     themes: AVAILABLE_THEMES.filter(t => t.category === 'erp')        },
   ];
 
   readonly activeNavGroups = computed(() => {

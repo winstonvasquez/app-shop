@@ -1,4 +1,5 @@
 import { Component, inject, signal, computed, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { DataTableComponent, TableColumn, TableAction } from '@shared/ui/tables/data-table/data-table.component';
@@ -110,9 +111,11 @@ export class PromotionsComponent implements OnInit {
     });
     totalVencidas   = computed(() => this.promociones().filter(p => p.estado === 'VENCIDA').length);
 
+    tipoDescuento = toSignal(this.form.controls.tipo.valueChanges, { initialValue: this.form.controls.tipo.value });
+
     /** Label dinámico para el campo valor según tipo de descuento seleccionado. */
     valorLabel = computed(() => {
-        const tipo = this.form.controls.tipo.value;
+        const tipo = this.tipoDescuento();
         return tipo === 'PORCENTAJE' ? 'Valor (%)' : 'Valor (S/)';
     });
 

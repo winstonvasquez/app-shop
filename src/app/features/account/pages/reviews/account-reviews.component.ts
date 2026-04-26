@@ -3,9 +3,10 @@ import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
+import { LucideAngularModule } from 'lucide-angular';
+import { AuthService } from '@core/auth/auth.service';
 import { environment } from '@env/environment';
-import { BreadcrumbComponent, BreadcrumbItem } from '@shared/components/breadcrumb/breadcrumb.component';
-import { ButtonComponent } from '@shared/components';
+import { DsAccountShellComponent, DsButtonComponent } from '@shared/ui/ds';
 
 interface ResenaResponse {
     id: number;
@@ -19,19 +20,16 @@ interface ResenaResponse {
 @Component({
     selector: 'app-account-reviews',
     standalone: true,
-    imports: [DatePipe, RouterLink, ReactiveFormsModule, BreadcrumbComponent, ButtonComponent],
+    imports: [DatePipe, RouterLink, ReactiveFormsModule, LucideAngularModule, DsAccountShellComponent, DsButtonComponent],
     templateUrl: './account-reviews.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AccountReviewsComponent implements OnInit {
     private http = inject(HttpClient);
     private fb = inject(FormBuilder);
+    private authService = inject(AuthService);
 
-    readonly breadcrumbItems: BreadcrumbItem[] = [
-        { label: 'Inicio', route: ['/home'] },
-        { label: 'Mi Cuenta' },
-        { label: 'Tus reseñas' }
-    ];
+    userName = computed(() => this.authService.currentUser()?.username ?? '');
 
     reviews = signal<ResenaResponse[]>([]);
     loading = signal(true);

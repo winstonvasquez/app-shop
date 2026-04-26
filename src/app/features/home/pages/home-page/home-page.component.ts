@@ -1,69 +1,103 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal, computed } from '@angular/core';
+import { Router } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
-import { PromoBannerComponent, Banner as CarouselBanner } from '@shared/components/promo-banner/promo-banner.component';
+import { LucideAngularModule } from 'lucide-angular';
+
 import { FlashDealsSectionComponent } from '@features/home/components/flash-deals-section/flash-deals-section.component';
 import { ProductShowcaseSectionComponent } from '@features/home/components/product-showcase-section/product-showcase-section.component';
+import { DsButtonComponent, DsBadgeComponent, DsCategoryTileComponent, DsCategoryTile } from '@shared/ui/ds';
+
 import { CategoryService } from '@core/services/category.service';
 import { BannerService, Banner } from '@features/home/services/banner.service';
 import { SearchService } from '@shared/services/search.service';
 
 @Component({
-  selector: 'app-home-page',
-  standalone: true,
-  imports: [
-    PromoBannerComponent,
-    FlashDealsSectionComponent,
-    ProductShowcaseSectionComponent,
-    TranslateModule
-  ],
-  templateUrl: './home-page.component.html'
+    selector: 'app-home-page',
+    standalone: true,
+    imports: [
+        TranslateModule,
+        LucideAngularModule,
+        FlashDealsSectionComponent,
+        ProductShowcaseSectionComponent,
+        DsButtonComponent,
+        DsBadgeComponent,
+        DsCategoryTileComponent,
+    ],
+    templateUrl: './home-page.component.html',
 })
 export class HomePageComponent implements OnInit {
-  private categoryService = inject(CategoryService);
-  private bannerService   = inject(BannerService);
-  public  searchService   = inject(SearchService);
+    private categoryService = inject(CategoryService);
+    private bannerService   = inject(BannerService);
+    private router          = inject(Router);
+    public  searchService   = inject(SearchService);
 
-  categories     = signal<any[]>([]);
-  carouselBanners = signal<CarouselBanner[]>([]);
+    /** Categorías reales mapeadas al shape DS (`name`, `count`, `image`, `tone`). */
+    readonly categories = signal<DsCategoryTile[]>([]);
+    readonly heroBanner = signal<Banner | null>(null);
 
-  ngOnInit() {
-    this.loadData();
-  }
+    /** Bullets de confianza — patrón "trust strip" del DS. */
+    readonly trustItems = [
+        { icon: 'truck',  title: 'Envío gratis',      sub: 'Desde S/ 99' },
+        { icon: 'shield', title: 'Compra protegida',  sub: 'Garantía 30 días' },
+        { icon: 'zap',    title: 'Entrega rápida',    sub: '24h en Lima' },
+        { icon: 'lock',   title: 'Pago seguro',       sub: 'PCI DSS · Yape' },
+    ];
 
-  selectCategory(id: number): void {
-    const current = this.searchService.categoryId();
-    // Toggle: si ya está seleccionada, deseleccionar
-    this.searchService.setCategoryId(current === id ? null : id);
-  }
-
-  clearCategory(): void {
-    this.searchService.setCategoryId(null);
-  }
-
-  private loadData() {
-    this.categoryService.getAllSimple().subscribe(cats => this.categories.set(cats));
-    this.bannerService.getAll().subscribe({
-      next: (banners) => {
-        const carouselBanners = banners.map(b => ({
-          id: b.id,
-          title: b.titulo,
-          subtitle: b.subtitulo,
-          ctaText: 'Ver productos',
-          imageUrl: b.imagenUrl
-        }));
-        this.carouselBanners.set(carouselBanners.length ? carouselBanners : this.getFallbackBanners());
-      },
-      error: () => this.carouselBanners.set(this.getFallbackBanners())
+    /** Cuenta regresiva del strip de flash deals — re-render cada minuto. */
+    private now = signal<Date>(new Date());
+    readonly flashTime = computed(() => {
+        const d = this.now();
+        const end = new Date(d);
+        end.setHours(23, 59, 59, 999);
+        const diff = Math.max(0, end.getTime() - d.getTime());
+        const h = Math.floor(diff / 3_600_000);
+        const m = Math.floor((diff % 3_600_000) / 60_000);
+        const s = Math.floor((diff % 60_000) / 1000);
+        return [pad(h), pad(m), pad(s)];
     });
-  }
 
-  private getFallbackBanners(): CarouselBanner[] {
-    return [{
-      id: 1,
-      title: 'Sports Season',
-      subtitle: 'Gear Up for Adventure — Fitness & Outdoor Equipment',
-      ctaText: 'Ver productos',
-      imageUrl: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=1400&h=600&fit=crop&q=80'
-    }];
-  }
+    ngOnInit(): void {
+        this.loadData();
+        setInterval(() => this.now.set(new Date()), 1000);
+    }
+
+    onHeroCta(): void {
+        this.router.navigate(['/offers']);
+    }
+
+    onHeroSecondary(): void {
+        this.router.navigate(['/categories']);
+    }
+
+    onCategoryClick(c: DsCategoryTile): void {
+        const original = this.categoriesRaw().find(x => x.nombre === c.name);
+        if (original) this.searchService.setCategoryId(original.id);
+        this.router.navigate(['/products']);
+    }
+
+    private categoriesRaw = signal<{ id: number; nombre: string }[]>([]);
+
+    private loadData(): void {
+        this.categoryService.getAllSimple().subscribe((cats: { id: number; nombre: string; imagenUrl?: string }[]) => {
+            this.categoriesRaw.set(cats);
+            this.categories.set(
+                cats.slice(0, 8).map((c, i) => ({
+                    name: c.nombre,
+                    image: c.imagenUrl,
+                    tone: i,
+                })),
+            );
+        });
+
+        this.bannerService.getAll().subscribe({
+            next: (banners: Banner[]) => {
+                this.heroBanner.set(banners[0] ?? null);
+            },
+            error: () => this.heroBanner.set(null),
+        });
+    }
+}
+
+function pad(n: number): string {
+    return n.toString().padStart(2, '0');
 }

@@ -1,74 +1,182 @@
-<div class="page-container">
-    <app-breadcrumb [items]="breadcrumbItems" />
-    <div class="page-header">
-        <h1 class="page-title">Mi Perfil</h1>
-        <p class="page-subtitle">Actualiza tus datos personales</p>
-    </div>
+<ds-account-shell title="Mi perfil" subtitle="Actualiza tus datos personales" [userName]="userName()">
 
     @if (loading()) {
-        <div class="loading-container"><div class="spinner"></div></div>
+        <div class="loading"><span class="spinner"></span> Cargando…</div>
     } @else {
-        <div class="card max-w-lg">
-            <div class="card-body">
-                @if (successMsg()) {
-                    <app-alert type="success" [message]="successMsg()" />
-                }
+        <div class="card">
 
-                <form [formGroup]="profileForm" (ngSubmit)="onSubmit()">
-                    <app-admin-form-layout [errorMessage]="submitError()">
+            @if (successMsg()) {
+                <div class="alert ok">
+                    <lucide-icon name="check-circle" [size]="16"/>
+                    {{ successMsg() }}
+                </div>
+            }
+            @if (submitError()) {
+                <div class="alert err">
+                    <lucide-icon name="alert-triangle" [size]="16"/>
+                    {{ submitError() }}
+                </div>
+            }
 
-                        <app-admin-form-section title="Datos personales" [columns]="2">
-                            <app-form-field label="Nombres" [required]="true" [error]="err('nombres')">
-                                <input class="form-input" type="text" formControlName="nombres" placeholder="Nombres" autocomplete="given-name" />
-                            </app-form-field>
-                            <app-form-field label="Apellidos" [required]="true" [error]="err('apellidos')">
-                                <input class="form-input" type="text" formControlName="apellidos" placeholder="Apellidos" autocomplete="family-name" />
-                            </app-form-field>
-                        </app-admin-form-section>
+            <form [formGroup]="profileForm" (ngSubmit)="onSubmit()" class="form">
 
-                        <app-admin-form-section title="Contacto" [columns]="1">
-                            <app-form-field
-                                label="Correo electrónico"
-                                hint="El correo no puede cambiarse desde aquí.">
-                                <input class="form-input opacity-60" type="email" formControlName="email" readonly />
-                            </app-form-field>
-                            <app-form-field label="Teléfono" [error]="err('telefono')">
-                                <input class="form-input" type="tel" formControlName="telefono" placeholder="Ej: 999 999 999" autocomplete="tel" />
-                            </app-form-field>
-                        </app-admin-form-section>
-
-                        <app-admin-form-section title="Documento de identidad" [columns]="2">
-                            <app-form-field label="Tipo de documento" [error]="err('tipoDocumento')">
-                                <select class="form-input" formControlName="tipoDocumento">
-                                    <option value="DNI">DNI</option>
-                                    <option value="CE">Carnet de Extranjería</option>
-                                    <option value="PASAPORTE">Pasaporte</option>
-                                </select>
-                            </app-form-field>
-                            <app-form-field label="N° Documento" [error]="err('numeroDocumento')">
-                                <input class="form-input" type="text" formControlName="numeroDocumento" placeholder="12345678" />
-                            </app-form-field>
-                        </app-admin-form-section>
-
-                        <app-admin-form-section [columns]="1">
-                            <app-form-field label="Fecha de nacimiento" [error]="err('fechaNacimiento')">
-                                <input class="form-input" type="date" formControlName="fechaNacimiento" />
-                            </app-form-field>
-                        </app-admin-form-section>
-
-                        <div slot="actions">
-                            <app-button
-                                [label]="saving() ? 'Guardando...' : 'Guardar cambios'"
-                                variant="primary"
-                                icon="save"
-                                type="submit"
-                                [loading]="saving()"
-                                [disabled]="saving() || profileForm.invalid" />
+                <section class="sec">
+                    <h3 class="sec-h">Datos personales</h3>
+                    <div class="grid-2">
+                        <div class="field">
+                            <label class="lbl">Nombres <span class="req">*</span></label>
+                            <input formControlName="nombres" class="input"
+                                [class.is-error]="!!err('nombres')"
+                                placeholder="Nombres" autocomplete="given-name"/>
+                            @if (err('nombres')) { <span class="hint err">{{ err('nombres') }}</span> }
                         </div>
+                        <div class="field">
+                            <label class="lbl">Apellidos <span class="req">*</span></label>
+                            <input formControlName="apellidos" class="input"
+                                [class.is-error]="!!err('apellidos')"
+                                placeholder="Apellidos" autocomplete="family-name"/>
+                            @if (err('apellidos')) { <span class="hint err">{{ err('apellidos') }}</span> }
+                        </div>
+                    </div>
+                </section>
 
-                    </app-admin-form-layout>
-                </form>
-            </div>
+                <section class="sec">
+                    <h3 class="sec-h">Contacto</h3>
+                    <div class="field">
+                        <label class="lbl">Correo electrónico</label>
+                        <input formControlName="email" type="email" class="input is-readonly" readonly/>
+                        <span class="hint">El correo no puede cambiarse desde aquí.</span>
+                    </div>
+                    <div class="field">
+                        <label class="lbl">Teléfono</label>
+                        <input formControlName="telefono" type="tel" class="input"
+                            placeholder="Ej: 999 999 999" autocomplete="tel"/>
+                    </div>
+                </section>
+
+                <section class="sec">
+                    <h3 class="sec-h">Documento de identidad</h3>
+                    <div class="grid-2">
+                        <div class="field">
+                            <label class="lbl">Tipo de documento</label>
+                            <select formControlName="tipoDocumento" class="input">
+                                <option value="DNI">DNI</option>
+                                <option value="CE">Carnet de Extranjería</option>
+                                <option value="PASAPORTE">Pasaporte</option>
+                            </select>
+                        </div>
+                        <div class="field">
+                            <label class="lbl">N° Documento</label>
+                            <input formControlName="numeroDocumento" class="input" placeholder="12345678"/>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="sec">
+                    <div class="field">
+                        <label class="lbl">Fecha de nacimiento</label>
+                        <input formControlName="fechaNacimiento" type="date" class="input"/>
+                    </div>
+                </section>
+
+                <div class="actions">
+                    <ds-button variant="primary" size="lg" type="submit"
+                        icon="save" [disabled]="saving() || profileForm.invalid">
+                        {{ saving() ? 'Guardando…' : 'Guardar cambios' }}
+                    </ds-button>
+                </div>
+
+            </form>
         </div>
     }
-</div>
+
+</ds-account-shell>
+
+<style>
+    .loading {
+        display: inline-flex; align-items: center; gap: 8px;
+        font-size: 13px; color: var(--c-muted);
+        padding: 24px;
+    }
+    .spinner {
+        width: 16px; height: 16px;
+        border: 2px solid var(--c-surface2);
+        border-top-color: var(--c-brand);
+        border-radius: 999px;
+        animation: spin 800ms linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .card {
+        background: var(--c-surface);
+        border: 1px solid var(--c-border);
+        border-radius: var(--r-lg);
+        padding: 24px;
+        max-width: 720px;
+    }
+
+    .alert {
+        display: flex; gap: 8px; align-items: center;
+        padding: 10px 14px;
+        border-radius: var(--r-md);
+        font-size: 13px;
+        margin-bottom: 16px;
+    }
+    .alert.ok {
+        background: color-mix(in srgb, var(--c-success) 12%, var(--c-surface));
+        border: 1px solid color-mix(in srgb, var(--c-success) 30%, var(--c-border));
+        color: var(--c-success);
+    }
+    .alert.err {
+        background: color-mix(in srgb, var(--c-danger) 12%, var(--c-surface));
+        border: 1px solid color-mix(in srgb, var(--c-danger) 30%, var(--c-border));
+        color: var(--c-danger);
+    }
+
+    .form { display: flex; flex-direction: column; gap: 24px; }
+    .sec { display: flex; flex-direction: column; gap: 12px; }
+    .sec-h {
+        font-family: var(--f-display);
+        font-size: 16px; font-weight: 700;
+        color: var(--c-text);
+        margin: 0 0 4px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid var(--c-border);
+    }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    .lbl { font-size: 12px; font-weight: 600; color: var(--c-text); }
+    .req { color: var(--c-danger); }
+
+    .input {
+        height: 40px;
+        padding: 0 14px;
+        background: var(--c-surface);
+        border: 1px solid var(--c-border);
+        border-radius: var(--r-md);
+        font-size: 14px;
+        color: var(--c-text);
+        font-family: inherit;
+        transition: border-color 120ms, box-shadow 120ms;
+    }
+    .input:focus {
+        outline: none;
+        border-color: var(--c-brand);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--c-brand) 25%, transparent);
+    }
+    .input.is-error { border-color: var(--c-danger); }
+    .input.is-readonly { background: var(--c-surface2); color: var(--c-muted); cursor: not-allowed; }
+
+    .hint { font-size: 12px; color: var(--c-muted); }
+    .hint.err { color: var(--c-danger); }
+
+    .actions {
+        display: flex; justify-content: flex-end;
+        padding-top: 8px; border-top: 1px solid var(--c-border);
+    }
+
+    @media (max-width: 640px) {
+        .grid-2 { grid-template-columns: 1fr; }
+        .card { padding: 16px; }
+    }
+</style>

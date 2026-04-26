@@ -1,84 +1,93 @@
 import {
-  Component, inject, signal, computed,
-  ChangeDetectionStrategy, effect, untracked,
-  ViewChild, ElementRef
+    Component, inject, signal, computed,
+    ChangeDetectionStrategy, effect, untracked,
+    ViewChild, ElementRef,
 } from '@angular/core';
-import { RouterLink } from '@angular/router';
-import { ProductCardComponent, Product as UIProduct } from '@shared/components/product-card/product-card.component';
+import { Router } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
+import { LucideAngularModule } from 'lucide-angular';
+
 import { ProductService } from '@core/services/product.service';
 import { SearchService } from '@shared/services/search.service';
+import { DsProductCardComponent, DsProduct } from '@shared/ui/ds';
 
 const FEATURED_COUNT = 10;
 
 @Component({
-  selector: 'app-flash-deals-section',
-  standalone: true,
-  imports: [ProductCardComponent, TranslateModule, RouterLink],
-  templateUrl: './flash-deals-section.component.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+    selector: 'app-flash-deals-section',
+    standalone: true,
+    imports: [DsProductCardComponent, TranslateModule, LucideAngularModule],
+    templateUrl: './flash-deals-section.component.html',
+    changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class FlashDealsSectionComponent {
-  @ViewChild('scrollContainer') scrollContainer?: ElementRef<HTMLDivElement>;
+    @ViewChild('scrollContainer') scrollContainer?: ElementRef<HTMLDivElement>;
 
-  private productService = inject(ProductService);
-  searchService = inject(SearchService);
+    private productService = inject(ProductService);
+    private router = inject(Router);
+    searchService = inject(SearchService);
 
-  products    = signal<UIProduct[]>([]);
-  currentPage = signal(0);
-  pageSize    = signal(24);
-  loading     = signal(false);
-  hasMore     = signal(true);
+    products    = signal<DsProduct[]>([]);
+    currentPage = signal(0);
+    pageSize    = signal(24);
+    loading     = signal(false);
+    hasMore     = signal(true);
 
-  featuredProducts  = computed(() => this.products().slice(0, FEATURED_COUNT));
-  remainingProducts = computed(() => this.products().slice(FEATURED_COUNT));
+    featuredProducts  = computed(() => this.products().slice(0, FEATURED_COUNT));
+    remainingProducts = computed(() => this.products().slice(FEATURED_COUNT));
 
-  constructor() {
-    // Recargar cuando cambia búsqueda O categoría
-    effect(() => {
-      const query = this.searchService.searchQuery();
-      const catId = this.searchService.categoryId();
-      untracked(() => {
-        this.products.set([]);
-        this.currentPage.set(0);
-        this.hasMore.set(true);
-        this.loadProducts(query, catId);
-      });
-    });
-  }
+    constructor() {
+        effect(() => {
+            const query = this.searchService.searchQuery();
+            const catId = this.searchService.categoryId();
+            untracked(() => {
+                this.products.set([]);
+                this.currentPage.set(0);
+                this.hasMore.set(true);
+                this.loadProducts(query, catId);
+            });
+        });
+    }
 
-  scroll(direction: number): void {
-    this.scrollContainer?.nativeElement.scrollBy({ left: direction * 300, behavior: 'smooth' });
-  }
+    scroll(direction: number): void {
+        this.scrollContainer?.nativeElement.scrollBy({ left: direction * 300, behavior: 'smooth' });
+    }
 
-  loadProducts(searchQuery?: string, categoryId?: number | null) {
-    if (this.loading() || !this.hasMore()) return;
+    onCardClick(p: DsProduct): void {
+        this.router.navigate(['/products', p.id]);
+    }
 
-    const query = searchQuery  ?? this.searchService.searchQuery();
-    const catId = categoryId !== undefined ? categoryId : this.searchService.categoryId();
+    loadProducts(searchQuery?: string, categoryId?: number | null) {
+        if (this.loading() || !this.hasMore()) return;
 
-    this.loading.set(true);
-    this.productService.getAllCachedFiltered(
-      this.currentPage(), this.pageSize(), query || undefined, catId
-    ).subscribe({
-      next: (page) => {
-        const offset = this.products().length;
-        const newProducts = page.content.map((p, i) => ({
-          id:       p.id,
-          name:     p.nombre,
-          price:    p.precioBase,
-          image:    p.imagenes?.find(img => img.esPrincipal)?.url
-                    || p.imagenes?.[0]?.url
-                    || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&h=400&fit=crop',
-          badge:    p.stock !== undefined && p.stock <= 5 ? 'CASI_AGOTADO' : undefined,
-          featured: (offset + i) % 5 === 1
-        }));
-        this.products.update(current => [...current, ...newProducts]);
-        this.hasMore.set(!page.last);
-        this.currentPage.update(p => p + 1);
-        this.loading.set(false);
-      },
-      error: () => this.loading.set(false)
-    });
-  }
+        const query = searchQuery  ?? this.searchService.searchQuery();
+        const catId = categoryId !== undefined ? categoryId : this.searchService.categoryId();
+
+        this.loading.set(true);
+        this.productService.getAllCachedFiltered(
+            this.currentPage(), this.pageSize(), query || undefined, catId,
+        ).subscribe({
+            next: (page) => {
+                const newProducts: DsProduct[] = page.content.map((p, i) => ({
+                    id: p.id,
+                    name: p.nombre,
+                    now: p.precioBase,
+                    was: p.originalPrice,
+                    rating: p.rating,
+                    sold: p.salesCount,
+                    stock: p.stock,
+                    badge: p.badge ?? (p.discount ?? (p.stock !== undefined && p.stock <= 5 ? 'POCAS' : undefined)),
+                    shipFree: (p.precioBase ?? 0) >= 99,
+                    flash: i < 3 ? 18 : undefined,
+                    image: p.imagenes?.find(img => img.esPrincipal)?.url
+                        || p.imagenes?.[0]?.url,
+                }));
+                this.products.update(current => [...current, ...newProducts]);
+                this.hasMore.set(!page.last);
+                this.currentPage.update(p => p + 1);
+                this.loading.set(false);
+            },
+            error: () => this.loading.set(false),
+        });
+    }
 }

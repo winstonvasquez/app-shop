@@ -369,16 +369,24 @@ Surface stacking via background luminance: `#0f0f0f` (page) → `#171717` (surfa
 - Other themes → sets `data-theme="theme-name"` on `<html>`
 - Server sync: `PUT /users/api/themes/active` with `{ module, themeKey, companyId }`
 
-### Theme Categories (30 total)
+### Theme Categories (33 total)
 | Category | Themes | Mode |
 |----------|--------|------|
 | Default | dark, obsidian, orange-black, orange-light | Mixed |
 | Seasonal | verano, invierno, primavera, otoño, christmas, black-friday, summer | Mixed |
 | Professional Dark | slate-professional, obsidian-dark, ember, forest, graphite-contrast, rose-executive | Dark |
-| Professional Light | arctic-light, sakura-light, ocean-breeze, verdant-light, golden-sand, lavender-mist, charcoal-light | Light |
-| Shop | fresh-mint, soft-blossom, golden-light, peach-cream, nordic-light, vibrant-play | Light |
+| Professional Light | arctic-light, sakura-light, ocean-breeze, verdant-light, golden-sand, lavender-mist, charcoal-light, **confianza-erp** | Light |
+| Shop | **confianza** *(default)*, confianza-dark, fresh-mint, soft-blossom, golden-light, peach-cream, nordic-light, vibrant-play | Mixed |
 
 ### Key Theme Variants
+
+**Confianza** (Shop default, Design System v2 — 2026-04-24)
+- Dirección: estilo Amazon — refinado, jerarquía clara, neutros cálidos
+- Storefront light: bg `#F7F6F3` (paper) / brand `#0B3D91` (ink blue) / accent `#F08C00` (orange CTA) / priceNow `#C0392B`
+- Display font: **Source Serif 4** (titulares) + Inter (body). ERP sibling usa Inter en todo.
+- Tres variantes: `confianza` (shop light), `confianza-dark` (shop dark), `confianza-erp` (admin sidebar ink)
+- Origen: handoff Claude Design — `.agent/design-system-v2/project/APP SHOP Design System v2.html`
+- Reemplaza a `fresh-mint` como default del contexto shop (usuario reportó menta demasiado saturado)
 
 **Obsidian** (Professional Dark)
 - Background: `oklch(0.09 0.018 245)` — deep blue-carbon

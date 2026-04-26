@@ -1,462 +1,318 @@
-/* Tailwind v4 Theme Configuration */
-/* Following tailwind-patterns and angular-tailwind skills */
+/**
+ * ===========================================================================
+ *  CONFIANZA — Theme oficial (storefront + ERP)
+ * ===========================================================================
+ *  Único tema del proyecto. 3 variantes:
+ *    · :root / [data-theme="confianza"]      → storefront light (default)
+ *    · [data-theme="confianza-dark"]         → storefront dark
+ *    · [data-theme="confianza-erp"]          → ERP / admin / POS sibling
+ *
+ *  Spec: sistemadisenio/tokens.js → window.THEMES.confianza + ERP_THEMES.confianza
+ *  Estructura compartida (spacing/radii/sombras/tipografía) → _design-system-tokens.scss
+ * ===========================================================================
+ */
 
+/* ──────────────────────────────────────────────────────────────
+ * 1. PRIMITIVES expuestas a Tailwind v4 (@theme)
+ *    Genera utilities bg-primary, text-on, border-token, etc.
+ * ─────────────────────────────────────────────────────────── */
 @theme {
-    /* ============================================
-     PRIMITIVE TOKENS (Base Design System)
-     ============================================ */
+    /* Brand — paleta Confianza (Amazon-style trust) */
+    --color-primary:          #0B3D91;
+    --color-primary-dark:     #062A6B;
+    --color-primary-contrast: #FFFFFF;
 
-    /* Brand Colors — paleta oficial: rojo + naranja + grises */
-    --color-brand-red: oklch(0.55 0.22 25);
-    /* Primary red #d7132a */
-    --color-brand-red-dark: oklch(0.45 0.22 25);
-    /* Darker red #b50f23 */
-    --color-brand-orange: #FB8C00;
-    /* Accent naranja — de la paleta oficial */
-    --color-brand-orange-dark: #F57C00;
-    /* Naranja oscuro */
-    --color-brand-black: oklch(0.15 0 0);
-    /* Near black #111111 */
+    --color-accent:           #F08C00;
+    --color-accent-dark:      #C97300;
+    --color-accent-2:         #0EA371;
 
-    /* Neutral Scale (OKLCH) */
-    --color-gray-50: oklch(0.99 0 0);
-    --color-gray-100: oklch(0.97 0 0);
-    --color-gray-200: oklch(0.93 0 0);
-    --color-gray-300: oklch(0.87 0 0);
-    --color-gray-400: oklch(0.71 0 0);
-    --color-gray-500: oklch(0.55 0 0);
-    --color-gray-600: oklch(0.45 0 0);
-    --color-gray-700: oklch(0.37 0 0);
-    --color-gray-800: oklch(0.28 0 0);
-    --color-gray-900: oklch(0.20 0 0);
-    --color-gray-950: oklch(0.15 0 0);
-    --color-black: oklch(0.10 0 0);
+    --color-secondary:        #0E1B2C;
 
-    /* ============================================
-     SEMANTIC TOKENS (Purpose-based naming)
-     ============================================ */
+    /* Surfaces — Confianza Light */
+    --color-background:       #F7F6F3;
+    --color-surface:          #FFFFFF;
+    --color-surface-raised:   #EFEDE7;
+    --color-border:           #DCD8CE;
 
-    /* Primary Colors */
-    --color-primary: var(--color-brand-red);
-    --color-primary-dark: var(--color-brand-red-dark);
-    --color-accent: var(--color-brand-orange);
-    --color-accent-dark: var(--color-brand-orange-dark);
-    --color-secondary: var(--color-brand-black);
+    /* Text */
+    --color-text-primary:     #0E1B2C;
+    --color-text-secondary:   #5A6473;
+    --color-text-muted:       #8C95A3;
 
-    /* Surface Colors — DARK DEFAULT */
-    --color-surface: oklch(0.17 0 0);
-    /* Dark card #171717 */
-    --color-surface-raised: oklch(0.21 0 0);
-    /* Elevated surface #202020 */
-    --color-background: oklch(0.10 0 0);
-    /* Page background #0f0f0f */
-    --color-border: oklch(0.27 0 0);
-    /* Subtle border #2c2c2c */
+    /* States semánticos */
+    --color-success: #0E8A5F;
+    --color-warning: #B45309;
+    --color-error:   #C0392B;
+    --color-danger:  #C0392B;
+    --color-info:    #0B6FB8;
 
-    /* Form Input Colors — SIEMPRE CLARO en todos los temas
-       Previene que los inputs luzcan como disabled */
-    --color-input-bg: #ffffff;
-    --color-input-bg-hover: oklch(0.985 0 0);
-    --color-input-text: oklch(0.18 0 0);
-    --color-input-placeholder: oklch(0.55 0 0);
-    --color-input-border: oklch(0.85 0 0);
-    --color-input-border-hover: oklch(0.7 0 0);
+    /* E-commerce */
+    --color-price-now: #C0392B;
+    --color-price-old: #8C95A3;
 
-    /* Text Colors — DARK DEFAULT */
-    --color-text-primary: oklch(0.96 0 0);
-    /* Near white #f5f5f5 */
-    --color-text-secondary: var(--color-gray-400);
-    /* Light gray */
-    --color-text-muted: var(--color-gray-500);
-    /* Muted gray */
+    /* Header (storefront) */
+    --color-header-bg: #0E1B2C;
+    --color-header-fg: #FFFFFF;
 
-    /* Payment Method Colors — YAPE, PLIN, Visa, OAuth */
-    --color-yape: #742284;
-    --color-yape-light: #9c27b0;
-    --color-plin: #00D4FF;
-    --color-plin-text: #002f5c;
-    --color-visa: #1a1f71;
-    --color-oauth-google: #EA4335;
+    /* Métodos de pago peruanos / OAuth (no derivar de tema) */
+    --color-yape:           #742284;
+    --color-yape-light:     #9c27b0;
+    --color-plin:           #00D4FF;
+    --color-plin-text:      #002f5c;
+    --color-visa:           #1a1f71;
+    --color-oauth-google:   #EA4335;
     --color-oauth-facebook: #1877F2;
 
-    /* State Colors */
-    --color-success: oklch(0.72 0.22 150);
-    --color-warning: oklch(0.80 0.18 86);
-    --color-error: oklch(0.64 0.24 25);
-    --color-info: oklch(0.65 0.20 250);
-    --color-danger: oklch(0.59 0.24 25);
+    /* Interaction */
+    --color-hover-overlay:  rgba(15, 23, 42, .04);
+    --color-active-overlay: rgba(15, 23, 42, .08);
+    --color-border-strong:  #C5BFAF;
+    --color-focus-ring:     color-mix(in srgb, #0B3D91 30%, transparent);
 
-    /* Interaction State Overlays (theme-adaptive) */
-    --color-hover-overlay:  oklch(1 0 0 / 0.05);  /* white/5  — for dark surfaces */
-    --color-active-overlay: oklch(1 0 0 / 0.10);  /* white/10 — for dark surfaces */
-    --color-border-strong:  oklch(0.45 0 0);       /* stronger border — gray-600 equiv */
-    --color-focus-ring:     color-mix(in srgb, var(--color-primary) 30%, transparent);
+    --color-surface-hover:    #EFEDE7;
+    --color-surface-selected: #E5E1D7;
 
-    /* Surface interaction states (derived from base surfaces) */
-    --color-surface-hover:    oklch(0.22 0 0);     /* surface + hover step */
-    --color-surface-selected: oklch(0.24 0 0);     /* surface + selected step */
-
-    /* Text on dark header/secondary backgrounds — always light */
-    --color-on-secondary:    oklch(1 0 0);          /* white — secondary bg is always dark */
-    /* Text ON primary-colored elements (buttons, badges) */
-    --color-primary-contrast: oklch(1 0 0);         /* white — contrasts with dark/red primary */
-
-    /* ============================================
-     TYPOGRAPHY SYSTEM
-     ============================================ */
-
-    /* Font Families */
-    --font-sans: "Inter", "Outfit", "Segoe UI", system-ui, sans-serif;
-    --font-display: "Baloo 2", "Outfit", "Segoe UI", sans-serif;
-    --font-mono: "JetBrains Mono", "Fira Code", monospace;
-
-    /* Font Sizes (Type Scale) */
-    --text-xs: 0.75rem;
-    /* 12px */
-    --text-sm: 0.875rem;
-    /* 14px */
-    --text-base: 1rem;
-    /* 16px */
-    --text-lg: 1.125rem;
-    /* 18px */
-    --text-xl: 1.25rem;
-    /* 20px */
-    --text-2xl: 1.5rem;
-    /* 24px */
-    --text-3xl: 1.875rem;
-    /* 30px */
-    --text-4xl: 2.25rem;
-    /* 36px */
-    --text-5xl: 3rem;
-    /* 48px */
-
-    /* Font Weights */
-    --font-normal: 400;
-    --font-medium: 500;
-    --font-semibold: 600;
-    --font-bold: 700;
-    --font-extrabold: 800;
-
-    /* Line Heights */
-    --leading-tight: 1.25;
-    --leading-normal: 1.5;
-    --leading-relaxed: 1.75;
-
-    /* ============================================
-     SPACING SYSTEM
-     ============================================ */
-
-    --spacing-xs: 0.25rem;
-    /* 4px */
-    --spacing-sm: 0.5rem;
-    /* 8px */
-    --spacing-md: 1rem;
-    /* 16px */
-    --spacing-lg: 1.5rem;
-    /* 24px */
-    --spacing-xl: 2rem;
-    /* 32px */
-    --spacing-2xl: 3rem;
-    /* 48px */
-    --spacing-3xl: 4rem;
-    /* 64px */
-
-    /* ERP Layout Spacing */
-    --card-gap: 1.5rem;
-    /* gap entre cards en grids */
-    --form-gap: 1rem;
-    /* gap entre campos de formulario */
-    --section-gap: 2rem;
-    /* gap entre secciones de página */
-
-    /* Aliases cortos --space-* (muchos componentes los usan) */
-    --space-xs:  0.25rem;   /* 4px  */
-    --space-sm:  0.5rem;    /* 8px  */
-    --space-md:  1rem;      /* 16px */
-    --space-lg:  1.5rem;    /* 24px */
-    --space-xl:  2rem;      /* 32px */
-    --space-2xl: 3rem;      /* 48px */
-
-    /* ============================================
-     BORDER & RADIUS
-     ============================================ */
-
-    --radius-sm: 0.25rem;
-    /* 4px */
-    --radius-md: 0.5rem;
-    /* 8px */
-    --radius-lg: 0.75rem;
-    /* 12px */
-    --radius-xl: 1rem;
-    /* 16px */
-    --radius-full: 9999px;
-
-    --border-width: 1px;
-    --border-width-2: 2px;
-
-    /* ============================================
-     SHADOWS
-     ============================================ */
-
-    --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.4);
-    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.5), 0 2px 4px -2px rgb(0 0 0 / 0.4);
-    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.6), 0 4px 6px -4px rgb(0 0 0 / 0.5);
-    --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.7), 0 8px 10px -6px rgb(0 0 0 / 0.6);
-
-    /* ============================================
-     TRANSITIONS
-     ============================================ */
-
-    --transition-fast: 150ms;
-    --transition-base: 200ms;
-    --transition-slow: 300ms;
-    --ease-out: cubic-bezier(0, 0, 0.2, 1);
-    --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+    /* Text-on helpers */
+    --color-on-secondary:     #FFFFFF;
 }
 
-/* ============================================
-   OBSIDIAN THEME — Nuevo default premium
-   Azul-carbón profundo + Crimson vívido + Ámbar dorado
-   ============================================ */
+/* ──────────────────────────────────────────────────────────────
+ * 2. CONFIANZA — Storefront Light (DEFAULT)
+ *    Aplicado a :root cuando no hay data-theme, y explícitamente
+ *    cuando data-theme="confianza".
+ * ─────────────────────────────────────────────────────────── */
+:root,
+[data-theme="confianza"] {
+    --color-background:       #F7F6F3;
+    --color-surface:          #FFFFFF;
+    --color-surface-raised:   #EFEDE7;
+    --color-border:           #DCD8CE;
 
-[data-theme="obsidian"] {
-    /* Fondos — azul-carbón profundo */
-    --color-background:     oklch(0.09 0.018 245);   /* #070C15 — fondo página */
-    --color-surface:        oklch(0.13 0.015 245);   /* #0E1520 — cards */
-    --color-surface-raised: oklch(0.18 0.013 245);   /* #151D2A — hover / modales */
+    --color-text-primary:     #0E1B2C;
+    --color-text-secondary:   #5A6473;
+    --color-text-muted:       #8C95A3;
 
-    /* Bordes */
-    --color-border:         oklch(0.26 0.010 245);   /* #1E2B3C — borde sutil */
-    --color-border-focus:   oklch(0.60 0.27 22);     /* crimson — focus ring */
+    --color-primary:          #0B3D91;
+    --color-primary-dark:     #062A6B;
+    --color-primary-contrast: #FFFFFF;
 
-    /* Primario: Crimson vívido */
-    --color-primary:        oklch(0.60 0.27 22);     /* #E8152D */
-    --color-primary-dark:   oklch(0.53 0.27 22);     /* más oscuro */
-    --color-primary-contrast: oklch(0.99 0 0);       /* blanco sobre primario */
+    --color-accent:           #F08C00;
+    --color-accent-dark:      #C97300;
+    --color-accent-2:         #0EA371;
 
-    /* Acento: Ámbar dorado */
-    --color-accent:         oklch(0.78 0.19 72);     /* #E8A820 */
-    --color-accent-dark:    oklch(0.71 0.19 72);     /* más profundo */
-    --color-on-secondary:   oklch(0.15 0.010 245);   /* texto oscuro sobre acento */
+    --color-success:          #0E8A5F;
+    --color-danger:           #C0392B;
+    --color-error:            #C0392B;
+    --color-warning:          #B45309;
+    --color-info:             #0B6FB8;
 
-    /* Textos */
-    --color-text-primary:   oklch(0.97 0.007 260);   /* casi blanco frío */
-    --color-text-secondary: oklch(0.68 0.008 250);   /* gris medio azulado */
-    --color-text-muted:     oklch(0.50 0.007 250);   /* gris muted */
+    --color-price-now:        #C0392B;
+    --color-price-old:        #8C95A3;
 
-    /* Estados semánticos */
-    --color-success:        oklch(0.70 0.21 150);    /* verde esmeralda */
-    --color-warning:        oklch(0.79 0.18 86);     /* ámbar advertencia */
-    --color-error:          oklch(0.63 0.24 22);     /* rojo error */
-    --color-info:           oklch(0.65 0.20 250);    /* azul información */
+    --color-header-bg:        #0E1B2C;
+    --color-header-fg:        #FFFFFF;
+    --color-header-main-bg:   #0E1B2C;
+    --color-header-top-bg:    #062A6B;
 
-    /* Surface interaction states */
-    --color-surface-hover:    oklch(0.20 0.011 245);
-    --color-surface-selected: oklch(0.22 0.012 245);
+    --color-hover-overlay:    rgba(15, 23, 42, .04);
+    --color-active-overlay:   rgba(15, 23, 42, .08);
+    --color-border-strong:    #C5BFAF;
+    --color-focus-ring:       color-mix(in srgb, #0B3D91 30%, transparent);
+    --color-surface-hover:    #EFEDE7;
+    --color-surface-selected: #E5E1D7;
 
-    /* Interaction overlays */
-    --color-hover-overlay:  oklch(1 0 0 / 0.05);
-    --color-active-overlay: oklch(1 0 0 / 0.10);
-    --color-border-strong:  oklch(0.40 0.012 245);
-    --color-focus-ring:     color-mix(in srgb, oklch(0.60 0.27 22) 30%, transparent);
-
-    /* Sombras — tintadas con el fondo azul-carbón */
-    --shadow-sm:   0 1px 3px oklch(0.05 0.02 245 / 0.60);
-    --shadow-md:   0 4px 12px oklch(0.05 0.02 245 / 0.70);
-    --shadow-lg:   0 8px 24px oklch(0.05 0.02 245 / 0.75);
-    --shadow-xl:   0 16px 48px oklch(0.05 0.02 245 / 0.80);
+    /* ── Aliases cortos --c-* (consumidos por componentes ds-*) ── */
+    --c-bg:        var(--color-background);
+    --c-surface:   var(--color-surface);
+    --c-surface2:  var(--color-surface-raised);
+    --c-border:    var(--color-border);
+    --c-text:      var(--color-text-primary);
+    --c-muted:     var(--color-text-secondary);
+    --c-subtle:    var(--color-text-muted);
+    --c-brand:     var(--color-primary);
+    --c-brandHi:   var(--color-primary-dark);
+    --c-onBrand:   var(--color-primary-contrast);
+    --c-accent:    var(--color-accent);
+    --c-accent2:   var(--color-accent-2);
+    --c-onAccent:  #1a1a1a;
+    --c-success:   var(--color-success);
+    --c-danger:    var(--color-danger);
+    --c-warn:      var(--color-warning);
+    --c-info:      var(--color-info);
+    --c-priceNow:  var(--color-price-now);
+    --c-priceOld:  var(--color-price-old);
+    --c-headerBg:  var(--color-header-bg);
+    --c-headerFg:  var(--color-header-fg);
 }
 
-/* ============================================
-   LIGHT MODE OVERRIDE (opt-in via data-theme="light")
-   ============================================ */
+/* ──────────────────────────────────────────────────────────────
+ * 3. CONFIANZA — Storefront Dark
+ * ─────────────────────────────────────────────────────────── */
+[data-theme="confianza-dark"] {
+    --color-background:       #0B1320;
+    --color-surface:          #121C2E;
+    --color-surface-raised:   #1A2538;
+    --color-border:           #2A3550;
 
-.light,
-[data-theme="light"] {
-    /* Surface Colors */
-    --color-surface: oklch(1 0 0);
-    /* White */
-    --color-surface-raised: oklch(0.97 0 0);
-    /* Very light gray */
-    --color-background: #E3E6E6;
-    /* Light gray background */
-    --color-border: oklch(0.87 0 0);
-    /* Light border */
+    --color-text-primary:     #EAEEF5;
+    --color-text-secondary:   #9BA6B8;
+    --color-text-muted:       #6F798C;
 
-    /* Text Colors */
-    --color-text-primary: oklch(0.20 0 0);
-    /* Near black */
-    --color-text-secondary: var(--color-gray-500);
-    --color-text-muted: var(--color-gray-400);
+    --color-primary:          #5A8DEE;
+    --color-primary-dark:     #7AA5F2;
+    --color-primary-contrast: #FFFFFF;
 
-    /* Light mode shadows */
-    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-    --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+    --color-accent:           #FFB04A;
+    --color-accent-dark:      #FFC071;
+    --color-accent-2:         #34D399;
 
-    /* Surface interaction states */
-    --color-surface-hover:    oklch(0.95 0 0);
-    --color-surface-selected: oklch(0.93 0 0);
+    --color-success:          #34D399;
+    --color-danger:           #FB7185;
+    --color-error:            #FB7185;
+    --color-warning:          #FBBF24;
+    --color-info:             #60A5FA;
 
-    /* Light mode interaction overlays */
-    --color-hover-overlay:  oklch(0 0 0 / 0.05);  /* black/5  — for light surfaces */
-    --color-active-overlay: oklch(0 0 0 / 0.08);  /* black/8  — for light surfaces */
-    --color-border-strong:  oklch(0.75 0 0);       /* softer but visible on white */
+    --color-price-now:        #FF8A8A;
+    --color-price-old:        #6F798C;
+
+    --color-header-bg:        #060B16;
+    --color-header-fg:        #EAEEF5;
+    --color-header-main-bg:   #060B16;
+    --color-header-top-bg:    #0B1320;
+
+    --color-hover-overlay:    rgba(255, 255, 255, .05);
+    --color-active-overlay:   rgba(255, 255, 255, .10);
+    --color-border-strong:    #3A4566;
+    --color-focus-ring:       color-mix(in srgb, #5A8DEE 35%, transparent);
+    --color-surface-hover:    #1A2538;
+    --color-surface-selected: #243250;
+
+    /* Sombras más densas en dark */
+    --s-sm: 0 1px 2px rgba(0, 0, 0, .3);
+    --s-md: 0 4px 12px rgba(0, 0, 0, .35);
+    --s-lg: 0 8px 24px rgba(0, 0, 0, .4);
+    --s-xl: 0 16px 48px rgba(0, 0, 0, .5);
+    --shadow-sm: var(--s-sm);
+    --shadow-md: var(--s-md);
+    --shadow-lg: var(--s-lg);
+    --shadow-xl: var(--s-xl);
+
+    /* Aliases --c-* */
+    --c-bg:       var(--color-background);
+    --c-surface:  var(--color-surface);
+    --c-surface2: var(--color-surface-raised);
+    --c-border:   var(--color-border);
+    --c-text:     var(--color-text-primary);
+    --c-muted:    var(--color-text-secondary);
+    --c-subtle:   var(--color-text-muted);
+    --c-brand:    var(--color-primary);
+    --c-brandHi:  var(--color-primary-dark);
+    --c-onBrand:  var(--color-primary-contrast);
+    --c-accent:   var(--color-accent);
+    --c-accent2:  var(--color-accent-2);
+    --c-onAccent: #1a1a1a;
+    --c-success:  var(--color-success);
+    --c-danger:   var(--color-danger);
+    --c-warn:     var(--color-warning);
+    --c-info:     var(--color-info);
+    --c-priceNow: var(--color-price-now);
+    --c-priceOld: var(--color-price-old);
+    --c-headerBg: var(--color-header-bg);
+    --c-headerFg: var(--color-header-fg);
 }
 
-/* ============================================
-   ALTERNATIVE THEMES (Multi-Template Support)
-   Apply via data-theme="navy|emerald|purple" on <html>
-   All components using semantic tokens adapt automatically.
-   ============================================ */
+/* ──────────────────────────────────────────────────────────────
+ * 4. CONFIANZA — ERP sibling (admin / POS)
+ *    Mismo idioma visual, optimizado para densidad de datos.
+ * ─────────────────────────────────────────────────────────── */
+[data-theme="confianza-erp"] {
+    --color-background:       #F1F3F8;
+    --color-surface:          #FFFFFF;
+    --color-surface-raised:   #E8EBF2;
+    --color-border:           #D2D7E1;
 
-/* --- Theme: Navy Blue (Corporate/Professional) --- */
-[data-theme="navy"] {
-    --color-primary: oklch(0.45 0.20 255);
-    /* Deep navy #1a3a6b */
-    --color-primary-dark: oklch(0.35 0.20 255);
-    /* Darker navy */
-    --color-accent: oklch(0.70 0.18 210);
-    /* Sky blue accent */
-    --color-secondary: oklch(0.20 0.05 255);
-    /* Very dark blue */
-    --color-background: oklch(0.96 0.01 255);
-    /* Slight blue tint white */
+    --color-text-primary:     #0E1B2C;
+    --color-text-secondary:   #5A6473;
+    --color-text-muted:       #8C95A3;
+
+    --color-primary:          #0B3D91;
+    --color-primary-dark:     #062A6B;
+    --color-primary-contrast: #FFFFFF;
+
+    --color-accent:           #F08C00;
+    --color-accent-dark:      #C97300;
+
+    --color-success:          #0E8A5F;
+    --color-danger:           #C0392B;
+    --color-error:            #C0392B;
+    --color-warning:          #B45309;
+    --color-info:             #0B6FB8;
+
+    /* Sidebar ERP */
+    --color-sidebar-bg:       #0E1B2C;
+    --color-sidebar-fg:       #E2E7F0;
+    --color-sidebar-muted:    #8E9DB5;
+    --color-sidebar-hover:    #1A2A42;
+    --color-sidebar-border:   #1A2A42;
+
+    --color-header-bg:        #0E1B2C;
+    --color-header-fg:        #FFFFFF;
+    --color-header-main-bg:   #0E1B2C;
+    --color-header-top-bg:    #062A6B;
+
+    --color-hover-overlay:    rgba(15, 23, 42, .04);
+    --color-active-overlay:   rgba(15, 23, 42, .08);
+    --color-border-strong:    #B6BFD0;
+    --color-focus-ring:       color-mix(in srgb, #0B3D91 30%, transparent);
+    --color-surface-hover:    #E8EBF2;
+    --color-surface-selected: #DDE1EC;
+
+    /* Aliases --c-* */
+    --c-bg:       var(--color-background);
+    --c-surface:  var(--color-surface);
+    --c-surface2: var(--color-surface-raised);
+    --c-border:   var(--color-border);
+    --c-text:     var(--color-text-primary);
+    --c-muted:    var(--color-text-secondary);
+    --c-subtle:   var(--color-text-muted);
+    --c-brand:    var(--color-primary);
+    --c-brandHi:  var(--color-primary-dark);
+    --c-onBrand:  var(--color-primary-contrast);
+    --c-accent:   var(--color-accent);
+    --c-onAccent: #1a1a1a;
+    --c-success:  var(--color-success);
+    --c-danger:   var(--color-danger);
+    --c-warn:     var(--color-warning);
+    --c-info:     var(--color-info);
+    --c-headerBg: var(--color-header-bg);
+    --c-headerFg: var(--color-header-fg);
 }
 
-[data-theme="navy"].dark,
-[data-theme="navy"][data-mode="dark"] {
-    --color-surface: oklch(0.18 0.05 255);
-    --color-background: oklch(0.12 0.05 255);
-    --color-text-primary: oklch(0.95 0.01 255);
-}
+/* ──────────────────────────────────────────────────────────────
+ * 5. SEMANTIC TAILWIND UTILITIES
+ *    Aliases que el @theme no genera con nombres bonitos.
+ * ─────────────────────────────────────────────────────────── */
 
-/* --- Theme: Emerald (Nature/Sustainability) --- */
-[data-theme="emerald"] {
-    --color-primary: oklch(0.48 0.20 155);
-    /* Emerald green #14a96a */
-    --color-primary-dark: oklch(0.38 0.20 155);
-    /* Darker emerald */
-    --color-accent: oklch(0.75 0.18 86);
-    /* Warm amber accent */
-    --color-secondary: oklch(0.20 0.05 155);
-    /* Very dark green */
-    --color-background: oklch(0.96 0.01 155);
-    /* Slight green tint */
-}
+@utility text-on        { color: var(--color-text-primary); }
+@utility text-on-secondary { color: var(--color-on-secondary); }
+@utility text-on-primary   { color: var(--color-primary-contrast); }
+@utility text-subtle    { color: var(--color-text-secondary); }
+@utility text-muted     { color: var(--color-text-muted); }
+@utility text-on-light  { color: white; }
+@utility text-on-dark   { color: var(--color-text-primary); }
 
-[data-theme="emerald"].dark,
-[data-theme="emerald"][data-mode="dark"] {
-    --color-surface: oklch(0.18 0.05 155);
-    --color-background: oklch(0.12 0.04 155);
-    --color-text-primary: oklch(0.95 0.01 155);
-}
+@utility bg-surface          { background-color: var(--color-surface); }
+@utility bg-surface-raised   { background-color: var(--color-surface-raised); }
+@utility bg-page             { background-color: var(--color-background); }
+@utility bg-surface-hover    { background-color: var(--color-surface-hover); }
+@utility bg-surface-selected { background-color: var(--color-surface-selected); }
 
-/* --- Theme: Purple Night (Luxury/Premium) --- */
-[data-theme="purple"] {
-    --color-primary: oklch(0.55 0.25 295);
-    /* Vivid purple #8b2fd4 */
-    --color-primary-dark: oklch(0.42 0.25 295);
-    /* Darker purple */
-    --color-accent: oklch(0.72 0.20 340);
-    /* Pink-rose accent */
-    --color-secondary: oklch(0.18 0.08 295);
-    /* Very dark purple */
-    --color-background: oklch(0.97 0.01 295);
-    /* Slight purple tint */
-}
+@utility border-token { border-color: var(--color-border); }
 
-[data-theme="purple"].dark,
-[data-theme="purple"][data-mode="dark"] {
-    --color-primary: oklch(0.65 0.25 295);
-    /* Brighter purple on dark */
-    --color-surface: oklch(0.17 0.07 295);
-    --color-background: oklch(0.11 0.06 295);
-    --color-text-primary: oklch(0.95 0.02 295);
-}
-
-/* ============================================
-   SEMANTIC TAILWIND UTILITY ALIASES (Tailwind v4 @utility)
-
-   The @theme block auto-generates utilities from --color-* tokens:
-     bg-surface, bg-surface-raised, bg-background, bg-primary, bg-accent
-     text-primary, text-accent, text-success, text-warning, text-error
-     border-border, border-primary
-
-   These @utility aliases handle the --color-text-* tokens whose
-   auto-generated names would be "text-text-primary" (ugly).
-   Use these instead: text-on, text-subtle, text-muted
-   ============================================ */
-
-/* Body text color — primary readable content */
-@utility text-on {
-    color: var(--color-text-primary);
-}
-
-/* Text on dark secondary/header backgrounds */
-@utility text-on-secondary {
-    color: var(--color-on-secondary);
-}
-
-/* Text on primary-colored elements (badges, buttons) */
-@utility text-on-primary {
-    color: var(--color-primary-contrast);
-}
-
-/* Secondary text — labels, metadata */
-@utility text-subtle {
-    color: var(--color-text-secondary);
-}
-
-/* Subdued text — placeholders, hints, disabled */
-@utility text-muted {
-    color: var(--color-text-muted);
-}
-
-/* Surface backgrounds (also auto-generated by @theme, listed here for clarity) */
-@utility bg-surface {
-    background-color: var(--color-surface);
-}
-
-@utility bg-surface-raised {
-    background-color: var(--color-surface-raised);
-}
-
-@utility bg-page {
-    background-color: var(--color-background);
-}
-
-/* Border alias */
-@utility border-token {
-    border-color: var(--color-border);
-}
-
-/* Text on light backgrounds (e.g. inside colored payment buttons) */
-@utility text-on-light {
-    color: white;
-}
-
-/* Text on dark backgrounds */
-@utility text-on-dark {
-    color: var(--color-text-primary);
-}
-
-/* Surface hover/selected states */
-@utility bg-surface-hover {
-    background-color: var(--color-surface-hover);
-}
-
-@utility bg-surface-selected {
-    background-color: var(--color-surface-selected);
-}
-
-/* Semantic text sizes — caption (13px) and label (12px) */
 @utility text-caption {
     font-size: 0.8125rem;
     line-height: var(--leading-normal);
 }
-
 @utility text-label {
     font-size: var(--text-xs);
     line-height: 1.4;

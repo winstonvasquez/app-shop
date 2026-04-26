@@ -1,93 +1,139 @@
-<div class="page-container">
-    <app-breadcrumb [items]="breadcrumbItems" />
-    <div class="page-header">
-        <h1 class="page-title">Cupones y ofertas</h1>
-        <p class="page-subtitle">Tus descuentos disponibles</p>
-    </div>
+<ds-account-shell title="Cupones y ofertas" subtitle="Tus descuentos disponibles" [userName]="userName()">
 
-    <!-- Tabs -->
-    <div class="flex gap-1 mb-4 p-1 rounded-xl" style="background: var(--color-surface-raised)">
-        @for (tab of [['ACTIVE', 'Activos'], ['USED', 'Usados'], ['EXPIRED', 'Expirados']]; track tab[0]) {
-            <button
-                class="flex-1 py-1.5 text-sm font-medium rounded-lg transition-colors"
-                [style.background]="activeTab() === tab[0] ? 'var(--color-surface)' : 'transparent'"
-                [style.color]="activeTab() === tab[0] ? 'var(--color-text-primary)' : 'var(--color-text-muted)'"
-                (click)="setTab($any(tab[0]))">
-                {{ tab[1] }}
+    <div class="tabs">
+        @for (t of tabs; track t.key) {
+            <button class="tab" [class.is-active]="activeTab() === t.key" (click)="setTab(t.key)" type="button">
+                {{ t.label }}
             </button>
         }
     </div>
 
     @if (loading()) {
-        <div class="loading-container"><div class="spinner"></div></div>
+        <div class="state"><span class="spinner"></span> Cargando…</div>
     } @else if (filtered().length === 0) {
-        <div class="flex flex-col items-center justify-center py-12 gap-3" style="color: var(--color-text-muted)">
-            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="1.5" style="opacity: 0.4">
-                <path d="M9 7H6a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2v-3"/>
-                <path d="M9 15h3l8.5-8.5a1.5 1.5 0 0 0-3-3L9 12v3"/>
-                <line x1="16" y1="5" x2="19" y2="8"/>
-            </svg>
-            <p class="text-sm">No tienes cupones en esta categoría</p>
+        <div class="empty">
+            <lucide-icon name="ticket" [size]="48"/>
+            <h3>Sin cupones {{ activeTab() === 'ACTIVE' ? 'disponibles' : (activeTab() === 'USED' ? 'usados' : 'vencidos') }}</h3>
+            <p>Vuelve pronto, siempre tenemos nuevas ofertas.</p>
         </div>
     } @else {
-        <div class="flex flex-col gap-3">
-            @for (cupon of filtered(); track cupon.id) {
-                <div class="card">
-                    <div class="card-body">
-                        <div class="flex items-start justify-between gap-3">
-                            <div class="flex-1 min-w-0">
-                                <!-- Badge descuento -->
-                                <span class="badge badge-accent text-xs font-bold mb-2 inline-block">
-                                    {{ formatDiscount(cupon) }}
-                                </span>
-                                <p class="text-sm font-semibold" style="color: var(--color-text-primary)">
-                                    {{ cupon.nombre }}
-                                </p>
-                                @if (cupon.descripcion) {
-                                    <p class="text-xs mt-0.5" style="color: var(--color-text-secondary)">
-                                        {{ cupon.descripcion }}
-                                    </p>
-                                }
-                                <p class="text-xs mt-1" style="color: var(--color-text-muted)">
-                                    Vence: {{ cupon.fechaFin | date:'dd/MM/yyyy' }}
-                                </p>
-                            </div>
-
-                            <!-- Código y acciones -->
-                            <div class="flex flex-col items-end gap-2 flex-shrink-0">
-                                @if (cupon.codigo && cupon.status === 'ACTIVE') {
-                                    <div class="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-mono font-bold"
-                                        style="background: var(--color-surface-raised); color: var(--color-primary); border: 1px dashed var(--color-primary)">
-                                        {{ cupon.codigo }}
-                                    </div>
-                                    <div class="flex gap-1">
-                                        <app-button
-                                            [label]="copiedId() === cupon.id ? '¡Copiado!' : 'Copiar'"
-                                            variant="secondary"
-                                            icon="copy"
-                                            size="xs"
-                                            (click)="copyCode(cupon)" />
-                                        <a routerLink="/cart" [queryParams]="{coupon: cupon.codigo}"
-                                            class="btn btn-primary text-xs py-1 px-2">
-                                            Usar
-                                        </a>
-                                    </div>
-                                } @else if (cupon.status === 'USED') {
-                                    <span class="badge badge-neutral text-xs">Usado</span>
-                                    @if (cupon.usedAt) {
-                                        <p class="text-xs" style="color: var(--color-text-muted)">
-                                            {{ cupon.usedAt | date:'dd/MM/yyyy' }}
-                                        </p>
-                                    }
-                                } @else {
-                                    <span class="badge badge-error text-xs">Expirado</span>
-                                }
-                            </div>
-                        </div>
+        <div class="grid">
+            @for (c of filtered(); track c.id) {
+                <article class="cupon" [class.is-disabled]="activeTab() !== 'ACTIVE'">
+                    <div class="cupon-disc">
+                        <strong>{{ formatDiscount(c) }}</strong>
+                        <span class="cupon-tag">{{ c.tipo === 'PORCENTAJE' ? '%' : 'S/' }}</span>
                     </div>
-                </div>
+                    <div class="cupon-body">
+                        <h4>{{ c.titulo ?? c.codigo }}</h4>
+                        @if (c.descripcion) { <p>{{ c.descripcion }}</p> }
+                        @if (c.fechaExpiracion) {
+                            <span class="exp">
+                                <lucide-icon name="clock" [size]="12"/>
+                                Vence {{ c.fechaExpiracion | date:'dd MMM yyyy' }}
+                            </span>
+                        }
+                        @if (activeTab() === 'ACTIVE') {
+                            <div class="code-row">
+                                <code>{{ c.codigo }}</code>
+                                <ds-button variant="secondary" size="sm"
+                                    [icon]="copiedId() === c.id ? 'check' : 'copy'"
+                                    (click)="copyCode(c)">
+                                    {{ copiedId() === c.id ? 'Copiado' : 'Copiar' }}
+                                </ds-button>
+                            </div>
+                        } @else {
+                            <ds-badge [tone]="activeTab() === 'USED' ? 'success' : 'neutral'" size="xs">
+                                {{ activeTab() === 'USED' ? 'Usado' : 'Vencido' }}
+                            </ds-badge>
+                        }
+                    </div>
+                </article>
             }
         </div>
     }
-</div>
+
+</ds-account-shell>
+
+<style>
+    .tabs {
+        display: flex; gap: 24px;
+        border-bottom: 1px solid var(--c-border);
+        margin-bottom: 8px;
+    }
+    .tab {
+        background: none; border: none; padding: 12px 0;
+        font-size: 14px; font-weight: 600;
+        color: var(--c-muted);
+        border-bottom: 2px solid transparent;
+        margin-bottom: -1px;
+        cursor: pointer; font-family: inherit;
+    }
+    .tab:hover { color: var(--c-text); }
+    .tab.is-active { color: var(--c-brand); border-bottom-color: var(--c-brand); }
+
+    .state, .empty {
+        background: var(--c-surface);
+        border: 1px solid var(--c-border);
+        border-radius: var(--r-lg);
+        padding: 48px 24px; text-align: center; color: var(--c-muted);
+        display: flex; flex-direction: column; align-items: center; gap: 12px;
+    }
+    .empty h3 { color: var(--c-text); margin: 0; font-family: var(--f-display); font-size: 18px; }
+    .spinner {
+        width: 16px; height: 16px;
+        border: 2px solid var(--c-surface2);
+        border-top-color: var(--c-brand);
+        border-radius: 999px;
+        animation: spin 800ms linear infinite;
+        display: inline-block; vertical-align: middle; margin-right: 8px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .grid {
+        display: grid; gap: 12px;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    }
+    .cupon {
+        background: var(--c-surface);
+        border: 1px solid var(--c-border);
+        border-radius: var(--r-lg);
+        overflow: hidden;
+        display: flex;
+    }
+    .cupon.is-disabled { opacity: .55; }
+    .cupon-disc {
+        background: var(--c-brand);
+        color: var(--c-onBrand, #fff);
+        padding: 16px;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        gap: 4px; min-width: 96px;
+        font-family: var(--f-display);
+    }
+    .cupon-disc strong { font-size: 20px; font-weight: 800; letter-spacing: -0.02em; }
+    .cupon-tag { font-size: 10px; opacity: .8; text-transform: uppercase; letter-spacing: .04em; }
+
+    .cupon-body {
+        padding: 14px; flex: 1;
+        display: flex; flex-direction: column; gap: 6px;
+    }
+    .cupon-body h4 { font-size: 14px; font-weight: 700; color: var(--c-text); margin: 0; }
+    .cupon-body p { font-size: 12px; color: var(--c-muted); margin: 0; }
+    .exp {
+        font-size: 11px; color: var(--c-muted);
+        display: inline-flex; align-items: center; gap: 4px;
+    }
+    .code-row {
+        display: flex; gap: 8px; align-items: center;
+        margin-top: auto;
+    }
+    .code-row code {
+        flex: 1;
+        background: var(--c-surface2);
+        padding: 6px 10px; border-radius: var(--r-sm);
+        font-family: var(--f-mono);
+        font-size: 13px; font-weight: 700;
+        color: var(--c-text); letter-spacing: .04em;
+        text-align: center;
+    }
+</style>

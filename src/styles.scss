@@ -1,32 +1,32 @@
-/* ============================================
- * app-shop 7-1 SCSS Architecture
- * ============================================ */
+/* ============================================================
+ *  app-shop — Sistema de Diseño "CONFIANZA" (único)
+ *  Arquitectura SCSS 7-1 (sin temas alternativos)
+ * ============================================================ */
 
-/* Load Tailwind directives first for @apply support in partials */
+/* 1. Tailwind v4 engine + fuentes (Inter / Source Serif 4) */
 @use 'styles/base/tailwind';
 
-/* 1. Abstracts */
+/* 2. Tokens estructurales compartidos (spacing, radii, shadows, type) */
+@use 'styles/base/design-system-tokens';
+
+/* 3. Abstracts (variables SCSS si fueran necesarias en el futuro) */
 @use 'styles/abstracts/variables';
 
-/* 2. Vendors */
+/* 4. Vendors (utilities compartidos) */
 @use 'styles/vendors/admin-utilities';
 @use 'styles/vendors/utilities';
 
-/* 3. Base */
+/* 5. Base */
 @use 'styles/base/reset';
 @use 'styles/base/typography';
 
-/* 4. Layout */
+/* 6. Layout */
 @use 'styles/layout/layout';
 
-/* 5. Themes */
+/* 7. Theme — único tema "Confianza" (light + dark + ERP) */
 @use 'styles/themes/default';
-@use 'styles/themes/orange-theme';
-@use 'styles/themes/seasonal-themes';
-@use 'styles/themes/professional-themes';
-@use 'styles/themes/header-warmth';
 
-/* 6. Components */
+/* 8. Components */
 @use 'styles/components/ui';
 @use 'styles/components/alert';
 @use 'styles/components/data-table';
@@ -37,7 +37,7 @@
 @use 'styles/components/modal';
 @use 'styles/components/page-header';
 
-/* 7. Pages */
+/* 9. Pages */
 @use 'styles/pages/login-page';
 @use 'styles/pages/pos-page';
 @use 'styles/pages/dashboard';

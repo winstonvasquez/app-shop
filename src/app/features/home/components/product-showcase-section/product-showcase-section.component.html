@@ -1,74 +1,98 @@
 @if (products().length > 0 || loading()) {
-<section class="mt-8">
-    <!-- Section header -->
-    <div class="flex items-center justify-between mb-4">
-        <div class="flex items-center gap-2">
-            @switch (type()) {
-                @case ('best-sellers') {
-                    <svg class="w-5 h-5 text-primary" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                    </svg>
+    <section class="ds-showcase">
+        <header class="head">
+            <div class="title-row">
+                @switch (type()) {
+                    @case ('best-sellers') { <lucide-icon name="award"  [size]="20" class="ic brand"/> }
+                    @case ('top-rated')    { <lucide-icon name="star"   [size]="20" class="ic accent"/> }
+                    @case ('new-arrivals') { <lucide-icon name="sparkles" [size]="20" class="ic ok"/> }
                 }
-                @case ('top-rated') {
-                    <svg class="w-5 h-5 text-amber-500" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
-                    </svg>
+                <h2>{{ title() }}</h2>
+            </div>
+            <a class="more" [routerLink]="['/products']" [queryParams]="linkParams()">
+                {{ 'home.viewAll' | translate }} →
+            </a>
+        </header>
+
+        <div class="strip">
+            <button (click)="scroll(-1)" class="nav-btn left" aria-label="Anterior">
+                <lucide-icon name="chevron-left" [size]="16"/>
+            </button>
+
+            <div #scrollContainer class="scroll-row">
+                @for (product of products(); track product.id) {
+                    <div class="card-wrap">
+                        <ds-product-card [p]="product" (cardClick)="onCardClick($event)"/>
+                    </div>
                 }
-                @case ('new-arrivals') {
-                    <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                    </svg>
+
+                @if (loading() && products().length === 0) {
+                    @for (n of [1,2,3,4,5,6]; track n) {
+                        <div class="skeleton"></div>
+                    }
                 }
-            }
-            <h2 class="text-base font-bold text-on">{{ title() }}</h2>
+            </div>
+
+            <button (click)="scroll(1)" class="nav-btn right" aria-label="Siguiente">
+                <lucide-icon name="chevron-right" [size]="16"/>
+            </button>
         </div>
-        <a [routerLink]="['/products']" [queryParams]="linkParams()"
-            class="text-[12px] font-semibold text-primary hover:underline">
-            {{ 'home.viewAll' | translate }} →
-        </a>
-    </div>
-
-    <!-- Scroll row -->
-    <div class="relative group/scroll">
-        <!-- Left arrow -->
-        <button (click)="scroll(-1)"
-            class="absolute left-1 top-1/2 -translate-y-1/2 z-10
-                   w-8 h-8 flex items-center justify-center
-                   rounded-full bg-surface border border-border text-on shadow-lg
-                   opacity-0 group-hover/scroll:opacity-100 transition-opacity
-                   focus:outline-none cursor-pointer">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/>
-            </svg>
-        </button>
-
-        <div #scrollContainer
-            class="flex gap-3 overflow-x-auto py-2 px-1
-                   [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-            @for (product of products(); track product.id) {
-                <div class="flex-shrink-0 snap-start w-[160px]">
-                    <app-product-card [product]="product" />
-                </div>
-            }
-
-            @if (loading()) {
-                @for (n of [1,2,3,4,5,6]; track n) {
-                    <div class="flex-shrink-0 rounded-xl animate-pulse bg-surface-raised/70 w-[160px] h-[220px]"></div>
-                }
-            }
-        </div>
-
-        <!-- Right arrow -->
-        <button (click)="scroll(1)"
-            class="absolute right-1 top-1/2 -translate-y-1/2 z-10
-                   w-8 h-8 flex items-center justify-center
-                   rounded-full bg-surface border border-border text-on shadow-lg
-                   opacity-0 group-hover/scroll:opacity-100 transition-opacity
-                   focus:outline-none cursor-pointer">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/>
-            </svg>
-        </button>
-    </div>
-</section>
+    </section>
 }
+
+<style>
+    .ds-showcase { font-family: var(--f-sans); }
+    .head {
+        display: flex; justify-content: space-between; align-items: baseline;
+        margin-bottom: 16px;
+    }
+    .title-row { display: flex; align-items: center; gap: 8px; }
+    .title-row h2 {
+        font-family: var(--f-display);
+        font-size: 24px; font-weight: 800;
+        color: var(--c-text);
+        margin: 0; letter-spacing: -0.02em;
+    }
+    .ic.brand  { color: var(--c-brand); }
+    .ic.accent { color: var(--c-accent); }
+    .ic.ok     { color: var(--c-success); }
+    .more {
+        color: var(--c-brand); font-size: 13px; font-weight: 700;
+        text-decoration: none; cursor: pointer;
+    }
+
+    .strip { position: relative; }
+    .nav-btn {
+        position: absolute; top: 50%; transform: translateY(-50%);
+        z-index: 2; width: 32px; height: 32px;
+        background: var(--c-surface);
+        border: 1px solid var(--c-border);
+        border-radius: 999px;
+        color: var(--c-text); cursor: pointer;
+        display: inline-flex; align-items: center; justify-content: center;
+        box-shadow: var(--s-md);
+        opacity: 0; transition: opacity 120ms;
+    }
+    .nav-btn.left  { left: -8px; }
+    .nav-btn.right { right: -8px; }
+    .strip:hover .nav-btn { opacity: 1; }
+
+    .scroll-row {
+        display: flex; gap: 12px;
+        overflow-x: auto; padding: 4px 4px 12px;
+        scroll-snap-type: x mandatory;
+        scrollbar-width: none;
+    }
+    .scroll-row::-webkit-scrollbar { display: none; }
+    .card-wrap {
+        flex-shrink: 0; width: 200px;
+        scroll-snap-align: start;
+    }
+    .skeleton {
+        flex-shrink: 0; width: 200px; height: 280px;
+        background: var(--c-surface2);
+        border-radius: var(--r-lg);
+        animation: pulse 1.4s ease-in-out infinite;
+    }
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .55; } }
+</style>

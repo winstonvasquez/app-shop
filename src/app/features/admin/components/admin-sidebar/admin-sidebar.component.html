@@ -1,22 +1,22 @@
 <aside
-    class="w-[260px] fixed left-0 top-0 bottom-0 overflow-y-auto z-[100] -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out bg-[var(--color-surface)] border-r border-[var(--color-border)]">
-    <div class="p-6 border-b border-[var(--color-border)]">
+    class="w-[260px] fixed left-0 top-0 bottom-0 overflow-y-auto z-[100] -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out bg-[var(--color-sidebar-bg,var(--color-surface))] border-r border-[var(--color-sidebar-border,var(--color-border))]">
+    <div class="p-6 border-b border-[var(--color-sidebar-border,var(--color-border))]">
         <div class="flex items-center gap-2 text-2xl font-bold">
             <div
                 class="w-8 h-8 bg-[var(--color-primary)] rounded-lg flex items-center justify-center text-white font-extrabold">
                 S</div>
-            <span class="text-[var(--color-text-primary)]">Shop<span class="text-[var(--color-primary)]">Admin</span></span>
+            <span class="text-[var(--color-sidebar-text,var(--color-text-primary))]">Shop<span class="text-[var(--color-primary)]">Admin</span></span>
         </div>
     </div>
 
     <nav class="py-4 px-3">
         @for (group of navGroups; track group.title) {
         <div class="mb-6">
-            <div class="text-xs font-semibold uppercase tracking-wider px-3 py-2 mb-1 text-[var(--color-text-muted)]">
+            <div class="text-xs font-semibold uppercase tracking-wider px-3 py-2 mb-1 text-[var(--color-sidebar-muted,var(--color-text-muted))]">
                 {{ group.title }}</div>
             @for (item of group.items; track item.route) {
-            <a [routerLink]="item.route" routerLinkActive="!bg-[var(--color-primary)] !text-white !opacity-100"
-                class="flex items-center gap-3 px-3 py-3 mb-1 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-[var(--color-surface-raised)] focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 opacity-80 text-[var(--color-text-primary)]"
+            <a [routerLink]="item.route" routerLinkActive="!bg-[var(--color-primary)] !text-[var(--color-primary-contrast,#fff)] !opacity-100"
+                class="flex items-center gap-3 px-3 py-3 mb-1 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-[var(--color-sidebar-hover,var(--color-surface-raised))] focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 opacity-80 text-[var(--color-sidebar-text,var(--color-text-primary))]"
                 [attr.aria-label]="item.label">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -30,10 +30,10 @@
     </nav>
 
     <!-- ── Selector de Apariencia ─────────────────────────── -->
-    <div class="border-t border-[var(--color-border)] px-3 py-3">
+    <div class="border-t border-[var(--color-sidebar-border,var(--color-border))] px-3 py-3">
         <!-- btn-migration: SKIP — custom sidebar toggle con flex inline, no clase btn-* -->
         <button
-            class="flex items-center justify-between w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors hover:bg-[var(--color-surface-raised)] text-[var(--color-text-primary)]"
+            class="flex items-center justify-between w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors hover:bg-[var(--color-sidebar-hover,var(--color-surface-raised))] text-[var(--color-sidebar-text,var(--color-text-primary))]"
             (click)="themePickerOpen.set(!themePickerOpen())"
             aria-label="Cambiar apariencia">
             <span class="flex items-center gap-2">
@@ -44,7 +44,7 @@
                 <span>Apariencia</span>
             </span>
             <span class="flex items-center gap-1.5">
-                <span class="w-3 h-3 rounded-full border border-[var(--color-border)] bg-[var(--color-primary)]"></span>
+                <span class="w-3 h-3 rounded-full border border-[var(--color-sidebar-border,var(--color-border))] bg-[var(--color-primary)]"></span>
                 <svg class="w-3 h-3 opacity-50 transition-transform" [class.rotate-180]="themePickerOpen()"
                     fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" />
@@ -53,11 +53,11 @@
         </button>
 
         @if (themePickerOpen()) {
-        <div class="mt-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-raised)] overflow-hidden">
+        <div class="mt-2 rounded-lg border border-[var(--color-sidebar-border,var(--color-border))] bg-[var(--color-sidebar-bg,var(--color-surface-raised))] overflow-hidden">
             @for (group of themeGroups; track group.label) {
             @if (group.themes.length > 0) {
             <div class="px-3 pt-3 pb-2">
-                <p class="text-[10px] font-semibold uppercase tracking-wider text-[var(--color-text-muted)] mb-2">
+                <p class="text-[10px] font-semibold uppercase tracking-wider text-[var(--color-sidebar-muted,var(--color-text-muted))] mb-2">
                     {{ group.label }}
                 </p>
                 <div class="flex flex-wrap gap-1.5">

@@ -1,66 +1,59 @@
-<div class="page-container">
-    <app-breadcrumb [items]="breadcrumbItems" />
-    <div class="page-header">
-        <h1 class="page-title">Mis permisos</h1>
-        <p class="page-subtitle">Roles y accesos asignados a tu cuenta</p>
-    </div>
+<ds-account-shell title="Permisos y privacidad" subtitle="Roles y accesos asignados a tu cuenta" [userName]="userName()">
 
     @if (loading()) {
-        <div class="loading-container"><div class="spinner"></div></div>
+        <div class="loading"><span class="spinner"></span></div>
     } @else if (error()) {
-        <div class="card max-w-md">
-            <div class="card-body">
-                <p class="text-sm" style="color: var(--color-text-muted)">{{ error() }}</p>
-            </div>
+        <div class="error-card">
+            <lucide-icon name="alert-triangle" [size]="20" class="err-icon"/>
+            <p class="err-msg">{{ error() }}</p>
         </div>
     } @else if (permissions()) {
-        <div class="card max-w-lg mb-4">
-            <div class="card-header">
+
+        <!-- Rol asignado -->
+        <div class="card">
+            <div class="card-head">
                 <h3 class="card-title">Rol asignado</h3>
-                <span class="badge badge-accent">{{ permissions()!.rolNombre }}</span>
+                <ds-badge tone="brand" size="sm">{{ permissions()!.rolNombre }}</ds-badge>
             </div>
             @if (permissions()!.rolDescripcion) {
-                <div class="card-body">
-                    <p class="text-sm" style="color: var(--color-text-muted)">{{ permissions()!.rolDescripcion }}</p>
-                </div>
+                <p class="card-desc">{{ permissions()!.rolDescripcion }}</p>
             }
         </div>
 
+        <!-- Acceso estándar -->
         @if (permissions()!.isStandardCustomer) {
-            <div class="card max-w-lg">
-                <div class="card-body" style="text-align: center; padding: var(--space-xl)">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin: 0 auto var(--space-md); color: var(--color-text-muted)">
-                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                    </svg>
-                    <p class="font-medium" style="color: var(--color-text-primary); margin-bottom: var(--space-xs)">Acceso estándar de cliente</p>
-                    <p class="text-sm" style="color: var(--color-text-muted)">Puedes comprar, gestionar tus pedidos y actualizar tu perfil.</p>
-                </div>
+            <div class="card text-center">
+                <lucide-icon name="users" [size]="40" class="std-icon"/>
+                <p class="std-title">Acceso estándar de cliente</p>
+                <p class="std-sub">Puedes comprar, gestionar tus pedidos y actualizar tu perfil.</p>
             </div>
+
+        <!-- Políticas de acceso -->
         } @else if (permissions()!.permissions.length > 0) {
-            <div class="card max-w-lg">
-                <div class="card-header">
+            <div class="card">
+                <div class="card-head">
                     <h3 class="card-title">Políticas de acceso</h3>
-                    <span class="badge badge-neutral">{{ permissions()!.permissions.length }}</span>
+                    <ds-badge tone="neutral" size="sm">{{ permissions()!.permissions.length }}</ds-badge>
                 </div>
-                <table class="table">
+                <table class="perm-table">
                     <thead>
                         <tr>
-                            <th class="table-header-cell">Política</th>
-                            <th class="table-header-cell">Efecto</th>
+                            <th class="th">Política</th>
+                            <th class="th">Efecto</th>
                         </tr>
                     </thead>
                     <tbody>
                         @for (p of permissions()!.permissions; track p.codigo) {
-                            <tr class="table-row">
-                                <td class="table-cell">
-                                    <p class="font-medium text-sm" style="color: var(--color-text-primary)">{{ p.nombre }}</p>
-                                    <p class="text-xs" style="color: var(--color-text-muted)">{{ p.codigo }}</p>
+                            <tr class="tr">
+                                <td class="td">
+                                    <p class="perm-name">{{ p.nombre }}</p>
+                                    <p class="perm-code">{{ p.codigo }}</p>
                                 </td>
-                                <td class="table-cell">
+                                <td class="td">
                                     @if (p.efecto === 'ALLOW') {
-                                        <span class="badge badge-success">Permitido</span>
+                                        <ds-badge tone="success" size="sm">Permitido</ds-badge>
                                     } @else {
-                                        <span class="badge badge-error">Denegado</span>
+                                        <ds-badge tone="danger" size="sm">Denegado</ds-badge>
                                     }
                                 </td>
                             </tr>
@@ -69,5 +62,68 @@
                 </table>
             </div>
         }
+
     }
-</div>
+
+</ds-account-shell>
+
+<style>
+    .loading {
+        display: flex; justify-content: center; padding: 40px;
+    }
+    .spinner {
+        width: 24px; height: 24px;
+        border: 2px solid var(--c-border);
+        border-top-color: var(--c-brand);
+        border-radius: 999px;
+        animation: spin 700ms linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .error-card {
+        display: flex; align-items: center; gap: 10px;
+        background: color-mix(in srgb, var(--c-danger) 10%, var(--c-surface));
+        border: 1px solid color-mix(in srgb, var(--c-danger) 25%, var(--c-border));
+        border-radius: var(--r-md);
+        padding: 14px 16px; max-width: 480px;
+    }
+    .err-icon { color: var(--c-danger); flex-shrink: 0; }
+    .err-msg { font-size: 13px; color: var(--c-text); margin: 0; }
+
+    .card {
+        background: var(--c-surface);
+        border: 1px solid var(--c-border);
+        border-radius: var(--r-lg);
+        padding: 20px 24px;
+        max-width: 640px;
+    }
+    .card.text-center { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+    .card-head {
+        display: flex; align-items: center; justify-content: space-between; gap: 12px;
+        margin-bottom: 12px;
+    }
+    .card-title {
+        font-family: var(--f-display);
+        font-size: 15px; font-weight: 700;
+        color: var(--c-text); margin: 0;
+    }
+    .card-desc { font-size: 13px; color: var(--c-muted); margin: 0; }
+
+    .std-icon { color: var(--c-muted); opacity: 0.5; }
+    .std-title { font-size: 15px; font-weight: 600; color: var(--c-text); margin: 0; }
+    .std-sub { font-size: 13px; color: var(--c-muted); margin: 0; max-width: 300px; }
+
+    .perm-table { width: 100%; border-collapse: collapse; margin-top: 4px; }
+    .th {
+        font-size: 11px; font-weight: 700;
+        text-transform: uppercase; letter-spacing: 0.06em;
+        color: var(--c-muted);
+        padding: 8px 12px; text-align: left;
+        border-bottom: 1px solid var(--c-border);
+    }
+    .tr { border-bottom: 1px solid var(--c-border); }
+    .tr:last-child { border-bottom: none; }
+    .td { padding: 12px 12px; }
+    .perm-name { font-size: 13px; font-weight: 600; color: var(--c-text); margin: 0 0 2px; }
+    .perm-code { font-size: 11px; color: var(--c-muted); font-family: monospace; margin: 0; }
+</style>

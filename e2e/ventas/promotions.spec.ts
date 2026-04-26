@@ -12,7 +12,7 @@ const mockPromociones = [
         limiteUsos: 100,
         usosActuales: 45,
         fechaInicio: '2026-03-01',
-        fechaFin: '2026-03-31',
+        fechaFin: '2026-12-31',
         activo: true
     },
     {
@@ -31,8 +31,9 @@ const mockPromociones = [
 test.describe('Módulo Promociones', () => {
     test.beforeEach(async ({ page }) => {
         await page.route('**/api/v1/promociones**', route => route.fulfill({ json: mockPromociones }));
+        await page.route('**/api/v1/parametros**', route => route.fulfill({ status: 404, body: '' }));
         await page.addInitScript(() => {
-            localStorage.setItem('auth_token', 'mock-token');
+            localStorage.setItem('auth_token', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiIsInVzZXJJZCI6MSwiY29tcGFueUlkIjoxLCJyb2xlIjoiQURNSU4iLCJleHAiOjk5OTk5OTk5OTksIm1vZHVsZXMiOiJWRU5UQVMsQ09NUFJBUyxMT0dJU1RJQ0EsQ09OVEFCSUxJREFELFJSSEgifQ==.sig');
             localStorage.setItem('user', JSON.stringify({ id: 1, username: 'admin', companyId: 1 }));
         });
         await page.goto('/admin/promotions');
@@ -40,7 +41,7 @@ test.describe('Módulo Promociones', () => {
 
     test('muestra página de promociones (no Próximamente)', async ({ page }) => {
         await expect(page.getByText('Próximamente')).not.toBeVisible();
-        await expect(page.getByText(/[Pp]romociones/)).toBeVisible();
+        await expect(page.getByRole('heading', { name: 'Promociones' })).toBeVisible();
     });
 
     test('muestra 3 tarjetas KPI', async ({ page }) => {
@@ -66,8 +67,8 @@ test.describe('Módulo Promociones', () => {
     test('abre drawer al crear nueva promoción', async ({ page }) => {
         await page.getByRole('button', { name: /Nueva Promoción/i }).click();
 
-        await expect(page.locator('app-drawer')).toBeVisible();
-        await expect(page.getByText('Nueva Promoción')).toBeVisible();
+        await expect(page.locator('.drawer-overlay')).toBeVisible();
+        await expect(page.getByRole('heading', { name: 'Nueva Promoción' })).toBeVisible();
     });
 
     test('drawer muestra dos campos de fecha con DateInput', async ({ page }) => {
@@ -81,11 +82,11 @@ test.describe('Módulo Promociones', () => {
         await page.getByRole('button', { name: /Nueva Promoción/i }).click();
 
         // Default is PORCENTAJE
-        await expect(page.getByText('(%)')).toBeVisible();
+        await expect(page.locator('label').filter({ hasText: '(%)' })).toBeVisible();
 
         // Switch to MONTO_FIJO
-        await page.locator('select').filter({ hasText: 'Porcentaje' }).selectOption('MONTO_FIJO');
-        await expect(page.getByText('(S/)')).toBeVisible();
+        await page.locator('select[formControlName="tipo"]').selectOption('MONTO_FIJO');
+        await expect(page.locator('label').filter({ hasText: 'Valor (S/)' })).toBeVisible();
     });
 
     test('botón guardar está deshabilitado si no hay nombre', async ({ page }) => {
