@@ -6,6 +6,8 @@ import { toSignal } from '@angular/core/rxjs-interop';
 
 import { CartService } from '@features/cart/services/cart.service';
 import { ConfigService, MedioPago, Certificacion } from '@core/services/config.service';
+import { OrderService } from '@core/services/order.service';
+import { finalize } from 'rxjs/operators';
 
 import {
     DsButtonComponent,
@@ -33,6 +35,7 @@ const FREE_SHIPPING_THRESHOLD = 99;
 export class CartPageComponent implements OnInit {
     cartService   = inject(CartService);
     configService = inject(ConfigService);
+    orderService  = inject(OrderService);
     router        = inject(Router);
 
     cartItems = this.cartService.cartItems;
@@ -42,8 +45,12 @@ export class CartPageComponent implements OnInit {
     mediosPago      = toSignal(this.configService.getMediosPago(),      { initialValue: [] as MedioPago[] });
     certificaciones = toSignal(this.configService.getCertificaciones(), { initialValue: [] as Certificacion[] });
 
-    isCheckingOut = signal(false);
-    coupon        = signal<string>('');
+    isCheckingOut    = signal(false);
+    coupon           = signal<string>('');
+    couponApplying   = signal(false);
+    couponError      = signal<string | null>(null);
+    appliedCoupon    = signal<string | null>(null);
+    private _couponDiscount = signal<number>(0);
 
     /** Subtotal de los items seleccionados. */
     readonly subtotal = computed(() => this.cartTotal());
@@ -58,8 +65,8 @@ export class CartPageComponent implements OnInit {
         return Math.min(100, Math.max(0, ratio * 100));
     });
 
-    /** Cupón aplicado fijo de demo S/ 30 si > 100 (placeholder hasta que el backend lo retorne). */
-    readonly couponDiscount = computed(() => 0);
+    /** Descuento real validado por backend (POST /sales/api/v1/cupones/validate). */
+    readonly couponDiscount = computed(() => this._couponDiscount());
 
     readonly total = computed(() => Math.max(0, this.subtotal() - this.savings() - this.couponDiscount()));
 
@@ -93,7 +100,23 @@ export class CartPageComponent implements OnInit {
     }
 
     onCouponInput(value: string): void { this.coupon.set(value); }
-    applyCoupon(): void { /* hook a backend cuando esté disponible */ }
+
+    applyCoupon(): void {
+        const code = this.coupon().trim();
+        if (!code) return;
+        this.couponError.set(null);
+        this.couponApplying.set(true);
+        this.orderService.validateCoupon(code, this.subtotal()).pipe(
+            finalize(() => this.couponApplying.set(false)),
+        ).subscribe({
+            next: (discount) => {
+                this._couponDiscount.set(discount.amount);
+                this.appliedCoupon.set(code.toUpperCase());
+                this.couponError.set(null);
+            },
+            error: () => this.couponError.set('Cupón inválido o expirado'),
+        });
+    }
 
     checkout(): void {
         if (this.isCheckingOut()) return;

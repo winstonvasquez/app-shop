@@ -199,9 +199,19 @@
                         type="text"
                         placeholder="Cupón de descuento"
                         [value]="coupon()"
-                        (input)="onCouponInput($any($event.target).value)"/>
-                    <ds-button variant="secondary" size="md" (click)="applyCoupon()">Aplicar</ds-button>
+                        [disabled]="couponApplying()"
+                        (input)="onCouponInput($any($event.target).value)"
+                        (keydown.enter)="applyCoupon()"/>
+                    <ds-button variant="secondary" size="md"
+                               [disabled]="couponApplying() || !coupon().trim()"
+                               (click)="applyCoupon()">Aplicar</ds-button>
                 </div>
+                @if (couponError()) {
+                    <p class="coupon-msg err">{{ couponError() }}</p>
+                }
+                @if (appliedCoupon() && couponDiscount() > 0) {
+                    <p class="coupon-msg ok">Cupón {{ appliedCoupon() }} aplicado: −S/ {{ couponDiscount().toFixed(2) }}</p>
+                }
             </section>
 
             <!-- Trust card -->
@@ -431,6 +441,10 @@
         font-family: inherit;
     }
     .coupon-input:focus { outline: none; border-color: var(--c-brand); box-shadow: 0 0 0 3px var(--color-focus-ring); }
+    .coupon-input:disabled { opacity: .55; cursor: not-allowed; }
+    .coupon-msg { margin: 8px 2px 0; font-size: 12px; line-height: 1.3; }
+    .coupon-msg.err { color: var(--c-danger); }
+    .coupon-msg.ok  { color: var(--c-success); font-weight: 600; }
 
     /* Trust */
     .trust-card {

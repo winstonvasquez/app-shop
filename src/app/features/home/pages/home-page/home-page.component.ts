@@ -62,11 +62,15 @@ export class HomePageComponent implements OnInit {
     }
 
     onHeroCta(): void {
-        this.router.navigate(['/offers']);
+        // Sin vista dedicada de "ofertas" todavía; mejor proxy: catálogo
+        // ordenado por descuento. products-page lee queryParams.sort.
+        this.router.navigate(['/products'], { queryParams: { sort: 'descuento,desc' } });
     }
 
     onHeroSecondary(): void {
-        this.router.navigate(['/categories']);
+        // Sin vista dedicada de "categorías"; el catálogo ya muestra el panel
+        // de categorías como filtro lateral.
+        this.router.navigate(['/products']);
     }
 
     onCategoryClick(c: DsCategoryTile): void {
