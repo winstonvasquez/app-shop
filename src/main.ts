@@ -19,23 +19,34 @@
 }
 
 /**
- * En dev (ngDevMode=true), si el manifest principal falla por MFEs caídos
- * (típico en `npm start` solo-shell), reintentamos con manifest vacío para
- * que el importmap `shared` igual se construya y los chunks Angular puedan
- * resolverse. En prod NO silenciamos: un manifest fallido es bug crítico.
+ * Selección de manifest de Native Federation:
+ *
+ * - DEV por default (host = localhost:4200, sin ?remotes=all): usa
+ *   /remotes.manifest.dev.json (vacío). `npm start` levanta SOLO el shell;
+ *   intentar resolver remoteEntry.json de los 6 MFEs caídos genera ruido
+ *   rojo en consola y no aporta valor cuando se trabaja en storefront/auth/
+ *   account/admin no-MFE.
+ *
+ * - DEV con `?remotes=all` en URL: fuerza el manifest completo. Útil cuando
+ *   se levantó `npm run start:all` y se quiere navegar a rutas de MFE.
+ *
+ * - PROD (cualquier otro host/puerto): siempre usa /remotes.manifest.json.
+ *   Un manifest fallido en prod es bug crítico — NO se silencia.
+ *
+ * Detección por `location.port === '4200'` en lugar de `ngDevMode`: esbuild
+ * NO reemplaza `globalThis['ngDevMode']` (bracket access), solo identifiers
+ * directos dentro de código Angular. Detectar por puerto es más fiable para
+ * este setup específico (el shell solo escucha 4200 en dev).
  */
-const __isDev = (globalThis as Record<string, unknown>)['ngDevMode'] === true;
+const __isDevShell = location.port === '4200';
+const __wantRemotes = new URLSearchParams(location.search).get('remotes') === 'all';
+const __manifestUrl = (__isDevShell && !__wantRemotes)
+    ? '/remotes.manifest.dev.json'
+    : '/remotes.manifest.json';
 
 import('@angular-architects/native-federation').then(({ initFederation }) =>
-    initFederation('/remotes.manifest.json')
-        .catch(err => {
-            if (__isDev) {
-                console.warn('[Shell] Federation init falló (MFEs caídos en dev) — fallback a manifest vacío');
-                return initFederation('/remotes.manifest.dev.json');
-            }
-            console.error('[Shell] Federation init error:', err);
-            throw err;
-        })
+    initFederation(__manifestUrl)
+        .catch(err => console.error('[Shell] Federation init error:', err))
         .then(() => import('./bootstrap'))
         .catch(err => console.error('[Shell] Bootstrap error:', err))
 );
