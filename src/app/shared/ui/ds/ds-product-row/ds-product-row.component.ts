@@ -1,4 +1,5 @@
 import { Component, input, output, ChangeDetectionStrategy } from '@angular/core';
+import { DecimalPipe } from '@angular/common';
 import { LucideAngularModule } from 'lucide-angular';
 import { DsThumbComponent } from '../ds-thumb/ds-thumb.component';
 import { DsStarsComponent } from '../ds-stars/ds-stars.component';
@@ -18,13 +19,14 @@ import { DsProduct } from '../ds-product-card/ds-product-card.component';
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
+        DecimalPipe,
         LucideAngularModule,
         DsThumbComponent, DsStarsComponent, DsPriceComponent, DsButtonComponent,
     ],
     template: `
         <article class="row">
             <div class="thumb-slot">
-                <ds-thumb [label]="p().name" [tone]="p().tone" [ratio]="1"/>
+                <ds-thumb [label]="p().name" [tone]="p().tone ?? 0" [ratio]="1"/>
             </div>
 
             <div class="info">
@@ -34,7 +36,7 @@ import { DsProduct } from '../ds-product-card/ds-product-card.component';
                 <h3 class="name">{{ p().name }}</h3>
 
                 <div class="meta">
-                    <ds-stars [rating]="p().rating" [size]="12"/>
+                    <ds-stars [rating]="p().rating ?? 0" [size]="12"/>
                     <span class="reviews">({{ p().reviews | number }})</span>
                     @if (p().sold) {
                         <span class="dot">·</span>
