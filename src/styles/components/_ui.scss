@@ -40,7 +40,7 @@
         }
         &-accent {
             background: var(--color-accent);
-            color: #1a1a1a;
+            color: var(--c-onAccent, #1a1a1a);
             &:hover:not(:disabled) { background: var(--color-accent-dark); }
         }
         &-secondary {
@@ -136,7 +136,7 @@
         &-info    { background: var(--color-info);    color: #fff; }
         &-brand,
         &-primary { background: var(--color-primary); color: var(--color-primary-contrast); }
-        &-accent  { background: var(--color-accent);  color: #1a1a1a; }
+        &-accent  { background: var(--color-accent);  color: var(--c-onAccent, #1a1a1a); }
         &-outline {
             background: transparent;
             color: var(--color-text-primary);
