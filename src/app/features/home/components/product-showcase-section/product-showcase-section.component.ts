@@ -7,6 +7,7 @@ import { TranslateModule } from '@ngx-translate/core';
 import { LucideAngularModule } from 'lucide-angular';
 
 import { ProductService } from '@core/services/product.service';
+import { CartService } from '@features/cart/services/cart.service';
 import { DsProductCardComponent, DsProduct } from '@shared/ui/ds';
 
 export type ShowcaseType = 'best-sellers' | 'top-rated' | 'new-arrivals';
@@ -28,6 +29,7 @@ export class ProductShowcaseSectionComponent implements OnInit {
 
     private productService = inject(ProductService);
     private router         = inject(Router);
+    private cartService    = inject(CartService);
 
     products = signal<DsProduct[]>([]);
     loading  = signal(false);
@@ -40,6 +42,17 @@ export class ProductShowcaseSectionComponent implements OnInit {
 
     onCardClick(p: DsProduct): void {
         this.router.navigate(['/products', p.id]);
+    }
+
+    onAddToCart(p: DsProduct): void {
+        this.cartService.addToCart({
+            id: Number(p.id),
+            name: p.name,
+            price: p.now,
+            image: p.image ?? '',
+            quantity: 1,
+        });
+        this.cartService.toggleDrawer();
     }
 
     private loadProducts() {

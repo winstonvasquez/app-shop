@@ -91,13 +91,14 @@ export class CheckoutPageComponent implements OnInit {
   addressFormError = signal<string | null>(null);
 
   addressForm = this.fb.group({
-    nombreCompleto: ['', Validators.required],
-    telefono: ['', Validators.required],
+    nombreDestinatario: ['', Validators.required],
+    telefonoDestinatario: ['', Validators.required],
     departamento: ['', Validators.required],
     provincia: ['', Validators.required],
     distrito: ['', Validators.required],
-    direccionLinea1: ['', Validators.required],
+    direccion: ['', Validators.required],
     referencia: [''],
+    ubigeo: [''],
     esPrincipal: [false],
   });
 
@@ -283,13 +284,13 @@ export class CheckoutPageComponent implements OnInit {
         cantidad: item.quantity
       })),
       direccionEnvio: {
-        direccion: addr.direccionLinea1,
+        direccion: addr.direccion,
         ciudad: addr.distrito,
-        codigoPostal: '00000',
+        codigoPostal: addr.ubigeo ?? '00000',
         pais: 'Perú',
         region: addr.departamento,
-        nombreDestinatario: addr.nombreCompleto,
-        telefono: addr.telefono
+        nombreDestinatario: addr.nombreDestinatario ?? '',
+        telefono: addr.telefonoDestinatario ?? ''
       },
       metodoPago: this.selectedPaymentMethod(),
       codigoCupon: this.appliedCouponCode() ?? undefined,

@@ -2,20 +2,27 @@
 
     <ds-top-bar/>
 
-    <ds-shop-header
-        [cartCount]="cartCount()"
-        [isAuthenticated]="isAuthenticated()"
-        [userName]="userName()"
-        [categories]="headerCategories"
-        (userClick)="onUserClick()"
-        (cartClick)="onCartClick()"
-        (search)="onSearch($event)"
-        (categorySelect)="onCategorySelect($event)"
-        (openCategoryMenu)="onOpenCategoryMenu()"/>
+    <div class="header-with-mega" (mouseleave)="onLeaveCategoryArea()">
+        <ds-shop-header
+            [cartCount]="cartCount()"
+            [isAuthenticated]="isAuthenticated()"
+            [userName]="userName()"
+            [categories]="headerCategories()"
+            (userClick)="onUserClick()"
+            (cartClick)="onCartClick()"
+            (search)="onSearch($event)"
+            (categorySelect)="onCategorySelect($event)"
+            (openCategoryMenu)="onOpenCategoryMenu()"
+            (hoverCategoryMenu)="onHoverCategoryMenu()"/>
+
+        <div class="mega-anchor" (mouseenter)="onEnterMegaPanel()">
+            <app-category-mega-menu #megaMenu [showTrigger]="false"/>
+        </div>
+    </div>
 
     <app-flash-sale-banner/>
 
-    <main class="flex-grow w-full">
+    <main class="flex-grow" style="width: 90%; margin: 0 auto;">
         <router-outlet/>
     </main>
 

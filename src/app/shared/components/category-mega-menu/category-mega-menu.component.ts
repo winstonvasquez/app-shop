@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed, OnInit } from '@angular/core';
+import { Component, inject, signal, computed, input, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { CategoryService } from '@core/services/category.service';
 import { UrlEncryptionService } from '@core/services/url-encryption.service';
@@ -17,6 +17,14 @@ export class CategoryMegaMenuComponent implements OnInit {
     private router = inject(Router);
     private urlEncryption = inject(UrlEncryptionService);
     private searchService = inject(SearchService);
+
+    /**
+     * Si false, oculta el trigger interno "Categorías ▾" del componente.
+     * Útil cuando quien lo embebe (ej. main-layout) ya tiene su propio
+     * trigger y solo quiere reusar el panel + lógica de carga.
+     * Default true (retrocompatible con uso standalone).
+     */
+    showTrigger = input<boolean>(true);
 
     isOpen = signal(false);
     isLoading = signal(false);

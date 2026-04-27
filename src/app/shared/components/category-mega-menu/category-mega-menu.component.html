@@ -1,24 +1,26 @@
 <div class="relative">
 
-    <!-- Trigger -->
-    <div (click)="toggle()"
-         class="flex items-center gap-1 cursor-pointer select-none hover:opacity-80">
-        Categorías
-        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
-             fill="none" stroke="currentColor" stroke-width="2"
-             stroke-linecap="round" stroke-linejoin="round"
-             class="transition-transform duration-200" [class.rotate-180]="isOpen()">
-            <path d="m6 9 6 6 6-6"/>
-        </svg>
-    </div>
+    @if (showTrigger()) {
+        <!-- Trigger interno (modo standalone) -->
+        <div (click)="toggle()"
+             class="flex items-center gap-1 cursor-pointer select-none hover:opacity-80">
+            Categorías
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                 fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round"
+                 class="transition-transform duration-200" [class.rotate-180]="isOpen()">
+                <path d="m6 9 6 6 6-6"/>
+            </svg>
+        </div>
+    }
 
     @if (isOpen()) {
 
     <!-- Backdrop -->
     <div class="fixed inset-0 z-[190]" (click)="close()"></div>
 
-    <!-- Panel -->
-    <div class="mm-panel absolute top-[calc(100%+10px)] left-1/2 -translate-x-1/2
+    <!-- Panel: alineado a la IZQUIERDA del anchor (left:0), sin centrado -->
+    <div class="mm-panel absolute top-[calc(100%+10px)] left-0
                 z-[200] w-[780px] max-h-[520px] flex rounded-2xl overflow-hidden">
 
         <!-- Izquierda: lista categorías -->

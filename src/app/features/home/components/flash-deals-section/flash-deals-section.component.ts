@@ -9,6 +9,7 @@ import { LucideAngularModule } from 'lucide-angular';
 
 import { ProductService } from '@core/services/product.service';
 import { SearchService } from '@shared/services/search.service';
+import { CartService } from '@features/cart/services/cart.service';
 import { DsProductCardComponent, DsProduct } from '@shared/ui/ds';
 
 const FEATURED_COUNT = 10;
@@ -25,6 +26,7 @@ export class FlashDealsSectionComponent {
 
     private productService = inject(ProductService);
     private router = inject(Router);
+    private cartService = inject(CartService);
     searchService = inject(SearchService);
 
     products    = signal<DsProduct[]>([]);
@@ -55,6 +57,17 @@ export class FlashDealsSectionComponent {
 
     onCardClick(p: DsProduct): void {
         this.router.navigate(['/products', p.id]);
+    }
+
+    onAddToCart(p: DsProduct): void {
+        this.cartService.addToCart({
+            id: Number(p.id),
+            name: p.name,
+            price: p.now,
+            image: p.image ?? '',
+            quantity: 1,
+        });
+        this.cartService.toggleDrawer();
     }
 
     loadProducts(searchQuery?: string, categoryId?: number | null) {

@@ -3,18 +3,43 @@
     Estructura: hero + side promos · trust strip · categorías 8col · flash deals · recomendados
     Paleta y tokens via --c-*, --r-*, --s-*, --f-*.
 -->
-<div class="ds-home" style="background: var(--c-bg); min-height: 100%;">
+<!--
+    GAPS — todos los espacios verticales se controlan desde aquí:
+    - --home-gap        : separación entre cada section (hero, trust, categorías, ofertas, etc.)
+    - --home-pad-top    : aire arriba (entre header global y primer banner)
+    - --home-pad-bottom : aire abajo (entre última section y footer)
+    Cambiar SOLO los 3 valores de abajo para ajustar todo el spacing del home.
+-->
+<div class="ds-home"
+     style="background: var(--c-bg); min-height: 100%;
+            display: flex; flex-direction: column;
+            --home-gap: 4px;
+            --home-pad-top: 16px;
+            --home-pad-bottom: 16px;
+            gap: var(--home-gap);
+            padding-top: var(--home-pad-top);
+            padding-bottom: var(--home-pad-bottom);">
 
     <!-- ════════════════════════════════════════════════════════
          HERO + 2 SIDE PROMOS
          ════════════════════════════════════════════════════════ -->
-    <section class="hero-grid">
+    <section class="hero-grid" style="padding: 0 !important; margin: 0 !important;">
 
-        <div class="hero">
+        <div class="hero"
+             [style.backgroundImage]="heroBanner()?.imagenUrl
+                ? 'linear-gradient(110deg, rgba(11,61,145,.78) 0%, rgba(6,42,107,.62) 60%, rgba(14,163,113,.55) 100%), url(' + heroBanner()?.imagenUrl + ')'
+                : null"
+             [style.backgroundSize]="'cover'"
+             [style.backgroundPosition]="'center'">
+
             <ds-badge tone="accent" size="sm">Solo hoy · 24h</ds-badge>
             <h1 class="hero-title">
-                Hot Sale<br/>
-                <span class="hero-accent">hasta 70% OFF</span>
+                @if (heroBanner()?.titulo) {
+                    {{ heroBanner()?.titulo }}
+                } @else {
+                    Hot Sale<br/>
+                    <span class="hero-accent">hasta 70% OFF</span>
+                }
             </h1>
             <p class="hero-sub">
                 {{ heroBanner()?.subtitulo ?? 'Tecnología, hogar y moda con descuentos que no se repiten. Envío gratis en compras desde S/ 99.' }}
@@ -27,11 +52,29 @@
                     Categorías
                 </ds-button>
             </div>
+
+            @if (hasMultiple()) {
+                <button type="button" class="hero-nav left"
+                        (click)="prevSlide()" aria-label="Slide anterior">
+                    <lucide-icon name="chevron-left" [size]="20"/>
+                </button>
+                <button type="button" class="hero-nav right"
+                        (click)="nextSlide()" aria-label="Slide siguiente">
+                    <lucide-icon name="chevron-right" [size]="20"/>
+                </button>
+            }
+
             <div class="hero-dots">
-                <span class="dot active"></span>
-                <span class="dot"></span>
-                <span class="dot"></span>
-                <span class="dot"></span>
+                @if (hasMultiple()) {
+                    @for (b of banners(); track b.id; let i = $index) {
+                        <button type="button" class="dot"
+                                [class.active]="i === currentSlide()"
+                                (click)="goToSlide(i)"
+                                [attr.aria-label]="'Ir al slide ' + (i + 1)"></button>
+                    }
+                } @else {
+                    <span class="dot active"></span>
+                }
             </div>
         </div>
 
@@ -55,7 +98,7 @@
     <!-- ════════════════════════════════════════════════════════
          TRUST STRIP
          ════════════════════════════════════════════════════════ -->
-    <section class="trust-wrap">
+    <section class="trust-wrap" style="padding: 0 !important; margin: 0 !important;">
         <div class="trust">
             @for (t of trustItems; track t.title) {
                 <div class="trust-item">
@@ -75,7 +118,7 @@
          CATEGORÍAS — 8 columnas
          ════════════════════════════════════════════════════════ -->
     @if (categories().length) {
-        <section class="section">
+        <section class="section" style="padding: 0 !important; margin: 0 !important;">
             <header class="section-head">
                 <h2>Compra por categoría</h2>
                 <a class="link-action">Ver todas →</a>
@@ -93,7 +136,7 @@
     <!-- ════════════════════════════════════════════════════════
          FLASH DEALS — strip con timer
          ════════════════════════════════════════════════════════ -->
-    <section class="section">
+    <section class="section" style="padding: 0 !important; margin: 0 !important;">
         <div class="flash-card">
             <div class="flash-bar">
                 <div class="flash-left">
@@ -119,21 +162,21 @@
     <!-- ════════════════════════════════════════════════════════
          RECOMENDADOS — 3 secciones (más vendidos / 5★ / nuevos)
          ════════════════════════════════════════════════════════ -->
-    <section class="section">
+    <section class="section" style="padding: 0 !important; margin: 0 !important;">
         <app-product-showcase-section
             type="best-sellers"
             [title]="'home.bestSellers' | translate"
             [linkParams]="{ sort: 'sales' }"/>
     </section>
 
-    <section class="section">
+    <section class="section" style="padding: 0 !important; margin: 0 !important;">
         <app-product-showcase-section
             type="top-rated"
             [title]="'home.topRated' | translate"
             [linkParams]="{ rating: '5' }"/>
     </section>
 
-    <section class="section last">
+    <section class="section last" style="padding: 0 !important; margin: 0 !important;">
         <app-product-showcase-section
             type="new-arrivals"
             [title]="'home.newArrivals' | translate"
@@ -145,17 +188,24 @@
 <style>
     .ds-home { font-family: var(--f-sans); color: var(--c-text); }
 
-    /* ── HERO ───────────────────────────────────────── */
+    /* ── HERO — gap controlado por .ds-home flex ── */
     .hero-grid {
-        max-width: 1280px; margin: 0 auto;
-        padding: 20px 24px;
-        display: grid; grid-template-columns: 1fr 320px; gap: 16px;
+        width: 100%;
+        padding: 0;
+        display: grid; grid-template-columns: 1fr 320px; gap: 8px;
+        align-items: stretch;        /* hero y side-stack misma altura — sin saltos */
     }
     .hero {
         position: relative; border-radius: var(--r-xl); overflow: hidden;
         background: linear-gradient(110deg, var(--c-brand) 0%, var(--c-brandHi) 60%, var(--c-accent2, var(--c-brand)) 100%);
-        padding: 40px 48px; color: #fff; min-height: 280px;
-        display: flex; flex-direction: column; justify-content: center; gap: 12px;
+        /* padding-left amplio para que el chevron-left no se superponga al contenido */
+        padding: 24px 32px 20px 15%;
+        color: #fff;
+        display: flex; flex-direction: column; justify-content: center; gap: 8px;
+        /* min-height fija evita que el hero se "contraiga" al cambiar texto del slider
+           o al cargar el banner async; el contenido se centra verticalmente. */
+        min-height: 280px;
+        height: 100%;
     }
     .hero-title {
         font-family: var(--f-display);
@@ -164,7 +214,7 @@
     }
     .hero-accent { color: var(--c-accent); }
     .hero-sub {
-        font-size: 16px; margin: 12px 0 24px;
+        font-size: 16px; margin: 4px 0 10px;
         max-width: 460px; color: rgba(255, 255, 255, .92);
     }
     .hero-actions { display: flex; gap: 12px; }
@@ -175,42 +225,67 @@
     .hero-dots {
         position: absolute; right: 32px; top: 32px;
         display: flex; gap: 8px;
+        z-index: 3;
     }
     .dot {
         width: 8px; height: 8px; border-radius: 999px;
         background: rgba(255, 255, 255, .4);
+        border: none; cursor: pointer; padding: 0;
+        transition: background 150ms, transform 150ms;
     }
-    .dot.active { background: #fff; }
+    .dot:hover { background: rgba(255, 255, 255, .7); }
+    .dot.active { background: #fff; transform: scale(1.3); }
 
-    .side-stack { display: grid; grid-template-rows: 1fr 1fr; gap: 16px; }
+    /* Slider — flechas izq/der */
+    .hero-nav {
+        position: absolute; top: 50%; transform: translateY(-50%);
+        z-index: 3; width: 40px; height: 40px;
+        background: rgba(255, 255, 255, .12);
+        border: 1px solid rgba(255, 255, 255, .25);
+        border-radius: 999px;
+        color: #fff; cursor: pointer;
+        display: inline-flex; align-items: center; justify-content: center;
+        backdrop-filter: blur(6px);
+        transition: background 150ms, transform 100ms;
+    }
+    .hero-nav:hover {
+        background: rgba(255, 255, 255, .25);
+        border-color: rgba(255, 255, 255, .5);
+    }
+    .hero-nav:active { transform: translateY(-50%) scale(.92); }
+    .hero-nav.left  { left: 12px; }
+    .hero-nav.right { right: 12px; }
+
+    .side-stack { display: grid; grid-template-rows: 1fr 1fr; gap: 10px; }
     .side-promo {
         border: 1px solid var(--c-border);
         border-radius: var(--r-lg);
-        padding: 20px;
-        display: flex; flex-direction: column; justify-content: space-between;
+        padding: 10px 14px;
+        display: flex; flex-direction: column;
+        justify-content: flex-start; gap: 4px;
     }
     .side-promo.light  { background: var(--c-surface); }
     .side-promo.raised { background: var(--c-surface2); }
     .side-promo h3 {
         font-size: 18px; font-weight: 700;
-        margin: 8px 0 4px; color: var(--c-text);
+        margin: 4px 0 2px; color: var(--c-text);
         font-family: var(--f-sans);
     }
     .side-promo p { font-size: 13px; margin: 0; color: var(--c-muted); }
     .side-cta {
         color: var(--c-brand);
         font-size: 13px; font-weight: 700;
-        margin-top: 12px; cursor: pointer; text-decoration: none;
+        margin-top: 4px; cursor: pointer; text-decoration: none;
     }
 
-    /* ── TRUST STRIP ────────────────────────────────── */
-    .trust-wrap { max-width: 1280px; margin: 0 auto; padding: 0 24px 16px; }
+    /* ── TRUST STRIP — gap controlado por .ds-home flex ── */
+    .trust-wrap { width: 100%; padding: 0; }
     .trust {
         background: var(--c-surface);
         border: 1px solid var(--c-border);
         border-radius: var(--r-lg);
-        padding: 16px 24px;
-        display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;
+        padding: 10px 16px;
+        display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
     }
     .trust-item { display: flex; gap: 12px; align-items: center; }
     .trust-icon {
@@ -223,15 +298,15 @@
     .trust-t { font-size: 14px; font-weight: 700; color: var(--c-text); }
     .trust-s { font-size: 12px; color: var(--c-muted); }
 
-    /* ── SECTIONS GENERICAS ─────────────────────────── */
+    /* ── SECTIONS GENERICAS — gap controlado por .ds-home flex (4px global) ── */
     .section {
-        max-width: 1280px; margin: 0 auto;
-        padding: 24px 24px 8px;
+        width: 100%;
+        padding: 0;                 /* el gap del .ds-home flex ya separa las secciones */
     }
-    .section.last { padding-bottom: 40px; }
+    .section.last { padding-bottom: 16px; }
     .section-head {
         display: flex; align-items: baseline; justify-content: space-between;
-        margin-bottom: 16px;
+        margin-bottom: 16px;          /* RESTAURADO al original — no toca el header */
     }
     .section-head h2 {
         font-family: var(--f-display);
@@ -291,7 +366,7 @@
         .trust { grid-template-columns: repeat(2, 1fr); }
     }
     @media (max-width: 640px) {
-        .hero { padding: 28px 24px; min-height: 220px; }
+        .hero { padding: 28px 24px 28px 18%; min-height: 220px; }
         .hero-title { font-size: 36px; }
         .cat-grid { grid-template-columns: repeat(2, 1fr); }
         .trust { grid-template-columns: 1fr; }

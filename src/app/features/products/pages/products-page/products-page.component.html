@@ -133,8 +133,9 @@
                 <div class="rh-controls">
                     <ds-button variant="secondary" size="sm" icon="sliders-horizontal">Filtros</ds-button>
                     <select class="sort"
-                        [value]="sortBy() ?? ''"
+                        [value]="sortBy() ?? '__placeholder__'"
                         (change)="setSort($any($event.target).value)">
+                        <option value="__placeholder__" disabled>Seleccionar</option>
                         <option value="">Más relevantes</option>
                         <option value="sales">Más vendidos</option>
                         <option value="price-asc">Menor precio</option>
@@ -236,7 +237,7 @@
     }
 
     /* ── Breadcrumb ────────────────────────────────────── */
-    .bc-wrap { max-width: 1280px; margin: 0 auto; padding: 16px 24px 8px; }
+    .bc-wrap { width: 100%; padding: 16px 0 8px; }
     .bc {
         display: flex; align-items: center; gap: 6px;
         font-size: 13px; color: var(--c-muted);
@@ -245,10 +246,10 @@
     .bc-link:hover { color: var(--c-brand); }
     .bc-current { color: var(--c-text); font-weight: 600; }
 
-    /* ── 2-col layout ──────────────────────────────────── */
+    /* ── 2-col layout — main ya impone 90% width arriba ───── */
     .cols {
-        max-width: 1280px; margin: 0 auto;
-        padding: 8px 24px 32px;
+        width: 100%;
+        padding: 8px 0 32px;
         display: grid; grid-template-columns: 240px 1fr; gap: 24px;
     }
 
@@ -259,6 +260,8 @@
         border: 1px solid var(--c-border);
         border-radius: var(--r-lg);
         padding: 16px;
+        min-width: 0;
+        overflow: hidden;
     }
     .filter-title {
         font-size: 11px; font-weight: 800;
@@ -285,21 +288,35 @@
     .filter-count { color: var(--c-muted); font-size: 12px; }
 
     /* Price */
-    .price-row { display: flex; gap: 8px; }
+    .price-row {
+        display: flex; gap: 8px;
+        width: 100%;
+    }
     .price-input {
-        flex: 1; height: 32px;
+        flex: 1 1 0;            /* shrink permitido — clave para input[type=number] */
+        min-width: 0;            /* evita que el width default del UA bloquee el shrink */
+        width: 100%;
+        box-sizing: border-box;
+        height: 32px;
         padding: 0 10px;
         border: 1px solid var(--c-border);
         border-radius: var(--r-sm);
         background: var(--c-surface);
         font-size: 13px; color: var(--c-text);
         font-family: inherit;
+        appearance: textfield;   /* oculta spinner Firefox/Edge */
+    }
+    .price-input::-webkit-outer-spin-button,
+    .price-input::-webkit-inner-spin-button {
+        -webkit-appearance: none; margin: 0;   /* oculta spinner Chrome/Safari */
     }
     .price-input:focus { outline: none; border-color: var(--c-brand); }
+
     .price-track {
         height: 4px; background: var(--c-surface2);
         border-radius: 2px;
-        position: relative; margin-top: 16px;
+        position: relative;
+        margin: 18px 8px 6px;    /* margen lateral para que los handles no se salgan */
     }
     .price-fill {
         position: absolute; left: 20%; right: 30%; height: 100%;
@@ -311,6 +328,7 @@
         border-radius: 999px;
         background: var(--c-surface);
         border: 2px solid var(--c-brand);
+        transform: translateX(-50%);   /* centra el handle sobre la posición */
     }
     .price-handle.left  { left: 20%; }
     .price-handle.right { left: 70%; }

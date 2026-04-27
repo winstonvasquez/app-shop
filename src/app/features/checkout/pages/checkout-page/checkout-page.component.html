@@ -103,10 +103,10 @@
                             </svg>
                         </div>
                         <div>
-                            <p class="font-bold text-[var(--color-text-primary)]">{{ selectedAddress()!.nombreCompleto }}
-                                <span class="font-normal text-[var(--color-text-muted)] ml-2">{{ selectedAddress()!.telefono }}</span>
+                            <p class="font-bold text-[var(--color-text-primary)]">{{ selectedAddress()!.nombreDestinatario }}
+                                <span class="font-normal text-[var(--color-text-muted)] ml-2">{{ selectedAddress()!.telefonoDestinatario }}</span>
                             </p>
-                            <p class="text-[var(--color-text-secondary)] mt-1">{{ selectedAddress()!.direccionLinea1 }}</p>
+                            <p class="text-[var(--color-text-secondary)] mt-1">{{ selectedAddress()!.direccion }}</p>
                             @if (selectedAddress()!.referencia) {
                                 <p class="text-xs text-[var(--color-text-muted)]">Ref: {{ selectedAddress()!.referencia }}</p>
                             }
@@ -519,13 +519,13 @@
                     (click)="selectAddress(addr)">
                     <div class="flex justify-between items-start">
                         <div>
-                            <p class="font-bold text-[var(--color-text-primary)] text-sm">{{ addr.nombreCompleto }}
+                            <p class="font-bold text-[var(--color-text-primary)] text-sm">{{ addr.nombreDestinatario }}
                                 @if (addr.esPrincipal) {
                                     <span class="badge badge-success ml-2 text-xs">Principal</span>
                                 }
                             </p>
-                            <p class="text-xs text-[var(--color-text-muted)] mt-0.5">{{ addr.telefono }}</p>
-                            <p class="text-sm text-[var(--color-text-secondary)] mt-1">{{ addr.direccionLinea1 }}</p>
+                            <p class="text-xs text-[var(--color-text-muted)] mt-0.5">{{ addr.telefonoDestinatario }}</p>
+                            <p class="text-sm text-[var(--color-text-secondary)] mt-1">{{ addr.direccion }}</p>
                             <p class="text-xs text-[var(--color-text-muted)]">{{ addr.distrito }}, {{ addr.provincia }}, {{ addr.departamento }}</p>
                         </div>
                         @if (selectedAddress()?.id === addr.id) {
@@ -554,11 +554,11 @@
 
                 <form [formGroup]="addressForm" (ngSubmit)="saveNewAddress()">
                     <app-admin-form-section [columns]="2">
-                        <app-form-field label="Nombre completo" [required]="true" [error]="errAddress('nombreCompleto')">
-                            <input type="text" formControlName="nombreCompleto" class="form-input" placeholder="Ej: Juan Pérez">
+                        <app-form-field label="Nombre completo" [required]="true" [error]="errAddress('nombreDestinatario')">
+                            <input type="text" formControlName="nombreDestinatario" class="form-input" placeholder="Ej: Juan Pérez">
                         </app-form-field>
-                        <app-form-field label="Teléfono" [required]="true" [error]="errAddress('telefono')">
-                            <input type="tel" formControlName="telefono" class="form-input" placeholder="Ej: 999 888 777">
+                        <app-form-field label="Teléfono" [required]="true" [error]="errAddress('telefonoDestinatario')">
+                            <input type="tel" formControlName="telefonoDestinatario" class="form-input" placeholder="Ej: 999 888 777">
                         </app-form-field>
                         <app-form-field label="Departamento" [required]="true" [error]="errAddress('departamento')">
                             <input type="text" formControlName="departamento" class="form-input" placeholder="Ej: Lima">
@@ -571,8 +571,8 @@
                         <app-form-field label="Distrito" [required]="true" [error]="errAddress('distrito')">
                             <input type="text" formControlName="distrito" class="form-input" placeholder="Ej: Miraflores">
                         </app-form-field>
-                        <app-form-field label="Dirección" [required]="true" [error]="errAddress('direccionLinea1')">
-                            <input type="text" formControlName="direccionLinea1" class="form-input" placeholder="Calle, número, urbanización">
+                        <app-form-field label="Dirección" [required]="true" [error]="errAddress('direccion')">
+                            <input type="text" formControlName="direccion" class="form-input" placeholder="Calle, número, urbanización">
                         </app-form-field>
                         <app-form-field label="Referencia" [error]="errAddress('referencia')">
                             <input type="text" formControlName="referencia" class="form-input" placeholder="Ej: Frente al parque">

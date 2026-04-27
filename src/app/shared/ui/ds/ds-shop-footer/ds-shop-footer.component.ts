@@ -1,18 +1,18 @@
 import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { RouterLink } from '@angular/router';
 
-interface FooterColumn {
-    title: string;
-    links: string[];
-}
+interface FooterLink { label: string; route: string; }
+interface FooterColumn { title: string; links: FooterLink[]; }
 
 /**
  * Shop Footer — 4 columnas (info / ayuda / legal / app downloads) + copyright.
- * Port 1:1 de chrome.jsx → function Footer()
+ * Port de chrome.jsx → function Footer() + RouterLink real a /info/<slug>.
  */
 @Component({
     selector: 'ds-shop-footer',
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
+    imports: [RouterLink],
     template: `
         <footer class="ft">
             <div class="grid">
@@ -20,8 +20,8 @@ interface FooterColumn {
                     <div>
                         <h4>{{ col.title }}</h4>
                         <ul>
-                            @for (l of col.links; track l) {
-                                <li>{{ l }}</li>
+                            @for (l of col.links; track l.route) {
+                                <li><a [routerLink]="l.route">{{ l.label }}</a></li>
                             }
                         </ul>
                     </div>
@@ -30,13 +30,17 @@ interface FooterColumn {
                     <h4>Descarga la app</h4>
                     <p class="p">Compra donde y cuando quieras.</p>
                     <div class="store-col">
-                        <div class="store"><span class="store-ic">⌘</span> App Store</div>
-                        <div class="store"><span class="store-ic">▶</span> Google Play</div>
+                        <a class="store" routerLink="/info/descarga-app">
+                            <span class="store-ic">⌘</span> App Store
+                        </a>
+                        <a class="store" routerLink="/info/descarga-app">
+                            <span class="store-ic">▶</span> Google Play
+                        </a>
                     </div>
                 </div>
             </div>
             <div class="bar">
-                <span>© 2026 APPSHOP. Todos los derechos reservados.</span>
+                <span>© {{ year }} APPSHOP. Todos los derechos reservados.</span>
                 <div class="pays">
                     @for (p of payments; track p) {
                         <span class="pay">{{ p }}</span>
@@ -50,11 +54,11 @@ interface FooterColumn {
         .ft {
             background: var(--c-surface);
             border-top: 1px solid var(--c-border);
-            padding: 40px 24px 20px;
+            padding: 40px 0 20px;
             font-family: var(--f-sans);
         }
         .grid {
-            max-width: 1280px; margin: 0 auto;
+            width: 90%; margin: 0 auto;
             display: grid; grid-template-columns: repeat(4, 1fr); gap: 32px;
         }
         h4 {
@@ -66,8 +70,12 @@ interface FooterColumn {
             list-style: none; padding: 0; margin: 0;
             display: flex; flex-direction: column; gap: 8px;
         }
-        li { font-size: 13px; color: var(--c-muted); cursor: pointer; }
-        li:hover { color: var(--c-text); }
+        li a {
+            font-size: 13px; color: var(--c-muted);
+            text-decoration: none; cursor: pointer;
+            transition: color 120ms;
+        }
+        li a:hover { color: var(--c-text); }
         .p { font-size: 12px; color: var(--c-muted); margin: 0 0 12px; }
         .store-col { display: flex; flex-direction: column; gap: 8px; }
         .store {
@@ -75,11 +83,13 @@ interface FooterColumn {
             padding: 8px 14px;
             background: var(--c-text); color: var(--c-surface);
             border-radius: var(--r-md); font-size: 12px;
-            cursor: pointer;
+            cursor: pointer; text-decoration: none;
+            transition: filter 120ms;
         }
+        .store:hover { filter: brightness(1.15); }
         .store-ic { font-size: 18px; }
         .bar {
-            max-width: 1280px; margin: 32px auto 0;
+            width: 90%; margin: 32px auto 0;
             padding-top: 16px; border-top: 1px solid var(--c-border);
             display: flex; justify-content: space-between; align-items: center;
             font-size: 12px; color: var(--c-muted);
@@ -98,10 +108,37 @@ interface FooterColumn {
     `],
 })
 export class DsShopFooterComponent {
+    readonly year = new Date().getFullYear();
+
     readonly columns: FooterColumn[] = [
-        { title: 'Información', links: ['Acerca de nosotros', 'Programa de afiliados', 'Vende con nosotros', 'Prensa y medios'] },
-        { title: 'Ayuda y soporte', links: ['Centro de ayuda', 'Estado del pedido', 'Devoluciones', 'Reportar problema'] },
-        { title: 'Legal', links: ['Términos y condiciones', 'Política de privacidad', 'Protección de datos', 'Accesibilidad'] },
+        {
+            title: 'Información',
+            links: [
+                { label: 'Acerca de nosotros',    route: '/info/nosotros'  },
+                { label: 'Programa de afiliados', route: '/info/afiliados' },
+                { label: 'Vende con nosotros',    route: '/info/vender'    },
+                { label: 'Prensa y medios',       route: '/info/prensa'    },
+            ],
+        },
+        {
+            title: 'Ayuda y soporte',
+            links: [
+                { label: 'Centro de ayuda',  route: '/info/ayuda'        },
+                { label: 'Estado del pedido', route: '/account/orders'   },
+                { label: 'Devoluciones',     route: '/info/devoluciones' },
+                { label: 'Reportar problema', route: '/info/reporte'     },
+            ],
+        },
+        {
+            title: 'Legal',
+            links: [
+                { label: 'Términos y condiciones', route: '/info/terminos'      },
+                { label: 'Política de privacidad', route: '/info/privacidad'    },
+                { label: 'Protección de datos',    route: '/info/datos'         },
+                { label: 'Accesibilidad',          route: '/info/accesibilidad' },
+            ],
+        },
     ];
+
     readonly payments = ['VISA', 'MC', 'AMEX', 'PP', 'YAPE'];
 }

@@ -22,7 +22,9 @@
             <div #scrollContainer class="scroll-row">
                 @for (product of products(); track product.id) {
                     <div class="card-wrap">
-                        <ds-product-card [p]="product" (cardClick)="onCardClick($event)"/>
+                        <ds-product-card [p]="product"
+                 (cardClick)="onCardClick($event)"
+                 (addToCart)="onAddToCart($event)"/>
                     </div>
                 }
 
@@ -44,7 +46,7 @@
     .ds-showcase { font-family: var(--f-sans); }
     .head {
         display: flex; justify-content: space-between; align-items: baseline;
-        margin-bottom: 16px;
+        margin-bottom: 8px;
     }
     .title-row { display: flex; align-items: center; gap: 8px; }
     .title-row h2 {
@@ -64,18 +66,21 @@
     .strip { position: relative; }
     .nav-btn {
         position: absolute; top: 50%; transform: translateY(-50%);
-        z-index: 2; width: 32px; height: 32px;
+        z-index: 2; width: 36px; height: 36px;
         background: var(--c-surface);
         border: 1px solid var(--c-border);
         border-radius: 999px;
         color: var(--c-text); cursor: pointer;
         display: inline-flex; align-items: center; justify-content: center;
         box-shadow: var(--s-md);
-        opacity: 0; transition: opacity 120ms;
+        opacity: .9; transition: opacity 120ms, transform 120ms, background 120ms;
     }
-    .nav-btn.left  { left: -8px; }
-    .nav-btn.right { right: -8px; }
-    .strip:hover .nav-btn { opacity: 1; }
+    .nav-btn:hover {
+        opacity: 1; background: var(--c-brand); color: var(--c-onBrand, #fff);
+        border-color: var(--c-brand);
+    }
+    .nav-btn.left  { left: -12px; }
+    .nav-btn.right { right: -12px; }
 
     .scroll-row {
         display: flex; gap: 12px;

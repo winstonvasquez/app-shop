@@ -139,7 +139,7 @@ export class ProductDetailPageComponent implements OnInit {
             this._error.set(false);
             this._product.set(null);
 
-            this.productDetailService.getProductDetail(id).subscribe({
+            this.productDetailService.getProductDetail(id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
                 next: (data) => {
                     this._product.set(data);
                     this.activeImageIndex.set(0);
@@ -161,7 +161,7 @@ export class ProductDetailPageComponent implements OnInit {
                     this.saveToBrowseHistory(data);
                     this.analytics.trackProductView(data.id, data.nombre, data.precioBase);
                     this.recommendationsService.trackVisualizacion(data.id);
-                    this.recommendationsService.getSimilares(data.id).subscribe(similares => {
+                    this.recommendationsService.getSimilares(data.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe(similares => {
                         this.similarProducts.set(similares.map(p => ({
                             id: p.id,
                             name: p.nombre,
@@ -213,6 +213,17 @@ export class ProductDetailPageComponent implements OnInit {
 
     onSimilarClick(p: DsProduct): void {
         this.router.navigate(['/products', p.id]);
+    }
+
+    onSimilarAddToCart(p: DsProduct): void {
+        this.cartService.addToCart({
+            id: Number(p.id),
+            name: p.name,
+            price: p.now,
+            image: p.image ?? '',
+            quantity: 1,
+        });
+        this.cartService.toggleDrawer();
     }
 
     private saveToBrowseHistory(product: ProductDetail): void {

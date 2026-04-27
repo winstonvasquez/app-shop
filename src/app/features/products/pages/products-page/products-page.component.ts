@@ -10,6 +10,7 @@ import { SearchService } from '@shared/services/search.service';
 import { AnalyticsService } from '@core/services/analytics.service';
 import { ProductService, FiltrosDisponibles } from '@core/services/product.service';
 import { ProductResponse } from '@core/models/product.model';
+import { CartService } from '@features/cart/services/cart.service';
 
 import {
     DsProductCardComponent,
@@ -48,6 +49,7 @@ export class ProductsPageComponent implements OnInit {
     private router          = inject(Router);
     private productService  = inject(ProductService);
     private analyticsService = inject(AnalyticsService);
+    private cartService     = inject(CartService);
     public  searchService   = inject(SearchService);
     private destroyRef      = inject(DestroyRef);
 
@@ -156,7 +158,7 @@ export class ProductsPageComponent implements OnInit {
     });
 
     ngOnInit() {
-        this.categoryService.getAllSimple().subscribe(cats => {
+        this.categoryService.getAllSimple().pipe(takeUntilDestroyed(this.destroyRef)).subscribe(cats => {
             this.categories.set(cats);
             this.loadFiltrosDisponibles();
         });
@@ -174,7 +176,7 @@ export class ProductsPageComponent implements OnInit {
 
     loadFiltrosDisponibles(): void {
         const catId = this.searchService.categoryId();
-        this.productService.getFiltrosDisponibles(catId ?? undefined).subscribe({
+        this.productService.getFiltrosDisponibles(catId ?? undefined).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
             next: (f) => this.filtrosDisponibles.set(f),
             error: () => { /* no crítico */ },
         });
@@ -202,6 +204,7 @@ export class ProductsPageComponent implements OnInit {
     }
 
     setSort(value: string): void {
+        if (value === '__placeholder__') return;     // option disabled, no debería llegar pero defensivo
         this.sortBy.set(value || null);
         this.goToPage(1);
     }
@@ -243,7 +246,7 @@ export class ProductsPageComponent implements OnInit {
                     maxPrice: pMax ?? undefined,
                     minRating: rating ?? undefined,
                 }
-            ).subscribe({
+            ).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
                 next: (data) => {
                     this.products.set(data.content.map(p => this.mapProduct(p)));
                     this.totalPages.set(data.totalPages ?? 1);
@@ -255,7 +258,7 @@ export class ProductsPageComponent implements OnInit {
             return;
         }
 
-        this.productService.getAllCachedFiltered(page - 1, this.pageSize, query || undefined, catId).subscribe({
+        this.productService.getAllCachedFiltered(page - 1, this.pageSize, query || undefined, catId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
             next: (data) => {
                 this.products.set(data.content.map(p => this.mapProduct(p)));
                 this.totalPages.set(data.totalPages ?? 1);
@@ -291,8 +294,15 @@ export class ProductsPageComponent implements OnInit {
         this.router.navigate(['/products', p.id]);
     }
 
-    onAddToCart(_p: DsProduct): void {
-        // El cart-drawer del layout reaccionará vía CartService cuando se conecte aquí.
+    onAddToCart(p: DsProduct): void {
+        this.cartService.addToCart({
+            id: Number(p.id),
+            name: p.name,
+            price: p.now,
+            image: p.image ?? '',
+            quantity: 1,
+        });
+        this.cartService.toggleDrawer();
     }
 
     goToPage(page: number) {

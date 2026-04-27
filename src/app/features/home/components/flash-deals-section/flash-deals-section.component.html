@@ -12,7 +12,9 @@
         <div #scrollContainer class="scroll-row">
             @for (product of featuredProducts(); track product.id) {
                 <div class="card-wrap">
-                    <ds-product-card [p]="product" (cardClick)="onCardClick($event)"/>
+                    <ds-product-card [p]="product"
+                 (cardClick)="onCardClick($event)"
+                 (addToCart)="onAddToCart($event)"/>
                 </div>
             }
 
@@ -31,7 +33,9 @@
     @if (remainingProducts().length > 0) {
         <div class="grid">
             @for (product of remainingProducts(); track product.id) {
-                <ds-product-card [p]="product" (cardClick)="onCardClick($event)"/>
+                <ds-product-card [p]="product"
+                 (cardClick)="onCardClick($event)"
+                 (addToCart)="onAddToCart($event)"/>
             }
         </div>
     }
@@ -55,18 +59,21 @@
     .strip { position: relative; }
     .nav-btn {
         position: absolute; top: 50%; transform: translateY(-50%);
-        z-index: 2; width: 32px; height: 32px;
+        z-index: 2; width: 36px; height: 36px;
         background: var(--c-surface);
         border: 1px solid var(--c-border);
         border-radius: 999px;
         color: var(--c-text); cursor: pointer;
         display: inline-flex; align-items: center; justify-content: center;
         box-shadow: var(--s-md);
-        opacity: 0; transition: opacity 120ms;
+        opacity: .9; transition: opacity 120ms, background 120ms;
     }
-    .nav-btn.left  { left: -8px; }
-    .nav-btn.right { right: -8px; }
-    .strip:hover .nav-btn { opacity: 1; }
+    .nav-btn:hover {
+        opacity: 1; background: var(--c-brand); color: var(--c-onBrand, #fff);
+        border-color: var(--c-brand);
+    }
+    .nav-btn.left  { left: -12px; }
+    .nav-btn.right { right: -12px; }
 
     .scroll-row {
         display: flex; gap: 12px;
@@ -88,14 +95,14 @@
     @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .55; } }
 
     .grid {
-        margin-top: 16px;
+        margin-top: 10px;
         display: grid; gap: 12px;
         grid-template-columns: repeat(6, 1fr);
     }
 
     .actions {
         display: flex; justify-content: center;
-        margin-top: 16px; min-height: 40px;
+        margin-top: 10px; min-height: 40px;
     }
     .loading-row {
         display: inline-flex; align-items: center; gap: 8px;

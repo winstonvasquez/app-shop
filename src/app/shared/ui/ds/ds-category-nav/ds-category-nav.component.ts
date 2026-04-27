@@ -21,7 +21,10 @@ export interface DsCategory {
     template: `
         <nav class="nav">
             <div class="inner">
-                <button class="cats-btn" (click)="openMenu.emit()" type="button">
+                <button class="cats-btn"
+                        (click)="openMenu.emit()"
+                        (mouseenter)="hoverMenu.emit()"
+                        type="button">
                     <lucide-icon name="layout-grid" [size]="14"/> Categorías
                 </button>
                 @for (c of items(); track c.label) {
@@ -93,4 +96,5 @@ export class DsCategoryNavComponent {
 
     selectItem = output<DsCategory>();
     openMenu = output<void>();
+    hoverMenu = output<void>();
 }

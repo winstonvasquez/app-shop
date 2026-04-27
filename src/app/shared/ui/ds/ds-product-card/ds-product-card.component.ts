@@ -97,7 +97,14 @@ export interface DsProduct {
         </article>
     `,
     styles: [`
-        :host { display: block; height: 100%; }
+        :host {
+            display: block; height: 100%;
+            /* Tipografía base IGUAL al filter-item del sidebar:
+               font-family Inter, 13px, color --c-text — todos los textos
+               internos del card heredan este baseline. */
+            font: 400 13px/1.4 var(--f-sans);
+            color: var(--c-text);
+        }
         .card {
             background: var(--c-surface);
             border: 1px solid var(--c-border);
@@ -107,7 +114,6 @@ export interface DsProduct {
             display: flex; flex-direction: column;
             transition: transform 120ms, box-shadow 120ms;
             height: 100%; cursor: pointer;
-            font-family: var(--f-sans);
         }
         .card:hover {
             transform: translateY(-2px);
@@ -140,29 +146,30 @@ export interface DsProduct {
             flex: 1;
         }
         .tag {
-            font-size: 10px; font-weight: 800; letter-spacing: .06em;
+            font-size: 11px; font-weight: 700; letter-spacing: .04em;
             color: var(--c-brand); text-transform: uppercase;
         }
         .name {
-            font-size: 13px; font-weight: 500; color: var(--c-text);
-            margin: 0; line-height: 1.35;
+            /* match exacto al .filter-item: 13px / 400 / --c-text */
+            font-size: 13px; font-weight: 400; color: var(--c-text);
+            margin: 0; line-height: 1.4;
             display: -webkit-box;
             -webkit-line-clamp: 2; -webkit-box-orient: vertical;
             overflow: hidden; min-height: 36px;
         }
         .rating {
             display: flex; align-items: center; gap: 6px;
-            font-size: 11px; color: var(--c-muted);
+            font-size: 13px; color: var(--c-muted);
         }
         .price { margin-top: 2px; }
         .ship {
             display: flex; align-items: center; gap: 8px;
-            font-size: 11px; color: var(--c-muted); flex-wrap: wrap;
+            font-size: 13px; color: var(--c-muted); flex-wrap: wrap;
         }
         .ship .free { color: var(--c-success); font-weight: 600;
             display: inline-flex; align-items: center; gap: 3px; }
         .ship > span { display: inline-flex; align-items: center; gap: 3px; }
-        .sold { font-size: 11px; color: var(--c-subtle); }
+        .sold { font-size: 13px; color: var(--c-subtle); }
         .cta { display: flex; gap: 6px; margin-top: auto; padding-top: 8px; }
     `],
 })

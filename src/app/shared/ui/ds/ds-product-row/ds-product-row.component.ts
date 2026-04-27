@@ -67,7 +67,12 @@ import { DsProduct } from '../ds-product-card/ds-product-card.component';
         </article>
     `,
     styles: [`
-        :host { display: block; }
+        :host {
+            display: block;
+            /* Baseline IGUAL al filter-item: 13px / 400 / --c-text */
+            font: 400 13px/1.4 var(--f-sans);
+            color: var(--c-text);
+        }
         .row {
             display: flex; gap: 16px;
             padding: 16px;
@@ -81,12 +86,13 @@ import { DsProduct } from '../ds-product-card/ds-product-card.component';
             display: flex; flex-direction: column; gap: 6px;
         }
         .tag {
-            font-size: 10px; font-weight: 800;
-            letter-spacing: .06em; text-transform: uppercase;
+            font-size: 11px; font-weight: 700;
+            letter-spacing: .04em; text-transform: uppercase;
             color: var(--c-brand);
         }
         .name {
-            font-size: 16px; font-weight: 600;
+            /* match al filter-item: 13px / 400 / --c-text (slightly bigger ok en row) */
+            font-size: 13px; font-weight: 500;
             color: var(--c-text);
             margin: 0;
             overflow: hidden; text-overflow: ellipsis;
@@ -94,7 +100,7 @@ import { DsProduct } from '../ds-product-card/ds-product-card.component';
         }
         .meta {
             display: flex; align-items: center; gap: 6px;
-            font-size: 12px; color: var(--c-muted);
+            font-size: 13px; color: var(--c-muted);
             flex-wrap: wrap;
         }
         .reviews { white-space: nowrap; }

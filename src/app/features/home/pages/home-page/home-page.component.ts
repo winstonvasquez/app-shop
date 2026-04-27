@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal, computed } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, signal, computed } from '@angular/core';
 import { Router } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 import { LucideAngularModule } from 'lucide-angular';
@@ -10,6 +10,8 @@ import { DsButtonComponent, DsBadgeComponent, DsCategoryTileComponent, DsCategor
 import { CategoryService } from '@core/services/category.service';
 import { BannerService, Banner } from '@features/home/services/banner.service';
 import { SearchService } from '@shared/services/search.service';
+
+const HERO_AUTO_ROTATE_MS = 6000;     // intervalo entre slides automáticos
 
 @Component({
     selector: 'app-home-page',
@@ -25,7 +27,7 @@ import { SearchService } from '@shared/services/search.service';
     ],
     templateUrl: './home-page.component.html',
 })
-export class HomePageComponent implements OnInit {
+export class HomePageComponent implements OnInit, OnDestroy {
     private categoryService = inject(CategoryService);
     private bannerService   = inject(BannerService);
     private router          = inject(Router);
@@ -33,7 +35,14 @@ export class HomePageComponent implements OnInit {
 
     /** Categorías reales mapeadas al shape DS (`name`, `count`, `image`, `tone`). */
     readonly categories = signal<DsCategoryTile[]>([]);
-    readonly heroBanner = signal<Banner | null>(null);
+
+    /** Slider hero — múltiples banners con auto-rotation y nav manual. */
+    readonly banners      = signal<Banner[]>([]);
+    readonly currentSlide = signal<number>(0);
+    readonly heroBanner   = computed(() => this.banners()[this.currentSlide()] ?? null);
+    readonly hasMultiple  = computed(() => this.banners().length > 1);
+
+    private autoRotateTimer?: ReturnType<typeof setInterval>;
 
     /** Bullets de confianza — patrón "trust strip" del DS. */
     readonly trustItems = [
@@ -59,6 +68,49 @@ export class HomePageComponent implements OnInit {
     ngOnInit(): void {
         this.loadData();
         setInterval(() => this.now.set(new Date()), 1000);
+    }
+
+    ngOnDestroy(): void {
+        this.stopAutoRotate();
+    }
+
+    /** Slider — nav manual y por dot. Resetean el timer auto. */
+    nextSlide(): void {
+        const n = this.banners().length;
+        if (n === 0) return;
+        this.currentSlide.update(i => (i + 1) % n);
+        this.restartAutoRotate();
+    }
+
+    prevSlide(): void {
+        const n = this.banners().length;
+        if (n === 0) return;
+        this.currentSlide.update(i => (i - 1 + n) % n);
+        this.restartAutoRotate();
+    }
+
+    goToSlide(i: number): void {
+        if (i < 0 || i >= this.banners().length) return;
+        this.currentSlide.set(i);
+        this.restartAutoRotate();
+    }
+
+    private startAutoRotate(): void {
+        if (this.autoRotateTimer) return;
+        if (!this.hasMultiple()) return;
+        this.autoRotateTimer = setInterval(() => this.nextSlide(), HERO_AUTO_ROTATE_MS);
+    }
+
+    private stopAutoRotate(): void {
+        if (this.autoRotateTimer) {
+            clearInterval(this.autoRotateTimer);
+            this.autoRotateTimer = undefined;
+        }
+    }
+
+    private restartAutoRotate(): void {
+        this.stopAutoRotate();
+        this.startAutoRotate();
     }
 
     onHeroCta(): void {
@@ -95,9 +147,12 @@ export class HomePageComponent implements OnInit {
 
         this.bannerService.getAll().subscribe({
             next: (banners: Banner[]) => {
-                this.heroBanner.set(banners[0] ?? null);
+                const sorted = [...banners].sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0));
+                this.banners.set(sorted);
+                this.currentSlide.set(0);
+                this.startAutoRotate();
             },
-            error: () => this.heroBanner.set(null),
+            error: () => this.banners.set([]),
         });
     }
 }

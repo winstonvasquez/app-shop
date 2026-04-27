@@ -13,6 +13,65 @@
     background-color: var(--color-surface);
     border: 1px solid var(--color-border);
     box-shadow: var(--shadow-xl);
+    position: relative;       /* ancla los pseudo-elementos del pico */
+}
+
+/* ── Pico/flecha apuntando al texto "Categorías" ── */
+/* dos pseudo-elementos triangulares apilados:
+     ::before  → triángulo "border" (1px más ancho, color del border)
+     ::after   → triángulo "fill"   (color de la superficie)
+   Ambos en la misma posición; el fill solapa al border 1px abajo
+   para crear el efecto de borde 1px alrededor del pico.
+*/
+.mm-panel::before,
+.mm-panel::after {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 0;
+    left: 22px;           /* alineado al inicio del panel — apunta al "C" */
+}
+.mm-panel::before {
+    top: -9px;
+    border-left: 9px solid transparent;
+    border-right: 9px solid transparent;
+    border-bottom: 9px solid var(--color-border);
+}
+.mm-panel::after {
+    top: -8px;
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-bottom: 8px solid var(--color-surface);
+}
+
+/* ── Scrollbars personalizados — sutil tipo Mercado Libre ── */
+.mm-sidebar,
+.mm-content {
+    /* Firefox */
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-border) transparent;
+}
+.mm-sidebar::-webkit-scrollbar,
+.mm-content::-webkit-scrollbar {
+    width: 6px;
+}
+.mm-sidebar::-webkit-scrollbar-track,
+.mm-content::-webkit-scrollbar-track {
+    background: transparent;
+}
+.mm-sidebar::-webkit-scrollbar-thumb,
+.mm-content::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, var(--color-text-muted) 35%, transparent);
+    border-radius: 999px;
+    transition: background 150ms;
+}
+.mm-sidebar:hover::-webkit-scrollbar-thumb,
+.mm-content:hover::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, var(--color-text-muted) 60%, transparent);
+}
+.mm-sidebar::-webkit-scrollbar-thumb:hover,
+.mm-content::-webkit-scrollbar-thumb:hover {
+    background: var(--color-text-muted);
 }
 
 /* ── Columna izquierda: lista de categorías ── */
