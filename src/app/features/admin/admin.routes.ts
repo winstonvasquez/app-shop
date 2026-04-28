@@ -100,6 +100,10 @@ export const adminRoutes: Routes = [
                 loadComponent: () => import('./pages/company-detail/company-detail.component').then(m => m.CompanyDetailComponent)
             },
             {
+                path: 'sucursales',
+                loadComponent: () => import('./pages/sucursales/sucursales.component').then(m => m.SucursalesComponent)
+            },
+            {
                 path: 'general-config',
                 loadComponent: () => import('./pages/configuracion/configuracion.component').then(m => m.ConfiguracionComponent)
             },

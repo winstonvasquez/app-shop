@@ -1,0 +1,101 @@
+<div class="page-container">
+    <header class="page-header">
+        <div>
+            <h1>Sucursales</h1>
+            <p class="subtitle">Gestión de sucursales de la empresa — {{ total() }} totales · {{ activas().length }} activas</p>
+        </div>
+        @if (!showForm()) {
+            <button class="btn btn-primary" (click)="openCreate()">+ Nueva sucursal</button>
+        }
+    </header>
+
+    @if (error()) {
+        <div class="alert alert-error">{{ error() }}</div>
+    }
+
+    @if (loading()) {
+        <p class="empty">Cargando...</p>
+    } @else if (showForm()) {
+        <!-- Form drawer inline -->
+        <form [formGroup]="form" (ngSubmit)="submit()" class="form-card">
+            <h2>{{ editingId() ? 'Editar' : 'Nueva' }} sucursal</h2>
+
+            @if (submitError()) {
+                <div class="alert alert-error">{{ submitError() }}</div>
+            }
+
+            <div class="form-grid">
+                <label>
+                    Nombre *
+                    <input type="text" formControlName="nombre" placeholder="Ej: Sucursal Miraflores">
+                </label>
+                <label>
+                    Teléfono
+                    <input type="tel" formControlName="telefono" placeholder="Ej: 999 888 777">
+                </label>
+                <label class="full">
+                    Dirección
+                    <input type="text" formControlName="direccion" placeholder="Calle, número, distrito">
+                </label>
+                <label>
+                    Ubigeo SUNAT
+                    <input type="text" formControlName="ubigeo" maxlength="6" placeholder="150122">
+                </label>
+                <label>
+                    Serie Boleta
+                    <input type="text" formControlName="serieBoleta" maxlength="4" placeholder="B001">
+                </label>
+                <label>
+                    Serie Factura
+                    <input type="text" formControlName="serieFactura" maxlength="4" placeholder="F001">
+                </label>
+            </div>
+
+            <div class="actions">
+                <button type="button" class="btn btn-secondary" (click)="cancel()">Cancelar</button>
+                <button type="submit" class="btn btn-primary" [disabled]="submitting()">
+                    {{ submitting() ? 'Guardando...' : (editingId() ? 'Actualizar' : 'Crear') }}
+                </button>
+            </div>
+        </form>
+    } @else if (sucursales().length === 0) {
+        <p class="empty">No hay sucursales. Crea la primera para esta empresa.</p>
+    } @else {
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Dirección</th>
+                    <th>Series CPE</th>
+                    <th>Estado</th>
+                    <th class="actions-col">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (s of sucursales(); track s.id) {
+                    <tr [class.inactive]="!s.activo">
+                        <td><strong>{{ s.nombre }}</strong></td>
+                        <td>
+                            {{ s.direccion || '—' }}
+                            @if (s.ubigeo) { <small> · ubigeo {{ s.ubigeo }}</small> }
+                        </td>
+                        <td>
+                            <small>{{ s.serieBoleta || '—' }} / {{ s.serieFactura || '—' }}</small>
+                        </td>
+                        <td>
+                            <span class="badge" [class.badge-active]="s.activo" [class.badge-inactive]="!s.activo">
+                                {{ s.activo ? 'Activa' : 'Inactiva' }}
+                            </span>
+                        </td>
+                        <td class="actions-col">
+                            <button class="btn-link" (click)="openEdit(s)">Editar</button>
+                            @if (s.activo) {
+                                <button class="btn-link danger" (click)="deactivate(s)">Desactivar</button>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>
