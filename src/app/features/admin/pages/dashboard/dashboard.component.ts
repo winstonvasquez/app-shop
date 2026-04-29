@@ -2,6 +2,7 @@ import { Component, signal, ChangeDetectionStrategy, OnInit, inject } from '@ang
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { NgApexchartsModule } from 'ng-apexcharts';
 import { ChartDefaultsService, CHART_COLORS } from '@shared/services/chart-defaults.service';
+import { ErpHealthCardComponent } from '@features/admin/components/erp-health-card/erp-health-card.component';
 import {
     ApexAxisChartSeries, ApexChart, ApexDataLabels, ApexFill,
     ApexGrid, ApexStroke, ApexTooltip, ApexXAxis, ApexYAxis, ApexNonAxisChartSeries, ApexLegend, ApexPlotOptions
@@ -35,7 +36,7 @@ interface Product {
 @Component({
     selector: 'app-dashboard',
     standalone: true,
-    imports: [TranslateModule, NgApexchartsModule],
+    imports: [TranslateModule, NgApexchartsModule, ErpHealthCardComponent],
     templateUrl: './dashboard.component.html',
     styleUrl: './dashboard.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush

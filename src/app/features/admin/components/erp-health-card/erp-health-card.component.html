@@ -1,0 +1,89 @@
+<section class="bg-white rounded-xl shadow-sm p-6">
+    <header class="flex items-center justify-between mb-4">
+        <div>
+            <h2 class="text-lg font-semibold text-gray-900">Estado del ERP</h2>
+            <p class="text-xs text-gray-500">Sincronización s2s ventas · compras · logística</p>
+        </div>
+        <div class="flex items-center gap-3">
+            @if (health(); as h) {
+                <span class="px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wide"
+                      [class]="estadoColor(h.estadoGlobal)">
+                    {{ h.estadoGlobal }}
+                </span>
+            }
+            <button type="button"
+                    class="text-xs text-gray-500 hover:text-gray-900 transition"
+                    [disabled]="loading()"
+                    (click)="refresh()">
+                @if (loading()) { · · · } @else { Actualizar }
+            </button>
+        </div>
+    </header>
+
+    @if (error(); as err) {
+        <div class="mb-4 rounded-lg bg-rose-50 border border-rose-200 px-4 py-3 text-sm text-rose-700">
+            <strong>Error:</strong> {{ err }}
+        </div>
+    }
+
+    @if (health()) {
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+            @for (svc of services(); track svc.label) {
+                <article class="rounded-lg border-2 p-4"
+                         [class]="serviceColor(svc.health.estado)">
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-sm font-semibold text-gray-900">{{ svc.label }}</span>
+                        <span class="px-2 py-0.5 rounded text-xs font-medium"
+                              [class]="estadoColor(svc.health.estado)">
+                            {{ estadoLabel(svc.health.estado) }}
+                        </span>
+                    </div>
+
+                    @if (svc.health.error) {
+                        <p class="text-xs text-rose-600">{{ svc.health.error }}</p>
+                    } @else {
+                        <dl class="space-y-1 text-xs">
+                            <div class="flex justify-between">
+                                <dt class="text-gray-500">Pendientes</dt>
+                                <dd class="font-medium text-gray-900">{{ svc.health.pendingCount ?? 0 }}</dd>
+                            </div>
+                            <div class="flex justify-between">
+                                <dt class="text-gray-500">Enviados 24h</dt>
+                                <dd class="font-medium text-gray-900">{{ svc.health.sentLast24h ?? 0 }}</dd>
+                            </div>
+                            <div class="flex justify-between">
+                                <dt class="text-gray-500">Dead-letter</dt>
+                                <dd class="font-medium"
+                                    [class.text-rose-700]="(svc.health.deadLetterCount ?? 0) > 0">
+                                    {{ svc.health.deadLetterCount ?? 0 }}
+                                </dd>
+                            </div>
+                            @if (svc.health.lastProcessedAt) {
+                                <div class="flex justify-between pt-1 border-t border-gray-100">
+                                    <dt class="text-gray-500">Último procesado</dt>
+                                    <dd class="text-gray-700">
+                                        {{ svc.health.lastProcessedAt | date:'short':'':'es-PE' }}
+                                    </dd>
+                                </div>
+                            }
+                        </dl>
+                    }
+                </article>
+            }
+        </div>
+
+        @if (firstServiceWithErrors(); as withErr) {
+            <details class="mt-4 text-xs text-gray-600">
+                <summary class="cursor-pointer hover:text-gray-900">Ver últimos errores ({{ withErr.health.topErrors!.length }})</summary>
+                <ul class="mt-2 space-y-1">
+                    @for (err of withErr.health.topErrors; track err.message) {
+                        <li class="rounded bg-gray-50 px-3 py-2">
+                            <span class="font-medium text-gray-900">[{{ withErr.label }}]</span>
+                            ×{{ err.count }} · {{ err.message }}
+                        </li>
+                    }
+                </ul>
+            </details>
+        }
+    }
+</section>
