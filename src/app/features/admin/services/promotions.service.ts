@@ -1,8 +1,9 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { environment } from '@env/environment';
+import { AuthService } from '@core/auth/auth.service';
 
 export interface Promocion {
     id?: number;
@@ -22,6 +23,7 @@ export interface Promocion {
 @Injectable({ providedIn: 'root' })
 export class PromotionsService {
     private readonly http = inject(HttpClient);
+    private readonly auth = inject(AuthService);
     private readonly baseUrl = `${environment.apiUrls.sales}/api/v1/promociones`;
 
     getAll(): Observable<Promocion[]> {
@@ -35,10 +37,15 @@ export class PromotionsService {
     }
 
     update(id: number, dto: Partial<Promocion>): Observable<Promocion> {
-        return this.http.put<Promocion>(`${this.baseUrl}/${id}`, dto);
+        return this.http.put<Promocion>(`${this.baseUrl}/${id}`, dto, { params: this.tenantParams() });
     }
 
     delete(id: number): Observable<void> {
-        return this.http.delete<void>(`${this.baseUrl}/${id}`);
+        return this.http.delete<void>(`${this.baseUrl}/${id}`, { params: this.tenantParams() });
+    }
+
+    private tenantParams(): HttpParams {
+        const id = this.auth.currentUser()?.activeCompanyId;
+        return id != null ? new HttpParams().set('companyId', String(id)) : new HttpParams();
     }
 }

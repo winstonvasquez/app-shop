@@ -10,12 +10,14 @@ import {
     MegaMenuCategoriaDto
 } from '@core/models/category.model';
 import { PageResponse, PaginationConfig } from '@core/models/pagination.model';
+import { AuthService } from '@core/auth/auth.service';
 
 @Injectable({
     providedIn: 'root'
 })
 export class CategoryService {
     private readonly http = inject(HttpClient);
+    private readonly auth = inject(AuthService);
     private readonly baseUrl = `${environment.apiUrls.sales}/api/v1/categorias`;
 
     getAll(
@@ -80,14 +82,19 @@ export class CategoryService {
 
     update(id: number, category: CategoryRequest): Observable<CategoryResponse> {
         return this.http
-            .put<CategoryResponse>(`${this.baseUrl}/${id}`, category)
+            .put<CategoryResponse>(`${this.baseUrl}/${id}`, category, { params: this.tenantParams() })
             .pipe(catchError(this.handleError));
     }
 
     delete(id: number): Observable<void> {
         return this.http
-            .delete<void>(`${this.baseUrl}/${id}`)
+            .delete<void>(`${this.baseUrl}/${id}`, { params: this.tenantParams() })
             .pipe(catchError(this.handleError));
+    }
+
+    private tenantParams(): HttpParams {
+        const id = this.auth.currentUser()?.activeCompanyId;
+        return id != null ? new HttpParams().set('companyId', String(id)) : new HttpParams();
     }
 
     search(query: string, pagination: PaginationConfig): Observable<PageResponse<CategoryResponse>> {
