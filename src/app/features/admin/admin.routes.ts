@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 import { AdminLayoutComponent } from '@features/admin/layout/admin-layout/admin-layout.component';
 import { DashboardComponent } from '@features/admin/pages/dashboard/dashboard.component';
 import { authGuard } from '@core/auth/auth.guard';
+import { moduleGuard } from '@core/auth/module.guard';
 
 export const adminRoutes: Routes = [
     {
@@ -29,22 +30,27 @@ export const adminRoutes: Routes = [
             },
             {
                 path: 'compras',
+                canActivate: [moduleGuard('COMPRAS')],
                 loadChildren: () => import('@features/compras/compras.routes').then(m => m.comprasRoutes)
             },
             {
                 path: 'logistica',
+                canActivate: [moduleGuard('LOGISTICA')],
                 loadChildren: () => import('@features/logistica/logistica.routes').then(m => m.logisticaRoutes)
             },
             {
                 path: 'contabilidad',
+                canActivate: [moduleGuard('CONTABILIDAD')],
                 loadChildren: () => import('@features/contabilidad/contabilidad.routes').then(m => m.CONTABILIDAD_ROUTES)
             },
             {
                 path: 'rrhh',
+                canActivate: [moduleGuard('RRHH')],
                 loadChildren: () => import('@features/rrhh/rrhh.routes').then(m => m.RRHH_ROUTES)
             },
             {
                 path: 'tesoreria',
+                canActivate: [moduleGuard('TESORERIA')],
                 loadChildren: () => import('@features/tesoreria/tesoreria.routes').then(m => m.TESORERIA_ROUTES)
             },
             {
@@ -57,6 +63,7 @@ export const adminRoutes: Routes = [
             },
             {
                 path: 'inventario',
+                canActivate: [moduleGuard('INVENTARIO')],
                 loadChildren: () => import('@features/inventory/inventory.routes').then(m => m.inventoryRoutes)
             },
             {
