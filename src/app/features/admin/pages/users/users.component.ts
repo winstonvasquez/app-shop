@@ -68,7 +68,7 @@ export class UsersComponent implements OnInit {
     this.userForm = this.fb.group({
       username: ['', [Validators.required, Validators.maxLength(50)]],
       email: ['', [Validators.required, Validators.email, Validators.maxLength(100)]],
-      password: ['', [Validators.required, Validators.minLength(6), Validators.maxLength(100)]],
+      password: ['', [Validators.required, Validators.minLength(8), Validators.maxLength(100)]],
       rolId: [null, [Validators.required]],
       nombres: ['', [Validators.required, Validators.maxLength(100)]],
       apellidos: ['', [Validators.required, Validators.maxLength(100)]],
@@ -133,7 +133,7 @@ export class UsersComponent implements OnInit {
     this.editMode.set(false);
     this.selectedUserId.set(null);
     this.userForm.reset({ tipoDocumento: 'DNI' });
-    this.userForm.get('password')?.setValidators([Validators.required, Validators.minLength(6)]);
+    this.userForm.get('password')?.setValidators([Validators.required, Validators.minLength(8)]);
     this.userForm.get('password')?.updateValueAndValidity();
     this.showDrawer.set(true);
     this.submitError.set(null);
