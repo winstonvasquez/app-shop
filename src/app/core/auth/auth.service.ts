@@ -119,6 +119,12 @@ export class AuthService {
         localStorage.removeItem('shop_theme');
         localStorage.removeItem('admin_theme');
         localStorage.removeItem('pos_theme');
+        // Hardening 2026-05-28: limpiar también carrito y datos de invitado, para que
+        // el siguiente usuario en el mismo dispositivo no herede sesión anterior.
+        localStorage.removeItem('cart');
+        localStorage.removeItem('guest_email');
+        localStorage.removeItem('guest_phone');
+        localStorage.removeItem('guest_name');
         this.currentUserSignal.set(null);
         this.router.navigate(['/']);
     }
