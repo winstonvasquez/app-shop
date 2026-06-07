@@ -111,7 +111,7 @@
                                             <lucide-icon name="plus" [size]="12"/>
                                         </button>
                                     </div>
-                                    <button class="link-btn" type="button">
+                                    <button class="link-btn" type="button" (click)="moverAFavoritos(item)">
                                         <lucide-icon name="heart" [size]="12"/> Mover a favoritos
                                     </button>
                                     <button class="link-btn danger" (click)="removeFromCart(item.productId)" type="button">

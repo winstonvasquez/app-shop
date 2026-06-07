@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, output, signal } from '@angular/core';
+import { Component, ChangeDetectionStrategy, output, signal, input, computed, effect } from '@angular/core';
 
 @Component({
     selector: 'app-pos-manager-pin-dialog',
@@ -30,9 +30,9 @@ import { Component, ChangeDetectionStrategy, output, signal } from '@angular/cor
                     </div>
                 </div>
 
-                @if (error()) {
+                @if (displayError()) {
                 <p style="color: var(--color-error); font-size: 12px; text-align: center; margin-bottom: 8px;">
-                    {{ error() }}
+                    {{ displayError() }}
                 </p>
                 }
 
@@ -40,14 +40,14 @@ import { Component, ChangeDetectionStrategy, output, signal } from '@angular/cor
                 <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
                     @for (n of numKeys; track n) {
                     <button class="btn-secondary" style="height: 48px; font-size: 18px; font-weight: 600;"
-                            (click)="addDigit(n)">{{ n }}</button>
+                            [disabled]="loading()" (click)="addDigit(n)">{{ n }}</button>
                     }
                     <button class="btn-secondary" style="height: 48px; font-size: 14px;"
-                            (click)="clear()">Borrar</button>
+                            [disabled]="loading()" (click)="clear()">Borrar</button>
                     <button class="btn-secondary" style="height: 48px; font-size: 18px; font-weight: 600;"
-                            (click)="addDigit('0')">0</button>
+                            [disabled]="loading()" (click)="addDigit('0')">0</button>
                     <button class="btn-primary" style="height: 48px; font-size: 14px; font-weight: 600;"
-                            (click)="submit()">OK</button>
+                            [disabled]="loading()" (click)="submit()">{{ loading() ? '...' : 'OK' }}</button>
                 </div>
             </div>
         </div>
@@ -58,10 +58,27 @@ export class PosManagerPinDialogComponent {
     readonly confirmed = output<string>();
     readonly cancel = output<void>();
 
+    /** Error externo (ej: PIN rechazado por el backend). Limpia el PIN para reintentar. */
+    readonly errorMessage = input<string>('');
+    /** Mientras se valida contra el backend, bloquea el numpad. */
+    readonly loading = input<boolean>(false);
+
     readonly pin = signal('');
     readonly error = signal('');
 
+    /** Error mostrado: el del backend tiene prioridad sobre la validación local. */
+    readonly displayError = computed(() => this.errorMessage() || this.error());
+
     readonly numKeys = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
+
+    constructor() {
+        // Al llegar un error del backend, limpiar el PIN para que el cajero reintente.
+        effect(() => {
+            if (this.errorMessage()) {
+                this.pin.set('');
+            }
+        });
+    }
 
     addDigit(d: string): void {
         if (this.pin().length < 6) {

@@ -12,9 +12,10 @@ import { PosOrdenesRetenidasService, OrdenRetenida } from '../../services/pos-or
 import { PosMovimientosCajaService, MovimientoCaja, MovimientoCajaRequest } from '../../services/pos-movimientos-caja.service';
 import { PosGiftCardService } from '../../services/pos-gift-card.service';
 import { PosOfflineSyncService } from '../../services/pos-offline-sync.service';
+import { PosManagerAuthService } from '../../services/pos-manager-auth.service';
 import { AuthService } from '@core/auth/auth.service';
 import { ThemeService } from '@core/services/theme/theme';
-import { ProductoCatalogoPOS } from '../../models/catalogo-pos.model';
+import { ProductoCatalogoPOS, DescuentoTipo } from '../../models/catalogo-pos.model';
 import { VentaPosResponse } from '../../models/venta-pos.model';
 import { TurnoCaja } from '../../models/turno-caja.model';
 
@@ -82,6 +83,7 @@ export class PosPageComponent implements OnInit, OnDestroy {
     private readonly ordenesRetenidasService = inject(PosOrdenesRetenidasService);
     private readonly movimientosCajaService = inject(PosMovimientosCajaService);
     private readonly giftCardService = inject(PosGiftCardService);
+    private readonly managerAuth = inject(PosManagerAuthService);
 
     // ── UI State ──────────────────────────────────────────────────
     readonly activeScreen = signal<PosScreen>('main');
@@ -113,7 +115,9 @@ export class PosPageComponent implements OnInit, OnDestroy {
 
     // Manager PIN dialog (discount authorization)
     readonly showManagerPin = signal(false);
-    readonly managerPinVarianteId = signal<number>(0);
+    readonly managerPinError = signal('');
+    readonly managerPinLoading = signal(false);
+    private readonly pendingDiscount = signal<{ varianteId: number; tipo: DescuentoTipo; valor: number } | null>(null);
 
     // Customer lookup visibility
     readonly showCustomerLookup = signal(true);
@@ -192,7 +196,11 @@ export class PosPageComponent implements OnInit, OnDestroy {
 
     private loadTurnoActivo(): void {
         this.turnoService.getTurnoActivo(this.cajeroId).subscribe({
-            next: turno => this.turnoActivo.set(turno), // null si no hay turno (manejado por el servicio)
+            next: turno => {
+                this.turnoActivo.set(turno); // null si no hay turno (manejado por el servicio)
+                // Pre-cargar el conteo de órdenes retenidas para el badge del sidenav
+                if (turno) this.loadOrdenesRetenidas();
+            },
         });
     }
 
@@ -407,21 +415,51 @@ export class PosPageComponent implements OnInit, OnDestroy {
     }
 
     // ── Manager PIN (discount authorization) ─────────────────────
-    requestManagerAuth(varianteId: number): void {
-        this.managerPinVarianteId.set(varianteId);
+    /** Un descuento de línea superó el umbral del cajero: solicitar PIN de supervisor. */
+    requestSupervisorAuth(detail: { varianteId: number; tipo: DescuentoTipo; valor: number }): void {
+        this.pendingDiscount.set(detail);
+        this.managerPinError.set('');
         this.showManagerPin.set(true);
     }
 
+    /**
+     * Valida el PIN contra microshopusers. El descuento se aplica SOLO si el backend
+     * confirma que el PIN pertenece a un supervisor autorizado de esta empresa,
+     * registrando su userId real como autorizadoPor.
+     */
     onManagerPinConfirmed(pin: string): void {
-        // For now, accept any valid 4+ digit PIN as supervisor authorization
-        // In production, validate against backend
-        const varianteId = this.managerPinVarianteId();
-        if (varianteId > 0) {
-            this.carrito.setLineDiscount(varianteId, 'PORCENTAJE', 10, this.cajeroId);
-            this.showToast('Descuento autorizado por supervisor', 'success');
+        const detail = this.pendingDiscount();
+        if (!detail) {
+            this.cancelManagerPin();
+            return;
         }
+        this.managerPinLoading.set(true);
+        this.managerPinError.set('');
+        this.managerAuth.verificarPinSupervisor(pin, this.companyId).subscribe({
+            next: resp => {
+                this.managerPinLoading.set(false);
+                if (resp.authorized && resp.userId != null) {
+                    this.carrito.setLineDiscount(detail.varianteId, detail.tipo, detail.valor, resp.userId);
+                    this.showManagerPin.set(false);
+                    this.pendingDiscount.set(null);
+                    this.showToast(`Descuento autorizado por ${resp.username ?? 'supervisor'}`, 'success');
+                } else {
+                    // PIN inexistente o sin rol autorizador: el diálogo limpia y permite reintento.
+                    this.managerPinError.set('PIN no válido o sin permiso para autorizar descuentos');
+                }
+            },
+            error: () => {
+                this.managerPinLoading.set(false);
+                this.managerPinError.set('No se pudo validar el PIN. Reintenta.');
+            },
+        });
+    }
+
+    cancelManagerPin(): void {
         this.showManagerPin.set(false);
-        this.managerPinVarianteId.set(0);
+        this.pendingDiscount.set(null);
+        this.managerPinError.set('');
+        this.managerPinLoading.set(false);
     }
 
     // ── Gift Card ────────────────────────────────────────────────

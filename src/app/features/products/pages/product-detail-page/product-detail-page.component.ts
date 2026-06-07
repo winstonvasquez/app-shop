@@ -16,6 +16,8 @@ import { Image as ProductImage } from '@features/products/models/image.model';
 import { UrlEncryptionService } from '@core/services/url-encryption.service';
 import { AnalyticsService } from '@core/services/analytics.service';
 import { RecommendationsService } from '@core/services/recommendations.service';
+import { WishlistService } from '@core/services/wishlist.service';
+import { StoreConfigService } from '@core/services/store-config.service';
 
 import {
     DsButtonComponent,
@@ -51,6 +53,8 @@ export class ProductDetailPageComponent implements OnInit {
     private productDetailService    = inject(ProductDetailService);
     private cartService             = inject(CartService);
     private recommendationsService  = inject(RecommendationsService);
+    private wishlistService         = inject(WishlistService);
+    readonly sc                     = inject(StoreConfigService);
     private titleService            = inject(Title);
     private route                   = inject(ActivatedRoute);
     private router                  = inject(Router);
@@ -87,6 +91,12 @@ export class ProductDetailPageComponent implements OnInit {
     readonly qty = signal<number>(1);
 
     readonly activeTab = signal<DetailTab>('desc');
+
+    /** ¿El producto actual está en la lista de deseos del cliente? */
+    readonly isSaved = computed<boolean>(() => {
+        const p = this._product();
+        return p ? this.wishlistService.isInWishlist(p.id) : false;
+    });
 
     readonly breadcrumbs = computed<DetailCrumb[]>(() => {
         const p = this._product();
@@ -132,6 +142,8 @@ export class ProductDetailPageComponent implements OnInit {
     });
 
     ngOnInit(): void {
+        // Carga el estado de favoritos para reflejar si este producto ya está guardado.
+        this.wishlistService.loadWishlist();
         this.route.params.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(params => {
             const rawId = params['id'];
             const id = this.urlEncryption.decrypt(rawId) ?? rawId;
@@ -209,6 +221,14 @@ export class ProductDetailPageComponent implements OnInit {
     buyNow(): void {
         this.addToCart();
         this.router.navigate(['/checkout']);
+    }
+
+    /** Agrega/quita el producto de la lista de deseos (persiste vía WishlistService). */
+    toggleWishlist(): void {
+        const p = this._product();
+        if (!p) return;
+        const variantId = this.selectedVariant()?.id;
+        this.wishlistService.toggle(p.id, variantId ?? undefined).subscribe();
     }
 
     onSimilarClick(p: DsProduct): void {

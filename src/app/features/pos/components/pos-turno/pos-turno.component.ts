@@ -16,6 +16,10 @@ export class PosTurnoComponent {
     readonly abrirTurno = output<void>();
     readonly cerrarTurno = output<void>();
     readonly volver = output<void>();
+    readonly reporteX = output<void>();
+    readonly reporteZ = output<void>();
+    readonly movimientoCaja = output<void>();
+    readonly cierreArqueo = output<void>();
 
     fmt(val: number | undefined | null): string {
         return (val ?? 0).toFixed(2);

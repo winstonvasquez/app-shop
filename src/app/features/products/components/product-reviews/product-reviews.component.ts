@@ -14,4 +14,13 @@ export class ProductReviewsComponent {
   rating = input<number>(0);
   /** Datos de distribución de talla provistos por el backend. Si es null/undefined, el bloque se oculta. */
   sizeFeedback = input<{ small: number; trueToSize: number; large: number } | null>(null);
+
+  /** Etiqueta textual según la calificación real de la reseña (antes estaba hardcodeada en "Excelente"). */
+  ratingLabel(calificacion: number): string {
+    if (calificacion >= 5) return 'Excelente';
+    if (calificacion >= 4) return 'Muy bueno';
+    if (calificacion >= 3) return 'Bueno';
+    if (calificacion >= 2) return 'Regular';
+    return 'Malo';
+  }
 }

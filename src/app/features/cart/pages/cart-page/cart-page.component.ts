@@ -4,9 +4,10 @@ import { TranslateModule } from '@ngx-translate/core';
 import { LucideAngularModule } from 'lucide-angular';
 import { toSignal } from '@angular/core/rxjs-interop';
 
-import { CartService } from '@features/cart/services/cart.service';
+import { CartService, CartItem } from '@features/cart/services/cart.service';
 import { ConfigService, MedioPago, Certificacion } from '@core/services/config.service';
 import { OrderService } from '@core/services/order.service';
+import { WishlistService } from '@core/services/wishlist.service';
 import { finalize } from 'rxjs/operators';
 
 import {
@@ -36,6 +37,7 @@ export class CartPageComponent implements OnInit {
     cartService   = inject(CartService);
     configService = inject(ConfigService);
     orderService  = inject(OrderService);
+    wishlistService = inject(WishlistService);
     router        = inject(Router);
 
     cartItems = this.cartService.cartItems;
@@ -95,8 +97,17 @@ export class CartPageComponent implements OnInit {
     toggleAll(checked: boolean): void { this.cartService.toggleAll(checked); }
 
     removeFromCart(id: number): void {
-        const m = this.cartService as unknown as { removeFromCart?: (id: number) => void };
-        m.removeFromCart?.(id);
+        this.cartService.removeFromCart(id);
+    }
+
+    /** Mueve un ítem del carrito a la lista de deseos (persiste) y lo quita del carrito. */
+    moverAFavoritos(item: CartItem): void {
+        this.wishlistService.add(item.productId, item.variantId ?? undefined).subscribe({
+            next: () => this.cartService.removeFromCart(item.productId),
+            error: () => { /* si ya está en favoritos o falla, igual lo quitamos del carrito */
+                this.cartService.removeFromCart(item.productId);
+            },
+        });
     }
 
     onCouponInput(value: string): void { this.coupon.set(value); }

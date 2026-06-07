@@ -364,6 +364,13 @@
         color: var(--brand) !important;
     }
 
+    .pos-sidenav-btn:disabled,
+    .pos-sidenav-btn--disabled {
+        opacity: .35;
+        cursor: not-allowed;
+        pointer-events: none;
+    }
+
     .sidenav-badge {
         position: absolute;
         top: 6px;
@@ -1898,6 +1905,49 @@
         letter-spacing: .8px;
         color: var(--text3);
         margin-bottom: var(--sp3);
+    }
+
+    .turno-op-btn {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 2px;
+        padding: var(--sp3) var(--sp3);
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        background: var(--card);
+        color: var(--text);
+        cursor: pointer;
+        text-align: left;
+        transition: all var(--dur) var(--ease);
+    }
+
+    .turno-op-btn:hover {
+        border-color: var(--brand);
+        background: var(--brand-light);
+        color: var(--brand);
+        transform: translateY(-1px);
+    }
+
+    .turno-op-btn svg {
+        color: var(--brand);
+        margin-bottom: 2px;
+    }
+
+    .turno-op-btn span {
+        font-size: 13px;
+        font-weight: 600;
+        line-height: 1.2;
+    }
+
+    .turno-op-btn small {
+        font-size: 11px;
+        color: var(--text3);
+    }
+
+    .turno-op-btn:hover small {
+        color: inherit;
+        opacity: .8;
     }
 
     .turno-ventas-rows {

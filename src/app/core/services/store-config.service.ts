@@ -51,6 +51,15 @@ export class StoreConfigService {
     footerPrivacyLabel      = computed(() => this.get('FOOTER_PRIVACY', ''));
     footerTermsLabel        = computed(() => this.get('FOOTER_TERMS', ''));
 
+    // ── Product detail trust badges (editables desde admin → Apariencia) ────
+    // 3 tarjetas de confianza bajo la galería del detalle de producto.
+    productBadgeShippingTitle = computed(() => this.get('PRODUCT_BADGE_SHIPPING_TITLE', 'Envío gratis'));
+    productBadgeShippingSub   = computed(() => this.get('PRODUCT_BADGE_SHIPPING_SUB',   'Llega rápido a tu ciudad'));
+    productBadgeWarrantyTitle = computed(() => this.get('PRODUCT_BADGE_WARRANTY_TITLE', 'Garantía oficial'));
+    productBadgeWarrantySub   = computed(() => this.get('PRODUCT_BADGE_WARRANTY_SUB',   '12 meses + 30 días devolución'));
+    productBadgeStockTitle    = computed(() => this.get('PRODUCT_BADGE_STOCK_TITLE',    'Stock disponible'));
+    productBadgeStockSub      = computed(() => this.get('PRODUCT_BADGE_STOCK_SUB',      'Despacho inmediato'));
+
     // ── Footer link arrays (stored as JSON in DB) ──────────────────────────
     footerCompanyLinks = computed(() => this.parseLinks('FOOTER_COMPANY_LINKS'));
     footerHelpLinks    = computed(() => this.parseLinks('FOOTER_HELP_LINKS'));

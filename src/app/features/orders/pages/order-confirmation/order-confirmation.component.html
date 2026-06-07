@@ -39,7 +39,7 @@
                     </p>
                 </div>
                 <div>
-                    <span class="badge badge-warning">{{ order()!.estado }}</span>
+                    <span [class]="'badge ' + badgeClass(order()!.estado)">{{ order()!.estado }}</span>
                 </div>
             </div>
         </div>

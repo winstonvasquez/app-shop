@@ -1,12 +1,18 @@
-import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, computed } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { StoreConfigService } from '@core/services/store-config.service';
 
 interface FooterLink { label: string; route: string; }
 interface FooterColumn { title: string; links: FooterLink[]; }
 
 /**
  * Shop Footer — 4 columnas (info / ayuda / legal / app downloads) + copyright.
- * Port de chrome.jsx → function Footer() + RouterLink real a /info/<slug>.
+ *
+ * Las 3 columnas de enlaces, sus títulos y el copyright son DINÁMICOS: se editan
+ * desde el panel admin (Gestor de Footer → /api/ventas/tienda/config, claves
+ * FOOTER_*_LINKS / FOOTER_*_TITLE / FOOTER_ALL_RIGHTS) y se leen vía
+ * StoreConfigService. Si la tienda aún no configuró el footer, se usan los
+ * defaults de abajo para no mostrar un footer vacío.
  */
 @Component({
     selector: 'ds-shop-footer',
@@ -16,7 +22,7 @@ interface FooterColumn { title: string; links: FooterLink[]; }
     template: `
         <footer class="ft">
             <div class="grid">
-                @for (col of columns; track col.title) {
+                @for (col of columns(); track col.title) {
                     <div>
                         <h4>{{ col.title }}</h4>
                         <ul>
@@ -40,7 +46,7 @@ interface FooterColumn { title: string; links: FooterLink[]; }
                 </div>
             </div>
             <div class="bar">
-                <span>© {{ year }} APPSHOP. Todos los derechos reservados.</span>
+                <span>{{ copyright() }}</span>
                 <div class="pays">
                     @for (p of payments; track p) {
                         <span class="pay">{{ p }}</span>
@@ -108,9 +114,12 @@ interface FooterColumn { title: string; links: FooterLink[]; }
     `],
 })
 export class DsShopFooterComponent {
+    private readonly sc = inject(StoreConfigService);
+
     readonly year = new Date().getFullYear();
 
-    readonly columns: FooterColumn[] = [
+    /** Defaults usados cuando la tienda aún no configuró el footer desde el admin. */
+    private readonly defaultColumns: FooterColumn[] = [
         {
             title: 'Información',
             links: [
@@ -139,6 +148,31 @@ export class DsShopFooterComponent {
             ],
         },
     ];
+
+    /**
+     * Columnas del footer derivadas de la config de tienda (editable desde
+     * admin → Gestor de Footer). Cada columna usa los enlaces configurados si
+     * existen; si no, cae al default. El título usa la clave FOOTER_*_TITLE o el
+     * título por defecto.
+     */
+    readonly columns = computed<FooterColumn[]>(() => {
+        const cfg: { title: string; links: { label: string; url: string }[]; def: FooterColumn }[] = [
+            { title: this.sc.footerCompanyTitle(), links: this.sc.footerCompanyLinks(), def: this.defaultColumns[0] },
+            { title: this.sc.footerHelpTitle(),    links: this.sc.footerHelpLinks(),    def: this.defaultColumns[1] },
+            { title: this.sc.footerLegalTitle(),   links: this.sc.footerLegalLinks(),   def: this.defaultColumns[2] },
+        ];
+        return cfg.map(c => ({
+            title: c.title || c.def.title,
+            links: c.links.length
+                ? c.links.map(l => ({ label: l.label, route: l.url }))
+                : c.def.links,
+        }));
+    });
+
+    /** Copyright editable desde admin (FOOTER_ALL_RIGHTS); fallback con el año actual. */
+    readonly copyright = computed<string>(() =>
+        this.sc.footerAllRightsLabel() || `© ${this.year} ${this.sc.storeName()}. Todos los derechos reservados.`
+    );
 
     readonly payments = ['VISA', 'MC', 'AMEX', 'PP', 'YAPE'];
 }

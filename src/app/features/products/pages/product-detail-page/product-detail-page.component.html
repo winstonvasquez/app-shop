@@ -66,22 +66,22 @@
                     <div class="tcard">
                         <lucide-icon name="truck" [size]="18" class="ic"/>
                         <div>
-                            <div class="tt">Envío gratis</div>
-                            <div class="ts">Llega mañana a Lima</div>
+                            <div class="tt">{{ sc.productBadgeShippingTitle() }}</div>
+                            <div class="ts">{{ sc.productBadgeShippingSub() }}</div>
                         </div>
                     </div>
                     <div class="tcard">
                         <lucide-icon name="shield" [size]="18" class="ic"/>
                         <div>
-                            <div class="tt">Garantía oficial</div>
-                            <div class="ts">12 meses + 30 días devolución</div>
+                            <div class="tt">{{ sc.productBadgeWarrantyTitle() }}</div>
+                            <div class="ts">{{ sc.productBadgeWarrantySub() }}</div>
                         </div>
                     </div>
                     <div class="tcard">
                         <lucide-icon name="package" [size]="18" class="ic"/>
                         <div>
-                            <div class="tt">Stock disponible</div>
-                            <div class="ts">Despacha desde Lima</div>
+                            <div class="tt">{{ sc.productBadgeStockTitle() }}</div>
+                            <div class="ts">{{ sc.productBadgeStockSub() }}</div>
                         </div>
                     </div>
                 </div>
@@ -179,15 +179,16 @@
                         [disabled]="!stock()" (click)="buyNow()">
                         Comprar ahora
                     </ds-button>
-                    <ds-button variant="ghost" size="md" [full]="true" icon="heart">
-                        Guardar para después
+                    <ds-button variant="ghost" size="md" [full]="true" icon="heart"
+                        (click)="toggleWishlist()">
+                        {{ isSaved() ? 'Guardado en favoritos' : 'Guardar para después' }}
                     </ds-button>
                 </div>
 
                 <div class="info-card">
                     <div class="info-row">
                         <lucide-icon name="map-pin" [size]="14"/>
-                        <span>Envío a <strong>Lima 15036</strong>. Llega <strong class="ok">mañana</strong> si compras pronto.</span>
+                        <span>Envío a todo el Perú. Llega <strong class="ok">en 24–72 h</strong> en ciudades principales.</span>
                     </div>
                     <div class="info-row">
                         <lucide-icon name="lock" [size]="14"/>

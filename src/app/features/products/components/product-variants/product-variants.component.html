@@ -82,7 +82,7 @@
                     <select
                         class="appearance-none bg-[var(--color-surface-raised)] border border-[var(--color-border)] text-[var(--color-text-primary)] py-1 pl-3 pr-8 rounded-sm leading-tight focus:outline-none focus:border-[var(--color-primary)] text-sm cursor-pointer"
                         (change)="onQtyChange($event)">
-                        @for (qty of [1,2,3,4,5]; track $index) {
+                        @for (qty of qtyOptions(); track qty) {
                         <option [value]="qty">{{ qty }}</option>
                         }
                     </select>

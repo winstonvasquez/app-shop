@@ -1,7 +1,7 @@
 import { Component, DestroyRef, inject, OnInit, signal, computed } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { TranslateModule } from '@ngx-translate/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
 
 import { CategoryService } from '@core/services/category.service';
@@ -35,6 +35,7 @@ interface ShippingFilter {
     selector: 'app-products-page',
     standalone: true,
     imports: [
+        RouterLink,
         TranslateModule,
         LucideAngularModule,
         DsProductCardComponent,

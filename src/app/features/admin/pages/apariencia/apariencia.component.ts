@@ -38,6 +38,16 @@ const APP_FIELDS: ConfigSection[] = [
     { key: 'PLAY_STORE_URL', label: 'Play Store URL',  placeholder: 'https://play.google.com/...', type: 'url' },
 ];
 
+// Tarjetas de confianza mostradas bajo la galería en el detalle de producto.
+const PRODUCT_BADGE_FIELDS: ConfigSection[] = [
+    { key: 'PRODUCT_BADGE_SHIPPING_TITLE', label: 'Envío · título',    placeholder: 'Envío gratis',                  type: 'text' },
+    { key: 'PRODUCT_BADGE_SHIPPING_SUB',   label: 'Envío · detalle',   placeholder: 'Llega rápido a tu ciudad',      type: 'text' },
+    { key: 'PRODUCT_BADGE_WARRANTY_TITLE', label: 'Garantía · título', placeholder: 'Garantía oficial',              type: 'text' },
+    { key: 'PRODUCT_BADGE_WARRANTY_SUB',   label: 'Garantía · detalle',placeholder: '12 meses + 30 días devolución', type: 'text' },
+    { key: 'PRODUCT_BADGE_STOCK_TITLE',    label: 'Stock · título',    placeholder: 'Stock disponible',              type: 'text' },
+    { key: 'PRODUCT_BADGE_STOCK_SUB',      label: 'Stock · detalle',   placeholder: 'Despacho inmediato',            type: 'text' },
+];
+
 @Component({
     selector: 'app-apariencia',
     standalone: true,
@@ -148,6 +158,25 @@ const APP_FIELDS: ConfigSection[] = [
                 </div>
             </div>
 
+            <!-- Tarjetas de confianza del detalle de producto -->
+            <div class="card" style="grid-column: 1 / -1">
+                <div class="card-header">
+                    <h3 class="card-title">Tarjetas de confianza (detalle de producto)</h3>
+                    <span class="badge badge-neutral">Se muestran bajo la galería de cada producto</span>
+                </div>
+                <div class="card-body"
+                     style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px,1fr)); gap:.75rem">
+                    @for (field of productBadgeFields; track field.key) {
+                        <div>
+                            <label class="input-label">{{ field.label }}</label>
+                            <input class="input-field" type="text"
+                                   [placeholder]="field.placeholder"
+                                   [(ngModel)]="form()[field.key]">
+                        </div>
+                    }
+                </div>
+            </div>
+
         </div>
     `,
 })
@@ -159,6 +188,7 @@ export class AparienciaComponent implements OnInit {
     readonly socialFields   = SOCIAL_FIELDS;
     readonly headerFields   = HEADER_FIELDS;
     readonly appFields      = APP_FIELDS;
+    readonly productBadgeFields = PRODUCT_BADGE_FIELDS;
 
     form       = signal<Record<string, string>>({});
     saving     = signal(false);

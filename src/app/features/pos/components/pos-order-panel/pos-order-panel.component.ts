@@ -19,6 +19,11 @@ export class PosOrderPanelComponent {
     readonly procesarVenta = output<void>();
     readonly irAlNumpad = output<void>();
     readonly giftCardLookup = output<string>();
+    /** Descuento de línea que excede el umbral del cajero → requiere PIN de supervisor. */
+    readonly requestSupervisorAuth = output<{ varianteId: number; tipo: DescuentoTipo; valor: number }>();
+
+    /** Descuento máximo (%) que un cajero puede aplicar sin autorización de supervisor. */
+    readonly MAX_DESCUENTO_SIN_AUTH = 10;
 
     readonly paymentMethods: { id: MetodoPagoPos; label: string; icon: string; i18nKey: string }[] = [
         { id: 'EFECTIVO', label: 'Efectivo',  icon: 'cash', i18nKey: 'pos.panel.cash' },
@@ -60,11 +65,30 @@ export class PosOrderPanelComponent {
         const tipo = this.discountType();
         const valor = this.discountValue();
         if (valor > 0 && tipo !== 'NINGUNO') {
+            if (this.requiereAutorizacion(varianteId, tipo, valor)) {
+                // Cerrar popover y delegar al padre la verificación del PIN de supervisor;
+                // el descuento se aplica solo si el backend autoriza.
+                this.discountPopoverFor.set(null);
+                this.requestSupervisorAuth.emit({ varianteId, tipo, valor });
+                return;
+            }
             this.carrito.setLineDiscount(varianteId, tipo, valor);
         } else {
             this.carrito.clearLineDiscount(varianteId);
         }
         this.discountPopoverFor.set(null);
+    }
+
+    /** Un descuento requiere autorización si supera MAX_DESCUENTO_SIN_AUTH (% directo o equivalente del bruto). */
+    private requiereAutorizacion(varianteId: number, tipo: DescuentoTipo, valor: number): boolean {
+        if (tipo === 'PORCENTAJE') {
+            return valor > this.MAX_DESCUENTO_SIN_AUTH;
+        }
+        const item = this.carrito.items().find(i => i.variante.varianteId === varianteId);
+        if (!item) return true;
+        const bruto = item.cantidad * item.variante.precioFinal;
+        const pct = bruto > 0 ? (valor / bruto) * 100 : 100;
+        return pct > this.MAX_DESCUENTO_SIN_AUTH;
     }
 
     removeLineDiscount(varianteId: number): void {

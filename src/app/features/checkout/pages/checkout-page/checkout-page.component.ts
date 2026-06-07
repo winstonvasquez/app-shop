@@ -149,7 +149,14 @@ export class CheckoutPageComponent implements OnInit {
     this.configService.getMediosPago().subscribe(data => this.paymentMethods.set(data));
     this.configService.getCertificaciones().subscribe(data => this.certifications.set(data));
     this.analyticsService.trackBeginCheckout(this.cartTotal(), this.cartItems().length);
-    this.zonaEnvioService.getZonas().subscribe({ next: zonas => this.zonas.set(zonas), error: () => {} });
+    this.zonaEnvioService.getZonas().subscribe({
+      next: zonas => {
+        this.zonas.set(zonas);
+        // Auto-seleccionar la primera zona para reflejar costo de envío real desde el inicio.
+        if (zonas.length && !this.selectedZona()) this.selectedZona.set(zonas[0]);
+      },
+      error: () => { /* sin zonas configuradas → envío gratis por defecto */ },
+    });
 
     if (this.isGuest()) {
       // Pre-llenar formulario de invitado con datos guardados si existen

@@ -80,7 +80,8 @@
                                [disabled]="!isValidEmailOrPhone(email())"
                                (click)="goToEmail()">Continuar</ds-button>
                     <div class="mt-6 text-center text-xs text-[var(--color-text-muted)]">
-                        <a href="#" class="hover:underline text-[var(--color-primary)]">¿Problemas al iniciar
+                        <a routerLink="/info/ayuda" (click)="closeModal()"
+                            class="hover:underline text-[var(--color-primary)]">¿Problemas al iniciar
                             sesión?</a>
                     </div>
                 </div>
@@ -194,8 +195,8 @@
             <!-- Footer -->
             <div class="mt-8 text-center text-xs text-[var(--color-text-muted)]">
                 Al continuar, aceptas nuestros
-                <a href="#" class="text-[var(--color-primary)] hover:underline">Términos de uso</a> y
-                <a href="#" class="text-[var(--color-primary)] hover:underline">Política de privacidad</a>.
+                <a routerLink="/info/terminos" (click)="closeModal()" class="text-[var(--color-primary)] hover:underline">Términos de uso</a> y
+                <a routerLink="/info/privacidad" (click)="closeModal()" class="text-[var(--color-primary)] hover:underline">Política de privacidad</a>.
             </div>
         </div>
     </div>

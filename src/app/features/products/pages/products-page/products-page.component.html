@@ -12,7 +12,7 @@
             @for (b of breadcrumbs(); track b.label; let i = $index, last = $last) {
                 @if (i > 0) { <lucide-icon name="chevron-right" [size]="12"/> }
                 @if (!last && b.route) {
-                    <a class="bc-link" (click)="b.route && $any(null)">{{ b.label }}</a>
+                    <a class="bc-link" [routerLink]="b.route">{{ b.label }}</a>
                 } @else {
                     <span [class.bc-current]="last">{{ b.label }}</span>
                 }
@@ -24,7 +24,7 @@
     <div class="cols">
 
         <!-- ─── Sidebar de filtros ─── -->
-        <aside class="sidebar">
+        <aside class="sidebar" [class.is-open]="showFilterPanel()">
 
             <!-- Categoría -->
             <section class="filter-card">
@@ -131,7 +131,10 @@
                     </span>
                 </div>
                 <div class="rh-controls">
-                    <ds-button variant="secondary" size="sm" icon="sliders-horizontal">Filtros</ds-button>
+                    <ds-button class="filter-toggle" variant="secondary" size="sm" icon="sliders-horizontal"
+                        (click)="showFilterPanel.set(!showFilterPanel())">
+                        {{ showFilterPanel() ? 'Ocultar filtros' : 'Filtros' }}
+                    </ds-button>
                     <select class="sort"
                         [value]="sortBy() ?? '__placeholder__'"
                         (change)="setSort($any($event.target).value)">
@@ -255,6 +258,8 @@
 
     /* ── Sidebar ───────────────────────────────────────── */
     .sidebar { display: flex; flex-direction: column; gap: 16px; }
+    /* El botón "Filtros" solo es útil en móvil; en desktop el sidebar siempre se ve. */
+    .filter-toggle { display: none; }
     .filter-card {
         background: var(--c-surface);
         border: 1px solid var(--c-border);
@@ -477,7 +482,10 @@
     /* ── Responsive ──────────────────────────────────── */
     @media (max-width: 1024px) {
         .cols { grid-template-columns: 1fr; }
-        .sidebar { order: 2; }
+        /* En móvil el sidebar se colapsa y se muestra al pulsar "Filtros". */
+        .sidebar { order: 2; display: none; }
+        .sidebar.is-open { display: flex; }
+        .filter-toggle { display: inline-flex; }
         .grid { grid-template-columns: repeat(3, 1fr); }
     }
     @media (max-width: 640px) {

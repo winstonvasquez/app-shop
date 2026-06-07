@@ -27,6 +27,12 @@ export class ProductVariantsComponent {
 
   selectedVariant = computed(() => this.variants()[this.selectedVariantIndex()]);
 
+  /** Opciones de cantidad según el stock real de la variante (tope 10), no un máximo fijo. */
+  readonly qtyOptions = computed<number[]>(() => {
+    const max = Math.min(this.selectedVariant()?.stockActual ?? 0, 10);
+    return Array.from({ length: Math.max(1, max) }, (_, i) => i + 1);
+  });
+
   selectVariant(index: number) {
     this.selectedVariantIndex.set(index);
     this.quantity.set(1);

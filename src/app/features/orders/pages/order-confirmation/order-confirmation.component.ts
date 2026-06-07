@@ -38,4 +38,22 @@ export class OrderConfirmationComponent implements OnInit {
             },
         });
     }
+
+    /** Clase de badge según el estado del pedido (verde/azul/ámbar/rojo). */
+    badgeClass(estado: string | undefined): string {
+        switch ((estado ?? '').toUpperCase()) {
+            case 'ENTREGADO':
+            case 'PAGADO':
+            case 'COMPLETADO':
+                return 'badge-success';
+            case 'ENVIADO':
+            case 'EN_PREPARACION':
+                return 'badge-info';
+            case 'CANCELADO':
+            case 'RECHAZADO':
+                return 'badge-error';
+            default:
+                return 'badge-warning';
+        }
+    }
 }
