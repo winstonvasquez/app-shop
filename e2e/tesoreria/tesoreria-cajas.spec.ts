@@ -78,9 +78,6 @@ function collectErrors(page: Page): string[] {
 const IGNORE_NOISE = [
     'favicon', 'ERR_ABORTED',
     'ERR_CONNECTION_REFUSED',
-    'remoteEntry',
-    'mfe-',
-    'native-federation',
     'SystemParameterService',
     'the server responded with a status of',
 ];

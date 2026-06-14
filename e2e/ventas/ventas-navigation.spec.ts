@@ -109,10 +109,7 @@ function collectErrors(page: Page): string[] {
 /** Filtra ruido esperado en tests (MFE remotes no arrancados, backend no corre, etc.) */
 const IGNORE_NOISE = [
     'favicon', 'ERR_ABORTED',
-    'ERR_CONNECTION_REFUSED',       // MFE remotes no corriendo
-    'remoteEntry',                  // MFE federation
-    'mfe-',                         // MFE remote errors
-    'native-federation',            // @angular-architects/native-federation
+    'ERR_CONNECTION_REFUSED',       // backend no corre
     'SystemParameterService',       // parámetros de sistema (backend no corre)
     'TranslateLoader',
     'StoreConfigService',

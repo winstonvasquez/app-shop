@@ -58,42 +58,6 @@
     },
     {
       "path": "./projects/ui-kit/tsconfig.spec.json"
-    },
-    {
-      "path": "./projects/mfe-pos/tsconfig.app.json"
-    },
-    {
-      "path": "./projects/mfe-pos/tsconfig.spec.json"
-    },
-    {
-      "path": "./projects/mfe-rrhh/tsconfig.app.json"
-    },
-    {
-      "path": "./projects/mfe-rrhh/tsconfig.spec.json"
-    },
-    {
-      "path": "./projects/mfe-finanzas/tsconfig.app.json"
-    },
-    {
-      "path": "./projects/mfe-finanzas/tsconfig.spec.json"
-    },
-    {
-      "path": "./projects/mfe-operaciones/tsconfig.app.json"
-    },
-    {
-      "path": "./projects/mfe-operaciones/tsconfig.spec.json"
-    },
-    {
-      "path": "./projects/mfe-platform/tsconfig.app.json"
-    },
-    {
-      "path": "./projects/mfe-platform/tsconfig.spec.json"
-    },
-    {
-      "path": "./projects/mfe-comercial/tsconfig.app.json"
-    },
-    {
-      "path": "./projects/mfe-comercial/tsconfig.spec.json"
     }
   ]
 }

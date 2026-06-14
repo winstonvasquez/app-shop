@@ -4,7 +4,6 @@ import { AuthLayoutComponent } from './layout/auth-layout/auth-layout.component'
 import { authGuard } from './core/auth/auth.guard';
 import { customerGuard } from './core/auth/customer.guard';
 import { moduleGuard } from './core/auth/module.guard';
-import { loadRemoteModule } from '@angular-architects/native-federation';
 
 export const routes: Routes = [
     {
@@ -85,21 +84,13 @@ export const routes: Routes = [
         path: 'admin',
         canActivate: [authGuard],
         loadChildren: () =>
-            loadRemoteModule('mfe-platform', './AdminRoutes')
-                .then((m) => m.ADMIN_REMOTE_ROUTES)
-                .catch(() =>
-                    import('./features/admin/admin.routes').then((m) => m.adminRoutes)
-                ),
+            import('./features/admin/admin.routes').then((m) => m.adminRoutes),
     },
     {
         path: 'pos',
         canActivate: [authGuard, moduleGuard('POS')],
         loadChildren: () =>
-            loadRemoteModule('mfe-pos', './Routes')
-                .then((m) => m.POS_REMOTE_ROUTES)
-                .catch(() =>
-                    import('./features/pos/pos.routes').then((m) => m.POS_ROUTES)
-                ),
+            import('./features/pos/pos.routes').then((m) => m.POS_ROUTES),
     },
     // Rutas legacy → redirigen al módulo correspondiente en /admin (con sidebar)
     { path: 'contabilidad', redirectTo: '/admin/contabilidad', pathMatch: 'prefix' },
@@ -111,11 +102,7 @@ export const routes: Routes = [
     {
         path: 'portal',
         loadChildren: () =>
-            loadRemoteModule('mfe-platform', './PortalRoutes')
-                .then((m) => m.PORTAL_REMOTE_ROUTES)
-                .catch(() =>
-                    import('./features/portal/portal.routes').then((m) => m.PORTAL_ROUTES)
-                ),
+            import('./features/portal/portal.routes').then((m) => m.PORTAL_ROUTES),
     },
     { path: '**', redirectTo: '/' }
 ];

@@ -18,24 +18,20 @@ src/app/features/
 └── …               → home, orders, account, portal (autoservicio), inventory/logistica
 ```
 
-## MFE (Module Federation) — ports 4200-4206
+## Arquitectura — monolito Angular (single SPA, port 4200)
 
-```
-shell (4200)        → app-shop/src/
-mfe-pos (4201)      → projects/mfe-pos/
-mfe-rrhh (4202)     → projects/mfe-rrhh/
-mfe-finanzas (4203) → projects/mfe-finanzas/
-mfe-operaciones (4204) → projects/mfe-operaciones/
-mfe-platform (4205) → projects/mfe-platform/
-mfe-comercial (4206) → projects/mfe-comercial/
-```
+App **monolítica**: una sola aplicación Angular standalone servida en `:4200`.
+Todas las rutas son lazy (`loadComponent` / `loadChildren`) hacia `src/app/features/*`.
+**No hay Module Federation ni microfrontends** — se eliminó en 2026-06-14
+(builder estándar `@angular/build:application`; las cáscaras `projects/mfe-*`,
+`federation.config.js`, `federation.shared.js` y los `remotes.manifest*.json`
+ya no existen). `projects/` solo conserva las librerías `auth-lib` y `ui-kit`.
 
 ## Comandos
 
 ```bash
 cd app-shop
-npm start              # Shell + Tailwind watch (port 4200)
-npm run start:all      # Shell + 6 MFEs (ports 4200-4206)
+npm start              # Dev server + Tailwind watch (port 4200)
 npm run build          # Production build
 npm test               # Vitest
 
@@ -51,7 +47,7 @@ node node_modules/typescript/bin/tsc --noEmit -p tsconfig.app.json
 ### Estado y componentes
 - **OnPush + Signals** siempre: `signal()`, `computed()`, `effect()` — NO `BehaviorSubject`
 - **Standalone components** — no NgModules; cada componente declara sus `imports[]`
-- **NO incluir `CommonModule`** en standalone — genera NG8113 y cancela MFE builds
+- **NO incluir `CommonModule`** en standalone — genera NG8113 y rompe el build
 - `@if` / `@for` / `@switch` — Angular 17+ control flow, no necesita `CommonModule`
 
 ### API URLs
@@ -77,7 +73,7 @@ node node_modules/typescript/bin/tsc --noEmit -p tsconfig.app.json
 
 ### Build / compilación
 - `ng build` en bash falla con "Unsupported package manager: bun" (hook pre-commit GGA, no código roto)
-- Imports `[]` sobrantes → **NG8113** → cancela MFE builds — eliminar siempre los que no se usen en template
+- Imports `[]` sobrantes → **NG8113** → rompe el build — eliminar siempre los que no se usen en template
 - `PageResponse<T>`: meta bajo `res.page.totalElements` / `res.page.totalPages` (NO en `res.totalElements`). **Usar siempre helpers** `pageTotalElements(res)` y `pageTotalPages(res)` desde `@core/models/pagination.model` — soportan ambos shapes (legacy flat + Boot 3 nested) con fallback a 0
 
 ### Sistema de Diseño "Confianza" (tema único)
