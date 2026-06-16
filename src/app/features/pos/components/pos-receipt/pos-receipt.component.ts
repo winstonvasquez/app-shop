@@ -1,9 +1,10 @@
-import { Component, ChangeDetectionStrategy, input, output, signal, inject } from '@angular/core';
+import { Component, ChangeDetectionStrategy, input, output, signal, inject, effect } from '@angular/core';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
 import { VentaPosResponse } from '../../models/venta-pos.model';
 import { PosVentaService } from '../../services/pos-venta.service';
+import QRCode from 'qrcode';
 
 @Component({
     selector: 'app-pos-receipt',
@@ -20,13 +21,28 @@ export class PosReceiptComponent {
 
     readonly nuevaVenta = output<void>();
     readonly imprimirRecibo = output<void>();
+    /** Solicita anular esta venta (el padre exige PIN de supervisor). Emite el id. */
+    readonly anularVenta = output<number>();
 
     readonly emailSending = signal(false);
     readonly emailSent = signal(false);
+    /** Data-URL del QR SUNAT escaneable, generado desde venta().qrData. */
+    readonly qrImage = signal<string | null>(null);
 
     readonly emailForm = this.fb.group({
         email: [''],
     });
+
+    constructor() {
+        // Genera el QR escaneable cada vez que cambia la venta mostrada.
+        effect(() => {
+            const data = this.venta()?.qrData;
+            if (!data) { this.qrImage.set(null); return; }
+            QRCode.toDataURL(data, { margin: 1, width: 180, errorCorrectionLevel: 'M' })
+                .then(url => this.qrImage.set(url))
+                .catch(() => this.qrImage.set(null));
+        });
+    }
 
     fmt(val: number | undefined | null): string {
         return (val ?? 0).toFixed(2);

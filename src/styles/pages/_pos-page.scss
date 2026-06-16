@@ -2595,6 +2595,16 @@
         color: var(--text3);
     }
 
+    /* QR SUNAT escaneable (data-URL generado en el componente) */
+    .receipt-qr-img {
+        width: 140px;
+        height: 140px;
+        display: block;
+        background: #fff;
+        border-radius: 6px;
+        image-rendering: pixelated; /* bordes nítidos del QR al escalar */
+    }
+
     .receipt-qr-label {
         font-size: 10px;
         color: var(--text3);

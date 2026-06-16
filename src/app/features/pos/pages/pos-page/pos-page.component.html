@@ -195,13 +195,16 @@
             <!-- PANTALLA 3: Último Recibo -->
             @if (activeScreen() === 'recibo') {
             <app-pos-receipt [venta]="lastVenta()" (nuevaVenta)="showScreen('main')"
-                (imprimirRecibo)="showToast('Enviando a impresora...')" />
+                (imprimirRecibo)="imprimirReciboActual()"
+                (anularVenta)="requestAnularVenta($event)" />
             }
 
             <!-- PANTALLA 4: Historial -->
             @if (activeScreen() === 'historial') {
             <app-pos-historial [items]="historialItems()" [turno]="turnoActivo()"
-                (verRecibo)="lastVenta.set($event); showScreen('recibo')" />
+                (verRecibo)="lastVenta.set($event); showScreen('recibo')"
+                (reimprimir)="reimprimirVenta($event)"
+                (anular)="requestAnularVenta($event.id)" />
             }
 
             <!-- PANTALLA 5: Mi Turno -->

@@ -15,6 +15,8 @@ export class PosHistorialComponent {
     readonly turno = input<TurnoCaja | null>(null);
 
     readonly verRecibo = output<VentaPosResponse>();
+    readonly reimprimir = output<VentaPosResponse>();
+    readonly anular = output<VentaPosResponse>();
 
     fmt(val: number | undefined | null): string {
         return (val ?? 0).toFixed(2);

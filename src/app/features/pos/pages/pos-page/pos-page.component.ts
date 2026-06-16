@@ -118,6 +118,8 @@ export class PosPageComponent implements OnInit, OnDestroy {
     readonly managerPinError = signal('');
     readonly managerPinLoading = signal(false);
     private readonly pendingDiscount = signal<{ varianteId: number; tipo: DescuentoTipo; valor: number } | null>(null);
+    /** Venta cuya anulación espera autorización por PIN de supervisor. */
+    private readonly pendingAnularVentaId = signal<number | null>(null);
 
     // Customer lookup visibility
     readonly showCustomerLookup = signal(true);
@@ -422,14 +424,23 @@ export class PosPageComponent implements OnInit, OnDestroy {
         this.showManagerPin.set(true);
     }
 
+    /** Una venta requiere anulación: solicitar PIN de supervisor antes de revertirla. */
+    requestAnularVenta(ventaId: number): void {
+        this.pendingDiscount.set(null);
+        this.pendingAnularVentaId.set(ventaId);
+        this.managerPinError.set('');
+        this.showManagerPin.set(true);
+    }
+
     /**
-     * Valida el PIN contra microshopusers. El descuento se aplica SOLO si el backend
-     * confirma que el PIN pertenece a un supervisor autorizado de esta empresa,
-     * registrando su userId real como autorizadoPor.
+     * Valida el PIN contra microshopusers y, según la acción pendiente, aplica el
+     * descuento de línea o anula la venta. Solo procede si el backend confirma que el
+     * PIN pertenece a un supervisor autorizado de esta empresa.
      */
     onManagerPinConfirmed(pin: string): void {
+        const anularId = this.pendingAnularVentaId();
         const detail = this.pendingDiscount();
-        if (!detail) {
+        if (anularId == null && !detail) {
             this.cancelManagerPin();
             return;
         }
@@ -438,15 +449,18 @@ export class PosPageComponent implements OnInit, OnDestroy {
         this.managerAuth.verificarPinSupervisor(pin, this.companyId).subscribe({
             next: resp => {
                 this.managerPinLoading.set(false);
-                if (resp.authorized && resp.userId != null) {
-                    this.carrito.setLineDiscount(detail.varianteId, detail.tipo, detail.valor, resp.userId);
-                    this.showManagerPin.set(false);
-                    this.pendingDiscount.set(null);
-                    this.showToast(`Descuento autorizado por ${resp.username ?? 'supervisor'}`, 'success');
-                } else {
+                if (!(resp.authorized && resp.userId != null)) {
                     // PIN inexistente o sin rol autorizador: el diálogo limpia y permite reintento.
-                    this.managerPinError.set('PIN no válido o sin permiso para autorizar descuentos');
+                    this.managerPinError.set('PIN no válido o sin permiso de supervisor');
+                    return;
                 }
+                if (anularId != null) {
+                    this.ejecutarAnularVenta(anularId, resp.username ?? 'supervisor');
+                } else if (detail) {
+                    this.carrito.setLineDiscount(detail.varianteId, detail.tipo, detail.valor, resp.userId);
+                    this.showToast(`Descuento autorizado por ${resp.username ?? 'supervisor'}`, 'success');
+                }
+                this.cancelManagerPin();
             },
             error: () => {
                 this.managerPinLoading.set(false);
@@ -455,11 +469,37 @@ export class PosPageComponent implements OnInit, OnDestroy {
         });
     }
 
+    /** Llama al backend para anular la venta y refresca historial + recibo mostrado. */
+    private ejecutarAnularVenta(ventaId: number, supervisor: string): void {
+        this.ventaService.anularVenta(ventaId).subscribe({
+            next: venta => {
+                this.showToast(`Venta ${venta.numeroTicket} anulada por ${supervisor}`, 'success');
+                if (this.lastVenta()?.id === venta.id) this.lastVenta.set(venta);
+                this.loadHistorial();
+            },
+            error: err => this.showToast(err.message ?? 'No se pudo anular la venta', 'error'),
+        });
+    }
+
     cancelManagerPin(): void {
         this.showManagerPin.set(false);
         this.pendingDiscount.set(null);
+        this.pendingAnularVentaId.set(null);
         this.managerPinError.set('');
         this.managerPinLoading.set(false);
+    }
+
+    /** Impresión real del recibo en pantalla (la hoja @media print da el formato 80mm). */
+    imprimirReciboActual(): void {
+        window.print();
+    }
+
+    /** Reimprime una venta del historial: muestra el recibo y lanza la impresión. */
+    reimprimirVenta(venta: VentaPosResponse): void {
+        this.lastVenta.set(venta);
+        this.showScreen('recibo');
+        // Esperar a que el recibo se renderice antes de invocar la impresión del navegador.
+        setTimeout(() => window.print(), 200);
     }
 
     // ── Gift Card ────────────────────────────────────────────────
