@@ -35,6 +35,9 @@
         </div>
     </div>
 
+    <!-- Zona scrolleable: items + descuento + totales + pago (Cobrar queda fijo abajo) -->
+    <div class="order-scroll">
+
     <!-- Items del pedido -->
     <div class="order-items">
         @if (carrito.isEmpty()) {
@@ -55,7 +58,7 @@
                 <p class="order-item-name">{{ item.variante.nombre }}</p>
                 <p class="order-item-meta">S/{{ fmt(item.variante.precioFinal) }} c/u · {{ item.variante.sku }}</p>
                 <div class="order-item-qty flex items-center gap-2">
-                    <button class="icon-btn-sm !w-6 !h-6 bg-white/5 hover:bg-white/10"
+                    <button class="icon-btn-sm !w-10 !h-10 bg-white/5 hover:bg-white/10"
                         (click)="carrito.cambiarCantidad(item.variante.varianteId, -1)">
                         <svg viewBox="0 0 20 20" fill="currentColor" width="11" height="11">
                             <path fill-rule="evenodd" d="M3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z"
@@ -63,7 +66,7 @@
                         </svg>
                     </button>
                     <span class="qty-value text-[13px] font-bold min-w-[1.25rem] text-center">{{ item.cantidad }}</span>
-                    <button class="icon-btn-sm !w-6 !h-6 bg-white/5 hover:bg-white/10"
+                    <button class="icon-btn-sm !w-10 !h-10 bg-white/5 hover:bg-white/10"
                         (click)="carrito.cambiarCantidad(item.variante.varianteId, 1)">
                         <svg viewBox="0 0 20 20" fill="currentColor" width="11" height="11">
                             <path fill-rule="evenodd"
@@ -76,7 +79,7 @@
             <div class="order-item-right flex flex-col items-end gap-1">
                 <div class="flex gap-1">
                     <!-- Descuento por línea -->
-                    <button class="icon-btn-sm !w-6 !h-6 hover:bg-[var(--color-primary)]/20"
+                    <button class="icon-btn-sm !w-9 !h-9 hover:bg-[var(--color-primary)]/20"
                         [class.text-[var(--color-primary)]]="item.descuentoTipo !== 'NINGUNO'"
                         [class.text-muted]="item.descuentoTipo === 'NINGUNO'"
                         (click)="toggleDiscountPopover(item.variante.varianteId)" title="Descuento">
@@ -86,7 +89,7 @@
                                 clip-rule="evenodd" />
                         </svg>
                     </button>
-                    <button class="icon-btn-sm !w-6 !h-6 text-[var(--color-error)] hover:bg-[var(--color-error)]/20"
+                    <button class="icon-btn-sm !w-9 !h-9 text-[var(--color-error)] hover:bg-[var(--color-error)]/20"
                         (click)="carrito.eliminarItem(item.variante.varianteId)" title="Quitar">
                         <svg viewBox="0 0 20 20" fill="currentColor" width="12" height="12">
                             <path fill-rule="evenodd"
@@ -321,8 +324,10 @@
             </div>
             }
         </div>
+    </div><!-- /.order-payment -->
+    </div><!-- /.order-scroll -->
 
-        <div class="order-actions flex items-center gap-2 mt-4 pt-4 border-t border-[var(--color-border)]">
+    <div class="order-actions flex items-center gap-2">
             <button class="btn-secondary !h-12 !w-12 !p-0 !rounded-xl shrink-0" (click)="irAlNumpad.emit()"
                 [disabled]="carrito.isEmpty()" title="Teclado numérico">
                 <svg viewBox="0 0 20 20" fill="currentColor" width="15" height="15">
@@ -331,7 +336,8 @@
                         clip-rule="evenodd" />
                 </svg>
             </button>
-            <button class="btn-primary !h-12 flex-1 !text-[15px] !rounded-xl !gap-2" [disabled]="carrito.isEmpty()"
+            <button class="btn-primary !h-12 flex-1 !text-[15px] !rounded-xl !gap-2"
+                [disabled]="carrito.isEmpty() || isProcessing()"
                 (click)="procesarVenta.emit()">
                 <svg viewBox="0 0 20 20" fill="currentColor" width="17" height="17">
                     <path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z" />
@@ -344,7 +350,5 @@
                     fmt(carrito.totalFinal()) }}</span>
             </button>
         </div>
-
-    </div>
 
 </aside>

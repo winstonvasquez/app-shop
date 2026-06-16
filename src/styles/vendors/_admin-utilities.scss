@@ -375,6 +375,11 @@
     color: var(--color-error);
 }
 
+.badge-info {
+    background: color-mix(in oklch, var(--color-primary) 16%, var(--color-surface));
+    color: var(--color-primary);
+}
+
 .badge-neutral {
     background: var(--color-surface-raised);
     color: var(--color-text-secondary);

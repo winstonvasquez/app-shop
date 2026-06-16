@@ -54,9 +54,9 @@
                         (change)="applyPriceFilter()"/>
                 </div>
                 <div class="price-track">
-                    <div class="price-fill"></div>
-                    <span class="price-handle left"></span>
-                    <span class="price-handle right"></span>
+                    <div class="price-fill" [style.left]="priceSlider().left" [style.width]="priceSlider().width"></div>
+                    <span class="price-handle left" [style.left]="priceSlider().left"></span>
+                    <span class="price-handle right" [style.left]="priceSlider().right"></span>
                 </div>
             </section>
 

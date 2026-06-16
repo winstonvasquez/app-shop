@@ -1,37 +1,48 @@
-import { Component, inject, OnInit, OnDestroy, signal, computed } from '@angular/core';
-import { Router } from '@angular/router';
+import { Component, inject, OnInit, OnDestroy, signal, computed, ChangeDetectionStrategy, ViewChild, ElementRef } from '@angular/core';
+import { Router, RouterLink } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 import { LucideAngularModule } from 'lucide-angular';
+import { catchError, of } from 'rxjs';
 
 import { FlashDealsSectionComponent } from '@features/home/components/flash-deals-section/flash-deals-section.component';
 import { ProductShowcaseSectionComponent } from '@features/home/components/product-showcase-section/product-showcase-section.component';
-import { DsButtonComponent, DsBadgeComponent, DsCategoryTileComponent, DsCategoryTile } from '@shared/ui/ds';
+import { DsButtonComponent, DsBadgeComponent, DsCategoryTileComponent, DsCategoryTile, DsProductCardComponent, DsProduct } from '@shared/ui/ds';
 
 import { CategoryService } from '@core/services/category.service';
 import { BannerService, Banner } from '@features/home/services/banner.service';
 import { SearchService } from '@shared/services/search.service';
+import { RecommendationsService } from '@core/services/recommendations.service';
+import { AuthService } from '@core/auth/auth.service';
+import { CartService } from '@features/cart/services/cart.service';
+import { ProductResponse } from '@core/models/product.model';
 
 const HERO_AUTO_ROTATE_MS = 6000;     // intervalo entre slides automáticos
 
 @Component({
     selector: 'app-home-page',
     standalone: true,
+    changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
         TranslateModule,
         LucideAngularModule,
+        RouterLink,
         FlashDealsSectionComponent,
         ProductShowcaseSectionComponent,
         DsButtonComponent,
         DsBadgeComponent,
         DsCategoryTileComponent,
+        DsProductCardComponent,
     ],
     templateUrl: './home-page.component.html',
 })
 export class HomePageComponent implements OnInit, OnDestroy {
-    private categoryService = inject(CategoryService);
-    private bannerService   = inject(BannerService);
-    private router          = inject(Router);
-    public  searchService   = inject(SearchService);
+    private categoryService         = inject(CategoryService);
+    private bannerService           = inject(BannerService);
+    private router                  = inject(Router);
+    private recommendationsService  = inject(RecommendationsService);
+    private authService             = inject(AuthService);
+    private cartService             = inject(CartService);
+    public  searchService           = inject(SearchService);
 
     /** Categorías reales mapeadas al shape DS (`name`, `count`, `image`, `tone`). */
     readonly categories = signal<DsCategoryTile[]>([]);
@@ -41,6 +52,11 @@ export class HomePageComponent implements OnInit, OnDestroy {
     readonly currentSlide = signal<number>(0);
     readonly heroBanner   = computed(() => this.banners()[this.currentSlide()] ?? null);
     readonly hasMultiple  = computed(() => this.banners().length > 1);
+
+    /** Recomendaciones personalizadas "Para ti" — vacío hasta que carga. */
+    readonly paraTi = signal<DsProduct[]>([]);
+
+    @ViewChild('paraTiScroll') paraTiScroll?: ElementRef<HTMLDivElement>;
 
     private autoRotateTimer?: ReturnType<typeof setInterval>;
 
@@ -67,6 +83,7 @@ export class HomePageComponent implements OnInit, OnDestroy {
 
     ngOnInit(): void {
         this.loadData();
+        this.loadParaTi();
         setInterval(() => this.now.set(new Date()), 1000);
     }
 
@@ -93,6 +110,25 @@ export class HomePageComponent implements OnInit, OnDestroy {
         if (i < 0 || i >= this.banners().length) return;
         this.currentSlide.set(i);
         this.restartAutoRotate();
+    }
+
+    scrollParaTi(direction: number): void {
+        this.paraTiScroll?.nativeElement.scrollBy({ left: direction * 300, behavior: 'smooth' });
+    }
+
+    onParaTiCardClick(p: DsProduct): void {
+        this.router.navigate(['/products', p.id]);
+    }
+
+    onParaTiAddToCart(p: DsProduct): void {
+        this.cartService.addToCart({
+            id: Number(p.id),
+            name: p.name,
+            price: p.now,
+            image: p.image ?? '',
+            quantity: 1,
+        });
+        this.cartService.toggleDrawer();
     }
 
     private startAutoRotate(): void {
@@ -154,6 +190,27 @@ export class HomePageComponent implements OnInit, OnDestroy {
             },
             error: () => this.banners.set([]),
         });
+    }
+
+    private loadParaTi(): void {
+        const usuarioId = this.authService.currentUser()?.userId;
+        this.recommendationsService.getParaTi(usuarioId)
+            .pipe(catchError(() => of<ProductResponse[]>([])))
+            .subscribe((productos: ProductResponse[]) => {
+                this.paraTi.set(productos.map(p => ({
+                    id: p.id,
+                    name: p.nombre,
+                    now: p.precioBase,
+                    was: p.originalPrice,
+                    rating: p.rating,
+                    sold: p.salesCount,
+                    badge: p.badge ?? (p.discount ? p.discount
+                               : (p.stock !== undefined && p.stock <= 5 ? 'POCAS' : undefined)),
+                    shipFree: (p.precioBase ?? 0) >= 99,
+                    image: p.imagenes?.find(img => img.esPrincipal)?.url
+                        || p.imagenes?.[0]?.url,
+                })));
+            });
     }
 }
 

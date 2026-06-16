@@ -1,4 +1,4 @@
-import { Component, DestroyRef, inject, OnInit, signal, computed } from '@angular/core';
+import { Component, DestroyRef, inject, OnInit, signal, computed, HostListener } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Title } from '@angular/platform-browser';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -91,6 +91,9 @@ export class ProductDetailPageComponent implements OnInit {
     readonly qty = signal<number>(1);
 
     readonly activeTab = signal<DetailTab>('desc');
+
+    /** Lightbox abierto/cerrado. */
+    readonly lightboxOpen = signal<boolean>(false);
 
     /** ¿El producto actual está en la lista de deseos del cliente? */
     readonly isSaved = computed<boolean>(() => {
@@ -198,6 +201,27 @@ export class ProductDetailPageComponent implements OnInit {
 
     incQty(): void { this.qty.update(q => Math.min(q + 1, this.stock() || 99)); }
     decQty(): void { this.qty.update(q => Math.max(1, q - 1)); }
+
+    /** Navega a la imagen anterior en el lightbox (con wrap). */
+    prevImage(): void {
+        const p = this._product();
+        if (!p?.images?.length) return;
+        this.activeImageIndex.update(i => (i - 1 + p.images.length) % p.images.length);
+    }
+
+    /** Navega a la imagen siguiente en el lightbox (con wrap). */
+    nextImage(): void {
+        const p = this._product();
+        if (!p?.images?.length) return;
+        this.activeImageIndex.update(i => (i + 1) % p.images.length);
+    }
+
+    @HostListener('document:keydown.escape')
+    closeLightboxOnEscape(): void {
+        if (this.lightboxOpen()) {
+            this.lightboxOpen.set(false);
+        }
+    }
 
     addToCart(): void {
         const p = this._product();

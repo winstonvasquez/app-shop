@@ -476,17 +476,17 @@
                         </div>
                         }
 
-                        <!-- Submit Button -->
+                        <!-- Submit Button — despacha al flujo de pago según método -->
                         <div class="mb-5">
-                            <button (click)="placeOrder()" [disabled]="isLoading()"
+                            <button (click)="confirmCheckout()" [disabled]="isProcessing()"
                                 class="btn btn-primary btn-lg w-full rounded-full active:scale-95">
-                                @if (isLoading()) {
+                                @if (isProcessing()) {
                                 <span class="flex items-center justify-center gap-2">
                                     <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
                                     Procesando...
                                 </span>
                                 } @else {
-                                {{ 'checkout.confirmarPedido' | translate }}
+                                {{ ctaLabel() }}
                                 }
                             </button>
                             <p class="text-center text-[10px] text-[var(--color-text-muted)] mt-2 font-medium">Transacción segura y encriptada.</p>

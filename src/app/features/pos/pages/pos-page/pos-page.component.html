@@ -180,7 +180,7 @@
                     <app-pos-customer-lookup
                         (clientSelected)="onClientSelected($event)"
                         (clientCleared)="onClientCleared()" />
-                    <app-pos-order-panel (procesarVenta)="procesarVenta()" (irAlNumpad)="showScreen('pago')"
+                    <app-pos-order-panel [isProcessing]="isLoading()" (procesarVenta)="procesarVenta()" (irAlNumpad)="showScreen('pago')"
                         (giftCardLookup)="lookupGiftCard($event)"
                         (requestSupervisorAuth)="requestSupervisorAuth($event)" />
                 </div>
@@ -189,7 +189,7 @@
 
             <!-- PANTALLA 2: Cobrar (Numpad) -->
             @if (activeScreen() === 'pago') {
-            <app-pos-numpad (confirmar)="procesarVenta()" (volver)="showScreen('main')" />
+            <app-pos-numpad [isProcessing]="isLoading()" (confirmar)="procesarVenta()" (volver)="showScreen('main')" />
             }
 
             <!-- PANTALLA 3: Último Recibo -->

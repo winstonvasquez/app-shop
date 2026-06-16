@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, inject, output, signal, computed } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, input, output, signal, computed } from '@angular/core';
 import { PosCarritoService } from '../../services/pos-carrito.service';
 
 @Component({
@@ -10,6 +10,9 @@ import { PosCarritoService } from '../../services/pos-carrito.service';
 export class PosNumpadComponent {
 
     readonly carrito = inject(PosCarritoService);
+
+    /** True mientras la venta se está procesando — deshabilita Confirmar (anti doble-venta). */
+    readonly isProcessing = input(false);
 
     readonly confirmar = output<void>();
     readonly volver = output<void>();

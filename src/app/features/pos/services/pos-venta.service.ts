@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpParams, HttpHeaders } from '@angular/common/http';
 import { VentaPosRequest, VentaPosResponse, PageResponse, DevolucionPosRequest, DevolucionPosResponse, TipoCambio } from '../models/venta-pos.model';
 import { environment } from '@env/environment';
 
@@ -9,8 +9,15 @@ export class PosVentaService {
     private readonly http = inject(HttpClient);
     private readonly baseUrl = environment.apiUrls.pos;
 
-    procesarVenta(request: VentaPosRequest): Observable<VentaPosResponse> {
-        return this.http.post<VentaPosResponse>(`${this.baseUrl}/ventas`, request);
+    /**
+     * Procesa una venta POS. Envía un header `Idempotency-Key` (UUID por venta) para que
+     * el backend deduplique ante reintento de red: el mismo key NO crea dos ventas.
+     */
+    procesarVenta(request: VentaPosRequest, idempotencyKey?: string): Observable<VentaPosResponse> {
+        const headers = idempotencyKey
+            ? new HttpHeaders({ 'Idempotency-Key': idempotencyKey })
+            : undefined;
+        return this.http.post<VentaPosResponse>(`${this.baseUrl}/ventas`, request, { headers });
     }
 
     anularVenta(ventaId: number): Observable<VentaPosResponse> {

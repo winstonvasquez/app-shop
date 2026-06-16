@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, inject, output, signal } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, input, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
 import { PosCarritoService } from '../../services/pos-carrito.service';
@@ -15,6 +15,9 @@ import { MetodoPagoPos, PagoMixto, TipoCpe } from '../../models/venta-pos.model'
 export class PosOrderPanelComponent {
 
     readonly carrito = inject(PosCarritoService);
+
+    /** True mientras la venta se está procesando — deshabilita Cobrar (anti doble-venta). */
+    readonly isProcessing = input(false);
 
     readonly procesarVenta = output<void>();
     readonly irAlNumpad = output<void>();

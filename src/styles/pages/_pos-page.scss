@@ -1059,12 +1059,21 @@
         color: var(--text3);
     }
 
-    .order-items {
+    /* Zona scrolleable única: items + descuento + totales + pago.
+       Mantiene el botón Cobrar (.order-actions) SIEMPRE visible abajo. */
+    .order-scroll {
         flex: 1;
+        min-height: 0;
         overflow-y: auto;
-        padding: var(--sp2) 0;
+        display: flex;
+        flex-direction: column;
         scrollbar-width: thin;
         scrollbar-color: var(--border) transparent;
+    }
+
+    .order-items {
+        flex: 0 0 auto;
+        padding: var(--sp2) 0;
     }
 
     .order-empty {
@@ -3279,5 +3288,46 @@
         .report-panel {
             max-width: 100%;
             padding: 0;
+        }
+
+        /* ── Recibo térmico 80mm: papel blanco, texto negro (no el header oscuro de pantalla) ── */
+        .receipt-screen {
+            background: #fff !important;
+            padding: 0 !important;
+            display: block !important;
+        }
+        .receipt-paper {
+            width: 80mm !important;
+            max-width: 80mm !important;
+            margin: 0 auto !important;
+            box-shadow: none !important;
+            border: none !important;
+            border-radius: 0 !important;
+            background: #fff !important;
+        }
+        /* El header de pantalla usa gradiente oscuro → forzar blanco/negro para impresión */
+        .receipt-header {
+            background: #fff !important;
+            color: #000 !important;
+            border-bottom: 1px dashed #000;
+            padding-top: 0 !important;
+        }
+        .receipt-paper *,
+        .receipt-header * {
+            color: #000 !important;
+            text-shadow: none !important;
+        }
+        .receipt-cpe-badge {
+            background: #fff !important;
+            border: 1px solid #000;
+        }
+        .receipt-meta-card {
+            background: #fff !important;
+            border: 1px solid #000;
+        }
+        /* Ocultar acciones (imprimir/email) y entradas en la copia impresa */
+        .receipt-actions,
+        .receipt-email-form {
+            display: none !important;
         }
     }

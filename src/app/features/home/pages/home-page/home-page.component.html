@@ -1,6 +1,6 @@
 <!--
     HOME — DS Confianza
-    Estructura: hero + side promos · trust strip · categorías 8col · flash deals · recomendados
+    Estructura: hero + side promos · trust strip · categorías 8col · flash deals · para-ti · recomendados
     Paleta y tokens via --c-*, --r-*, --s-*, --f-*.
 -->
 <!--
@@ -158,6 +158,43 @@
             </div>
         </div>
     </section>
+
+    <!-- ════════════════════════════════════════════════════════
+         PARA TI — recomendaciones personalizadas (dinámicas)
+         Solo se renderiza cuando el backend devuelve resultados.
+         ════════════════════════════════════════════════════════ -->
+    @if (paraTi().length > 0) {
+        <section class="section" style="padding: 0 !important; margin: 0 !important;">
+            <div class="ds-showcase">
+                <header class="head">
+                    <div class="title-row">
+                        <lucide-icon name="sparkles" [size]="20" class="ic para-ti"/>
+                        <h2>Recomendados para ti</h2>
+                    </div>
+                    <a class="more" [routerLink]="['/products']">
+                        Ver más →
+                    </a>
+                </header>
+                <div class="strip">
+                    <button type="button" (click)="scrollParaTi(-1)" class="nav-btn left" aria-label="Anterior">
+                        <lucide-icon name="chevron-left" [size]="16"/>
+                    </button>
+                    <div #paraTiScroll class="scroll-row">
+                        @for (product of paraTi(); track product.id) {
+                            <div class="card-wrap">
+                                <ds-product-card [p]="product"
+                                                 (cardClick)="onParaTiCardClick($event)"
+                                                 (addToCart)="onParaTiAddToCart($event)"/>
+                            </div>
+                        }
+                    </div>
+                    <button type="button" (click)="scrollParaTi(1)" class="nav-btn right" aria-label="Siguiente">
+                        <lucide-icon name="chevron-right" [size]="16"/>
+                    </button>
+                </div>
+            </div>
+        </section>
+    }
 
     <!-- ════════════════════════════════════════════════════════
          RECOMENDADOS — 3 secciones (más vendidos / 5★ / nuevos)
@@ -358,6 +395,54 @@
         cursor: pointer; text-decoration: none;
     }
     .flash-body { padding: 16px; }
+
+    /* ── PARA TI — showcase inline (mismo patrón que ds-showcase) ── */
+    .ds-showcase { font-family: var(--f-sans); }
+    .head {
+        display: flex; justify-content: space-between; align-items: baseline;
+        margin-bottom: 8px;
+    }
+    .title-row { display: flex; align-items: center; gap: 8px; }
+    .title-row h2 {
+        font-family: var(--f-display);
+        font-size: 24px; font-weight: 800;
+        color: var(--c-text);
+        margin: 0; letter-spacing: -0.02em;
+    }
+    .ic.para-ti { color: var(--c-brand); }
+    .more {
+        color: var(--c-brand); font-size: 13px; font-weight: 700;
+        text-decoration: none; cursor: pointer;
+    }
+    .strip { position: relative; }
+    .nav-btn {
+        position: absolute; top: 50%; transform: translateY(-50%);
+        z-index: 2; width: 36px; height: 36px;
+        background: var(--c-surface);
+        border: 1px solid var(--c-border);
+        border-radius: 999px;
+        color: var(--c-text); cursor: pointer;
+        display: inline-flex; align-items: center; justify-content: center;
+        box-shadow: var(--s-md);
+        opacity: .9; transition: opacity 120ms, transform 120ms, background 120ms;
+    }
+    .nav-btn:hover {
+        opacity: 1; background: var(--c-brand); color: var(--c-onBrand, #fff);
+        border-color: var(--c-brand);
+    }
+    .nav-btn.left  { left: -12px; }
+    .nav-btn.right { right: -12px; }
+    .scroll-row {
+        display: flex; gap: 12px;
+        overflow-x: auto; padding: 4px 4px 12px;
+        scroll-snap-type: x mandatory;
+        scrollbar-width: none;
+    }
+    .scroll-row::-webkit-scrollbar { display: none; }
+    .card-wrap {
+        flex-shrink: 0; width: 200px;
+        scroll-snap-align: start;
+    }
 
     /* ── RESPONSIVE ─────────────────────────────────── */
     @media (max-width: 1024px) {

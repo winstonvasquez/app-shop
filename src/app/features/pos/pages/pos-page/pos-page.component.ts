@@ -521,6 +521,9 @@ export class PosPageComponent implements OnInit, OnDestroy {
 
     // ── Venta ─────────────────────────────────────────────────────
     procesarVenta(): void {
+        // Guard anti doble-venta (reentrada): cubre doble-click y el atajo F5,
+        // que disparan procesarVenta() sin pasar por el [disabled] del botón.
+        if (this.isLoading()) return;
         if (this.carrito.isEmpty()) {
             this.showToast('Agrega productos al pedido');
             return;
@@ -580,7 +583,8 @@ export class PosPageComponent implements OnInit, OnDestroy {
         }
 
         this.isLoading.set(true);
-        this.ventaService.procesarVenta(request).subscribe({
+        // Idempotency-Key por venta: el backend deduplica si la request se reenvía.
+        this.ventaService.procesarVenta(request, crypto.randomUUID()).subscribe({
             next: venta => {
                 this.lastVenta.set(venta);
                 this.carrito.vaciarCarrito();

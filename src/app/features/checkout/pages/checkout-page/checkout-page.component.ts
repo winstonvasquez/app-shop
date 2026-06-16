@@ -145,6 +145,17 @@ export class CheckoutPageComponent implements OnInit {
   /** Referencia al intervalo de polling de Yape */
   private yapePollingInterval: ReturnType<typeof setInterval> | null = null;
 
+  /** True mientras CUALQUIER flujo de pago esté en curso (tarjeta o Yape). */
+  isProcessing = computed(() => this.isLoading() || this.yapeLoading());
+
+  /** Etiqueta del CTA principal del resumen según el método de pago elegido. */
+  ctaLabel = computed(() => {
+    const m = this.selectedPaymentMethod();
+    if (m === 'VIS' || m === 'MAS') return 'Pagar S/ ' + this.finalTotal().toFixed(2);
+    if (m === 'YAPE') return 'Pagar con Yape';
+    return this.translate.instant('checkout.confirmarPedido');
+  });
+
   ngOnInit() {
     this.configService.getMediosPago().subscribe(data => this.paymentMethods.set(data));
     this.configService.getCertificaciones().subscribe(data => this.certifications.set(data));
@@ -332,7 +343,7 @@ export class CheckoutPageComponent implements OnInit {
    */
   private async crearPedidoPendiente(): Promise<number> {
     const orderRequest = this.buildOrderRequest('PENDIENTE_PAGO');
-    const response = await firstValueFrom(this.orderService.createOrder(orderRequest));
+    const response = await firstValueFrom(this.orderService.createOrder(orderRequest, crypto.randomUUID()));
     const orderId = response.id ?? (response as unknown as { orderId?: number }).orderId;
     if (!orderId) {
       throw new Error('El servidor no retornó un ID de pedido válido');
@@ -378,6 +389,7 @@ export class CheckoutPageComponent implements OnInit {
    * 5b. Pago RECHAZADO → cancelar pedido (restaura stock) → mostrar error al usuario
    */
   async payWithCard() {
+    if (this.isLoading()) return;   // guard anti doble-submit (reentrada)
     if (!this.cardNumber() || !this.expiryDate() || !this.cvv() || !this.cardholderName()) {
       this.errorMessage.set('Por favor completa todos los campos de la tarjeta');
       return;
@@ -472,6 +484,7 @@ export class CheckoutPageComponent implements OnInit {
    * 5b. REJECTED/EXPIRED → cancelar pedido (restaura stock) → mostrar error
    */
   async initiateYapePayment() {
+    if (this.yapeLoading()) return;   // guard anti doble-submit (reentrada)
     if (!this.validarPrecondicionesPago()) {
       // Reusar el campo yapeError para no confundir al usuario
       this.yapeError.set(this.errorMessage() || 'Por favor selecciona una dirección de envío');
@@ -592,6 +605,7 @@ export class CheckoutPageComponent implements OnInit {
    * ya que no hay un gateway que pueda fallar.
    */
   placeOrder() {
+    if (this.isLoading()) return;   // guard anti doble-submit (reentrada)
     if (!this.validarPrecondicionesPago()) return;
 
     this.isLoading.set(true);
@@ -599,7 +613,7 @@ export class CheckoutPageComponent implements OnInit {
 
     const orderRequest = this.buildOrderRequest();
 
-    this.orderService.createOrder(orderRequest).subscribe({
+    this.orderService.createOrder(orderRequest, crypto.randomUUID()).subscribe({
       next: (response) => {
         this.isLoading.set(false);
         const orderId = response.id ?? (response as unknown as { orderId?: number }).orderId ?? 0;
@@ -611,5 +625,23 @@ export class CheckoutPageComponent implements OnInit {
         this.isLoading.set(false);
       }
     });
+  }
+
+  /**
+   * CTA principal del resumen: despacha al flujo de pago correcto según el
+   * método seleccionado. Antes este botón llamaba placeOrder() directo, lo que
+   * creaba el pedido SIN cobrar aunque el usuario hubiera elegido tarjeta/Yape
+   * (hueco de ingreso). Ahora enruta a la pasarela cuando corresponde.
+   */
+  confirmCheckout() {
+    const metodo = this.selectedPaymentMethod();
+    if (metodo === 'VIS' || metodo === 'MAS') {
+      this.payWithCard();
+    } else if (metodo === 'YAPE') {
+      if (this.yapeIntent()) return;   // el QR ya está visible esperando pago
+      this.initiateYapePayment();
+    } else {
+      this.placeOrder();               // efectivo, transferencia, contra entrega
+    }
   }
 }

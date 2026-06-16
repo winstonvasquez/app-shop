@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpParams, HttpErrorResponse } from '@angular/common/http';
+import { HttpClient, HttpParams, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { environment } from '@env/environment';
@@ -46,9 +46,16 @@ export class OrderService {
             .pipe(catchError(this.handleError));
     }
 
-    createOrder(order: OrderRequest): Observable<OrderResponse> {
+    /**
+     * Crea un pedido. Envía un header `Idempotency-Key` (UUID por intento) para que el
+     * backend deduplique ante reintento de red: el mismo key NO crea dos pedidos.
+     */
+    createOrder(order: OrderRequest, idempotencyKey?: string): Observable<OrderResponse> {
+        const headers = idempotencyKey
+            ? new HttpHeaders({ 'Idempotency-Key': idempotencyKey })
+            : undefined;
         return this.http
-            .post<OrderResponse>(this.baseUrl, order)
+            .post<OrderResponse>(this.baseUrl, order, { headers })
             .pipe(catchError(this.handleError));
     }
 

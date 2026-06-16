@@ -56,7 +56,7 @@
 
             <!-- Main image + trust cards -->
             <div class="main-col">
-                <div class="main-img">
+                <div class="main-img" (click)="lightboxOpen.set(true)" style="cursor: zoom-in" title="Clic para ampliar">
                     @if (activeImage(); as img) {
                         <img [src]="img.url" [alt]="p.nombre"/>
                     }
@@ -146,8 +146,15 @@
                             @for (v of p.variants; track v.id) {
                                 <button class="vchip"
                                     [class.is-active]="selectedVariant()?.id === v.id"
+                                    [class.is-out]="v.stockActual <= 0"
+                                    [disabled]="v.stockActual <= 0"
                                     (click)="selectVariant(v)" type="button">
-                                    {{ v.nombre }}
+                                    <span class="vchip-name">{{ v.nombre }}</span>
+                                    @if (v.stockActual <= 0) {
+                                        <small class="vchip-stock">Agotado</small>
+                                    } @else if (v.stockActual <= 5) {
+                                        <small class="vchip-stock">Últimas {{ v.stockActual }} u.</small>
+                                    }
                                 </button>
                             }
                         </div>
@@ -280,6 +287,34 @@
             </section>
         }
 
+        <!-- Barra de compra sticky (solo móvil) -->
+        <div class="mobile-buybar">
+            <ds-price [now]="effectivePrice()" [was]="p.originalPrice || null" size="lg" tone="priceNow"/>
+            <ds-button variant="accent" size="lg" icon="shopping-cart"
+                [disabled]="!stock()" (click)="addToCart()">
+                {{ !stock() ? 'Agotado' : 'Agregar' }}
+            </ds-button>
+        </div>
+
+        <!-- Lightbox de imagen ampliada -->
+        @if (lightboxOpen()) {
+        <div class="lightbox" (click)="lightboxOpen.set(false)">
+            <button class="lightbox-close" type="button" aria-label="Cerrar"
+                (click)="lightboxOpen.set(false)">✕</button>
+            @if (p.images.length > 1) {
+            <button class="lightbox-nav prev" type="button" aria-label="Imagen anterior"
+                (click)="$event.stopPropagation(); prevImage()">‹</button>
+            }
+            @if (activeImage(); as img) {
+            <img class="lightbox-img" [src]="img.url" [alt]="p.nombre" (click)="$event.stopPropagation()"/>
+            }
+            @if (p.images.length > 1) {
+            <button class="lightbox-nav next" type="button" aria-label="Imagen siguiente"
+                (click)="$event.stopPropagation(); nextImage()">›</button>
+            }
+        </div>
+        }
+
     }
 
 </div>
@@ -350,7 +385,8 @@
         overflow: hidden;
         aspect-ratio: 1;
     }
-    .main-img img { width: 100%; height: 100%; object-fit: contain; display: block; }
+    .main-img img { width: 100%; height: 100%; object-fit: contain; display: block; transition: transform .35s ease; }
+    .main-img:hover img { transform: scale(1.12); }
 
     .trust-grid {
         display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
@@ -420,6 +456,11 @@
         font-weight: 700;
         padding: 7px 13px;
     }
+    .vchip { display: inline-flex; flex-direction: column; align-items: center; gap: 1px; line-height: 1.15; }
+    .vchip-stock { font-size: 10px; font-weight: 600; color: var(--color-text-muted, #8a8a8a); }
+    .vchip.is-out { opacity: .5; cursor: not-allowed; }
+    .vchip.is-out .vchip-name { text-decoration: line-through; }
+    .vchip.is-out .vchip-stock { color: var(--color-error, #c0392b); }
 
     .qty-row {
         display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
@@ -568,9 +609,45 @@
         .top { padding: 8px 16px 24px; }
         .bc-wrap { padding: 12px 16px 8px; }
         .tabs-wrap { padding: 0 16px 24px; }
-        .similar { padding: 0 16px 32px; }
+        .similar { padding: 0 16px 96px; }   /* espacio para la buybar fija */
         .similar-grid { grid-template-columns: repeat(2, 1fr); }
         .trust-grid { grid-template-columns: 1fr; }
         .title { font-size: 18px; }
+        .mobile-buybar {
+            display: flex; align-items: center; justify-content: space-between; gap: 12px;
+            position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;
+            padding: 10px 16px;
+            background: var(--c-surface); border-top: 1px solid var(--c-border);
+            box-shadow: 0 -2px 12px rgba(0,0,0,.1);
+        }
     }
+
+    /* Barra de compra sticky en móvil (oculta en desktop) */
+    .mobile-buybar { display: none; }
+
+    /* Lightbox de imagen ampliada */
+    .lightbox {
+        position: fixed; inset: 0; z-index: 1000;
+        background: rgba(0,0,0,.85);
+        display: flex; align-items: center; justify-content: center;
+        padding: 24px;
+    }
+    .lightbox-img { max-width: 90vw; max-height: 90vh; object-fit: contain; border-radius: 8px; }
+    .lightbox-close {
+        position: absolute; top: 16px; right: 20px;
+        width: 44px; height: 44px; border-radius: 50%;
+        background: rgba(255,255,255,.14); color: #fff; border: none;
+        font-size: 20px; cursor: pointer; line-height: 1;
+    }
+    .lightbox-close:hover { background: rgba(255,255,255,.28); }
+    .lightbox-nav {
+        position: absolute; top: 50%; transform: translateY(-50%);
+        width: 52px; height: 52px; border-radius: 50%;
+        background: rgba(255,255,255,.14); color: #fff; border: none;
+        font-size: 32px; cursor: pointer; line-height: 1;
+        display: flex; align-items: center; justify-content: center;
+    }
+    .lightbox-nav:hover { background: rgba(255,255,255,.28); }
+    .lightbox-nav.prev { left: 20px; }
+    .lightbox-nav.next { right: 20px; }
 </style>

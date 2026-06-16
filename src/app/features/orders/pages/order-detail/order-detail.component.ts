@@ -3,6 +3,7 @@ import { DatePipe, DecimalPipe } from '@angular/common';
 import { RouterLink, ActivatedRoute } from '@angular/router';
 import { OrderService } from '@core/services/order.service';
 import { OrderResponse } from '@core/models/order.model';
+import { CartService } from '@features/cart/services/cart.service';
 
 /** Estados del pedido con orden de progresión para el timeline */
 const ESTADOS_TIMELINE = [
@@ -23,6 +24,7 @@ const ESTADOS_TIMELINE = [
 export class OrderDetailComponent implements OnInit {
     private route = inject(ActivatedRoute);
     private orderService = inject(OrderService);
+    private cartService = inject(CartService);
 
     order = signal<OrderResponse | null>(null);
     loading = signal(true);
@@ -57,6 +59,24 @@ export class OrderDetailComponent implements OnInit {
         if (estado === 'CANCELADO') return -1;
         const idx = ESTADOS_TIMELINE.findIndex(e => e.key === estado);
         return idx >= 0 ? idx : 0;
+    }
+
+    /** "Volver a comprar": re-agrega todos los ítems del pedido al carrito y abre el drawer. */
+    reordenar(): void {
+        const o = this.order();
+        if (!o?.detalles?.length) return;
+        for (const d of o.detalles) {
+            this.cartService.addToCart({
+                id: d.productoId,
+                sku: d.sku,
+                variantName: d.varianteNombre,
+                name: d.productoNombre,
+                price: d.precioUnitario,
+                quantity: d.cantidad,
+                image: '',
+            });
+        }
+        this.cartService.openDrawer();
     }
 
     getEstadoBadgeClass(estado: string): string {

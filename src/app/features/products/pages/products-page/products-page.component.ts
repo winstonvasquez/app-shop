@@ -214,6 +214,21 @@ export class ProductsPageComponent implements OnInit {
     onPriceMaxInput(value: string): void { this.precioMax.set(value ? Number(value) : null); }
     applyPriceFilter(): void { this.goToPage(1); }
 
+    /** Tope de referencia del slider visual: mayor precio visible (mín. S/1000). */
+    readonly precioTope = computed(() => {
+        const max = this.products().reduce((m, p) => Math.max(m, p.now ?? 0), 0);
+        return max > 0 ? max : 1000;
+    });
+
+    /** Posiciones (%) del relleno y los handles según el rango min/máx seleccionado. */
+    readonly priceSlider = computed(() => {
+        const tope = this.precioTope();
+        const pct = (v: number) => Math.max(0, Math.min(100, (v / tope) * 100));
+        const left = pct(this.precioMin() ?? 0);
+        const right = pct(this.precioMax() ?? tope);
+        return { left: left + '%', right: right + '%', width: Math.max(0, right - left) + '%' };
+    });
+
     setView(mode: 'grid' | 'list'): void { this.viewMode.set(mode); }
 
     loadProducts(page: number = this.currentPage()) {
