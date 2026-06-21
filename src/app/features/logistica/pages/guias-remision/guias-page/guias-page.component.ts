@@ -10,7 +10,7 @@ import { DateInputComponent } from '@shared/ui/forms/date-input/date-input.compo
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
-import { pageTotalElements } from '@core/models/pagination.model';
+import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 
 const MOTIVOS_TRASLADO: { codigo: string; descripcion: string }[] = [
     { codigo: '01', descripcion: '01 — Venta' },
@@ -165,11 +165,15 @@ export class GuiasPageComponent implements OnInit {
 
     cargarGuias() {
         this.loading.set(true);
-        this.guiaService.getGuias(this.companyId).subscribe({
+        this.guiaService.getGuias(this.companyId, {
+            page: this.currentPage(),
+            size: this.pageSize()
+        }).subscribe({
             next: (res) => {
                 this.guias.set(res.content);
                 this.guiasFiltradas.set(res.content);
                 this.totalElements.set(pageTotalElements(res));
+                this.totalPages.set(pageTotalPages(res));
                 this.loading.set(false);
             },
             error: () => {
@@ -178,6 +182,12 @@ export class GuiasPageComponent implements OnInit {
                 this.loading.set(false);
             }
         });
+    }
+
+    onPageChange(event: PaginationChangeEvent) {
+        this.currentPage.set(event.page);
+        this.pageSize.set(event.size);
+        this.cargarGuias();
     }
 
     aplicarFiltro() {

@@ -1,30 +1,31 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators, FormGroup, FormControl } from '@angular/forms';
 import { InventoryApiService } from '../../services/inventory-api.service';
-import { KardexEntry, InventoryMovementType } from '../../models/inventory.models';
+import { KardexEntry } from '../../models/inventory.models';
 import { DataTableComponent, TableColumn, PaginationEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { ButtonComponent } from '@shared/components';
+import { ProductLookupComponent } from '../../components/product-lookup/product-lookup.component';
+import { ProductResponse } from '@core/models/product.model';
 
 @Component({
     selector: 'app-kardex-view',
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
-        ReactiveFormsModule,
-        DataTableComponent, PageHeaderComponent, AlertComponent, ButtonComponent
+        DataTableComponent, PageHeaderComponent, AlertComponent, ButtonComponent,
+        ProductLookupComponent
     ],
     templateUrl: './kardex-view.component.html'
 })
 export class KardexViewComponent {
     private readonly api = inject(InventoryApiService);
-    private readonly fb = inject(FormBuilder);
 
     entries = signal<KardexEntry[]>([]);
     loading = signal(false);
     error = signal<string | null>(null);
     currentProductId = signal<number | null>(null);
+    currentProductName = signal<string | null>(null);
 
     currentPage = signal(0);
     pageSize = signal(20);
@@ -65,16 +66,12 @@ export class KardexViewComponent {
           render: (r) => r.performedBy ?? '—' }
     ];
 
-    searchForm: FormGroup = this.fb.nonNullable.group({
-        productId: [null as number | null, [Validators.required, Validators.min(1)]]
-    });
-
-    onSearch(): void {
-        if (this.searchForm.invalid) { this.searchForm.markAllAsTouched(); return; }
-        const id = Number(this.searchForm.getRawValue().productId);
-        this.currentProductId.set(id);
+    /** El usuario eligió un producto del buscador → carga su kardex. */
+    onProductSelected(p: ProductResponse): void {
+        this.currentProductId.set(p.id);
+        this.currentProductName.set(p.nombre);
         this.currentPage.set(0);
-        this.loadKardex(id);
+        this.loadKardex(p.id);
     }
 
     loadKardex(productId: number): void {
@@ -118,6 +115,4 @@ export class KardexViewComponent {
         this.currentPage.set(e.page);
         this.pageSize.set(e.size);
     }
-
-    getCtrl(name: string): FormControl { return this.searchForm.get(name) as FormControl; }
 }

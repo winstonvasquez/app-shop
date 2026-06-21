@@ -1,27 +1,33 @@
-export type PickingOrderStatus = 'PENDING' | 'ASSIGNED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
-export type PickingItemStatus = 'PENDING' | 'PICKED' | 'SKIPPED';
+// Alineado al contrato real del backend (PickingOrderResponse / PickingOrderItemResponse).
+export type PickingOrderStatus = 'PENDING_PICKING' | 'PICKING' | 'PICKED' | 'CANCELLED';
 
 export interface PickingItem {
     id: string;
-    productId: string;
+    productoId: string;
+    varianteId?: string;
     sku: string;
-    productName: string;
-    locationCode: string;
-    requestedQty: number;
-    pickedQty: number;
-    status: PickingItemStatus;
+    productoNombre: string;
+    cantidadSolicitada: number;
+    cantidadRecogida: number;
+    ubicacion?: string;
+    notas?: string;
+    /** Secuencia de recorrido (pick path) optimizada por ubicación: 1, 2, 3… */
+    secuencia: number;
 }
 
 export interface PickingOrder {
     id: string;
-    referenceOrderId: string;
-    companyId: string;
-    assignedTo?: string;
+    orderId: string;
+    warehouseId: string;
     status: PickingOrderStatus;
-    items: PickingItem[];
-    completionPercent: number;
+    assignedTo?: string;
+    pickingStartedAt?: string;
+    pickingCompletedAt?: string;
+    notes?: string;
+    companyId: string;
     createdAt: string;
     updatedAt?: string;
+    items: PickingItem[];
 }
 
 export interface PickingPage {
@@ -33,8 +39,8 @@ export interface PickingPage {
 }
 
 export interface PickItemBody {
-    pickedQty: number;
-    locationCode?: string;
+    cantidadRecogida: number;
+    notas?: string;
 }
 
 export interface CompletePickingBody {

@@ -6,6 +6,7 @@ import { InventoryApiService } from '../../services/inventory-api.service';
 import { Location, Warehouse } from '../../models/inventory.models';
 import { DataTableComponent, TableColumn, TableAction, PaginationEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
+import { ModalComponent } from '@shared/components/modal/modal.component';
 import { ButtonComponent } from '@shared/components';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
@@ -17,7 +18,7 @@ import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.compo
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
         ReactiveFormsModule,
-        DataTableComponent, DrawerComponent,
+        DataTableComponent, DrawerComponent, ModalComponent,
         PageHeaderComponent, AlertComponent, FormFieldComponent, ButtonComponent
     ],
     templateUrl: './location-management.component.html',
@@ -44,6 +45,9 @@ export class LocationManagementComponent implements OnInit {
     submitting = signal(false);
     submitError = signal<string | null>(null);
 
+    showConfirmDelete = signal(false);
+    pendingDeleteId = signal<number | null>(null);
+
     breadcrumbs: Breadcrumb[] = [
         { label: 'Admin', url: '/admin' },
         { label: 'Inventario', url: '/admin/inventario/dashboard' },
@@ -67,7 +71,7 @@ export class LocationManagementComponent implements OnInit {
 
     actions: TableAction<Location>[] = [
         { label: 'Editar',   icon: 'edit',  class: 'btn-icon-edit',   onClick: (r) => this.openEdit(r) },
-        { label: 'Eliminar', icon: 'trash', class: 'btn-icon-delete', onClick: (r) => this.onDelete(r.id) }
+        { label: 'Eliminar', icon: 'trash', class: 'btn-icon-delete', onClick: (r) => this.confirmDelete(r.id) }
     ];
 
     form: FormGroup = this.fb.nonNullable.group({
@@ -151,11 +155,23 @@ export class LocationManagementComponent implements OnInit {
         });
     }
 
-    onDelete(id: number): void {
-        if (!confirm('¿Eliminar esta ubicación?')) return;
+    confirmDelete(id: number): void {
+        this.pendingDeleteId.set(id);
+        this.showConfirmDelete.set(true);
+    }
+
+    cancelDelete(): void {
+        this.pendingDeleteId.set(null);
+        this.showConfirmDelete.set(false);
+    }
+
+    executeDelete(): void {
+        const id = this.pendingDeleteId();
+        if (id === null) return;
+        this.showConfirmDelete.set(false);
         this.api.deleteLocation(id).subscribe({
-            next: () => { if (this.selectedWarehouseId()) this.loadLocations(this.selectedWarehouseId()!); },
-            error: (err: Error) => this.error.set(err.message)
+            next: () => { this.pendingDeleteId.set(null); if (this.selectedWarehouseId()) this.loadLocations(this.selectedWarehouseId()!); },
+            error: (err: Error) => { this.pendingDeleteId.set(null); this.error.set(err.message); }
         });
     }
 

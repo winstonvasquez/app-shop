@@ -16,11 +16,125 @@ import {
     PageResponse
 } from '../models/inventory.models';
 
+/**
+ * KPIs del dashboard de inventario. Refleja el contrato real del backend
+ * (DashboardInventarioResponse de microshoplogistica, endpoint /api/dashboard/inventory).
+ * Los movimientos recientes NO vienen aquí — se cargan aparte vía getMovements().
+ */
 export interface DashboardSummary {
-    totalStock: number;
-    lowStockProducts: number;
-    pendingTransfers: number;
-    recentMovements: InventoryMovement[];
+    totalAlmacenes: number;
+    almacenesActivos: number;
+    productosStockBajo: number;
+    productosNecesitanReorden: number;
+    movimientosHoy: number;
+    /** Inventory Record Accuracy (IRA) del último conteo físico cerrado. null si no hay conteos. */
+    inventoryAccuracyPct: number | null;
+}
+
+/** Clasificación ABC (Pareto) — resumen por clase A/B/C. */
+export interface AbcClaseResumen {
+    clase: string;
+    productos: number;
+    valor: number;
+    valorPct: number;
+    productosPct: number;
+}
+
+/** Un producto clasificado en la curva de Pareto del inventario. */
+export interface AbcItem {
+    productId: number;
+    valorConsumo: number;
+    unidades: number;
+    participacionPct: number;
+    acumuladoPct: number;
+    clase: string;
+}
+
+/** Respuesta del análisis ABC de inventario. */
+export interface AbcAnalysis {
+    periodoDias: number;
+    totalProductos: number;
+    valorTotal: number;
+    resumen: AbcClaseResumen[];
+    items: AbcItem[];
+}
+
+/** Una ubicación candidata de putaway. */
+export interface PutawaySuggestion {
+    locationId: number;
+    code: string;
+    name: string;
+    ubicacion: string;
+    locationType: string | null;
+    capacidad: number | null;
+    ocupado: number;
+    disponible: number | null;
+    razon: string;
+}
+
+/** Sugerencias de putaway para guardar un producto en un almacén. */
+export interface PutawayResponse {
+    warehouseId: number;
+    productId: number;
+    cantidad: number;
+    totalSugerencias: number;
+    sugerencias: PutawaySuggestion[];
+}
+
+/** Línea de un ASN: esperado vs. recibido. */
+export interface AsnLine {
+    id: number;
+    productId: number;
+    sku: string | null;
+    productName: string | null;
+    expectedQuantity: number;
+    receivedQuantity: number;
+    unitCost: number | null;
+    notes: string | null;
+}
+
+/** ASN (Advanced Shipping Notice) — recepción controlada de mercadería. */
+export interface Asn {
+    id: number;
+    asnNumber: string;
+    supplierName: string | null;
+    referenceDocument: string | null;
+    warehouseId: number;
+    expectedDate: string | null;
+    status: string;            // PENDIENTE | CONFORME | CON_DIFERENCIAS
+    receivedDate: string | null;
+    receivedBy: string | null;
+    notes: string | null;
+    createdAt: string;
+    lines: AsnLine[];
+}
+
+export interface CreateAsnLineRequest {
+    productId: number;
+    sku?: string;
+    productName?: string;
+    expectedQuantity: number;
+    unitCost?: number;
+    notes?: string;
+}
+
+export interface CreateAsnRequest {
+    supplierName?: string;
+    referenceDocument?: string;
+    warehouseId: number;
+    expectedDate?: string;
+    notes?: string;
+    lines: CreateAsnLineRequest[];
+}
+
+export interface ReceiveAsnLine {
+    lineId: number;
+    receivedQuantity: number;
+    notes?: string;
+}
+
+export interface ReceiveAsnRequest {
+    lines: ReceiveAsnLine[];
 }
 
 @Injectable({
@@ -171,12 +285,60 @@ export class InventoryApiService {
         return this.http.get<PageResponse<InventoryCount>>(`${this.baseUrl}/inventory/counts`, { params: httpParams });
     }
 
+    /**
+     * Aplica los ajustes de un conteo físico CERRADO: genera los movimientos
+     * ENTRADA_AJUSTE / SALIDA_AJUSTE al kardex y deja el conteo en AJUSTADO.
+     * Idempotente en backend (re-invocar sobre uno ya AJUSTADO no duplica).
+     */
+    /** Cierra un conteo EN_PROCESO (congela como paso previo al ajuste). Idempotente en backend. */
+    closeInventoryCount(id: number): Observable<InventoryCount> {
+        return this.http.post<InventoryCount>(`${this.baseUrl}/inventory/counts/${id}/close`, {});
+    }
+
+    applyCountAdjustments(id: number): Observable<InventoryCount> {
+        return this.http.post<InventoryCount>(`${this.baseUrl}/inventory/counts/${id}/apply-adjustments`, {});
+    }
+
     getKardexByProduct(productId: number): Observable<KardexEntry[]> {
         return this.http.get<KardexEntry[]>(`${this.baseUrl}/kardex/product/${productId}`);
     }
 
     getDashboardSummary(): Observable<DashboardSummary> {
         return this.http.get<DashboardSummary>(`${this.baseUrl}/dashboard/inventory`);
+    }
+
+    /** Análisis ABC del inventario (Pareto por valor de consumo en los últimos `dias`). */
+    getAbcAnalysis(dias = 365): Observable<AbcAnalysis> {
+        return this.http.get<AbcAnalysis>(`${this.baseUrl}/inventory/abc-analysis`, {
+            params: this.buildParams({ dias })
+        });
+    }
+
+    /** Sugerencias de putaway (ubicación de almacenamiento) para una recepción. */
+    getPutawaySuggestions(warehouseId: number, productId: number, quantity?: number): Observable<PutawayResponse> {
+        return this.http.get<PutawayResponse>(`${this.baseUrl}/inventory/putaway/suggest`, {
+            params: this.buildParams({ warehouseId, productId, quantity })
+        });
+    }
+
+    // ── ASN (recepción controlada) ────────────────────────────────────
+    getAsnList(params?: { status?: string; page?: number; size?: number }): Observable<PageResponse<Asn>> {
+        return this.http.get<PageResponse<Asn>>(`${this.baseUrl}/inventory/asn`, {
+            params: this.buildParams({ status: params?.status, page: params?.page, size: params?.size })
+        });
+    }
+
+    getAsn(id: number): Observable<Asn> {
+        return this.http.get<Asn>(`${this.baseUrl}/inventory/asn/${id}`);
+    }
+
+    createAsn(body: CreateAsnRequest): Observable<Asn> {
+        return this.http.post<Asn>(`${this.baseUrl}/inventory/asn`, body);
+    }
+
+    /** Recibe un ASN: confirma cantidades, genera entradas al kardex y marca el estado. */
+    receiveAsn(id: number, body: ReceiveAsnRequest): Observable<Asn> {
+        return this.http.post<Asn>(`${this.baseUrl}/inventory/asn/${id}/receive`, body);
     }
 
     exportInventoryReport(params: {

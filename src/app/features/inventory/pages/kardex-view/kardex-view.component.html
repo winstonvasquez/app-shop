@@ -10,27 +10,26 @@
     </div>
   </app-page-header>
 
-  <!-- Barra de búsqueda -->
-  <div class="filters-bar" [formGroup]="searchForm" (keydown.enter)="onSearch()">
-    <div class="filter-field">
-      <label class="input-label">Producto ID</label>
-      <input class="form-input" type="number" formControlName="productId"
-             style="min-width:220px"
-             placeholder="Ingresa el ID del producto" />
-    </div>
-    <div class="filter-action">
-      <app-button icon="search" label="Buscar Kardex" variant="primary"
-        [disabled]="loading()" (click)="onSearch()" />
-    </div>
+  <!-- Búsqueda de producto -->
+  <div style="max-width:560px;margin-bottom:1rem">
+    <app-product-lookup placeholder="Buscar producto por nombre o SKU"
+      (selected)="onProductSelected($event)" />
   </div>
+
+  @if (currentProductName()) {
+    <div class="text-subtle" style="font-size:0.9rem;margin-bottom:0.5rem">
+      Kardex de <strong>{{ currentProductName() }}</strong>
+      <span style="font-size:0.75rem">#{{ currentProductId() }}</span>
+    </div>
+  }
 
   @if (error()) {
     <app-alert type="error" [message]="error()!" [dismissible]="true" (dismiss)="error.set(null)" />
   }
 
   @if (!currentProductId() && !loading()) {
-    <div class="card card-body" style="text-align:center; color:var(--color-text-secondary); padding:3rem 1rem">
-      Ingresa un ID de producto y haz clic en "Buscar Kardex" para ver el historial.
+    <div class="empty-state">
+      <p class="empty-state-desc">Buscá un producto por nombre para ver su historial de kardex.</p>
     </div>
   } @else {
     <app-data-table

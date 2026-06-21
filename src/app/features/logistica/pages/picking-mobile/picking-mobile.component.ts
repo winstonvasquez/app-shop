@@ -1,11 +1,12 @@
 import { Component, inject, signal, computed, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { PickingService } from '../../services/picking.service';
 import { PickingOrder, PickingItem } from '../../models/picking.model';
+import { ButtonComponent } from '@shared/components';
 
 @Component({
     selector: 'app-picking-mobile',
     standalone: true,
-    imports: [],
+    imports: [ButtonComponent],
     templateUrl: './picking-mobile.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -17,12 +18,17 @@ export class PickingMobileComponent implements OnInit {
     error = signal<string | null>(null);
     pickingItemId = signal<string | null>(null);
 
+    /** Un ítem se considera recogido cuando la cantidad recogida cubre la solicitada. */
+    private isPicked(i: PickingItem): boolean {
+        return i.cantidadRecogida >= i.cantidadSolicitada;
+    }
+
     totalItems = computed(() =>
         this.orders().reduce((sum, o) => sum + o.items.length, 0)
     );
 
     pickedItems = computed(() =>
-        this.orders().reduce((sum, o) => sum + o.items.filter(i => i.status === 'PICKED').length, 0)
+        this.orders().reduce((sum, o) => sum + o.items.filter(i => this.isPicked(i)).length, 0)
     );
 
     overallProgress = computed(() => {
@@ -54,7 +60,7 @@ export class PickingMobileComponent implements OnInit {
         if (this.pickingItemId() === item.id) return;
         this.pickingItemId.set(item.id);
         this.pickingService.pickItem(orderId, item.id, {
-            pickedQty: item.requestedQty
+            cantidadRecogida: item.cantidadSolicitada
         }).subscribe({
             next: (updated) => {
                 this.orders.update(list =>
@@ -68,20 +74,35 @@ export class PickingMobileComponent implements OnInit {
         });
     }
 
+    /** Progreso de la orden: ítems recogidos / total. */
     orderProgress(order: PickingOrder): number {
-        return Math.round(order.completionPercent);
+        const total = order.items.length;
+        if (total === 0) return 0;
+        const picked = order.items.filter(i => this.isPicked(i)).length;
+        return Math.round((picked / total) * 100);
     }
 
+    /** Ítems aún por recoger, ya en orden de recorrido (el backend los devuelve por `secuencia`). */
     pendingItems(order: PickingOrder): PickingItem[] {
-        return order.items.filter(i => i.status === 'PENDING');
+        return order.items.filter(i => !this.isPicked(i));
     }
 
     statusClass(status: string): string {
         switch (status) {
-            case 'IN_PROGRESS': return 'bg-warning/10 text-warning';
-            case 'COMPLETED': return 'bg-success/10 text-success';
-            case 'ASSIGNED': return 'bg-info/10 text-info';
-            default: return 'bg-gray-100 text-gray-600';
+            case 'PICKING':  return 'bg-warning/10 text-warning';
+            case 'PICKED':   return 'bg-success/10 text-success';
+            case 'CANCELLED': return 'bg-error/10 text-error';
+            default:         return 'bg-gray-100 text-gray-600';
+        }
+    }
+
+    statusLabel(status: string): string {
+        switch (status) {
+            case 'PENDING_PICKING': return 'Pendiente';
+            case 'PICKING':         return 'En proceso';
+            case 'PICKED':          return 'Completado';
+            case 'CANCELLED':       return 'Cancelado';
+            default:                return status;
         }
     }
 }

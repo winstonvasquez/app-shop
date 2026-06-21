@@ -2,7 +2,10 @@ import { Component, ChangeDetectionStrategy, computed, inject, signal } from '@a
 import { DatePipe } from '@angular/common';
 import { NgApexchartsModule } from 'ng-apexcharts';
 import { InventoryApiService, DashboardSummary } from '../../services/inventory-api.service';
+import { InventoryMovement } from '../../models/inventory.models';
 import { ChartDefaultsService, CHART_COLORS } from '@shared/services/chart-defaults.service';
+import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
+import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import {
     ApexAxisChartSeries, ApexChart, ApexFill, ApexGrid,
     ApexNonAxisChartSeries, ApexPlotOptions, ApexLegend,
@@ -12,45 +15,43 @@ import {
 @Component({
     selector: 'app-inventory-dashboard',
     standalone: true,
-    imports: [DatePipe, NgApexchartsModule],
+    imports: [DatePipe, NgApexchartsModule, PageHeaderComponent, AlertComponent],
     changeDetection: ChangeDetectionStrategy.OnPush,
     template: `
-        <div class="page-header">
-            <div>
-                <h1 class="page-title">Dashboard de Inventario</h1>
-                <p class="page-subtitle">Resumen general de stock y movimientos recientes.</p>
-            </div>
-        </div>
+        <div class="page-container">
+        <app-page-header
+            title="Dashboard de Inventario"
+            subtitle="Resumen general de stock y movimientos recientes."
+            [breadcrumbs]="breadcrumbs">
+        </app-page-header>
 
         @if (loading()) {
             <div class="loading-container"><div class="spinner"></div></div>
         }
 
         @if (error()) {
-            <div class="card" style="border-left:3px solid var(--color-error);padding:1rem;margin-bottom:1.25rem">
-                <p class="text-subtle">{{ error() }}</p>
-            </div>
+            <app-alert type="error" [message]="error()!" [dismissible]="true" (dismiss)="error.set(null)" />
         }
 
         <!-- KPI Cards -->
-        <div class="kpi-grid kpi-grid-4">
+        <div class="kpi-grid kpi-grid-5">
             <div class="kpi-card kpi-card-blue">
                 <div class="kpi-top">
-                    <span class="kpi-label">Stock Total</span>
+                    <span class="kpi-label">Almacenes activos</span>
                     <div class="kpi-icon kpi-icon-blue">
                         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                                d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0H5m14 0h2M5 21H3m4-14h2m-2 4h2m-2 4h2m4-8h2m-2 4h2m-2 4h2"/>
                         </svg>
                     </div>
                 </div>
-                <div class="kpi-value">{{ summary()?.totalStock ?? 0 }}</div>
-                <div class="kpi-sub">unidades totales</div>
+                <div class="kpi-value">{{ summary()?.almacenesActivos ?? 0 }}</div>
+                <div class="kpi-sub">de {{ summary()?.totalAlmacenes ?? 0 }} totales</div>
             </div>
 
             <div class="kpi-card kpi-card-yellow">
                 <div class="kpi-top">
-                    <span class="kpi-label">Bajo Stock</span>
+                    <span class="kpi-label">Stock bajo</span>
                     <div class="kpi-icon kpi-icon-yellow">
                         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -58,27 +59,27 @@ import {
                         </svg>
                     </div>
                 </div>
-                <div class="kpi-value">{{ summary()?.lowStockProducts ?? 0 }}</div>
-                <div class="kpi-sub">productos a reponer</div>
+                <div class="kpi-value">{{ summary()?.productosStockBajo ?? 0 }}</div>
+                <div class="kpi-sub">productos bajo el mínimo</div>
             </div>
 
             <div class="kpi-card kpi-card-orange">
                 <div class="kpi-top">
-                    <span class="kpi-label">Transferencias</span>
+                    <span class="kpi-label">Necesitan reorden</span>
                     <div class="kpi-icon kpi-icon-orange">
                         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
+                                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
                         </svg>
                     </div>
                 </div>
-                <div class="kpi-value">{{ summary()?.pendingTransfers ?? 0 }}</div>
-                <div class="kpi-sub">pendientes</div>
+                <div class="kpi-value">{{ summary()?.productosNecesitanReorden ?? 0 }}</div>
+                <div class="kpi-sub">bajo punto de reorden</div>
             </div>
 
             <div class="kpi-card kpi-card-red">
                 <div class="kpi-top">
-                    <span class="kpi-label">Movimientos 7d</span>
+                    <span class="kpi-label">Movimientos hoy</span>
                     <div class="kpi-icon kpi-icon-red">
                         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -86,14 +87,38 @@ import {
                         </svg>
                     </div>
                 </div>
-                <div class="kpi-value">{{ recentMovements().length }}</div>
-                <div class="kpi-sub">registros</div>
+                <div class="kpi-value">{{ summary()?.movimientosHoy ?? 0 }}</div>
+                <div class="kpi-sub">registros del día</div>
+            </div>
+
+            <!-- IRA — Inventory Record Accuracy (exactitud del último conteo físico) -->
+            <div class="kpi-card"
+                [class.kpi-card-green]="iraOk()"
+                [class.kpi-card-yellow]="iraBelowTarget()"
+                [class.kpi-card-teal]="iraValue() === null">
+                <div class="kpi-top">
+                    <span class="kpi-label">Exactitud (IRA)</span>
+                    <div class="kpi-icon"
+                        [class.kpi-icon-green]="iraOk()"
+                        [class.kpi-icon-yellow]="iraBelowTarget()"
+                        [class.kpi-icon-blue]="iraValue() === null">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </div>
+                </div>
+                <div class="kpi-value">{{ iraDisplay() }}</div>
+                <div class="kpi-sub">
+                    @if (iraValue() === null) { sin conteos cerrados }
+                    @else { objetivo ≥ 98% · último conteo }
+                </div>
             </div>
         </div>
 
         @if (summary()) {
             <!-- Charts row -->
-            <div class="dash-row dash-row-2-1">
+            <div class="dash-row dash-row-2-1" style="margin-top:0">
                 <!-- Área: Tendencia semanal -->
                 <div class="chart-card">
                     <div class="chart-card-header">
@@ -149,6 +174,7 @@ import {
                 </div>
             </div>
         }
+        </div>
     `
 })
 export class InventoryDashboardComponent {
@@ -156,10 +182,23 @@ export class InventoryDashboardComponent {
     private readonly chartDefaults = inject(ChartDefaultsService);
 
     summary = signal<DashboardSummary | null>(null);
+    recentMovements = signal<InventoryMovement[]>([]);
     loading = signal(false);
     error = signal<string | null>(null);
 
-    recentMovements = computed(() => this.summary()?.recentMovements ?? []);
+    readonly breadcrumbs: Breadcrumb[] = [
+        { label: 'Inicio',     url: '/admin/dashboard' },
+        { label: 'Inventario' }
+    ];
+
+    /* ── IRA — Inventory Record Accuracy ──────────────────────── */
+    readonly iraValue = computed(() => this.summary()?.inventoryAccuracyPct ?? null);
+    readonly iraDisplay = computed(() => {
+        const v = this.iraValue();
+        return v === null ? '—' : `${v.toFixed(1)}%`;
+    });
+    readonly iraOk = computed(() => { const v = this.iraValue(); return v !== null && v >= 98; });
+    readonly iraBelowTarget = computed(() => { const v = this.iraValue(); return v !== null && v < 98; });
 
     /* ── Chart: Área — tendencia semanal ──────────────────────── */
     areaChart: ApexChart = this.chartDefaults.areaChart(240);
@@ -167,7 +206,7 @@ export class InventoryDashboardComponent {
     areaStroke: ApexStroke = this.chartDefaults.areaStroke();
     areaGrid: ApexGrid = this.chartDefaults.grid();
     areaColors = [CHART_COLORS[0]];
-    areaTooltip: ApexTooltip = { theme: 'dark', y: { formatter: (v: number) => v + ' movimientos' } };
+    areaTooltip: ApexTooltip = { theme: 'light', y: { formatter: (v: number) => v + ' movimientos' } };
 
     areaSeries = computed<ApexAxisChartSeries>(() => {
         const now = new Date();
@@ -193,7 +232,10 @@ export class InventoryDashboardComponent {
         labels: { style: { colors: this.chartDefaults.textColor }, formatter: (v) => String(Math.round(v)) }
     };
 
-    constructor() { this.loadSummary(); }
+    constructor() {
+        this.loadSummary();
+        this.loadMovements();
+    }
 
     private loadSummary(): void {
         this.loading.set(true);
@@ -201,6 +243,14 @@ export class InventoryDashboardComponent {
         this.api.getDashboardSummary().subscribe({
             next: (response) => { this.summary.set(response); this.loading.set(false); },
             error: (err: Error) => { this.error.set(err.message); this.loading.set(false); }
+        });
+    }
+
+    /** Los movimientos recientes no vienen en el dashboard del backend: se cargan aparte. */
+    private loadMovements(): void {
+        this.api.getMovements({ page: 0, size: 50 }).subscribe({
+            next: (res) => this.recentMovements.set(res.content ?? []),
+            error: () => this.recentMovements.set([])
         });
     }
 }

@@ -95,14 +95,67 @@
         </select>
       </div>
 
-      <app-form-field label="Producto ID" [control]="getCtrl('productId')"
-        type="number" placeholder="ID del producto" [required]="true" />
+      <div class="col-span-2">
+        <label class="input-label">Producto <span class="text-error">*</span></label>
+        @if (selectedProductName()) {
+          <div class="flex items-center justify-between gap-2 rounded-lg border border-border-subtle px-3 py-2"
+               style="margin-top:0.25rem">
+            <span class="text-sm">{{ selectedProductName() }}
+              <span class="text-subtle" style="font-size:0.75rem">#{{ getCtrl('productId').value }}</span>
+            </span>
+            <app-button variant="secondary" size="sm" label="Cambiar" (click)="clearProduct()" />
+          </div>
+        } @else {
+          <app-product-lookup placeholder="Buscar producto por nombre o SKU"
+            (selected)="onProductSelected($event)" />
+          @if (getCtrl('productId').touched && getCtrl('productId').invalid) {
+            <span class="text-error" style="font-size:0.75rem">Seleccioná un producto.</span>
+          }
+        }
+      </div>
 
       <app-form-field label="Cantidad" [control]="getCtrl('quantity')"
         type="number" placeholder="0" [required]="true" />
 
       <app-form-field label="Costo Unitario (S/)" [control]="getCtrl('unitCost')"
         type="number" placeholder="0.00" />
+
+      @if (isEntrada()) {
+        <div class="col-span-2">
+          <label class="input-label">Ubicación sugerida (putaway)</label>
+          @if (selectedLocationLabel()) {
+            <div class="flex items-center justify-between gap-2 rounded-lg border border-border-subtle px-3 py-2"
+                 style="margin-top:0.25rem">
+              <span class="text-sm">{{ selectedLocationLabel() }}</span>
+              <app-button variant="secondary" size="sm" label="Quitar" (click)="clearLocation()" />
+            </div>
+          } @else {
+            <div style="margin-top:0.25rem">
+              <app-button variant="secondary" size="sm"
+                [label]="loadingPutaway() ? 'Buscando...' : 'Sugerir ubicación'"
+                [loading]="loadingPutaway()"
+                [disabled]="!getCtrl('warehouseId').value || !getCtrl('productId').value || loadingPutaway()"
+                (click)="suggestPutaway()" />
+              @if (putawaySuggestions().length) {
+                <div class="space-y-1" style="margin-top:0.5rem">
+                  @for (s of putawaySuggestions(); track s.locationId) {
+                    <button type="button"
+                      class="w-full rounded-lg border border-border-subtle px-3 py-2 text-left text-xs hover:bg-surface-raised"
+                      (click)="pickLocation(s)">
+                      <div class="font-semibold">{{ s.code }} — {{ s.ubicacion }}</div>
+                      <div class="text-subtle">{{ s.razon }}@if (s.disponible !== null) { · disponible {{ s.disponible }}}</div>
+                    </button>
+                  }
+                </div>
+              } @else if (putawaySearched()) {
+                <p class="text-subtle text-xs" style="margin-top:0.5rem">
+                  Sin ubicaciones con capacidad disponible. Se guardará sin ubicación específica.
+                </p>
+              }
+            </div>
+          }
+        </div>
+      }
 
       <div class="col-span-2">
         <app-date-input label="Fecha" formControlName="movementDate" [required]="true" />

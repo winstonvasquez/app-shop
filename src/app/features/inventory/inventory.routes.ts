@@ -37,5 +37,13 @@ export const inventoryRoutes: Routes = [
     {
         path: 'kardex',
         loadComponent: () => import('./pages/kardex-view/kardex-view.component').then(m => m.KardexViewComponent)
+    },
+    {
+        path: 'abc',
+        loadComponent: () => import('./pages/abc-analysis/abc-analysis.component').then(m => m.AbcAnalysisComponent)
+    },
+    {
+        path: 'asn',
+        loadComponent: () => import('./pages/asn/asn.component').then(m => m.AsnComponent)
     }
 ];

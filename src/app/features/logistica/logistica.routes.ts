@@ -14,21 +14,11 @@ export const logisticaRoutes: Routes = [
         loadComponent: () => import('./pages/dashboard-logistica/dashboard-logistica.component')
           .then(m => m.DashboardLogisticaComponent)
       },
-      {
-        path: 'almacenes',
-        loadComponent: () => import('./pages/almacenes/almacenes-page/almacenes-page.component')
-          .then(m => m.AlmacenesPageComponent)
-      },
-      {
-        path: 'inventario',
-        loadComponent: () => import('./pages/inventario/inventario-page/inventario-page.component')
-          .then(m => m.InventarioPageComponent)
-      },
-      {
-        path: 'movimientos',
-        loadComponent: () => import('./pages/movimientos/movimientos-page/movimientos-page.component')
-          .then(m => m.MovimientosPageComponent)
-      },
+      // --- Dominio WMS movido al módulo Inventario (dedup de IA 2026-06-16). ---
+      // Se conservan como redirects para no romper enlaces/bookmarks antiguos.
+      { path: 'almacenes',   redirectTo: '/admin/inventario/almacenes',   pathMatch: 'full' },
+      { path: 'inventario',  redirectTo: '/admin/inventario/stock',       pathMatch: 'full' },
+      { path: 'movimientos', redirectTo: '/admin/inventario/movimientos', pathMatch: 'full' },
       {
         path: 'guias',
         loadComponent: () => import('./pages/guias-remision/guias-page/guias-page.component')
@@ -38,6 +28,11 @@ export const logisticaRoutes: Routes = [
         path: 'tracking',
         loadComponent: () => import('./pages/tracking/tracking-page/tracking-page.component')
           .then(m => m.TrackingPageComponent)
+      },
+      {
+        path: 'rutas',
+        loadComponent: () => import('./pages/delivery-routes/delivery-routes.component')
+          .then(m => m.DeliveryRoutesComponent)
       },
       {
         path: 'transportistas',
@@ -53,6 +48,31 @@ export const logisticaRoutes: Routes = [
         path: 'devoluciones',
         loadComponent: () => import('./pages/devoluciones/devoluciones-page.component')
           .then(m => m.DevolucionesPageComponent)
+      },
+      {
+        path: 'batch-picking',
+        loadComponent: () => import('./pages/batch-picking/batch-picking.component')
+          .then(m => m.BatchPickingComponent)
+      },
+      {
+        path: 'kpi',
+        loadComponent: () => import('./pages/kpi-dashboard/kpi-dashboard.component')
+          .then(m => m.KpiDashboardComponent)
+      },
+      {
+        path: 'picking-mobile',
+        loadComponent: () => import('./pages/picking-mobile/picking-mobile.component')
+          .then(m => m.PickingMobileComponent)
+      },
+      {
+        path: 'stock-reservations',
+        loadComponent: () => import('./pages/stock-reservations/stock-reservations.component')
+          .then(m => m.StockReservationsComponent)
+      },
+      {
+        path: 'notificaciones',
+        loadComponent: () => import('./pages/notifications/notifications.component')
+          .then(m => m.NotificationsComponent)
       }
     ]
   }

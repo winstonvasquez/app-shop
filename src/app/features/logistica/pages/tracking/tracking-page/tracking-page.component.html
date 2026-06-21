@@ -79,14 +79,15 @@
     <app-button variant="secondary" icon="refresh-cw" label="Actualizar" (click)="cargarEnvios()"></app-button>
   </div>
   <app-data-table
-    [data]="envios()"
+    [data]="enviosPagina()"
     [columns]="columns"
     [actions]="envioActions"
     [loading]="loadingEnvios()"
-    [totalPages]="1"
+    [totalPages]="totalPages()"
     [totalElements]="envios().length"
-    [currentPage]="0"
-    [pageSize]="100">
+    [currentPage]="currentPage()"
+    [pageSize]="pageSize()"
+    (paginationChange)="onPageChange($event)">
   </app-data-table>
 </div>
 </div>

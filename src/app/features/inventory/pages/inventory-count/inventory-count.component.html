@@ -24,6 +24,9 @@
   @if (error()) {
     <app-alert type="error" [message]="error()!" [dismissible]="true" (dismiss)="error.set(null)" />
   }
+  @if (info()) {
+    <app-alert type="success" [message]="info()!" [dismissible]="true" (dismiss)="info.set(null)" />
+  }
 
   <app-data-table
     [data]="counts()"
@@ -33,6 +36,7 @@
     [pageSize]="pageSize()"
     [totalElements]="totalElements()"
     [totalPages]="totalPages()"
+    [actions]="actions"
     (pageChange)="onPageChange($event)">
   </app-data-table>
 
@@ -75,24 +79,29 @@
     <!-- Detalle de conteo -->
     <div class="items-section">
       <div class="items-header">
-        <span class="input-label">Productos contados</span>
-        <app-button icon="plus" label="Agregar" variant="secondary" size="sm" (click)="addDetail()" />
+        <span class="input-label">Productos contados <span class="text-error">*</span></span>
       </div>
+      <app-product-lookup placeholder="Buscar producto para agregar al conteo"
+        (selected)="onAddProductRow($event)" />
 
-      <div formArrayName="details">
+      <div formArrayName="details" style="margin-top:0.75rem">
         @for (detail of details.controls; track $index; let i = $index) {
           <div class="item-row" [formGroupName]="i">
-            <app-form-field label="Producto ID" [control]="getDetailCtrl(i, 'productId')"
-              type="number" placeholder="ID" [required]="true" />
+            <div style="flex:1;min-width:0">
+              <label class="input-label">Producto</label>
+              <div class="text-sm" style="padding:0.4rem 0">
+                {{ getDetailCtrl(i, 'productName').value || ('Producto #' + getDetailCtrl(i, 'productId').value) }}
+              </div>
+            </div>
             <app-form-field label="Cantidad Contada" [control]="getDetailCtrl(i, 'countedQuantity')"
               type="number" placeholder="0" [required]="true" />
             <app-form-field label="Notas" [control]="getDetailCtrl(i, 'notes')"
               type="text" placeholder="Observación" />
-            @if (details.length > 1) {
-              <app-button [iconOnly]="true" icon="x" variant="danger" size="sm"
-                ariaLabel="Eliminar fila" (click)="removeDetail(i)" label="Eliminar" />
-            }
+            <app-button [iconOnly]="true" icon="x" variant="danger" size="sm"
+              ariaLabel="Eliminar fila" (click)="removeDetail(i)" label="Eliminar" />
           </div>
+        } @empty {
+          <p class="text-subtle text-xs" style="margin-top:0.5rem">Buscá productos para agregarlos al conteo.</p>
         }
       </div>
     </div>
@@ -101,6 +110,6 @@
   <div slot="footer">
     <app-button icon="x" label="Cancelar" variant="secondary" (click)="closeDrawer()" />
     <app-button icon="clipboard-check" label="Crear Conteo" variant="primary"
-      [loading]="submitting()" [disabled]="form.invalid" (click)="onSubmit()" />
+      [loading]="submitting()" [disabled]="form.invalid || details.length === 0" (click)="onSubmit()" />
   </div>
 </app-drawer>

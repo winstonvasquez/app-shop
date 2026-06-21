@@ -18,19 +18,21 @@ export class PickingService {
         return this.http.get<PickingOrder[]>(`${this.baseUrl}/my-orders`);
     }
 
+    // El backend expone estas mutaciones como PUT (no POST).
     assignOrder(id: string): Observable<PickingOrder> {
-        return this.http.post<PickingOrder>(`${this.baseUrl}/${id}/assign`, {});
+        return this.http.put<PickingOrder>(`${this.baseUrl}/${id}/assign`, {});
     }
 
+    /** Inicia el picking de una orden asignada al operario (flujo mobile). */
     startOrder(id: string): Observable<PickingOrder> {
-        return this.http.post<PickingOrder>(`${this.baseUrl}/${id}/start`, {});
+        return this.http.put<PickingOrder>(`${this.baseUrl}/${id}/start-mobile`, {});
     }
 
     pickItem(orderId: string, itemId: string, body: PickItemBody): Observable<PickingOrder> {
-        return this.http.post<PickingOrder>(`${this.baseUrl}/${orderId}/items/${itemId}/pick`, body);
+        return this.http.put<PickingOrder>(`${this.baseUrl}/${orderId}/items/${itemId}/pick`, body);
     }
 
     completeOrder(id: string, body: CompletePickingBody): Observable<PickingOrder> {
-        return this.http.post<PickingOrder>(`${this.baseUrl}/${id}/complete`, body);
+        return this.http.put<PickingOrder>(`${this.baseUrl}/${id}/complete`, body);
     }
 }

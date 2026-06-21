@@ -3,16 +3,24 @@ import { DatePipe } from '@angular/common';
 import { DeliveryRouteService } from '../../services/delivery-route.service';
 import { DeliveryRoute } from '../../models/delivery-route.model';
 import { ButtonComponent } from '@shared/components';
+import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
+import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 
 @Component({
     selector: 'app-delivery-routes',
     standalone: true,
-    imports: [DatePipe, ButtonComponent],
+    imports: [DatePipe, ButtonComponent, AlertComponent, PageHeaderComponent],
     templateUrl: './delivery-routes.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DeliveryRoutesComponent implements OnInit {
     private readonly routeService = inject(DeliveryRouteService);
+
+    readonly breadcrumbs: Breadcrumb[] = [
+        { label: 'Inicio',    url: '/admin/dashboard' },
+        { label: 'Logística', url: '/logistica/dashboard' },
+        { label: 'Rutas de Entrega' }
+    ];
 
     routes = signal<DeliveryRoute[]>([]);
     loading = signal(false);

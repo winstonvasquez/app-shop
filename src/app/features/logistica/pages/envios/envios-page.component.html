@@ -4,12 +4,15 @@
     subtitle="Gestión de despachos y seguimiento de entrega"
     [breadcrumbs]="breadcrumbs">
     <div actions>
-      <app-button icon="plus" variant="primary" label="Nuevo Envío" (clicked)="openCreateForm()" />
+      <app-button icon="plus" variant="primary" label="Nuevo Envío" (click)="openCreateForm()" />
     </div>
   </app-page-header>
 
   @if (error()) {
     <app-alert type="error" [message]="error()!" (dismiss)="error.set(null)" [dismissible]="true" />
+  }
+  @if (confirmInfo()) {
+    <app-alert type="success" [message]="confirmInfo()!" (dismiss)="confirmInfo.set(null)" [dismissible]="true" />
   }
 
   <!-- Filtros -->
@@ -131,11 +134,11 @@
   }
 
   <div slot="footer">
-    <app-button icon="x" variant="secondary" label="Cancelar" (clicked)="closeForm()" />
+    <app-button icon="x" variant="secondary" label="Cancelar" (click)="closeForm()" />
     <app-button icon="send" variant="primary"
       [label]="submitting() ? 'Creando...' : 'Crear Envío'"
       [disabled]="submitting()"
-      (clicked)="onSubmit()" />
+      (click)="onSubmit()" />
   </div>
 </app-drawer>
 
@@ -214,4 +217,68 @@
 
     </div>
   }
+</app-drawer>
+
+<!-- Drawer: Confirmar entrega (POD + GPS) -->
+<app-drawer
+  [isOpen]="showConfirm()"
+  title="Confirmar entrega"
+  size="md" side="right" [hasFooter]="true"
+  (closed)="closeConfirm()">
+
+  @if (confirmTarget(); as envio) {
+    <form [formGroup]="confirmForm">
+      @if (confirmError()) {
+        <app-alert type="error" [message]="confirmError()!" [dismissible]="true" (dismiss)="confirmError.set(null)" />
+      }
+
+      <p class="text-subtle" style="font-size:0.85rem;margin-bottom:0.75rem">
+        Envío <strong>{{ envio.trackingNumber }}</strong> · {{ envio.recipientName }}
+      </p>
+
+      <div style="margin-bottom:0.75rem">
+        <label class="input-label">Recibido por <span class="text-error">*</span></label>
+        <input class="form-input" formControlName="receivedBy" placeholder="Nombre de quien recibe" />
+      </div>
+
+      <div style="margin-bottom:0.75rem">
+        <label class="input-label">DNI / documento (opcional)</label>
+        <input class="form-input" formControlName="receiverIdNumber" placeholder="N° de documento" />
+      </div>
+
+      <!-- Captura GPS -->
+      <div class="card card-body" style="margin-bottom:0.75rem">
+        <div class="flex items-center justify-between gap-2">
+          <span class="input-label" style="margin:0">Ubicación de entrega (GPS)</span>
+          <app-button variant="secondary" size="sm" icon="map-pin"
+            [label]="capturingGps() ? 'Obteniendo...' : 'Capturar ubicación'"
+            [loading]="capturingGps()" [disabled]="capturingGps()"
+            (click)="captureGps()" />
+        </div>
+        @if (gpsLat() !== null && gpsLng() !== null) {
+          <p class="text-sm" style="margin-top:0.5rem">
+            📍 {{ gpsLat() }}, {{ gpsLng() }}
+            <span class="text-subtle" style="font-size:0.72rem">(±{{ gpsAccuracy() }} m)</span>
+          </p>
+          <a class="text-sm" style="color:var(--color-primary)" target="_blank" rel="noopener"
+             [href]="'https://maps.google.com/?q=' + gpsLat() + ',' + gpsLng()">Ver en el mapa</a>
+        } @else if (gpsError()) {
+          <p class="text-error text-xs" style="margin-top:0.5rem">{{ gpsError() }}</p>
+        } @else {
+          <p class="text-subtle text-xs" style="margin-top:0.5rem">Opcional. Registra dónde se confirmó la entrega.</p>
+        }
+      </div>
+
+      <div>
+        <label class="input-label">Notas</label>
+        <input class="form-input" formControlName="notes" placeholder="Observaciones de la entrega" />
+      </div>
+    </form>
+  }
+
+  <div slot="footer">
+    <app-button icon="x" label="Cancelar" variant="secondary" (click)="closeConfirm()" />
+    <app-button icon="check" label="Confirmar entrega" variant="primary"
+      [loading]="submittingConfirm()" [disabled]="confirmForm.invalid" (click)="submitConfirm()" />
+  </div>
 </app-drawer>

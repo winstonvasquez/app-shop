@@ -44,18 +44,17 @@ const ALL_NAV_GROUPS: NavGroup[] = [
     ]
   },
   {
+    // Logística = fulfillment + transporte (NO duplica el dominio WMS, que vive en Inventario).
     title: 'Logística',
     moduleCode: 'LOGISTICA',
     items: [
-      { label: 'Dashboard Logístico',  route: '/admin/logistica/dashboard',      icon: 'truck' },
-      { label: 'Almacenes',            route: '/admin/logistica/almacenes',      icon: 'warehouse' },
-      { label: 'Inventario',           route: '/admin/logistica/inventario',     icon: 'box' },
-      { label: 'Movimientos Stock',    route: '/admin/logistica/movimientos',    icon: 'clipboard' },
+      { label: 'Dashboard Logístico',  route: '/admin/logistica/dashboard',      icon: 'chart' },
+      { label: 'Envíos',               route: '/admin/logistica/envios',         icon: 'truck' },
+      { label: 'Tracking',             route: '/admin/logistica/tracking',       icon: 'location' },
+      { label: 'Rutas de Entrega',     route: '/admin/logistica/rutas',          icon: 'clipboard' },
       { label: 'Guías de Remisión',    route: '/admin/logistica/guias',          icon: 'document-text' },
-      { label: 'Transportistas',       route: '/admin/logistica/transportistas', icon: 'truck' },
-      { label: 'Envíos',              route: '/admin/logistica/envios',         icon: 'location' },
-      { label: 'Devoluciones',         route: '/admin/logistica/devoluciones',   icon: 'return' },
-      { label: 'Tracking',             route: '/admin/logistica/tracking',       icon: 'location' }
+      { label: 'Transportistas',       route: '/admin/logistica/transportistas', icon: 'factory' },
+      { label: 'Devoluciones',         route: '/admin/logistica/devoluciones',   icon: 'return' }
     ]
   },
   {
@@ -67,9 +66,11 @@ const ALL_NAV_GROUPS: NavGroup[] = [
       { label: 'Ubicaciones', route: '/admin/inventario/ubicaciones', icon: 'location' },
       { label: 'Stock', route: '/admin/inventario/stock', icon: 'box' },
       { label: 'Movimientos',         route: '/admin/inventario/movimientos',    icon: 'clipboard' },
+      { label: 'Recepción (ASN)',     route: '/admin/inventario/asn',            icon: 'truck' },
       { label: 'Transferencias',      route: '/admin/inventario/transferencias', icon: 'truck' },
       { label: 'Inventarios Físicos', route: '/admin/inventario/conteos',        icon: 'list' },
-      { label: 'Kardex Valorizado',   route: '/admin/inventario/kardex',         icon: 'document' }
+      { label: 'Kardex Valorizado',   route: '/admin/inventario/kardex',         icon: 'document' },
+      { label: 'Análisis ABC',        route: '/admin/inventario/abc',            icon: 'chart-bar' }
     ]
   },
   {

@@ -25,14 +25,15 @@
     [columns]="columns"
     [actions]="actions"
     [loading]="loading()"
-    [totalPages]="1"
+    [totalPages]="totalPages()"
     [totalElements]="totalElements()"
-    [currentPage]="0"
-    [pageSize]="100"
+    [currentPage]="currentPage()"
+    [pageSize]="pageSize()"
     [searchable]="true"
     searchPlaceholder="Buscar por serie, N° o destinatario..."
     [exportable]="true"
-    exportFileName="guias-remision">
+    exportFileName="guias-remision"
+    (paginationChange)="onPageChange($event)">
   </app-data-table>
 </div>
 

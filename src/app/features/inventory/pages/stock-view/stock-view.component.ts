@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { InventoryApiService } from '../../services/inventory-api.service';
+import { ProductsApiService } from '@features/products/services/products-api.service';
 import { InventoryStock, Warehouse } from '../../models/inventory.models';
 import { DataTableComponent, TableColumn, PaginationEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
@@ -15,6 +16,10 @@ import { ButtonComponent } from '@shared/components';
 })
 export class StockViewComponent {
     private readonly api = inject(InventoryApiService);
+    private readonly productsApi = inject(ProductsApiService);
+
+    /** Mapa productId → nombre (el maestro de productos vive en ventas, cross-service). */
+    private readonly productNames = signal<Map<number, string>>(new Map());
 
     warehouses = signal<Warehouse[]>([]);
     allStock = signal<InventoryStock[]>([]);
@@ -36,8 +41,8 @@ export class StockViewComponent {
     ];
 
     columns: TableColumn<InventoryStock>[] = [
-        { key: 'productId',         label: 'Producto ID',  sortable: true, width: '110px',
-          render: (r) => `#${r.productId}` },
+        { key: 'productId',         label: 'Producto',     sortable: true,
+          render: (r) => this.productNames().get(r.productId) ?? `Producto #${r.productId}` },
         { key: 'warehouseName',     label: 'Almacén',
           render: (r) => r.warehouseName ?? String(r.warehouseId) },
         { key: 'quantity',          label: 'Stock',        sortable: true, align: 'right',
@@ -58,12 +63,29 @@ export class StockViewComponent {
         }
     ];
 
-    constructor() { this.loadWarehouses(); }
+    constructor() {
+        this.loadWarehouses();
+        this.loadProductNames();
+    }
 
     loadWarehouses(): void {
         this.api.getWarehouses().subscribe({
             next: (data) => this.warehouses.set(data),
             error: (err: Error) => this.error.set(err.message)
+        });
+    }
+
+    /** Resuelve nombres de producto en bulk; degrada graceful (queda "Producto #id"). */
+    private loadProductNames(): void {
+        this.productsApi.getProducts({ page: 0, size: 500 }).subscribe({
+            next: (page) => {
+                const map = new Map<number, string>();
+                for (const p of page.content) { map.set(p.id, p.nombre); }
+                this.productNames.set(map);
+                // Si el stock ya estaba cargado, refrescar la referencia para re-render del nombre.
+                if (this.stock().length > 0) { this.stock.set([...this.stock()]); }
+            },
+            error: () => this.productNames.set(new Map())
         });
     }
 
@@ -102,9 +124,10 @@ export class StockViewComponent {
 
     exportCsv(): void {
         const bom = '\uFEFF';
-        const headers = ['Producto ID', 'Almacén', 'Stock', 'Reservado', 'Disponible', 'Mínimo', 'Bajo mínimo'];
+        const headers = ['Producto ID', 'Producto', 'Almacén', 'Stock', 'Reservado', 'Disponible', 'Mínimo', 'Bajo mínimo'];
         const rows = this.stock().map(s => [
             s.productId,
+            this.productNames().get(s.productId) ?? '',
             s.warehouseName ?? s.warehouseId,
             s.quantity,
             s.reservedQuantity ?? 0,

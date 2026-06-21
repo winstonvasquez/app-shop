@@ -1,6 +1,7 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators, FormGroup, FormControl } from '@angular/forms';
-import { InventoryApiService } from '../../services/inventory-api.service';
+import { InventoryApiService, PutawaySuggestion } from '../../services/inventory-api.service';
 import {
     InventoryMovement, InventoryMovementRequest, InventoryMovementType, Warehouse
 } from '../../models/inventory.models';
@@ -11,6 +12,8 @@ import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
 import { DateInputComponent } from '@shared/ui/forms/date-input/date-input.component';
 import { ButtonComponent } from '@shared/components';
+import { ProductLookupComponent } from '../../components/product-lookup/product-lookup.component';
+import { ProductResponse } from '@core/models/product.model';
 
 @Component({
     selector: 'app-movement-management',
@@ -21,7 +24,7 @@ import { ButtonComponent } from '@shared/components';
         DataTableComponent, DrawerComponent,
         PageHeaderComponent, AlertComponent,
         FormFieldComponent, DateInputComponent,
-        ButtonComponent
+        ButtonComponent, ProductLookupComponent
     ],
     templateUrl: './movement-management.component.html'
 })
@@ -47,6 +50,17 @@ export class MovementManagementComponent {
     showDrawer = signal(false);
     submitting = signal(false);
     submitError = signal<string | null>(null);
+
+    /** Nombre del producto elegido vía buscador (el form solo guarda el productId). */
+    selectedProductName = signal<string | null>(null);
+
+    /** Estado de putaway (sugerencia de ubicación para entradas). */
+    movementTypeValue = signal<string>('');
+    readonly isEntrada = computed(() => this.movementTypeValue().startsWith('ENTRADA'));
+    putawaySuggestions = signal<PutawaySuggestion[]>([]);
+    loadingPutaway = signal(false);
+    putawaySearched = signal(false);
+    selectedLocationLabel = signal<string | null>(null);
 
     readonly movementTypes: InventoryMovementType[] = [
         'ENTRADA_COMPRA', 'ENTRADA_DEVOLUCION', 'ENTRADA_AJUSTE',
@@ -115,6 +129,13 @@ export class MovementManagementComponent {
     constructor() {
         this.loadWarehouses();
         this.loadMovements();
+        // Reaccionar al tipo de movimiento: putaway solo aplica a entradas.
+        this.form.get('movementType')!.valueChanges
+            .pipe(takeUntilDestroyed())
+            .subscribe((v) => {
+                this.movementTypeValue.set((v as string) ?? '');
+                this.resetPutaway();
+            });
     }
 
     loadWarehouses(): void {
@@ -164,11 +185,68 @@ export class MovementManagementComponent {
 
     openCreate(): void {
         this.form.reset({ movementDate: new Date().toISOString().split('T')[0] });
+        this.selectedProductName.set(null);
+        this.movementTypeValue.set('');
+        this.resetPutaway();
         this.submitError.set(null);
         this.showDrawer.set(true);
     }
 
     closeDrawer(): void { this.showDrawer.set(false); }
+
+    /** El usuario eligió un producto del buscador → llena el productId y muestra el nombre. */
+    onProductSelected(p: ProductResponse): void {
+        this.getCtrl('productId').setValue(p.id);
+        this.selectedProductName.set(p.nombre);
+        this.resetPutaway();
+    }
+
+    clearProduct(): void {
+        this.getCtrl('productId').setValue(null);
+        this.selectedProductName.set(null);
+        this.resetPutaway();
+    }
+
+    /** Pide al backend las mejores ubicaciones para guardar el producto en el almacén elegido. */
+    suggestPutaway(): void {
+        const wid = Number(this.getCtrl('warehouseId').value);
+        const pid = Number(this.getCtrl('productId').value);
+        if (!wid || !pid) return;
+        const qtyRaw = this.getCtrl('quantity').value;
+        this.loadingPutaway.set(true);
+        this.putawaySearched.set(false);
+        this.api.getPutawaySuggestions(wid, pid, qtyRaw != null ? Number(qtyRaw) : undefined).subscribe({
+            next: (res) => {
+                this.putawaySuggestions.set(res.sugerencias);
+                this.loadingPutaway.set(false);
+                this.putawaySearched.set(true);
+            },
+            error: () => {
+                this.putawaySuggestions.set([]);
+                this.loadingPutaway.set(false);
+                this.putawaySearched.set(true);
+            }
+        });
+    }
+
+    pickLocation(s: PutawaySuggestion): void {
+        this.getCtrl('locationId').setValue(s.locationId);
+        this.selectedLocationLabel.set(`${s.code} — ${s.ubicacion}`);
+        this.putawaySuggestions.set([]);
+    }
+
+    clearLocation(): void {
+        this.getCtrl('locationId').setValue(null);
+        this.selectedLocationLabel.set(null);
+        this.putawaySearched.set(false);
+    }
+
+    private resetPutaway(): void {
+        this.putawaySuggestions.set([]);
+        this.selectedLocationLabel.set(null);
+        this.putawaySearched.set(false);
+        this.getCtrl('locationId').setValue(null);
+    }
 
     onSubmit(): void {
         if (this.form.invalid) { this.form.markAllAsTouched(); return; }

@@ -1,36 +1,37 @@
 import { ChangeDetectionStrategy, Component, inject, signal, output, input } from '@angular/core';
 import { ProductsApiService } from '@features/products/services/products-api.service';
 import { ProductResponse } from '@core/models/product.model';
+import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
+import { ButtonComponent } from '@shared/components';
 
 @Component({
     selector: 'app-product-lookup',
     standalone: true,
-    imports: [],
+    imports: [AlertComponent, ButtonComponent],
     changeDetection: ChangeDetectionStrategy.OnPush,
     template: `
-        <div class="rounded-xl border border-border-subtle bg-surface p-4 shadow-sm space-y-3">
+        <div class="card card-body space-y-3">
             <div class="flex flex-col gap-2 md:flex-row md:items-end">
                 <div class="flex-1">
-                    <label class="text-xs font-semibold uppercase text-subtle">Buscar producto</label>
+                    <label class="input-label">Buscar producto</label>
                     <input
-                        class="mt-2 w-full rounded-lg border border-border px-3 py-2 text-sm"
+                        class="form-input mt-1"
                         [placeholder]="placeholder()"
                         [value]="query()"
                         (input)="query.set($any($event.target).value)"
                     />
                 </div>
-                <button
-                    type="button"
-                    class="rounded-full border border-border px-4 py-2 text-xs font-semibold text-on hover:bg-surface-raised"
-                    (click)="search()"
+                <app-button
+                    variant="secondary"
+                    [label]="loading() ? 'Buscando...' : 'Buscar'"
+                    [loading]="loading()"
                     [disabled]="loading()"
-                >
-                    {{ loading() ? 'Buscando...' : 'Buscar' }}
-                </button>
+                    (click)="search()"
+                />
             </div>
 
             @if (error()) {
-                <div class="rounded-lg border border-error/30 bg-error/10 p-3 text-xs text-error-hover">{{ error() }}</div>
+                <app-alert type="error" [message]="error()!" [dismissible]="true" (dismiss)="error.set(null)" />
             }
 
             @if (results().length) {
@@ -47,7 +48,7 @@ import { ProductResponse } from '@core/models/product.model';
                     }
                 </div>
             } @else {
-                <p class="text-xs text-gray-400">Sin resultados.</p>
+                <p class="text-xs text-subtle">Sin resultados.</p>
             }
         </div>
     `

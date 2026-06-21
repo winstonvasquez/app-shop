@@ -3,11 +3,12 @@ import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { DatePipe } from '@angular/common';
 import { StockReservationService } from '../../services/stock-reservation.service';
 import { StockReservation, ReservationStatus } from '../../models/stock-reservation.model';
+import { ButtonComponent } from '@shared/components';
 
 @Component({
     selector: 'app-stock-reservations',
     standalone: true,
-    imports: [ReactiveFormsModule, DatePipe],
+    imports: [ReactiveFormsModule, DatePipe, ButtonComponent],
     templateUrl: './stock-reservations.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
 })

@@ -4,13 +4,15 @@ import {
 } from '@angular/forms';
 import { InventoryApiService } from '../../services/inventory-api.service';
 import { InventoryCount, InventoryCountRequest, InventoryCountStatus, Warehouse } from '../../models/inventory.models';
-import { DataTableComponent, TableColumn, PaginationEvent } from '@shared/ui/tables/data-table/data-table.component';
+import { DataTableComponent, TableColumn, TableAction, PaginationEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
 import { DateInputComponent } from '@shared/ui/forms/date-input/date-input.component';
 import { ButtonComponent } from '@shared/components';
+import { ProductLookupComponent } from '../../components/product-lookup/product-lookup.component';
+import { ProductResponse } from '@core/models/product.model';
 
 @Component({
     selector: 'app-inventory-count',
@@ -21,7 +23,7 @@ import { ButtonComponent } from '@shared/components';
         DataTableComponent, DrawerComponent,
         PageHeaderComponent, AlertComponent,
         FormFieldComponent, DateInputComponent,
-        ButtonComponent
+        ButtonComponent, ProductLookupComponent
     ],
     templateUrl: './inventory-count.component.html',
     styleUrl: './inventory-count.component.scss'
@@ -34,6 +36,8 @@ export class InventoryCountComponent {
     warehouses = signal<Warehouse[]>([]);
     loading = signal(false);
     error = signal<string | null>(null);
+    info = signal<string | null>(null);
+    applyingId = signal<number | null>(null);
 
     currentPage = signal(0);
     pageSize = signal(20);
@@ -78,6 +82,21 @@ export class InventoryCountComponent {
         }
     ];
 
+    actions: TableAction<InventoryCount>[] = [
+        {
+            label: 'Cerrar',
+            class: 'btn btn-secondary',
+            show: (r) => r.status === 'EN_PROCESO',
+            onClick: (r) => this.onCloseCount(r.id)
+        },
+        {
+            label: 'Aplicar ajustes',
+            class: 'btn btn-primary',
+            show: (r) => r.status === 'CERRADO',
+            onClick: (r) => this.onApplyAdjustments(r.id)
+        }
+    ];
+
     form: FormGroup = this.fb.nonNullable.group({
         warehouseId: [null as number | null, Validators.required],
         countDate:   ['', Validators.required],
@@ -87,12 +106,19 @@ export class InventoryCountComponent {
 
     get details(): FormArray { return this.form.get('details') as FormArray; }
 
-    newDetailRow(): FormGroup {
+    newDetailRow(productId: number | null = null, productName = ''): FormGroup {
         return this.fb.nonNullable.group({
-            productId:       [null as number | null, Validators.required],
+            productId:       [productId, Validators.required],
+            productName:     [productName],
             countedQuantity: [null as number | null, [Validators.required, Validators.min(0)]],
             notes:           ['']
         });
+    }
+
+    /** Agrega una fila prellenada con el producto elegido en el buscador (evita duplicados). */
+    onAddProductRow(p: ProductResponse): void {
+        if (this.details.controls.some(c => Number(c.get('productId')?.value) === p.id)) return;
+        this.details.push(this.newDetailRow(p.id, p.nombre));
     }
 
     constructor() {
@@ -121,6 +147,41 @@ export class InventoryCountComponent {
         });
     }
 
+    /** Cierra un conteo EN_PROCESO (congela como paso previo al ajuste). */
+    onCloseCount(id: number): void {
+        if (this.applyingId() !== null) return;
+        this.applyingId.set(id);
+        this.error.set(null);
+        this.info.set(null);
+        this.api.closeInventoryCount(id).subscribe({
+            next: (c) => {
+                this.applyingId.set(null);
+                this.info.set(`Conteo ${c.countNumber ?? id} cerrado. Ya podés aplicar los ajustes.`);
+                this.loadCounts();
+            },
+            error: (err: Error) => { this.applyingId.set(null); this.error.set(err.message); }
+        });
+    }
+
+    /**
+     * Aplica los ajustes de un conteo CERRADO: genera los movimientos de ajuste al kardex.
+     * El backend valida el estado (solo CERRADO) y es idempotente.
+     */
+    onApplyAdjustments(id: number): void {
+        if (this.applyingId() !== null) return;
+        this.applyingId.set(id);
+        this.error.set(null);
+        this.info.set(null);
+        this.api.applyCountAdjustments(id).subscribe({
+            next: (c) => {
+                this.applyingId.set(null);
+                this.info.set(`Conteo ${c.countNumber ?? id} ajustado: el stock fue corregido según las diferencias contadas.`);
+                this.loadCounts();
+            },
+            error: (err: Error) => { this.applyingId.set(null); this.error.set(err.message); }
+        });
+    }
+
     onFilterStatus(event: Event): void {
         this.filterStatus.set((event.target as HTMLSelectElement).value);
         this.currentPage.set(0);
@@ -128,18 +189,17 @@ export class InventoryCountComponent {
     }
 
     openCreate(): void {
-        while (this.details.length > 1) this.details.removeAt(this.details.length - 1);
-        this.details.at(0).reset();
+        while (this.details.length > 0) this.details.removeAt(0);
         this.form.reset({ countDate: new Date().toISOString().split('T')[0] });
         this.submitError.set(null);
         this.showDrawer.set(true);
     }
 
     closeDrawer(): void { this.showDrawer.set(false); }
-    addDetail(): void { this.details.push(this.newDetailRow()); }
-    removeDetail(i: number): void { if (this.details.length > 1) this.details.removeAt(i); }
+    removeDetail(i: number): void { this.details.removeAt(i); }
 
     onSubmit(): void {
+        if (this.details.length === 0) { this.submitError.set('Agregá al menos un producto al conteo.'); return; }
         if (this.form.invalid) { this.form.markAllAsTouched(); return; }
         this.submitting.set(true);
         const v = this.form.getRawValue();

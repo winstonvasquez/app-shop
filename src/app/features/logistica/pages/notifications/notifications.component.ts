@@ -72,7 +72,7 @@ export class NotificationsComponent implements OnInit {
         switch (type) {
             case 'PICKING_ASSIGNED': return 'bg-info/10 text-info';
             case 'STOCK_LOW': return 'bg-error/10 text-error';
-            case 'SHIPMENT_DELAYED': return 'bg-orange-100 text-orange-700';
+            case 'SHIPMENT_DELAYED': return 'bg-warning/10 text-warning';
             case 'DELIVERY_COMPLETED': return 'bg-success/10 text-success';
             default: return 'bg-gray-100 text-gray-600';
         }

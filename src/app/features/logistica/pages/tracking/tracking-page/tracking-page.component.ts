@@ -1,10 +1,11 @@
-import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { DatePipe } from '@angular/common';
 import { ShipmentService, TrackingInfoResponse, ShipmentResponse } from '../../../services/shipment.service';
 import { DataTableComponent, TableColumn, TableAction } from '@shared/ui/tables/data-table/data-table.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { ButtonComponent } from '@shared/components';
+import { PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
 
 @Component({
     selector: 'app-tracking-page',
@@ -53,6 +54,18 @@ export class TrackingPageComponent {
     readonly loadingEnvios = signal(false);
     readonly errorMsg      = signal('');
 
+    // Paginación: ShipmentService.getShipments() devuelve un array plano sin paginación
+    // server-side. Los valores son coherentes con los datos reales recibidos;
+    // no se miente el total. Cuando el endpoint soporte paginación, agregar
+    // parámetros page/size aquí y en el servicio.
+    readonly currentPage  = signal(0);
+    readonly pageSize     = signal(20);
+    readonly totalPages   = computed(() => Math.max(1, Math.ceil(this.envios().length / this.pageSize())));
+    readonly enviosPagina = computed(() => {
+        const start = this.currentPage() * this.pageSize();
+        return this.envios().slice(start, start + this.pageSize());
+    });
+
     constructor() {
         this.cargarEnvios();
     }
@@ -93,6 +106,14 @@ export class TrackingPageComponent {
         this.searchForm.patchValue({ trackingInput: trackingNumber });
         this.buscarTracking();
         window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    onPageChange(event: PaginationChangeEvent) {
+        this.currentPage.set(event.page);
+        this.pageSize.set(event.size);
+        // Sin re-fetch: los datos ya están en memoria (endpoint plano).
+        // Si el endpoint adopta paginación server-side en el futuro,
+        // llamar this.cargarEnvios() aquí con los nuevos params.
     }
 
     statusBadge(status: string): string {

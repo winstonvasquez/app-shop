@@ -8,13 +8,12 @@
             placeholder="ID de orden"
             class="border rounded px-3 py-2 flex-1"
         />
-        <button
+        <app-button
             type="submit"
-            [disabled]="loading()"
-            class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 disabled:opacity-50"
-        >
-            {{ loading() ? 'Buscando...' : 'Buscar' }}
-        </button>
+            variant="primary"
+            [label]="loading() ? 'Buscando...' : 'Buscar'"
+            [loading]="loading()"
+            [disabled]="loading()" />
     </form>
 
     @if (error()) {
