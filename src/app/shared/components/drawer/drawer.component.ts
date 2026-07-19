@@ -108,7 +108,7 @@ export type DrawerSize = 'sm' | 'md' | 'lg' | 'xl' | 'full';
       /* Botones del drawer: ~70% menos ovalados (12px → 6px) */
       .drawer ::ng-deep app-button .btn { border-radius: 6px; }
       /* Espaciado entre botones del footer (funciona con o sin wrapper <div slot=footer>) */
-      .drawer-footer ::ng-deep app-button + app-button { margin-inline-start: 16px; }
+      .drawer-footer ::ng-deep app-button + app-button { margin-inline-start: 20px; }
 
       /* ===== Formularios proyectados dentro del drawer (::ng-deep, scoped al body) ===== */
       .drawer-body ::ng-deep fieldset,
