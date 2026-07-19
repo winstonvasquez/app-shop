@@ -37,7 +37,7 @@ export class ProductsComponent implements OnInit {
 
   // Pagination state
   currentPage = signal(0);
-  pageSize = signal(10);
+  pageSize = signal(20);
   totalElements = signal(0);
   totalPages = signal(0);
 
