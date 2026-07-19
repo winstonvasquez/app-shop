@@ -1,5 +1,4 @@
 import { Component, input, ChangeDetectionStrategy } from '@angular/core';
-import { RouterLink } from '@angular/router';
 
 export interface Breadcrumb {
     label: string;
@@ -9,29 +8,12 @@ export interface Breadcrumb {
 @Component({
     selector: 'app-page-header',
     standalone: true,
-    imports: [RouterLink],
     changeDetection: ChangeDetectionStrategy.OnPush,
     template: `
 <div class="ph-root">
 
-    <!-- Breadcrumbs -->
-    @if (breadcrumbs().length > 0) {
-        <nav class="ph-breadcrumbs" aria-label="Navegación">
-            @for (crumb of breadcrumbs(); track $index) {
-                @if ($index > 0) {
-                    <svg class="ph-bc-sep" viewBox="0 0 6 10" fill="none">
-                        <path d="M1 1l4 4-4 4" stroke="currentColor" stroke-width="1.5"
-                              stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                }
-                @if (crumb.url) {
-                    <a [routerLink]="crumb.url" class="ph-bc-link">{{ crumb.label }}</a>
-                } @else {
-                    <span class="ph-bc-current">{{ crumb.label }}</span>
-                }
-            }
-        </nav>
-    }
+    <!-- Breadcrumbs suprimidos globalmente (2026-07-19): el input 'breadcrumbs'
+         se mantiene por compatibilidad con los callers, pero no se renderiza. -->
 
     <!-- Línea principal: título + acciones -->
     <div class="ph-main">
