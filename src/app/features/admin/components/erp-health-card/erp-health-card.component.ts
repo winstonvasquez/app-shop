@@ -7,7 +7,6 @@ import {
     signal
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { DatePipe } from '@angular/common';
 import { ErpHealthService } from '@features/admin/services/erp-health.service';
 import {
     ErpEstado,
@@ -30,7 +29,7 @@ interface ServiceRow {
 @Component({
     selector: 'app-erp-health-card',
     standalone: true,
-    imports: [DatePipe],
+    imports: [],
     templateUrl: './erp-health-card.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -98,5 +97,34 @@ export class ErpHealthCardComponent implements OnInit {
         if (!estado) return '—';
         if (estado.length > 30) return estado.substring(0, 30) + '…';
         return estado;
+    }
+
+    /** Calculate success rate (0–100) for SVG progress ring */
+    successRate(svc: ServiceRow): number {
+        const sent = svc.health.sentLast24h ?? 0;
+        const dlq = svc.health.deadLetterCount ?? 0;
+        const total = sent + dlq;
+        if (total === 0) return 100;
+        return Math.round((sent / total) * 100);
+    }
+
+    /** SVG stroke-dashoffset for a 36px radius ring (circumference ≈ 226) */
+    ringOffset(rate: number): number {
+        const circumference = 226;
+        return circumference - (circumference * rate) / 100;
+    }
+
+    /** Relative time string like "hace 5 min" */
+    timeAgo(date: Date | string | undefined): string {
+        if (!date) return '—';
+        const now = Date.now();
+        const then = new Date(date).getTime();
+        const diffSec = Math.floor((now - then) / 1000);
+        if (diffSec < 60) return 'hace unos segundos';
+        const diffMin = Math.floor(diffSec / 60);
+        if (diffMin < 60) return `hace ${diffMin} min`;
+        const diffH = Math.floor(diffMin / 60);
+        if (diffH < 24) return `hace ${diffH}h`;
+        return `hace ${Math.floor(diffH / 24)}d`;
     }
 }

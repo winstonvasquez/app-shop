@@ -1,5 +1,5 @@
-<div class="admin-layout">
-    <app-admin-sidebar />
+<div class="admin-layout" [class.sidebar-collapsed]="isSidebarCollapsed()">
+    <app-admin-sidebar [collapsed]="isSidebarCollapsed()" (toggleCollapse)="onToggleCollapse($event)" />
 
     <div class="main-content">
         <app-admin-header />

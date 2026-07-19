@@ -126,7 +126,7 @@ export class AuthService {
         localStorage.removeItem('guest_phone');
         localStorage.removeItem('guest_name');
         this.currentUserSignal.set(null);
-        this.router.navigate(['/']);
+        this.router.navigate(['/auth/login']);
     }
 
     getToken(): string | null {

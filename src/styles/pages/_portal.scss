@@ -10,6 +10,14 @@ body:has(.portal-shell) {
   height: auto !important;
 }
 
+/* Prevent vertical scroll specifically on the login page */
+html:has(.ds-auth),
+body:has(.ds-auth) {
+  overflow: hidden !important;
+  height: 100vh !important;
+}
+
+
 .portal-shell {
   /* Colors & Tokens */
   --portal-bg: #050814;

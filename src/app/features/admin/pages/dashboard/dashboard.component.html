@@ -1,19 +1,14 @@
-<div class="page-header">
+<div class="page-header mb-6">
     <div>
-        <h1 class="page-title">{{ 'admin.dashboard.title' | translate }}</h1>
-        <p class="page-subtitle">Bienvenido de vuelta. Aquí está el resumen de tu tienda.</p>
+        <h1 class="page-title text-xl font-extrabold text-[var(--color-text-primary)] tracking-tight">{{ 'admin.dashboard.title' | translate }}</h1>
+        <p class="page-subtitle text-xs text-[var(--color-text-muted)]">Bienvenido de vuelta. Aquí está el resumen de tu tienda.</p>
     </div>
 </div>
 
-<!-- ERP Health: estado consolidado de los flujos s2s -->
-<div style="margin-bottom:1.25rem">
-    <app-erp-health-card />
-</div>
-
-<!-- KPI Cards -->
-<div class="kpi-grid kpi-grid-4">
+<!-- KPI Cards (Metrics) at the very top -->
+<div class="kpi-grid kpi-grid-4 mb-6">
     @for (metric of metrics(); track metric.label) {
-        <div class="kpi-card kpi-card-{{ metric.iconColor }}">
+        <div class="kpi-card kpi-card-{{ metric.iconColor }} animate-card-in">
             <div class="kpi-top">
                 <span class="kpi-label">{{ metric.label }}</span>
                 <div class="kpi-icon kpi-icon-{{ metric.iconColor }}">
@@ -30,110 +25,116 @@
     }
 </div>
 
-<!-- Charts row -->
-<div class="dash-row dash-row-2-1" style="margin-bottom:1.25rem">
-    <!-- Área: Ventas del mes -->
-    <div class="chart-card">
-        <div class="chart-card-header">
-            <span class="chart-card-title">Ventas del Mes</span>
-            <a href="#" class="card-action" style="font-size:0.8125rem">Ver detalles →</a>
+<!-- Main content grid -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Left Column (Ventas del Mes + Pedidos Recientes) -->
+    <div class="lg:col-span-2 space-y-6">
+        <!-- Área: Ventas del mes -->
+        <div class="chart-card">
+            <div class="chart-card-header">
+                <span class="chart-card-title">Ventas del Mes</span>
+                <a href="#" class="card-action">Ver detalles →</a>
+            </div>
+            <div class="chart-card-body">
+                <apx-chart
+                    [series]="areaSeries"
+                    [chart]="areaChart"
+                    [xaxis]="areaXAxis"
+                    [yaxis]="areaYAxis"
+                    [fill]="areaFill"
+                    [stroke]="areaStroke"
+                    [grid]="areaGrid"
+                    [tooltip]="areaTooltip"
+                    [colors]="areaColors"
+                    [dataLabels]="{ enabled: false }">
+                </apx-chart>
+            </div>
         </div>
-        <div class="chart-card-body">
-            <apx-chart
-                [series]="areaSeries"
-                [chart]="areaChart"
-                [xaxis]="areaXAxis"
-                [yaxis]="areaYAxis"
-                [fill]="areaFill"
-                [stroke]="areaStroke"
-                [grid]="areaGrid"
-                [tooltip]="areaTooltip"
-                [colors]="areaColors"
-                [dataLabels]="{ enabled: false }">
-            </apx-chart>
-        </div>
-    </div>
 
-    <!-- Donut: Top Categorías -->
-    <div class="chart-card">
-        <div class="chart-card-header">
-            <span class="chart-card-title">Ventas por Categoría</span>
-        </div>
-        <div class="chart-card-body">
-            <apx-chart
-                [series]="donutSeries"
-                [chart]="donutChart"
-                [labels]="donutLabels"
-                [colors]="donutColors"
-                [plotOptions]="donutPlot"
-                [legend]="donutLegend"
-                [dataLabels]="donutDataLabels"
-                [tooltip]="{ theme: 'dark' }">
-            </apx-chart>
-        </div>
-    </div>
-</div>
-
-<!-- Bottom row: Top Productos + Pedidos recientes -->
-<div class="dash-row dash-row-2-1">
-    <!-- Pedidos Recientes -->
-    <div class="card">
-        <div class="card-header">
-            <h2 class="card-title">Pedidos Recientes</h2>
-            <a href="#" class="card-action">Ver todos →</a>
-        </div>
-        <div class="overflow-x-auto">
-            <table class="table">
-                <thead class="table-header">
-                    <tr>
-                        <th class="table-header-cell">ID Pedido</th>
-                        <th class="table-header-cell">Cliente</th>
-                        <th class="table-header-cell">Producto</th>
-                        <th class="table-header-cell">Fecha</th>
-                        <th class="table-header-cell text-right">Total</th>
-                        <th class="table-header-cell">Estado</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @for (order of recentOrders(); track order.id) {
-                        <tr class="table-row">
-                            <td class="table-cell font-medium" style="font-variant-numeric:tabular-nums">{{ order.id }}</td>
-                            <td class="table-cell">{{ order.customer }}</td>
-                            <td class="table-cell text-subtle">{{ order.product }}</td>
-                            <td class="table-cell text-subtle" style="white-space:nowrap">{{ order.date }}</td>
-                            <td class="table-cell text-right font-semibold">{{ order.total }}</td>
-                            <td class="table-cell">
-                                <span class="badge"
-                                    [class.badge-success]="order.status === 'success'"
-                                    [class.badge-warning]="order.status === 'pending'"
-                                    [class.badge-error]="order.status === 'cancelled'">
-                                    {{ order.statusLabel || order.status }}
-                                </span>
-                            </td>
+        <!-- Pedidos Recientes -->
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">Pedidos Recientes</h2>
+                <a href="#" class="card-action">Ver todos →</a>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="table">
+                    <thead class="table-header">
+                        <tr>
+                            <th class="table-header-cell">ID Pedido</th>
+                            <th class="table-header-cell">Cliente</th>
+                            <th class="table-header-cell">Producto</th>
+                            <th class="table-header-cell">Fecha</th>
+                            <th class="table-header-cell text-right">Total</th>
+                            <th class="table-header-cell">Estado</th>
                         </tr>
-                    }
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        @for (order of recentOrders(); track order.id) {
+                            <tr class="table-row">
+                                <td class="table-cell font-medium" style="font-variant-numeric:tabular-nums">{{ order.id }}</td>
+                                <td class="table-cell">{{ order.customer }}</td>
+                                <td class="table-cell text-subtle">{{ order.product }}</td>
+                                <td class="table-cell text-subtle" style="white-space:nowrap">{{ order.date }}</td>
+                                <td class="table-cell text-right font-semibold">{{ order.total }}</td>
+                                <td class="table-cell">
+                                    <span class="badge"
+                                        [class.badge-success]="order.status === 'success'"
+                                        [class.badge-warning]="order.status === 'pending'"
+                                        [class.badge-error]="order.status === 'cancelled'">
+                                        {{ order.statusLabel || order.status }}
+                                    </span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 
-    <!-- Top Productos -->
-    <div class="card">
-        <div class="card-header">
-            <h2 class="card-title">Más Vendidos</h2>
-            <a href="#" class="card-action">Ver todos →</a>
+    <!-- Right Column (ERP Health + Ventas por Categoría + Más Vendidos) -->
+    <div class="space-y-6">
+        <!-- ERP Health Card -->
+        <app-erp-health-card />
+
+        <!-- Donut: Top Categorías -->
+        <div class="chart-card">
+            <div class="chart-card-header">
+                <span class="chart-card-title">Ventas por Categoría</span>
+            </div>
+            <div class="chart-card-body">
+                <apx-chart
+                    [series]="donutSeries"
+                    [chart]="donutChart"
+                    [labels]="donutLabels"
+                    [colors]="donutColors"
+                    [plotOptions]="donutPlot"
+                    [legend]="donutLegend"
+                    [dataLabels]="donutDataLabels"
+                    [tooltip]="{ theme: 'dark' }">
+                </apx-chart>
+            </div>
         </div>
-        <div class="card-body" style="padding-top:0.75rem">
-            @for (product of topProducts(); track product.name; let i = $index) {
-                <div class="product-item">
-                    <div class="product-rank" [style.background]="productColors[i]">{{ i + 1 }}</div>
-                    <div class="product-info">
-                        <div class="product-name">{{ product.name }}</div>
-                        <div class="product-category">{{ product.category }}</div>
+
+        <!-- Top Productos -->
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">Más Vendidos</h2>
+                <a href="#" class="card-action">Ver todos →</a>
+            </div>
+            <div class="card-body" style="padding-top:0.75rem">
+                @for (product of topProducts(); track product.name; let i = $index) {
+                    <div class="product-item">
+                        <div class="product-rank" [style.background]="productColors[i]">{{ i + 1 }}</div>
+                        <div class="product-info">
+                            <div class="product-name">{{ product.name }}</div>
+                            <div class="product-category">{{ product.category }}</div>
+                        </div>
+                        <div class="product-sales">{{ product.sales }}</div>
                     </div>
-                    <div class="product-sales">{{ product.sales }}</div>
-                </div>
-            }
+                }
+            </div>
         </div>
     </div>
 </div>

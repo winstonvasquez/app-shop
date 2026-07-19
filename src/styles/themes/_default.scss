@@ -228,27 +228,27 @@
  *    Mismo idioma visual, optimizado para densidad de datos.
  * ─────────────────────────────────────────────────────────── */
 [data-theme="confianza-erp"] {
-    --color-background:       #F1F3F8;
-    --color-surface:          #FFFFFF;
-    --color-surface-raised:   #E8EBF2;
-    --color-border:           #D2D7E1;
+    --color-background:       #f8fafc; /* Sleek, modern Slate-50 background */
+    --color-surface:          #ffffff;
+    --color-surface-raised:   #f1f5f9; /* Slate-100 */
+    --color-border:           #e2e8f0; /* Slate-200 */
 
-    --color-text-primary:     #0E1B2C;
-    --color-text-secondary:   #5A6473;
-    --color-text-muted:       #8C95A3;
+    --color-text-primary:     #0f172a; /* Slate-900 */
+    --color-text-secondary:   #475569; /* Slate-600 */
+    --color-text-muted:       #94a3b8; /* Slate-400 */
 
-    --color-primary:          #0B3D91;
-    --color-primary-dark:     #062A6B;
-    --color-primary-contrast: #FFFFFF;
+    --color-primary:          #2563eb; /* Vibrant Royal Blue */
+    --color-primary-dark:     #1d4ed8;
+    --color-primary-contrast: #ffffff;
 
-    --color-accent:           #F08C00;
-    --color-accent-dark:      #C97300;
+    --color-accent:           #f59e0b; /* Amber-500 */
+    --color-accent-dark:      #d97706;
 
-    --color-success:          #0E8A5F;
-    --color-danger:           #C0392B;
-    --color-error:            #C0392B;
-    --color-warning:          #B45309;
-    --color-info:             #0B6FB8;
+    --color-success:          #10b981; /* Emerald-500 */
+    --color-danger:           #ef4444; /* Red-500 */
+    --color-error:            #ef4444;
+    --color-warning:          #f59e0b;
+    --color-info:             #3b82f6;
 
     /* Sidebar ERP */
     --color-sidebar-bg:       #0E1B2C;

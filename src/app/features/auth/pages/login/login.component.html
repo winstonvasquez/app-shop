@@ -177,14 +177,13 @@
 <style>
     .ds-auth {
         display: grid; 
-        grid-template-columns: 1fr 1fr;
-        min-height: 100vh;
+        grid-template-columns: 70% 30%;
+        height: 100vh;
         width: 100%;
         position: relative;
         z-index: 10;
-        background-image: url('/assets/images/login_brand_bg.png');
-        background-size: cover;
-        background-position: center;
+        background-color: #050814;
+        overflow: hidden;
     }
 
     /* Fix logo colors on dark background */
@@ -195,26 +194,28 @@
         color: var(--neon-teal, #06b6d4) !important;
     }
 
-    /* Override browser autofill default styling to keep theme dark and premium */
+    /* Override browser autofill default styling to keep theme clean and light */
     input:-webkit-autofill,
     input:-webkit-autofill:hover, 
     input:-webkit-autofill:focus, 
     input:-webkit-autofill:active {
-        -webkit-box-shadow: 0 0 0 30px #0b1129 inset !important;
-        -webkit-text-fill-color: #ffffff !important;
+        -webkit-box-shadow: 0 0 0 30px #ffffff inset !important;
+        -webkit-text-fill-color: #0f172a !important;
         transition: background-color 5000s ease-in-out 0s;
     }
 
     /* ── LEFT side ─────────────────────────────────────── */
     .brand-side {
-        padding: 64px 48px;
+        padding: 40px 48px;
         display: flex; 
         flex-direction: column;
         justify-content: center; 
-        gap: 40px;
+        gap: 32px;
         position: relative;
         z-index: 15;
-        background: linear-gradient(to right, rgba(5, 8, 20, 0.94) 20%, rgba(5, 8, 20, 0.5) 100%);
+        background-image: linear-gradient(to right, rgba(5, 8, 20, 0.94) 20%, rgba(5, 8, 20, 0.5) 100%), url('/assets/images/login_brand_bg.png');
+        background-size: cover;
+        background-position: center;
     }
     
     .brand-row { 
@@ -421,38 +422,36 @@
         font-weight: 500;
     }
  
-    /* ── RIGHT side ───────────────────────────────────── */
+    /* ── RIGHT side (Light Theme Elegant Panel) ───────── */
     .form-side {
-        padding: 64px 48px;
+        padding: 40px 32px;
         display: flex; 
         flex-direction: column; 
         justify-content: center;
         position: relative;
         z-index: 15;
-        background: rgba(5, 8, 20, 0.97);
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
-        border-left: 1px solid rgba(255, 255, 255, 0.06);
+        background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+        border-left: 1px solid #cbd5e1;
     }
     
     .form-wrap { 
-        max-width: 440px; 
+        max-width: 380px; 
         width: 100%; 
         margin: 0 auto; 
     }
  
     .form-h {
-        font-size: 1.75rem; 
+        font-size: 1.85rem; 
         font-weight: 800;
         margin: 0 0 8px;
-        color: #ffffff;
-        letter-spacing: -0.5px;
+        color: #0f172a;
+        letter-spacing: -0.75px;
     }
     
     .form-p {
-        font-size: 0.9rem; 
-        color: rgba(255, 255, 255, 0.65);
-        margin: 0 0 28px;
+        font-size: 0.925rem; 
+        color: #475569;
+        margin: 0 0 18px;
     }
  
     .alert {
@@ -466,27 +465,27 @@
     }
     
     .alert-error {
-        background: rgba(244, 63, 94, 0.1);
-        border: 1px solid rgba(244, 63, 94, 0.25);
-        color: #f43f5e;
+        background: rgba(239, 68, 68, 0.1);
+        border: 1px solid rgba(239, 68, 68, 0.25);
+        color: #dc2626;
     }
  
     .form-grid { 
         display: flex; 
         flex-direction: column; 
-        gap: 20px; 
+        gap: 16px; 
     }
     
     .field { 
         display: flex; 
         flex-direction: column; 
-        gap: 8px; 
+        gap: 6px; 
     }
     
     .lbl {
         font-size: 0.775rem; 
-        font-weight: 600;
-        color: rgba(255, 255, 255, 0.85);
+        font-weight: 700;
+        color: #334155;
         text-transform: uppercase;
         letter-spacing: 0.5px;
     }
@@ -498,20 +497,20 @@
     }
     
     .req { 
-        color: #f43f5e; 
+        color: #ef4444; 
     }
     
     .link {
         font-size: 0.8rem; 
-        color: var(--neon-teal);
+        color: #2563eb;
         font-weight: 600; 
         text-decoration: none;
         cursor: pointer;
         transition: all 0.2s ease;
 
         &:hover {
-            color: #ffffff;
-            text-shadow: 0 0 8px rgba(6, 182, 212, 0.4);
+            color: #1d4ed8;
+            text-decoration: underline;
         }
     }
     
@@ -525,25 +524,25 @@
         height: 46px; 
         padding: 0 16px; 
         gap: 10px;
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.14);
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
         border-radius: 10px;
         transition: all 0.25s ease;
     }
     
     .input-wrap:focus-within {
-        border-color: var(--neon-purple);
-        background: rgba(255, 255, 255, 0.05);
-        box-shadow: 0 0 10px rgba(168, 85, 247, 0.2), inset 0 1px 2px rgba(0, 0, 0, 0.2);
+        border-color: #8b5cf6;
+        background: #ffffff;
+        box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15), inset 0 1px 2px rgba(0, 0, 0, 0.05);
     }
     
     .input-wrap.is-active { 
-        border-color: var(--neon-purple); 
+        border-color: #8b5cf6; 
     }
     
     .input-wrap.is-error { 
-        border-color: #f43f5e; 
-        box-shadow: 0 0 10px rgba(244, 63, 94, 0.15);
+        border-color: #ef4444; 
+        box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
     }
     
     .input-wrap input {
@@ -551,31 +550,31 @@
         border: none; 
         outline: none;
         font-size: 0.95rem; 
-        color: #ffffff;
+        color: #0f172a;
         background: transparent;
         font-family: inherit;
         box-sizing: border-box;
     }
     
     .input-wrap .ic { 
-        color: var(--portal-muted); 
+        color: #64748b; 
     }
     
     .input-wrap .ok { 
-        color: var(--neon-teal); 
+        color: #10b981; 
     }
     
     .input-wrap .toggle {
         background: none; 
         border: none; 
         padding: 4px;
-        color: var(--portal-muted); 
+        color: #64748b; 
         cursor: pointer;
         display: inline-flex;
         transition: color 0.2s ease;
 
         &:hover {
-            color: #ffffff;
+            color: #0f172a;
         }
     }
  
@@ -584,7 +583,7 @@
     }
     
     .hint.err { 
-        color: #f43f5e; 
+        color: #ef4444; 
     }
  
     .check-row {
@@ -592,13 +591,13 @@
         align-items: center; 
         gap: 10px;
         font-size: 0.875rem; 
-        color: rgba(255, 255, 255, 0.75);
+        color: #475569;
         cursor: pointer;
         user-select: none;
         transition: color 0.2s ease;
 
         &:hover {
-            color: #ffffff;
+            color: #0f172a;
         }
     }
     
@@ -606,28 +605,51 @@
         width: 18px; 
         height: 18px;
         border-radius: 6px;
-        border: 1.5px solid rgba(255, 255, 255, 0.15);
-        background: rgba(255, 255, 255, 0.02);
+        border: 1.5px solid #cbd5e1;
+        background: #ffffff;
         display: inline-flex; 
         align-items: center; 
         justify-content: center;
-        color: #050814;
+        color: #ffffff;
         flex-shrink: 0;
         transition: all 0.2s ease;
     }
     
     .check.is-on { 
-        border-color: var(--neon-teal); 
-        background: var(--neon-teal); 
-        box-shadow: 0 0 8px rgba(6, 182, 212, 0.3);
+        border-color: #0d9488; 
+        background: #0d9488; 
+        box-shadow: 0 0 8px rgba(13, 148, 136, 0.3);
     }
  
+    /* Elegant Gradient Button Override */
+    .submit-button-neon ::ng-deep button {
+        background: linear-gradient(135deg, #7c3aed 0%, #2563eb 100%) !important;
+        border: none !important;
+        color: #ffffff !important;
+        font-weight: 700 !important;
+        font-size: 0.95rem !important;
+        letter-spacing: 0.5px !important;
+        box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35) !important;
+        transition: all 0.3s ease !important;
+        border-radius: 10px !important;
+    }
+
+    .submit-button-neon ::ng-deep button:hover:not(:disabled) {
+        box-shadow: 0 6px 20px rgba(37, 99, 235, 0.5) !important;
+        filter: brightness(1.08) !important;
+        transform: translateY(-1px) !important;
+    }
+
+    .submit-button-neon ::ng-deep button:active:not(:disabled) {
+        transform: translateY(0) !important;
+    }
+
     .divider-row {
         display: grid; 
         grid-template-columns: 1fr auto 1fr;
         gap: 12px; 
         align-items: center;
-        color: var(--portal-subtle); 
+        color: #64748b; 
         font-size: 0.775rem;
         margin: 8px 0;
         text-transform: uppercase;
@@ -637,7 +659,7 @@
     .divider-row span:first-child,
     .divider-row span:last-child { 
         height: 1px; 
-        background: rgba(255, 255, 255, 0.08); 
+        background: #e2e8f0; 
     }
  
     .oauth-grid { 
@@ -648,12 +670,12 @@
     
     .oauth {
         height: 44px;
-        background: rgba(255, 255, 255, 0.02);
-        border: 1px solid rgba(255, 255, 255, 0.06);
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
         border-radius: 10px;
         font-size: 0.85rem; 
         font-weight: 600;
-        color: #ffffff;
+        color: #334155;
         cursor: pointer; 
         font-family: inherit;
         display: inline-flex; 
@@ -663,8 +685,8 @@
         transition: all 0.25s ease;
 
         &:hover {
-            border-color: var(--neon-purple);
-            background: rgba(255, 255, 255, 0.05);
+            border-color: #94a3b8;
+            background: #f8fafc;
             transform: translateY(-1px);
         }
     }
@@ -684,10 +706,10 @@
     .signup-row {
         text-align: center; 
         font-size: 0.875rem;
-        color: var(--portal-muted);
-        margin: 12px 0 0;
-        border-top: 1px solid rgba(255, 255, 255, 0.05);
-        padding-top: 20px;
+        color: #475569;
+        margin: 8px 0 0;
+        border-top: 1px solid #e2e8f0;
+        padding-top: 12px;
     }
  
     .status-bar {
@@ -695,23 +717,23 @@
         align-items: center; 
         gap: 8px;
         justify-content: center;
-        margin-top: 36px; 
-        padding-top: 20px;
-        border-top: 1px solid rgba(255, 255, 255, 0.05);
+        margin-top: 24px; 
+        padding-top: 12px;
+        border-top: 1px solid #e2e8f0;
         font-size: 11px; 
-        color: var(--portal-subtle);
+        color: #64748b;
     }
     
     .status-bar .dot {
         width: 8px; 
         height: 8px; 
         border-radius: 50%;
-        background: rgba(255, 255, 255, 0.1);
+        background: #cbd5e1;
     }
     
     .status-bar .dot.ok { 
-        background: var(--neon-teal); 
-        box-shadow: 0 0 8px var(--neon-teal);
+        background: #10b981; 
+        box-shadow: 0 0 8px #10b981;
     }
     
     .status-bar .ver { 
@@ -722,6 +744,8 @@
     @media (max-width: 1024px) {
         .ds-auth { 
             grid-template-columns: 1fr; 
+            height: auto;
+            overflow: auto;
         }
         .brand-side { 
             display: none; 

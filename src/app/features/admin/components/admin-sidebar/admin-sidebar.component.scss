@@ -1,2 +1,139 @@
-// Admin sidebar styles - migrated to Tailwind utilities in admin-sidebar.html
-// This file can be deleted after verification
+// Custom variables for widths and spacing
+.sidebar-container {
+    width: 260px;
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    
+    &.w-sidebar-collapsed {
+        width: 80px;
+        
+        // Hide scrollbars on collapsed mode
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+        &::-webkit-scrollbar {
+            display: none;
+        }
+    }
+}
+
+// Hover submenu display logic for collapsed mode
+.navigation-group {
+    &.is-collapsed:hover {
+        .hover-submenu {
+            display: block !important;
+            animation: slideIn 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+    }
+}
+
+// Nav items styling with "colores vivos" and smooth micro-interactions
+.group-header {
+    transition: all 0.2s ease;
+    
+    &:hover {
+        color: #ffffff !important;
+        background: var(--color-sidebar-hover, #1A2A42) !important;
+    }
+}
+
+.nav-item {
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    opacity: 0.8;
+    color: var(--color-sidebar-text, #E2E7F0);
+    
+    &:hover {
+        opacity: 1;
+        background: var(--color-sidebar-hover, #1A2A42) !important;
+        color: #ffffff !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        padding-left: 20px; // Smooth shift right on hover
+    }
+    
+    // Active item (RouterLinkActive) - Corporate vibrant gradient with neon indicator
+    &.active-nav-item {
+        opacity: 1 !important;
+        background: linear-gradient(135deg, #7c3aed 0%, #2563eb 100%) !important;
+        color: #ffffff !important;
+        font-weight: 700 !important;
+        box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35) !important;
+        
+        // Neon cyan line indicator on the left
+        &::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 20%;
+            height: 60%;
+            width: 4px;
+            background: #00ffff;
+            border-radius: 0 4px 4px 0;
+            box-shadow: 0 0 8px #00ffff, 0 0 16px #00ffff;
+        }
+
+        svg {
+            opacity: 1 !important;
+            color: #00ffff !important;
+            filter: drop-shadow(0 0 4px rgba(0, 255, 255, 0.5));
+        }
+    }
+}
+
+// Hover submenu items styling
+.hover-submenu {
+    .nav-item {
+        opacity: 0.85;
+        &:hover {
+            padding-left: 14px;
+        }
+        &.active-nav-item {
+            padding-left: 10px;
+            &::before {
+                left: 0;
+                top: 25%;
+                height: 50%;
+                width: 3px;
+            }
+        }
+    }
+}
+
+// Collapsed Appearance Picker positioning
+.theme-picker-panel.is-collapsed-picker {
+    position: fixed;
+    bottom: 72px;
+    left: 88px;
+    min-width: 150px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    background: var(--color-sidebar-bg, #0E1B2C);
+    border: 1px solid var(--color-sidebar-border, #1A2A42);
+    z-index: 250;
+    border-radius: 12px;
+}
+
+// Smooth transition for accordion groups
+.group-items-list {
+    max-height: 500px;
+    animation: expandDropdown 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes expandDropdown {
+    from {
+        max-height: 0;
+        opacity: 0;
+    }
+    to {
+        max-height: 500px;
+        opacity: 1;
+    }
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(-8px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}

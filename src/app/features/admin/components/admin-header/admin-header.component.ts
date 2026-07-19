@@ -1,11 +1,12 @@
 import { Component, inject, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { AuthService } from '@core/auth/auth.service';
 import { ToastService } from '@shared/services/toast.service';
 
 @Component({
   selector: 'app-admin-header',
   standalone: true,
-  imports: [],
+  imports: [RouterLink],
   templateUrl: './admin-header.component.html',
   styleUrl: './admin-header.component.scss'
 })

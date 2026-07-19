@@ -1,7 +1,9 @@
 .admin-layout {
     display: flex;
     min-height: 100vh;
-    background: var(--color-background);
+    background: radial-gradient(circle at 12% 18%, rgba(37, 99, 235, 0.04) 0%, transparent 40%),
+                radial-gradient(circle at 88% 82%, rgba(124, 58, 237, 0.04) 0%, transparent 45%),
+                var(--color-background, #f8fafc);
 }
 
 .main-content {
@@ -10,6 +12,11 @@
     min-height: 100vh;
     display: flex;
     flex-direction: column;
+    transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.admin-layout.sidebar-collapsed .main-content {
+    margin-left: 80px; /* Width of collapsed sidebar (80px) */
 }
 
 .dashboard-content {
@@ -19,6 +26,6 @@
 
 @media (max-width: 768px) {
     .main-content {
-        margin-left: 0;
+        margin-left: 0 !important;
     }
 }

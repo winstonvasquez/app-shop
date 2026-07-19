@@ -1,5 +1,5 @@
-import { Component, computed, inject, signal } from '@angular/core';
-import { RouterLink, RouterLinkActive } from '@angular/router';
+import { Component, computed, inject, signal, input, output, OnInit } from '@angular/core';
+import { RouterLink, RouterLinkActive, Router, NavigationEnd } from '@angular/router';
 import { AuthService } from '@core/auth/auth.service';
 import { ThemeService, AppTheme, AVAILABLE_THEMES } from '@core/services/theme/theme';
 
@@ -168,11 +168,57 @@ const ALL_NAV_GROUPS: NavGroup[] = [
   templateUrl: './admin-sidebar.component.html',
   styleUrl: './admin-sidebar.component.scss'
 })
-export class AdminSidebarComponent {
+export class AdminSidebarComponent implements OnInit {
   private readonly authService = inject(AuthService);
   readonly themeService = inject(ThemeService);
+  private readonly router = inject(Router);
+
+  // Collapsible sidebar state inputs/outputs
+  collapsed = input<boolean>(false);
+  toggleCollapse = output<boolean>();
 
   readonly themePickerOpen = signal(false);
+  readonly expandedGroup = signal<string | null>(null);
+
+  constructor() {
+    // Listen to route changes to automatically expand the active section
+    this.router.events.subscribe(event => {
+      if (event instanceof NavigationEnd) {
+        this.autoExpandGroup(event.urlAfterRedirects || event.url);
+      }
+    });
+  }
+
+  ngOnInit(): void {
+    this.autoExpandGroup(this.router.url);
+  }
+
+  private autoExpandGroup(url: string): void {
+    // If collapsed, don't auto-expand accordion to keep it clean
+    if (this.collapsed()) {
+      return;
+    }
+    for (const group of ALL_NAV_GROUPS) {
+      if (group.items.some(item => url.startsWith(item.route))) {
+        this.expandedGroup.set(group.title);
+        break;
+      }
+    }
+  }
+
+  toggleGroup(title: string): void {
+    if (this.collapsed()) {
+      // In collapsed mode, clicking a group expands the sidebar first
+      this.toggleCollapse.emit(false);
+      setTimeout(() => this.expandedGroup.set(title), 150);
+      return;
+    }
+    this.expandedGroup.set(this.expandedGroup() === title ? null : title);
+  }
+
+  toggleCollapseState(): void {
+    this.toggleCollapse.emit(!this.collapsed());
+  }
 
   /** Variantes del DS Confianza disponibles desde el sidebar. */
   readonly themeGroups = [

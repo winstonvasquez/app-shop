@@ -1,14 +1,28 @@
 .header {
-    height: 64px;
-    background: var(--color-surface);
-    border-bottom: 1px solid var(--color-border);
+    height: 56px;
+    background: rgba(255, 255, 255, 0.78);
+    backdrop-filter: blur(12px) saturate(1.4);
+    -webkit-backdrop-filter: blur(12px) saturate(1.4);
+    border-bottom: none;
     display: flex;
     align-items: center;
-    gap: 1.5rem;
-    padding: 0 2rem;
+    gap: 1rem;
+    padding: 0 1.5rem;
     position: sticky;
     top: 0;
     z-index: 50;
+
+    /* Gradient accent line at bottom */
+    &::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, #2563eb 0%, #7c3aed 50%, #2563eb 100%);
+        opacity: 0.6;
+    }
 }
 
 .header-search {
@@ -45,7 +59,8 @@
 .search-input:focus {
     outline: none;
     border-color: var(--color-primary);
-    background: var(--color-surface-raised);
+    background: var(--color-surface);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 15%, transparent);
 }
 
 .header-actions {
@@ -57,18 +72,18 @@
 }
 
 .icon-button {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
     border: none;
     background: transparent;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: background 0.2s;
+    transition: all 0.2s;
     position: relative;
-    color: var(--color-text-primary);
+    color: var(--color-text-secondary);
 }
 
 .icon-button:hover {
@@ -101,16 +116,17 @@
 }
 
 .user-avatar {
-    width: 36px;
-    height: 36px;
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
-    background: var(--color-primary);
+    background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
     color: white;
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: 600;
-    font-size: 0.875rem;
+    font-size: 0.8125rem;
+    position: relative;
 }
 
 .user-info {
