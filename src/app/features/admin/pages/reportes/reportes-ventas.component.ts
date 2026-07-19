@@ -1,13 +1,12 @@
-import { Component, ChangeDetectionStrategy, inject, signal, OnInit, computed, DestroyRef } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Component, ChangeDetectionStrategy, inject, signal, OnInit, computed } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
+import { of } from 'rxjs';
 import { environment } from '@env/environment';
 import { AuthService } from '@core/auth/auth.service';
 import { ExportService } from '../../../../shared/services/export.service';
 import { ButtonComponent } from '@shared/components';
-import { DataTableComponent, TableColumn, TableAction } from '@shared/ui/tables/data-table/data-table.component';
+import { DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent, PaginationEvent } from '@shared/ui/tables/data-table/data-table.component';
 
 interface VentaPos {
     id: number;
@@ -36,7 +35,7 @@ interface PageResponse<T> {
     selector: 'app-reportes-ventas',
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [DecimalPipe, ReactiveFormsModule, DataTableComponent, ButtonComponent],
+    imports: [DecimalPipe, DataTableComponent, ButtonComponent],
     templateUrl: './reportes-ventas.component.html',
     styleUrls: ['./reportes-ventas.component.scss'],
 })
@@ -44,23 +43,18 @@ export class ReportesVentasComponent implements OnInit {
     private readonly http = inject(HttpClient);
     private readonly auth = inject(AuthService);
     private readonly exportService = inject(ExportService);
-    private readonly fb = inject(FormBuilder);
-    private readonly destroyRef = inject(DestroyRef);
 
     ventas = signal<VentaPos[]>([]);
     cargando = signal(false);
     error = signal<string | null>(null);
     pagina = signal(0);
+    pageSize = signal(20);
     totalElements = signal(0);
     totalPages = signal(0);
 
-    private busquedaSignal = signal('');
-    private filtroEstadoSignal = signal('');
-
-    filterForm: FormGroup = this.fb.group({
-        busqueda: [''],
-        filtroEstado: [''],
-    });
+    // Búsqueda/filtro server-side (por botón Buscar)
+    private searchQuery = signal('');
+    private filtroEstado = signal('');
 
     totalVentas = computed(() => this.ventas().length);
     montoTotal = computed(() => this.ventas().reduce((sum, v) => sum + (v.total ?? 0), 0));
@@ -72,6 +66,11 @@ export class ReportesVentasComponent implements OnInit {
     readonly estadoOptions = [
         { value: 'COMPLETADA', label: 'Completada' },
         { value: 'ANULADA',    label: 'Anulada' },
+    ];
+
+    // Filtro de estado para el toolbar del data-table
+    estadoFilters: FilterConfig[] = [
+        { field: 'estado', label: 'Todos los estados', options: of(this.estadoOptions) }
     ];
 
     columns: TableColumn<VentaPos>[] = [
@@ -96,29 +95,7 @@ export class ReportesVentasComponent implements OnInit {
         { label: 'Ver', icon: '👁', class: 'btn-view', onClick: (_row) => {} }
     ];
 
-    ventasFiltradas = computed(() => {
-        let lista = this.ventas();
-        const q = this.busquedaSignal().toLowerCase();
-        if (q) {
-            lista = lista.filter(v =>
-                v.numeroTicket?.toLowerCase().includes(q) ||
-                v.cajeroNombre?.toLowerCase().includes(q)
-            );
-        }
-        const estado = this.filtroEstadoSignal();
-        if (estado) {
-            lista = lista.filter(v => v.estado === estado);
-        }
-        return lista;
-    });
-
     ngOnInit() {
-        this.filterForm.get('busqueda')!.valueChanges
-            .pipe(takeUntilDestroyed(this.destroyRef))
-            .subscribe((v: string) => this.busquedaSignal.set(v ?? ''));
-        this.filterForm.get('filtroEstado')!.valueChanges
-            .pipe(takeUntilDestroyed(this.destroyRef))
-            .subscribe((v: string) => this.filtroEstadoSignal.set(v ?? ''));
         this.cargar();
     }
 
@@ -126,8 +103,14 @@ export class ReportesVentasComponent implements OnInit {
         this.cargando.set(true);
         this.error.set(null);
         const companyId = this.auth.currentUser()?.activeCompanyId ?? 1;
-        const url = `${environment.apiUrls.sales}/api/pos/ventas?companyId=${companyId}&page=${this.pagina()}&size=100`;
-        this.http.get<PageResponse<VentaPos>>(url).subscribe({
+        const params: Record<string, string> = {
+            companyId: String(companyId),
+            page: String(this.pagina()),
+            size: String(this.pageSize()),
+        };
+        if (this.searchQuery()) params['search'] = this.searchQuery();
+        if (this.filtroEstado()) params['estado'] = this.filtroEstado();
+        this.http.get<PageResponse<VentaPos>>(`${environment.apiUrls.sales}/api/pos/ventas`, { params }).subscribe({
             next: (page) => {
                 this.ventas.set(page.content);
                 this.totalElements.set(page.totalElements);
@@ -141,8 +124,23 @@ export class ReportesVentasComponent implements OnInit {
         });
     }
 
-    irPagina(p: number) {
-        this.pagina.set(p);
+    onSearchTerm(term: string): void {
+        this.searchQuery.set(term);
+        this.pagina.set(0);
+        this.cargar();
+    }
+
+    onFilterChangeEvent(event: FilterChangeEvent): void {
+        if (event.field === 'estado') {
+            this.filtroEstado.set(event.value != null ? String(event.value) : '');
+            this.pagina.set(0);
+            this.cargar();
+        }
+    }
+
+    onPageChange(event: PaginationEvent): void {
+        this.pagina.set(event.page);
+        this.pageSize.set(event.size);
         this.cargar();
     }
 

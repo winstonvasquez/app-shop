@@ -1,8 +1,10 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { toObservable } from '@angular/core/rxjs-interop';
+import { map } from 'rxjs';
 import { InventoryApiService } from '../../services/inventory-api.service';
 import { ProductsApiService } from '@features/products/services/products-api.service';
 import { InventoryStock, Warehouse } from '../../models/inventory.models';
-import { DataTableComponent, TableColumn, PaginationEvent } from '@shared/ui/tables/data-table/data-table.component';
+import { DataTableComponent, TableColumn, PaginationEvent, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { ButtonComponent } from '@shared/components';
@@ -28,11 +30,29 @@ export class StockViewComponent {
     error = signal<string | null>(null);
     showLowStockOnly = signal(false);
     selectedWarehouseId = signal<number | null>(null);
+    searchQuery = signal('');
 
     currentPage = signal(0);
     pageSize = signal(20);
     totalElements = signal(0);
     totalPages = signal(0);
+
+    /** Página visible (slicing local: el stock llega completo por almacén). */
+    readonly pagedStock = computed(() => {
+        const start = this.currentPage() * this.pageSize();
+        return this.stock().slice(start, start + this.pageSize());
+    });
+
+    // Selector de almacén en el toolbar — opciones dinámicas desde la BD
+    almacenFilters: FilterConfig[] = [
+        {
+            field: 'warehouse',
+            label: 'Seleccionar almacén...',
+            options: toObservable(this.warehouses).pipe(
+                map(list => list.map(w => ({ value: w.id, label: `${w.code} — ${w.name}` })))
+            )
+        }
+    ];
 
     breadcrumbs: Breadcrumb[] = [
         { label: 'Admin', url: '/admin' },
@@ -89,11 +109,19 @@ export class StockViewComponent {
         });
     }
 
-    onWarehouseChange(event: Event): void {
-        const id = Number((event.target as HTMLSelectElement).value);
+    onFilterChangeEvent(event: FilterChangeEvent): void {
+        if (event.field !== 'warehouse') return;
+        const id = event.value != null ? Number(event.value) : 0;
         this.selectedWarehouseId.set(id || null);
+        this.currentPage.set(0);
         if (!id) { this.allStock.set([]); this.applyFilter(); return; }
         this.loadStock(id);
+    }
+
+    onSearchTerm(term: string): void {
+        this.searchQuery.set(term);
+        this.currentPage.set(0);
+        this.applyFilter();
     }
 
     loadStock(warehouseId: number): void {
@@ -114,9 +142,16 @@ export class StockViewComponent {
     }
 
     private applyFilter(): void {
-        const filtered = this.showLowStockOnly()
+        let filtered = this.showLowStockOnly()
             ? this.allStock().filter(s => s.belowMinimum)
             : this.allStock();
+        const q = this.searchQuery().toLowerCase();
+        if (q) {
+            filtered = filtered.filter(s => {
+                const nombre = this.productNames().get(s.productId)?.toLowerCase() ?? '';
+                return nombre.includes(q) || String(s.productId).includes(q);
+            });
+        }
         this.stock.set(filtered);
         this.totalElements.set(filtered.length);
         this.totalPages.set(Math.ceil(filtered.length / this.pageSize()) || 1);

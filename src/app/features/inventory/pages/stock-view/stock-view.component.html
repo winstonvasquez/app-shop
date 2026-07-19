@@ -14,37 +14,31 @@
     </div>
   </app-page-header>
 
-  <div class="filters-bar">
-    <div class="filter-field">
-      <label class="input-label">Almacén</label>
-      <select class="form-input" (change)="onWarehouseChange($event)" style="min-width:260px">
-        <option value="">Seleccionar almacén...</option>
-        @for (w of warehouses(); track w.id) {
-          <option [value]="w.id">{{ w.code }} — {{ w.name }}</option>
-        }
-      </select>
-    </div>
-  </div>
-
   @if (error()) {
     <app-alert type="error" [message]="error()!" [dismissible]="true" (dismiss)="error.set(null)" />
   }
 
   @if (!selectedWarehouseId() && !loading()) {
-    <div class="empty-state">
-      <p class="empty-state-desc">Selecciona un almacén para ver el stock.</p>
-    </div>
-  } @else {
-    <app-data-table
-      [data]="stock()"
-      [columns]="columns"
-      [loading]="loading()"
-      [currentPage]="currentPage()"
-      [pageSize]="pageSize()"
-      [totalElements]="totalElements()"
-      [totalPages]="totalPages()"
-      (pageChange)="onPageChange($event)">
-    </app-data-table>
+    <p class="text-sm text-subtle mb-sm">Selecciona un almacén en el filtro para ver el stock.</p>
   }
+
+  <!-- Tabla (almacén desde BD en el toolbar + búsqueda por botón + paginación 20/pág) -->
+  <app-data-table
+    [data]="pagedStock()"
+    [columns]="columns"
+    [loading]="loading()"
+    [searchable]="true"
+    searchPlaceholder="Buscar por producto..."
+    [filters]="almacenFilters"
+    [exportable]="true"
+    exportFileName="stock"
+    [currentPage]="currentPage()"
+    [pageSize]="pageSize()"
+    [totalElements]="totalElements()"
+    [totalPages]="totalPages()"
+    (searchChange)="onSearchTerm($event)"
+    (filterChange)="onFilterChangeEvent($event)"
+    (pageChange)="onPageChange($event)">
+  </app-data-table>
 
 </div>

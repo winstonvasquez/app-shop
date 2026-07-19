@@ -1,15 +1,15 @@
 import { Component, inject, signal, OnInit, ChangeDetectionStrategy } from '@angular/core';
-import { ReactiveFormsModule, FormBuilder } from '@angular/forms';
+import { toObservable } from '@angular/core/rxjs-interop';
+import { map } from 'rxjs';
 import { InventarioService } from '../../../services/inventario.service';
 import { InventarioItem } from '../../../models/inventario.model';
 import { AlmacenService } from '../../../services/almacen.service';
 import { Almacen } from '../../../models/almacen.model';
 import { AuthService } from '../../../../../core/auth/auth.service';
-import { DataTableComponent, TableColumn, TableAction } from '@shared/ui/tables/data-table/data-table.component';
+import { DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
-import { ButtonComponent } from '@shared/components';
 import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 
 @Component({
@@ -17,11 +17,9 @@ import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
-        ReactiveFormsModule,
         DataTableComponent,
         AlertComponent,
-        PageHeaderComponent,
-        ButtonComponent
+        PageHeaderComponent
     ],
     templateUrl: './inventario-page.component.html'
 })
@@ -29,7 +27,6 @@ export class InventarioPageComponent implements OnInit {
     private readonly inventarioService = inject(InventarioService);
     private readonly almacenService    = inject(AlmacenService);
     private readonly authService       = inject(AuthService);
-    private readonly fb                = inject(FormBuilder);
 
     // Data
     items     = signal<InventarioItem[]>([]);
@@ -39,15 +36,24 @@ export class InventarioPageComponent implements OnInit {
     loading = signal(false);
     error   = signal<string | null>(null);
 
-    // Filters — reactive
-    filterForm = this.fb.group({
-        almacen:  [''],
-        busqueda: ['']
-    });
+    // Filters — server-side (por botón Buscar del toolbar)
+    searchQuery   = signal('');
+    filtroAlmacen = signal('');
+
+    // Filtro de almacén (dinámico, poblado desde la BD) para el toolbar
+    almacenFilters: FilterConfig[] = [
+        {
+            field: 'almacen',
+            label: 'Todos los almacenes',
+            options: toObservable(this.almacenes).pipe(
+                map(list => list.map(a => ({ value: a.id, label: a.nombre })))
+            )
+        }
+    ];
 
     // Pagination
     currentPage   = signal(0);
-    pageSize      = signal(10);
+    pageSize      = signal(20);
     totalElements = signal(0);
     totalPages    = signal(0);
 
@@ -94,10 +100,9 @@ export class InventarioPageComponent implements OnInit {
     loadInventario() {
         this.loading.set(true);
         this.error.set(null);
-        const { almacen, busqueda } = this.filterForm.value;
         this.inventarioService.getInventario(this.companyId, {
-            almacenId: almacen   || undefined,
-            busqueda:  busqueda  || undefined,
+            almacenId: this.filtroAlmacen() || undefined,
+            busqueda:  this.searchQuery()   || undefined,
             page:      this.currentPage(),
             size:      this.pageSize()
         }).subscribe({
@@ -115,9 +120,18 @@ export class InventarioPageComponent implements OnInit {
         });
     }
 
-    aplicarFiltros() {
+    onSearchTerm(term: string) {
+        this.searchQuery.set(term);
         this.currentPage.set(0);
         this.loadInventario();
+    }
+
+    onFilterChangeEvent(event: FilterChangeEvent) {
+        if (event.field === 'almacen') {
+            this.filtroAlmacen.set(event.value != null ? String(event.value) : '');
+            this.currentPage.set(0);
+            this.loadInventario();
+        }
     }
 
     onPaginationChange(event: PaginationChangeEvent) {
