@@ -10,14 +10,21 @@ import {
 import { ReactiveFormsModule, FormBuilder, Validators, FormArray, FormGroup } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
+import { of } from 'rxjs';
 import { FacturaProveedorService } from '../../services/factura-proveedor.service';
 import { FacturaProveedor, RegistrarFacturaRequest } from '../../models/factura-proveedor.model';
 import { ButtonComponent } from '@shared/components';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
-import { LoadingSpinnerComponent } from '@shared/ui/feedback/loading-spinner/loading-spinner.component';
-import { PaginationComponent, PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
+import {
+    DataTableComponent,
+    TableColumn,
+    TableAction,
+    PaginationEvent,
+    FilterConfig,
+    FilterChangeEvent,
+} from '@shared/ui/tables/data-table/data-table.component';
 
 @Component({
     selector: 'app-facturas-proveedor',
@@ -30,8 +37,7 @@ import { PaginationComponent, PaginationChangeEvent } from '@shared/ui/paginatio
         DrawerComponent,
         PageHeaderComponent,
         AlertComponent,
-        LoadingSpinnerComponent,
-        PaginationComponent,
+        DataTableComponent,
     ],
     templateUrl: './facturas-proveedor.component.html',
 })
@@ -56,9 +62,21 @@ export class FacturasProveedorComponent implements OnInit {
     pageSize = signal(10);
     totalElements = signal(0);
     totalPages = signal(0);
+    searchQuery = signal('');
 
     hasFacturas = computed(() => this.facturas().length > 0);
     isEmpty = computed(() => !this.loading() && !this.hasFacturas());
+
+    filteredFacturas = computed(() => {
+        const q = this.searchQuery().trim().toLowerCase();
+        if (!q) return this.facturas();
+        return this.facturas().filter(
+            (f) =>
+                (f.proveedorNombre ?? '').toLowerCase().includes(q) ||
+                `${f.serie}-${f.numero}`.toLowerCase().includes(q) ||
+                (f.ordenCompraCodigo ?? '').toLowerCase().includes(q)
+        );
+    });
 
     breadcrumbs: Breadcrumb[] = [
         { label: 'Compras', url: '/compras' },
@@ -77,6 +95,39 @@ export class FacturasProveedorComponent implements OnInit {
         { value: 'DIFERENCIA_PRECIO', label: '✗ Dif. Precio', cls: 'badge-error' },
         { value: 'DIFERENCIA_CANTIDAD', label: '✗ Dif. Cantidad', cls: 'badge-error' },
         { value: 'RECHAZADA', label: '✗ Rechazada', cls: 'badge-error' },
+    ];
+
+    columns: TableColumn<FacturaProveedor>[] = [
+        { key: 'proveedorNombre', label: 'Proveedor' },
+        { key: 'factura', label: 'Factura', render: (row) => `${row.serie}-${row.numero}` },
+        { key: 'ordenCompraCodigo', label: 'OC' },
+        { key: 'fechaEmision', label: 'Fecha' },
+        { key: 'total', label: 'Total', align: 'right', render: (row) => `S/ ${row.total.toFixed(2)}` },
+        {
+            key: 'estado',
+            label: 'Estado',
+            html: true,
+            render: (row) => `<span class="${this.getEstadoBadge(row.estado)}">${row.estado}</span>`,
+        },
+        {
+            key: 'resultadoMatch',
+            label: '3-Way Match',
+            html: true,
+            render: (row) =>
+                `<span class="${this.getMatchBadge(row.resultadoMatch)}">${this.getMatchLabel(row.resultadoMatch)}</span>`,
+        },
+    ];
+
+    actions: TableAction<FacturaProveedor>[] = [
+        { label: 'Ver', icon: 'view', onClick: (row) => this.openDetail(row) },
+    ];
+
+    estadoFilters: FilterConfig[] = [
+        {
+            field: 'estado',
+            label: 'Todos los estados',
+            options: of(this.estadoOptions.map((o) => ({ value: o.value, label: o.label }))),
+        },
     ];
 
     facturaForm = this.fb.group({
@@ -126,13 +177,19 @@ export class FacturasProveedorComponent implements OnInit {
         });
     }
 
-    onFilterEstado(event: Event): void {
-        this.filterEstado.set((event.target as HTMLSelectElement).value);
-        this.currentPage.set(0);
-        this.loadFacturas();
+    onSearchTerm(term: string): void {
+        this.searchQuery.set(term);
     }
 
-    onPageChange(event: PaginationChangeEvent): void {
+    onFilterChangeEvent(event: FilterChangeEvent): void {
+        if (event.field === 'estado') {
+            this.filterEstado.set((event.value as string) ?? '');
+            this.currentPage.set(0);
+            this.loadFacturas();
+        }
+    }
+
+    onPageChange(event: PaginationEvent): void {
         this.currentPage.set(event.page);
         this.loadFacturas();
     }

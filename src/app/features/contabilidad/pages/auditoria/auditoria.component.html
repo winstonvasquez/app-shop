@@ -6,69 +6,50 @@
         </div>
     </div>
 
-    <!-- Filtros -->
+    <!-- Filtros (gobiernan la consulta al backend: entidadTipo/desde/hasta) -->
     <div class="filters-bar mb-4">
-        <input class="form-input w-40" type="text" placeholder="Tipo: ASIENTO, PERIODO..."
-            [ngModel]="filtroTipo()" (ngModelChange)="filtroTipo.set($event)">
-        <div class="filter-field">
-            <label class="input-label">Desde</label>
-            <input class="form-input" type="date" [ngModel]="filtroDesde()" (ngModelChange)="filtroDesde.set($event)">
+        <div class="flex gap-3 flex-wrap items-end">
+            <div>
+                <label class="input-label">Tipo de entidad</label>
+                <input class="form-input w-40" type="text" placeholder="ASIENTO, PERIODO..."
+                    [ngModel]="filtroTipo()" (ngModelChange)="filtroTipo.set($event)">
+            </div>
+            <div>
+                <label class="input-label">Desde</label>
+                <input class="form-input" type="date" [ngModel]="filtroDesde()" (ngModelChange)="filtroDesde.set($event)">
+            </div>
+            <div>
+                <label class="input-label">Hasta</label>
+                <input class="form-input" type="date" [ngModel]="filtroHasta()" (ngModelChange)="filtroHasta.set($event)">
+            </div>
+            <app-button
+                icon="search"
+                variant="primary"
+                label="Buscar"
+                (click)="buscar()">
+            </app-button>
         </div>
-        <div class="filter-field">
-            <label class="input-label">Hasta</label>
-            <input class="form-input" type="date" [ngModel]="filtroHasta()" (ngModelChange)="filtroHasta.set($event)">
-        </div>
-        <app-button icon="search" variant="primary" size="sm" label="Buscar" (click)="buscar()"></app-button>
     </div>
 
-    <div class="grid" [ngClass]="seleccionado() ? 'grid-cols-2 gap-4' : 'grid-cols-1'">
+    <div class="grid" [class]="seleccionado() ? 'grid-cols-2 gap-4' : 'grid-cols-1'">
         <!-- Tabla -->
-        <div class="card">
-            <div class="card-header">
-                <h3 class="card-title">Eventos de auditoría</h3>
-                <span class="text-muted text-sm">{{ totalElements() }} registros</span>
-            </div>
-            <div class="card-body">
-                @if (cargando()) {
-                    <div class="loading-container"><div class="spinner"></div></div>
-                } @else if (logs().length === 0) {
-                    <p class="text-muted text-center py-6">No hay registros.</p>
-                } @else {
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th class="table-header-cell">Fecha/Hora</th>
-                                <th class="table-header-cell">Entidad</th>
-                                <th class="table-header-cell">Acción</th>
-                                <th class="table-header-cell">Usuario</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @for (log of logs(); track log.id) {
-                                <tr class="table-row cursor-pointer" (click)="verDetalle(log)"
-                                    [ngClass]="seleccionado()?.id === log.id ? 'bg-[var(--color-surface-raised)]' : ''">
-                                    <td class="table-cell text-sm">{{ log.timestamp | date:'dd/MM/yyyy HH:mm' }}</td>
-                                    <td class="table-cell">
-                                        <div class="text-sm">{{ log.entidadTipo }}</div>
-                                        <div class="text-muted text-xs font-mono">{{ log.entidadId.substring(0, 8) }}…</div>
-                                    </td>
-                                    <td class="table-cell">
-                                        <span [ngClass]="accionClass(log.accion)">{{ log.accion }}</span>
-                                    </td>
-                                    <td class="table-cell text-sm">{{ log.usuarioNombre }}</td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                    @if (totalPages() > 1) {
-                        <div class="pagination mt-3">
-                            <button class="btn-page" [disabled]="page() === 0" (click)="buscar(page() - 1)">‹</button>
-                            <span class="pagination-info">{{ page() + 1 }} / {{ totalPages() }}</span>
-                            <button class="btn-page" [disabled]="page() + 1 >= totalPages()" (click)="buscar(page() + 1)">›</button>
-                        </div>
-                    }
-                }
-            </div>
+        <div>
+            <app-data-table
+                [data]="logsFiltrados()"
+                [columns]="columns"
+                [actions]="actions"
+                [loading]="cargando()"
+                [searchable]="true"
+                searchPlaceholder="Buscar por usuario, entidad o acción..."
+                [exportable]="true"
+                exportFileName="auditoria"
+                [currentPage]="page()"
+                [pageSize]="pageSize"
+                [totalElements]="totalElements()"
+                [totalPages]="totalPages()"
+                (searchChange)="onSearchTerm($event)"
+                (pageChange)="onPageChange($event)">
+            </app-data-table>
         </div>
 
         <!-- Panel de detalle -->
@@ -87,11 +68,11 @@
                 <div class="card-body space-y-3">
                     <div class="grid grid-cols-2 gap-2 text-sm">
                         <div><span class="text-muted">Entidad:</span> {{ seleccionado()!.entidadTipo }}</div>
-                        <div><span class="text-muted">Acción:</span> <span [ngClass]="accionClass(seleccionado()!.accion)">{{ seleccionado()!.accion }}</span></div>
+                        <div><span class="text-muted">Acción:</span> <span [class]="accionClass(seleccionado()!.accion)">{{ seleccionado()!.accion }}</span></div>
                         <div><span class="text-muted">Usuario:</span> {{ seleccionado()!.usuarioNombre }}</div>
                         <div><span class="text-muted">IP:</span> {{ seleccionado()!.ipOrigen ?? '—' }}</div>
                         <div class="col-span-2"><span class="text-muted">ID entidad:</span> <span class="font-mono text-xs">{{ seleccionado()!.entidadId }}</span></div>
-                        <div class="col-span-2"><span class="text-muted">Timestamp:</span> {{ seleccionado()!.timestamp | date:'dd/MM/yyyy HH:mm:ss' }}</div>
+                        <div class="col-span-2"><span class="text-muted">Timestamp:</span> {{ formatFechaHora(seleccionado()!.timestamp) }}</div>
                     </div>
                     @if (seleccionado()!.datosAnteriores) {
                         <div>

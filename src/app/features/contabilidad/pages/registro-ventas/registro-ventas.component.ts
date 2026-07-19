@@ -1,13 +1,12 @@
 import { Component, inject, signal, computed, OnInit, ChangeDetectionStrategy } from '@angular/core';
-import { DatePipe, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { PeriodoService, PeriodoContable } from '../../services/periodo.service';
 import { ExportService } from '@shared/services/export.service';
 import { PleService } from '../../services/ple.service';
 import { environment } from '@env/environment';
-import { PaginationComponent, PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
 import { ButtonComponent } from '@shared/components';
+import { DataTableComponent, TableColumn, PaginationEvent } from '@shared/ui/tables/data-table/data-table.component';
 
 interface VentaPLE {
     id: string | number;
@@ -27,7 +26,7 @@ interface VentaPLE {
     selector: 'app-registro-ventas',
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [DatePipe, DecimalPipe, FormsModule, PaginationComponent, ButtonComponent],
+    imports: [FormsModule, ButtonComponent, DataTableComponent],
     templateUrl: './registro-ventas.component.html'
 })
 export class RegistroVentasComponent implements OnInit {
@@ -46,13 +45,29 @@ export class RegistroVentasComponent implements OnInit {
     readonly rucEmpresa = signal('');
     readonly descargandoPLE = signal(false);
 
+    readonly searchQuery = signal('');
+
     readonly currentPage = signal(0);
     readonly pageSize = signal(20);
+
+    readonly ventasFiltradas = computed(() => {
+        const q = this.searchQuery().trim().toLowerCase();
+        const lista = this.ventas();
+        if (!q) return lista;
+        return lista.filter(v =>
+            v.serie?.toLowerCase().includes(q) ||
+            v.numero?.toLowerCase().includes(q) ||
+            v.rucCliente?.toLowerCase().includes(q) ||
+            v.razonSocial?.toLowerCase().includes(q) ||
+            v.tipoComprobante?.toLowerCase().includes(q)
+        );
+    });
+
     readonly ventasPaginadas = computed(() => {
         const inicio = this.currentPage() * this.pageSize();
-        return this.ventas().slice(inicio, inicio + this.pageSize());
+        return this.ventasFiltradas().slice(inicio, inicio + this.pageSize());
     });
-    readonly totalPagesLocal = computed(() => Math.ceil(this.ventas().length / this.pageSize()) || 1);
+    readonly totalPagesLocal = computed(() => Math.ceil(this.ventasFiltradas().length / this.pageSize()) || 1);
 
     readonly totalBase = computed(() =>
         this.ventas().filter(v => v.estado !== 'ANULADO').reduce((s, v) => s + v.baseImponible, 0)
@@ -63,6 +78,37 @@ export class RegistroVentasComponent implements OnInit {
     readonly totalVentas = computed(() =>
         this.ventas().filter(v => v.estado !== 'ANULADO').reduce((s, v) => s + v.total, 0)
     );
+
+    columns: TableColumn<VentaPLE>[] = [
+        {
+            key: 'fecha', label: 'Fecha', html: true,
+            render: v => `<span class="font-mono">${v.fecha ? new Date(v.fecha).toLocaleDateString('es-PE') : '-'}</span>`
+        },
+        {
+            key: 'tipoComprobante', label: 'Tipo', html: true,
+            render: v => `<span class="badge badge-neutral">${v.tipoComprobante}</span>`
+        },
+        { key: 'serie', label: 'Serie', html: true, render: v => `<span class="font-mono">${v.serie}</span>` },
+        { key: 'numero', label: 'Número', html: true, render: v => `<span class="font-mono">${v.numero}</span>` },
+        { key: 'rucCliente', label: 'RUC/DNI', html: true, render: v => `<span class="font-mono">${v.rucCliente}</span>` },
+        { key: 'razonSocial', label: 'Cliente' },
+        {
+            key: 'baseImponible', label: 'Base Imp.', align: 'right', html: true,
+            render: v => `<span class="font-mono">S/ ${(v.baseImponible ?? 0).toFixed(2)}</span>`
+        },
+        {
+            key: 'igv', label: 'IGV', align: 'right', html: true,
+            render: v => `<span class="font-mono">S/ ${(v.igv ?? 0).toFixed(2)}</span>`
+        },
+        {
+            key: 'total', label: 'Total', align: 'right', html: true,
+            render: v => `<span class="font-mono font-bold">S/ ${(v.total ?? 0).toFixed(2)}</span>`
+        },
+        {
+            key: 'estado', label: 'Estado', html: true,
+            render: v => `<span class="badge ${v.estado === 'ANULADO' ? 'badge-error' : 'badge-success'}">${v.estado}</span>`
+        },
+    ];
 
     ngOnInit() {
         this.periodoService.listar().subscribe({
@@ -135,7 +181,12 @@ export class RegistroVentasComponent implements OnInit {
         this.exportService.exportCsv([cabecera, ...filas], 'registro-ventas');
     }
 
-    onPageChange(event: PaginationChangeEvent) {
+    onSearchTerm(term: string) {
+        this.searchQuery.set(term);
+        this.currentPage.set(0);
+    }
+
+    onPageChange(event: PaginationEvent) {
         this.currentPage.set(event.page);
         this.pageSize.set(event.size);
     }
@@ -143,6 +194,7 @@ export class RegistroVentasComponent implements OnInit {
     cargar() {
         if (!this.periodoSeleccionado()) return;
         this.currentPage.set(0);
+        this.searchQuery.set('');
         this.cargando.set(true);
         this.error.set(null);
         let params = new HttpParams().set('periodoId', this.periodoSeleccionado()).set('size', '200');

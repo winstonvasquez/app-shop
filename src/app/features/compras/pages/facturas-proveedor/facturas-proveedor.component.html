@@ -9,68 +9,24 @@
     @if (error()) { <app-alert type="error" [message]="error()!" (close)="error.set(null)" /> }
     @if (actionError()) { <app-alert type="error" [message]="actionError()!" (close)="actionError.set(null)" /> }
 
-    <div class="filters-bar">
-        <select class="form-input" style="width:180px" (change)="onFilterEstado($event)">
-            <option value="">Todos los estados</option>
-            @for (opt of estadoOptions; track opt.value) {
-                <option [value]="opt.value">{{ opt.label }}</option>
-            }
-        </select>
-    </div>
-
-    <div class="card">
-        <div class="card-body">
-            @if (loading()) {
-                <app-loading-spinner />
-            } @else if (isEmpty()) {
-                <p class="text-muted text-center py-8">No hay facturas registradas.</p>
-            } @else {
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th class="table-header-cell">Proveedor</th>
-                            <th class="table-header-cell">Factura</th>
-                            <th class="table-header-cell">OC</th>
-                            <th class="table-header-cell">Fecha</th>
-                            <th class="table-header-cell text-right">Total</th>
-                            <th class="table-header-cell">Estado</th>
-                            <th class="table-header-cell">3-Way Match</th>
-                            <th class="table-header-cell">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @for (fac of facturas(); track fac.id) {
-                            <tr class="table-row">
-                                <td class="table-cell">{{ fac.proveedorNombre }}</td>
-                                <td class="table-cell font-mono text-sm">{{ fac.serie }}-{{ fac.numero }}</td>
-                                <td class="table-cell font-mono text-sm">{{ fac.ordenCompraCodigo }}</td>
-                                <td class="table-cell">{{ fac.fechaEmision }}</td>
-                                <td class="table-cell text-right">S/ {{ fac.total.toFixed(2) }}</td>
-                                <td class="table-cell">
-                                    <span [class]="getEstadoBadge(fac.estado)">{{ fac.estado }}</span>
-                                </td>
-                                <td class="table-cell">
-                                    <span [class]="getMatchBadge(fac.resultadoMatch)">
-                                        {{ getMatchLabel(fac.resultadoMatch) }}
-                                    </span>
-                                </td>
-                                <td class="table-cell">
-                                    <app-button label="Ver" variant="secondary" icon="eye" size="sm" (click)="openDetail(fac)" />
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-
-                <app-pagination
-                    [currentPage]="currentPage()"
-                    [totalPages]="totalPages()"
-                    [totalElements]="totalElements()"
-                    [pageSize]="pageSize()"
-                    (pageChange)="onPageChange($event)" />
-            }
-        </div>
-    </div>
+    <app-data-table
+        [data]="filteredFacturas()"
+        [columns]="columns"
+        [actions]="actions"
+        [loading]="loading()"
+        [searchable]="true"
+        searchPlaceholder="Buscar por proveedor, factura u OC..."
+        [filters]="estadoFilters"
+        [exportable]="true"
+        exportFileName="facturas-proveedor"
+        [currentPage]="currentPage()"
+        [pageSize]="pageSize()"
+        [totalElements]="totalElements()"
+        [totalPages]="totalPages()"
+        (searchChange)="onSearchTerm($event)"
+        (filterChange)="onFilterChangeEvent($event)"
+        (pageChange)="onPageChange($event)">
+    </app-data-table>
 </div>
 
 <!-- Register Factura Drawer -->

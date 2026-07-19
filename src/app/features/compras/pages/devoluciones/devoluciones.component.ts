@@ -10,14 +10,21 @@ import {
 import { ReactiveFormsModule, FormBuilder, Validators, FormArray, FormGroup } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
+import { of } from 'rxjs';
 import { DevolucionService } from '../../services/devolucion.service';
 import { CrearDevolucionRequest, Devolucion } from '../../models/devolucion.model';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
-import { LoadingSpinnerComponent } from '@shared/ui/feedback/loading-spinner/loading-spinner.component';
-import { PaginationComponent, PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
 import { ButtonComponent } from '@shared/components';
+import {
+    DataTableComponent,
+    TableColumn,
+    TableAction,
+    PaginationEvent,
+    FilterConfig,
+    FilterChangeEvent,
+} from '@shared/ui/tables/data-table/data-table.component';
 
 @Component({
     selector: 'app-devoluciones',
@@ -29,9 +36,8 @@ import { ButtonComponent } from '@shared/components';
         DrawerComponent,
         PageHeaderComponent,
         AlertComponent,
-        LoadingSpinnerComponent,
-        PaginationComponent,
         ButtonComponent,
+        DataTableComponent,
     ],
     templateUrl: './devoluciones.component.html',
 })
@@ -56,9 +62,21 @@ export class DevolucionesComponent implements OnInit {
     pageSize = signal(10);
     totalElements = signal(0);
     totalPages = signal(0);
+    searchQuery = signal('');
 
     hasItems = computed(() => this.devoluciones().length > 0);
     isEmpty = computed(() => !this.loading() && !this.hasItems());
+
+    filteredDevoluciones = computed(() => {
+        const q = this.searchQuery().trim().toLowerCase();
+        if (!q) return this.devoluciones();
+        return this.devoluciones().filter(
+            (d) =>
+                (d.codigo ?? '').toLowerCase().includes(q) ||
+                (d.ordenCompraCodigo ?? '').toLowerCase().includes(q) ||
+                (d.proveedorNombre ?? '').toLowerCase().includes(q)
+        );
+    });
 
     breadcrumbs: Breadcrumb[] = [
         { label: 'Compras', url: '/compras' },
@@ -79,6 +97,32 @@ export class DevolucionesComponent implements OnInit {
         { value: 'PRECIO_INCORRECTO', label: 'Precio Incorrecto' },
         { value: 'ENTREGA_TARDIA', label: 'Entrega Tardía' },
         { value: 'OTRO', label: 'Otro' },
+    ];
+
+    columns: TableColumn<Devolucion>[] = [
+        { key: 'codigo', label: 'Código' },
+        { key: 'ordenCompraCodigo', label: 'OC' },
+        { key: 'proveedorNombre', label: 'Proveedor' },
+        { key: 'motivo', label: 'Motivo', render: (row) => this.getMotivoLabel(row.motivo) },
+        { key: 'tipo', label: 'Tipo' },
+        {
+            key: 'estado',
+            label: 'Estado',
+            html: true,
+            render: (row) => `<span class="${this.getBadge(row.estado)}">${this.getEstadoLabel(row.estado)}</span>`,
+        },
+    ];
+
+    actions: TableAction<Devolucion>[] = [
+        { label: 'Ver', icon: 'view', onClick: (row) => this.openDetail(row) },
+    ];
+
+    estadoFilters: FilterConfig[] = [
+        {
+            field: 'estado',
+            label: 'Todos los estados',
+            options: of(this.estadoOptions.map((o) => ({ value: o.value, label: o.label }))),
+        },
     ];
 
     devolucionForm = this.fb.group({
@@ -114,13 +158,19 @@ export class DevolucionesComponent implements OnInit {
         });
     }
 
-    onFilterEstado(event: Event): void {
-        this.filterEstado.set((event.target as HTMLSelectElement).value);
-        this.currentPage.set(0);
-        this.loadDevoluciones();
+    onSearchTerm(term: string): void {
+        this.searchQuery.set(term);
     }
 
-    onPageChange(event: PaginationChangeEvent): void {
+    onFilterChangeEvent(event: FilterChangeEvent): void {
+        if (event.field === 'estado') {
+            this.filterEstado.set((event.value as string) ?? '');
+            this.currentPage.set(0);
+            this.loadDevoluciones();
+        }
+    }
+
+    onPageChange(event: PaginationEvent): void {
         this.currentPage.set(event.page);
         this.loadDevoluciones();
     }

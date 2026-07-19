@@ -9,62 +9,24 @@
     @if (error()) { <app-alert type="error" [message]="error()!" (close)="error.set(null)" /> }
     @if (actionError()) { <app-alert type="error" [message]="actionError()!" (close)="actionError.set(null)" /> }
 
-    <div class="filters-bar">
-        <select class="form-input" style="width:180px" (change)="onFilterEstado($event)">
-            <option value="">Todos los estados</option>
-            @for (opt of estadoOptions; track opt.value) {
-                <option [value]="opt.value">{{ opt.label }}</option>
-            }
-        </select>
-    </div>
-
-    <div class="card">
-        <div class="card-body">
-            @if (loading()) {
-                <app-loading-spinner />
-            } @else if (isEmpty()) {
-                <p class="text-muted text-center py-8">No hay devoluciones registradas.</p>
-            } @else {
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th class="table-header-cell">Código</th>
-                            <th class="table-header-cell">OC</th>
-                            <th class="table-header-cell">Proveedor</th>
-                            <th class="table-header-cell">Motivo</th>
-                            <th class="table-header-cell">Tipo</th>
-                            <th class="table-header-cell">Estado</th>
-                            <th class="table-header-cell">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @for (dev of devoluciones(); track dev.id) {
-                            <tr class="table-row">
-                                <td class="table-cell font-mono text-sm">{{ dev.codigo }}</td>
-                                <td class="table-cell font-mono text-sm">{{ dev.ordenCompraCodigo }}</td>
-                                <td class="table-cell">{{ dev.proveedorNombre }}</td>
-                                <td class="table-cell">{{ getMotivoLabel(dev.motivo) }}</td>
-                                <td class="table-cell">{{ dev.tipo }}</td>
-                                <td class="table-cell">
-                                    <span [class]="getBadge(dev.estado)">{{ getEstadoLabel(dev.estado) }}</span>
-                                </td>
-                                <td class="table-cell">
-                                    <button class="btn btn-secondary text-xs py-1 px-2"
-                                        (click)="openDetail(dev)">Ver</button>
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-                <app-pagination
-                    [currentPage]="currentPage()"
-                    [totalPages]="totalPages()"
-                    [totalElements]="totalElements()"
-                    [pageSize]="pageSize()"
-                    (pageChange)="onPageChange($event)" />
-            }
-        </div>
-    </div>
+    <app-data-table
+        [data]="filteredDevoluciones()"
+        [columns]="columns"
+        [actions]="actions"
+        [loading]="loading()"
+        [searchable]="true"
+        searchPlaceholder="Buscar por código, OC o proveedor..."
+        [filters]="estadoFilters"
+        [exportable]="true"
+        exportFileName="devoluciones"
+        [currentPage]="currentPage()"
+        [pageSize]="pageSize()"
+        [totalElements]="totalElements()"
+        [totalPages]="totalPages()"
+        (searchChange)="onSearchTerm($event)"
+        (filterChange)="onFilterChangeEvent($event)"
+        (pageChange)="onPageChange($event)">
+    </app-data-table>
 </div>
 
 <!-- Create Drawer -->
