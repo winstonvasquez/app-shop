@@ -36,34 +36,20 @@
 </div>
 
 <!-- Filtros -->
-<div class="filters-bar">
-    <select class="form-input" style="width: auto; min-width: 200px"
-            [value]="filtroEstado()"
-            (change)="onFilterEstado($event)">
-        <option value="">Todos los estados</option>
-        @for (opt of estadoOptions; track opt.value) {
-            <option [value]="opt.value">{{ opt.label }}</option>
-        }
-    </select>
-</div>
-
 <!-- Tabla -->
 <app-data-table
     [data]="pagedData()"
     [columns]="columns"
     [actions]="actions"
+    [filters]="toolbarFilters"
     [exportable]="true"
     exportFileName="capacitaciones"
-    [hidePagination]="true" />
-
-@if (totalElements() > 0) {
-    <app-pagination
-        [currentPage]="currentPage()"
-        [totalPages]="totalPages()"
-        [totalElements]="totalElements()"
-        [pageSize]="pageSize()"
-        (pageChange)="onPaginationChange($event)" />
-}
+    [currentPage]="currentPage()"
+    [pageSize]="pageSize()"
+    [totalElements]="totalElements()"
+    [totalPages]="totalPages()"
+    (filterChange)="onFilterChangeEvent($event)"
+    (pageChange)="onPaginationChange($event)" />
 
 <!-- ── Drawer: Crear/Editar Capacitación ────────────────────────────────── -->
 <app-drawer

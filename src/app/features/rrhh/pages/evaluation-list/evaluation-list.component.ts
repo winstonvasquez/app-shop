@@ -2,7 +2,8 @@ import { Component, inject, signal, computed, ChangeDetectionStrategy, OnInit } 
 import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ButtonComponent } from '@shared/components';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
-import { DataTableComponent, TableColumn, TableAction } from '@shared/ui/tables/data-table/data-table.component';
+import { of } from 'rxjs';
+import { DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { PaginationComponent, PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
@@ -163,13 +164,16 @@ export class EvaluationListComponent implements OnInit {
         this.employeeService.loadEmployees();
     }
 
-    onFilterEstado(event: Event): void {
-        this.filtroEstado.set((event.target as HTMLSelectElement).value);
-        this.currentPage.set(0);
-    }
+    readonly toolbarFilters: FilterConfig[] = [
+        { field: 'estado', label: 'Todos los estados', options: of(this.estadoOptions) },
+        { field: 'tipo', label: 'Todos los tipos', options: of(this.tipoOptions) }
+    ];
 
-    onFilterTipo(event: Event): void {
-        this.filtroTipo.set((event.target as HTMLSelectElement).value);
+    onFilterChangeEvent(event: FilterChangeEvent): void {
+        const v = event.value != null ? String(event.value) : '';
+        if (event.field === 'estado') this.filtroEstado.set(v);
+        else if (event.field === 'tipo') this.filtroTipo.set(v);
+        else return;
         this.currentPage.set(0);
     }
 

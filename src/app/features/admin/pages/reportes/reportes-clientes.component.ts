@@ -1,7 +1,7 @@
 import { Component, ChangeDetectionStrategy, inject, signal, OnInit, computed, DestroyRef } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DatePipe } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
+
 import { HttpClient } from '@angular/common/http';
 import { environment } from '@env/environment';
 import { ExportService } from '../../../../shared/services/export.service';
@@ -30,14 +30,13 @@ interface PageResponse<T> {
     selector: 'app-reportes-clientes',
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [DatePipe, ReactiveFormsModule, ButtonComponent],
+    imports: [DatePipe, ButtonComponent],
     templateUrl: './reportes-clientes.component.html',
     styleUrls: ['./reportes-clientes.component.scss'],
 })
 export class ReportesClientesComponent implements OnInit {
     private readonly http = inject(HttpClient);
     private readonly exportService = inject(ExportService);
-    private readonly fb = inject(FormBuilder);
     private readonly destroyRef = inject(DestroyRef);
 
     usuarios = signal<Usuario[]>([]);
@@ -49,9 +48,9 @@ export class ReportesClientesComponent implements OnInit {
 
     private busquedaSignal = signal('');
 
-    filterForm: FormGroup = this.fb.group({
-        busqueda: [''],
-    });
+    onSearchTerm(term: string): void {
+        this.busquedaSignal.set(term);
+    }
 
     activos = computed(() => this.usuarios().filter(u => u.activo).length);
     pages = computed(() => Array.from({ length: Math.min(this.totalPages(), 5) }, (_, i) => i));
@@ -67,9 +66,6 @@ export class ReportesClientesComponent implements OnInit {
     });
 
     ngOnInit() {
-        this.filterForm.get('busqueda')!.valueChanges
-            .pipe(takeUntilDestroyed(this.destroyRef))
-            .subscribe((v: string) => this.busquedaSignal.set(v ?? ''));
         this.cargar();
     }
 

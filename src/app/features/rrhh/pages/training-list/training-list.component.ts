@@ -1,7 +1,8 @@
 import { Component, inject, signal, computed, ChangeDetectionStrategy, OnInit } from '@angular/core';
 import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
-import { DataTableComponent, TableColumn, TableAction } from '@shared/ui/tables/data-table/data-table.component';
+import { of } from 'rxjs';
+import { DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { PaginationComponent, PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
@@ -129,8 +130,13 @@ export class TrainingListComponent implements OnInit {
         this.trainingService.loadTrainings();
     }
 
-    onFilterEstado(event: Event): void {
-        this.filtroEstado.set((event.target as HTMLSelectElement).value);
+    readonly toolbarFilters: FilterConfig[] = [
+        { field: 'estado', label: 'Todos los estados', options: of(this.estadoOptions) }
+    ];
+
+    onFilterChangeEvent(event: FilterChangeEvent): void {
+        if (event.field !== 'estado') return;
+        this.filtroEstado.set(event.value != null ? String(event.value) : '');
         this.currentPage.set(0);
     }
 

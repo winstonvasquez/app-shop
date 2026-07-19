@@ -10,25 +10,23 @@
 
   <!-- Filtros -->
   <div class="filters-bar mb-6">
-    <div style="display:flex;gap:var(--space-md);align-items:flex-end;flex-wrap:wrap">
-      <div>
-        <label class="input-label">Fecha Inicio</label>
-        <input
-          type="date"
-          class="form-input"
-          [value]="fechaInicio()"
-          (change)="fechaInicio.set($any($event.target).value)">
-      </div>
-      <div>
-        <label class="input-label">Fecha Fin</label>
-        <input
-          type="date"
-          class="form-input"
-          [value]="fechaFin()"
-          (change)="fechaFin.set($any($event.target).value)">
-      </div>
-      <app-button icon="search" label="Consultar" variant="primary" (click)="consultar()" />
+    <div class="filter-field">
+      <label class="input-label">Desde</label>
+      <input
+        type="date"
+        class="form-input"
+        [value]="fechaInicio()"
+        (change)="fechaInicio.set($any($event.target).value)">
     </div>
+    <div class="filter-field">
+      <label class="input-label">Hasta</label>
+      <input
+        type="date"
+        class="form-input"
+        [value]="fechaFin()"
+        (change)="fechaFin.set($any($event.target).value)">
+    </div>
+    <app-button icon="search" label="Consultar" variant="primary" size="sm" (click)="consultar()" />
   </div>
 
   <!-- KPIs -->

@@ -2,7 +2,8 @@ import { Component, inject, signal, computed, OnInit, ChangeDetectionStrategy } 
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
-import { DataTableComponent, TableColumn, TableAction } from '@shared/ui/tables/data-table/data-table.component';
+import { of } from 'rxjs';
+import { DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { DateInputComponent } from '@shared/ui/forms/date-input/date-input.component';
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
 import { AdminFormSectionComponent } from '@shared/ui/forms/admin-form-section/admin-form-section.component';
@@ -55,6 +56,17 @@ export class PromotionsComponent implements OnInit {
         { value: 'INACTIVA', label: 'Inactivas' },
         { value: 'VENCIDA',  label: 'Vencidas' },
     ];
+
+    // Filtro de estado en el toolbar del data-table
+    readonly estadoFilters: FilterConfig[] = [
+        { field: 'estado', label: 'Todos los estados',
+          options: of(this.estadoOptions.filter(o => o.value !== '')) }
+    ];
+
+    onFilterChangeEvent(event: FilterChangeEvent): void {
+        if (event.field !== 'estado') return;
+        this.filtroEstado = event.value != null ? String(event.value) : '';
+    }
 
     form = this.fb.group({
         nombre:       ['', Validators.required],

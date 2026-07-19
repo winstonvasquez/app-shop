@@ -26,27 +26,17 @@
     </div>
 
     <!-- Filtros -->
-    <div class="filters-bar mb-[var(--form-gap)]">
-        <select class="form-input" [value]="filtroEstado" (change)="filtroEstado = $any($event.target).value">
-            @for (opt of estadoOptions; track opt.value) {
-                <option [value]="opt.value">{{ opt.label }}</option>
-            }
-        </select>
-    </div>
-
-    <!-- Tabla -->
-    <div class="card">
-        <div class="card-body" style="padding:0">
-            <app-data-table
-                [data]="promocionesVm()"
-                [columns]="columns"
-                [actions]="actions"
-                [loading]="cargando()"
-                [totalElements]="promocionesVm().length"
-                [pageSize]="20">
-            </app-data-table>
-        </div>
-    </div>
+    <!-- Tabla (filtro de estado en el toolbar; sin card contenedor) -->
+    <app-data-table
+        [data]="promocionesVm()"
+        [columns]="columns"
+        [actions]="actions"
+        [loading]="cargando()"
+        [filters]="estadoFilters"
+        [totalElements]="promocionesVm().length"
+        [pageSize]="20"
+        (filterChange)="onFilterChangeEvent($event)">
+    </app-data-table>
 
 </div>
 

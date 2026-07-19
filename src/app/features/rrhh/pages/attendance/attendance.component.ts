@@ -7,7 +7,8 @@ import { AttendanceService } from '../../services/attendance.service';
 import { EmployeeService } from '../../services/employee.service';
 import { Attendance } from '../../models/attendance.model';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
-import { DataTableComponent, TableColumn } from '@shared/ui/tables/data-table/data-table.component';
+import { of } from 'rxjs';
+import { DataTableComponent, TableColumn, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { PaginationComponent, PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
@@ -132,8 +133,14 @@ export class AttendanceComponent implements OnInit {
         this.currentPage.set(0);
     }
 
-    onFilterTipo(event: Event): void {
-        this.filterTipo.set((event.target as HTMLSelectElement).value);
+    readonly tipoFilters: FilterConfig[] = [
+        { field: 'tipo', label: 'Todos los tipos',
+          options: of(this.tipoRegistroOptions.map(o => ({ value: o.value, label: o.label }))) }
+    ];
+
+    onFilterChangeEvent(event: FilterChangeEvent): void {
+        if (event.field !== 'tipo') return;
+        this.filterTipo.set(event.value != null ? String(event.value) : '');
         this.currentPage.set(0);
     }
 

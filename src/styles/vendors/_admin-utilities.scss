@@ -669,6 +669,26 @@
     border-radius: 12px;
     padding: 12px 16px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+
+    /* Alineación uniforme del patrón toolbar: todo control de filtro a 32px */
+    > select, > input,
+    select.form-input, input.form-input,
+    .filter-field select, .filter-field input,
+    form select, form input {
+        height: 32px;
+        min-height: 32px;
+        padding-top: 0;
+        padding-bottom: 0;
+        border-radius: 6px;
+        font-size: 13px;
+    }
+    /* Labels de filtro: inline junto al control (no encima) */
+    .filter-field, > div {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .input-label { margin: 0; white-space: nowrap; }
 }
 
 .search-box {

@@ -8,27 +8,17 @@
 
     <!-- Filtros -->
     <div class="filters-bar mb-4">
-        <div class="flex gap-3 flex-wrap items-end">
-            <div>
-                <label class="input-label">Tipo de entidad</label>
-                <input class="form-input w-40" type="text" placeholder="ASIENTO, PERIODO..."
-                    [ngModel]="filtroTipo()" (ngModelChange)="filtroTipo.set($event)">
-            </div>
-            <div>
-                <label class="input-label">Desde</label>
-                <input class="form-input" type="date" [ngModel]="filtroDesde()" (ngModelChange)="filtroDesde.set($event)">
-            </div>
-            <div>
-                <label class="input-label">Hasta</label>
-                <input class="form-input" type="date" [ngModel]="filtroHasta()" (ngModelChange)="filtroHasta.set($event)">
-            </div>
-            <app-button
-                icon="search"
-                variant="primary"
-                label="Buscar"
-                (click)="buscar()">
-            </app-button>
+        <input class="form-input w-40" type="text" placeholder="Tipo: ASIENTO, PERIODO..."
+            [ngModel]="filtroTipo()" (ngModelChange)="filtroTipo.set($event)">
+        <div class="filter-field">
+            <label class="input-label">Desde</label>
+            <input class="form-input" type="date" [ngModel]="filtroDesde()" (ngModelChange)="filtroDesde.set($event)">
         </div>
+        <div class="filter-field">
+            <label class="input-label">Hasta</label>
+            <input class="form-input" type="date" [ngModel]="filtroHasta()" (ngModelChange)="filtroHasta.set($event)">
+        </div>
+        <app-button icon="search" variant="primary" size="sm" label="Buscar" (click)="buscar()"></app-button>
     </div>
 
     <div class="grid" [ngClass]="seleccionado() ? 'grid-cols-2 gap-4' : 'grid-cols-1'">

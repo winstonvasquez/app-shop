@@ -84,10 +84,11 @@ export class ReportesRrhhComponent implements OnInit {
         return lista;
     });
 
+    onSearchTerm(term: string): void {
+        this.busquedaSignal.set(term);
+    }
+
     ngOnInit() {
-        this.filterForm.get('busqueda')!.valueChanges
-            .pipe(takeUntilDestroyed(this.destroyRef))
-            .subscribe((v: string) => this.busquedaSignal.set(v ?? ''));
         this.filterForm.get('filtroArea')!.valueChanges
             .pipe(takeUntilDestroyed(this.destroyRef))
             .subscribe((v: string) => this.filtroAreaSignal.set(v ?? ''));
