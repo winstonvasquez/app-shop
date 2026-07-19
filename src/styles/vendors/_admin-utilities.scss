@@ -580,7 +580,9 @@
    ============================================ */
 
 .page-container {
-    @apply p-6;
+    /* El gutter lo provee .dashboard-content (24px) para uniformar TODAS las páginas.
+       Antes esta clase tenía p-6, lo que dejaba pegadas las páginas que usan
+       wrappers propios (-page) sin ese padding. */
 }
 
 /* ── Page Header — diseño moderno ───────────────────────────── */

@@ -20,8 +20,10 @@
 
 .dashboard-content {
     flex: 1;
-    /* Gutter chrome↔main compacto: 4px (antes 2rem/32px) */
-    padding: 4px;
+    /* Gutter único del main para TODAS las páginas (nivel Promociones, p-6=24px).
+       El padding vive aquí, no en .page-container, para que toda página
+       (con .page-container, wrapper -page propio, o sin wrapper) herede el mismo espaciado. */
+    padding: 1.5rem;
 }
 
 @media (max-width: 768px) {
