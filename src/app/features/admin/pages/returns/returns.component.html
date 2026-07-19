@@ -9,47 +9,45 @@
         <app-button label="Nueva Devolución" variant="primary" icon="plus" (click)="abrirNueva()" />
     </div>
 
-    <!-- KPI Cards -->
+    <!-- KPI Cards (server-side /stats) -->
     <div class="grid grid-cols-2 gap-[var(--card-gap)] md:grid-cols-4 mb-[var(--section-gap)]">
         <div class="card-metric">
             <span class="card-metric-label">Total Devoluciones</span>
-            <span class="card-metric-value">{{ totalDevoluciones() }}</span>
+            <span class="card-metric-value">{{ stats().total }}</span>
         </div>
         <div class="card-metric">
             <span class="card-metric-label">Pendientes Revisión</span>
-            <span class="card-metric-value">{{ devPendientes() }}</span>
+            <span class="card-metric-value">{{ stats().pendientes }}</span>
         </div>
         <div class="card-metric">
             <span class="card-metric-label">Aprobadas</span>
-            <span class="card-metric-value">{{ devAprobadas() }}</span>
+            <span class="card-metric-value">{{ stats().aprobadas }}</span>
         </div>
         <div class="card-metric">
             <span class="card-metric-label">Monto Reembolsado</span>
-            <span class="card-metric-value">S/ {{ montoReembolsado().toFixed(2) }}</span>
+            <span class="card-metric-value">S/ {{ stats().montoReembolsado.toFixed(2) }}</span>
         </div>
     </div>
 
-    <!-- Filtros -->
-    <div class="filters-bar mb-[var(--form-gap)]" [formGroup]="filterForm">
-        <select class="form-input" formControlName="filtroEstado">
-            @for (opt of estadoOptions(); track opt.value) {
-                <option [value]="opt.value">{{ opt.label }}</option>
-            }
-        </select>
-    </div>
-
-    <!-- Tabla -->
-    <div class="card">
-        <div class="card-body" style="padding:0">
-            <app-data-table
-                [data]="devolucionesFiltradas()"
-                [columns]="columns"
-                [actions]="actions"
-                [totalElements]="devolucionesFiltradas().length"
-                [pageSize]="20">
-            </app-data-table>
-        </div>
-    </div>
+    <!-- Tabla (server-side: search + estado + paginación 20/pág; toolbar integrado) -->
+    <app-data-table
+        [data]="devoluciones()"
+        [columns]="columns"
+        [actions]="actions"
+        [loading]="loading()"
+        [searchable]="true"
+        searchPlaceholder="Buscar por pedido o cliente..."
+        [filters]="estadoFilters"
+        [exportable]="true"
+        exportFileName="devoluciones"
+        [currentPage]="currentPage()"
+        [pageSize]="pageSize()"
+        [totalElements]="totalElements()"
+        [totalPages]="totalPages()"
+        (searchChange)="onSearchTerm($event)"
+        (filterChange)="onFilterChangeEvent($event)"
+        (pageChange)="onPageChange($event)">
+    </app-data-table>
 
 </div>
 

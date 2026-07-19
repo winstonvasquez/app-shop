@@ -1,15 +1,16 @@
-import { Component, inject, signal, computed, OnInit, ChangeDetectionStrategy, DestroyRef } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Component, inject, signal, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '@env/environment';
+import { PageResponse, pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
-import { DataTableComponent, TableColumn, TableAction } from '@shared/ui/tables/data-table/data-table.component';
+import { DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent, PaginationEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { DateInputComponent } from '@shared/ui/forms/date-input/date-input.component';
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
 import { AdminFormSectionComponent } from '@shared/ui/forms/admin-form-section/admin-form-section.component';
 import { AdminFormLayoutComponent } from '@shared/ui/forms/admin-form-layout/admin-form-layout.component';
 import { ButtonComponent } from '@shared/components';
+import { AuthService } from '@core/auth/auth.service';
 import { VentasParametrosService, SelectOption } from '../../services/ventas-parametros.service';
 
 type MotivoDevolucion = 'DEFECTO' | 'CAMBIO' | 'ERROR_PEDIDO' | 'NO_LLEGÓ' | 'OTRO';
@@ -18,7 +19,7 @@ type EstadoDevolucion = 'SOLICITADA' | 'EN_REVISION' | 'APROBADA' | 'RECHAZADA';
 
 interface Devolucion {
     id: string;
-    pedidoId: number;
+    pedidoId: number | null;
     numeroOrden: string;
     clienteNombre: string;
     fechaSolicitud: string;
@@ -29,8 +30,12 @@ interface Devolucion {
     observaciones?: string;
 }
 
-interface OrderSummary { id: number; usuarioId: number; estado: string; total: number; }
-interface PageResponse<T> { content: T[]; }
+interface DevolucionStats {
+    total: number;
+    pendientes: number;
+    aprobadas: number;
+    montoReembolsado: number;
+}
 
 @Component({
     selector: 'app-returns',
@@ -49,28 +54,44 @@ interface PageResponse<T> { content: T[]; }
     templateUrl: './returns.component.html',
 })
 export class ReturnsComponent implements OnInit {
-    private readonly http      = inject(HttpClient);
-    private readonly fb        = inject(FormBuilder);
-    private readonly destroyRef = inject(DestroyRef);
-    readonly parametros        = inject(VentasParametrosService);
+    private readonly http = inject(HttpClient);
+    private readonly fb   = inject(FormBuilder);
+    private readonly auth = inject(AuthService);
+    readonly parametros   = inject(VentasParametrosService);
 
-    devoluciones      = signal<Devolucion[]>([]);
-    pedidosEntregados = signal<OrderSummary[]>([]);
-    showModal         = signal(false);
-    guardando         = signal(false);
-    editMode          = signal(false);
-    selectedId        = signal<string | null>(null);
-    submitError       = signal('');
+    private readonly baseUrl = `${environment.apiUrls.sales}/api/devoluciones`;
 
-    motivoOptions      = signal<SelectOption[]>([]);
-    resolucionOptions  = signal<SelectOption[]>([]);
-    estadoOptions      = signal<SelectOption[]>([{ value: '', label: 'Todos los estados' }]);
-    filtroEstadoSignal = signal('');
+    /** Tenant actual (claim del JWT) — requerido por @RequiresTenantAccess en el backend. */
+    private companyId(): string {
+        return String(this.auth.currentUser()?.activeCompanyId ?? '');
+    }
 
-    // Formulario de filtro
-    filterForm: FormGroup = this.fb.group({
-        filtroEstado: [''],
-    });
+    devoluciones = signal<Devolucion[]>([]);
+    stats        = signal<DevolucionStats>({ total: 0, pendientes: 0, aprobadas: 0, montoReembolsado: 0 });
+    loading      = signal(false);
+    showModal    = signal(false);
+    guardando    = signal(false);
+    editMode     = signal(false);
+    selectedId   = signal<string | null>(null);
+    submitError  = signal('');
+
+    motivoOptions     = signal<SelectOption[]>([]);
+    resolucionOptions = signal<SelectOption[]>([]);
+
+    // Filtros / búsqueda (server-side por botón Buscar)
+    searchQuery  = signal('');
+    filtroEstado = signal('');
+
+    // Paginación server-side
+    currentPage   = signal(0);
+    pageSize      = signal(20);
+    totalElements = signal(0);
+    totalPages    = signal(0);
+
+    // Filtro de estado del toolbar — opciones dinámicas desde parámetros (BD)
+    estadoFilters: FilterConfig[] = [
+        { field: 'estado', label: 'Todos los estados', options: this.parametros.getEstadosDevolucion() }
+    ];
 
     // Formulario de devolución
     returnForm: FormGroup = this.fb.group({
@@ -85,7 +106,7 @@ export class ReturnsComponent implements OnInit {
 
     columns: TableColumn<Devolucion>[] = [
         { key: 'fechaSolicitud', label: 'Fecha',
-          render: (row) => new Date(row.fechaSolicitud).toLocaleDateString('es-PE') },
+          render: (row) => new Date(row.fechaSolicitud + 'T00:00:00').toLocaleDateString('es-PE') },
         { key: 'numeroOrden',   label: 'Pedido' },
         { key: 'clienteNombre', label: 'Cliente' },
         { key: 'motivo',        label: 'Motivo',
@@ -101,6 +122,9 @@ export class ReturnsComponent implements OnInit {
     actions: TableAction<Devolucion>[] = [
         { label: 'Revisar', icon: '👁', class: 'btn-view',
           onClick: (row) => this.abrirDetalle(row) },
+        { label: 'Pasar a revisión', icon: '✏️', class: 'btn-view',
+          show: (row) => row.estado === 'SOLICITADA',
+          onClick: (row) => this.cambiarEstado(row.id, 'EN_REVISION') },
         { label: 'Aprobar', icon: '✓', class: 'btn-view',
           show: (row) => row.estado === 'EN_REVISION',
           onClick: (row) => this.cambiarEstado(row.id, 'APROBADA') },
@@ -109,44 +133,67 @@ export class ReturnsComponent implements OnInit {
           onClick: (row) => this.cambiarEstado(row.id, 'RECHAZADA') },
     ];
 
-    devolucionesFiltradas = computed(() => {
-        const estado = this.filtroEstadoSignal();
-        if (!estado) return this.devoluciones();
-        return this.devoluciones().filter(d => d.estado === estado);
-    });
-
-    totalDevoluciones  = computed(() => this.devoluciones().length);
-    devPendientes      = computed(() => this.devoluciones().filter(d => d.estado === 'SOLICITADA').length);
-    devAprobadas       = computed(() => this.devoluciones().filter(d => d.estado === 'APROBADA').length);
-    montoReembolsado   = computed(() =>
-        this.devoluciones()
-            .filter(d => d.estado === 'APROBADA' && d.tipoResolucion === 'REEMBOLSO')
-            .reduce((s, d) => s + d.monto, 0)
-    );
-
     ngOnInit(): void {
-        this.filterForm.get('filtroEstado')!.valueChanges
-            .pipe(takeUntilDestroyed(this.destroyRef))
-            .subscribe((v: string) => this.filtroEstadoSignal.set(v ?? ''));
-
-        this.cargarPedidos();
         this.parametros.getMotivosDevolucion().subscribe(opts => this.motivoOptions.set(opts));
         this.parametros.getTiposResolucion().subscribe(opts => this.resolucionOptions.set(opts));
-        this.parametros.getEstadosDevolucion().subscribe(opts =>
-            this.estadoOptions.set([{ value: '', label: 'Todos los estados' }, ...opts])
-        );
+        this.loadPage();
+        this.loadStats();
     }
 
-    cargarPedidos(): void {
-        const url = `${environment.apiUrls.sales}/api/pedidos?page=0&size=50&sort=fechaPedido,desc`;
-        this.http.get<PageResponse<OrderSummary>>(url).subscribe({
-            next: (res) => this.pedidosEntregados.set(
-                (res.content ?? []).filter(p => p.estado === 'ENTREGADO')
-            ),
-            error: () => this.pedidosEntregados.set([])
+    /** Carga la página actual server-side (search + estado + 20/pág). */
+    private loadPage(): void {
+        this.loading.set(true);
+        const params: Record<string, string> = {
+            companyId: this.companyId(),
+            page: String(this.currentPage()),
+            size: String(this.pageSize()),
+        };
+        if (this.searchQuery()) params['search'] = this.searchQuery();
+        if (this.filtroEstado()) params['estado'] = this.filtroEstado();
+
+        this.http.get<PageResponse<Devolucion>>(`${this.baseUrl}/paged`, { params }).subscribe({
+            next: (res) => {
+                this.devoluciones.set(res.content ?? []);
+                this.totalElements.set(pageTotalElements(res));
+                this.totalPages.set(pageTotalPages(res));
+                this.loading.set(false);
+            },
+            error: () => {
+                this.devoluciones.set([]);
+                this.loading.set(false);
+            }
         });
     }
 
+    private loadStats(): void {
+        this.http.get<DevolucionStats>(`${this.baseUrl}/stats`, { params: { companyId: this.companyId() } }).subscribe({
+            next: (s) => this.stats.set(s),
+            error: () => { /* cards quedan en 0 */ }
+        });
+    }
+
+    // ── Toolbar handlers ──────────────────────────────────────────────────────
+    onSearchTerm(term: string): void {
+        this.searchQuery.set(term);
+        this.currentPage.set(0);
+        this.loadPage();
+    }
+
+    onFilterChangeEvent(event: FilterChangeEvent): void {
+        if (event.field === 'estado') {
+            this.filtroEstado.set(event.value != null ? String(event.value) : '');
+            this.currentPage.set(0);
+            this.loadPage();
+        }
+    }
+
+    onPageChange(event: PaginationEvent): void {
+        this.currentPage.set(event.page);
+        this.pageSize.set(event.size);
+        this.loadPage();
+    }
+
+    // ── Drawer / CRUD ─────────────────────────────────────────────────────────
     abrirNueva(): void {
         this.resetForm();
         this.editMode.set(false);
@@ -177,45 +224,47 @@ export class ReturnsComponent implements OnInit {
             this.returnForm.markAllAsTouched();
             return;
         }
-
-        const v = this.returnForm.getRawValue() as {
-            numeroOrden: string;
-            clienteNombre: string;
-            motivo: MotivoDevolucion;
-            tipoResolucion: TipoResolucion;
-            monto: number;
-            fechaSolicitud: string;
-            observaciones: string;
-        };
-
-        const devolucion: Devolucion = {
-            id:             this.editMode() ? (this.selectedId() ?? crypto.randomUUID()) : crypto.randomUUID(),
-            pedidoId:       0,
+        this.guardando.set(true);
+        this.submitError.set('');
+        const v = this.returnForm.getRawValue();
+        const body = {
+            pedidoId:       null,
             numeroOrden:    v.numeroOrden,
-            clienteNombre:  v.clienteNombre || `Pedido ${v.numeroOrden}`,
+            clienteNombre:  v.clienteNombre,
             fechaSolicitud: v.fechaSolicitud,
             motivo:         v.motivo,
             tipoResolucion: v.tipoResolucion,
             monto:          v.monto,
-            estado:         'SOLICITADA',
-            observaciones:  v.observaciones || undefined,
+            observaciones:  v.observaciones || null,
         };
+        const opts = { params: { companyId: this.companyId() } };
+        const req = this.editMode() && this.selectedId()
+            ? this.http.put<Devolucion>(`${this.baseUrl}/${this.selectedId()}`, body, opts)
+            : this.http.post<Devolucion>(this.baseUrl, body, opts);
 
-        if (this.editMode()) {
-            this.devoluciones.update(list =>
-                list.map(d => d.id === devolucion.id ? { ...d, ...devolucion, estado: d.estado } : d)
-            );
-        } else {
-            this.devoluciones.update(list => [devolucion, ...list]);
-        }
-
-        this.cerrarModal();
+        req.subscribe({
+            next: () => {
+                this.guardando.set(false);
+                this.cerrarModal();
+                this.loadPage();
+                this.loadStats();
+            },
+            error: (err) => {
+                this.guardando.set(false);
+                this.submitError.set(err?.error?.message ?? 'No se pudo guardar la devolución');
+            }
+        });
     }
 
     cambiarEstado(id: string, estado: EstadoDevolucion): void {
-        this.devoluciones.update(list =>
-            list.map(d => d.id === id ? { ...d, estado } : d)
-        );
+        this.http.patch<Devolucion>(`${this.baseUrl}/${id}/estado`, { estado },
+            { params: { companyId: this.companyId() } }).subscribe({
+            next: () => {
+                this.loadPage();
+                this.loadStats();
+            },
+            error: () => { /* mantener estado actual si falla */ }
+        });
     }
 
     cerrarModal(): void {
