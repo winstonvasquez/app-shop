@@ -6,11 +6,11 @@
    ============================================ */
 
 .btn {
-    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 font-medium rounded-xl
+    @apply inline-flex items-center justify-center gap-2 px-4 py-1.5 text-sm font-medium rounded-md
            transition-all duration-200 focus-visible:ring-2 focus-visible:ring-offset-2
            cursor-pointer border-0;
-    min-height: 2.75rem; /* 44px — WCAG 2.5.5 touch target minimum */
-    min-width: 2.75rem;  /* 44px — WCAG 2.5.5 touch target minimum */
+    min-height: 2rem; /* 32px — misma altura que el input small; esquinas rounded-md (6px, -50%) */
+    min-width: 2rem;
     ring-offset-color: var(--color-surface);
 
     &:focus-visible {
@@ -1297,11 +1297,39 @@
   .drawer-body {
     flex: 1;
     overflow-y: auto;
-    padding: 1.75rem;
-    
+    padding: 1.5rem 1.75rem;
+
     .form-field {
-      margin-bottom: 1.25rem;
+      margin-bottom: 1.1rem;
     }
+
+    /* Layout de formularios — espaciado limpio, menos recargado */
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px 20px;
+      align-items: start;
+    }
+    @media (max-width: 720px) { .form-grid { grid-template-columns: 1fr; } }
+
+    .form-field-wrapper {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    /* Secciones (Contacto, Integración API…) con aire y título corporativo compacto */
+    .form-section { margin-top: 1.4rem; }
+    .form-section:first-child { margin-top: 0; }
+    .form-section-title {
+      margin: 0 0 0.75rem;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--color-primary);
+    }
+    .input-hint { text-transform: none; letter-spacing: 0; color: var(--color-text-muted); font-weight: 500; }
 
     .form-label, .input-label {
       font-size: 0.8125rem; /* 13px */
