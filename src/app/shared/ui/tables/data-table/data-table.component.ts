@@ -81,6 +81,8 @@ export class DataTableComponent<T = any> {
     pageChange = output<PaginationEvent>();
     sortChange = output<SortEvent>();
     rowSelect = output<T>();
+    /** Emite el conjunto de filas seleccionadas cada vez que cambia (modo selectable). */
+    selectionChange = output<T[]>();
     searchChange = output<string>();
     filterChange = output<FilterChangeEvent>();
 
@@ -142,6 +144,17 @@ export class DataTableComponent<T = any> {
         } else {
             this.selectedRows.add(row);
         }
+        this.selectionChange.emit([...this.selectedRows]);
+    }
+
+    /** Selecciona/deselecciona todas las filas visibles (checkbox del header). */
+    toggleSelectAll(): void {
+        if (this.selectedRows.size === this.data().length) {
+            this.selectedRows.clear();
+        } else {
+            this.data().forEach(r => this.selectedRows.add(r));
+        }
+        this.selectionChange.emit([...this.selectedRows]);
     }
     
     isRowSelected(row: T): boolean {
@@ -207,6 +220,12 @@ export class DataTableComponent<T = any> {
     /** Ejecuta el filtrado: se llama desde el botón "Buscar" y con Enter. */
     onSearchSubmit(): void {
         this.searchChange.emit(this.searchTerm());
+    }
+
+    /** Limpia el término y resetea la búsqueda (server-side vuelve a la lista completa). */
+    onSearchClear(): void {
+        this.searchTerm.set('');
+        this.searchChange.emit('');
     }
 
     onFilterChange(field: string, event: Event): void {

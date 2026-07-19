@@ -2,7 +2,7 @@ import {
     Component, OnInit, ChangeDetectionStrategy, inject, signal, computed
 } from '@angular/core';
 
-import { RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { CustomerService } from '@features/admin/services/customer.service';
 import {
     CustomerResponse,
@@ -11,20 +11,22 @@ import {
 } from '@features/admin/models/customer.model';
 import { ButtonComponent } from '@shared/components';
 import { PageHeaderComponent } from '@shared/ui/layout/page-header/page-header.component';
-import { PaginationComponent, PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
+import { PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
+import { DataTableComponent, TableColumn, TableAction } from '@shared/ui/tables/data-table/data-table.component';
 import { AuthService } from '@core/auth/auth.service';
 import { CustomerFormComponent } from '../customer-form/customer-form.component';
 
 @Component({
     selector: 'app-customer-list',
     standalone: true,
-    imports: [RouterLink, PageHeaderComponent, PaginationComponent, CustomerFormComponent, ButtonComponent],
+    imports: [PageHeaderComponent, DataTableComponent, CustomerFormComponent, ButtonComponent],
     templateUrl: './customer-list.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CustomerListComponent implements OnInit {
     private readonly customerService = inject(CustomerService);
     private readonly authService = inject(AuthService);
+    private readonly router = inject(Router);
 
     customers = signal<CustomerResponse[]>([]);
     loading = signal(false);
@@ -43,6 +45,36 @@ export class CustomerListComponent implements OnInit {
     editingCustomer = signal<CustomerResponse | null>(null);
 
     selectedIds = signal<Set<number>>(new Set());
+
+    // Columnas del data-table estándar
+    columns: TableColumn<CustomerResponse>[] = [
+        { key: 'numeroDocumento', label: 'Documento', html: true,
+          render: (c) => `<span class="badge badge-neutral">${c.tipoDocumento}</span> ${c.numeroDocumento}` },
+        { key: 'nombreCompleto', label: 'Nombre / Razón Social', sortable: true,
+          html: true, render: (c) => `<span class="font-medium">${c.nombreCompleto}</span>` },
+        { key: 'tipoCliente', label: 'Tipo', html: true,
+          render: (c) => c.tipoCliente === 'PERSONA_JURIDICA'
+              ? '<span class="badge badge-accent">Empresa</span>'
+              : '<span class="badge badge-neutral">Natural</span>' },
+        { key: 'email', label: 'Email', render: (c) => c.email || '-' },
+        { key: 'celular', label: 'Teléfono', render: (c) => c.celular || c.telefono || '-' },
+        { key: 'condicionPago', label: 'Cond. Pago', html: true,
+          render: (c) => `<span class="badge badge-neutral">${c.condicionPago}</span>` },
+        { key: 'limiteCredito', label: 'Crédito', align: 'right',
+          render: (c) => c.limiteCredito > 0
+              ? `S/ ${c.saldoCredito.toFixed(2)} / ${c.limiteCredito.toFixed(2)}` : '-' }
+    ];
+
+    actions: TableAction<CustomerResponse>[] = [
+        { label: 'Ver detalle', icon: 'view', class: 'btn-view',
+          onClick: (c) => this.router.navigate(['/admin/customers', c.id]) },
+        { label: 'Editar', icon: 'edit', class: 'btn-icon-edit', onClick: (c) => this.openEdit(c) },
+        { label: 'Desactivar', icon: 'delete', class: 'btn-icon-delete', onClick: (c) => this.onDeactivate(c) }
+    ];
+
+    onSelectionChange(rows: CustomerResponse[]): void {
+        this.selectedIds.set(new Set(rows.map(r => r.id)));
+    }
     showBulkSegment = signal(false);
 
     isEmpty = computed(() => !this.loading() && this.customers().length === 0);

@@ -739,6 +739,40 @@
     color: var(--color-text-muted);
 }
 
+/* Espacio a la derecha para el botón de limpiar */
+.search-box input {
+    padding-right: 30px;
+}
+
+/* Botón circular "X" para limpiar el input de búsqueda/filtro */
+.search-clear {
+    position: absolute;
+    right: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 18px;
+    height: 18px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: 50%;
+    background: var(--color-surface-raised);
+    color: var(--color-text-muted);
+    cursor: pointer;
+    padding: 0;
+    transition: background-color 0.15s, color 0.15s;
+    z-index: 1;
+}
+.search-clear:hover {
+    background: color-mix(in srgb, var(--color-error) 12%, var(--color-surface));
+    color: var(--color-error);
+}
+
+/* Variante auto (páginas sin signal): visible solo cuando el input tiene texto */
+.search-clear--auto { display: none; }
+.search-box input:not(:placeholder-shown) ~ .search-clear--auto { display: inline-flex; }
+
 /* Pagination */
 .pagination {
     @apply flex items-center justify-between px-4 py-3 mt-0;

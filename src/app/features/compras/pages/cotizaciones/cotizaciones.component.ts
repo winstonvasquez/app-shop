@@ -10,6 +10,7 @@ import {
 import { ReactiveFormsModule, FormBuilder, Validators, FormArray, FormGroup } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
+import { of } from 'rxjs';
 import { CotizacionService } from '../../services/cotizacion.service';
 import { AuthService } from '@core/auth/auth.service';
 import {
@@ -21,8 +22,14 @@ import { ButtonComponent } from '@shared/components';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
-import { LoadingSpinnerComponent } from '@shared/ui/feedback/loading-spinner/loading-spinner.component';
-import { PaginationComponent, PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
+import {
+    DataTableComponent,
+    TableColumn,
+    TableAction,
+    PaginationEvent,
+    FilterConfig,
+    FilterChangeEvent,
+} from '@shared/ui/tables/data-table/data-table.component';
 
 @Component({
     selector: 'app-cotizaciones',
@@ -35,8 +42,7 @@ import { PaginationComponent, PaginationChangeEvent } from '@shared/ui/paginatio
         DrawerComponent,
         PageHeaderComponent,
         AlertComponent,
-        LoadingSpinnerComponent,
-        PaginationComponent,
+        DataTableComponent,
     ],
     templateUrl: './cotizaciones.component.html',
 })
@@ -64,9 +70,18 @@ export class CotizacionesComponent implements OnInit {
     pageSize = signal(10);
     totalElements = signal(0);
     totalPages = signal(0);
+    searchQuery = signal('');
 
     hasCotizaciones = computed(() => this.cotizaciones().length > 0);
     isEmpty = computed(() => !this.loading() && !this.hasCotizaciones());
+
+    filteredCotizaciones = computed(() => {
+        const q = this.searchQuery().trim().toLowerCase();
+        if (!q) return this.cotizaciones();
+        return this.cotizaciones().filter(
+            (c) => c.codigo.toLowerCase().includes(q) || c.titulo.toLowerCase().includes(q)
+        );
+    });
 
     breadcrumbs: Breadcrumb[] = [
         { label: 'Compras', url: '/compras' },
@@ -80,6 +95,64 @@ export class CotizacionesComponent implements OnInit {
         { value: 'ADJUDICADA', label: 'Adjudicada' },
         { value: 'CONVERTIDA_OC', label: 'Convertida en OC' },
         { value: 'CANCELADA', label: 'Cancelada' },
+    ];
+
+    columns: TableColumn<CotizacionResumen>[] = [
+        { key: 'codigo', label: 'Código' },
+        { key: 'titulo', label: 'Título' },
+        {
+            key: 'estado',
+            label: 'Estado',
+            html: true,
+            render: (row) => `<span class="${this.getBadgeClass(row.estado)}">${this.getEstadoLabel(row.estado)}</span>`,
+        },
+        { key: 'fechaEmision', label: 'Emisión' },
+        { key: 'fechaVencimiento', label: 'Vencimiento' },
+        { key: 'totalItems', label: 'Items', align: 'center' },
+        { key: 'totalProveedores', label: 'Proveedores', align: 'center' },
+        {
+            key: 'respuestasRecibidas',
+            label: 'Respuestas',
+            align: 'center',
+            html: true,
+            render: (row) =>
+                `<span class="${row.respuestasRecibidas > 0 ? 'badge badge-success' : 'badge badge-neutral'}">${row.respuestasRecibidas}/${row.totalProveedores}</span>`,
+        },
+    ];
+
+    actions: TableAction<CotizacionResumen>[] = [
+        {
+            label: 'Enviar',
+            icon: 'check',
+            onClick: (row) => this.enviarCotizacion(row.id),
+            show: (row) => row.estado === 'CREADA',
+        },
+        {
+            label: 'Comparativa',
+            icon: 'view',
+            onClick: (row) => this.verComparativa(row),
+            show: (row) => row.estado === 'EN_RESPUESTA',
+        },
+        {
+            label: 'Adjudicar',
+            icon: 'check',
+            onClick: (row) => this.openAdjudicarModal(row),
+            show: (row) => row.estado === 'EN_RESPUESTA',
+        },
+        {
+            label: 'Generar OC',
+            icon: 'check',
+            onClick: (row) => this.convertirOc(row.id),
+            show: (row) => row.estado === 'ADJUDICADA',
+        },
+    ];
+
+    estadoFilters: FilterConfig[] = [
+        {
+            field: 'estado',
+            label: 'Todos los estados',
+            options: of(this.estadoOptions.map((o) => ({ value: o.value, label: o.label }))),
+        },
     ];
 
     cotizacionForm = this.fb.group({
@@ -124,14 +197,19 @@ export class CotizacionesComponent implements OnInit {
             });
     }
 
-    onFilterEstado(event: Event): void {
-        const value = (event.target as HTMLSelectElement).value;
-        this.filterEstado.set(value);
-        this.currentPage.set(0);
-        this.loadCotizaciones();
+    onSearchTerm(term: string): void {
+        this.searchQuery.set(term);
     }
 
-    onPageChange(event: PaginationChangeEvent): void {
+    onFilterChangeEvent(event: FilterChangeEvent): void {
+        if (event.field === 'estado') {
+            this.filterEstado.set((event.value as string) ?? '');
+            this.currentPage.set(0);
+            this.loadCotizaciones();
+        }
+    }
+
+    onPageChange(event: PaginationEvent): void {
         this.currentPage.set(event.page);
         this.loadCotizaciones();
     }

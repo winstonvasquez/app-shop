@@ -1,11 +1,9 @@
 import { Component, inject, signal, computed, OnInit, ChangeDetectionStrategy } from '@angular/core';
-import { DatePipe, DecimalPipe } from '@angular/common';
-import { FormsModule } from '@angular/forms';
 import { AsientoService } from '../../services/asiento.service';
 import { PeriodoService, PeriodoContable } from '../../services/periodo.service';
 import { ExportService } from '@shared/services/export.service';
-import { PaginationComponent, PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
 import { ButtonComponent } from '@shared/components';
+import { DataTableComponent, TableColumn, PaginationEvent } from '@shared/ui/tables/data-table/data-table.component';
 
 interface LibroDiarioLinea {
     fecha: string;
@@ -21,7 +19,7 @@ interface LibroDiarioLinea {
     selector: 'app-libro-diario',
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [DatePipe, DecimalPipe, FormsModule, PaginationComponent, ButtonComponent],
+    imports: [ButtonComponent, DataTableComponent],
     templateUrl: './libro-diario.component.html'
 })
 export class LibroDiarioComponent implements OnInit {
@@ -37,17 +35,56 @@ export class LibroDiarioComponent implements OnInit {
     readonly fechaDesde = signal('');
     readonly fechaHasta = signal('');
 
+    readonly searchQuery = signal('');
+
     readonly currentPage = signal(0);
     readonly pageSize = signal(20);
+
+    readonly lineasFiltradas = computed(() => {
+        const q = this.searchQuery().trim().toLowerCase();
+        const lista = this.lineas();
+        if (!q) return lista;
+        return lista.filter(l =>
+            l.cuentaCodigo?.toLowerCase().includes(q) ||
+            l.cuentaNombre?.toLowerCase().includes(q) ||
+            l.descripcion?.toLowerCase().includes(q) ||
+            l.codigoAsiento?.toLowerCase().includes(q)
+        );
+    });
+
     readonly lineasPaginadas = computed(() => {
         const inicio = this.currentPage() * this.pageSize();
-        return this.lineas().slice(inicio, inicio + this.pageSize());
+        return this.lineasFiltradas().slice(inicio, inicio + this.pageSize());
     });
-    readonly totalPagesLocal = computed(() => Math.ceil(this.lineas().length / this.pageSize()) || 1);
+    readonly totalPagesLocal = computed(() => Math.ceil(this.lineasFiltradas().length / this.pageSize()) || 1);
 
     readonly totalDebe = computed(() => this.lineas().reduce((s, l) => s + l.debe, 0));
     readonly totalHaber = computed(() => this.lineas().reduce((s, l) => s + l.haber, 0));
     readonly cuadra = computed(() => Math.abs(this.totalDebe() - this.totalHaber()) < 0.01);
+
+    columns: TableColumn<LibroDiarioLinea>[] = [
+        {
+            key: 'fecha', label: 'Fecha', html: true,
+            render: l => `<span class="font-mono">${l.fecha ? new Date(l.fecha).toLocaleDateString('es-PE') : '-'}</span>`
+        },
+        {
+            key: 'codigoAsiento', label: 'N° Asiento', html: true,
+            render: l => `<span class="font-mono font-bold">${l.codigoAsiento}</span>`
+        },
+        {
+            key: 'cuentaCodigo', label: 'Cuenta', html: true,
+            render: l => `<span class="font-mono font-bold">${l.cuentaCodigo}</span> <span class="text-sm" style="color:var(--color-text-muted)">${l.cuentaNombre}</span>`
+        },
+        { key: 'descripcion', label: 'Descripción' },
+        {
+            key: 'debe', label: 'Debe', align: 'right', html: true,
+            render: l => `<span class="font-mono">${l.debe > 0 ? 'S/ ' + l.debe.toFixed(2) : ''}</span>`
+        },
+        {
+            key: 'haber', label: 'Haber', align: 'right', html: true,
+            render: l => `<span class="font-mono">${l.haber > 0 ? 'S/ ' + l.haber.toFixed(2) : ''}</span>`
+        },
+    ];
 
     ngOnInit() {
         this.cargarPeriodos();
@@ -73,7 +110,12 @@ export class LibroDiarioComponent implements OnInit {
         else this.lineas.set([]);
     }
 
-    onPageChange(event: PaginationChangeEvent) {
+    onSearchTerm(term: string) {
+        this.searchQuery.set(term);
+        this.currentPage.set(0);
+    }
+
+    onPageChange(event: PaginationEvent) {
         this.currentPage.set(event.page);
         this.pageSize.set(event.size);
     }
@@ -82,6 +124,7 @@ export class LibroDiarioComponent implements OnInit {
         const periodoId = this.periodoSeleccionado();
         if (!periodoId) return;
         this.currentPage.set(0);
+        this.searchQuery.set('');
         this.cargando.set(true);
         this.error.set(null);
         this.asientoService.obtenerLibroDiario(periodoId, this.fechaDesde(), this.fechaHasta()).subscribe({

@@ -30,6 +30,12 @@
             <input #searchInput type="text" placeholder="Buscar por nombre, email o documento..."
                 [value]="searchQuery()"
                 (keyup.enter)="onSearch(searchInput.value)" />
+        <button type="button" class="search-clear search-clear--auto" aria-label="Limpiar búsqueda"
+            (click)="searchInput.value=''; onSearch('')">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+        </button>
         </div>
         <app-button label="Buscar" icon="search" variant="primary" size="sm"
             (click)="onSearch(searchInput.value)"></app-button>

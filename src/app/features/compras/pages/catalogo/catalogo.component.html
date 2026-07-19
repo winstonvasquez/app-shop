@@ -15,6 +15,12 @@
              [value]="busqueda()"
              (input)="busqueda.set($any($event.target).value)"
              (keydown.enter)="cargar(0)" />
+        <button type="button" class="search-clear search-clear--auto" aria-label="Limpiar búsqueda"
+            (click)="busqueda.set(''); cargar(0)">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+        </button>
     </div>
     <select class="form-input w-48" style="height:32px;padding-top:0;padding-bottom:0"
             [value]="filtroCategoria()"

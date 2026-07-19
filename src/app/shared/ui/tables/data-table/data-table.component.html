@@ -15,6 +15,14 @@
                             [value]="searchTerm()"
                             (input)="onSearchInput($event)"
                             (keyup.enter)="onSearchSubmit()" />
+                        @if (searchTerm()) {
+                            <button type="button" class="search-clear" aria-label="Limpiar búsqueda"
+                                (click)="onSearchClear()">
+                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        }
                     </div>
                     <app-button label="Buscar" icon="search" variant="primary" size="sm" (click)="onSearchSubmit()" />
                 </div>
@@ -49,7 +57,9 @@
                 <tr>
                     @if (selectable()) {
                         <th class="select-column">
-                            <input type="checkbox" />
+                            <input type="checkbox"
+                                [checked]="data().length > 0 && selectedRows.size === data().length"
+                                (change)="toggleSelectAll()" />
                         </th>
                     }
                     

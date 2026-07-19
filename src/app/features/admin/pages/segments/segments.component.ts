@@ -3,7 +3,8 @@ import {
 } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators, FormGroup } from '@angular/forms';
 import { SegmentService } from '@features/admin/services/segment.service';
-import { PaginationComponent, PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
+import { PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
+import { DataTableComponent, TableColumn, TableAction } from '@shared/ui/tables/data-table/data-table.component';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { ButtonComponent } from '@shared/components';
 import {
@@ -17,7 +18,7 @@ import {
     selector: 'app-segments',
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [ReactiveFormsModule, PaginationComponent, DrawerComponent, ButtonComponent],
+    imports: [ReactiveFormsModule, DataTableComponent, DrawerComponent, ButtonComponent],
     templateUrl: './segments.component.html',
     styleUrl: './segments.component.scss'
 })
@@ -47,6 +48,24 @@ export class SegmentsComponent implements OnInit {
     totalPages    = signal(0);
 
     // Computed
+    // Columnas del data-table estándar
+    columns: TableColumn<SegmentResponse>[] = [
+        { key: 'nombre', label: 'Segmento', html: true,
+          render: (s) => `<span class="segment-dot" style="background:${s.color};display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:8px;vertical-align:middle"></span><span class="font-medium">${s.nombre}</span>` },
+        { key: 'tipoCliente', label: 'Tipo de Cliente', html: true,
+          render: (s) => `<span class="badge badge-neutral">${s.tipoCliente}</span>` },
+        { key: 'descripcion', label: 'Descripción', render: (s) => s.descripcion || '—' },
+        { key: 'totalClientes', label: 'Clientes', align: 'right',
+          render: (s) => String(s.totalClientes ?? 0) },
+        { key: 'activo', label: 'Estado', html: true,
+          render: (s) => `<span class="badge ${s.activo ? 'badge-success' : 'badge-neutral'}">${s.activo ? 'Activo' : 'Inactivo'}</span>` }
+    ];
+
+    actions: TableAction<SegmentResponse>[] = [
+        { label: 'Editar', icon: 'edit', class: 'btn-icon-edit', onClick: (row) => this.openEdit(row) },
+        { label: 'Eliminar', icon: 'delete', class: 'btn-icon-delete', onClick: (row) => this.onDelete(row) }
+    ];
+
     hasSegments = computed(() => this.segments().length > 0);
     isEmpty     = computed(() => !this.loading() && !this.hasSegments());
 

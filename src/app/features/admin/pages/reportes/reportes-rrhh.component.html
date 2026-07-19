@@ -67,6 +67,12 @@
                 <span class="search-box-icon">&#128269;</span>
                 <input #searchInput type="text" class="form-input pl-8" placeholder="Buscar por nombre, código o área..."
                        (keyup.enter)="onSearchTerm(searchInput.value)">
+        <button type="button" class="search-clear search-clear--auto" aria-label="Limpiar búsqueda"
+            (click)="searchInput.value=''; onSearchTerm('')">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+        </button>
             </div>
             <app-button label="Buscar" icon="search" variant="primary" size="sm"
                 (click)="onSearchTerm(searchInput.value)"></app-button>

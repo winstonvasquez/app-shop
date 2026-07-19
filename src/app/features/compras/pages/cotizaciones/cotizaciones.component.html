@@ -9,83 +9,25 @@
     @if (error()) { <app-alert type="error" [message]="error()!" (close)="error.set(null)" /> }
     @if (actionError()) { <app-alert type="error" [message]="actionError()!" (close)="actionError.set(null)" /> }
 
-    <!-- Filters -->
-    <div class="filters-bar">
-        <select class="form-input" style="width:200px" (change)="onFilterEstado($event)">
-            <option value="">Todos los estados</option>
-            @for (opt of estadoOptions; track opt.value) {
-                <option [value]="opt.value">{{ opt.label }}</option>
-            }
-        </select>
-    </div>
-
     <!-- Table -->
-    <div class="card">
-        <div class="card-body">
-            @if (loading()) {
-                <app-loading-spinner />
-            } @else if (isEmpty()) {
-                <p class="text-muted text-center py-8">No hay cotizaciones registradas.</p>
-            } @else {
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th class="table-header-cell">Código</th>
-                            <th class="table-header-cell">Título</th>
-                            <th class="table-header-cell">Estado</th>
-                            <th class="table-header-cell">Emisión</th>
-                            <th class="table-header-cell">Vencimiento</th>
-                            <th class="table-header-cell">Items</th>
-                            <th class="table-header-cell">Proveedores</th>
-                            <th class="table-header-cell">Respuestas</th>
-                            <th class="table-header-cell">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @for (cot of cotizaciones(); track cot.id) {
-                            <tr class="table-row">
-                                <td class="table-cell font-mono text-sm">{{ cot.codigo }}</td>
-                                <td class="table-cell">{{ cot.titulo }}</td>
-                                <td class="table-cell">
-                                    <span [class]="getBadgeClass(cot.estado)">{{ getEstadoLabel(cot.estado) }}</span>
-                                </td>
-                                <td class="table-cell">{{ cot.fechaEmision }}</td>
-                                <td class="table-cell">{{ cot.fechaVencimiento }}</td>
-                                <td class="table-cell text-center">{{ cot.totalItems }}</td>
-                                <td class="table-cell text-center">{{ cot.totalProveedores }}</td>
-                                <td class="table-cell text-center">
-                                    <span [class]="cot.respuestasRecibidas > 0 ? 'badge badge-success' : 'badge badge-neutral'">
-                                        {{ cot.respuestasRecibidas }}/{{ cot.totalProveedores }}
-                                    </span>
-                                </td>
-                                <td class="table-cell">
-                                    <div class="flex gap-2 flex-wrap">
-                                        @if (cot.estado === 'CREADA') {
-                                            <app-button label="Enviar" variant="secondary" icon="send" size="sm" (click)="enviarCotizacion(cot.id)" />
-                                        }
-                                        @if (cot.estado === 'EN_RESPUESTA') {
-                                            <app-button label="Comparativa" variant="secondary" icon="git-compare" size="sm" (click)="verComparativa(cot)" />
-                                            <app-button label="Adjudicar" variant="primary" icon="check-circle" size="sm" (click)="openAdjudicarModal(cot)" />
-                                        }
-                                        @if (cot.estado === 'ADJUDICADA') {
-                                            <app-button label="Generar OC" variant="primary" icon="receipt" size="sm" (click)="convertirOc(cot.id)" />
-                                        }
-                                    </div>
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-
-                <app-pagination
-                    [currentPage]="currentPage()"
-                    [totalPages]="totalPages()"
-                    [totalElements]="totalElements()"
-                    [pageSize]="pageSize()"
-                    (pageChange)="onPageChange($event)" />
-            }
-        </div>
-    </div>
+    <app-data-table
+        [data]="filteredCotizaciones()"
+        [columns]="columns"
+        [actions]="actions"
+        [loading]="loading()"
+        [searchable]="true"
+        searchPlaceholder="Buscar por código o título..."
+        [filters]="estadoFilters"
+        [exportable]="true"
+        exportFileName="cotizaciones"
+        [currentPage]="currentPage()"
+        [pageSize]="pageSize()"
+        [totalElements]="totalElements()"
+        [totalPages]="totalPages()"
+        (searchChange)="onSearchTerm($event)"
+        (filterChange)="onFilterChangeEvent($event)"
+        (pageChange)="onPageChange($event)">
+    </app-data-table>
 </div>
 
 <!-- Create Cotizacion Drawer -->
