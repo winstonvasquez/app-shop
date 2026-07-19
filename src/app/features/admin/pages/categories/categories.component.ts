@@ -1,6 +1,5 @@
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
+import { of } from 'rxjs';
 import { FormBuilder, ReactiveFormsModule, Validators, FormGroup, FormControl } from '@angular/forms';
 import { CategoryService } from '@core/services/category.service';
 import {
@@ -9,7 +8,7 @@ import {
   CategoryFilter
 } from '@core/models/category.model';
 import { PaginationConfig, PageResponse, pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
-import { DataTableComponent, TableColumn, TableAction, PaginationEvent, SortEvent } from '@shared/ui/tables/data-table/data-table.component';
+import { DataTableComponent, TableColumn, TableAction, PaginationEvent, SortEvent, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
@@ -64,7 +63,6 @@ export class CategoriesComponent implements OnInit {
   // Category form with validations
   categoryForm: FormGroup;
 
-  private readonly searchInput$ = new Subject<string>();
 
   // Breadcrumbs
   breadcrumbs: Breadcrumb[] = [
@@ -120,6 +118,11 @@ export class CategoriesComponent implements OnInit {
     { value: 3, label: 'Nivel 3' }
   ];
 
+  // Filtro de nivel para el toolbar del data-table
+  nivelFilters: FilterConfig[] = [
+    { field: 'nivel', label: 'Todos los niveles', options: of(this.levelOptions) }
+  ];
+
   constructor() {
     this.categoryForm = this.fb.group({
       nombre: ['', [
@@ -141,13 +144,6 @@ export class CategoriesComponent implements OnInit {
       ]]
     });
 
-    this.searchInput$
-      .pipe(debounceTime(300), distinctUntilChanged(), takeUntilDestroyed())
-      .subscribe(value => {
-        this.searchQuery.set(value);
-        this.currentPage.set(0);
-        this.loadCategories();
-      });
   }
 
   ngOnInit(): void {
@@ -190,22 +186,23 @@ export class CategoriesComponent implements OnInit {
   }
 
   /**
-   * Handle search input (debounced 300ms via searchInput$)
+   * Handle search term emitted by the data-table toolbar (Buscar/Enter)
    */
-  onSearch(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    this.searchInput$.next(input.value);
+  onSearchTerm(term: string): void {
+    this.searchQuery.set(term);
+    this.currentPage.set(0);
+    this.loadCategories();
   }
 
   /**
-   * Handle level filter change
+   * Handle filter change emitted by the data-table toolbar
    */
-  onLevelFilterChange(event: Event): void {
-    const select = event.target as HTMLSelectElement;
-    const value = select.value;
-    this.filterLevel.set(value === '' ? null : parseInt(value, 10));
-    this.currentPage.set(0);
-    this.loadCategories();
+  onFilterChangeEvent(event: FilterChangeEvent): void {
+    if (event.field === 'nivel') {
+      this.filterLevel.set(event.value != null ? parseInt(String(event.value), 10) : null);
+      this.currentPage.set(0);
+      this.loadCategories();
+    }
   }
 
   /**

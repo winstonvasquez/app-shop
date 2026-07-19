@@ -6,7 +6,8 @@ import {
   CompanyResponse,
   CompanyRequest,
 } from '@features/admin/models/company.model';
-import { DataTableComponent, TableColumn, TableAction } from '@shared/ui/tables/data-table/data-table.component';
+import { of } from 'rxjs';
+import { DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
 import {
   FormFieldComponent,
   AdminFormLayoutComponent,
@@ -87,6 +88,14 @@ export class CompaniesComponent implements OnInit {
   isEmpty = computed(() => !this.loading() && !this.hasCompanies());
   totalCompanies = computed(() => this.allCompanies().length);
   filteredCount = computed(() => this.companies().length);
+
+  // Filtro de estado para el toolbar del data-table
+  estadoFilters: FilterConfig[] = [
+    { field: 'active', label: 'Todos', options: of([
+      { value: 'true', label: 'Activos' },
+      { value: 'false', label: 'Inactivos' }
+    ]) }
+  ];
 
   // Breadcrumbs
   breadcrumbs: Breadcrumb[] = [
@@ -177,20 +186,19 @@ export class CompaniesComponent implements OnInit {
   }
 
   /**
-   * Handle search input
+   * Handle search term emitted by the data-table toolbar (Buscar/Enter)
    */
-  onSearch(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    this.searchQuery.set(input.value);
+  onSearchTerm(term: string): void {
+    this.searchQuery.set(term);
   }
 
   /**
-   * Handle active filter change
+   * Handle filter change emitted by the data-table toolbar
    */
-  onActiveFilterChange(event: Event): void {
-    const select = event.target as HTMLSelectElement;
-    const value = select.value;
-    this.filterActive.set(value === '' ? null : value === 'true');
+  onFilterChangeEvent(event: FilterChangeEvent): void {
+    if (event.field === 'active') {
+      this.filterActive.set(event.value == null ? null : String(event.value) === 'true');
+    }
   }
 
   /**
