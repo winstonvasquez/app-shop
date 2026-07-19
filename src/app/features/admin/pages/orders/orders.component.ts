@@ -9,7 +9,6 @@ import { OrderStatus, OrderDetail } from '@features/admin/models/order.model';
 import { VentasParametrosService } from '../../services/ventas-parametros.service';
 import { PaginationConfig } from '@core/models/pagination.model';
 import { DataTableComponent, TableColumn, TableAction, PaginationEvent, SortEvent } from '@shared/ui/tables/data-table/data-table.component';
-import { PaginationComponent, PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
@@ -24,7 +23,6 @@ import { ButtonComponent } from '@shared/components';
     CurrencyPipe,
     TranslateModule,
     DataTableComponent,
-    PaginationComponent,
     DrawerComponent,
     PageHeaderComponent,
     AlertComponent,
@@ -52,7 +50,7 @@ export class OrdersComponent implements OnInit {
 
   // Pagination
   currentPage = signal(0);
-  pageSize = signal(10);
+  pageSize = signal(20);
   totalElements = signal(0);
   totalPages = signal(0);
 
@@ -165,12 +163,6 @@ export class OrdersComponent implements OnInit {
       this.currentPage.set(event.page);
       this.pageSize.set(event.size);
     }
-    this.loadOrders();
-  }
-
-  onPaginationChange(event: PaginationChangeEvent): void {
-    this.currentPage.set(event.page);
-    this.pageSize.set(event.size);
     this.loadOrders();
   }
 

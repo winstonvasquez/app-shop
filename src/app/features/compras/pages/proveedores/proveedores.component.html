@@ -33,21 +33,11 @@
         [totalPages]="totalPages()"
         [sortField]="sortField()"
         [sortDirection]="sortDirection()"
-        [hidePagination]="true"
         (searchChange)="onSearchTerm($event)"
         (filterChange)="onFilterChangeEvent($event)"
+        (pageChange)="onPaginationChange($event)"
         (sortChange)="onSort($event)">
     </app-data-table>
-
-    @if (!loading() && totalPages() > 0) {
-        <app-pagination
-            [currentPage]="currentPage()"
-            [totalPages]="totalPages()"
-            [totalElements]="totalElements()"
-            [pageSize]="pageSize()"
-            (pageChange)="onPaginationChange($event)">
-        </app-pagination>
-    }
 
     <!-- Drawer: Create / Edit Proveedor -->
     <app-drawer

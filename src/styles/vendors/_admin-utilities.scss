@@ -107,17 +107,24 @@
     @apply px-6 py-3 text-base;
 }
 
-/* Icon-only button */
+/* Icon-only button — estilo outline 32x32 (columna Acciones / iconos de tabla) */
 .btn-icon {
-    @apply inline-flex items-center justify-center w-8 h-8 rounded-lg
-           transition-all duration-200 cursor-pointer border-0;
-    background: transparent;
+    @apply inline-flex items-center justify-center
+           transition-all duration-200 cursor-pointer;
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    min-height: 32px;
+    border-radius: 6px;
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
     color: var(--color-text-secondary);
 }
 
 .btn-icon:hover {
-    background: var(--color-surface-raised);
-    color: var(--color-text-primary);
+    border-color: var(--color-primary);
+    background: color-mix(in srgb, var(--color-primary) 8%, var(--color-surface));
+    color: var(--color-primary);
 }
 
 .btn-icon-sm {
@@ -154,11 +161,13 @@
 
 .btn-icon-edit:hover {
     color: var(--color-accent);
+    border-color: var(--color-accent);
     background: color-mix(in oklch, var(--color-accent) 12%, var(--color-surface));
 }
 
 .btn-icon-delete:hover {
     color: var(--color-error);
+    border-color: var(--color-error);
     background: color-mix(in oklch, var(--color-error) 12%, var(--color-surface));
 }
 

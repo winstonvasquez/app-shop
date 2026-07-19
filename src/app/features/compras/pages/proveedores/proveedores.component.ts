@@ -4,7 +4,7 @@ import { ProveedorService } from '../../services/proveedor.service';
 import { Proveedor } from '../../models/proveedor.model';
 import { of } from 'rxjs';
 import { DataTableComponent, TableColumn, TableAction, SortEvent, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
-import { PaginationComponent, PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
+import { PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
@@ -19,7 +19,6 @@ import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model
     imports: [
         ReactiveFormsModule,
         DataTableComponent,
-        PaginationComponent,
         DrawerComponent,
         FormFieldComponent,
         PageHeaderComponent,
@@ -62,7 +61,7 @@ export class ProveedoresComponent implements OnInit {
 
     // Pagination
     currentPage = signal(0);
-    pageSize = signal(10);
+    pageSize = signal(20);
     totalElements = signal(0);
     totalPages = signal(0);
 
