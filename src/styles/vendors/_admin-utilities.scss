@@ -337,16 +337,18 @@
 }
 
 /* Botones de exportación (CSV/Excel) del data-table:
-   con icono + color corporativo (outline) y misma altura que el input de búsqueda. */
+   con icono + color corporativo (outline), altura sm (= input) y alineados a la derecha. */
 .table-export-buttons {
     display: flex;
     align-items: center;
     gap: 8px;
+    margin-left: auto;   /* siempre pegados a la derecha del toolbar */
 
     .btn {
-        height: 40px;
-        border-radius: 8px;
-        padding: 0 14px;
+        height: 32px;
+        min-height: 32px;
+        border-radius: 6px;
+        padding: 0 12px;
         background: var(--color-surface);
         border: 1px solid color-mix(in srgb, var(--color-primary) 35%, var(--color-border));
         color: var(--color-primary);
@@ -1112,6 +1114,34 @@
     flex: 1;
     min-width: 200px;
     max-width: 400px;
+  }
+
+  /* Grupo de búsqueda del data-table: input (sm) + botón "Buscar", alineados */
+  .table-search {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+
+    .search-box {
+      flex: 0 1 340px;
+      width: 340px;
+      max-width: 340px;
+    }
+    /* El botón Buscar comparte altura con el input (32px) */
+    .btn {
+      height: 32px;
+      min-height: 32px;
+      border-radius: 6px;
+    }
+  }
+
+  /* Filtro combo dentro del toolbar a la misma altura del input */
+  .table-filter .input-field {
+    height: 32px;
+    padding-top: 0;
+    padding-bottom: 0;
+    width: auto;
+    min-width: 170px;
   }
 
   .table-toolbar-filters {

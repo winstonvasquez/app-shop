@@ -2,7 +2,8 @@ import { Component, OnInit, inject, signal, computed, ChangeDetectionStrategy } 
 import { FormBuilder, ReactiveFormsModule, Validators, FormGroup, FormControl } from '@angular/forms';
 import { ProveedorService } from '../../services/proveedor.service';
 import { Proveedor } from '../../models/proveedor.model';
-import { DataTableComponent, TableColumn, TableAction, SortEvent } from '@shared/ui/tables/data-table/data-table.component';
+import { of } from 'rxjs';
+import { DataTableComponent, TableColumn, TableAction, SortEvent, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { PaginationComponent, PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
@@ -46,6 +47,18 @@ export class ProveedoresComponent implements OnInit {
     // Filters
     searchQuery = signal('');
     filterEstado = signal('');
+
+    // Filtro de estado para el toolbar del data-table
+    estadoFilters: FilterConfig[] = [
+        {
+            field: 'estado',
+            label: 'Todos los estados',
+            options: of([
+                { value: 'ACTIVO', label: 'Activo' },
+                { value: 'INACTIVO', label: 'Inactivo' }
+            ])
+        }
+    ];
 
     // Pagination
     currentPage = signal(0);
@@ -147,16 +160,18 @@ export class ProveedoresComponent implements OnInit {
         });
     }
 
-    onSearch(event: Event): void {
-        this.searchQuery.set((event.target as HTMLInputElement).value);
+    onSearchTerm(term: string): void {
+        this.searchQuery.set(term);
         this.currentPage.set(0);
         this.loadProveedores();
     }
 
-    onFilterEstado(event: Event): void {
-        this.filterEstado.set((event.target as HTMLSelectElement).value);
-        this.currentPage.set(0);
-        this.loadProveedores();
+    onFilterChangeEvent(event: FilterChangeEvent): void {
+        if (event.field === 'estado') {
+            this.filterEstado.set(event.value != null ? String(event.value) : '');
+            this.currentPage.set(0);
+            this.loadProveedores();
+        }
     }
 
     onSort(event: SortEvent): void {

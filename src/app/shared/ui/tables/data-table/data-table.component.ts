@@ -1,4 +1,4 @@
-import { Component, input, output, computed, inject, ChangeDetectionStrategy } from '@angular/core';
+import { Component, input, output, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { AsyncPipe } from '@angular/common';
 import { Observable } from 'rxjs';
 import { ExportService } from '@shared/services/export.service';
@@ -85,7 +85,10 @@ export class DataTableComponent<T = any> {
     filterChange = output<FilterChangeEvent>();
 
     private readonly exportService = inject(ExportService);
-    
+
+    /** Término de búsqueda tecleado; el filtrado se dispara con el botón "Buscar" o Enter. */
+    protected readonly searchTerm = signal('');
+
     selectedRows = new Set<T>();
     
     pages = computed(() => {
@@ -198,7 +201,12 @@ export class DataTableComponent<T = any> {
     }
 
     onSearchInput(event: Event): void {
-        this.searchChange.emit((event.target as HTMLInputElement).value);
+        this.searchTerm.set((event.target as HTMLInputElement).value);
+    }
+
+    /** Ejecuta el filtrado: se llama desde el botón "Buscar" y con Enter. */
+    onSearchSubmit(): void {
+        this.searchChange.emit(this.searchTerm());
     }
 
     onFilterChange(field: string, event: Event): void {

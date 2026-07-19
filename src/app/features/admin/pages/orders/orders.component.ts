@@ -128,9 +128,8 @@ export class OrdersComponent implements OnInit {
     this.loadOrders();
   }
 
-  onSearch(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    this.searchInput$.next(input.value);
+  onSearchTerm(term: string): void {
+    this.searchInput$.next(term);
   }
 
   loadOrders(): void {
