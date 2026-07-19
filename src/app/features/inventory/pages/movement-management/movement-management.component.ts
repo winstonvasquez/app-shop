@@ -14,6 +14,7 @@ import { DateInputComponent } from '@shared/ui/forms/date-input/date-input.compo
 import { ButtonComponent } from '@shared/components';
 import { ProductLookupComponent } from '../../components/product-lookup/product-lookup.component';
 import { ProductResponse } from '@core/models/product.model';
+import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 
 @Component({
     selector: 'app-movement-management',
@@ -154,8 +155,8 @@ export class MovementManagementComponent {
         }).subscribe({
             next: (res) => {
                 this.movements.set(res.content);
-                this.totalElements.set(res.page.totalElements);
-                this.totalPages.set(res.page.totalPages);
+                this.totalElements.set(pageTotalElements(res));
+                this.totalPages.set(pageTotalPages(res));
                 this.loading.set(false);
             },
             error: (err: Error) => { this.error.set(err.message); this.loading.set(false); }

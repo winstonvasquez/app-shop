@@ -4,6 +4,7 @@ import {
 } from '@angular/forms';
 import { InventoryApiService } from '../../services/inventory-api.service';
 import { InventoryTransfer, InventoryTransferRequest, InventoryTransferStatus, Warehouse } from '../../models/inventory.models';
+import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 import { DataTableComponent, TableColumn, TableAction, PaginationEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
@@ -133,8 +134,8 @@ export class TransferManagementComponent {
         }).subscribe({
             next: (res) => {
                 this.transfers.set(res.content);
-                this.totalElements.set(res.page.totalElements);
-                this.totalPages.set(res.page.totalPages);
+                this.totalElements.set(pageTotalElements(res));
+                this.totalPages.set(pageTotalPages(res));
                 this.loading.set(false);
             },
             error: (err: Error) => { this.error.set(err.message); this.loading.set(false); }

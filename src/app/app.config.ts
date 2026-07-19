@@ -42,6 +42,13 @@ import { environment } from '@env/environment';
 
 import { routes } from './app.routes';
 
+import { registerLocaleData } from '@angular/common';
+import localeEsPE from '@angular/common/locales/es-PE';
+
+// Registra datos de locale es-PE (Perú) para DatePipe/DecimalPipe/CurrencyPipe.
+// Sin esto, cualquier pipe que pida explícitamente 'es-PE' lanza NG0701 "Missing locale data".
+registerLocaleData(localeEsPE, 'es-PE');
+
 import { SystemParameterService } from '@core/services/system-parameter.service';
 import { StoreConfigService } from '@core/services/store-config.service';
 import { WishlistService } from '@core/services/wishlist.service';

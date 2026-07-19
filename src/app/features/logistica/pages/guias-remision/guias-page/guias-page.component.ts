@@ -5,11 +5,10 @@ import { DrawerComponent } from '../../../../../shared/components/drawer/drawer.
 import { GuiaRemisionService } from '../../../services/guia-remision.service';
 import { GuiaRemision, EstadoGuia, CreateGuiaRemisionDto, GuiaRemisionItemDto } from '../../../models/guia-remision.model';
 import { AuthService } from '../../../../../core/auth/auth.service';
-import { DataTableComponent, TableColumn, TableAction } from '@shared/ui/tables/data-table/data-table.component';
+import { DataTableComponent, TableColumn, TableAction, PaginationEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { DateInputComponent } from '@shared/ui/forms/date-input/date-input.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
-import { PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
 import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 
 const MOTIVOS_TRASLADO: { codigo: string; descripcion: string }[] = [
@@ -184,7 +183,7 @@ export class GuiasPageComponent implements OnInit {
         });
     }
 
-    onPageChange(event: PaginationChangeEvent) {
+    onPageChange(event: PaginationEvent) {
         this.currentPage.set(event.page);
         this.pageSize.set(event.size);
         this.cargarGuias();

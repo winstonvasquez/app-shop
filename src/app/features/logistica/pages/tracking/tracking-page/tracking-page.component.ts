@@ -2,10 +2,9 @@ import { Component, inject, signal, computed, ChangeDetectionStrategy } from '@a
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { DatePipe } from '@angular/common';
 import { ShipmentService, TrackingInfoResponse, ShipmentResponse } from '../../../services/shipment.service';
-import { DataTableComponent, TableColumn, TableAction } from '@shared/ui/tables/data-table/data-table.component';
+import { DataTableComponent, TableColumn, TableAction, PaginationEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { ButtonComponent } from '@shared/components';
-import { PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
 
 @Component({
     selector: 'app-tracking-page',
@@ -108,7 +107,7 @@ export class TrackingPageComponent {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    onPageChange(event: PaginationChangeEvent) {
+    onPageChange(event: PaginationEvent) {
         this.currentPage.set(event.page);
         this.pageSize.set(event.size);
         // Sin re-fetch: los datos ya están en memoria (endpoint plano).
