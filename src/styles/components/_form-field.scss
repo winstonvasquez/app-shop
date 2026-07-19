@@ -30,10 +30,27 @@ textarea.form-input {
     font-size: 13px;
     border: 1px solid var(--color-input-border, var(--color-border));
     border-radius: var(--radius-md, 6px);
-    background: var(--color-input-bg, #ffffff);
+    background-color: var(--color-input-bg, #ffffff);
     color: var(--color-input-text, oklch(0.18 0 0));
     transition: all var(--transition-fast);
     box-sizing: border-box;
+}
+
+/* Selects: apariencia limpia (sin estilo nativo gris) + chevron propio */
+.form-select,
+select.form-input {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    padding-right: 2rem;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.65rem center;
+    background-size: 0.8rem;
+}
+.form-select:focus,
+select.form-input:focus {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%230B3D91' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
 }
 
 .form-textarea,
@@ -52,7 +69,7 @@ textarea.form-input {
 .form-input:hover:not(:disabled):not(.error),
 .form-select:hover:not(:disabled),
 .form-textarea:hover:not(:disabled) {
-    background: var(--color-input-bg-hover, oklch(0.985 0 0));
+    background-color: var(--color-input-bg-hover, oklch(0.985 0 0));
     border-color: var(--color-input-border-hover, color-mix(in oklch, var(--color-primary) 35%, var(--color-input-border)));
 }
 
@@ -61,18 +78,42 @@ textarea.form-input {
 .form-textarea:focus {
     outline: none;
     border-color: var(--color-primary);
-    background: var(--color-input-bg, #ffffff);
+    background-color: var(--color-input-bg, #ffffff);
     box-shadow: 0 0 0 3px color-mix(in oklch, var(--color-primary) 15%, transparent);
 }
 
+/* Deshabilitado: atenuado, sin interacción, borde punteado sutil */
 .form-input:disabled,
 .form-select:disabled,
 .form-textarea:disabled {
-    background: oklch(0.94 0 0);
-    color: oklch(0.55 0 0);
-    border-color: oklch(0.88 0 0);
+    background-color: color-mix(in srgb, var(--color-surface-raised) 55%, var(--color-surface));
+    color: var(--color-text-muted);
+    border-color: var(--color-border);
+    border-style: dashed;
     cursor: not-allowed;
-    opacity: 0.8;
+    opacity: 0.75;
+    box-shadow: none;
+}
+
+/* Solo lectura: se lee como dato, no como campo editable (sin fondo, borde tenue) */
+.form-input[readonly],
+.form-select[readonly],
+.form-textarea[readonly] {
+    background-color: transparent;
+    border-color: transparent;
+    border-bottom-color: var(--color-border);
+    border-radius: 0;
+    color: var(--color-text-secondary);
+    padding-left: 0;
+    cursor: default;
+    box-shadow: none;
+}
+.form-input[readonly]:focus,
+.form-select[readonly]:focus,
+.form-textarea[readonly]:focus {
+    border-color: transparent;
+    border-bottom-color: var(--color-primary);
+    box-shadow: none;
 }
 
 .form-input.error {
