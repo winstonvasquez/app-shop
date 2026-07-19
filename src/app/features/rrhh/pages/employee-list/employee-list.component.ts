@@ -1,5 +1,5 @@
 import {
-    Component, OnInit, inject, signal, computed,
+    Component, OnInit, inject, signal,
     ChangeDetectionStrategy
 } from '@angular/core';
 import { of } from 'rxjs';
@@ -66,32 +66,11 @@ export class EmployeeListComponent implements OnInit {
         ]) }
     ];
 
-    // ── Pagination ────────────────────────────────────────────────────────────
-    currentPage = signal(0);
-    pageSize    = signal(10);
-
-    // ── Computed ──────────────────────────────────────────────────────────────
-    readonly filtered = computed(() => {
-        const term   = this.searchQuery().toLowerCase();
-        const estado = this.filterEstado();
-        return this.employees().filter(e => {
-            const matchSearch = !term ||
-                e.codigoEmpleado.toLowerCase().includes(term) ||
-                e.nombres.toLowerCase().includes(term) ||
-                e.apellidos.toLowerCase().includes(term) ||
-                e.documentoIdentidad.includes(term);
-            const matchEstado = !estado || e.estado === estado;
-            return matchSearch && matchEstado;
-        });
-    });
-
-    readonly totalElements = computed(() => this.filtered().length);
-    readonly totalPages    = computed(() => Math.ceil(this.totalElements() / this.pageSize()) || 1);
-
-    readonly pagedData = computed(() => {
-        const start = this.currentPage() * this.pageSize();
-        return this.filtered().slice(start, start + this.pageSize());
-    });
+    // ── Pagination (server-side) ──────────────────────────────────────────────
+    currentPage   = signal(0);
+    pageSize      = signal(20);
+    totalElements = signal(0);
+    totalPages    = signal(0);
 
     // ── Breadcrumbs ───────────────────────────────────────────────────────────
     breadcrumbs: Breadcrumb[] = [
@@ -151,7 +130,20 @@ export class EmployeeListComponent implements OnInit {
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
     ngOnInit(): void {
-        this.employeeService.loadEmployees().catch(err => {
+        this.loadPage();
+    }
+
+    /** Carga la página actual server-side (search + estado + 20/pág). */
+    private loadPage(): void {
+        this.employeeService.loadEmployeesPaged(
+            this.currentPage(),
+            this.pageSize(),
+            this.searchQuery() || undefined,
+            this.filterEstado() || undefined
+        ).then(res => {
+            this.totalElements.set(res.totalElements);
+            this.totalPages.set(res.totalPages);
+        }).catch(err => {
             this.error.set((err as Error).message ?? 'Error al cargar empleados');
         });
     }
@@ -160,18 +152,21 @@ export class EmployeeListComponent implements OnInit {
     onSearchTerm(term: string): void {
         this.searchQuery.set(term);
         this.currentPage.set(0);
+        this.loadPage();
     }
 
     onFilterChangeEvent(event: FilterChangeEvent): void {
         if (event.field === 'estado') {
             this.filterEstado.set(event.value != null ? String(event.value) : '');
             this.currentPage.set(0);
+            this.loadPage();
         }
     }
 
     onPaginationChange(event: PaginationChangeEvent): void {
         this.currentPage.set(event.page);
         this.pageSize.set(event.size);
+        this.loadPage();
     }
 
     openCreateModal(): void {
@@ -221,6 +216,7 @@ export class EmployeeListComponent implements OnInit {
                 await this.employeeService.createEmployee(val as never);
             }
             this.closeModal();
+            this.loadPage();
         } catch (err) {
             this.submitError.set((err as Error).message ?? 'Error al guardar empleado');
         } finally {
@@ -232,6 +228,7 @@ export class EmployeeListComponent implements OnInit {
         if (!confirm(`¿Desactivar a "${employee.nombres} ${employee.apellidos}"?`)) return;
         try {
             await this.employeeService.deactivateEmployee(employee.id);
+            this.loadPage();
         } catch (err) {
             this.error.set((err as Error).message ?? 'Error al desactivar empleado');
         }

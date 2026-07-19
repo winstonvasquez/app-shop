@@ -2,6 +2,7 @@ import { Injectable, inject, signal, computed } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '@env/environment';
 import { firstValueFrom } from 'rxjs';
+import { PageResponse, pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 import {
     Employee, EmployeeRequest,
     EmergencyContact, EmergencyContactRequest,
@@ -39,6 +40,28 @@ export class EmployeeService {
                 this.http.get<Employee[]>(this.baseUrl)
             );
             this._employees.set(employees);
+        } catch (error) {
+            this._error.set('Error al cargar empleados');
+            throw error;
+        } finally {
+            this._loading.set(false);
+        }
+    }
+
+    /** Carga server-side paginada (search + estado opcionales). Devuelve totales de página. */
+    async loadEmployeesPaged(page: number, size: number, search?: string, status?: string):
+        Promise<{ totalElements: number; totalPages: number }> {
+        this._loading.set(true);
+        this._error.set(null);
+        try {
+            const params: Record<string, string> = { page: String(page), size: String(size) };
+            if (search) params['search'] = search;
+            if (status) params['status'] = status;
+            const res = await firstValueFrom(
+                this.http.get<PageResponse<Employee>>(`${this.baseUrl}/paged`, { params })
+            );
+            this._employees.set(res.content ?? []);
+            return { totalElements: pageTotalElements(res), totalPages: pageTotalPages(res) };
         } catch (error) {
             this._error.set('Error al cargar empleados');
             throw error;
