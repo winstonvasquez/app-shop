@@ -196,3 +196,23 @@
     padding: var(--spacing-xs) var(--spacing-sm);
     color: var(--color-text-muted);
 }
+
+/* ── Shimmer skeleton loader (estado loading del data-table) ───────── */
+@keyframes dt-shimmer {
+    0%   { background-position: -450px 0; }
+    100% { background-position:  450px 0; }
+}
+.data-table .skeleton-row td { padding: 14px 16px; border-bottom: 1px solid var(--color-border); }
+.data-table .skeleton-cell {
+    display: block;
+    height: 12px;
+    width: 80%;
+    border-radius: 6px;
+    background: linear-gradient(90deg,
+        var(--color-surface-raised) 25%,
+        color-mix(in srgb, var(--color-surface-raised) 45%, var(--color-surface)) 37%,
+        var(--color-surface-raised) 63%);
+    background-size: 900px 100%;
+    animation: dt-shimmer 1.4s ease-in-out infinite;
+}
+.data-table .skeleton-cell--sm { width: 34px; }

@@ -58,6 +58,9 @@ export class DataTableComponent<T = any> {
     actions = input<TableAction<T>[]>([]);
 
     loading = input<boolean>(false);
+
+    /** Filas placeholder para el shimmer skeleton mientras carga. */
+    protected readonly skeletonRows = Array.from({ length: 6 }, (_, i) => i);
     selectable = input<boolean>(false);
 
     currentPage = input<number>(0);
@@ -71,7 +74,7 @@ export class DataTableComponent<T = any> {
     searchable = input<boolean>(false);
     searchPlaceholder = input<string>('Buscar...');
     filters = input<FilterConfig[]>([]);
-    exportable = input<boolean>(false);
+    exportable = input<boolean>(true);  // todas las tablas ofrecen export por defecto (CSV/XLSX)
     exportFileName = input<string>('export');
     hidePagination = input<boolean>(false);
 

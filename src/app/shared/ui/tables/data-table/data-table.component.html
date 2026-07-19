@@ -30,14 +30,6 @@
         </div>
     }
 
-    <!-- Loading State -->
-    @if (loading()) {
-        <div class="loading-overlay">
-            <div class="spinner"></div>
-            <p>Cargando...</p>
-        </div>
-    }
-
     <!-- Table -->
     <div class="table-wrapper">
         <table class="data-table">
@@ -71,7 +63,21 @@
             </thead>
             
             <tbody>
-                @if (isEmpty()) {
+                @if (loading()) {
+                    @for (r of skeletonRows; track r) {
+                        <tr class="skeleton-row">
+                            @if (selectable()) {
+                                <td class="select-column"><span class="skeleton-cell skeleton-cell--sm"></span></td>
+                            }
+                            @for (column of columns(); track column.key) {
+                                <td [style.text-align]="column.align || 'left'"><span class="skeleton-cell"></span></td>
+                            }
+                            @if (hasActions()) {
+                                <td class="actions-column"><span class="skeleton-cell skeleton-cell--sm"></span></td>
+                            }
+                        </tr>
+                    }
+                } @else if (isEmpty()) {
                     <tr>
                         <td [attr.colspan]="columns().length + (selectable() ? 1 : 0) + (hasActions() ? 1 : 0)" class="empty-state">
                             <div class="empty-message">
