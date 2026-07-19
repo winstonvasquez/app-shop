@@ -61,33 +61,17 @@ export class DepartmentListComponent implements OnInit {
         ]) }
     ];
 
-    // ── Pagination ────────────────────────────────────────────────────────────
-    currentPage = signal(0);
-    pageSize    = signal(10);
+    // ── Pagination (server-side) ──────────────────────────────────────────────
+    currentPage   = signal(0);
+    pageSize      = signal(20);
+    totalElements = signal(0);
+    totalPages    = signal(0);
 
-    // ── Computed ──────────────────────────────────────────────────────────────
-    readonly filtered = computed(() => {
-        const term   = this.searchQuery().toLowerCase();
-        const activo = this.filterActivo();
-        return this.departments().filter(d => {
-            const matchSearch = !term ||
-                d.codigo.toLowerCase().includes(term) ||
-                d.nombre.toLowerCase().includes(term);
-            const matchActivo = activo === '' || String(d.activo) === activo;
-            return matchSearch && matchActivo;
-        });
-    });
-
-    readonly totalElements = computed(() => this.filtered().length);
-    readonly totalPages    = computed(() => Math.ceil(this.totalElements() / this.pageSize()) || 1);
-
-    readonly pagedData = computed(() => {
-        const start = this.currentPage() * this.pageSize();
-        return this.filtered().slice(start, start + this.pageSize());
-    });
+    // Lista completa para el dropdown de departamento padre (independiente de la paginación)
+    readonly allDepartments = signal<Department[]>([]);
 
     readonly parentOptions = computed(() =>
-        this.departments().filter(d => {
+        this.allDepartments().filter(d => {
             const sel = this.selectedDept();
             return d.activo && (!sel || d.id !== sel.id);
         })
@@ -146,11 +130,25 @@ export class DepartmentListComponent implements OnInit {
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
     ngOnInit(): void {
-        Promise.all([
-            this.departmentService.loadAllDepartments(),
-            this.employeeService.loadEmployees(),
-        ]).catch(err => {
-            this.error.set((err as Error).message ?? 'Error al cargar datos');
+        this.departmentService.fetchAll()
+            .then(list => this.allDepartments.set(list))
+            .catch(() => { /* dropdown de padre es opcional */ });
+        this.employeeService.loadEmployees().catch(() => { /* dropdown responsable opcional */ });
+        this.loadPage();
+    }
+
+    /** Carga la página actual server-side (search + activo + 20/pág). */
+    private loadPage(): void {
+        this.departmentService.loadDepartmentsPaged(
+            this.currentPage(),
+            this.pageSize(),
+            this.searchQuery() || undefined,
+            this.filterActivo() || undefined
+        ).then(res => {
+            this.totalElements.set(res.totalElements);
+            this.totalPages.set(res.totalPages);
+        }).catch(err => {
+            this.error.set((err as Error).message ?? 'Error al cargar departamentos');
         });
     }
 
@@ -158,18 +156,21 @@ export class DepartmentListComponent implements OnInit {
     onSearchTerm(term: string): void {
         this.searchQuery.set(term);
         this.currentPage.set(0);
+        this.loadPage();
     }
 
     onFilterChangeEvent(event: FilterChangeEvent): void {
         if (event.field === 'activo') {
             this.filterActivo.set(event.value != null ? String(event.value) : '');
             this.currentPage.set(0);
+            this.loadPage();
         }
     }
 
     onPaginationChange(event: PaginationChangeEvent): void {
         this.currentPage.set(event.page);
         this.pageSize.set(event.size);
+        this.loadPage();
     }
 
     openCreateModal(): void {
@@ -221,6 +222,8 @@ export class DepartmentListComponent implements OnInit {
                 await this.departmentService.createDepartment(request);
             }
             this.closeModal();
+            this.loadPage();
+            this.departmentService.fetchAll().then(list => this.allDepartments.set(list)).catch(() => {});
         } catch (err) {
             this.submitError.set((err as Error).message ?? 'Error al guardar departamento');
         } finally {
@@ -232,6 +235,7 @@ export class DepartmentListComponent implements OnInit {
         if (!confirm(`¿Desactivar el departamento "${dept.nombre}"?`)) return;
         try {
             await this.departmentService.deactivateDepartment(dept.id);
+            this.loadPage();
         } catch (err) {
             this.error.set((err as Error).message ?? 'Error al desactivar departamento');
         }

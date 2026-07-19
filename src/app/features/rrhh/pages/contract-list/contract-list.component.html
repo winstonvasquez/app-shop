@@ -16,9 +16,9 @@
         [message]="expiringCount() + ' contrato(s) por vencer en los próximos 30 días'" />
 }
 
-<!-- Tabla -->
+<!-- Tabla (server-side: search + estado + tipo + paginación 20/pág) -->
 <app-data-table
-    [data]="pagedData()"
+    [data]="contracts()"
     [columns]="columns"
     [actions]="actions"
     [loading]="loading()"
@@ -27,19 +27,13 @@
     [filters]="contratoFilters"
     [exportable]="true"
     exportFileName="contratos"
-    [hidePagination]="true"
+    [currentPage]="currentPage()"
+    [pageSize]="pageSize()"
+    [totalElements]="totalElements()"
+    [totalPages]="totalPages()"
     (searchChange)="onSearchTerm($event)"
-    (filterChange)="onFilterChangeEvent($event)" />
-
-<!-- Paginación -->
-@if (totalElements() > 0) {
-    <app-pagination
-        [currentPage]="currentPage()"
-        [totalPages]="totalPages()"
-        [totalElements]="totalElements()"
-        [pageSize]="pageSize()"
-        (pageChange)="onPaginationChange($event)" />
-}
+    (filterChange)="onFilterChangeEvent($event)"
+    (pageChange)="onPaginationChange($event)" />
 
 <!-- Drawer: Crear / Editar Contrato -->
 <app-drawer

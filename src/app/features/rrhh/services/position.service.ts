@@ -2,6 +2,7 @@ import { Injectable, inject, signal, computed } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '@env/environment';
 import { firstValueFrom } from 'rxjs';
+import { PageResponse, pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 import { Position, PositionRequest } from '../models/position.model';
 
 @Injectable({ providedIn: 'root' })
@@ -22,6 +23,27 @@ export class PositionService {
     );
 
     readonly totalPositions = computed(() => this._positions().length);
+
+    async loadPositionsPaged(page: number, size: number, search?: string, departmentId?: string):
+        Promise<{ totalElements: number; totalPages: number }> {
+        this._loading.set(true);
+        this._error.set(null);
+        try {
+            const params: Record<string, string> = { page: String(page), size: String(size) };
+            if (search) params['search'] = search;
+            if (departmentId) params['departmentId'] = departmentId;
+            const res = await firstValueFrom(
+                this.http.get<PageResponse<Position>>(`${this.baseUrl}/paged`, { params })
+            );
+            this._positions.set(res.content ?? []);
+            return { totalElements: pageTotalElements(res), totalPages: pageTotalPages(res) };
+        } catch (error) {
+            this._error.set('Error al cargar puestos');
+            throw error;
+        } finally {
+            this._loading.set(false);
+        }
+    }
 
     async loadPositions(): Promise<void> {
         this._loading.set(true);

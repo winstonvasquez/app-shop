@@ -1,5 +1,5 @@
 import {
-    Component, OnInit, inject, signal, computed,
+    Component, OnInit, inject, signal,
     ChangeDetectionStrategy
 } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
@@ -65,30 +65,11 @@ export class PositionListComponent implements OnInit {
         }
     ];
 
-    // ── Pagination ────────────────────────────────────────────────────────────
-    currentPage = signal(0);
-    pageSize    = signal(10);
-
-    // ── Computed ──────────────────────────────────────────────────────────────
-    readonly filtered = computed(() => {
-        const term   = this.searchQuery().toLowerCase();
-        const deptId = this.filterDepartment();
-        return this.positions().filter(p => {
-            const matchSearch = !term ||
-                p.codigo.toLowerCase().includes(term) ||
-                p.nombre.toLowerCase().includes(term);
-            const matchDept = !deptId || String(p.departmentId) === deptId;
-            return matchSearch && matchDept;
-        });
-    });
-
-    readonly totalElements = computed(() => this.filtered().length);
-    readonly totalPages    = computed(() => Math.ceil(this.totalElements() / this.pageSize()) || 1);
-
-    readonly pagedData = computed(() => {
-        const start = this.currentPage() * this.pageSize();
-        return this.filtered().slice(start, start + this.pageSize());
-    });
+    // ── Pagination (server-side) ──────────────────────────────────────────────
+    currentPage   = signal(0);
+    pageSize      = signal(20);
+    totalElements = signal(0);
+    totalPages    = signal(0);
 
     // ── Breadcrumbs ───────────────────────────────────────────────────────────
     breadcrumbs: Breadcrumb[] = [
@@ -151,11 +132,22 @@ export class PositionListComponent implements OnInit {
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
     ngOnInit(): void {
-        Promise.all([
-            this.positionService.loadAllPositions(),
-            this.departmentService.loadDepartments(),
-        ]).catch(err => {
-            this.error.set((err as Error).message ?? 'Error al cargar datos');
+        this.departmentService.loadDepartments().catch(() => { /* dropdown depto opcional */ });
+        this.loadPage();
+    }
+
+    /** Carga la página actual server-side (search + departamento + 20/pág). */
+    private loadPage(): void {
+        this.positionService.loadPositionsPaged(
+            this.currentPage(),
+            this.pageSize(),
+            this.searchQuery() || undefined,
+            this.filterDepartment() || undefined
+        ).then(res => {
+            this.totalElements.set(res.totalElements);
+            this.totalPages.set(res.totalPages);
+        }).catch(err => {
+            this.error.set((err as Error).message ?? 'Error al cargar puestos');
         });
     }
 
@@ -163,18 +155,21 @@ export class PositionListComponent implements OnInit {
     onSearchTerm(term: string): void {
         this.searchQuery.set(term);
         this.currentPage.set(0);
+        this.loadPage();
     }
 
     onFilterChangeEvent(event: FilterChangeEvent): void {
         if (event.field === 'department') {
             this.filterDepartment.set(event.value != null ? String(event.value) : '');
             this.currentPage.set(0);
+            this.loadPage();
         }
     }
 
     onPaginationChange(event: PaginationChangeEvent): void {
         this.currentPage.set(event.page);
         this.pageSize.set(event.size);
+        this.loadPage();
     }
 
     openCreateModal(): void {
@@ -232,6 +227,7 @@ export class PositionListComponent implements OnInit {
                 await this.positionService.createPosition(request);
             }
             this.closeModal();
+            this.loadPage();
         } catch (err) {
             this.submitError.set((err as Error).message ?? 'Error al guardar puesto');
         } finally {
@@ -243,6 +239,7 @@ export class PositionListComponent implements OnInit {
         if (!confirm(`¿Desactivar el puesto "${pos.nombre}"?`)) return;
         try {
             await this.positionService.deactivatePosition(pos.id);
+            this.loadPage();
         } catch (err) {
             this.error.set((err as Error).message ?? 'Error al desactivar puesto');
         }

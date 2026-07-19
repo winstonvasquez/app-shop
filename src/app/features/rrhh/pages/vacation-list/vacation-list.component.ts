@@ -1,5 +1,5 @@
 import {
-    Component, OnInit, inject, signal, computed, effect,
+    Component, OnInit, inject, signal, effect,
     ChangeDetectionStrategy
 } from '@angular/core';
 import { of } from 'rxjs';
@@ -65,30 +65,11 @@ export class VacationListComponent implements OnInit {
         ]) }
     ];
 
-    // ── Pagination ────────────────────────────────────────────────────────────
-    currentPage = signal(0);
-    pageSize    = signal(10);
-
-    // ── Computed ──────────────────────────────────────────────────────────────
-    readonly filtered = computed(() => {
-        const estado = this.filterEstado();
-        const term   = this.searchQuery().toLowerCase();
-        return this.vacations().filter(v => {
-            const emp = this.employees().find(e => e.id === v.employeeId);
-            const nombre = emp ? `${emp.nombres} ${emp.apellidos}`.toLowerCase() : '';
-            const matchSearch = !term || nombre.includes(term);
-            const matchEstado = !estado || v.estado === estado;
-            return matchSearch && matchEstado;
-        });
-    });
-
-    readonly totalElements = computed(() => this.filtered().length);
-    readonly totalPages    = computed(() => Math.ceil(this.totalElements() / this.pageSize()) || 1);
-
-    readonly pagedData = computed(() => {
-        const start = this.currentPage() * this.pageSize();
-        return this.filtered().slice(start, start + this.pageSize());
-    });
+    // ── Pagination (server-side) ──────────────────────────────────────────────
+    currentPage   = signal(0);
+    pageSize      = signal(20);
+    totalElements = signal(0);
+    totalPages    = signal(0);
 
     // ── Breadcrumbs ───────────────────────────────────────────────────────────
     breadcrumbs: Breadcrumb[] = [
@@ -164,11 +145,22 @@ export class VacationListComponent implements OnInit {
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
     ngOnInit(): void {
-        Promise.all([
-            this.vacationService.loadVacations(),
-            this.employeeService.loadEmployees(),
-        ]).catch(err => {
-            this.error.set((err as Error).message ?? 'Error al cargar datos');
+        this.employeeService.loadEmployees().catch(() => { /* nombres/empleado dropdown */ });
+        this.loadPage();
+    }
+
+    /** Carga la página actual server-side (search + estado + 20/pág). */
+    private loadPage(): void {
+        this.vacationService.loadVacationsPaged(
+            this.currentPage(),
+            this.pageSize(),
+            this.searchQuery() || undefined,
+            this.filterEstado() || undefined
+        ).then(res => {
+            this.totalElements.set(res.totalElements);
+            this.totalPages.set(res.totalPages);
+        }).catch(err => {
+            this.error.set((err as Error).message ?? 'Error al cargar vacaciones');
         });
     }
 
@@ -176,18 +168,21 @@ export class VacationListComponent implements OnInit {
     onSearchTerm(term: string): void {
         this.searchQuery.set(term);
         this.currentPage.set(0);
+        this.loadPage();
     }
 
     onFilterChangeEvent(event: FilterChangeEvent): void {
         if (event.field === 'estado') {
             this.filterEstado.set(event.value != null ? String(event.value) : '');
             this.currentPage.set(0);
+            this.loadPage();
         }
     }
 
     onPaginationChange(event: PaginationChangeEvent): void {
         this.currentPage.set(event.page);
         this.pageSize.set(event.size);
+        this.loadPage();
     }
 
     openCreateModal(): void {
@@ -229,6 +224,7 @@ export class VacationListComponent implements OnInit {
                 motivo:      val.motivo ?? undefined,
             });
             this.closeModal();
+            this.loadPage();
         } catch (err) {
             this.submitError.set((err as Error).message ?? 'Error al crear solicitud');
         } finally {
@@ -240,6 +236,7 @@ export class VacationListComponent implements OnInit {
         if (!confirm(`¿Aprobar la solicitud de "${this.getEmployeeName(vacation.employeeId)}"?`)) return;
         try {
             await this.vacationService.approveOrReject(vacation.id, { approved: true, comentarios: 'Aprobado' });
+            this.loadPage();
         } catch (err) {
             this.error.set((err as Error).message ?? 'Error al aprobar');
         }
@@ -257,6 +254,7 @@ export class VacationListComponent implements OnInit {
                 comentarios: this.rejectForm.value.comentarios ?? '',
             });
             this.closeRejectModal();
+            this.loadPage();
         } catch (err) {
             this.error.set((err as Error).message ?? 'Error al rechazar');
         } finally {

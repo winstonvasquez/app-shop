@@ -2,6 +2,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '@env/environment';
 import { firstValueFrom } from 'rxjs';
+import { PageResponse, pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 
 export interface VacationRequest {
     id: number;
@@ -42,6 +43,23 @@ export class VacationService {
 
     readonly vacations = this._vacations.asReadonly();
     readonly loading = this._loading.asReadonly();
+
+    async loadVacationsPaged(page: number, size: number, search?: string, estado?: string):
+        Promise<{ totalElements: number; totalPages: number }> {
+        this._loading.set(true);
+        try {
+            const params: Record<string, string> = { page: String(page), size: String(size) };
+            if (search) params['search'] = search;
+            if (estado) params['estado'] = estado;
+            const res = await firstValueFrom(
+                this.http.get<PageResponse<VacationRequest>>(`${this.baseUrl}/paged`, { params })
+            );
+            this._vacations.set(res.content ?? []);
+            return { totalElements: pageTotalElements(res), totalPages: pageTotalPages(res) };
+        } finally {
+            this._loading.set(false);
+        }
+    }
 
     async loadVacations(): Promise<void> {
         this._loading.set(true);

@@ -11,10 +11,9 @@
     <app-alert type="error" [message]="error()!" />
 }
 
-<!-- Filtros -->
-<!-- Tabla -->
+<!-- Tabla (server-side: search + estado + paginación 20/pág) -->
 <app-data-table
-    [data]="pagedData()"
+    [data]="vacations()"
     [columns]="columns"
     [actions]="actions"
     [loading]="loading()"
@@ -23,19 +22,13 @@
     [filters]="estadoFilters"
     [exportable]="true"
     exportFileName="vacaciones"
-    [hidePagination]="true"
+    [currentPage]="currentPage()"
+    [pageSize]="pageSize()"
+    [totalElements]="totalElements()"
+    [totalPages]="totalPages()"
     (searchChange)="onSearchTerm($event)"
-    (filterChange)="onFilterChangeEvent($event)" />
-
-<!-- Paginación -->
-@if (totalElements() > 0) {
-    <app-pagination
-        [currentPage]="currentPage()"
-        [totalPages]="totalPages()"
-        [totalElements]="totalElements()"
-        [pageSize]="pageSize()"
-        (pageChange)="onPaginationChange($event)" />
-}
+    (filterChange)="onFilterChangeEvent($event)"
+    (pageChange)="onPaginationChange($event)" />
 
 <!-- ── Drawer: Nueva Solicitud ─────────────────────────────────────────── -->
 <app-drawer

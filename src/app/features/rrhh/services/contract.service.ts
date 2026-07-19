@@ -2,6 +2,7 @@ import { Injectable, inject, signal, computed } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '@env/environment';
 import { firstValueFrom } from 'rxjs';
+import { PageResponse, pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 import { Contract, ContractRequest, ContractStatus } from '../models/contract.model';
 
 @Injectable({ providedIn: 'root' })
@@ -26,6 +27,28 @@ export class ContractService {
     );
 
     readonly totalContracts = computed(() => this._contracts().length);
+
+    async loadContractsPaged(page: number, size: number, search?: string, status?: string, type?: string):
+        Promise<{ totalElements: number; totalPages: number }> {
+        this._loading.set(true);
+        this._error.set(null);
+        try {
+            const params: Record<string, string> = { page: String(page), size: String(size) };
+            if (search) params['search'] = search;
+            if (status) params['status'] = status;
+            if (type) params['type'] = type;
+            const res = await firstValueFrom(
+                this.http.get<PageResponse<Contract>>(`${this.baseUrl}/paged`, { params })
+            );
+            this._contracts.set(res.content ?? []);
+            return { totalElements: pageTotalElements(res), totalPages: pageTotalPages(res) };
+        } catch (error) {
+            this._error.set('Error al cargar contratos');
+            throw error;
+        } finally {
+            this._loading.set(false);
+        }
+    }
 
     async loadContracts(): Promise<void> {
         this._loading.set(true);

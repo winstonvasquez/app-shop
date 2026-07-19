@@ -79,32 +79,16 @@ export class ContractListComponent implements OnInit {
 
     // ── Pagination ────────────────────────────────────────────────────────────
     currentPage = signal(0);
-    pageSize    = signal(10);
+    pageSize    = signal(20);
 
-    // ── Computed ──────────────────────────────────────────────────────────────
+    // ── Computed / server-side pagination ─────────────────────────────────────
+    // Nota: expiringCount refleja los contratos por vencer de la página actual.
     readonly expiringCount = computed(() =>
         this.contracts().filter(c => c.expiringSoon).length
     );
 
-    readonly filtered = computed(() => {
-        const term   = this.searchQuery().toLowerCase();
-        const status = this.filterStatus();
-        const type   = this.filterType();
-        return this.contracts().filter(c => {
-            const matchSearch = !term || c.employeeName?.toLowerCase().includes(term);
-            const matchStatus = !status || c.estado === status;
-            const matchType   = !type || c.tipoContrato === type;
-            return matchSearch && matchStatus && matchType;
-        });
-    });
-
-    readonly totalElements = computed(() => this.filtered().length);
-    readonly totalPages    = computed(() => Math.ceil(this.totalElements() / this.pageSize()) || 1);
-
-    readonly pagedData = computed(() => {
-        const start = this.currentPage() * this.pageSize();
-        return this.filtered().slice(start, start + this.pageSize());
-    });
+    totalElements = signal(0);
+    totalPages    = signal(0);
 
     // ── Breadcrumbs ───────────────────────────────────────────────────────────
     breadcrumbs: Breadcrumb[] = [
@@ -183,11 +167,23 @@ export class ContractListComponent implements OnInit {
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
     ngOnInit(): void {
-        Promise.all([
-            this.contractService.loadContracts(),
-            this.employeeService.loadEmployees(),
-        ]).catch(err => {
-            this.error.set((err as Error).message ?? 'Error al cargar datos');
+        this.employeeService.loadEmployees().catch(() => { /* dropdown empleado opcional */ });
+        this.loadPage();
+    }
+
+    /** Carga la página actual server-side (search + estado + tipo + 20/pág). */
+    private loadPage(): void {
+        this.contractService.loadContractsPaged(
+            this.currentPage(),
+            this.pageSize(),
+            this.searchQuery() || undefined,
+            this.filterStatus() || undefined,
+            this.filterType() || undefined
+        ).then(res => {
+            this.totalElements.set(res.totalElements);
+            this.totalPages.set(res.totalPages);
+        }).catch(err => {
+            this.error.set((err as Error).message ?? 'Error al cargar contratos');
         });
     }
 
@@ -195,6 +191,7 @@ export class ContractListComponent implements OnInit {
     onSearchTerm(term: string): void {
         this.searchQuery.set(term);
         this.currentPage.set(0);
+        this.loadPage();
     }
 
     onFilterChangeEvent(event: FilterChangeEvent): void {
@@ -202,11 +199,13 @@ export class ContractListComponent implements OnInit {
         if (event.field === 'status') this.filterStatus.set(value);
         else if (event.field === 'type') this.filterType.set(value);
         this.currentPage.set(0);
+        this.loadPage();
     }
 
     onPaginationChange(event: PaginationChangeEvent): void {
         this.currentPage.set(event.page);
         this.pageSize.set(event.size);
+        this.loadPage();
     }
 
     // ── Modal handlers ────────────────────────────────────────────────────────
@@ -303,6 +302,7 @@ export class ContractListComponent implements OnInit {
                 await this.contractService.createContract(request);
             }
             this.closeModal();
+            this.loadPage();
         } catch (err) {
             this.submitError.set((err as Error).message ?? 'Error al guardar contrato');
         } finally {
@@ -320,6 +320,7 @@ export class ContractListComponent implements OnInit {
         try {
             await this.contractService.terminateContract(sel.id, this.terminateMotivo.value!);
             this.closeTerminateModal();
+            this.loadPage();
         } catch (err) {
             this.error.set((err as Error).message ?? 'Error al finalizar contrato');
         } finally {

@@ -2,6 +2,7 @@ import { Injectable, inject, signal, computed } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '@env/environment';
 import { firstValueFrom } from 'rxjs';
+import { PageResponse, pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 import { Department, DepartmentRequest } from '../models/department.model';
 
 @Injectable({ providedIn: 'root' })
@@ -22,6 +23,32 @@ export class DepartmentService {
     );
 
     readonly totalDepartments = computed(() => this._departments().length);
+
+    /** Trae TODOS los departamentos sin tocar el signal (para dropdowns de formulario). */
+    async fetchAll(): Promise<Department[]> {
+        return firstValueFrom(this.http.get<Department[]>(this.baseUrl));
+    }
+
+    async loadDepartmentsPaged(page: number, size: number, search?: string, activo?: string):
+        Promise<{ totalElements: number; totalPages: number }> {
+        this._loading.set(true);
+        this._error.set(null);
+        try {
+            const params: Record<string, string> = { page: String(page), size: String(size) };
+            if (search) params['search'] = search;
+            if (activo) params['activo'] = activo;
+            const res = await firstValueFrom(
+                this.http.get<PageResponse<Department>>(`${this.baseUrl}/paged`, { params })
+            );
+            this._departments.set(res.content ?? []);
+            return { totalElements: pageTotalElements(res), totalPages: pageTotalPages(res) };
+        } catch (error) {
+            this._error.set('Error al cargar departamentos');
+            throw error;
+        } finally {
+            this._loading.set(false);
+        }
+    }
 
     async loadDepartments(): Promise<void> {
         this._loading.set(true);
