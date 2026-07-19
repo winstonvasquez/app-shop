@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { AuthService } from '../../../core/auth/auth.service';
 import { FinancialMovement, Page } from '../models/tesoreria.model';
@@ -43,9 +43,11 @@ export class MovimientosFinancierosService {
     getFlujoCaja(fechaInicio: string, fechaFin: string): Observable<number> {
         let params = new HttpParams()
             .set('tenantId', this.tenantId)
-            .set('fechaInicio', fechaInicio)
-            .set('fechaFin', fechaFin);
-        return this.http.get<number>(`${this.apiUrl}/flujo-caja`, { params });
+            .set('desde', fechaInicio)
+            .set('hasta', fechaFin);
+        // El backend retorna { flujoNeto, desde, hasta, signo, tenantId }; extraemos el número.
+        return this.http.get<{ flujoNeto: number }>(`${this.apiUrl}/flujo-caja`, { params })
+            .pipe(map(r => Number(r?.flujoNeto ?? 0)));
     }
 
     registerMovement(movement: FinancialMovementRequest): Observable<FinancialMovement> {

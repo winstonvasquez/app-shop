@@ -40,9 +40,10 @@ export class TipoCambioComponent implements OnInit {
         this.resultado.set(null);
         this.service.obtener(this.fecha(), this.moneda()).subscribe({
             next: tc => {
+                // 204 No Content → tc null (no hay TC para la fecha): mostrar 0 sin error.
                 this.resultado.set(tc);
-                this.compra.set(tc.compra);
-                this.venta.set(tc.venta);
+                this.compra.set(tc?.compra ?? 0);
+                this.venta.set(tc?.venta ?? 0);
                 this.cargando.set(false);
             },
             error: () => {

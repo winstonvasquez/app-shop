@@ -356,14 +356,14 @@ export class AsientosComponent implements OnInit {
             key: 'totalDebe',
             label: 'Debe (S/)',
             align: 'right',
-            render: (r) => `<span class="font-mono">S/ ${r.totalDebe.toFixed(2)}</span>`,
+            render: (r) => `<span class="font-mono">S/ ${(r.totalDebe ?? 0).toFixed(2)}</span>`,
             html: true
         },
         {
             key: 'totalHaber',
             label: 'Haber (S/)',
             align: 'right',
-            render: (r) => `<span class="font-mono">S/ ${r.totalHaber.toFixed(2)}</span>`,
+            render: (r) => `<span class="font-mono">S/ ${(r.totalHaber ?? 0).toFixed(2)}</span>`,
             html: true
         },
         {

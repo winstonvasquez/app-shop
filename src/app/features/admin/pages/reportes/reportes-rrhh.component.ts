@@ -97,10 +97,11 @@ export class ReportesRrhhComponent implements OnInit {
     cargar() {
         this.cargando.set(true);
         this.error.set(null);
-        const url = `${environment.apiUrls.hr}/hr/api/employees?size=100&estado=ACTIVO`;
-        this.http.get<PageResponse<EmpleadoReporte>>(url).subscribe({
-            next: (page) => {
-                this.empleados.set(page.content);
+        const url = `${environment.apiUrls.hr}/api/employees?size=100&estado=ACTIVO`;
+        this.http.get<EmpleadoReporte[] | PageResponse<EmpleadoReporte>>(url).subscribe({
+            next: (res) => {
+                // El endpoint /hr/api/employees devuelve un array plano; toleramos también el envelope Page.
+                this.empleados.set(Array.isArray(res) ? res : (res?.content ?? []));
                 this.cargando.set(false);
             },
             error: () => {
