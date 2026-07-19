@@ -81,10 +81,10 @@ type PageItem = number | 'ellipsis';
     align-items: center;
     flex-wrap: wrap;
     gap: 6px 12px;
-    padding: 10px 16px;
+    padding: 8px 16px;
     border-top: 1px solid var(--color-border);
-    background: var(--color-surface-raised);
-    font-size: 13px;
+    background: var(--color-surface);
+    font-size: 12.5px;
     color: var(--color-text-primary);
 }
 
@@ -107,14 +107,14 @@ type PageItem = number | 'ellipsis';
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-width: 32px;
-    height: 32px;
+    min-width: 30px;
+    height: 30px;
     padding: 0 8px;
     border: 1px solid var(--color-border);
-    border-radius: 4px;
-    background: var(--color-surface-raised);
+    border-radius: 6px;
+    background: var(--color-surface);
     color: var(--color-text-primary);
-    font-size: 13px;
+    font-size: 12.5px;
     line-height: 1;
     cursor: pointer;
     transition: border-color .12s, background .12s, color .12s;
@@ -125,7 +125,7 @@ type PageItem = number | 'ellipsis';
 .pg-btn:hover:not([disabled]):not(.pg-btn-active) {
     border-color: var(--color-primary);
     color: var(--color-primary);
-    background: color-mix(in oklch, var(--color-primary) 8%, var(--color-surface-raised));
+    background: color-mix(in oklch, var(--color-primary) 8%, var(--color-surface));
 }
 
 .pg-btn[disabled] {
@@ -149,9 +149,17 @@ type PageItem = number | 'ellipsis';
     gap: 4px;
 }
 
-/* Botón "Ir" */
+/* Botón "Ir" — acento corporativo */
 .pg-btn-go {
-    padding: 0 12px;
+    padding: 0 14px;
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: #fff;
+}
+.pg-btn-go:hover:not([disabled]) {
+    background: color-mix(in srgb, var(--color-primary) 88%, #000);
+    border-color: color-mix(in srgb, var(--color-primary) 88%, #000);
+    color: #fff;
 }
 
 /* ── Puntos suspensivos ───────────────────────────────── */
@@ -159,8 +167,8 @@ type PageItem = number | 'ellipsis';
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-width: 28px;
-    height: 32px;
+    min-width: 26px;
+    height: 30px;
     font-size: 13px;
     color: var(--color-text-muted);
     letter-spacing: 1px;
@@ -183,14 +191,14 @@ type PageItem = number | 'ellipsis';
 
 /* ── Input "Ir a página" ──────────────────────────────── */
 .pg-input {
-    width: 52px;
-    height: 32px;
+    width: 48px;
+    height: 30px;
     padding: 0 6px;
     border: 1px solid var(--color-border);
-    border-radius: 4px;
-    background: var(--color-surface-raised);
+    border-radius: 6px;
+    background: var(--color-surface);
     color: var(--color-text-primary);
-    font-size: 13px;
+    font-size: 12.5px;
     text-align: center;
     -moz-appearance: textfield;
 }
@@ -204,16 +212,26 @@ type PageItem = number | 'ellipsis';
 
 /* ── Select "Filas por página" ────────────────────────── */
 .pg-select {
-    height: 32px;
-    padding: 0 8px;
+    height: 30px;
+    padding: 0 1.75rem 0 8px;
     border: 1px solid var(--color-border);
-    border-radius: 4px;
-    background: var(--color-surface-raised);
+    border-radius: 6px;
+    background-color: var(--color-surface);
     color: var(--color-text-primary);
-    font-size: 13px;
+    font-size: 12.5px;
     cursor: pointer;
-    appearance: auto;
-    min-width: 64px;
+    min-width: 60px;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.5rem center;
+    background-size: 0.75rem;
+}
+.pg-select:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 2px color-mix(in oklch, var(--color-primary) 20%, transparent);
 }
 
 /* ── Responsive ───────────────────────────────────────── */

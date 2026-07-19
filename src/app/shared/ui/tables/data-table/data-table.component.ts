@@ -3,6 +3,7 @@ import { AsyncPipe } from '@angular/common';
 import { Observable } from 'rxjs';
 import { ExportService } from '@shared/services/export.service';
 import { PaginationComponent, PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
+import { ButtonComponent } from '@shared/components';
 
 export interface TableColumn<T = any> {
     key: string;
@@ -47,7 +48,7 @@ export interface FilterChangeEvent {
 @Component({
     selector: 'app-data-table',
     standalone: true,
-    imports: [AsyncPipe, PaginationComponent],
+    imports: [AsyncPipe, PaginationComponent, ButtonComponent],
     templateUrl: './data-table.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
 })

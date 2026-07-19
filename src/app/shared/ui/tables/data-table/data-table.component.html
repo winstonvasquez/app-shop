@@ -23,8 +23,8 @@
             }
             @if (exportable()) {
                 <div class="table-export-buttons">
-                    <button type="button" class="btn btn-secondary" (click)="onExportCsv()">CSV</button>
-                    <button type="button" class="btn btn-secondary" (click)="onExportExcel()">Excel</button>
+                    <app-button label="CSV" icon="download" variant="secondary" size="md" (click)="onExportCsv()" />
+                    <app-button label="Excel" icon="download" variant="secondary" size="md" (click)="onExportExcel()" />
                 </div>
             }
         </div>
