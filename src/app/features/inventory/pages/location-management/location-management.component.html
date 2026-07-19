@@ -10,39 +10,27 @@
     </div>
   </app-page-header>
 
-  <div class="filters-bar">
-    <div class="filter-field">
-      <label class="input-label">Almacén</label>
-      <select class="form-input" (change)="onWarehouseChange($event)">
-        <option value="">Seleccionar almacén...</option>
-        @for (w of warehouses(); track w.id) {
-          <option [value]="w.id">{{ w.code }} — {{ w.name }}</option>
-        }
-      </select>
-    </div>
-  </div>
-
   @if (error()) {
     <app-alert type="error" [message]="error()!" [dismissible]="true" (dismiss)="error.set(null)" />
   }
 
   @if (!selectedWarehouseId()) {
-    <div class="card card-body empty-state">
-      Selecciona un almacén para ver sus ubicaciones.
-    </div>
-  } @else {
-    <app-data-table
-      [data]="locations()"
-      [columns]="columns"
-      [actions]="actions"
-      [loading]="loading()"
-      [currentPage]="currentPage()"
-      [pageSize]="pageSize()"
-      [totalElements]="totalElements()"
-      [totalPages]="totalPages()"
-      (pageChange)="onPageChange($event)">
-    </app-data-table>
+    <p class="text-sm text-subtle mb-sm">Selecciona un almacén en el filtro para ver sus ubicaciones.</p>
   }
+
+  <app-data-table
+    [data]="locations()"
+    [columns]="columns"
+    [actions]="actions"
+    [loading]="loading()"
+    [currentPage]="currentPage()"
+    [pageSize]="pageSize()"
+    [totalElements]="totalElements()"
+    [totalPages]="totalPages()"
+    [filters]="almacenFilters"
+    (filterChange)="onFilterChangeEvent($event)"
+    (pageChange)="onPageChange($event)">
+  </app-data-table>
 
 </div>
 

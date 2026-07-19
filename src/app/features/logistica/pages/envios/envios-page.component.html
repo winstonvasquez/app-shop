@@ -15,18 +15,7 @@
     <app-alert type="success" [message]="confirmInfo()!" (dismiss)="confirmInfo.set(null)" [dismissible]="true" />
   }
 
-  <!-- Filtros -->
-  <div class="filters-bar">
-    <select class="form-input" style="width:220px"
-            (change)="onFilterStatus($event)">
-      <option value="">Todos los estados</option>
-      @for (opt of statusOptions; track opt.value) {
-        <option [value]="opt.value">{{ opt.label }}</option>
-      }
-    </select>
-  </div>
-
-  <!-- Tabla -->
+  <!-- Tabla (filtro de estado en el toolbar) -->
   <app-data-table
     [data]="envios()"
     [columns]="columns"
@@ -38,8 +27,10 @@
     [totalPages]="totalPages()"
     [searchable]="true"
     searchPlaceholder="Buscar por N° tracking o destinatario..."
+    [filters]="estadoFilters"
     [exportable]="true"
     exportFileName="envios-export"
+    (filterChange)="onFilterChangeEvent($event)"
     (pageChange)="onPaginationChange($event)">
   </app-data-table>
 </div>

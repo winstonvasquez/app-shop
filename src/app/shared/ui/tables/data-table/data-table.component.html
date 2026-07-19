@@ -29,6 +29,10 @@
                     </select>
                 </div>
             }
+            <!-- Slot para filtros custom (date-inputs, radios, etc.) alineados en el toolbar -->
+            <div class="table-toolbar-extra">
+                <ng-content select="[toolbarExtra]"></ng-content>
+            </div>
             @if (exportable()) {
                 <div class="table-export-buttons">
                     <app-button label="CSV" icon="download" variant="secondary" size="sm" (click)="onExportCsv()" />

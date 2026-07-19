@@ -8,18 +8,7 @@
     </div>
   </app-page-header>
 
-  <!-- Filtro -->
-  <form [formGroup]="filterForm" class="filters-bar">
-    <select class="form-input" style="width:200px"
-            formControlName="estado"
-            (change)="aplicarFiltro()">
-      <option value="">Todos los estados</option>
-      @for (opt of estadoGuiaOptions; track opt.value) {
-        <option [value]="opt.value">{{ opt.label }}</option>
-      }
-    </select>
-  </form>
-
+  <!-- Tabla (filtro de estado en el toolbar) -->
   <app-data-table
     [data]="guiasFiltradas()"
     [columns]="columns"
@@ -31,8 +20,10 @@
     [pageSize]="pageSize()"
     [searchable]="true"
     searchPlaceholder="Buscar por serie, N° o destinatario..."
+    [filters]="estadoFilters"
     [exportable]="true"
     exportFileName="guias-remision"
+    (filterChange)="onFilterChangeEvent($event)"
     (pageChange)="onPageChange($event)">
   </app-data-table>
 </div>

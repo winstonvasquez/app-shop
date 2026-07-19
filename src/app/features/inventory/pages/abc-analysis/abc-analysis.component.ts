@@ -36,30 +36,15 @@ interface AbcRow extends AbcItem {
                 <app-alert type="error" [message]="error()!" [dismissible]="true" (dismiss)="error.set(null)" />
             }
 
-            <!-- Resumen por clase -->
-            <div class="kpi-grid kpi-grid-3">
+            <!-- Resumen por clase (línea compacta; los KPI cards viven solo en dashboards) -->
+            <div class="flex flex-wrap gap-md text-sm text-subtle mb-sm">
                 @for (r of resumen(); track r.clase) {
-                    <div class="kpi-card"
-                        [class.kpi-card-green]="r.clase === 'A'"
-                        [class.kpi-card-yellow]="r.clase === 'B'"
-                        [class.kpi-card-teal]="r.clase === 'C'">
-                        <div class="kpi-top">
-                            <span class="kpi-label">Clase {{ r.clase }}</span>
-                            <div class="kpi-icon"
-                                [class.kpi-icon-green]="r.clase === 'A'"
-                                [class.kpi-icon-yellow]="r.clase === 'B'"
-                                [class.kpi-icon-blue]="r.clase === 'C'">
-                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
-                                </svg>
-                            </div>
-                        </div>
-                        <div class="kpi-value">{{ r.productos }}</div>
-                        <div class="kpi-sub">{{ r.valorPct }}% del valor · {{ r.productosPct }}% de ítems</div>
-                    </div>
+                    <span>
+                        <strong class="text-on">Clase {{ r.clase }}:</strong>
+                        {{ r.productos }} ítems · {{ r.valorPct }}% del valor · {{ r.productosPct }}% de ítems
+                    </span>
                 } @empty {
-                    <div class="kpi-card"><div class="kpi-sub">Sin datos en el período</div></div>
+                    <span>Sin datos en el período</span>
                 }
             </div>
 

@@ -5,7 +5,8 @@ import { DevolucionService } from '../../services/devolucion.service';
 import { Devolucion, DevolucionStatus } from '../../models/devolucion.model';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { ButtonComponent } from '@shared/components';
-import { DataTableComponent, TableColumn, TableAction } from '@shared/ui/tables/data-table/data-table.component';
+import { of } from 'rxjs';
+import { DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
@@ -79,6 +80,11 @@ export class DevolucionesPageComponent implements OnInit {
         { value: 'REFUNDED',  label: 'Reembolsada' }
     ];
 
+    // Filtro de estado en el toolbar del data-table
+    readonly estadoFilters: FilterConfig[] = [
+        { field: 'status', label: 'Todos los estados', options: of(this.statusOptions) }
+    ];
+
     readonly reasonOptions = [
         'Producto defectuoso',
         'Producto incorrecto',
@@ -142,8 +148,9 @@ export class DevolucionesPageComponent implements OnInit {
         });
     }
 
-    onFilterStatus(event: Event) {
-        this.filterForm.patchValue({ status: (event.target as HTMLSelectElement).value });
+    onFilterChangeEvent(event: FilterChangeEvent) {
+        if (event.field !== 'status') return;
+        this.filterForm.patchValue({ status: event.value != null ? String(event.value) : '' });
         this.currentPage.set(0);
         this.loadDevoluciones();
     }

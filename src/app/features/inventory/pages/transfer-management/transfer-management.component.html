@@ -9,19 +9,6 @@
     </div>
   </app-page-header>
 
-  <div class="filters-bar">
-    <div class="filter-field">
-      <label class="input-label">Estado</label>
-      <select class="form-input" style="min-width:180px" (change)="onFilterStatus($event)">
-        <option value="">Todos</option>
-        <option value="PENDIENTE">Pendiente</option>
-        <option value="ENVIADA">Enviada</option>
-        <option value="RECIBIDA">Recibida</option>
-        <option value="CANCELADA">Cancelada</option>
-      </select>
-    </div>
-  </div>
-
   @if (error()) {
     <app-alert type="error" [message]="error()!" [dismissible]="true" (dismiss)="error.set(null)" />
   }
@@ -35,6 +22,8 @@
     [pageSize]="pageSize()"
     [totalElements]="totalElements()"
     [totalPages]="totalPages()"
+    [filters]="estadoFilters"
+    (filterChange)="onFilterChangeEvent($event)"
     (pageChange)="onPageChange($event)">
   </app-data-table>
 

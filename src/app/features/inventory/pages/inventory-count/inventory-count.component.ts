@@ -4,7 +4,8 @@ import {
 } from '@angular/forms';
 import { InventoryApiService } from '../../services/inventory-api.service';
 import { InventoryCount, InventoryCountRequest, InventoryCountStatus, Warehouse } from '../../models/inventory.models';
-import { DataTableComponent, TableColumn, TableAction, PaginationEvent } from '@shared/ui/tables/data-table/data-table.component';
+import { of } from 'rxjs';
+import { DataTableComponent, TableColumn, TableAction, PaginationEvent, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
@@ -183,8 +184,17 @@ export class InventoryCountComponent {
         });
     }
 
-    onFilterStatus(event: Event): void {
-        this.filterStatus.set((event.target as HTMLSelectElement).value);
+    readonly estadoFilters: FilterConfig[] = [
+        { field: 'estado', label: 'Todos', options: of([
+            { value: 'EN_PROCESO', label: 'En proceso' },
+            { value: 'CERRADO', label: 'Cerrado' },
+            { value: 'AJUSTADO', label: 'Ajustado' }
+        ]) }
+    ];
+
+    onFilterChangeEvent(event: FilterChangeEvent): void {
+        if (event.field !== 'estado') return;
+        this.filterStatus.set(event.value != null ? String(event.value) : '');
         this.currentPage.set(0);
         this.loadCounts();
     }

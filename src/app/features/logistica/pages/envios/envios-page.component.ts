@@ -8,7 +8,8 @@ import { Envio, EnvioStatus, TrackingEvent } from '../../models/envio.model';
 import { Transportista } from '../../models/transportista.model';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { ButtonComponent } from '@shared/components';
-import { DataTableComponent, TableColumn, TableAction } from '@shared/ui/tables/data-table/data-table.component';
+import { of } from 'rxjs';
+import { DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { DateInputComponent } from '@shared/ui/forms/date-input/date-input.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
@@ -95,6 +96,11 @@ export class EnviosPageComponent implements OnInit {
         { value: 'DELIVERED',        label: 'Entregado' },
         { value: 'FAILED',           label: 'Fallido' },
         { value: 'RETURNED',         label: 'Devuelto' }
+    ];
+
+    // Filtro de estado en el toolbar del data-table
+    readonly estadoFilters: FilterConfig[] = [
+        { field: 'status', label: 'Todos los estados', options: of(this.statusOptions) }
     ];
 
     breadcrumbs: Breadcrumb[] = [
@@ -187,8 +193,9 @@ export class EnviosPageComponent implements OnInit {
         });
     }
 
-    onFilterStatus(event: Event) {
-        this.filterStatus = (event.target as HTMLSelectElement).value;
+    onFilterChangeEvent(event: FilterChangeEvent) {
+        if (event.field !== 'status') return;
+        this.filterStatus = event.value != null ? String(event.value) : '';
         this.currentPage.set(0);
         this.loadEnvios();
     }

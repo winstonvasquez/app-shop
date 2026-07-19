@@ -1153,6 +1153,28 @@
     min-width: 170px;
   }
 
+  /* Slot de filtros custom proyectados (date-inputs, radios, selects propios):
+     todo a 32px, alineado con el resto del toolbar */
+  .table-toolbar-extra {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+
+    &:empty { display: none; }
+
+    input, select, .form-input, .input-field {
+      height: 32px;
+      min-height: 32px;
+      padding-top: 0;
+      padding-bottom: 0;
+      border-radius: 6px;
+      font-size: 13px;
+    }
+    /* app-date-input proyectado: ocultar label para mantener una sola fila */
+    label, .input-label { display: none; }
+    app-date-input { display: inline-flex; align-items: center; }
+  }
+
   .table-toolbar-filters {
     display: flex;
     align-items: center;

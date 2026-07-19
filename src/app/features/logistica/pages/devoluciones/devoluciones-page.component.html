@@ -9,17 +9,7 @@
     <app-alert type="error" [message]="error()!" (dismiss)="error.set(null)" [dismissible]="true" />
   }
 
-  <!-- Filtros -->
-  <div class="filters-bar">
-    <select class="form-input" style="width:220px" (change)="onFilterStatus($event)">
-      <option value="">Todos los estados</option>
-      @for (opt of statusOptions; track opt.value) {
-        <option [value]="opt.value">{{ opt.label }}</option>
-      }
-    </select>
-  </div>
-
-  <!-- Tabla -->
+  <!-- Tabla (filtro de estado en el toolbar) -->
   <app-data-table
     [data]="devoluciones()"
     [columns]="columns"
@@ -29,8 +19,10 @@
     [pageSize]="pageSize()"
     [totalElements]="totalElements()"
     [totalPages]="totalPages()"
+    [filters]="estadoFilters"
     [exportable]="true"
     exportFileName="devoluciones-export"
+    (filterChange)="onFilterChangeEvent($event)"
     (pageChange)="onPaginationChange($event)">
   </app-data-table>
 </div>

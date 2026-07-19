@@ -1,28 +1,12 @@
 <div class="historial-screen">
 
-    <!-- KPI cards del turno con gradiente -->
+    <!-- Resumen del turno (línea compacta; los KPI cards viven solo en dashboards) -->
     @if (turno(); as t) {
-    <div class="kpi-grid">
-        <div class="kpi-card kpi-card--primary">
-            <p class="kpi-label">Ventas del turno</p>
-            <p class="kpi-value">S/{{ fmt(t.totalVentas) }}</p>
-            <p class="kpi-sub">{{ t.totalTransacciones }} transacciones</p>
-        </div>
-        <div class="kpi-card">
-            <p class="kpi-label">Ticket promedio</p>
-            <p class="kpi-value">S/{{ ticketPromedio(t) }}</p>
-            <p class="kpi-sub">Por transacción</p>
-        </div>
-        <div class="kpi-card">
-            <p class="kpi-label">CPE emitidos</p>
-            <p class="kpi-value">{{ t.boletasEmitidas + t.facturasEmitidas }}</p>
-            <p class="kpi-sub">Boletas: {{ t.boletasEmitidas }} · Facturas: {{ t.facturasEmitidas }}</p>
-        </div>
-        <div class="kpi-card">
-            <p class="kpi-label">Efectivo en caja</p>
-            <p class="kpi-value">S/{{ fmt(t.totalEfectivo) }}</p>
-            <p class="kpi-sub">Yape/Plin: S/{{ fmt(t.totalYape + t.totalPlin) }}</p>
-        </div>
+    <div class="flex flex-wrap gap-x-6 gap-y-1 text-sm mb-3 px-1">
+        <span><strong>Ventas del turno:</strong> S/{{ fmt(t.totalVentas) }} ({{ t.totalTransacciones }} transacciones)</span>
+        <span><strong>Ticket promedio:</strong> S/{{ ticketPromedio(t) }}</span>
+        <span><strong>CPE:</strong> {{ t.boletasEmitidas + t.facturasEmitidas }} (B: {{ t.boletasEmitidas }} · F: {{ t.facturasEmitidas }})</span>
+        <span><strong>Efectivo:</strong> S/{{ fmt(t.totalEfectivo) }} · Yape/Plin: S/{{ fmt(t.totalYape + t.totalPlin) }}</span>
     </div>
     }
 

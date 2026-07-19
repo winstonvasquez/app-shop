@@ -12,22 +12,7 @@
     <app-alert type="error" [message]="error()!" (dismiss)="error.set(null)" [dismissible]="true" />
   }
 
-  <!-- Filtros -->
-  <form [formGroup]="filterForm" (ngSubmit)="buscar()" class="filters-bar">
-    <select class="form-input" style="width:200px" formControlName="tipoFilter">
-      <option value="">Todos los tipos</option>
-      @for (opt of tipoOptions; track opt.value) {
-        <option [value]="opt.value">{{ opt.label }}</option>
-      }
-    </select>
-
-    <app-date-input label="Desde" formControlName="dateFrom" />
-    <app-date-input label="Hasta"  formControlName="dateTo" />
-
-    <app-button label="Buscar" variant="primary" icon="search" type="submit" />
-  </form>
-
-  <!-- Tabla -->
+  <!-- Tabla (tipo + rango de fechas en el toolbar; el botón Buscar aplica los filtros) -->
   <app-data-table
     [data]="movimientos()"
     [columns]="columns"
@@ -35,13 +20,21 @@
     [loading]="loading()"
     [searchable]="true"
     searchPlaceholder="Buscar por código o referencia..."
+    [filters]="tipoFilters"
     [exportable]="true"
     exportFileName="movimientos-stock"
     [currentPage]="currentPage()"
     [pageSize]="pageSize()"
     [totalElements]="totalElements()"
     [totalPages]="totalPages()"
+    (searchChange)="buscar()"
+    (filterChange)="onFilterChangeEvent($event)"
     (pageChange)="onPaginationChange($event)">
+    <div toolbarExtra [formGroup]="filterForm" class="flex items-center gap-2">
+      <app-date-input formControlName="dateFrom" />
+      <span class="text-subtle text-sm">—</span>
+      <app-date-input formControlName="dateTo" />
+    </div>
   </app-data-table>
 </div>
 

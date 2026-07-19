@@ -19,13 +19,13 @@ export interface Breadcrumb {
     <div class="ph-main">
         <div class="ph-left">
             @if (showBackButton()) {
-                <button type="button" class="ph-back" (click)="goBack()">
+                <button type="button" class="ph-back" (click)="goBack()" title="Regresar">
                     <svg viewBox="0 0 20 20" fill="none" stroke="currentColor">
                         <path d="M12 4L6 10l6 6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
                 </button>
             }
-            <div>
+            <div class="ph-title-group">
                 <h1 class="page-title">{{ title() }}</h1>
                 @if (subtitle()) {
                     <p class="page-subtitle">{{ subtitle() }}</p>
@@ -47,58 +47,72 @@ export interface Breadcrumb {
 /* ── Root ─────────────────────────────────────────── */
 .ph-root {
     padding-bottom: 1.25rem;
-    margin-bottom: 1.75rem;
-    border-bottom: 1px solid var(--color-border);
+    margin-bottom: 2rem;
     position: relative;
 }
+
+/* Modern bottom separator: a gradient border line */
 .ph-root::after {
     content: '';
     position: absolute;
-    bottom: -1px;
+    bottom: 0;
     left: 0;
-    width: 2.5rem;
-    height: 2px;
-    background: var(--color-primary);
-    border-radius: 1px;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, 
+        var(--color-border, #e2e8f0) 0%, 
+        rgba(37, 99, 235, 0.15) 15%, 
+        rgba(37, 99, 235, 0.02) 100%
+    );
 }
 
-/* ── Breadcrumbs ───────────────────────────────────── */
-.ph-breadcrumbs {
+/* Left accent accentuating the title group */
+.ph-title-group {
+    position: relative;
+    padding-left: 0.75rem;
     display: flex;
-    align-items: center;
-    gap: 4px;
-    margin-bottom: 6px;
-    font-size: 12px;
+    flex-direction: column;
 }
-.ph-bc-sep {
-    width: 6px;
-    height: 10px;
-    color: var(--color-text-muted);
-    opacity: 0.5;
-    flex-shrink: 0;
+.ph-title-group::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 4px;
+    bottom: 4px;
+    width: 3px;
+    background: linear-gradient(180deg, var(--color-primary, #2563eb) 0%, var(--color-primary-hover, #1d4ed8) 100%);
+    border-radius: 4px;
 }
-.ph-bc-link {
-    color: var(--color-text-muted);
-    text-decoration: none;
-    transition: color 0.15s;
+
+.page-title {
+    font-size: 1.375rem;
+    font-weight: 700;
+    color: var(--color-text-primary, #0f172a);
+    letter-spacing: -0.025em;
+    margin: 0;
+    line-height: 1.25;
 }
-.ph-bc-link:hover { color: var(--color-primary); }
-.ph-bc-current {
-    color: var(--color-text-secondary);
-    font-weight: 500;
+
+.page-subtitle {
+    font-size: 0.8125rem;
+    font-weight: 450;
+    color: var(--color-text-secondary, #64748b);
+    margin-top: 0.25rem;
+    margin-bottom: 0;
+    letter-spacing: -0.01em;
 }
 
 /* ── Main row ──────────────────────────────────────── */
 .ph-main {
     display: flex;
-    align-items: flex-end;
+    align-items: center;
     justify-content: space-between;
-    gap: 1rem;
+    gap: 1.5rem;
 }
 .ph-left {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
 }
 
 /* ── Back button ───────────────────────────────────── */
@@ -108,25 +122,35 @@ export interface Breadcrumb {
     justify-content: center;
     width: 32px;
     height: 32px;
-    border: 1px solid var(--color-border);
-    border-radius: 8px;
-    background: var(--color-surface-raised);
-    color: var(--color-text-muted);
+    border: 1px solid var(--color-border, #e2e8f0);
+    border-radius: 10px;
+    background: var(--color-surface, #ffffff);
+    color: var(--color-text-secondary, #64748b);
     cursor: pointer;
-    transition: border-color .15s, color .15s;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     flex-shrink: 0;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
 }
-.ph-back svg { width: 18px; height: 18px; }
+.ph-back svg { 
+    width: 16px; 
+    height: 16px; 
+    transition: transform 0.2s;
+}
 .ph-back:hover {
-    border-color: var(--color-primary);
-    color: var(--color-primary);
+    border-color: var(--color-primary, #2563eb);
+    color: var(--color-primary, #2563eb);
+    background: rgba(37, 99, 235, 0.04);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.08);
+}
+.ph-back:hover svg {
+    transform: translateX(-2px);
 }
 
 /* ── Actions slot ──────────────────────────────────── */
 .ph-actions {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
     flex-shrink: 0;
 }
     `]

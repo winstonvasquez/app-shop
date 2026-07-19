@@ -8,7 +8,8 @@ import { Almacen } from '../../../models/almacen.model';
 import { MovimientoItem, CreateMovimientoDto } from '../../../models/movimiento.model';
 import { AuthService } from '../../../../../core/auth/auth.service';
 import { ButtonComponent } from '@shared/components';
-import { DataTableComponent, TableColumn, TableAction } from '@shared/ui/tables/data-table/data-table.component';
+import { of } from 'rxjs';
+import { DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { DateInputComponent } from '@shared/ui/forms/date-input/date-input.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
@@ -73,6 +74,11 @@ export class MovimientosPageComponent implements OnInit {
         { value: 'TRASLADO',       label: 'Traslado' },
         { value: 'AJUSTE',         label: 'Ajuste de inventario' },
         { value: 'DEVOLUCION',     label: 'Devolución' }
+    ];
+
+    // Filtro de tipo en el toolbar del data-table (fechas van proyectadas via toolbarExtra)
+    readonly tipoFilters: FilterConfig[] = [
+        { field: 'tipo', label: 'Todos los tipos', options: of(this.tipoOptions) }
     ];
 
     breadcrumbs: Breadcrumb[] = [
@@ -155,6 +161,12 @@ export class MovimientosPageComponent implements OnInit {
     buscar() {
         this.currentPage.set(0);
         this.loadMovimientos();
+    }
+
+    onFilterChangeEvent(event: FilterChangeEvent) {
+        if (event.field !== 'tipo') return;
+        this.filterForm.patchValue({ tipoFilter: event.value != null ? String(event.value) : '' });
+        this.buscar();
     }
 
     onPaginationChange(event: PaginationChangeEvent) {

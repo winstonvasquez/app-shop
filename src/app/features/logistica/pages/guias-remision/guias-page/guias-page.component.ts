@@ -5,7 +5,8 @@ import { DrawerComponent } from '../../../../../shared/components/drawer/drawer.
 import { GuiaRemisionService } from '../../../services/guia-remision.service';
 import { GuiaRemision, EstadoGuia, CreateGuiaRemisionDto, GuiaRemisionItemDto } from '../../../models/guia-remision.model';
 import { AuthService } from '../../../../../core/auth/auth.service';
-import { DataTableComponent, TableColumn, TableAction, PaginationEvent } from '@shared/ui/tables/data-table/data-table.component';
+import { of } from 'rxjs';
+import { DataTableComponent, TableColumn, TableAction, PaginationEvent, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { DateInputComponent } from '@shared/ui/forms/date-input/date-input.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
@@ -76,6 +77,11 @@ export class GuiasPageComponent implements OnInit {
     filterForm = this.fb.group({
         estado: ['']
     });
+
+    // Filtro de estado en el toolbar del data-table
+    readonly estadoFilters: FilterConfig[] = [
+        { field: 'estado', label: 'Todos los estados', options: of(this.estadoGuiaOptions) }
+    ];
 
     // Form GRE — reactive
     private readonly hoy = new Date().toISOString().split('T')[0];
@@ -187,6 +193,12 @@ export class GuiasPageComponent implements OnInit {
         this.currentPage.set(event.page);
         this.pageSize.set(event.size);
         this.cargarGuias();
+    }
+
+    onFilterChangeEvent(event: FilterChangeEvent) {
+        if (event.field !== 'estado') return;
+        this.filterForm.patchValue({ estado: event.value != null ? String(event.value) : '' });
+        this.aplicarFiltro();
     }
 
     aplicarFiltro() {

@@ -5,7 +5,8 @@ import {
 import { InventoryApiService } from '../../services/inventory-api.service';
 import { InventoryTransfer, InventoryTransferRequest, InventoryTransferStatus, Warehouse } from '../../models/inventory.models';
 import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
-import { DataTableComponent, TableColumn, TableAction, PaginationEvent } from '@shared/ui/tables/data-table/data-table.component';
+import { of } from 'rxjs';
+import { DataTableComponent, TableColumn, TableAction, PaginationEvent, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
@@ -142,8 +143,18 @@ export class TransferManagementComponent {
         });
     }
 
-    onFilterStatus(event: Event): void {
-        this.filterStatus.set((event.target as HTMLSelectElement).value);
+    readonly estadoFilters: FilterConfig[] = [
+        { field: 'estado', label: 'Todos', options: of([
+            { value: 'PENDIENTE', label: 'Pendiente' },
+            { value: 'ENVIADA', label: 'Enviada' },
+            { value: 'RECIBIDA', label: 'Recibida' },
+            { value: 'CANCELADA', label: 'Cancelada' }
+        ]) }
+    ];
+
+    onFilterChangeEvent(event: FilterChangeEvent): void {
+        if (event.field !== 'estado') return;
+        this.filterStatus.set(event.value != null ? String(event.value) : '');
         this.currentPage.set(0);
         this.loadTransfers();
     }

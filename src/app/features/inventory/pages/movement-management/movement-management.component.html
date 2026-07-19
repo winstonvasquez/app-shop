@@ -10,40 +10,6 @@
   </app-page-header>
 
   <!-- Filtros -->
-  <div class="filters-bar">
-    <div class="filter-field">
-      <label class="input-label">Almacén</label>
-      <select class="form-input" style="min-width:200px" (change)="onFilterWarehouse($event)">
-        <option value="">Todos</option>
-        @for (w of warehouses(); track w.id) {
-          <option [value]="w.id">{{ w.name }}</option>
-        }
-      </select>
-    </div>
-
-    <div class="filter-field">
-      <label class="input-label">Tipo</label>
-      <select class="form-input" style="min-width:210px" (change)="onFilterType($event)">
-        <option value="">Todos</option>
-        @for (t of movementTypes; track t) {
-          <option [value]="t">{{ movementTypeLabels[t] }}</option>
-        }
-      </select>
-    </div>
-
-    <div class="filter-field">
-      <label class="input-label">Desde</label>
-      <input class="form-input" type="date" style="min-width:160px"
-             (change)="onFilterDate('from', $event)" />
-    </div>
-
-    <div class="filter-field">
-      <label class="input-label">Hasta</label>
-      <input class="form-input" type="date" style="min-width:160px"
-             (change)="onFilterDate('to', $event)" />
-    </div>
-  </div>
-
   @if (error()) {
     <app-alert type="error" [message]="error()!" [dismissible]="true" (dismiss)="error.set(null)" />
   }
@@ -56,7 +22,14 @@
     [pageSize]="pageSize()"
     [totalElements]="totalElements()"
     [totalPages]="totalPages()"
+    [filters]="toolbarFilters"
+    (filterChange)="onFilterChangeEvent($event)"
     (pageChange)="onPageChange($event)">
+    <div toolbarExtra class="flex items-center gap-2">
+      <input class="form-input" type="date" title="Desde" (change)="onFilterDate('from', $event)" />
+      <span class="text-subtle text-sm">—</span>
+      <input class="form-input" type="date" title="Hasta" (change)="onFilterDate('to', $event)" />
+    </div>
   </app-data-table>
 
 </div>

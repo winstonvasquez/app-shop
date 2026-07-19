@@ -4,7 +4,9 @@ import {
 import { FormBuilder, ReactiveFormsModule, Validators, FormGroup, FormControl } from '@angular/forms';
 import { InventoryApiService } from '../../services/inventory-api.service';
 import { Location, Warehouse } from '../../models/inventory.models';
-import { DataTableComponent, TableColumn, TableAction, PaginationEvent } from '@shared/ui/tables/data-table/data-table.component';
+import { of, map } from 'rxjs';
+import { toObservable } from '@angular/core/rxjs-interop';
+import { DataTableComponent, TableColumn, TableAction, PaginationEvent, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { ModalComponent } from '@shared/components/modal/modal.component';
 import { ButtonComponent } from '@shared/components';
@@ -29,6 +31,12 @@ export class LocationManagementComponent implements OnInit {
     private readonly fb = inject(FormBuilder);
 
     warehouses = signal<Warehouse[]>([]);
+
+    // Selector de almacén en el toolbar (opciones dinámicas desde BD)
+    readonly almacenFilters: FilterConfig[] = [
+        { field: 'warehouse', label: 'Seleccionar almacén...', options: toObservable(this.warehouses).pipe(
+            map(list => list.map(w => ({ value: w.id, label: `${w.code} — ${w.name}` }))) ) }
+    ];
     locations = signal<Location[]>([]);
     loading = signal(false);
     error = signal<string | null>(null);
@@ -99,8 +107,9 @@ export class LocationManagementComponent implements OnInit {
         });
     }
 
-    onWarehouseChange(event: Event): void {
-        const id = Number((event.target as HTMLSelectElement).value);
+    onFilterChangeEvent(event: FilterChangeEvent): void {
+        if (event.field !== 'warehouse') return;
+        const id = event.value != null ? Number(event.value) : 0;
         this.selectedWarehouseId.set(id || null);
         if (id) this.loadLocations(id);
         else { this.locations.set([]); this.totalElements.set(0); this.totalPages.set(0); }

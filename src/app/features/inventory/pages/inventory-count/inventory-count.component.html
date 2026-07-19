@@ -9,18 +9,6 @@
     </div>
   </app-page-header>
 
-  <div class="filters-bar">
-    <div class="filter-field">
-      <label class="input-label">Estado</label>
-      <select class="form-input" style="min-width:180px" (change)="onFilterStatus($event)">
-        <option value="">Todos</option>
-        <option value="EN_PROCESO">En proceso</option>
-        <option value="CERRADO">Cerrado</option>
-        <option value="AJUSTADO">Ajustado</option>
-      </select>
-    </div>
-  </div>
-
   @if (error()) {
     <app-alert type="error" [message]="error()!" [dismissible]="true" (dismiss)="error.set(null)" />
   }
@@ -37,6 +25,8 @@
     [totalElements]="totalElements()"
     [totalPages]="totalPages()"
     [actions]="actions"
+    [filters]="estadoFilters"
+    (filterChange)="onFilterChangeEvent($event)"
     (pageChange)="onPageChange($event)">
   </app-data-table>
 

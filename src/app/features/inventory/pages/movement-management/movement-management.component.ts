@@ -5,7 +5,9 @@ import { InventoryApiService, PutawaySuggestion } from '../../services/inventory
 import {
     InventoryMovement, InventoryMovementRequest, InventoryMovementType, Warehouse
 } from '../../models/inventory.models';
-import { DataTableComponent, TableColumn, PaginationEvent } from '@shared/ui/tables/data-table/data-table.component';
+import { of, map } from 'rxjs';
+import { toObservable } from '@angular/core/rxjs-interop';
+import { DataTableComponent, TableColumn, PaginationEvent, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
@@ -163,15 +165,20 @@ export class MovementManagementComponent {
         });
     }
 
-    onFilterWarehouse(event: Event): void {
-        const val = (event.target as HTMLSelectElement).value;
-        this.filterWarehouseId.set(val ? Number(val) : undefined);
-        this.currentPage.set(0);
-        this.loadMovements();
-    }
+    // Filtros del toolbar: almacén dinámico (BD) + tipo de movimiento
+    readonly toolbarFilters: FilterConfig[] = [
+        { field: 'warehouse', label: 'Todos los almacenes', options: toObservable(this.warehouses).pipe(
+            map(list => list.map(w => ({ value: w.id, label: w.name }))) ) },
+        { field: 'tipo', label: 'Todos los tipos',
+          options: of(this.movementTypes.map(t => ({ value: t, label: this.movementTypeLabels[t] }))) }
+    ];
 
-    onFilterType(event: Event): void {
-        this.filterType.set((event.target as HTMLSelectElement).value);
+    onFilterChangeEvent(event: FilterChangeEvent): void {
+        if (event.field === 'warehouse') {
+            this.filterWarehouseId.set(event.value != null ? Number(event.value) : undefined);
+        } else if (event.field === 'tipo') {
+            this.filterType.set(event.value != null ? String(event.value) : '');
+        } else { return; }
         this.currentPage.set(0);
         this.loadMovements();
     }
