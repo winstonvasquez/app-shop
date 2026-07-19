@@ -2,6 +2,7 @@ import {
     Component, OnInit, inject, signal, computed,
     ChangeDetectionStrategy
 } from '@angular/core';
+import { of } from 'rxjs';
 import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ContractService } from '../../services/contract.service';
 import { EmployeeService } from '../../services/employee.service';
@@ -10,7 +11,7 @@ import {
     CONTRACT_TYPE_LABELS, CONTRACT_STATUS_LABELS, WORKING_DAY_LABELS,
 } from '../../models/contract.model';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
-import { DataTableComponent, TableColumn, TableAction } from '@shared/ui/tables/data-table/data-table.component';
+import { DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { PaginationComponent, PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
 import { AdminFormSectionComponent } from '@shared/ui/forms/admin-form-section/admin-form-section.component';
@@ -58,6 +59,23 @@ export class ContractListComponent implements OnInit {
     searchQuery  = signal('');
     filterStatus = signal('');
     filterType   = signal('');
+
+    // Filtros (estado + tipo) para el toolbar del data-table
+    contratoFilters: FilterConfig[] = [
+        { field: 'status', label: 'Todos los estados', options: of([
+            { value: 'ACTIVO', label: 'Activo' },
+            { value: 'FINALIZADO', label: 'Finalizado' },
+            { value: 'SUSPENDIDO', label: 'Suspendido' },
+            { value: 'RENOVADO', label: 'Renovado' }
+        ]) },
+        { field: 'type', label: 'Todos los tipos', options: of([
+            { value: 'INDEFINIDO', label: 'Indefinido' },
+            { value: 'PLAZO_FIJO', label: 'Plazo Fijo' },
+            { value: 'TEMPORAL', label: 'Temporal' },
+            { value: 'PRACTICAS', label: 'Prácticas' },
+            { value: 'LOCACION_SERVICIOS', label: 'Locación de Servicios' }
+        ]) }
+    ];
 
     // ── Pagination ────────────────────────────────────────────────────────────
     currentPage = signal(0);
@@ -174,18 +192,15 @@ export class ContractListComponent implements OnInit {
     }
 
     // ── Filter handlers ───────────────────────────────────────────────────────
-    onSearch(event: Event): void {
-        this.searchQuery.set((event.target as HTMLInputElement).value);
+    onSearchTerm(term: string): void {
+        this.searchQuery.set(term);
         this.currentPage.set(0);
     }
 
-    onFilterStatus(event: Event): void {
-        this.filterStatus.set((event.target as HTMLSelectElement).value);
-        this.currentPage.set(0);
-    }
-
-    onFilterType(event: Event): void {
-        this.filterType.set((event.target as HTMLSelectElement).value);
+    onFilterChangeEvent(event: FilterChangeEvent): void {
+        const value = event.value != null ? String(event.value) : '';
+        if (event.field === 'status') this.filterStatus.set(value);
+        else if (event.field === 'type') this.filterType.set(value);
         this.currentPage.set(0);
     }
 

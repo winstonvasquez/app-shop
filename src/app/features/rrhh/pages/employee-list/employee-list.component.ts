@@ -2,12 +2,13 @@ import {
     Component, OnInit, inject, signal, computed,
     ChangeDetectionStrategy
 } from '@angular/core';
+import { of } from 'rxjs';
 import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { EmployeeService } from '../../services/employee.service';
 import { Employee } from '../../models/employee.model';
 import { ButtonComponent } from '@shared/components';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
-import { DataTableComponent, TableColumn, TableAction } from '@shared/ui/tables/data-table/data-table.component';
+import { DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { PaginationComponent, PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
 import { AdminFormSectionComponent } from '@shared/ui/forms/admin-form-section/admin-form-section.component';
@@ -54,6 +55,16 @@ export class EmployeeListComponent implements OnInit {
     // ── Filters ───────────────────────────────────────────────────────────────
     searchQuery  = signal('');
     filterEstado = signal('');
+
+    // Filtro de estado para el toolbar del data-table
+    estadoFilters: FilterConfig[] = [
+        { field: 'estado', label: 'Todos los estados', options: of([
+            { value: 'ACTIVO', label: 'Activo' },
+            { value: 'INACTIVO', label: 'Inactivo' },
+            { value: 'SUSPENDIDO', label: 'Suspendido' },
+            { value: 'CESADO', label: 'Cesado' }
+        ]) }
+    ];
 
     // ── Pagination ────────────────────────────────────────────────────────────
     currentPage = signal(0);
@@ -146,14 +157,16 @@ export class EmployeeListComponent implements OnInit {
     }
 
     // ── Handlers ─────────────────────────────────────────────────────────────
-    onSearch(event: Event): void {
-        this.searchQuery.set((event.target as HTMLInputElement).value);
+    onSearchTerm(term: string): void {
+        this.searchQuery.set(term);
         this.currentPage.set(0);
     }
 
-    onFilterEstado(event: Event): void {
-        this.filterEstado.set((event.target as HTMLSelectElement).value);
-        this.currentPage.set(0);
+    onFilterChangeEvent(event: FilterChangeEvent): void {
+        if (event.field === 'estado') {
+            this.filterEstado.set(event.value != null ? String(event.value) : '');
+            this.currentPage.set(0);
+        }
     }
 
     onPaginationChange(event: PaginationChangeEvent): void {

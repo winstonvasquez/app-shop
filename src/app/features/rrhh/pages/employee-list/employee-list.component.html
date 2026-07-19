@@ -12,38 +12,20 @@
 }
 
 <!-- Filtros -->
-<div class="filters-bar">
-    <div class="search-box">
-        <svg class="search-box-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-            <path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z" clip-rule="evenodd" />
-        </svg>
-        <input
-            type="text"
-            placeholder="Buscar por código, nombre o documento..."
-            [value]="searchQuery()"
-            (input)="onSearch($event)" />
-    </div>
-
-    <select class="form-input" style="width: auto; min-width: 160px"
-            [value]="filterEstado()"
-            (change)="onFilterEstado($event)">
-        <option value="">Todos los estados</option>
-        <option value="ACTIVO">Activo</option>
-        <option value="INACTIVO">Inactivo</option>
-        <option value="SUSPENDIDO">Suspendido</option>
-        <option value="CESADO">Cesado</option>
-    </select>
-</div>
-
 <!-- Tabla -->
 <app-data-table
     [data]="pagedData()"
     [columns]="columns"
     [actions]="actions"
     [loading]="loading()"
+    [searchable]="true"
+    searchPlaceholder="Buscar por código, nombre o documento..."
+    [filters]="estadoFilters"
     [exportable]="true"
     exportFileName="empleados"
-    [hidePagination]="true" />
+    [hidePagination]="true"
+    (searchChange)="onSearchTerm($event)"
+    (filterChange)="onFilterChangeEvent($event)" />
 
 <!-- Paginación -->
 @if (totalElements() > 0) {

@@ -2,13 +2,15 @@ import {
     Component, OnInit, inject, signal, computed,
     ChangeDetectionStrategy
 } from '@angular/core';
+import { toObservable } from '@angular/core/rxjs-interop';
+import { map } from 'rxjs';
 import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { PositionService } from '../../services/position.service';
 import { DepartmentService } from '../../services/department.service';
 import { Position } from '../../models/position.model';
 import { ButtonComponent } from '@shared/components';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
-import { DataTableComponent, TableColumn, TableAction } from '@shared/ui/tables/data-table/data-table.component';
+import { DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { PaginationComponent, PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
@@ -51,6 +53,17 @@ export class PositionListComponent implements OnInit {
     // ── Filters ───────────────────────────────────────────────────────────────
     searchQuery      = signal('');
     filterDepartment = signal('');
+
+    // Filtro de departamento (dinámico) para el toolbar del data-table
+    departamentoFilters: FilterConfig[] = [
+        {
+            field: 'department',
+            label: 'Todos los departamentos',
+            options: toObservable(this.departments).pipe(
+                map(list => list.map(d => ({ value: d.id, label: d.nombre })))
+            )
+        }
+    ];
 
     // ── Pagination ────────────────────────────────────────────────────────────
     currentPage = signal(0);
@@ -147,14 +160,16 @@ export class PositionListComponent implements OnInit {
     }
 
     // ── Handlers ─────────────────────────────────────────────────────────────
-    onSearch(event: Event): void {
-        this.searchQuery.set((event.target as HTMLInputElement).value);
+    onSearchTerm(term: string): void {
+        this.searchQuery.set(term);
         this.currentPage.set(0);
     }
 
-    onFilterDepartment(event: Event): void {
-        this.filterDepartment.set((event.target as HTMLSelectElement).value);
-        this.currentPage.set(0);
+    onFilterChangeEvent(event: FilterChangeEvent): void {
+        if (event.field === 'department') {
+            this.filterDepartment.set(event.value != null ? String(event.value) : '');
+            this.currentPage.set(0);
+        }
     }
 
     onPaginationChange(event: PaginationChangeEvent): void {

@@ -2,12 +2,13 @@ import {
     Component, OnInit, inject, signal, computed,
     ChangeDetectionStrategy
 } from '@angular/core';
+import { of } from 'rxjs';
 import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DepartmentService } from '../../services/department.service';
 import { EmployeeService } from '../../services/employee.service';
 import { Department } from '../../models/department.model';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
-import { DataTableComponent, TableColumn, TableAction } from '@shared/ui/tables/data-table/data-table.component';
+import { DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { PaginationComponent, PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
@@ -51,6 +52,14 @@ export class DepartmentListComponent implements OnInit {
     // ── Filters ───────────────────────────────────────────────────────────────
     searchQuery  = signal('');
     filterActivo = signal('');
+
+    // Filtro de estado para el toolbar del data-table
+    estadoFilters: FilterConfig[] = [
+        { field: 'activo', label: 'Todos', options: of([
+            { value: 'true', label: 'Activos' },
+            { value: 'false', label: 'Inactivos' }
+        ]) }
+    ];
 
     // ── Pagination ────────────────────────────────────────────────────────────
     currentPage = signal(0);
@@ -146,14 +155,16 @@ export class DepartmentListComponent implements OnInit {
     }
 
     // ── Handlers ─────────────────────────────────────────────────────────────
-    onSearch(event: Event): void {
-        this.searchQuery.set((event.target as HTMLInputElement).value);
+    onSearchTerm(term: string): void {
+        this.searchQuery.set(term);
         this.currentPage.set(0);
     }
 
-    onFilterActivo(event: Event): void {
-        this.filterActivo.set((event.target as HTMLSelectElement).value);
-        this.currentPage.set(0);
+    onFilterChangeEvent(event: FilterChangeEvent): void {
+        if (event.field === 'activo') {
+            this.filterActivo.set(event.value != null ? String(event.value) : '');
+            this.currentPage.set(0);
+        }
     }
 
     onPaginationChange(event: PaginationChangeEvent): void {
