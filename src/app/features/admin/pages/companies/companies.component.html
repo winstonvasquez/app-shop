@@ -27,14 +27,14 @@
         [filters]="estadoFilters"
         [exportable]="true"
         exportFileName="empresas"
-        [hidePagination]="true"
+        [currentPage]="currentPage()"
+        [pageSize]="pageSize()"
+        [totalElements]="totalElements()"
+        [totalPages]="totalPages()"
         (searchChange)="onSearchTerm($event)"
-        (filterChange)="onFilterChangeEvent($event)">
+        (filterChange)="onFilterChangeEvent($event)"
+        (pageChange)="onPaginationChange($event)">
     </app-data-table>
-
-    <div class="mt-sm text-sm text-subtle">
-        Mostrando {{ filteredCount() }} de {{ totalCompanies() }} empresas
-    </div>
 
     <app-drawer
         [isOpen]="showModal()"

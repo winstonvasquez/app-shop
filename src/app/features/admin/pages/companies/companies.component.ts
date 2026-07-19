@@ -7,6 +7,7 @@ import {
   CompanyRequest,
 } from '@features/admin/models/company.model';
 import { of } from 'rxjs';
+import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 import { DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
 import {
   FormFieldComponent,
@@ -41,14 +42,20 @@ export class CompaniesComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly router = inject(Router);
 
-  // Signals for reactive state
-  allCompanies = signal<CompanyResponse[]>([]);
+  // Signals for reactive state — companies() es la página actual (server-side)
+  companies = signal<CompanyResponse[]>([]);
   loading = signal(false);
   error = signal<string | null>(null);
 
   // Filter state
   searchQuery = signal('');
   filterActive = signal<boolean | null>(null);
+
+  // Pagination (server-side)
+  currentPage   = signal(0);
+  pageSize      = signal(20);
+  totalElements = signal(0);
+  totalPages    = signal(0);
 
   // Modal state
   showModal = signal(false);
@@ -62,32 +69,8 @@ export class CompaniesComponent implements OnInit {
   // Company form with validations
   companyForm: FormGroup;
 
-  // Computed values - filtered companies
-  companies = computed(() => {
-    let filtered = this.allCompanies();
-
-    // Apply search filter
-    const search = this.searchQuery().toLowerCase();
-    if (search) {
-      filtered = filtered.filter(c =>
-        c.name.toLowerCase().includes(search) ||
-        c.ruc.includes(search)
-      );
-    }
-
-    // Apply active filter
-    const activeFilter = this.filterActive();
-    if (activeFilter !== null) {
-      filtered = filtered.filter(c => c.isActive === activeFilter);
-    }
-
-    return filtered;
-  });
-
   hasCompanies = computed(() => this.companies().length > 0);
   isEmpty = computed(() => !this.loading() && !this.hasCompanies());
-  totalCompanies = computed(() => this.allCompanies().length);
-  filteredCount = computed(() => this.companies().length);
 
   // Filtro de estado para el toolbar del data-table
   estadoFilters: FilterConfig[] = [
@@ -167,15 +150,22 @@ export class CompaniesComponent implements OnInit {
   }
 
   /**
-   * Load all companies
+   * Load current page server-side (search + active + 20/pág)
    */
   loadCompanies(): void {
     this.loading.set(true);
     this.error.set(null);
 
-    this.companyService.getAll().subscribe({
-      next: (companies: CompanyResponse[]) => {
-        this.allCompanies.set(companies);
+    this.companyService.getPaged(
+      this.currentPage(),
+      this.pageSize(),
+      this.searchQuery() || undefined,
+      this.filterActive()
+    ).subscribe({
+      next: (res) => {
+        this.companies.set(res.content ?? []);
+        this.totalElements.set(pageTotalElements(res));
+        this.totalPages.set(pageTotalPages(res));
         this.loading.set(false);
       },
       error: (err: Error) => {
@@ -190,6 +180,8 @@ export class CompaniesComponent implements OnInit {
    */
   onSearchTerm(term: string): void {
     this.searchQuery.set(term);
+    this.currentPage.set(0);
+    this.loadCompanies();
   }
 
   /**
@@ -198,7 +190,18 @@ export class CompaniesComponent implements OnInit {
   onFilterChangeEvent(event: FilterChangeEvent): void {
     if (event.field === 'active') {
       this.filterActive.set(event.value == null ? null : String(event.value) === 'true');
+      this.currentPage.set(0);
+      this.loadCompanies();
     }
+  }
+
+  /**
+   * Handle pagination change from the data-table
+   */
+  onPaginationChange(event: { page: number; size: number }): void {
+    this.currentPage.set(event.page);
+    this.pageSize.set(event.size);
+    this.loadCompanies();
   }
 
   /**

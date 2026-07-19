@@ -3,6 +3,7 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { environment } from '@env/environment';
+import { PageResponse } from '@core/models/pagination.model';
 import {
     CompanyResponse,
     CompanyRequest,
@@ -26,6 +27,16 @@ export class CompanyService {
     getAll(): Observable<CompanyResponse[]> {
         return this.http
             .get<CompanyResponse[]>(this.baseUrl)
+            .pipe(catchError(this.handleError));
+    }
+
+    /** Listado paginado server-side (search + active opcionales). */
+    getPaged(page: number, size: number, search?: string, active?: boolean | null): Observable<PageResponse<CompanyResponse>> {
+        let params: Record<string, string> = { page: String(page), size: String(size) };
+        if (search) params['search'] = search;
+        if (active !== null && active !== undefined) params['active'] = String(active);
+        return this.http
+            .get<PageResponse<CompanyResponse>>(`${this.baseUrl}/paged`, { params })
             .pipe(catchError(this.handleError));
     }
 
