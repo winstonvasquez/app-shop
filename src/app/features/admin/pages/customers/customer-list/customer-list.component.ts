@@ -1,7 +1,7 @@
 import {
     Component, OnInit, ChangeDetectionStrategy, inject, signal, computed
 } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+
 import { RouterLink } from '@angular/router';
 import { CustomerService } from '@features/admin/services/customer.service';
 import {
@@ -18,7 +18,7 @@ import { CustomerFormComponent } from '../customer-form/customer-form.component'
 @Component({
     selector: 'app-customer-list',
     standalone: true,
-    imports: [FormsModule, RouterLink, PageHeaderComponent, PaginationComponent, CustomerFormComponent, ButtonComponent],
+    imports: [RouterLink, PageHeaderComponent, PaginationComponent, CustomerFormComponent, ButtonComponent],
     templateUrl: './customer-list.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -31,7 +31,7 @@ export class CustomerListComponent implements OnInit {
     error = signal<string | null>(null);
 
     currentPage = signal(0);
-    pageSize = signal(10);
+    pageSize = signal(20);
     totalElements = signal(0);
     totalPages = signal(0);
 

@@ -16,7 +16,7 @@
              (input)="busqueda.set($any($event.target).value)"
              (keydown.enter)="cargar(0)" />
     </div>
-    <select class="form-input w-48"
+    <select class="form-input w-48" style="height:32px;padding-top:0;padding-bottom:0"
             [value]="filtroCategoria()"
             (change)="filtroCategoria.set($any($event.target).value); cargar(0)">
       <option value="">Todas las categorías</option>
@@ -24,7 +24,7 @@
         <option [value]="cat">{{ cat }}</option>
       }
     </select>
-    <app-button label="Buscar" icon="search" variant="primary" (click)="cargar(0)"></app-button>
+    <app-button label="Buscar" icon="search" variant="primary" size="sm" (click)="cargar(0)"></app-button>
   </div>
 
   <!-- Grid de ítems -->
