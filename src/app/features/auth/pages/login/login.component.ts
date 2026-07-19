@@ -1,6 +1,7 @@
 import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { Title, Meta } from '@angular/platform-browser';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { LucideAngularModule } from 'lucide-angular';
 import { AuthService } from '@core/auth/auth.service';
@@ -27,6 +28,13 @@ export class LoginComponent {
     private router      = inject(Router);
     private route       = inject(ActivatedRoute);
     private translate   = inject(TranslateService);
+    private titleService = inject(Title);
+    private metaService  = inject(Meta);
+
+    constructor() {
+        this.titleService.setTitle('Iniciar sesión | AppShop ERP');
+        this.metaService.updateTag({ name: 'description', content: 'Inicia sesión en AppShop ERP para gestionar tu tienda, inventario, pedidos y facturación electrónica.' });
+    }
 
     loginForm = this.fb.group({
         username: ['', [Validators.required]],

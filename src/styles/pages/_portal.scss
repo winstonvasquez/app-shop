@@ -1,0 +1,355 @@
+/* ============================================================
+   *  Portal Public Styles — Dark Aurora & Glassmorphism Theme
+   * ============================================================ */
+
+/* Prevent double scrollbars specifically on portal pages */
+html:has(.portal-shell),
+body:has(.portal-shell) {
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  height: auto !important;
+}
+
+.portal-shell {
+  /* Colors & Tokens */
+  --portal-bg: #050814;
+  --portal-text: #f3f4f6;
+  --portal-muted: #9ca3af;
+  --portal-subtle: #6b7280;
+
+  --neon-pink: #f43f5e;
+  --neon-purple: #a855f7;
+  --neon-blue: #3b82f6;
+  --neon-teal: #06b6d4;
+
+  --gradient-aurora: linear-gradient(135deg, var(--neon-pink) 0%, var(--neon-purple) 35%, var(--neon-blue) 70%, var(--neon-teal) 100%);
+  --gradient-text: linear-gradient(to right, #ffffff 30%, #a5b4fc 100%);
+  --gradient-neon-text: linear-gradient(135deg, #ff79c6 0%, #8be9fd 100%);
+
+  /* Base Reset inside Shell */
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--portal-bg);
+  color: var(--portal-text);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  overflow-x: hidden;
+  position: relative;
+
+  /* Premium Aurora Glow Effects */
+  &::before {
+    content: '';
+    position: absolute;
+    top: -10%;
+    left: -10%;
+    width: 60%;
+    height: 60%;
+    background: radial-gradient(circle, rgba(244, 63, 94, 0.08) 0%, rgba(168, 53, 247, 0.05) 50%, transparent 100%);
+    filter: blur(80px);
+    pointer-events: none;
+    z-index: 1;
+    animation: aurora-float-1 25s ease-in-out infinite alternate;
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: -10%;
+    right: -10%;
+    width: 60%;
+    height: 60%;
+    background: radial-gradient(circle, rgba(6, 182, 212, 0.08) 0%, rgba(59, 130, 246, 0.05) 50%, transparent 100%);
+    filter: blur(80px);
+    pointer-events: none;
+    z-index: 1;
+    animation: aurora-float-2 30s ease-in-out infinite alternate;
+  }
+
+  /* Grid mesh background overlay */
+  .portal-grid-overlay {
+    position: absolute;
+    inset: 0;
+    background-image: 
+      linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
+    background-size: 40px 40px;
+    background-position: center;
+    mask-image: radial-gradient(ellipse at 50% 50%, black 40%, transparent 100%);
+    -webkit-mask-image: radial-gradient(ellipse at 50% 50%, black 40%, transparent 100%);
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  /* Starry elements & shooting stars */
+  .portal-stars {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image: 
+      radial-gradient(circle, white 1px, transparent 0),
+      radial-gradient(circle, white 0.75px, transparent 0),
+      radial-gradient(circle, rgba(255,255,255,0.7) 1.2px, transparent 0);
+    background-size: 200px 200px, 350px 350px, 500px 500px;
+    background-position: 0 0, 40px 60px, 120px 200px;
+    opacity: 0.15;
+    z-index: 1;
+  }
+
+  .shooting-star-container {
+    position: absolute;
+    top: 0;
+    left: 20%;
+    width: 60%;
+    height: 40%;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  .shooting-star {
+    position: absolute;
+    top: 0;
+    left: 80%;
+    width: 80px;
+    height: 1.5px;
+    background: linear-gradient(-45deg, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0));
+    filter: drop-shadow(0 0 5px rgba(168, 85, 247, 0.4));
+    transform: rotate(-35deg);
+    animation: shooting-effect 8s ease-in-out infinite;
+
+    &:nth-child(2) {
+      left: 30%;
+      top: 10%;
+      animation-delay: 3s;
+      animation-duration: 10s;
+      filter: drop-shadow(0 0 5px rgba(6, 182, 212, 0.4));
+    }
+  }
+
+  /* Header & Navigation */
+  .portal-header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(5, 8, 20, 0.75);
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    transition: all 0.3s ease;
+  }
+
+  .portal-header-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 24px;
+    height: 72px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .portal-logo {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    text-decoration: none;
+    font-size: 1.35rem;
+    font-weight: 800;
+    letter-spacing: -0.75px;
+    position: relative;
+    z-index: 10;
+
+    .logo-app {
+      background: linear-gradient(135deg, #ffffff 40%, #a5b4fc 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .logo-shop {
+      background: linear-gradient(135deg, var(--neon-purple) 0%, var(--neon-teal) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .logo-tag {
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      color: #fff;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 6px;
+      padding: 1px 6px;
+      margin-left: 6px;
+      text-shadow: 0 0 8px rgba(168, 85, 247, 0.3);
+    }
+  }
+
+  .portal-nav {
+    display: flex;
+    align-items: center;
+    gap: 28px;
+
+    a {
+      text-decoration: none;
+      color: var(--portal-muted);
+      font-size: 0.925rem;
+      font-weight: 500;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+
+      &.active-link {
+        color: #fff;
+        text-shadow: 0 0 10px rgba(168, 85, 247, 0.2);
+
+        &::after {
+          content: '';
+          position: absolute;
+          bottom: -6px;
+          left: 0;
+          width: 100%;
+          height: 2px;
+          background: linear-gradient(90deg, var(--neon-purple), var(--neon-teal));
+          border-radius: 2px;
+          box-shadow: 0 0 8px rgba(168, 85, 247, 0.6);
+        }
+      }
+
+      &:hover:not(.active-link):not(.btn-login):not(.btn-register) {
+        color: #ffffff;
+      }
+    }
+
+    .btn-login {
+      color: var(--portal-text) !important;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 8px 18px;
+      border-radius: 20px;
+      font-size: 0.85rem !important;
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: rgba(255, 255, 255, 0.15);
+        transform: translateY(-1px);
+      }
+    }
+
+    .btn-register {
+      background: linear-gradient(135deg, var(--neon-purple) 0%, var(--neon-blue) 100%) !important;
+      color: #fff !important;
+      padding: 9px 20px;
+      border-radius: 20px;
+      font-weight: 600;
+      font-size: 0.85rem !important;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 4px 15px rgba(168, 85, 247, 0.25);
+
+      &:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 20px rgba(168, 85, 247, 0.4);
+        filter: brightness(1.1);
+      }
+    }
+  }
+
+  /* Main Shell Container */
+  .portal-main {
+    flex: 1;
+    position: relative;
+    z-index: 10;
+  }
+
+  /* Footer */
+  .portal-footer {
+    position: relative;
+    z-index: 10;
+    text-align: center;
+    padding: 32px 24px;
+    color: var(--portal-subtle);
+    font-size: 0.825rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.04);
+    background: rgba(5, 8, 20, 0.8);
+    backdrop-filter: blur(12px);
+  }
+
+  /* Glassmorphism Common Class */
+  .glass-card {
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 16px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.05);
+      border-color: rgba(255, 255, 255, 0.12);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3);
+    }
+  }
+}
+
+/* Animations */
+@keyframes aurora-float-1 {
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(5%, 10%) scale(1.1);
+  }
+  100% {
+    transform: translate(-5%, -5%) scale(0.9);
+  }
+}
+
+@keyframes aurora-float-2 {
+  0% {
+    transform: translate(0, 0) scale(0.9);
+  }
+  50% {
+    transform: translate(-8%, -12%) scale(1.15);
+  }
+  100% {
+    transform: translate(5%, 5%) scale(1);
+  }
+}
+
+@keyframes shooting-effect {
+  0% {
+    transform: translate(0, 0) rotate(-35deg) scale(0);
+    opacity: 0;
+  }
+  1% {
+    opacity: 1;
+    transform: translate(0, 0) rotate(-35deg) scale(1);
+  }
+  10% {
+    transform: translate(-300px, 210px) rotate(-35deg) scale(1);
+    opacity: 0;
+  }
+  100% {
+    transform: translate(-300px, 210px) rotate(-35deg) scale(0);
+    opacity: 0;
+  }
+}
+
+/* Float Animation */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+/* Pulse Glow Animation */
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 15px rgba(168, 85, 247, 0.25); }
+  50% { box-shadow: 0 0 25px rgba(168, 85, 247, 0.45); }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 3s infinite ease-in-out;
+}
