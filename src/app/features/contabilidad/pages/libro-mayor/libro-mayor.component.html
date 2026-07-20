@@ -68,64 +68,27 @@
         </div>
     }
 
-    <div class="card">
-        @if (cargando()) {
-            <div class="loading-container"><div class="spinner"></div></div>
-        } @else if (error()) {
+    @if (error()) {
+        <div class="card mb-lg">
             <div class="card-body" style="color:var(--color-error);text-align:center">
                 {{ error() }}
             </div>
-        } @else {
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th class="table-header-cell">Fecha</th>
-                        <th class="table-header-cell">N° Asiento</th>
-                        <th class="table-header-cell">Descripción</th>
-                        <th class="table-header-cell text-right">Debe</th>
-                        <th class="table-header-cell text-right">Haber</th>
-                        <th class="table-header-cell text-right">Saldo acumulado</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @for (m of movimientosPaginados(); track $index) {
-                        <tr class="table-row">
-                            <td class="table-cell font-mono">{{ m.fecha | date:'dd/MM/yyyy' }}</td>
-                            <td class="table-cell font-mono font-bold">{{ m.codigoAsiento }}</td>
-                            <td class="table-cell">{{ m.glosa }}</td>
-                            <td class="table-cell text-right font-mono">
-                                @if (m.debe > 0) { {{ m.debe | number:'1.2-2' }} }
-                            </td>
-                            <td class="table-cell text-right font-mono">
-                                @if (m.haber > 0) { {{ m.haber | number:'1.2-2' }} }
-                            </td>
-                            <td class="table-cell text-right font-mono"
-                                [style.color]="m.saldo < 0 ? 'var(--color-error)' : ''">
-                                {{ m.saldo | number:'1.2-2' }}
-                            </td>
-                        </tr>
-                    } @empty {
-                        <tr>
-                            <td colspan="6" class="table-cell text-center text-sm text-[var(--color-text-muted)]">
-                                @if (cuentaSeleccionada() && periodoSeleccionado()) {
-                                    No hay movimientos para esta cuenta en el periodo
-                                } @else {
-                                    Selecciona una cuenta y un periodo para ver el mayor
-                                }
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-            <div class="mt-4">
-                <app-pagination
-                    [currentPage]="currentPage()"
-                    [totalPages]="totalPagesLocal()"
-                    [totalElements]="movimientos().length"
-                    [pageSize]="pageSize()"
-                    (pageChange)="onPageChange($event)">
-                </app-pagination>
-            </div>
-        }
-    </div>
+        </div>
+    }
+
+    <app-data-table
+        [data]="movimientosPaginados()"
+        [columns]="columns"
+        [loading]="cargando()"
+        [searchable]="true"
+        searchPlaceholder="Buscar por N° asiento o descripción..."
+        [exportable]="true"
+        exportFileName="libro-mayor"
+        [currentPage]="currentPage()"
+        [pageSize]="pageSize()"
+        [totalElements]="movimientosFiltrados().length"
+        [totalPages]="totalPagesLocal()"
+        (searchChange)="onSearchTerm($event)"
+        (pageChange)="onPageChange($event)">
+    </app-data-table>
 </div>
