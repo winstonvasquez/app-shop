@@ -1,9 +1,9 @@
-import { Component, inject, signal, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, signal, computed, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ButtonComponent } from '@shared/components';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
+import { DataTableComponent, TableColumn, TableAction, PaginationEvent } from '@shared/ui/tables/data-table/data-table.component';
 import {
     ReglaAsientoService, ReglaAsiento, ReglaAsientoRequest, DetalleRegla, TransactionType
 } from '../../services/regla-asiento.service';
@@ -12,7 +12,7 @@ import {
     selector: 'app-reglas-asiento',
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [FormsModule, DatePipe, ButtonComponent, DrawerComponent],
+    imports: [FormsModule, ButtonComponent, DrawerComponent, DataTableComponent],
     templateUrl: './reglas-asiento.component.html',
 })
 export class ReglasAsientoComponent implements OnInit {
@@ -25,6 +25,63 @@ export class ReglasAsientoComponent implements OnInit {
     readonly editandoId = signal<string | null>(null);
     readonly error = signal('');
     readonly errorForm = signal('');
+
+    // ── Tabla ─────────────────────────────────────────────────────────────────
+    readonly searchQuery = signal('');
+    readonly currentPage = signal(0);
+    readonly pageSize = signal(20);
+
+    readonly reglasFiltradas = computed(() => {
+        const q = this.searchQuery().trim().toLowerCase();
+        const lista = this.reglas();
+        if (!q) return lista;
+        return lista.filter(r =>
+            r.nombre?.toLowerCase().includes(q) ||
+            r.descripcion?.toLowerCase().includes(q) ||
+            r.transactionType?.toLowerCase().includes(q)
+        );
+    });
+
+    readonly reglasPaginadas = computed(() => {
+        const inicio = this.currentPage() * this.pageSize();
+        return this.reglasFiltradas().slice(inicio, inicio + this.pageSize());
+    });
+    readonly totalPagesLocal = computed(() => Math.ceil(this.reglasFiltradas().length / this.pageSize()) || 1);
+
+    readonly columns: TableColumn<ReglaAsiento>[] = [
+        {
+            key: 'transactionType', label: 'Tipo Transacción', html: true,
+            render: r => `<span class="badge badge-neutral">${r.transactionType}</span>`
+        },
+        {
+            key: 'nombre', label: 'Nombre', html: true,
+            render: r => `<div class="font-medium text-on">${r.nombre}</div>${r.descripcion ? `<div class="text-muted text-sm">${r.descripcion}</div>` : ''}`
+        },
+        { key: 'detalles', label: 'Líneas', render: r => `${r.detalles?.length ?? 0} línea(s)` },
+        {
+            key: 'activo', label: 'Estado', html: true,
+            render: r => r.activo
+                ? '<span class="badge badge-success">Activa</span>'
+                : '<span class="badge badge-neutral">Inactiva</span>'
+        },
+        {
+            key: 'createdAt', label: 'Creado',
+            render: r => r.createdAt ? new Date(r.createdAt).toLocaleDateString('es-PE') : '—'
+        },
+    ];
+
+    readonly actions: TableAction<ReglaAsiento>[] = [
+        {
+            label: 'Editar', icon: 'edit', class: 'btn-view',
+            show: r => r.activo,
+            onClick: r => this.abrirEditar(r)
+        },
+        {
+            label: 'Desactivar', icon: 'x', class: 'btn-view',
+            show: r => r.activo,
+            onClick: r => this.desactivar(r.id)
+        },
+    ];
 
     // Form signals
     readonly tipoTransaccion = signal<TransactionType>('VENTA');
@@ -50,6 +107,16 @@ export class ReglasAsientoComponent implements OnInit {
                 this.cargando.set(false);
             },
         });
+    }
+
+    onSearchTerm(term: string) {
+        this.searchQuery.set(term);
+        this.currentPage.set(0);
+    }
+
+    onPageChange(event: PaginationEvent) {
+        this.currentPage.set(event.page);
+        this.pageSize.set(event.size);
     }
 
     abrirNueva() {

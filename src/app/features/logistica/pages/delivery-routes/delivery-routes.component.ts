@@ -1,15 +1,15 @@
 import { Component, inject, signal, OnInit, ChangeDetectionStrategy } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { DeliveryRouteService } from '../../services/delivery-route.service';
 import { DeliveryRoute } from '../../models/delivery-route.model';
 import { ButtonComponent } from '@shared/components';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
+import { DataTableComponent, TableColumn, TableAction, PaginationEvent } from '@shared/ui/tables/data-table/data-table.component';
 
 @Component({
     selector: 'app-delivery-routes',
     standalone: true,
-    imports: [DatePipe, ButtonComponent, AlertComponent, PageHeaderComponent],
+    imports: [ButtonComponent, AlertComponent, PageHeaderComponent, DataTableComponent],
     templateUrl: './delivery-routes.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -28,16 +28,67 @@ export class DeliveryRoutesComponent implements OnInit {
     error = signal<string | null>(null);
     successMsg = signal<string | null>(null);
 
+    currentPage = signal(0);
+    pageSize = signal(20);
+    totalElements = signal(0);
+    totalPages = signal(0);
+
+    readonly columns: TableColumn<DeliveryRoute>[] = [
+        {
+            key: 'id', label: 'ID', html: true,
+            render: r => `<span class="font-mono text-sm" style="color:var(--color-text-muted)">${r.id.slice(0, 8)}…</span>`
+        },
+        {
+            key: 'createdAt', label: 'Fecha Creación',
+            render: r => r.createdAt ? new Date(r.createdAt).toLocaleDateString('es-PE') + ' ' + new Date(r.createdAt).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' }) : '—'
+        },
+        { key: 'driverId', label: 'Conductor', render: r => r.driverId ?? '—' },
+        {
+            key: 'status', label: 'Estado', html: true,
+            render: r => `<span class="badge ${this.statusBadgeClass(r.status)}">${this.statusLabel(r.status)}</span>`
+        },
+        { key: 'stops', label: 'Paradas', align: 'right', render: r => String(r.stops?.length ?? 0) },
+        {
+            key: 'startedAt', label: 'Iniciado',
+            render: r => r.startedAt ? new Date(r.startedAt).toLocaleDateString('es-PE') : '—'
+        },
+        {
+            key: 'completedAt', label: 'Completado',
+            render: r => r.completedAt ? new Date(r.completedAt).toLocaleDateString('es-PE') : '—'
+        },
+    ];
+
+    readonly actions: TableAction<DeliveryRoute>[] = [
+        {
+            label: 'Iniciar', icon: 'check', class: 'btn-view',
+            show: r => r.status === 'PLANNED',
+            onClick: r => this.startRoute(r.id)
+        },
+        {
+            label: 'Completar', icon: 'check', class: 'btn-view',
+            show: r => r.status === 'IN_PROGRESS',
+            onClick: r => this.completeRoute(r.id)
+        },
+    ];
+
     ngOnInit(): void {
+        this.loadRoutes();
+    }
+
+    onPageChange(event: PaginationEvent): void {
+        this.currentPage.set(event.page);
+        this.pageSize.set(event.size);
         this.loadRoutes();
     }
 
     loadRoutes(): void {
         this.loading.set(true);
         this.error.set(null);
-        this.routeService.list().subscribe({
+        this.routeService.list(this.currentPage(), this.pageSize()).subscribe({
             next: (page) => {
                 this.routes.set(page.content);
+                this.totalElements.set(page.totalElements);
+                this.totalPages.set(page.totalPages);
                 this.loading.set(false);
             },
             error: () => {
@@ -82,13 +133,13 @@ export class DeliveryRoutesComponent implements OnInit {
         setTimeout(() => this.successMsg.set(null), 3000);
     }
 
-    statusClass(status: string): string {
+    statusBadgeClass(status: string): string {
         switch (status) {
-            case 'PLANNED': return 'bg-surface-raised text-subtle';
-            case 'IN_PROGRESS': return 'bg-warning/10 text-warning';
-            case 'COMPLETED': return 'bg-success/10 text-success';
-            case 'CANCELLED': return 'bg-error/10 text-error';
-            default: return 'bg-surface-raised text-subtle';
+            case 'PLANNED': return 'badge-neutral';
+            case 'IN_PROGRESS': return 'badge-warning';
+            case 'COMPLETED': return 'badge-success';
+            case 'CANCELLED': return 'badge-error';
+            default: return 'badge-neutral';
         }
     }
 
@@ -100,9 +151,5 @@ export class DeliveryRoutesComponent implements OnInit {
             case 'CANCELLED': return 'Cancelado';
             default: return status;
         }
-    }
-
-    totalDistance(route: DeliveryRoute): number {
-        return route.stops?.length ?? 0;
     }
 }

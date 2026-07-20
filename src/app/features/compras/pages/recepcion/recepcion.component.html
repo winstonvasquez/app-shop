@@ -5,61 +5,28 @@
         [breadcrumbs]="breadcrumbs">
     </app-page-header>
 
-    <!-- Filters -->
-    <div class="mb-lg">
-        <select class="form-input" style="width:200px" [value]="estadoFiltro()" (change)="onFilterEstado($event)">
-            <option value="">Todos los estados</option>
-            @for (opt of estadoOptions; track opt.value) {
-                <option [value]="opt.value">{{ opt.label }}</option>
-            }
-        </select>
-    </div>
-
     @if (error()) {
         <app-alert type="error" [message]="error()!" [dismissible]="true" (dismiss)="error.set(null)"></app-alert>
     }
 
-    @if (cargando() && !hasRecepciones()) {
-        <div class="loading-container">
-            <div class="spinner"></div>
-            <p>Cargando recepciones...</p>
-        </div>
-    }
-
-    @if (isEmpty()) {
-        <div class="text-center py-2xl text-subtle">
-            <svg class="mx-auto text-muted mb-md" width="64" height="64" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
-            </svg>
-            <h3 class="text-lg font-bold text-on mb-xs">No hay recepciones registradas</h3>
-            <p>Las recepciones aparecerán aquí cuando se aprueben órdenes de compra.</p>
-        </div>
-    }
-
-    @if (hasRecepciones()) {
-        <app-data-table
-            [data]="recepciones()"
-            [columns]="columns"
-            [actions]="actions"
-            [loading]="cargando()"
-            [currentPage]="currentPage()"
-            [pageSize]="pageSize()"
-            [totalElements]="totalElements()"
-            [totalPages]="totalPages()"
-            [hidePagination]="true">
-        </app-data-table>
-    }
-
-    @if (!cargando() && totalPages() > 0) {
-        <app-pagination
-            [currentPage]="currentPage()"
-            [totalPages]="totalPages()"
-            [totalElements]="totalElements()"
-            [pageSize]="pageSize()"
-            (pageChange)="onPaginationChange($event)">
-        </app-pagination>
-    }
+    <app-data-table
+        [data]="filteredRecepciones()"
+        [columns]="columns"
+        [actions]="actions"
+        [loading]="cargando()"
+        [searchable]="true"
+        searchPlaceholder="Buscar por OC referencia o guía..."
+        [filters]="estadoFilters"
+        [exportable]="true"
+        exportFileName="recepciones"
+        [currentPage]="currentPage()"
+        [pageSize]="pageSize()"
+        [totalElements]="totalElements()"
+        [totalPages]="totalPages()"
+        (searchChange)="onSearchTerm($event)"
+        (filterChange)="onFilterChangeEvent($event)"
+        (pageChange)="onPaginationChange($event)">
+    </app-data-table>
 
     <!-- Drawer: Detalle Recepción -->
     <app-drawer

@@ -16,68 +16,17 @@
     <app-alert type="success" [message]="successMsg()!" />
   }
 
-  <!-- Tabla de rutas -->
-  <div class="card">
-    <div class="card-body" style="padding:0">
-      <div class="card-header" style="padding:var(--space-md) var(--space-lg)">
-        <h2 class="card-title">Rutas Activas y Recientes</h2>
-      </div>
-
-      @if (loading()) {
-        <div style="text-align:center;padding:var(--space-2xl);color:var(--color-text-muted)">
-          Cargando rutas...
-        </div>
-      } @else if (routes().length === 0) {
-        <div style="text-align:center;padding:var(--space-2xl);color:var(--color-text-muted)">
-          No hay rutas de entrega registradas.
-        </div>
-      } @else {
-        <div style="overflow-x:auto">
-          <table class="data-table" style="width:100%">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Fecha Creación</th>
-                <th>Conductor</th>
-                <th>Estado</th>
-                <th style="text-align:right">Paradas</th>
-                <th>Iniciado</th>
-                <th>Completado</th>
-                <th style="text-align:right">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (route of routes(); track route.id) {
-                <tr>
-                  <td style="font-family:monospace;font-size:0.8125rem;color:var(--color-text-muted)">{{ route.id.slice(0, 8) }}…</td>
-                  <td>{{ route.createdAt | date:'dd/MM/yyyy HH:mm' }}</td>
-                  <td>{{ route.driverId ?? '—' }}</td>
-                  <td>
-                    <span class="badge" [class]="statusClass(route.status)">{{ statusLabel(route.status) }}</span>
-                  </td>
-                  <td style="text-align:right">{{ route.stops.length }}</td>
-                  <td style="color:var(--color-text-muted)">{{ route.startedAt ? (route.startedAt | date:'dd/MM HH:mm') : '—' }}</td>
-                  <td style="color:var(--color-text-muted)">{{ route.completedAt ? (route.completedAt | date:'dd/MM HH:mm') : '—' }}</td>
-                  <td>
-                    <div style="display:flex;gap:var(--space-xs);justify-content:flex-end">
-                      @if (route.status === 'PLANNED') {
-                        <app-button icon="truck" variant="ghost" size="sm" label="Iniciar"
-                          [disabled]="actionId() === route.id"
-                          (click)="startRoute(route.id)" />
-                      }
-                      @if (route.status === 'IN_PROGRESS') {
-                        <app-button icon="check" variant="success" size="sm" label="Completar"
-                          [disabled]="actionId() === route.id"
-                          (click)="completeRoute(route.id)" />
-                      }
-                    </div>
-                  </td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
-      }
-    </div>
-  </div>
+  <app-data-table
+    [data]="routes()"
+    [columns]="columns"
+    [actions]="actions"
+    [loading]="loading()"
+    [exportable]="true"
+    exportFileName="rutas-entrega"
+    [currentPage]="currentPage()"
+    [pageSize]="pageSize()"
+    [totalElements]="totalElements()"
+    [totalPages]="totalPages()"
+    (pageChange)="onPageChange($event)">
+  </app-data-table>
 </div>

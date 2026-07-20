@@ -1,12 +1,12 @@
 import { Component, OnInit, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators, FormGroup, FormControl } from '@angular/forms';
+import { of } from 'rxjs';
 import { OrdenCompraService } from '../../services/orden-compra.service';
 import { ProveedorService } from '../../services/proveedor.service';
 import { OrdenCompra, OrdenCompraItem } from '../../models/orden-compra.model';
 import { Proveedor } from '../../models/proveedor.model';
-import { DataTableComponent, TableColumn, TableAction, SortEvent } from '@shared/ui/tables/data-table/data-table.component';
-import { PaginationComponent, PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
+import { DataTableComponent, TableColumn, TableAction, SortEvent, FilterConfig, FilterChangeEvent, PaginationEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { DateInputComponent } from '@shared/ui/forms/date-input/date-input.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
@@ -29,7 +29,6 @@ export interface OcItemForm {
     imports: [
     ReactiveFormsModule,
     DataTableComponent,
-    PaginationComponent,
     DrawerComponent,
     DateInputComponent,
     PageHeaderComponent,
@@ -65,6 +64,7 @@ export class OrdenesCompraComponent implements OnInit {
 
     // Filters
     filterEstado = signal('');
+    searchQuery = signal('');
 
     // Pagination
     currentPage = signal(0);
@@ -79,6 +79,16 @@ export class OrdenesCompraComponent implements OnInit {
     // Computed
     hasOrdenes = computed(() => this.ordenes().length > 0);
     isEmpty = computed(() => !this.loading() && !this.hasOrdenes());
+
+    /** Filtrado client-side (el backend no soporta búsqueda por texto) sobre la página cargada. */
+    filteredOrdenes = computed(() => {
+        const term = this.searchQuery().trim().toLowerCase();
+        if (!term) return this.ordenes();
+        return this.ordenes().filter(o =>
+            o.codigo?.toLowerCase().includes(term) ||
+            o.proveedorNombre?.toLowerCase().includes(term)
+        );
+    });
 
     totales = computed(() => {
         const items = this.formItems();
@@ -100,6 +110,15 @@ export class OrdenesCompraComponent implements OnInit {
         { value: 'ENVIADA', label: 'Enviada' },
         { value: 'RECIBIDA', label: 'Recibida' },
         { value: 'CANCELADA', label: 'Cancelada' }
+    ];
+
+    // Filtro de estado para el toolbar del data-table
+    estadoFilters: FilterConfig[] = [
+        {
+            field: 'estado',
+            label: 'Todos los estados',
+            options: of(this.estadoOptions)
+        }
     ];
 
     readonly condicionPagoOptions = [
@@ -194,10 +213,16 @@ export class OrdenesCompraComponent implements OnInit {
         });
     }
 
-    onFilterEstado(event: Event): void {
-        this.filterEstado.set((event.target as HTMLSelectElement).value);
-        this.currentPage.set(0);
-        this.loadOrdenes();
+    onSearchTerm(term: string): void {
+        this.searchQuery.set(term);
+    }
+
+    onFilterChangeEvent(event: FilterChangeEvent): void {
+        if (event.field === 'estado') {
+            this.filterEstado.set(event.value != null ? String(event.value) : '');
+            this.currentPage.set(0);
+            this.loadOrdenes();
+        }
     }
 
     onSort(event: SortEvent): void {
@@ -207,7 +232,7 @@ export class OrdenesCompraComponent implements OnInit {
         this.loadOrdenes();
     }
 
-    onPaginationChange(event: PaginationChangeEvent): void {
+    onPaginationChange(event: PaginationEvent): void {
         this.currentPage.set(event.page);
         this.pageSize.set(event.size);
         this.loadOrdenes();

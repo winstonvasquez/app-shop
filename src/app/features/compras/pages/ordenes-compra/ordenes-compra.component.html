@@ -8,64 +8,31 @@
         </div>
     </app-page-header>
 
-    <!-- Filters -->
-    <div class="mb-lg">
-        <select class="form-input" style="width:200px" [value]="filterEstado()" (change)="onFilterEstado($event)">
-            <option value="">Todos los estados</option>
-            @for (opt of estadoOptions; track opt.value) {
-                <option [value]="opt.value">{{ opt.label }}</option>
-            }
-        </select>
-    </div>
-
     @if (error()) {
         <app-alert type="error" [message]="error()!" [dismissible]="true" (dismiss)="error.set(null)"></app-alert>
     }
 
-    @if (loading() && !hasOrdenes()) {
-        <div class="loading-container">
-            <div class="spinner"></div>
-            <p>Cargando órdenes de compra...</p>
-        </div>
-    }
-
-    @if (isEmpty()) {
-        <div class="text-center py-2xl text-subtle">
-            <svg class="mx-auto text-muted mb-md" width="64" height="64" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-            </svg>
-            <h3 class="text-lg font-bold text-on mb-xs">No hay órdenes de compra</h3>
-            <p>Crea tu primera orden de compra.</p>
-        </div>
-    }
-
-    @if (hasOrdenes()) {
-        <app-data-table
-            [data]="ordenes()"
-            [columns]="columns"
-            [actions]="actions"
-            [loading]="loading()"
-            [currentPage]="currentPage()"
-            [pageSize]="pageSize()"
-            [totalElements]="totalElements()"
-            [totalPages]="totalPages()"
-            [sortField]="sortField()"
-            [sortDirection]="sortDirection()"
-            [hidePagination]="true"
-            (sortChange)="onSort($event)">
-        </app-data-table>
-    }
-
-    @if (!loading() && totalPages() > 0) {
-        <app-pagination
-            [currentPage]="currentPage()"
-            [totalPages]="totalPages()"
-            [totalElements]="totalElements()"
-            [pageSize]="pageSize()"
-            (pageChange)="onPaginationChange($event)">
-        </app-pagination>
-    }
+    <app-data-table
+        [data]="filteredOrdenes()"
+        [columns]="columns"
+        [actions]="actions"
+        [loading]="loading()"
+        [searchable]="true"
+        searchPlaceholder="Buscar por OC # o proveedor..."
+        [filters]="estadoFilters"
+        [exportable]="true"
+        exportFileName="ordenes-compra"
+        [currentPage]="currentPage()"
+        [pageSize]="pageSize()"
+        [totalElements]="totalElements()"
+        [totalPages]="totalPages()"
+        [sortField]="sortField()"
+        [sortDirection]="sortDirection()"
+        (searchChange)="onSearchTerm($event)"
+        (filterChange)="onFilterChangeEvent($event)"
+        (pageChange)="onPaginationChange($event)"
+        (sortChange)="onSort($event)">
+    </app-data-table>
 
     <!-- ── Drawer: Detalle OC (read-only) ─────────────────── -->
     <app-drawer

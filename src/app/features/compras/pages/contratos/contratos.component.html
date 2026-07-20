@@ -19,63 +19,24 @@
         </div>
     }
 
-    <!-- Filtro estado -->
-    <div class="filters-bar" style="margin-bottom:1rem">
-        <select class="form-input" style="width:160px" (change)="onFiltro($event)">
-            <option value="">Todos los estados</option>
-            <option value="ACTIVO">Activo</option>
-            <option value="VENCIDO">Vencido</option>
-            <option value="SUSPENDIDO">Suspendido</option>
-            <option value="RESCINDIDO">Rescindido</option>
-        </select>
-    </div>
-
-    @if (cargando()) {
-        <div class="loading-container"><div class="spinner"></div></div>
-    } @else {
-        <div class="card">
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th class="table-header-cell">Código</th>
-                        <th class="table-header-cell">Proveedor</th>
-                        <th class="table-header-cell">Tipo</th>
-                        <th class="table-header-cell">Vigencia</th>
-                        <th class="table-header-cell">Monto</th>
-                        <th class="table-header-cell">Estado</th>
-                        <th class="table-header-cell">Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @for (c of contratos(); track c.id) {
-                        <tr class="table-row">
-                            <td class="table-cell" style="font-weight:600">{{ c.codigo }}</td>
-                            <td class="table-cell">{{ c.proveedorNombre }}</td>
-                            <td class="table-cell">{{ c.tipoContrato }}</td>
-                            <td class="table-cell" style="font-size:.8rem">
-                                {{ c.fechaInicio }} — {{ c.fechaFin }}
-                            </td>
-                            <td class="table-cell">{{ c.moneda }} {{ c.montoContrato | number:'1.2-2' }}</td>
-                            <td class="table-cell">
-                                <span class="badge {{ estadoClass(c.estado) }}">{{ c.estado }}</span>
-                            </td>
-                            <td class="table-cell">
-                                @if (c.estado === 'ACTIVO') {
-                                    <button class="btn-icon btn-icon-delete" title="Rescindir"
-                                        (click)="rescindir(c.id)">✕</button>
-                                }
-                            </td>
-                        </tr>
-                    }
-                    @if (contratos().length === 0) {
-                        <tr><td class="table-cell" colspan="7" style="text-align:center; padding:1.5rem">
-                            No hay contratos registrados
-                        </td></tr>
-                    }
-                </tbody>
-            </table>
-        </div>
-    }
+    <app-data-table
+        [data]="pagedContratos()"
+        [columns]="columns"
+        [actions]="actions"
+        [loading]="cargando()"
+        [searchable]="true"
+        searchPlaceholder="Buscar por código o proveedor..."
+        [filters]="estadoFilters"
+        [exportable]="true"
+        exportFileName="contratos"
+        [currentPage]="currentPage()"
+        [pageSize]="pageSize()"
+        [totalElements]="totalElements()"
+        [totalPages]="totalPages()"
+        (searchChange)="onSearchTerm($event)"
+        (filterChange)="onFilterChangeEvent($event)"
+        (pageChange)="onPageChange($event)">
+    </app-data-table>
 </div>
 
 <!-- Drawer crear contrato -->

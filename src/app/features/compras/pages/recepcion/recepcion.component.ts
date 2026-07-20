@@ -1,10 +1,9 @@
 import { Component, OnInit, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
 import { DatePipe } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { of } from 'rxjs';
 import { RecepcionService, RecepcionPage } from '../../services/recepcion.service';
 import { Recepcion, RecepcionItem } from '../../models/orden-compra.model';
-import { DataTableComponent, TableColumn, TableAction } from '@shared/ui/tables/data-table/data-table.component';
-import { PaginationComponent, PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
+import { DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent, PaginationEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
@@ -17,9 +16,7 @@ import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
-    FormsModule,
     DataTableComponent,
-    PaginationComponent,
     DrawerComponent,
     PageHeaderComponent,
     AlertComponent,
@@ -41,6 +38,7 @@ export class RecepcionComponent implements OnInit {
     detailError = signal<string | null>(null);
 
     estadoFiltro = signal('');
+    searchQuery = signal('');
     showDetail = signal(false);
 
     // Pagination
@@ -52,10 +50,29 @@ export class RecepcionComponent implements OnInit {
     hasRecepciones = computed(() => this.recepciones().length > 0);
     isEmpty = computed(() => !this.cargando() && !this.hasRecepciones());
 
+    /** Filtrado client-side (el backend no soporta búsqueda por texto) sobre la página cargada. */
+    filteredRecepciones = computed(() => {
+        const term = this.searchQuery().trim().toLowerCase();
+        if (!term) return this.recepciones();
+        return this.recepciones().filter(r =>
+            r.ordenCompraCodigo?.toLowerCase().includes(term) ||
+            r.numeroGuia?.toLowerCase().includes(term)
+        );
+    });
+
     readonly estadoOptions = [
         { value: 'PENDIENTE', label: 'Pendiente' },
         { value: 'CONFORME', label: 'Conforme' },
         { value: 'DIFERENCIA', label: 'Con Diferencia' }
+    ];
+
+    // Filtro de estado para el toolbar del data-table
+    estadoFilters: FilterConfig[] = [
+        {
+            field: 'estado',
+            label: 'Todos los estados',
+            options: of(this.estadoOptions)
+        }
     ];
 
     breadcrumbs: Breadcrumb[] = [
@@ -120,13 +137,19 @@ export class RecepcionComponent implements OnInit {
         });
     }
 
-    onFilterEstado(event: Event): void {
-        this.estadoFiltro.set((event.target as HTMLSelectElement).value);
-        this.currentPage.set(0);
-        this.loadRecepciones();
+    onSearchTerm(term: string): void {
+        this.searchQuery.set(term);
     }
 
-    onPaginationChange(event: PaginationChangeEvent): void {
+    onFilterChangeEvent(event: FilterChangeEvent): void {
+        if (event.field === 'estado') {
+            this.estadoFiltro.set(event.value != null ? String(event.value) : '');
+            this.currentPage.set(0);
+            this.loadRecepciones();
+        }
+    }
+
+    onPaginationChange(event: PaginationEvent): void {
         this.currentPage.set(event.page);
         this.pageSize.set(event.size);
         this.loadRecepciones();

@@ -13,70 +13,22 @@
         <div class="badge badge-error mb-4 block">{{ error() }}</div>
     }
 
-    @if (cargando()) {
-        <div class="loading-container"><div class="spinner"></div></div>
-    }
-
-    @if (!cargando()) {
-        <div class="card">
-            <div class="card-body p-0">
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th class="table-header-cell">Tipo Transacción</th>
-                            <th class="table-header-cell">Nombre</th>
-                            <th class="table-header-cell">Líneas</th>
-                            <th class="table-header-cell">Estado</th>
-                            <th class="table-header-cell">Creado</th>
-                            <th class="table-header-cell">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @for (r of reglas(); track r.id) {
-                            <tr class="table-row">
-                                <td class="table-cell">
-                                    <span class="badge badge-neutral">{{ r.transactionType }}</span>
-                                </td>
-                                <td class="table-cell">
-                                    <div class="font-medium text-on">{{ r.nombre }}</div>
-                                    @if (r.descripcion) {
-                                        <div class="text-muted text-sm">{{ r.descripcion }}</div>
-                                    }
-                                </td>
-                                <td class="table-cell">{{ r.detalles.length }} línea(s)</td>
-                                <td class="table-cell">
-                                    @if (r.activo) {
-                                        <span class="badge badge-success">Activa</span>
-                                    } @else {
-                                        <span class="badge badge-neutral">Inactiva</span>
-                                    }
-                                </td>
-                                <td class="table-cell">{{ r.createdAt | date:'dd/MM/yyyy' }}</td>
-                                <td class="table-cell">
-                                    <div class="flex gap-2">
-                                        @if (r.activo) {
-                                            <app-button icon="pencil" [iconOnly]="true" variant="ghost"
-                                                    ariaLabel="Editar"
-                                                    (click)="abrirEditar(r)" />
-                                            <app-button icon="power" [iconOnly]="true" variant="danger"
-                                                    ariaLabel="Desactivar"
-                                                    (click)="desactivar(r.id)" />
-                                        }
-                                    </div>
-                                </td>
-                            </tr>
-                        } @empty {
-                            <tr>
-                                <td colspan="6" class="table-cell text-center text-muted py-8">
-                                    No hay reglas configuradas
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    }
+    <app-data-table
+        [data]="reglasPaginadas()"
+        [columns]="columns"
+        [actions]="actions"
+        [loading]="cargando()"
+        [searchable]="true"
+        searchPlaceholder="Buscar por nombre, descripción o tipo..."
+        [exportable]="true"
+        exportFileName="reglas-asiento"
+        [currentPage]="currentPage()"
+        [pageSize]="pageSize()"
+        [totalElements]="reglasFiltradas().length"
+        [totalPages]="totalPagesLocal()"
+        (searchChange)="onSearchTerm($event)"
+        (pageChange)="onPageChange($event)">
+    </app-data-table>
 </div>
 
 <!-- ── DRAWER FORMULARIO ──────────────────────────────────────────── -->

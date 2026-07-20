@@ -1,10 +1,11 @@
-import { Component, OnInit, ChangeDetectionStrategy, signal, inject } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy, signal, computed, inject } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
-import { DecimalPipe } from '@angular/common';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { of } from 'rxjs';
 import { environment } from '@env/environment';
 import { AuthService } from '@core/auth/auth.service';
 import { ButtonComponent } from '@shared/components';
+import { DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent, PaginationEvent } from '@shared/ui/tables/data-table/data-table.component';
 
 interface ContratoDto {
     id: string;
@@ -27,7 +28,7 @@ interface ContratoDto {
 @Component({
     selector: 'app-contratos',
     standalone: true,
-    imports: [ReactiveFormsModule, DecimalPipe, ButtonComponent],
+    imports: [ReactiveFormsModule, ButtonComponent, DataTableComponent],
     templateUrl: './contratos.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -44,6 +45,69 @@ export class ContratosComponent implements OnInit {
     mostrarForm = signal(false);
     guardando = signal(false);
     filtroEstado = signal('');
+    searchQuery = signal('');
+
+    // Pagination (client-side — el backend no pagina /api/contratos)
+    currentPage = signal(0);
+    pageSize = signal(20);
+
+    // Filtro de estado para el toolbar del data-table
+    estadoFilters: FilterConfig[] = [
+        {
+            field: 'estado',
+            label: 'Todos los estados',
+            options: of([
+                { value: 'ACTIVO', label: 'Activo' },
+                { value: 'VENCIDO', label: 'Vencido' },
+                { value: 'SUSPENDIDO', label: 'Suspendido' },
+                { value: 'RESCINDIDO', label: 'Rescindido' }
+            ])
+        }
+    ];
+
+    /** Filtrado client-side por búsqueda + estado (todo el listado se carga en un solo fetch). */
+    filteredContratos = computed(() => {
+        const term = this.searchQuery().trim().toLowerCase();
+        const estado = this.filtroEstado();
+        return this.contratos().filter(c =>
+            (!estado || c.estado === estado) &&
+            (!term || c.codigo?.toLowerCase().includes(term) || c.proveedorNombre?.toLowerCase().includes(term))
+        );
+    });
+
+    totalElements = computed(() => this.filteredContratos().length);
+    totalPages = computed(() => Math.ceil(this.totalElements() / this.pageSize()) || 0);
+
+    pagedContratos = computed(() => {
+        const start = this.currentPage() * this.pageSize();
+        return this.filteredContratos().slice(start, start + this.pageSize());
+    });
+
+    columns: TableColumn<ContratoDto>[] = [
+        { key: 'codigo', label: 'Código', sortable: true },
+        { key: 'proveedorNombre', label: 'Proveedor' },
+        { key: 'tipoContrato', label: 'Tipo' },
+        {
+            key: 'fechaInicio', label: 'Vigencia',
+            render: (r) => `${r.fechaInicio} — ${r.fechaFin}`
+        },
+        {
+            key: 'montoContrato', label: 'Monto', align: 'right',
+            render: (r) => `${r.moneda} ${r.montoContrato.toFixed(2)}`
+        },
+        {
+            key: 'estado', label: 'Estado', html: true,
+            render: (r) => `<span class="badge ${this.estadoClass(r.estado)}">${r.estado}</span>`
+        }
+    ];
+
+    actions: TableAction<ContratoDto>[] = [
+        {
+            label: 'Rescindir', icon: 'x', class: 'btn-icon-delete',
+            show: (row) => row.estado === 'ACTIVO',
+            onClick: (row) => this.rescindir(row.id)
+        }
+    ];
 
     form = this.fb.group({
         proveedorId: ['', Validators.required],
@@ -68,9 +132,7 @@ export class ContratosComponent implements OnInit {
 
     cargar(): void {
         this.cargando.set(true);
-        const estado = this.filtroEstado();
-        const url = estado ? `${this.baseUrl}?estado=${estado}` : this.baseUrl;
-        this.http.get<ContratoDto[]>(url, { headers: this.getHeaders() }).subscribe({
+        this.http.get<ContratoDto[]>(this.baseUrl, { headers: this.getHeaders() }).subscribe({
             next: (d) => {
                 this.contratos.set(d);
                 this.cargando.set(false);
@@ -112,9 +174,20 @@ export class ContratosComponent implements OnInit {
         return m[estado] ?? 'badge-neutral';
     }
 
-    onFiltro(event: Event): void {
-        const val = (event.target as HTMLSelectElement).value;
-        this.filtroEstado.set(val);
-        this.cargar();
+    onSearchTerm(term: string): void {
+        this.searchQuery.set(term);
+        this.currentPage.set(0);
+    }
+
+    onFilterChangeEvent(event: FilterChangeEvent): void {
+        if (event.field === 'estado') {
+            this.filtroEstado.set(event.value != null ? String(event.value) : '');
+            this.currentPage.set(0);
+        }
+    }
+
+    onPageChange(event: PaginationEvent): void {
+        this.currentPage.set(event.page);
+        this.pageSize.set(event.size);
     }
 }

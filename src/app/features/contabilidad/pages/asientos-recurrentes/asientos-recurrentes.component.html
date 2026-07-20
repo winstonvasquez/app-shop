@@ -22,68 +22,22 @@
     }
 
     <!-- Tabla -->
-    @if (!cargando()) {
-        <div class="card">
-            <div class="card-body p-0">
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th class="table-header-cell">Nombre</th>
-                            <th class="table-header-cell">Frecuencia</th>
-                            <th class="table-header-cell">Día ejecución</th>
-                            <th class="table-header-cell">Próxima ejecución</th>
-                            <th class="table-header-cell">Última ejecución</th>
-                            <th class="table-header-cell">Estado</th>
-                            <th class="table-header-cell">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @for (r of recurrentes(); track r.id) {
-                            <tr class="table-row">
-                                <td class="table-cell">
-                                    <div class="font-medium text-on">{{ r.name }}</div>
-                                    @if (r.description) {
-                                        <div class="text-muted text-sm">{{ r.description }}</div>
-                                    }
-                                </td>
-                                <td class="table-cell">{{ frecuenciaLabel(r.frequency) }}</td>
-                                <td class="table-cell">Día {{ r.executionDay }}</td>
-                                <td class="table-cell">{{ r.nextExecution | date:'dd/MM/yyyy' }}</td>
-                                <td class="table-cell">
-                                    {{ r.lastExecution ? (r.lastExecution | date:'dd/MM/yyyy') : '—' }}
-                                </td>
-                                <td class="table-cell">
-                                    @if (r.active) {
-                                        <span class="badge badge-success">Activo</span>
-                                    } @else {
-                                        <span class="badge badge-neutral">Inactivo</span>
-                                    }
-                                </td>
-                                <td class="table-cell">
-                                    <div class="flex gap-2">
-                                        @if (r.active) {
-                                            <app-button icon="play" [iconOnly]="true" variant="primary"
-                                                    ariaLabel="Ejecutar ahora"
-                                                    (click)="ejecutarAhora(r.id)" />
-                                            <app-button icon="power" [iconOnly]="true" variant="danger"
-                                                    ariaLabel="Desactivar"
-                                                    (click)="desactivar(r.id)" />
-                                        }
-                                    </div>
-                                </td>
-                            </tr>
-                        } @empty {
-                            <tr>
-                                <td colspan="7" class="table-cell text-center text-muted py-8">
-                                    No hay asientos recurrentes configurados
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    }
+    <app-data-table
+        [data]="recurrentesPaginados()"
+        [columns]="columns"
+        [actions]="actions"
+        [loading]="cargando()"
+        [searchable]="true"
+        searchPlaceholder="Buscar por nombre, descripción o frecuencia..."
+        [exportable]="true"
+        exportFileName="asientos-recurrentes"
+        [currentPage]="currentPage()"
+        [pageSize]="pageSize()"
+        [totalElements]="recurrentesFiltrados().length"
+        [totalPages]="totalPagesLocal()"
+        (searchChange)="onSearchTerm($event)"
+        (pageChange)="onPageChange($event)">
+    </app-data-table>
 </div>
 
 <!-- ── DRAWER NUEVO ASIENTO RECURRENTE ─────────────────────────────────── -->
