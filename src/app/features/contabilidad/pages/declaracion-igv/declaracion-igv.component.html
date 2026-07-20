@@ -16,26 +16,24 @@
         </div>
     </div>
 
-    <div class="card mb-lg">
-        <div class="filters-bar">
-            <select class="form-input"
-                    [value]="periodoSeleccionado()"
-                    (change)="cambiarPeriodo(periodoSelect.value)"
-                    #periodoSelect>
-                <option value="">— Seleccionar periodo —</option>
-                @for (p of periodos(); track p.id) {
-                    <option [value]="p.id">{{ p.nombre }} ({{ p.estado }})</option>
-                }
-            </select>
-            <app-button
-                [label]="cargando() ? 'Calculando...' : 'Calcular'"
-                variant="primary"
-                icon="percent"
-                [loading]="cargando()"
-                [disabled]="!periodoSeleccionado() || cargando()"
-                (click)="calcularIGV(periodoSeleccionado())">
-            </app-button>
-        </div>
+    <div class="filters-bar">
+        <select class="form-input"
+                [value]="periodoSeleccionado()"
+                (change)="cambiarPeriodo(periodoSelect.value)"
+                #periodoSelect>
+            <option value="">— Seleccionar periodo —</option>
+            @for (p of periodos(); track p.id) {
+                <option [value]="p.id">{{ p.nombre }} ({{ p.estado }})</option>
+            }
+        </select>
+        <app-button
+            [label]="cargando() ? 'Calculando...' : 'Calcular'"
+            variant="primary"
+            icon="percent"
+            [loading]="cargando()"
+            [disabled]="!periodoSeleccionado() || cargando()"
+            (click)="calcularIGV(periodoSeleccionado())">
+        </app-button>
     </div>
 
     @if (cargando()) {

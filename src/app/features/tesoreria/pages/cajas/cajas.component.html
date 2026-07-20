@@ -9,43 +9,24 @@
   </app-page-header>
 
   <!-- KPIs -->
-  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:var(--space-md);margin-bottom:var(--space-lg)">
-    <div class="card">
-      <div class="card-body">
-        <div class="text-sm" style="color:var(--color-text-muted)">Cajas Abiertas</div>
-        <div class="font-bold" style="font-size:2rem;color:var(--color-success)">{{ cajasAbiertas() }}</div>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-body">
-        <div class="text-sm" style="color:var(--color-text-muted)">Cajas Cerradas</div>
-        <div class="font-bold" style="font-size:2rem">{{ cajasCerradas() }}</div>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-body">
-        <div class="text-sm" style="color:var(--color-text-muted)">Saldo Total (abiertas)</div>
-        <div class="font-bold" style="font-size:1.75rem;color:var(--color-primary)">
-          S/ {{ saldoTotal() | number:'1.2-2' }}
-        </div>
-      </div>
-    </div>
+  <div class="flex flex-wrap gap-x-6 gap-y-1 text-sm text-subtle mb-sm">
+    <span><strong class="text-on">Cajas Abiertas:</strong> {{ cajasAbiertas() }}</span>
+    <span><strong class="text-on">Cajas Cerradas:</strong> {{ cajasCerradas() }}</span>
+    <span><strong class="text-on">Saldo Total (abiertas):</strong> S/ {{ saldoTotal() | number:'1.2-2' }}</span>
   </div>
 
   <!-- Tabla -->
-  <div class="card">
-    <app-data-table
-      [data]="cajas()"
-      [columns]="columns"
-      [actions]="actions"
-      [loading]="cargando()"
-      [currentPage]="currentPage()"
-      [pageSize]="pageSize()"
-      [totalElements]="totalElements()"
-      [totalPages]="totalPages()"
-      (pageChange)="onPageChange($event)">
-    </app-data-table>
-  </div>
+  <app-data-table
+    [data]="cajas()"
+    [columns]="columns"
+    [actions]="actions"
+    [loading]="cargando()"
+    [currentPage]="currentPage()"
+    [pageSize]="pageSize()"
+    [totalElements]="totalElements()"
+    [totalPages]="totalPages()"
+    (pageChange)="onPageChange($event)">
+  </app-data-table>
 
 </div>
 

@@ -670,7 +670,8 @@
     padding: 12px 16px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 
-    /* Alineación uniforme del patrón toolbar: todo control de filtro a 32px */
+    /* Alineación uniforme del patrón toolbar: todo control de filtro a 32px,
+       ancho propio (nunca w-full — todo en UNA sola línea) */
     > select, > input,
     select.form-input, input.form-input,
     .filter-field select, .filter-field input,
@@ -681,6 +682,11 @@
         padding-bottom: 0;
         border-radius: 6px;
         font-size: 13px;
+        width: auto;
+    }
+    > select, select.form-input, .filter-field select, form select {
+        min-width: 200px;
+        max-width: 320px;
     }
     /* Labels de filtro: inline junto al control (no encima) */
     .filter-field, > div {
@@ -744,29 +750,33 @@
     padding-right: 30px;
 }
 
-/* Botón circular "X" para limpiar el input de búsqueda/filtro */
+/* Botón "X" para limpiar el input de búsqueda/filtro:
+   aspa gris discreta DENTRO del input (estilo buscador del header),
+   círculo suave solo al hover */
 .search-clear {
     position: absolute;
-    right: 6px;
+    right: 8px;
     top: 50%;
     transform: translateY(-50%);
-    width: 18px;
-    height: 18px;
+    width: 20px;
+    height: 20px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     border: none;
     border-radius: 50%;
-    background: var(--color-surface-raised);
+    background: transparent;
     color: var(--color-text-muted);
     cursor: pointer;
     padding: 0;
+    line-height: 1;
     transition: background-color 0.15s, color 0.15s;
     z-index: 1;
 }
+.search-clear svg { width: 13px; height: 13px; }
 .search-clear:hover {
-    background: color-mix(in srgb, var(--color-error) 12%, var(--color-surface));
-    color: var(--color-error);
+    background: var(--color-surface-raised);
+    color: var(--color-text-primary);
 }
 
 /* Variante auto (páginas sin signal): visible solo cuando el input tiene texto */
@@ -1823,3 +1833,22 @@
     animation: dropdownIn 0.15s cubic-bezier(0.4, 0, 0.2, 1) both;
     transform-origin: top right;
 }
+
+/* ============================================
+   FIX max-w-* con nombre (colisión Tailwind v4)
+   El @theme define --spacing-sm/md/lg/xl/2xl… y esta versión de TW4
+   genera `max-w-3xl { max-width: var(--spacing-3xl) }` (¡48px/64px!)
+   en vez de la escala de contenedores. Estas reglas SIN @layer ganan
+   a las utilities en @layer y restauran los anchos estándar.
+   ============================================ */
+.max-w-xs  { max-width: 20rem; }
+.max-w-sm  { max-width: 24rem; }
+.max-w-md  { max-width: 28rem; }
+.max-w-lg  { max-width: 32rem; }
+.max-w-xl  { max-width: 36rem; }
+.max-w-2xl { max-width: 42rem; }
+.max-w-3xl { max-width: 48rem; }
+.max-w-4xl { max-width: 56rem; }
+.max-w-5xl { max-width: 64rem; }
+.max-w-6xl { max-width: 72rem; }
+.max-w-7xl { max-width: 80rem; }

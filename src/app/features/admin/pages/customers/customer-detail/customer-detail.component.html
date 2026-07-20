@@ -91,7 +91,7 @@
 
         <!-- ── Tab: Direcciones ─────────────────────────────────────────── -->
         @if (activeTab() === 'direcciones') {
-            <div class="card">
+            <div class="card mb-4">
                 <div class="card-header">
                     <h3 class="card-title">Direcciones</h3>
                     @if (!showDirForm()) {
@@ -101,7 +101,7 @@
                 </div>
 
                 @if (showDirForm()) {
-                    <div class="card-body border-b border-[var(--color-border)]">
+                    <div class="card-body">
                         <form [formGroup]="dirForm" (ngSubmit)="saveDireccion()">
                             <app-admin-form-layout [errorMessage]="dirSaveError()">
                                 <app-admin-form-section [columns]="3">
@@ -147,21 +147,19 @@
                         </form>
                     </div>
                 }
-
-                <div class="card-body p-0">
-                    <app-data-table
-                        [data]="direcciones()"
-                        [columns]="dirColumns"
-                        [actions]="dirActions"
-                        [hidePagination]="true">
-                    </app-data-table>
-                </div>
             </div>
+
+            <app-data-table
+                [data]="direcciones()"
+                [columns]="dirColumns"
+                [actions]="dirActions"
+                [hidePagination]="true">
+            </app-data-table>
         }
 
         <!-- ── Tab: Contactos (B2B) ─────────────────────────────────────── -->
         @if (activeTab() === 'contactos') {
-            <div class="card">
+            <div class="card mb-4">
                 <div class="card-header">
                     <h3 class="card-title">Contactos</h3>
                     @if (!showCtForm()) {
@@ -171,7 +169,7 @@
                 </div>
 
                 @if (showCtForm()) {
-                    <div class="card-body border-b border-[var(--color-border)]">
+                    <div class="card-body">
                         <form [formGroup]="ctForm" (ngSubmit)="saveContacto()">
                             <app-admin-form-layout [errorMessage]="ctSaveError()">
                                 <app-admin-form-section [columns]="2">
@@ -207,16 +205,14 @@
                         </form>
                     </div>
                 }
-
-                <div class="card-body p-0">
-                    <app-data-table
-                        [data]="contactos()"
-                        [columns]="ctColumns"
-                        [actions]="ctActions"
-                        [hidePagination]="true">
-                    </app-data-table>
-                </div>
             </div>
+
+            <app-data-table
+                [data]="contactos()"
+                [columns]="ctColumns"
+                [actions]="ctActions"
+                [hidePagination]="true">
+            </app-data-table>
         }
     }
 </div>

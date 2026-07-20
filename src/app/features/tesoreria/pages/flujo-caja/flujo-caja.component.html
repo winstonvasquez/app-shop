@@ -30,49 +30,23 @@
   </div>
 
   <!-- KPIs -->
-  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:var(--space-md);margin-bottom:var(--space-lg)">
-    <div class="card">
-      <div class="card-body">
-        <div style="color:var(--color-text-muted);font-size:0.875rem">Ingresos del periodo</div>
-        <div style="font-size:1.75rem;font-weight:700;color:var(--color-success)">
-          S/ {{ ingresos() | number:'1.2-2' }}
-        </div>
-        <div style="color:var(--color-text-muted);font-size:0.75rem">movimientos INGRESO</div>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-body">
-        <div style="color:var(--color-text-muted);font-size:0.875rem">Egresos del periodo</div>
-        <div style="font-size:1.75rem;font-weight:700;color:var(--color-warning)">
-          S/ {{ egresos() | number:'1.2-2' }}
-        </div>
-        <div style="color:var(--color-text-muted);font-size:0.75rem">movimientos EGRESO</div>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-body">
-        <div style="color:var(--color-text-muted);font-size:0.875rem">Flujo de Caja Neto</div>
-        <div style="font-size:1.75rem;font-weight:700"
-             [style.color]="flujoCajaNeto() >= 0 ? 'var(--color-success)' : 'var(--color-error)'">
-          S/ {{ flujoCajaNeto() | number:'1.2-2' }}
-        </div>
-      </div>
-    </div>
+  <div class="flex flex-wrap gap-x-6 gap-y-1 text-sm text-subtle mb-sm">
+    <span><strong class="text-on">Ingresos del periodo:</strong> S/ {{ ingresos() | number:'1.2-2' }}</span>
+    <span><strong class="text-on">Egresos del periodo:</strong> S/ {{ egresos() | number:'1.2-2' }}</span>
+    <span><strong class="text-on">Flujo de Caja Neto:</strong> S/ {{ flujoCajaNeto() | number:'1.2-2' }}</span>
   </div>
 
   <!-- Tabla -->
-  <div class="card">
-    <app-data-table
-      [data]="movimientos()"
-      [columns]="columns"
-      [loading]="cargando()"
-      [currentPage]="currentPage()"
-      [pageSize]="pageSize()"
-      [totalElements]="totalElements()"
-      [totalPages]="totalPages()"
-      (pageChange)="onPageChange($event)">
-    </app-data-table>
-  </div>
+  <app-data-table
+    [data]="movimientos()"
+    [columns]="columns"
+    [loading]="cargando()"
+    [currentPage]="currentPage()"
+    [pageSize]="pageSize()"
+    [totalElements]="totalElements()"
+    [totalPages]="totalPages()"
+    (pageChange)="onPageChange($event)">
+  </app-data-table>
 
 </div>
 

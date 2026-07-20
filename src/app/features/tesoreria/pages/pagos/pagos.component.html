@@ -8,50 +8,26 @@
     </div>
   </app-page-header>
 
-  <!-- KPIs -->
-  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-    <div class="card">
-      <div class="card-body">
-        <div class="text-sm text-[var(--color-text-muted)]">Pendientes</div>
-        <div class="font-bold text-[2rem] text-[var(--color-warning)]">{{ countPendientes() }}</div>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-body">
-        <div class="text-sm text-[var(--color-text-muted)]">Aprobados</div>
-        <div class="font-bold text-[2rem] text-[var(--color-accent)]">{{ countAprobados() }}</div>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-body">
-        <div class="text-sm text-[var(--color-text-muted)]">Pagados</div>
-        <div class="font-bold text-[2rem] text-[var(--color-success)]">{{ countPagados() }}</div>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-body">
-        <div class="text-sm text-[var(--color-text-muted)]">Total Comprometido</div>
-        <div class="font-bold text-[1.5rem] text-[var(--color-primary)]">
-          S/ {{ totalComprometido() | number:'1.2-2' }}
-        </div>
-      </div>
-    </div>
+  <!-- Resumen -->
+  <div class="flex flex-wrap gap-x-6 gap-y-1 text-sm text-subtle mb-sm">
+    <span><strong class="text-on">Pendientes:</strong> {{ countPendientes() }}</span>
+    <span><strong class="text-on">Aprobados:</strong> {{ countAprobados() }}</span>
+    <span><strong class="text-on">Pagados:</strong> {{ countPagados() }}</span>
+    <span><strong class="text-on">Total comprometido:</strong> S/ {{ totalComprometido() | number:'1.2-2' }}</span>
   </div>
 
   <!-- Tabla -->
-  <div class="card">
-    <app-data-table
-      [data]="pagos()"
-      [columns]="columns"
-      [actions]="actions"
-      [loading]="cargando()"
-      [currentPage]="currentPage()"
-      [pageSize]="pageSize()"
-      [totalElements]="totalElements()"
-      [totalPages]="totalPages()"
-      (pageChange)="onPageChange($event)">
-    </app-data-table>
-  </div>
+  <app-data-table
+    [data]="pagos()"
+    [columns]="columns"
+    [actions]="actions"
+    [loading]="cargando()"
+    [currentPage]="currentPage()"
+    [pageSize]="pageSize()"
+    [totalElements]="totalElements()"
+    [totalPages]="totalPages()"
+    (pageChange)="onPageChange($event)">
+  </app-data-table>
 
 </div>
 

@@ -8,51 +8,25 @@
     </div>
   </app-page-header>
 
-  <!-- KPIs por moneda -->
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-    <div class="card">
-      <div class="card-body">
-        <div class="text-sm text-[var(--color-text-muted)]">Saldo PEN</div>
-        <div class="font-bold text-[1.75rem] text-[var(--color-primary)]">
-          S/ {{ saldoTotalPEN() | number:'1.2-2' }}
-        </div>
-        <div class="text-sm text-[var(--color-text-muted)]">{{ cuentasPEN() }} cuentas en soles</div>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-body">
-        <div class="text-sm text-[var(--color-text-muted)]">Saldo USD</div>
-        <div class="font-bold text-[1.75rem]">
-          $ {{ saldoTotalUSD() | number:'1.2-2' }}
-        </div>
-        <div class="text-sm text-[var(--color-text-muted)]">{{ cuentasUSD() }} cuentas en dólares</div>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-body">
-        <div class="text-sm text-[var(--color-text-muted)]">Cuenta Detracciones</div>
-        <div class="font-bold text-[1.75rem] text-[var(--color-accent)]">
-          S/ {{ saldoDetracciones() | number:'1.2-2' }}
-        </div>
-        <div class="text-sm text-[var(--color-text-muted)]">Banco de la Nación</div>
-      </div>
-    </div>
+  <!-- Resumen por moneda -->
+  <div class="flex flex-wrap gap-x-6 gap-y-1 text-sm text-subtle mb-sm">
+    <span><strong class="text-on">Saldo PEN:</strong> S/ {{ saldoTotalPEN() | number:'1.2-2' }} ({{ cuentasPEN() }} cuentas en soles)</span>
+    <span><strong class="text-on">Saldo USD:</strong> $ {{ saldoTotalUSD() | number:'1.2-2' }} ({{ cuentasUSD() }} cuentas en dólares)</span>
+    <span><strong class="text-on">Detracciones:</strong> S/ {{ saldoDetracciones() | number:'1.2-2' }} (Banco de la Nación)</span>
   </div>
 
   <!-- Tabla -->
-  <div class="card">
-    <app-data-table
-      [data]="cuentas()"
-      [columns]="columns"
-      [actions]="actions"
-      [loading]="cargando()"
-      [currentPage]="currentPage()"
-      [pageSize]="pageSize()"
-      [totalElements]="totalElements()"
-      [totalPages]="totalPages()"
-      (pageChange)="onPageChange($event)">
-    </app-data-table>
-  </div>
+  <app-data-table
+    [data]="cuentas()"
+    [columns]="columns"
+    [actions]="actions"
+    [loading]="cargando()"
+    [currentPage]="currentPage()"
+    [pageSize]="pageSize()"
+    [totalElements]="totalElements()"
+    [totalPages]="totalPages()"
+    (pageChange)="onPageChange($event)">
+  </app-data-table>
 
 </div>
 

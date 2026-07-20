@@ -9,24 +9,12 @@
         <app-button label="Nueva Devolución" variant="primary" icon="plus" (click)="abrirNueva()" />
     </div>
 
-    <!-- KPI Cards (server-side /stats) -->
-    <div class="grid grid-cols-2 gap-[var(--card-gap)] md:grid-cols-4 mb-[var(--section-gap)]">
-        <div class="card-metric">
-            <span class="card-metric-label">Total Devoluciones</span>
-            <span class="card-metric-value">{{ stats().total }}</span>
-        </div>
-        <div class="card-metric">
-            <span class="card-metric-label">Pendientes Revisión</span>
-            <span class="card-metric-value">{{ stats().pendientes }}</span>
-        </div>
-        <div class="card-metric">
-            <span class="card-metric-label">Aprobadas</span>
-            <span class="card-metric-value">{{ stats().aprobadas }}</span>
-        </div>
-        <div class="card-metric">
-            <span class="card-metric-label">Monto Reembolsado</span>
-            <span class="card-metric-value">S/ {{ stats().montoReembolsado.toFixed(2) }}</span>
-        </div>
+    <!-- KPIs compactos (server-side /stats) -->
+    <div class="flex flex-wrap gap-x-6 gap-y-1 text-sm text-subtle mb-sm">
+        <span><strong class="text-on">Total Devoluciones:</strong> {{ stats().total }}</span>
+        <span><strong class="text-on">Pendientes Revisión:</strong> {{ stats().pendientes }}</span>
+        <span><strong class="text-on">Aprobadas:</strong> {{ stats().aprobadas }}</span>
+        <span><strong class="text-on">Monto Reembolsado:</strong> S/ {{ stats().montoReembolsado.toFixed(2) }}</span>
     </div>
 
     <!-- Tabla (server-side: search + estado + paginación 20/pág; toolbar integrado) -->

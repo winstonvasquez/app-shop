@@ -33,20 +33,18 @@
         </div>
     </div>
 
-    <div class="card mb-lg">
-        <div class="filters-bar">
-            <select class="form-input"
-                    [value]="periodoSeleccionado()"
-                    (change)="cambiarPeriodo($any($event.target).value)">
-                <option value="">— Seleccionar periodo —</option>
-                @for (p of periodos(); track p.id) {
-                    <option [value]="p.id">{{ p.nombre }} ({{ p.estado }})</option>
-                }
-            </select>
-            <input type="date" class="form-input" style="width:160px" [value]="fechaDesde()" (input)="fechaDesde.set($any($event.target).value)" />
-            <input type="date" class="form-input" style="width:160px" [value]="fechaHasta()" (input)="fechaHasta.set($any($event.target).value)" />
-            <app-button label="Buscar" variant="primary" icon="search" (click)="cargar()"></app-button>
-        </div>
+    <div class="filters-bar">
+        <select class="form-input"
+                [value]="periodoSeleccionado()"
+                (change)="cambiarPeriodo($any($event.target).value)">
+            <option value="">— Seleccionar periodo —</option>
+            @for (p of periodos(); track p.id) {
+                <option [value]="p.id">{{ p.nombre }} ({{ p.estado }})</option>
+            }
+        </select>
+        <input type="date" class="form-input" style="width:160px" [value]="fechaDesde()" (input)="fechaDesde.set($any($event.target).value)" />
+        <input type="date" class="form-input" style="width:160px" [value]="fechaHasta()" (input)="fechaHasta.set($any($event.target).value)" />
+        <app-button label="Buscar" variant="primary" icon="search" (click)="cargar()"></app-button>
     </div>
 
     @if (error()) {
@@ -56,27 +54,11 @@
     }
 
     @if (ventas().length > 0) {
-        <div class="card mb-lg">
-            <div class="card-body">
-                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:var(--space-md)">
-                    <div>
-                        <div class="input-label">Comprobantes</div>
-                        <div class="font-bold text-2xl">{{ ventas().length }}</div>
-                    </div>
-                    <div>
-                        <div class="input-label">Base Imponible</div>
-                        <div class="font-bold text-xl">S/ {{ totalBase().toFixed(2) }}</div>
-                    </div>
-                    <div>
-                        <div class="input-label">IGV (18%)</div>
-                        <div class="font-bold text-xl" style="color:var(--color-primary)">S/ {{ totalIgv().toFixed(2) }}</div>
-                    </div>
-                    <div>
-                        <div class="input-label">Total Ventas</div>
-                        <div class="font-bold text-xl">S/ {{ totalVentas().toFixed(2) }}</div>
-                    </div>
-                </div>
-            </div>
+        <div class="flex flex-wrap gap-x-6 gap-y-1 text-sm text-subtle mb-sm">
+            <span><strong class="text-on">Comprobantes:</strong> {{ ventas().length }}</span>
+            <span><strong class="text-on">Base Imponible:</strong> S/ {{ totalBase().toFixed(2) }}</span>
+            <span><strong class="text-on">IGV (18%):</strong> S/ {{ totalIgv().toFixed(2) }}</span>
+            <span><strong class="text-on">Total Ventas:</strong> S/ {{ totalVentas().toFixed(2) }}</span>
         </div>
     }
 

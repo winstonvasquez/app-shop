@@ -22,26 +22,24 @@
         </div>
     </div>
 
-    <div class="card mb-lg">
-        <div class="filters-bar">
-            <select class="form-input" [value]="periodoSeleccionado()"
-                    (change)="cambiarPeriodo($any($event.target).value)">
-                <option value="">— Seleccionar periodo —</option>
-                @for (p of periodos(); track p.id) {
-                    <option [value]="p.id">{{ p.nombre }} ({{ p.estado }})</option>
-                }
-            </select>
-            <input type="date" class="form-input" style="width:160px"
-                   [value]="fechaDesde()" (input)="fechaDesde.set($any($event.target).value)" />
-            <input type="date" class="form-input" style="width:160px"
-                   [value]="fechaHasta()" (input)="fechaHasta.set($any($event.target).value)" />
-            <app-button
-                icon="search"
-                variant="primary"
-                label="Consultar"
-                (click)="cargarLibro()">
-            </app-button>
-        </div>
+    <div class="filters-bar">
+        <select class="form-input" [value]="periodoSeleccionado()"
+                (change)="cambiarPeriodo($any($event.target).value)">
+            <option value="">— Seleccionar periodo —</option>
+            @for (p of periodos(); track p.id) {
+                <option [value]="p.id">{{ p.nombre }} ({{ p.estado }})</option>
+            }
+        </select>
+        <input type="date" class="form-input" style="width:160px"
+               [value]="fechaDesde()" (input)="fechaDesde.set($any($event.target).value)" />
+        <input type="date" class="form-input" style="width:160px"
+               [value]="fechaHasta()" (input)="fechaHasta.set($any($event.target).value)" />
+        <app-button
+            icon="search"
+            variant="primary"
+            label="Consultar"
+            (click)="cargarLibro()">
+        </app-button>
     </div>
 
     @if (error()) {
@@ -53,27 +51,16 @@
     }
 
     @if (lineas().length > 0) {
-        <div class="card mb-lg">
-            <div class="card-body">
-                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:var(--space-md)">
-                    <div>
-                        <div class="input-label">Total Debe</div>
-                        <div class="font-bold text-xl font-mono">S/ {{ totalDebe().toFixed(2) }}</div>
-                    </div>
-                    <div>
-                        <div class="input-label">Total Haber</div>
-                        <div class="font-bold text-xl font-mono">S/ {{ totalHaber().toFixed(2) }}</div>
-                    </div>
-                    <div>
-                        <div class="input-label">Cuadre</div>
-                        @if (cuadra()) {
-                            <span class="badge badge-success">Cuadra</span>
-                        } @else {
-                            <span class="badge badge-error">No cuadra</span>
-                        }
-                    </div>
-                </div>
-            </div>
+        <div class="flex flex-wrap gap-x-6 gap-y-1 text-sm text-subtle mb-sm">
+            <span><strong class="text-on">Total Debe:</strong> <span class="font-mono">S/ {{ totalDebe().toFixed(2) }}</span></span>
+            <span><strong class="text-on">Total Haber:</strong> <span class="font-mono">S/ {{ totalHaber().toFixed(2) }}</span></span>
+            <span><strong class="text-on">Cuadre:</strong>
+                @if (cuadra()) {
+                    <span class="badge badge-success">Cuadra</span>
+                } @else {
+                    <span class="badge badge-error">No cuadra</span>
+                }
+            </span>
         </div>
     }
 

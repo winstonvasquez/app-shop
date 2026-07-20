@@ -73,21 +73,19 @@
   </div>
 }
 
-<div class="card">
-  <div class="card-header">
-    <h3 class="card-title">Envíos Recientes</h3>
-    <app-button variant="secondary" icon="refresh-cw" label="Actualizar" (click)="cargarEnvios()"></app-button>
-  </div>
-  <app-data-table
-    [data]="enviosPagina()"
-    [columns]="columns"
-    [actions]="envioActions"
-    [loading]="loadingEnvios()"
-    [totalPages]="totalPages()"
-    [totalElements]="envios().length"
-    [currentPage]="currentPage()"
-    [pageSize]="pageSize()"
-    (pageChange)="onPageChange($event)">
-  </app-data-table>
+<div class="flex items-center justify-between mb-sm">
+  <h3 class="text-base font-bold text-on">Envíos Recientes</h3>
+  <app-button variant="secondary" icon="refresh-cw" label="Actualizar" (click)="cargarEnvios()"></app-button>
 </div>
+<app-data-table
+  [data]="enviosPagina()"
+  [columns]="columns"
+  [actions]="envioActions"
+  [loading]="loadingEnvios()"
+  [totalPages]="totalPages()"
+  [totalElements]="envios().length"
+  [currentPage]="currentPage()"
+  [pageSize]="pageSize()"
+  (pageChange)="onPageChange($event)">
+</app-data-table>
 </div>

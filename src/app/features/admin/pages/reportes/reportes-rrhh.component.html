@@ -58,11 +58,7 @@
         </div>
     </div>
 
-    <div class="card">
-        <div class="card-header">
-            <h3 class="card-title">Personal</h3>
-        </div>
-        <div class="filters-bar no-print" [formGroup]="filterForm">
+    <div class="filters-bar no-print" [formGroup]="filterForm">
             <div class="search-box">
                 <span class="search-box-icon">&#128269;</span>
                 <input #searchInput type="text" class="form-input pl-8" placeholder="Buscar por nombre, código o área..."
@@ -82,8 +78,12 @@
                     <option [value]="area">{{ area }}</option>
                 }
             </select>
-        </div>
+    </div>
 
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Personal</h3>
+        </div>
         @if (cargando()) {
             <div class="loading-container"><div class="spinner"></div></div>
         } @else {

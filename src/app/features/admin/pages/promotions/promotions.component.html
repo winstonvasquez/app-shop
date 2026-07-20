@@ -9,20 +9,11 @@
         <app-button label="Nueva Promoción" icon="plus" variant="primary" (click)="abrirNueva()" />
     </div>
 
-    <!-- KPI Cards -->
-    <div class="grid grid-cols-1 gap-[var(--card-gap)] sm:grid-cols-3 mb-[var(--section-gap)]">
-        <div class="card-metric">
-            <span class="card-metric-label">Activas</span>
-            <span class="card-metric-value text-[var(--color-success)]">{{ totalActivas() }}</span>
-        </div>
-        <div class="card-metric">
-            <span class="card-metric-label">Próximas a Vencer (7d)</span>
-            <span class="card-metric-value text-[var(--color-warning)]">{{ proximasAVencer() }}</span>
-        </div>
-        <div class="card-metric">
-            <span class="card-metric-label">Vencidas</span>
-            <span class="card-metric-value text-[var(--color-text-muted)]">{{ totalVencidas() }}</span>
-        </div>
+    <!-- Métricas compactas -->
+    <div class="flex flex-wrap gap-x-6 gap-y-1 text-sm text-subtle mb-sm">
+        <span><strong class="text-on">Activas:</strong> {{ totalActivas() }}</span>
+        <span><strong class="text-on">Próximas a vencer (7d):</strong> {{ proximasAVencer() }}</span>
+        <span><strong class="text-on">Vencidas:</strong> {{ totalVencidas() }}</span>
     </div>
 
     <!-- Filtros -->
