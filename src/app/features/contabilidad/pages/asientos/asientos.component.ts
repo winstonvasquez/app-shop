@@ -1,10 +1,12 @@
 import { Component, inject, signal, computed, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import { toObservable } from '@angular/core/rxjs-interop';
 import { DecimalPipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
+import { of, map } from 'rxjs';
 import { AuthService } from '@core/auth/auth.service';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
-import { DataTableComponent, TableColumn, TableAction, PaginationEvent } from '@shared/ui/tables/data-table/data-table.component';
+import { DataTableComponent, TableColumn, TableAction, PaginationEvent, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { AsientoService } from '../../services/asiento.service';
 import { CuentaService, CuentaContable } from '../../services/cuenta.service';
 import { PeriodoService, PeriodoContable } from '../../services/periodo.service';
@@ -190,38 +192,22 @@ interface LineaForm {
         </app-drawer>
 
         <!-- ── LISTA DE ASIENTOS ─────────────────────────────────────────────── -->
-        <div class="card">
-            <div class="card-header">
-                <div class="filters-bar">
-                    <select class="select-filter" [value]="periodoSeleccionado()"
-                            (change)="cambiarPeriodo(periodoSelect.value)"
-                            #periodoSelect>
-                        <option value="">— Seleccionar periodo —</option>
-                        @for (p of periodos(); track p.id) {
-                            <option [value]="p.id">{{ p.nombre }} ({{ p.estado }})</option>
-                        }
-                    </select>
-                    <select class="select-filter" [(ngModel)]="tipoFiltro" (change)="cargarAsientos()">
-                        <option value="">Tipo ▼</option>
-                        <option value="MANUAL">Manual</option>
-                        <option value="AUTOMATICO">Automático</option>
-                        <option value="CIERRE">Cierre</option>
-                    </select>
-                </div>
-            </div>
-
-            <app-data-table
-                [data]="asientos()"
-                [columns]="columns"
-                [actions]="tableActions"
-                [loading]="cargando()"
-                [currentPage]="currentPage()"
-                [pageSize]="pageSize()"
-                [totalElements]="asientos().length"
-                [totalPages]="totalPagesLocal()"
-                (pageChange)="onPaginationChange($event)">
-            </app-data-table>
-        </div>
+        <app-data-table
+            [data]="asientosFiltrados()"
+            [columns]="columns"
+            [actions]="tableActions"
+            [loading]="cargando()"
+            [searchable]="true"
+            searchPlaceholder="Buscar por código o descripción..."
+            [filters]="filters"
+            [currentPage]="currentPage()"
+            [pageSize]="pageSize()"
+            [totalElements]="asientosFiltrados().length"
+            [totalPages]="totalPagesLocal()"
+            (searchChange)="onSearchTerm($event)"
+            (filterChange)="onFilterChange($event)"
+            (pageChange)="onPaginationChange($event)">
+        </app-data-table>
 
         @if (mostrarModalExtorno()) {
             <div class="modal-overlay" (click)="cerrarModalExtorno()">
@@ -286,10 +272,40 @@ export class AsientosComponent implements OnInit {
     readonly error = signal<string | null>(null);
     tipoFiltro = '';
 
+    // ── Búsqueda client-side ───────────────────────────────────────────────
+    readonly searchQuery = signal('');
+    readonly asientosFiltrados = computed(() => {
+        const q = this.searchQuery().trim().toLowerCase();
+        if (!q) return this.asientos();
+        return this.asientos().filter(a =>
+            a.codigo.toLowerCase().includes(q) || a.glosa.toLowerCase().includes(q)
+        );
+    });
+
+    // ── Filtros del data-table (periodo dinámico + tipo fijo) ───────────────
+    readonly filters: FilterConfig[] = [
+        {
+            field: 'periodo',
+            label: '— Seleccionar periodo —',
+            options: toObservable(this.periodos).pipe(
+                map(list => list.map(p => ({ value: p.id, label: `${p.nombre} (${p.estado})` })))
+            )
+        },
+        {
+            field: 'tipo',
+            label: 'Tipo ▼',
+            options: of([
+                { value: 'MANUAL', label: 'Manual' },
+                { value: 'AUTOMATICO', label: 'Automático' },
+                { value: 'CIERRE', label: 'Cierre' }
+            ])
+        }
+    ];
+
     // ── Paginación local ───────────────────────────────────────────────────
     readonly currentPage = signal(0);
     readonly pageSize = signal(10);
-    readonly totalPagesLocal = computed(() => Math.ceil(this.asientos().length / this.pageSize()) || 1);
+    readonly totalPagesLocal = computed(() => Math.ceil(this.asientosFiltrados().length / this.pageSize()) || 1);
 
     // ── Formulario ─────────────────────────────────────────────────────────
     readonly mostrarForm = signal(false);
@@ -421,6 +437,19 @@ export class AsientosComponent implements OnInit {
         this.periodoSeleccionado.set(id);
         if (id) this.cargarAsientos();
         else this.asientos.set([]);
+    }
+
+    onSearchTerm(term: string) {
+        this.searchQuery.set(term);
+    }
+
+    onFilterChange(event: FilterChangeEvent) {
+        if (event.field === 'periodo') {
+            this.cambiarPeriodo(String(event.value ?? ''));
+        } else if (event.field === 'tipo') {
+            this.tipoFiltro = String(event.value ?? '');
+            this.cargarAsientos();
+        }
     }
 
     cargarAsientos() {

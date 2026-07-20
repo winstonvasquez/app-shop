@@ -70,14 +70,14 @@
             </svg>
         </button>
             </div>
-            <app-button label="Buscar" icon="search" variant="primary" size="sm"
-                (click)="onSearchTerm(searchInput.value)"></app-button>
             <select class="form-input w-auto" formControlName="filtroArea">
                 <option value="">Todas las áreas</option>
                 @for (area of areasUnicas(); track area) {
                     <option [value]="area">{{ area }}</option>
                 }
             </select>
+            <app-button label="Buscar" icon="search" variant="primary" size="sm"
+                (click)="onSearchTerm(searchInput.value)"></app-button>
     </div>
 
     <div class="card">

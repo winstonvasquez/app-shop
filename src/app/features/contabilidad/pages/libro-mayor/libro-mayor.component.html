@@ -3,6 +3,18 @@
         <div>
             <h1 class="page-title">Libro Mayor</h1>
             <p class="page-subtitle">Saldos por cuenta PCGE 2020</p>
+            @if (cuentaInfo()) {
+                <div class="header-kpis">
+                    <span class="header-kpi header-kpi--neutral">Cuenta <b>{{ cuentaInfo()!.codigo }} — {{ cuentaInfo()!.nombre }}</b></span>
+                    <span class="header-kpi">Saldo Deudor <b>{{ totalDebe() | number:'1.2-2' }}</b></span>
+                    <span class="header-kpi">Saldo Acreedor <b>{{ totalHaber() | number:'1.2-2' }}</b></span>
+                    <span class="header-kpi"
+                          [class.header-kpi--success]="(totalDebe() - totalHaber()) >= 0"
+                          [class.header-kpi--error]="(totalDebe() - totalHaber()) < 0">
+                        Saldo Neto <b>{{ (totalDebe() - totalHaber()) | number:'1.2-2' }}</b>
+                    </span>
+                </div>
+            }
         </div>
         <div class="page-actions">
             <app-button
@@ -39,15 +51,6 @@
             (click)="cargarMayor()">
         </app-button>
     </div>
-
-    @if (cuentaInfo()) {
-        <div class="flex flex-wrap gap-x-6 gap-y-1 text-sm text-subtle mb-sm">
-            <span><strong class="text-on">Cuenta:</strong> {{ cuentaInfo()!.codigo }} — {{ cuentaInfo()!.nombre }}</span>
-            <span><strong class="text-on">Saldo Deudor:</strong> {{ totalDebe() | number:'1.2-2' }}</span>
-            <span><strong class="text-on">Saldo Acreedor:</strong> {{ totalHaber() | number:'1.2-2' }}</span>
-            <span><strong class="text-on">Saldo Neto:</strong> {{ (totalDebe() - totalHaber()) | number:'1.2-2' }}</span>
-        </div>
-    }
 
     @if (error()) {
         <div class="card mb-lg">

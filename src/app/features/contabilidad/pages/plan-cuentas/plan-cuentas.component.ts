@@ -1,7 +1,8 @@
 import { Component, inject, signal, computed, OnInit, ChangeDetectionStrategy } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { of } from 'rxjs';
 import { CuentaService } from '../../services/cuenta.service';
-import { PaginationComponent, PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
+import { PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
+import { DataTableComponent, TableColumn, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
 
 interface CuentaPCGE {
     id?: string | number;
@@ -67,7 +68,7 @@ const PCGE_DEMO: CuentaPCGE[] = [
     selector: 'app-plan-cuentas',
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [FormsModule, PaginationComponent],
+    imports: [DataTableComponent],
     template: `
         <div class="page-header">
             <div>
@@ -86,112 +87,24 @@ const PCGE_DEMO: CuentaPCGE[] = [
             </div>
         </div>
 
-        <!-- Filtros -->
-        <div class="card" style="margin-bottom: var(--space-lg)">
-            <div class="filters-bar">
-                <div class="search-box">
-                    <svg class="search-box-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-                    <input
-                        class="input-field"
-                        type="text"
-                        placeholder="Buscar por código o nombre..."
-                        [value]="busqueda()"
-                        (input)="onBusquedaChange($any($event.target).value)"
-                        style="padding-left: 36px" />
-                </div>
-                <select
-                    class="input-field"
-                    [value]="tipoFiltro()"
-                    (change)="onTipoFiltroChange($any($event.target).value)"
-                    style="width: auto; min-width: 180px">
-                    <option value="TODOS">Todos los tipos</option>
-                    <option value="ACTIVO">Activo</option>
-                    <option value="PASIVO">Pasivo</option>
-                    <option value="PATRIMONIO">Patrimonio</option>
-                    <option value="GASTO">Gasto</option>
-                    <option value="INGRESO">Ingreso</option>
-                </select>
-            </div>
-        </div>
-
-        <!-- Tabla -->
-        @if (cargando()) {
-            <div class="loading-container">
-                <div class="spinner"></div>
-            </div>
-        } @else {
-            <div class="card">
-                <div class="card-body" style="padding: 0">
-                    <table class="table">
-                        <thead class="table-header">
-                            <tr>
-                                <th class="table-header-cell" style="width: 120px">Código</th>
-                                <th class="table-header-cell">Nombre</th>
-                                <th class="table-header-cell" style="width: 130px">Tipo</th>
-                                <th class="table-header-cell text-center" style="width: 80px">Nivel</th>
-                                <th class="table-header-cell text-center" style="width: 150px">Acepta Movimiento</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @for (cuenta of cuentasPaginadas(); track cuenta.codigo) {
-                                <tr class="table-row" [class.cuenta-nivel2]="cuenta.nivel === 2">
-                                    <td class="table-cell font-mono" style="font-size: 0.9rem">
-                                        {{ cuenta.codigo }}
-                                    </td>
-                                    <td class="table-cell"
-                                        [style.padding-left]="indentacion(cuenta.nivel)">
-                                        <span [class.font-bold]="cuenta.nivel === 2">{{ cuenta.nombre }}</span>
-                                    </td>
-                                    <td class="table-cell">
-                                        <span [class]="badgeTipo(cuenta.tipo)">{{ cuenta.tipo }}</span>
-                                    </td>
-                                    <td class="table-cell text-center">
-                                        {{ cuenta.nivel }}
-                                    </td>
-                                    <td class="table-cell text-center">
-                                        @if (cuenta.aceptaMovimiento) {
-                                            <span style="color: var(--color-success); font-size: 1.1rem">&#10003;</span>
-                                        } @else {
-                                            <span class="text-[var(--color-text-muted)]">—</span>
-                                        }
-                                    </td>
-                                </tr>
-                            }
-                            @if (cuentasFiltradas().length === 0) {
-                                <tr>
-                                    <td colspan="5" class="text-center text-[var(--color-text-muted)]" style="padding: 48px">
-                                        No se encontraron cuentas con los filtros aplicados.
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <app-pagination
-                [currentPage]="currentPage()"
-                [totalPages]="totalPages()"
-                [totalElements]="cuentasFiltradas().length"
-                [pageSize]="pageSize()"
-                (pageChange)="onPageChange($event)">
-            </app-pagination>
-        }
+        <app-data-table
+            [data]="cuentasPaginadas()"
+            [columns]="columns"
+            [loading]="cargando()"
+            [searchable]="true"
+            searchPlaceholder="Buscar por código o nombre..."
+            [filters]="tipoFilters"
+            [exportable]="true"
+            exportFileName="plan-cuentas"
+            [currentPage]="currentPage()"
+            [pageSize]="pageSize()"
+            [totalElements]="cuentasFiltradas().length"
+            [totalPages]="totalPages()"
+            (searchChange)="onBusquedaChange($event)"
+            (filterChange)="onFilterChangeEvent($event)"
+            (pageChange)="onPageChange($event)">
+        </app-data-table>
     `,
-    styles: [`
-        .cuenta-nivel2 {
-            background: var(--color-surface-raised);
-        }
-        .cuenta-nivel2 .table-cell {
-            font-weight: 700;
-        }
-        .font-bold {
-            font-weight: 700;
-        }
-    `]
 })
 export class PlanCuentasComponent implements OnInit {
     private cuentaService = inject(CuentaService);
@@ -202,7 +115,22 @@ export class PlanCuentasComponent implements OnInit {
     readonly busqueda = signal('');
     readonly tipoFiltro = signal<TipoFiltro>('TODOS');
 
-    // Paginación
+    // Filtro de tipo para el toolbar del data-table
+    readonly tipoFilters: FilterConfig[] = [
+        {
+            field: 'tipo',
+            label: 'Todos los tipos',
+            options: of([
+                { value: 'ACTIVO', label: 'Activo' },
+                { value: 'PASIVO', label: 'Pasivo' },
+                { value: 'PATRIMONIO', label: 'Patrimonio' },
+                { value: 'GASTO', label: 'Gasto' },
+                { value: 'INGRESO', label: 'Ingreso' },
+            ])
+        }
+    ];
+
+    // Paginación (client-side)
     readonly currentPage = signal(0);
     readonly pageSize = signal(20);
 
@@ -229,6 +157,33 @@ export class PlanCuentasComponent implements OnInit {
         Math.ceil(this.cuentasFiltradas().length / this.pageSize()) || 1
     );
 
+    columns: TableColumn<CuentaPCGE>[] = [
+        {
+            key: 'codigo', label: 'Código', width: '120px',
+            html: true, render: (r) => `<span class="font-mono text-sm">${r.codigo}</span>`
+        },
+        {
+            key: 'nombre', label: 'Nombre', html: true,
+            render: (r) => {
+                const bold = r.nivel === 2 ? ' font-bold' : '';
+                return `<span style="padding-left: ${this.indentacion(r.nivel)}; display: inline-block"`
+                    + ` class="${bold.trim()}">${r.nombre}</span>`;
+            }
+        },
+        {
+            key: 'tipo', label: 'Tipo', width: '130px',
+            html: true, render: (r) => `<span class="${this.badgeTipo(r.tipo)}">${r.tipo}</span>`
+        },
+        { key: 'nivel', label: 'Nivel', align: 'center', width: '80px' },
+        {
+            key: 'aceptaMovimiento', label: 'Acepta Movimiento', align: 'center', width: '150px',
+            html: true,
+            render: (r) => r.aceptaMovimiento
+                ? `<span style="color: var(--color-success); font-size: 1.1rem">&#10003;</span>`
+                : `<span class="text-[var(--color-text-muted)]">—</span>`
+        },
+    ];
+
     ngOnInit(): void {
         this.cuentaService.listarTodas().subscribe({
             next: (lista) => {
@@ -248,9 +203,11 @@ export class PlanCuentasComponent implements OnInit {
         this.currentPage.set(0);
     }
 
-    onTipoFiltroChange(value: string): void {
-        this.tipoFiltro.set(value as TipoFiltro);
-        this.currentPage.set(0);
+    onFilterChangeEvent(event: FilterChangeEvent): void {
+        if (event.field === 'tipo') {
+            this.tipoFiltro.set((event.value as TipoFiltro) ?? 'TODOS');
+            this.currentPage.set(0);
+        }
     }
 
     onPageChange(event: PaginationChangeEvent): void {

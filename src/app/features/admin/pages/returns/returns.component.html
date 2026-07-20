@@ -5,16 +5,14 @@
         <div>
             <h1 class="page-title">Devoluciones</h1>
             <p class="page-subtitle">Gestión de solicitudes de devolución y notas de crédito</p>
+            <div class="header-kpis">
+                <span class="header-kpi header-kpi--neutral">Total Devoluciones <b>{{ stats().total }}</b></span>
+                <span class="header-kpi header-kpi--warning">Pendientes Revisión <b>{{ stats().pendientes }}</b></span>
+                <span class="header-kpi header-kpi--success">Aprobadas <b>{{ stats().aprobadas }}</b></span>
+                <span class="header-kpi">Monto Reembolsado <b>S/ {{ stats().montoReembolsado.toFixed(2) }}</b></span>
+            </div>
         </div>
         <app-button label="Nueva Devolución" variant="primary" icon="plus" (click)="abrirNueva()" />
-    </div>
-
-    <!-- KPIs compactos (server-side /stats) -->
-    <div class="flex flex-wrap gap-x-6 gap-y-1 text-sm text-subtle mb-sm">
-        <span><strong class="text-on">Total Devoluciones:</strong> {{ stats().total }}</span>
-        <span><strong class="text-on">Pendientes Revisión:</strong> {{ stats().pendientes }}</span>
-        <span><strong class="text-on">Aprobadas:</strong> {{ stats().aprobadas }}</span>
-        <span><strong class="text-on">Monto Reembolsado:</strong> S/ {{ stats().montoReembolsado.toFixed(2) }}</span>
     </div>
 
     <!-- Tabla (server-side: search + estado + paginación 20/pág; toolbar integrado) -->

@@ -1852,3 +1852,52 @@
 .max-w-5xl { max-width: 64rem; }
 .max-w-6xl { max-width: 72rem; }
 .max-w-7xl { max-width: 80rem; }
+
+/* ============================================
+   KPIs COMPACTOS DEL PAGE-HEADER
+   Chips pequeños con color semántico, bajo el subtítulo.
+   No ensanchan el header (alto ~20px, margen mínimo).
+   ============================================ */
+.header-kpis {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin-top: 6px;
+}
+.header-kpi {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 500;
+    line-height: 1;
+    padding: 3px 9px;
+    border-radius: 9999px;
+    white-space: nowrap;
+    background: color-mix(in srgb, var(--color-primary) 8%, var(--color-surface));
+    color: var(--color-text-secondary);
+    border: 1px solid color-mix(in srgb, var(--color-primary) 20%, var(--color-border));
+
+    b, strong { font-weight: 700; color: var(--color-primary); }
+}
+.header-kpi--success {
+    background: color-mix(in srgb, var(--color-success) 10%, var(--color-surface));
+    border-color: color-mix(in srgb, var(--color-success) 30%, var(--color-border));
+    b, strong { color: var(--color-success); }
+}
+.header-kpi--warning {
+    background: color-mix(in srgb, var(--color-warning) 12%, var(--color-surface));
+    border-color: color-mix(in srgb, var(--color-warning) 35%, var(--color-border));
+    b, strong { color: color-mix(in srgb, var(--color-warning) 80%, black); }
+}
+.header-kpi--error {
+    background: color-mix(in srgb, var(--color-error) 10%, var(--color-surface));
+    border-color: color-mix(in srgb, var(--color-error) 30%, var(--color-border));
+    b, strong { color: var(--color-error); }
+}
+.header-kpi--neutral {
+    background: var(--color-surface-raised);
+    border-color: var(--color-border);
+    b, strong { color: var(--color-text-primary); }
+}

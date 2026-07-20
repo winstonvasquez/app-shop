@@ -3,6 +3,14 @@
         <div>
             <h1 class="page-title">Registro de Compras</h1>
             <p class="page-subtitle">PLE — Libro 8 · SUNAT</p>
+            @if (ordenes().length > 0) {
+                <div class="header-kpis">
+                    <span class="header-kpi header-kpi--neutral">Comprobantes <b>{{ ordenesActivas().length }}</b></span>
+                    <span class="header-kpi">Base Imponible <b>S/ {{ totalBase() | number:'1.2-2' }}</b></span>
+                    <span class="header-kpi">IGV Crédito Fiscal <b>S/ {{ totalIgv() | number:'1.2-2' }}</b></span>
+                    <span class="header-kpi">Total Compras <b>S/ {{ totalCompras() | number:'1.2-2' }}</b></span>
+                </div>
+            }
         </div>
         <div class="page-actions">
             <form [formGroup]="filterForm" class="inline-flex gap-2">
@@ -34,35 +42,6 @@
         </div>
     </div>
 
-    <div class="filters-bar">
-        <select class="form-input"
-                [value]="periodoSeleccionado()"
-                (change)="cambiarPeriodo($any($event.target).value)">
-            <option value="">— Seleccionar periodo —</option>
-            @for (p of periodos(); track p.id) {
-                <option [value]="p.id">{{ p.nombre }} ({{ p.estado }})</option>
-            }
-        </select>
-        <form [formGroup]="filterForm">
-            <select class="form-input" formControlName="estadoFiltro" (change)="cargar()">
-                <option value="">Todos los estados</option>
-                @for (opt of estadoOptions; track opt.value) {
-                    <option [value]="opt.value">{{ opt.label }}</option>
-                }
-            </select>
-        </form>
-        <app-button label="Buscar" variant="primary" icon="search" (click)="cargar()"></app-button>
-    </div>
-
-    @if (ordenes().length > 0) {
-        <div class="flex flex-wrap gap-x-6 gap-y-1 text-sm text-subtle mb-sm">
-            <span><strong class="text-on">Comprobantes:</strong> {{ ordenesActivas().length }}</span>
-            <span><strong class="text-on">Base Imponible:</strong> S/ {{ totalBase() | number:'1.2-2' }}</span>
-            <span><strong class="text-on">IGV Crédito Fiscal:</strong> S/ {{ totalIgv() | number:'1.2-2' }}</span>
-            <span><strong class="text-on">Total Compras:</strong> S/ {{ totalCompras() | number:'1.2-2' }}</span>
-        </div>
-    }
-
     @if (error()) {
         <div class="card mb-lg">
             <div class="card-body" style="color:var(--color-error);text-align:center">{{ error() }}</div>
@@ -70,11 +49,16 @@
     }
 
     <app-data-table
-        [data]="ordenes()"
+        [data]="ordenesFiltradas()"
         [columns]="columns"
         [loading]="cargando()"
+        [searchable]="true"
+        searchPlaceholder="Buscar por código o proveedor..."
+        (searchChange)="onSearchTerm($event)"
+        [filters]="filtros"
+        (filterChange)="onFilterChange($event)"
         [totalPages]="1"
-        [totalElements]="ordenes().length"
+        [totalElements]="ordenesFiltradas().length"
         [currentPage]="0"
         [pageSize]="200">
     </app-data-table>

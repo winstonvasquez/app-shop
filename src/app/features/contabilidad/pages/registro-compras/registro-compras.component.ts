@@ -1,12 +1,14 @@
 import { Component, inject, signal, computed, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import { toObservable } from '@angular/core/rxjs-interop';
 import { DecimalPipe } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
+import { of, map } from 'rxjs';
 import { PeriodoService, PeriodoContable } from '../../services/periodo.service';
 import { OrdenCompraService } from '../../../compras/services/orden-compra.service';
 import { PleService } from '../../services/ple.service';
 import { OrdenCompra } from '../../../compras/models/orden-compra.model';
 import { ExportService } from '@shared/services/export.service';
-import { DataTableComponent, TableColumn } from '@shared/ui/tables/data-table/data-table.component';
+import { DataTableComponent, TableColumn, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { ButtonComponent } from '@shared/components';
 
 @Component({
@@ -24,12 +26,13 @@ export class RegistroComprasComponent implements OnInit {
     private fb = inject(FormBuilder);
 
     filterForm = this.fb.group({
-        estadoFiltro: [''],
         rucEmpresa: [''],
     });
 
     periodos = signal<PeriodoContable[]>([]);
     periodoSeleccionado = signal<string>('');
+    estadoFiltro = signal<string>('');
+    searchQuery = signal<string>('');
     ordenes = signal<OrdenCompra[]>([]);
     cargando = signal(false);
     error = signal<string | null>(null);
@@ -40,6 +43,22 @@ export class RegistroComprasComponent implements OnInit {
         { value: 'PENDIENTE', label: 'Pendientes' },
         { value: 'RECIBIDA',  label: 'Recibidas' },
         { value: 'CANCELADA', label: 'Canceladas' },
+    ];
+
+    // Filtros del toolbar del data-table: periodo (dinámico) + estado (estático)
+    filtros: FilterConfig[] = [
+        {
+            field: 'periodo',
+            label: '— Seleccionar periodo —',
+            options: toObservable(this.periodos).pipe(
+                map(list => list.map(p => ({ value: p.id, label: `${p.nombre} (${p.estado})` })))
+            )
+        },
+        {
+            field: 'estado',
+            label: 'Todos los estados',
+            options: of(this.estadoOptions)
+        }
     ];
 
     columns: TableColumn<OrdenCompra>[] = [
@@ -64,6 +83,16 @@ export class RegistroComprasComponent implements OnInit {
     readonly totalIgv = computed(() => this.ordenesActivas().reduce((s, o) => s + (o.igv ?? 0), 0));
     readonly totalCompras = computed(() => this.ordenesActivas().reduce((s, o) => s + (o.total ?? 0), 0));
 
+    /** Búsqueda client-side por código o proveedor sobre lo ya cargado del periodo/estado seleccionado. */
+    readonly ordenesFiltradas = computed(() => {
+        const q = this.searchQuery().trim().toLowerCase();
+        if (!q) return this.ordenes();
+        return this.ordenes().filter(o =>
+            (o.codigo ?? '').toLowerCase().includes(q) ||
+            (o.proveedorNombre ?? '').toLowerCase().includes(q)
+        );
+    });
+
     ngOnInit() {
         this.periodoService.listar().subscribe({
             next: (lista) => {
@@ -83,11 +112,26 @@ export class RegistroComprasComponent implements OnInit {
         this.ordenes.set([]);
     }
 
+    /** Maneja los selects del toolbar del data-table (periodo dinámico + estado estático). */
+    onFilterChange(event: FilterChangeEvent): void {
+        if (event.field === 'periodo') {
+            this.cambiarPeriodo(event.value != null ? String(event.value) : '');
+            if (this.periodoSeleccionado()) this.cargar();
+        } else if (event.field === 'estado') {
+            this.estadoFiltro.set(event.value != null ? String(event.value) : '');
+            this.cargar();
+        }
+    }
+
+    onSearchTerm(term: string): void {
+        this.searchQuery.set(term);
+    }
+
     cargar() {
         if (!this.periodoSeleccionado()) return;
         this.cargando.set(true);
         this.error.set(null);
-        const estadoFiltro = this.filterForm.value.estadoFiltro || undefined;
+        const estadoFiltro = this.estadoFiltro() || undefined;
         this.ordenCompraService.getOrdenes(0, 200, estadoFiltro).subscribe({
             next: (page) => {
                 this.ordenes.set(page.content ?? []);

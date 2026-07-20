@@ -3,17 +3,15 @@
   <app-page-header
     title="Control de Cajas"
     subtitle="Gestión de cajas registradoras y arqueos">
+    <div meta class="header-kpis">
+      <span class="header-kpi header-kpi--success">Cajas Abiertas <b>{{ cajasAbiertas() }}</b></span>
+      <span class="header-kpi header-kpi--neutral">Cajas Cerradas <b>{{ cajasCerradas() }}</b></span>
+      <span class="header-kpi">Saldo Total (abiertas) <b>S/ {{ saldoTotal() | number:'1.2-2' }}</b></span>
+    </div>
     <div actions>
       <app-button icon="plus" label="Nueva Caja" variant="primary" (click)="openCreateDrawer()" />
     </div>
   </app-page-header>
-
-  <!-- KPIs -->
-  <div class="flex flex-wrap gap-x-6 gap-y-1 text-sm text-subtle mb-sm">
-    <span><strong class="text-on">Cajas Abiertas:</strong> {{ cajasAbiertas() }}</span>
-    <span><strong class="text-on">Cajas Cerradas:</strong> {{ cajasCerradas() }}</span>
-    <span><strong class="text-on">Saldo Total (abiertas):</strong> S/ {{ saldoTotal() | number:'1.2-2' }}</span>
-  </div>
 
   <!-- Tabla -->
   <app-data-table

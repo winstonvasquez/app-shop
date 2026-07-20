@@ -24,7 +24,6 @@
                             </button>
                         }
                     </div>
-                    <app-button label="Buscar" icon="search" variant="primary" size="sm" (click)="onSearchSubmit()" />
                 </div>
             }
             @for (filter of filters(); track filter.field) {
@@ -41,6 +40,10 @@
             <div class="table-toolbar-extra">
                 <ng-content select="[toolbarExtra]"></ng-content>
             </div>
+            <!-- El botón Buscar SIEMPRE al final de los filtros -->
+            @if (searchable()) {
+                <app-button label="Buscar" icon="search" variant="primary" size="sm" (click)="onSearchSubmit()" />
+            }
             @if (exportable()) {
                 <div class="table-export-buttons">
                     <app-button label="CSV" icon="download" variant="secondary" size="sm" (click)="onExportCsv()" />

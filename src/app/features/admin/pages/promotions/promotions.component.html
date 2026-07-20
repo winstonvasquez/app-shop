@@ -5,15 +5,13 @@
         <div>
             <h1 class="page-title">Promociones</h1>
             <p class="page-subtitle">Campañas, descuentos y cupones para tus clientes</p>
+            <div class="header-kpis">
+                <span class="header-kpi header-kpi--success">Activas <b>{{ totalActivas() }}</b></span>
+                <span class="header-kpi header-kpi--warning">Próximas a Vencer <b>{{ proximasAVencer() }}</b></span>
+                <span class="header-kpi header-kpi--error">Vencidas <b>{{ totalVencidas() }}</b></span>
+            </div>
         </div>
         <app-button label="Nueva Promoción" icon="plus" variant="primary" (click)="abrirNueva()" />
-    </div>
-
-    <!-- Métricas compactas -->
-    <div class="flex flex-wrap gap-x-6 gap-y-1 text-sm text-subtle mb-sm">
-        <span><strong class="text-on">Activas:</strong> {{ totalActivas() }}</span>
-        <span><strong class="text-on">Próximas a vencer (7d):</strong> {{ proximasAVencer() }}</span>
-        <span><strong class="text-on">Vencidas:</strong> {{ totalVencidas() }}</span>
     </div>
 
     <!-- Filtros -->

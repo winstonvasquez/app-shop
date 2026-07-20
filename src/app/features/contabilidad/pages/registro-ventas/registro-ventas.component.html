@@ -3,6 +3,14 @@
         <div>
             <h1 class="page-title">Registro de Ventas</h1>
             <p class="page-subtitle">PLE — Libro 14 · SUNAT</p>
+            @if (ventas().length > 0) {
+                <div class="header-kpis">
+                    <span class="header-kpi header-kpi--neutral">Comprobantes <b>{{ ventas().length }}</b></span>
+                    <span class="header-kpi">Base Imponible <b>S/ {{ totalBase().toFixed(2) }}</b></span>
+                    <span class="header-kpi">IGV (18%) <b>S/ {{ totalIgv().toFixed(2) }}</b></span>
+                    <span class="header-kpi">Total Ventas <b>S/ {{ totalVentas().toFixed(2) }}</b></span>
+                </div>
+            }
         </div>
         <div class="page-actions">
             <input class="form-input" type="text" maxlength="11" placeholder="RUC (11 dígitos)"
@@ -50,15 +58,6 @@
     @if (error()) {
         <div class="card mb-lg">
             <div class="card-body" style="color:var(--color-error);text-align:center">{{ error() }}</div>
-        </div>
-    }
-
-    @if (ventas().length > 0) {
-        <div class="flex flex-wrap gap-x-6 gap-y-1 text-sm text-subtle mb-sm">
-            <span><strong class="text-on">Comprobantes:</strong> {{ ventas().length }}</span>
-            <span><strong class="text-on">Base Imponible:</strong> S/ {{ totalBase().toFixed(2) }}</span>
-            <span><strong class="text-on">IGV (18%):</strong> S/ {{ totalIgv().toFixed(2) }}</span>
-            <span><strong class="text-on">Total Ventas:</strong> S/ {{ totalVentas().toFixed(2) }}</span>
         </div>
     }
 

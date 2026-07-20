@@ -6,15 +6,13 @@
     <div actions>
       <app-button icon="plus" label="Nuevo Pago" variant="primary" (click)="openCreateDrawer()" />
     </div>
+    <div meta class="header-kpis">
+      <span class="header-kpi header-kpi--warning">Pendientes <b>{{ countPendientes() }}</b></span>
+      <span class="header-kpi header-kpi--success">Aprobados <b>{{ countAprobados() }}</b></span>
+      <span class="header-kpi header-kpi--neutral">Pagados <b>{{ countPagados() }}</b></span>
+      <span class="header-kpi">Total comprometido <b>S/ {{ totalComprometido() | number:'1.2-2' }}</b></span>
+    </div>
   </app-page-header>
-
-  <!-- Resumen -->
-  <div class="flex flex-wrap gap-x-6 gap-y-1 text-sm text-subtle mb-sm">
-    <span><strong class="text-on">Pendientes:</strong> {{ countPendientes() }}</span>
-    <span><strong class="text-on">Aprobados:</strong> {{ countAprobados() }}</span>
-    <span><strong class="text-on">Pagados:</strong> {{ countPagados() }}</span>
-    <span><strong class="text-on">Total comprometido:</strong> S/ {{ totalComprometido() | number:'1.2-2' }}</span>
-  </div>
 
   <!-- Tabla -->
   <app-data-table

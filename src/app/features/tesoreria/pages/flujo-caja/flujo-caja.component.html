@@ -3,6 +3,11 @@
   <app-page-header
     title="Flujo de Caja"
     subtitle="Movimientos financieros del periodo">
+    <div meta class="header-kpis">
+      <span class="header-kpi header-kpi--success">Ingresos del periodo <b>S/ {{ ingresos() | number:'1.2-2' }}</b></span>
+      <span class="header-kpi header-kpi--error">Egresos del periodo <b>S/ {{ egresos() | number:'1.2-2' }}</b></span>
+      <span class="header-kpi">Flujo de Caja Neto <b>S/ {{ flujoCajaNeto() | number:'1.2-2' }}</b></span>
+    </div>
     <div actions>
       <app-button icon="plus" label="Nuevo Movimiento" variant="primary" (click)="openCreateDrawer()" />
     </div>
@@ -27,13 +32,6 @@
         (change)="fechaFin.set($any($event.target).value)">
     </div>
     <app-button icon="search" label="Consultar" variant="primary" size="sm" (click)="consultar()" />
-  </div>
-
-  <!-- KPIs -->
-  <div class="flex flex-wrap gap-x-6 gap-y-1 text-sm text-subtle mb-sm">
-    <span><strong class="text-on">Ingresos del periodo:</strong> S/ {{ ingresos() | number:'1.2-2' }}</span>
-    <span><strong class="text-on">Egresos del periodo:</strong> S/ {{ egresos() | number:'1.2-2' }}</span>
-    <span><strong class="text-on">Flujo de Caja Neto:</strong> S/ {{ flujoCajaNeto() | number:'1.2-2' }}</span>
   </div>
 
   <!-- Tabla -->

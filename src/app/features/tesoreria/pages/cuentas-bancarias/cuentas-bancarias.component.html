@@ -3,17 +3,15 @@
   <app-page-header
     title="Cuentas Bancarias"
     subtitle="Gestión de cuentas bancarias del tenant">
+    <div meta class="header-kpis">
+      <span class="header-kpi">Saldo PEN <b>S/ {{ saldoTotalPEN() | number:'1.2-2' }} ({{ cuentasPEN() }})</b></span>
+      <span class="header-kpi">Saldo USD <b>$ {{ saldoTotalUSD() | number:'1.2-2' }} ({{ cuentasUSD() }})</b></span>
+      <span class="header-kpi header-kpi--neutral">Detracciones <b>S/ {{ saldoDetracciones() | number:'1.2-2' }}</b></span>
+    </div>
     <div actions>
       <app-button icon="plus" label="Nueva Cuenta" variant="primary" (click)="openCreateDrawer()" />
     </div>
   </app-page-header>
-
-  <!-- Resumen por moneda -->
-  <div class="flex flex-wrap gap-x-6 gap-y-1 text-sm text-subtle mb-sm">
-    <span><strong class="text-on">Saldo PEN:</strong> S/ {{ saldoTotalPEN() | number:'1.2-2' }} ({{ cuentasPEN() }} cuentas en soles)</span>
-    <span><strong class="text-on">Saldo USD:</strong> $ {{ saldoTotalUSD() | number:'1.2-2' }} ({{ cuentasUSD() }} cuentas en dólares)</span>
-    <span><strong class="text-on">Detracciones:</strong> S/ {{ saldoDetracciones() | number:'1.2-2' }} (Banco de la Nación)</span>
-  </div>
 
   <!-- Tabla -->
   <app-data-table

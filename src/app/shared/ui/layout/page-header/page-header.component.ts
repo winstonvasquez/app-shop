@@ -30,6 +30,8 @@ export interface Breadcrumb {
                 @if (subtitle()) {
                     <p class="page-subtitle">{{ subtitle() }}</p>
                 }
+                <!-- Slot para KPIs compactos del header (uso: <div meta class="header-kpis">...) -->
+                <ng-content select="[meta]"></ng-content>
             </div>
         </div>
 

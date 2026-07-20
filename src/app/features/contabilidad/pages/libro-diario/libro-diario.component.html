@@ -3,6 +3,17 @@
         <div>
             <h1 class="page-title">Libro Diario</h1>
             <p class="page-subtitle">PCGE 2020 · Partida doble</p>
+            @if (lineas().length > 0) {
+                <div class="header-kpis">
+                    <span class="header-kpi">Total Debe <b>S/ {{ totalDebe().toFixed(2) }}</b></span>
+                    <span class="header-kpi">Total Haber <b>S/ {{ totalHaber().toFixed(2) }}</b></span>
+                    @if (cuadra()) {
+                        <span class="header-kpi header-kpi--success">Cuadre <b>Cuadra</b></span>
+                    } @else {
+                        <span class="header-kpi header-kpi--error">Cuadre <b>No cuadra</b></span>
+                    }
+                </div>
+            }
         </div>
         <div class="page-actions">
             <app-button
@@ -47,20 +58,6 @@
             <div class="card-body" style="color:var(--color-error);text-align:center">
                 {{ error() }}
             </div>
-        </div>
-    }
-
-    @if (lineas().length > 0) {
-        <div class="flex flex-wrap gap-x-6 gap-y-1 text-sm text-subtle mb-sm">
-            <span><strong class="text-on">Total Debe:</strong> <span class="font-mono">S/ {{ totalDebe().toFixed(2) }}</span></span>
-            <span><strong class="text-on">Total Haber:</strong> <span class="font-mono">S/ {{ totalHaber().toFixed(2) }}</span></span>
-            <span><strong class="text-on">Cuadre:</strong>
-                @if (cuadra()) {
-                    <span class="badge badge-success">Cuadra</span>
-                } @else {
-                    <span class="badge badge-error">No cuadra</span>
-                }
-            </span>
         </div>
     }
 
