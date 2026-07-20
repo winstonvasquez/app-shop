@@ -58,44 +58,23 @@
                 </button>
             </div>
         </form>
-    } @else if (sucursales().length === 0) {
-        <p class="empty">No hay sucursales. Crea la primera para esta empresa.</p>
     } @else {
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>Nombre</th>
-                    <th>Dirección</th>
-                    <th>Series CPE</th>
-                    <th>Estado</th>
-                    <th class="actions-col">Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                @for (s of sucursales(); track s.id) {
-                    <tr [class.inactive]="!s.activo">
-                        <td><strong>{{ s.nombre }}</strong></td>
-                        <td>
-                            {{ s.direccion || '—' }}
-                            @if (s.ubigeo) { <small> · ubigeo {{ s.ubigeo }}</small> }
-                        </td>
-                        <td>
-                            <small>{{ s.serieBoleta || '—' }} / {{ s.serieFactura || '—' }}</small>
-                        </td>
-                        <td>
-                            <span class="badge" [class.badge-active]="s.activo" [class.badge-inactive]="!s.activo">
-                                {{ s.activo ? 'Activa' : 'Inactiva' }}
-                            </span>
-                        </td>
-                        <td class="actions-col">
-                            <button class="btn-link" (click)="openEdit(s)">Editar</button>
-                            @if (s.activo) {
-                                <button class="btn-link danger" (click)="deactivate(s)">Desactivar</button>
-                            }
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
+        <!-- Tabla estándar (búsqueda con X + Buscar + export, paginación empalmada) -->
+        <app-data-table
+            [data]="pagedData()"
+            [columns]="columns"
+            [actions]="actions"
+            [loading]="loading()"
+            [searchable]="true"
+            searchPlaceholder="Buscar por nombre o dirección..."
+            [exportable]="true"
+            exportFileName="sucursales"
+            [currentPage]="currentPage()"
+            [pageSize]="pageSize()"
+            [totalElements]="totalElements()"
+            [totalPages]="totalPages()"
+            (searchChange)="onSearchTerm($event)"
+            (pageChange)="onPageChange($event)">
+        </app-data-table>
     }
 </div>
