@@ -172,11 +172,20 @@
                 </div>
             }
 
-            <!-- Loading -->
+            <!-- Loading (Skeleton Shimmer) -->
             @if (loading()) {
-                <div class="state">
-                    <div class="spinner"></div>
-                    <p>Cargando productos…</p>
+                <div class="grid" [class.is-list]="viewMode() === 'list'">
+                    @for (item of [1,2,3,4,5,6,7,8]; track $index) {
+                        <div class="skeleton-card" [class.is-list]="viewMode() === 'list'">
+                            <div class="sk-media"></div>
+                            <div class="sk-body">
+                                <div class="sk-line sk-tag"></div>
+                                <div class="sk-line sk-title"></div>
+                                <div class="sk-line sk-price"></div>
+                                <div class="sk-line sk-btn"></div>
+                            </div>
+                        </div>
+                    }
                 </div>
             }
 
@@ -190,14 +199,21 @@
                 </div>
             }
 
-            <!-- Grid -->
+            <!-- Grid / List -->
             @if (!loading() && products().length) {
                 <div class="grid" [class.is-list]="viewMode() === 'list'">
                     @for (p of products(); track p.id) {
-                        <ds-product-card
-                            [p]="p"
-                            (cardClick)="onCardClick($event)"
-                            (addToCart)="onAddToCart($event)"/>
+                        @if (viewMode() === 'list') {
+                            <ds-product-row
+                                [p]="p"
+                                (click)="onCardClick(p)"
+                                (addToCart)="onAddToCart($event)"/>
+                        } @else {
+                            <ds-product-card
+                                [p]="p"
+                                (cardClick)="onCardClick($event)"
+                                (addToCart)="onAddToCart($event)"/>
+                        }
                     }
                 </div>
 
@@ -429,8 +445,85 @@
         display: grid;
         grid-template-columns: repeat(4, 1fr);
         gap: 12px;
+        align-content: start;
     }
-    .grid.is-list { grid-template-columns: 1fr; }
+    .grid.is-list {
+        grid-template-columns: 1fr;
+        gap: 4px;
+    }
+    .grid ::ng-deep article {
+        margin-bottom: 0 !important;
+    }
+
+    /* Skeletons */
+    .skeleton-card {
+        background: var(--c-surface);
+        border: 1px solid var(--c-border);
+        border-radius: var(--r-lg);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        position: relative;
+    }
+    .skeleton-card.is-list {
+        flex-direction: row;
+        gap: 16px;
+        padding: 16px;
+    }
+    .sk-media {
+        aspect-ratio: 1;
+        background: var(--c-surface2);
+        position: relative;
+        overflow: hidden;
+    }
+    .skeleton-card.is-list .sk-media {
+        width: 140px;
+        height: 140px;
+        border-radius: var(--r-md);
+        flex-shrink: 0;
+    }
+    .sk-body {
+        padding: 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        flex: 1;
+    }
+    .skeleton-card.is-list .sk-body {
+        padding: 0;
+        justify-content: center;
+    }
+    .sk-line {
+        height: 12px;
+        background: var(--c-surface2);
+        border-radius: 4px;
+        position: relative;
+        overflow: hidden;
+    }
+    .sk-tag { width: 30%; }
+    .sk-title { width: 80%; height: 16px; }
+    .sk-price { width: 45%; }
+    .sk-btn { width: 100%; height: 32px; margin-top: auto; border-radius: var(--r-md); }
+    .skeleton-card.is-list .sk-btn { width: 120px; }
+
+    /* Shimmer Animation Effect */
+    .sk-media::after,
+    .sk-line::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        transform: translateX(-100%);
+        background: linear-gradient(90deg, 
+            transparent 0%, 
+            color-mix(in srgb, var(--c-surface2) 60%, var(--c-border)) 50%, 
+            transparent 100%
+        );
+        animation: shimmer 1.6s infinite;
+    }
+    @keyframes shimmer {
+        100% { transform: translateX(100%); }
+    }
 
     /* States */
     .state {

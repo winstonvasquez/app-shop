@@ -53,7 +53,7 @@ import { ProductResponse } from '@core/models/product.model';
                             <lucide-icon name="x" [size]="16"/>
                         </button>
                     }
-                    <button type="submit" class="btn" aria-label="Buscar">
+                    <button type="submit" class="search-btn" aria-label="Buscar">
                         <lucide-icon name="search" [size]="20"/>
                     </button>
 
@@ -185,23 +185,27 @@ import { ProductResponse } from '@core/models/product.model';
             display: inline-flex; align-items: center;
         }
         .clear:hover { color: var(--c-text); }
-        .btn {
+        .search-btn {
             background: var(--c-accent); border: none;
-            padding: 0 20px; cursor: pointer;
+            margin: 0; padding: 0 20px; cursor: pointer;
             color: var(--c-onAccent, #1a1a1a);
             display: inline-flex; align-items: center; justify-content: center;
             transition: filter 120ms;
+            height: 100%; align-self: stretch;
+            border-radius: 0;
             border-top-right-radius: calc(var(--r-md) - 2px);
             border-bottom-right-radius: calc(var(--r-md) - 2px);
         }
-        .btn:hover { filter: brightness(1.06); }
+        .search-btn:hover { filter: brightness(1.06); }
 
         /* Dropdown sugerencias */
         .dropdown {
             position: absolute; top: calc(100% + 6px); left: 0; right: 0;
-            background: var(--c-surface);
+            background: color-mix(in srgb, var(--c-surface) 86%, transparent);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
             color: var(--c-text);
-            border: 1px solid var(--c-border);
+            border: 1px solid color-mix(in srgb, var(--c-border) 45%, transparent);
             border-radius: var(--r-lg);
             box-shadow: var(--s-lg);
             padding: 16px;

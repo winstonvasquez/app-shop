@@ -25,7 +25,8 @@ export interface DsCategoryTile {
                     [label]="c().name"
                     [tone]="c().tone ?? 0"
                     [ratio]="1.4"
-                    [src]="c().image ?? null"/>
+                    [src]="c().image ?? null"
+                    [fullBleed]="true"/>
                 <div class="overlay"></div>
             </div>
             <div class="body">
@@ -61,7 +62,8 @@ export interface DsCategoryTile {
         }
         .tile:hover {
             transform: translateY(-4px);
-            box-shadow: var(--s-lg);
+            box-shadow: 0 16px 36px -12px color-mix(in srgb, var(--c-brand) 32%, transparent), 
+                        0 4px 16px -6px rgba(0,0,0,0.06);
             border-color: var(--c-brand);
         }
 

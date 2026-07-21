@@ -50,6 +50,7 @@ export class PosCatalogComponent implements OnInit, AfterViewInit, OnDestroy {
     readonly favoritoSelected = output<PosFavorito>();
     readonly favoritoRemoved = output<PosFavorito>();
     readonly addToFavorites = output<ProductoCatalogoPOS>();
+    readonly scanTriggered = output<void>();
 
     // ── Computed ──────────────────────────────────────────────────
     readonly categorias = computed(() =>

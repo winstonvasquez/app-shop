@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, input, output } from '@angular/core';
+import { Component, ChangeDetectionStrategy, input, output, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { TurnoCaja } from '../../models/turno-caja.model';
 
@@ -19,4 +19,25 @@ export class PosTopbarComponent {
     readonly abrirTurno = output<void>();
     readonly cerrarTurno = output<void>();
     readonly navigate = output<PosScreen>();
+
+    readonly isFullscreen = signal(false);
+
+    constructor() {
+        if (typeof document !== 'undefined') {
+            document.addEventListener('fullscreenchange', () => {
+                this.isFullscreen.set(!!document.fullscreenElement);
+            });
+        }
+    }
+
+    toggleFullscreen(): void {
+        if (typeof document === 'undefined') return;
+        if (document.fullscreenElement) {
+            document.exitFullscreen();
+        } else {
+            document.documentElement.requestFullscreen().catch(err => {
+                console.error('Error attempting to enable full-screen mode:', err);
+            });
+        }
+    }
 }

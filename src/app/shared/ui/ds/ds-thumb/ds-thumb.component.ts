@@ -12,7 +12,8 @@ import { Component, input, computed, ChangeDetectionStrategy } from '@angular/co
     template: `
         <div class="thumb" [style]="containerStyle()">
             @if (src(); as s) {
-                <img [src]="s" [alt]="label()" loading="lazy" class="img"/>
+                <img [src]="s" [alt]="label()" loading="lazy" class="img" [class.full-bleed]="fullBleed()"/>
+                <div class="thumb-overlay"></div>
             } @else {
                 <span class="mark">{{ initials() }}</span>
             }
@@ -31,6 +32,19 @@ import { Component, input, computed, ChangeDetectionStrategy } from '@angular/co
             position: absolute; inset: 0;
             width: 100%; height: 100%;
             object-fit: contain; padding: 8%;
+            mix-blend-mode: var(--c-image-blend, multiply);
+            transition: transform 0.4s cubic-bezier(0,0,.2,1);
+        }
+        .img.full-bleed {
+            object-fit: cover;
+            padding: 0;
+            mix-blend-mode: normal;
+        }
+        .thumb-overlay {
+            position: absolute; inset: 0;
+            pointer-events: none;
+            background: radial-gradient(circle, transparent 65%, rgba(0, 0, 0, 0.04) 100%);
+            z-index: 1;
         }
         .mark {
             font-family: var(--f-display);
@@ -40,6 +54,7 @@ import { Component, input, computed, ChangeDetectionStrategy } from '@angular/co
         }
         .badge-slot {
             position: absolute; top: 8px; left: 8px;
+            z-index: 2;
         }
     `],
 })
@@ -48,6 +63,7 @@ export class DsThumbComponent {
     tone = input<number>(0);
     ratio = input<number>(1);
     src = input<string | null>(null);
+    fullBleed = input<boolean>(false);
 
     private readonly palette = [
         'linear-gradient(135deg,#FFE0B0,#FFC189)',

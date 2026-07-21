@@ -8,7 +8,13 @@
 
         <!-- Product image -->
         <img [src]="product().image" [alt]="product().name" class="absolute inset-0 w-full h-full object-contain p-4
-                   group-hover:scale-[1.08] transition-transform duration-500 ease-out" loading="lazy" />
+                   group-hover:scale-[1.08] transition-transform duration-500 ease-out"
+             style="mix-blend-mode: var(--c-image-blend, multiply);" loading="lazy" />
+
+        <!-- Fusión inferior y viñeteado sutil -->
+        <div class="absolute inset-0 pointer-events-none z-[1]"
+            style="background: linear-gradient(to bottom, transparent 72%, var(--color-surface) 100%),
+                        radial-gradient(circle at center, transparent 40%, rgba(0,0,0,0.03) 100%);"></div>
 
         <!-- Discount badge — DS Style -->
         @if (product().discount) {

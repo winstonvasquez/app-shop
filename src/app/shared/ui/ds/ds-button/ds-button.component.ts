@@ -41,7 +41,7 @@ export type DsButtonSize = 'sm' | 'md' | 'lg' | 'xl';
             transition: background 120ms, transform 80ms, filter 120ms;
         }
         button:not(:disabled):hover { filter: brightness(1.06); }
-        button:not(:disabled):active { transform: translateY(1px); }
+        button:not(:disabled):active { transform: scale(0.96); }
         button:disabled { cursor: not-allowed; opacity: .5; }
         .lbl:empty { display: none; }
     `],

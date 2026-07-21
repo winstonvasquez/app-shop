@@ -144,6 +144,7 @@
     --c-priceOld:  var(--color-price-old);
     --c-headerBg:  var(--color-header-bg);
     --c-headerFg:  var(--color-header-fg);
+    --c-image-blend: multiply;
 }
 
 /* ──────────────────────────────────────────────────────────────
@@ -221,6 +222,7 @@
     --c-priceOld: var(--color-price-old);
     --c-headerBg: var(--color-header-bg);
     --c-headerFg: var(--color-header-fg);
+    --c-image-blend: normal;
 }
 
 /* ──────────────────────────────────────────────────────────────
@@ -290,6 +292,7 @@
     --c-info:     var(--color-info);
     --c-headerBg: var(--color-header-bg);
     --c-headerFg: var(--color-header-fg);
+    --c-image-blend: multiply;
 }
 
 /* ──────────────────────────────────────────────────────────────

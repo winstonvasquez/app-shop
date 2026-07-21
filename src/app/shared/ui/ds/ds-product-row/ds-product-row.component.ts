@@ -79,6 +79,14 @@ import { DsProduct } from '../ds-product-card/ds-product-card.component';
             background: var(--c-surface);
             border: 1px solid var(--c-border);
             border-radius: var(--r-lg);
+            cursor: pointer;
+            transition: transform 120ms, box-shadow 120ms, border-color 120ms;
+        }
+        .row:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 28px -10px color-mix(in srgb, var(--c-brand) 30%, transparent), 
+                        0 4px 12px -5px rgba(0,0,0,0.06);
+            border-color: var(--c-brand);
         }
         .thumb-slot { width: 140px; flex-shrink: 0; }
         .info {

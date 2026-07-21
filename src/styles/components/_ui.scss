@@ -109,7 +109,8 @@
                     box-shadow var(--transition-slow) var(--ease-out);
         &:hover {
             transform: translateY(-4px);
-            box-shadow: var(--s-xl);
+            box-shadow: 0 16px 36px -12px color-mix(in srgb, var(--color-primary) 32%, transparent), 
+                        0 4px 16px -6px rgba(0,0,0,0.06);
         }
     }
 

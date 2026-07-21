@@ -17,6 +17,7 @@ import {
     DsProduct,
     DsButtonComponent,
     DsStarsComponent,
+    DsProductRowComponent,
 } from '@shared/ui/ds';
 
 const PAGE_SIZE = 20;
@@ -39,6 +40,7 @@ interface ShippingFilter {
         TranslateModule,
         LucideAngularModule,
         DsProductCardComponent,
+        DsProductRowComponent,
         DsButtonComponent,
         DsStarsComponent,
     ],

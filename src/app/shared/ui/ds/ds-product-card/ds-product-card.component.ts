@@ -117,9 +117,21 @@ export interface DsProduct {
         }
         .card:hover {
             transform: translateY(-2px);
-            box-shadow: var(--s-md);
+            box-shadow: 0 12px 28px -10px color-mix(in srgb, var(--c-brand) 30%, transparent), 
+                        0 4px 12px -5px rgba(0,0,0,0.06);
         }
-        .media { position: relative; }
+        .media { position: relative; overflow: hidden; }
+        .media::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to bottom, transparent 72%, var(--c-surface) 100%);
+            pointer-events: none;
+            z-index: 1;
+        }
+        .card:hover :deep(.img) {
+            transform: scale(1.05);
+        }
         .badge-abs { position: absolute; top: 8px; left: 8px; z-index: 2; }
         .fav {
             position: absolute; top: 8px; right: 8px; z-index: 2;
@@ -134,7 +146,10 @@ export interface DsProduct {
         .flash {
             position: absolute; bottom: 8px; left: 8px; right: 8px;
             padding: 4px 8px;
-            background: rgba(0,0,0,.7); color: #fff;
+            background: linear-gradient(135deg, #F08C00 0%, #C0392B 100%);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 4px 10px rgba(192, 57, 43, 0.15);
+            color: #fff;
             border-radius: var(--r-sm);
             font-size: 11px; font-weight: 700;
             display: flex; align-items: center; justify-content: space-between;

@@ -72,155 +72,163 @@ interface LineaDevolucion {
 
     <!-- Venta encontrada -->
     @if (ventaSeleccionada(); as venta) {
-      <div class="rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] overflow-hidden mb-4">
-        <!-- Header de la venta -->
-        <div class="flex items-center justify-between px-4 py-3 border-b border-[var(--color-border)]">
-          <div class="flex items-center gap-3">
-            <span class="font-bold text-on">{{ venta.numeroTicket }}</span>
-            <span class="text-xs font-mono text-muted">ID: {{ venta.id }}</span>
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start mb-4">
+        
+        <!-- Columna Izquierda: Detalle de venta y Tabla de items -->
+        <div class="lg:col-span-2 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] overflow-hidden">
+          <!-- Header de la venta -->
+          <div class="flex items-center justify-between px-4 py-3 border-b border-[var(--color-border)]">
+            <div class="flex items-center gap-3">
+              <span class="font-bold text-on">{{ venta.numeroTicket }}</span>
+              <span class="text-xs font-mono text-muted">ID: {{ venta.id }}</span>
+            </div>
+            <span class="text-xs font-bold px-2.5 py-1 rounded-full"
+                [class]="venta.estado === 'COMPLETADA'
+                  ? 'bg-[var(--color-success)]/15 text-[var(--color-success)]'
+                  : 'bg-[var(--color-error)]/15 text-[var(--color-error)]'">
+              {{ venta.estado }}
+            </span>
           </div>
-          <span class="text-xs font-bold px-2.5 py-1 rounded-full"
-              [class]="venta.estado === 'COMPLETADA'
-                ? 'bg-[var(--color-success)]/15 text-[var(--color-success)]'
-                : 'bg-[var(--color-error)]/15 text-[var(--color-error)]'">
-            {{ venta.estado }}
-          </span>
-        </div>
-
-        <!-- Info grid -->
-        <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 px-4 py-3">
-          <div>
-            <p class="text-[10px] text-muted uppercase tracking-wide">Fecha</p>
-            <p class="text-sm font-medium text-on">{{ venta.fechaCreacion | date:'dd/MM/yyyy HH:mm' }}</p>
+  
+          <!-- Info grid -->
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 px-4 py-3">
+            <div>
+              <p class="text-[10px] text-muted uppercase tracking-wide">Fecha</p>
+              <p class="text-sm font-medium text-on">{{ venta.fechaCreacion | date:'dd/MM/yyyy HH:mm' }}</p>
+            </div>
+            <div>
+              <p class="text-[10px] text-muted uppercase tracking-wide">Cajero</p>
+              <p class="text-sm font-medium text-on">{{ venta.cajeroNombre }}</p>
+            </div>
+            <div>
+              <p class="text-[10px] text-muted uppercase tracking-wide">Total</p>
+              <p class="text-lg font-bold text-[var(--color-primary)]">
+                <span class="text-xs align-super mr-px">S/</span>{{ venta.total | number:'1.2-2' }}
+              </p>
+            </div>
           </div>
-          <div>
-            <p class="text-[10px] text-muted uppercase tracking-wide">Cajero</p>
-            <p class="text-sm font-medium text-on">{{ venta.cajeroNombre }}</p>
-          </div>
-          <div>
-            <p class="text-[10px] text-muted uppercase tracking-wide">Total</p>
-            <p class="text-lg font-bold text-[var(--color-primary)]">
-              <span class="text-xs align-super mr-px">S/</span>{{ venta.total | number:'1.2-2' }}
-            </p>
-          </div>
-        </div>
-
-        <!-- Items con checkboxes para devolucion parcial -->
-        @if (venta.estado === 'COMPLETADA') {
-        <div class="border-t border-[var(--color-border)]">
-          <table class="w-full text-sm">
-            <thead>
-              <tr class="bg-[var(--color-background)]">
-                <th class="px-3 py-2 text-left w-8"></th>
-                <th class="px-3 py-2 text-left text-[10px] font-semibold text-muted uppercase">Producto</th>
-                <th class="px-3 py-2 text-center text-[10px] font-semibold text-muted uppercase w-20">Vendido</th>
-                <th class="px-3 py-2 text-center text-[10px] font-semibold text-muted uppercase w-24">Devolver</th>
-                <th class="px-3 py-2 text-right text-[10px] font-semibold text-muted uppercase w-28">Reembolso</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (linea of lineasDevolucion(); track linea.detalle.id) {
-                <tr class="border-t border-[var(--color-border)]/50"
-                    [class.bg-[var(--color-primary)]/5]="linea.seleccionada">
-                  <td class="px-3 py-2 text-center">
-                    <input type="checkbox" [checked]="linea.seleccionada"
-                           [disabled]="linea.maxDevolvible === 0"
-                           (change)="toggleLinea(linea.detalle.id)"
-                           class="accent-[var(--color-primary)]">
-                  </td>
-                  <td class="px-3 py-2">
-                    <p class="text-on">{{ linea.detalle.varianteNombre }}</p>
-                    <p class="text-[10px] text-muted font-mono">{{ linea.detalle.varianteSku }}</p>
-                  </td>
-                  <td class="px-3 py-2 text-center text-on">{{ linea.detalle.cantidad }}</td>
-                  <td class="px-3 py-2 text-center">
-                    @if (linea.seleccionada && linea.maxDevolvible > 0) {
-                      <div class="flex items-center justify-center gap-1">
-                        <button class="w-6 h-6 rounded bg-[var(--color-border)] text-on text-xs"
-                                (click)="cambiarCantidadDevolucion(linea.detalle.id, -1)">-</button>
-                        <span class="w-8 text-center font-bold text-on">{{ linea.cantidadDevuelta }}</span>
-                        <button class="w-6 h-6 rounded bg-[var(--color-border)] text-on text-xs"
-                                (click)="cambiarCantidadDevolucion(linea.detalle.id, 1)">+</button>
-                      </div>
-                    } @else if (linea.maxDevolvible === 0) {
-                      <span class="text-xs text-muted">Ya devuelto</span>
-                    }
-                  </td>
-                  <td class="px-3 py-2 text-right font-mono font-semibold"
-                      [class.text-[var(--color-warning)]]="linea.montoDevuelto > 0"
-                      [class.text-muted]="linea.montoDevuelto === 0">
-                    S/ {{ linea.montoDevuelto | number:'1.2-2' }}
-                  </td>
+  
+          <!-- Items con checkboxes para devolucion parcial -->
+          @if (venta.estado === 'COMPLETADA') {
+          <div class="border-t border-[var(--color-border)] overflow-y-auto max-h-[380px]">
+            <table class="w-full text-sm">
+              <thead>
+                <tr class="bg-[var(--color-background)] sticky top-0 z-10 border-b border-[var(--color-border)]">
+                  <th class="px-3 py-2 text-left w-8"></th>
+                  <th class="px-3 py-2 text-left text-[10px] font-semibold text-muted uppercase">Producto</th>
+                  <th class="px-3 py-2 text-center text-[10px] font-semibold text-muted uppercase w-20">Vendido</th>
+                  <th class="px-3 py-2 text-center text-[10px] font-semibold text-muted uppercase w-24">Devolver</th>
+                  <th class="px-3 py-2 text-right text-[10px] font-semibold text-muted uppercase w-28">Reembolso</th>
                 </tr>
-              }
-            </tbody>
-          </table>
-
-          <!-- Total devolucion -->
-          <div class="flex justify-end px-4 py-3 border-t border-[var(--color-border)]">
-            <div class="text-right">
-              <span class="text-sm text-muted mr-3">Total a devolver:</span>
-              <span class="text-xl font-bold text-[var(--color-warning)]">
+              </thead>
+              <tbody>
+                @for (linea of lineasDevolucion(); track linea.detalle.id) {
+                  <tr class="border-t border-[var(--color-border)]/50"
+                      [class.bg-[var(--color-primary)]/5]="linea.seleccionada">
+                    <td class="px-3 py-2 text-center">
+                      <input type="checkbox" [checked]="linea.seleccionada"
+                             [disabled]="linea.maxDevolvible === 0"
+                             (change)="toggleLinea(linea.detalle.id)"
+                             class="accent-[var(--color-primary)]">
+                    </td>
+                    <td class="px-3 py-2">
+                      <p class="text-on font-medium">{{ linea.detalle.varianteNombre }}</p>
+                      <p class="text-[10px] text-muted font-mono">{{ linea.detalle.varianteSku }}</p>
+                    </td>
+                    <td class="px-3 py-2 text-center text-on">{{ linea.detalle.cantidad }}</td>
+                    <td class="px-3 py-2 text-center">
+                      @if (linea.seleccionada && linea.maxDevolvible > 0) {
+                        <div class="flex items-center justify-center gap-1">
+                          <button class="w-6 h-6 rounded bg-[var(--color-border)] text-on text-xs hover:bg-[var(--color-border)]/80"
+                                  (click)="cambiarCantidadDevolucion(linea.detalle.id, -1)">-</button>
+                          <span class="w-8 text-center font-bold text-on">{{ linea.cantidadDevuelta }}</span>
+                          <button class="w-6 h-6 rounded bg-[var(--color-border)] text-on text-xs hover:bg-[var(--color-border)]/80"
+                                  (click)="cambiarCantidadDevolucion(linea.detalle.id, 1)">+</button>
+                        </div>
+                      } @else if (linea.maxDevolvible === 0) {
+                        <span class="text-xs text-muted">Ya devuelto</span>
+                      }
+                    </td>
+                    <td class="px-3 py-2 text-right font-mono font-semibold"
+                        [class.text-[var(--color-warning)]]="linea.montoDevuelto > 0"
+                        [class.text-muted]="linea.montoDevuelto === 0">
+                      S/ {{ linea.montoDevuelto | number:'1.2-2' }}
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          } @else {
+            <div class="p-6 text-center border-t border-[var(--color-border)]">
+              <p class="text-muted text-sm">Esta venta ya fue anulada previamente.</p>
+            </div>
+          }
+        </div>
+  
+        <!-- Columna Derecha: Formulario de devolucion -->
+        <div class="flex flex-col gap-4">
+          @if (venta.estado === 'COMPLETADA') {
+          <form [formGroup]="formDevolucion" class="rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] p-4 flex flex-col gap-4">
+            <h3 class="font-bold text-on text-sm border-b border-[var(--color-border)] pb-2">Resumen de Reembolso</h3>
+            
+            <!-- Total devolucion -->
+            <div class="flex justify-between items-center py-2 bg-[var(--color-warning)]/10 px-3 rounded-lg border border-[var(--color-warning)]/20">
+              <span class="text-xs font-semibold text-[var(--color-warning)] uppercase tracking-wider">Total Reembolso:</span>
+              <span class="text-xl font-bold text-[var(--color-warning)] font-mono">
                 S/ {{ totalDevolucion() | number:'1.2-2' }}
               </span>
             </div>
-          </div>
-        </div>
 
-        <!-- Formulario de devolucion -->
-        <form [formGroup]="formDevolucion" class="p-4 border-t border-[var(--color-border)] flex flex-col gap-4">
-          <div>
-            <label class="text-xs font-semibold text-subtle uppercase tracking-wide mb-1 block">Motivo *</label>
-            <select class="input-field !h-10" formControlName="motivo">
-              <option value="">Seleccionar motivo...</option>
-              @for (m of motivos; track m.valor) {
-                <option [value]="m.valor">{{ m.etiqueta }}</option>
-              }
-            </select>
-          </div>
-          <div>
-            <label class="text-xs font-semibold text-subtle uppercase tracking-wide mb-1 block">Observaciones</label>
-            <textarea class="input-field" formControlName="observaciones" rows="2"
-                      placeholder="Descripcion adicional..."></textarea>
-          </div>
-
-          <!-- Success message -->
-          @if (procesado()) {
-            <div class="flex items-center gap-2 p-3 rounded-lg bg-[var(--color-success)]/10 border border-[var(--color-success)]/20">
-              <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16" class="text-[var(--color-success)] shrink-0">
-                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-              </svg>
-              <div class="text-sm">
-                <p class="font-bold text-[var(--color-success)]">Devolucion procesada — NC: {{ ultimaNc() }}</p>
-                <p class="text-subtle text-xs mt-0.5">Entregue S/ {{ totalDevolucion() | number:'1.2-2' }} al cliente.</p>
-              </div>
+            <div>
+              <label class="text-xs font-semibold text-subtle uppercase tracking-wide mb-1 block">Motivo *</label>
+              <select class="input-field !h-10" formControlName="motivo">
+                <option value="">Seleccionar motivo...</option>
+                @for (m of motivos; track m.valor) {
+                  <option [value]="m.valor">{{ m.etiqueta }}</option>
+                }
+              </select>
             </div>
-          }
-
-          <div class="flex justify-end gap-3">
-            <button type="button" class="btn-secondary !h-9 !px-4" (click)="limpiar()">Cancelar</button>
-            <button type="button" class="!h-9 !px-5 rounded-xl text-sm font-semibold text-white transition-colors"
-                [class]="!motivoSeleccionado() || !haySeleccion() || procesando() || procesado()
-                  ? 'bg-[var(--color-border)] cursor-not-allowed'
-                  : 'bg-[var(--color-error)] hover:brightness-110 active:brightness-90'"
-                [disabled]="!motivoSeleccionado() || !haySeleccion() || procesando() || procesado()"
-                (click)="confirmarDevolucion()">
-              @if (procesando()) {
-                <svg class="animate-spin inline mr-1" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
-                  <path d="M10 3a7 7 0 017 7" stroke-linecap="round" />
+            <div>
+              <label class="text-xs font-semibold text-subtle uppercase tracking-wide mb-1 block">Observaciones</label>
+              <textarea class="input-field" formControlName="observaciones" rows="2"
+                        placeholder="Descripción adicional..."></textarea>
+            </div>
+  
+            <!-- Success message -->
+            @if (procesado()) {
+              <div class="flex items-center gap-2 p-3 rounded-lg bg-[var(--color-success)]/10 border border-[var(--color-success)]/20">
+                <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16" class="text-[var(--color-success)] shrink-0">
+                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
                 </svg>
-                Procesando...
-              } @else {
-                Confirmar Devolucion Parcial
-              }
-            </button>
-          </div>
-        </form>
-        } @else {
-          <div class="p-6 text-center border-t border-[var(--color-border)]">
-            <p class="text-muted text-sm">Esta venta ya fue anulada previamente.</p>
-          </div>
-        }
+                <div class="text-sm">
+                  <p class="font-bold text-[var(--color-success)]">Devolución procesada — NC: {{ ultimaNc() }}</p>
+                  <p class="text-subtle text-xs mt-0.5">Entregue S/ {{ totalDevolucion() | number:'1.2-2' }} al cliente.</p>
+                </div>
+              </div>
+            }
+  
+            <div class="flex justify-end gap-2 pt-2 border-t border-[var(--color-border)]">
+              <button type="button" class="btn-secondary !h-9 !px-4" (click)="limpiar()">Cancelar</button>
+              <button type="button" class="!h-9 !px-4 rounded-xl text-xs font-semibold text-white transition-colors"
+                  [class]="!motivoSeleccionado() || !haySeleccion() || procesando() || procesado()
+                    ? 'bg-[var(--color-border)] cursor-not-allowed'
+                    : 'bg-[var(--color-error)] hover:brightness-110 active:brightness-90'"
+                  [disabled]="!motivoSeleccionado() || !haySeleccion() || procesando() || procesado()"
+                  (click)="confirmarDevolucion()">
+                @if (procesando()) {
+                  <svg class="animate-spin inline mr-1" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                    <path d="M10 3a7 7 0 017 7" stroke-linecap="round" />
+                  </svg>
+                  Procesando...
+                } @else {
+                  Confirmar Devolución
+                }
+              </button>
+            </div>
+          </form>
+          }
+        </div>
       </div>
     }
 
