@@ -59,7 +59,9 @@ export class CartSyncService {
     markRecovered(): void {
         const user = this.authService.currentUser();
         if (!user?.userId) return;
-        this.http.post(`${API}/carritos-abandonados/recuperado`, { userId: user.userId })
+        // companyId es obligatorio en el backend (validación multi-tenant @RequiresTenantAccess)
+        this.http.post(`${API}/carritos-abandonados/recuperado`,
+            { userId: user.userId, companyId: user.activeCompanyId })
             .subscribe({ error: () => {} });
     }
 }
