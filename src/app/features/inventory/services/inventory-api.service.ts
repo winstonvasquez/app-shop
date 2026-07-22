@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { environment } from '@env/environment';
 import {
     Warehouse,
@@ -299,8 +300,16 @@ export class InventoryApiService {
         return this.http.post<InventoryCount>(`${this.baseUrl}/inventory/counts/${id}/apply-adjustments`, {});
     }
 
-    getKardexByProduct(productId: number): Observable<KardexEntry[]> {
-        return this.http.get<KardexEntry[]>(`${this.baseUrl}/kardex/product/${productId}`);
+    getKardexByProduct(productId: number, size = 2000): Observable<KardexEntry[]> {
+        // El backend ahora pagina el kardex (Pageable) para no escanear la tabla completa
+        // sin límite. La vista mantiene su paginación/export en cliente: pedimos una página
+        // amplia y devolvemos content[] como array. `size` acota defensivamente (un kardex
+        // por producto rara vez supera 2000 movimientos; antes el fetch era ILIMITADO).
+        return this.http
+            .get<PageResponse<KardexEntry>>(`${this.baseUrl}/kardex/product/${productId}`, {
+                params: this.buildParams({ page: 0, size })
+            })
+            .pipe(map(res => res.content ?? []));
     }
 
     getDashboardSummary(): Observable<DashboardSummary> {
