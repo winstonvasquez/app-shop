@@ -7,6 +7,7 @@ import { AuthService } from '@core/auth/auth.service';
 import { MONEDA } from '@shared/constants/sunat.constants';
 import { ButtonComponent } from '@shared/components';
 import { DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent, PaginationEvent } from '@shared/ui/tables/data-table/data-table.component';
+import { BackendExportConfig } from '@shared/services/backend-export.service';
 
 interface ContratoDto {
     id: string;
@@ -65,6 +66,16 @@ export class ContratosComponent implements OnInit {
             ])
         }
     ];
+
+    /**
+     * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios
+     * (respeta los filtros actuales búsqueda + estado). Ver /purchases/api/contratos/export.
+     */
+    readonly exportConfig: BackendExportConfig = {
+        url: `${environment.apiUrls.purchases}/api/contratos/export`,
+        filename: 'contratos',
+        params: () => ({ search: this.searchQuery(), estado: this.filtroEstado() }),
+    };
 
     /** Filtrado client-side por búsqueda + estado (todo el listado se carga en un solo fetch). */
     filteredContratos = computed(() => {

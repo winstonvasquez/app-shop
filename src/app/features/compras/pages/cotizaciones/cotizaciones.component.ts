@@ -14,6 +14,8 @@ import { of } from 'rxjs';
 import { CotizacionService } from '../../services/cotizacion.service';
 import { AuthService } from '@core/auth/auth.service';
 import { PAGINATION } from '@shared/constants/app.constants';
+import { BackendExportConfig } from '@shared/services/backend-export.service';
+import { environment } from '@env/environment';
 import {
     CotizacionResumen,
     ComparativaDto,
@@ -155,6 +157,16 @@ export class CotizacionesComponent implements OnInit {
             options: of(this.estadoOptions.map((o) => ({ value: o.value, label: o.label }))),
         },
     ];
+
+    /**
+     * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios
+     * (respeta el filtro de estado actual). Ver /purchases/api/cotizaciones/export.
+     */
+    readonly exportConfig: BackendExportConfig = {
+        url: `${environment.apiUrls.purchases}/api/cotizaciones/export`,
+        filename: 'cotizaciones',
+        params: () => ({ estado: this.filterEstado() }),
+    };
 
     cotizacionForm = this.fb.group({
         titulo: ['', Validators.required],

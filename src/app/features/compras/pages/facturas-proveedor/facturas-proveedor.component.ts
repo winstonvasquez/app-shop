@@ -25,6 +25,8 @@ import {
     FilterConfig,
     FilterChangeEvent,
 } from '@shared/ui/tables/data-table/data-table.component';
+import { BackendExportConfig } from '@shared/services/backend-export.service';
+import { environment } from '@env/environment';
 import { MONEDA } from '@shared/constants/sunat.constants';
 import { PAGINATION } from '@shared/constants/app.constants';
 
@@ -131,6 +133,16 @@ export class FacturasProveedorComponent implements OnInit {
             options: of(this.estadoOptions.map((o) => ({ value: o.value, label: o.label }))),
         },
     ];
+
+    /**
+     * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios
+     * (respeta el filtro de estado actual). Ver /api/facturas-proveedor/export.
+     */
+    readonly exportConfig: BackendExportConfig = {
+        url: `${environment.apiUrls.purchases}/api/facturas-proveedor/export`,
+        filename: 'facturas-proveedor',
+        params: () => ({ estado: this.filterEstado() }),
+    };
 
     facturaForm = this.fb.group({
         ordenCompraId: ['', Validators.required],

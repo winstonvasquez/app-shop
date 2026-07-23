@@ -26,6 +26,8 @@ import {
     FilterConfig,
     FilterChangeEvent,
 } from '@shared/ui/tables/data-table/data-table.component';
+import { BackendExportConfig } from '@shared/services/backend-export.service';
+import { environment } from '@env/environment';
 
 @Component({
     selector: 'app-devoluciones',
@@ -125,6 +127,16 @@ export class DevolucionesComponent implements OnInit {
             options: of(this.estadoOptions.map((o) => ({ value: o.value, label: o.label }))),
         },
     ];
+
+    /**
+     * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios
+     * (respeta el filtro de estado actual). Ver /purchases/api/devoluciones/export.
+     */
+    readonly exportConfig: BackendExportConfig = {
+        url: `${environment.apiUrls.purchases}/api/devoluciones/export`,
+        filename: 'devoluciones',
+        params: () => ({ estado: this.filterEstado() }),
+    };
 
     devolucionForm = this.fb.group({
         ordenCompraId: ['', Validators.required],

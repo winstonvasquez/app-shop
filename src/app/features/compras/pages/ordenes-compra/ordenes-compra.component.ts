@@ -7,6 +7,8 @@ import { ProveedorService } from '../../services/proveedor.service';
 import { OrdenCompra, OrdenCompraItem } from '../../models/orden-compra.model';
 import { Proveedor } from '../../models/proveedor.model';
 import { DataTableComponent, TableColumn, TableAction, SortEvent, FilterConfig, FilterChangeEvent, PaginationEvent } from '@shared/ui/tables/data-table/data-table.component';
+import { BackendExportConfig } from '@shared/services/backend-export.service';
+import { environment } from '@env/environment';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { DateInputComponent } from '@shared/ui/forms/date-input/date-input.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
@@ -122,6 +124,16 @@ export class OrdenesCompraComponent implements OnInit {
             options: of(this.estadoOptions)
         }
     ];
+
+    /**
+     * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios
+     * (respeta el filtro de estado actual). Ver /purchases/api/ordenes-compra/export.
+     */
+    readonly exportConfig: BackendExportConfig = {
+        url: `${environment.apiUrls.purchases}/api/ordenes-compra/export`,
+        filename: 'ordenes-compra',
+        params: () => ({ estado: this.filterEstado() }),
+    };
 
     readonly condicionPagoOptions = [
         { value: 'CONTADO', label: 'Contado' },

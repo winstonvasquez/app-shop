@@ -12,6 +12,8 @@ import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/p
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { ButtonComponent } from '@shared/components';
 import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
+import { BackendExportConfig } from '@shared/services/backend-export.service';
+import { environment } from '@env/environment';
 
 @Component({
     selector: 'app-proveedores',
@@ -59,6 +61,16 @@ export class ProveedoresComponent implements OnInit {
             ])
         }
     ];
+
+    /**
+     * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios
+     * (respeta los filtros actuales search + estado). Ver /purchases/api/proveedores/export.
+     */
+    readonly exportConfig: BackendExportConfig = {
+        url: `${environment.apiUrls.purchases}/api/proveedores/export`,
+        filename: 'proveedores',
+        params: () => ({ search: this.searchQuery(), estado: this.filterEstado() }),
+    };
 
     // Pagination
     currentPage = signal(0);

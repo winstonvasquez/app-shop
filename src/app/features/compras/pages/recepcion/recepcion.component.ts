@@ -11,6 +11,8 @@ import { LoadingSpinnerComponent } from '@shared/ui/feedback/loading-spinner/loa
 import { PAGINATION } from '@shared/constants/app.constants';
 import { ButtonComponent } from '@shared/components';
 import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
+import { BackendExportConfig } from '@shared/services/backend-export.service';
+import { environment } from '@env/environment';
 
 @Component({
     selector: 'app-recepcion',
@@ -81,6 +83,16 @@ export class RecepcionComponent implements OnInit {
         { label: 'Compras', url: '/admin/compras/dashboard' },
         { label: 'Recepción Mercadería' }
     ];
+
+    /**
+     * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios
+     * (respeta el filtro de estado actual). Ver /purchases/api/recepciones/export.
+     */
+    readonly exportConfig: BackendExportConfig = {
+        url: `${environment.apiUrls.purchases}/api/recepciones/export`,
+        filename: 'recepciones',
+        params: () => ({ estado: this.estadoFiltro() || undefined }),
+    };
 
     columns: TableColumn<Recepcion>[] = [
         {
