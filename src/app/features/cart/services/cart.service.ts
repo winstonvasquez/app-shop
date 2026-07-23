@@ -1,6 +1,7 @@
 
 import { Injectable, computed, effect, signal, inject } from '@angular/core';
 import { AnalyticsService } from '@core/services/analytics.service';
+import { STORAGE_KEYS } from '@shared/constants/app.constants';
 
 export interface CartItem {
     productId: number;
@@ -47,14 +48,14 @@ export class CartService {
 
     constructor() {
         // Load initial state from local storage
-        const savedCart = localStorage.getItem('cart');
+        const savedCart = localStorage.getItem(STORAGE_KEYS.cart);
         if (savedCart) {
             this.cartItems.set(JSON.parse(savedCart));
         }
 
         // Save state to local storage whenever it changes
         effect(() => {
-            localStorage.setItem('cart', JSON.stringify(this.cartItems()));
+            localStorage.setItem(STORAGE_KEYS.cart, JSON.stringify(this.cartItems()));
         });
     }
 

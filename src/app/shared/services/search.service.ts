@@ -1,4 +1,5 @@
 import { Injectable, signal, inject } from '@angular/core';
+import { STORAGE_KEYS } from '@shared/constants/app.constants';
 
 @Injectable({
     providedIn: 'root'
@@ -41,7 +42,7 @@ export class SearchService {
     }
 
     private loadRecentSearches() {
-        const saved = localStorage.getItem('recentSearches');
+        const saved = localStorage.getItem(STORAGE_KEYS.recentSearches);
         if (saved) {
             try {
                 this.recentSearchesSignal.set(JSON.parse(saved));
@@ -55,11 +56,11 @@ export class SearchService {
         const current = this.recentSearchesSignal();
         const updated = [query, ...current.filter(q => q.toLowerCase() !== query.toLowerCase())].slice(0, 5);
         this.recentSearchesSignal.set(updated);
-        localStorage.setItem('recentSearches', JSON.stringify(updated));
+        localStorage.setItem(STORAGE_KEYS.recentSearches, JSON.stringify(updated));
     }
 
     clearRecentSearches() {
         this.recentSearchesSignal.set([]);
-        localStorage.removeItem('recentSearches');
+        localStorage.removeItem(STORAGE_KEYS.recentSearches);
     }
 }

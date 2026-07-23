@@ -7,6 +7,7 @@ import { CartService } from '@features/cart/services/cart.service';
 import { ModalStateService } from '@core/services/modal-state.service';
 import { ThemeService } from '@core/services/theme/theme';
 import { CategoryService } from '@core/services/category.service';
+import { STORAGE_KEYS } from '@shared/constants/app.constants';
 
 import {
     DsTopBarComponent,
@@ -171,9 +172,9 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
 
     onAuthModalLoginSuccess(): void {
         this.modalState.closeAuthModal();
-        const returnUrl = this.modalState.authModalReturnUrl() ?? sessionStorage.getItem('returnUrl');
+        const returnUrl = this.modalState.authModalReturnUrl() ?? sessionStorage.getItem(STORAGE_KEYS.returnUrl);
         if (returnUrl) {
-            sessionStorage.removeItem('returnUrl');
+            sessionStorage.removeItem(STORAGE_KEYS.returnUrl);
             this.router.navigateByUrl(returnUrl);
             return;
         }

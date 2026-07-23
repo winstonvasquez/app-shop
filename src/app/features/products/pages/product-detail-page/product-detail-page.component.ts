@@ -18,6 +18,7 @@ import { AnalyticsService } from '@core/services/analytics.service';
 import { RecommendationsService } from '@core/services/recommendations.service';
 import { WishlistService } from '@core/services/wishlist.service';
 import { StoreConfigService } from '@core/services/store-config.service';
+import { STORAGE_KEYS } from '@shared/constants/app.constants';
 
 import {
     DsButtonComponent,
@@ -272,7 +273,7 @@ export class ProductDetailPageComponent implements OnInit {
 
     private saveToBrowseHistory(product: ProductDetail): void {
         try {
-            const history = JSON.parse(localStorage.getItem('browse_history') ?? '[]');
+            const history = JSON.parse(localStorage.getItem(STORAGE_KEYS.browseHistory) ?? '[]');
             const item = {
                 id: product.id,
                 name: product.nombre,
@@ -281,7 +282,7 @@ export class ProductDetailPageComponent implements OnInit {
                 slug: (product as unknown as Record<string, unknown>)['slug'] ?? product.id,
             };
             const filtered = history.filter((h: Record<string, unknown>) => h['id'] !== item.id);
-            localStorage.setItem('browse_history', JSON.stringify([item, ...filtered].slice(0, 20)));
+            localStorage.setItem(STORAGE_KEYS.browseHistory, JSON.stringify([item, ...filtered].slice(0, 20)));
         } catch {
             /* ignore */
         }

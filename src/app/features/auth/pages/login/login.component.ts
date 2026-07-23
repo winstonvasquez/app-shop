@@ -6,7 +6,7 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { LucideAngularModule } from 'lucide-angular';
 import { AuthService } from '@core/auth/auth.service';
 import { DsButtonComponent, DsWordmarkComponent } from '@shared/ui/ds';
-import { HTTP_STATUS } from '@shared/constants/app.constants';
+import { HTTP_STATUS, STORAGE_KEYS } from '@shared/constants/app.constants';
 
 @Component({
     selector: 'app-login',
@@ -87,11 +87,11 @@ export class LoginComponent {
 
     private navigateAfterLogin(): void {
         const returnUrlParam   = this.route.snapshot.queryParams['returnUrl'];
-        const returnUrlSession = sessionStorage.getItem('returnUrl');
+        const returnUrlSession = sessionStorage.getItem(STORAGE_KEYS.returnUrl);
         const returnUrl        = returnUrlParam || returnUrlSession;
 
         if (returnUrl) {
-            sessionStorage.removeItem('returnUrl');
+            sessionStorage.removeItem(STORAGE_KEYS.returnUrl);
             this.router.navigateByUrl(returnUrl);
             return;
         }

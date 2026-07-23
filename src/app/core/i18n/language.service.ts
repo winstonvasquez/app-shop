@@ -1,6 +1,7 @@
 import { Injectable, signal, inject, effect } from '@angular/core';
 import { TranslateService } from '@ngx-translate/core';
 import { Observable } from 'rxjs';
+import { STORAGE_KEYS } from '@shared/constants/app.constants';
 
 export interface Language {
     code: string;
@@ -19,7 +20,7 @@ export interface Language {
     providedIn: 'root'
 })
 export class LanguageService {
-    private readonly STORAGE_KEY = 'app-language';
+    private readonly STORAGE_KEY = STORAGE_KEYS.language;
     private readonly DEFAULT_LANGUAGE = 'es';
 
     private translate = inject(TranslateService);

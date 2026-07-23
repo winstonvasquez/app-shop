@@ -4,13 +4,14 @@ import { HttpClient } from '@angular/common/http';
 import { catchError, of } from 'rxjs';
 import { environment } from '@env/environment';
 import { AuthService } from '@core/auth/auth.service';
+import { STORAGE_KEYS } from '@shared/constants/app.constants';
 
 export type ThemeContext = 'shop' | 'admin' | 'pos';
 
 const THEME_KEYS: Record<ThemeContext, string> = {
-    shop:  'shop_theme',
-    admin: 'admin_theme',
-    pos:   'pos_theme',
+    shop:  STORAGE_KEYS.shopTheme,
+    admin: STORAGE_KEYS.adminTheme,
+    pos:   STORAGE_KEYS.posTheme,
 };
 
 /**

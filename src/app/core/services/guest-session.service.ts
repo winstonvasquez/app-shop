@@ -1,9 +1,10 @@
 import { Injectable } from '@angular/core';
 import { signal, computed } from '@angular/core';
+import { STORAGE_KEYS } from '@shared/constants/app.constants';
 
-const GUEST_EMAIL_KEY = 'guest_email';
-const GUEST_PHONE_KEY = 'guest_phone';
-const GUEST_NAME_KEY  = 'guest_name';
+const GUEST_EMAIL_KEY = STORAGE_KEYS.guestEmail;
+const GUEST_PHONE_KEY = STORAGE_KEYS.guestPhone;
+const GUEST_NAME_KEY  = STORAGE_KEYS.guestName;
 
 /**
  * Gestiona la sesión de compra para usuarios invitados (sin cuenta).

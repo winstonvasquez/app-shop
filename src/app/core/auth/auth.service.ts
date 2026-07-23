@@ -118,15 +118,15 @@ export class AuthService {
 
     logout(): void {
         localStorage.removeItem(TOKEN_KEY);
-        localStorage.removeItem('shop_theme');
-        localStorage.removeItem('admin_theme');
-        localStorage.removeItem('pos_theme');
+        localStorage.removeItem(STORAGE_KEYS.shopTheme);
+        localStorage.removeItem(STORAGE_KEYS.adminTheme);
+        localStorage.removeItem(STORAGE_KEYS.posTheme);
         // Hardening 2026-05-28: limpiar también carrito y datos de invitado, para que
         // el siguiente usuario en el mismo dispositivo no herede sesión anterior.
-        localStorage.removeItem('cart');
-        localStorage.removeItem('guest_email');
-        localStorage.removeItem('guest_phone');
-        localStorage.removeItem('guest_name');
+        localStorage.removeItem(STORAGE_KEYS.cart);
+        localStorage.removeItem(STORAGE_KEYS.guestEmail);
+        localStorage.removeItem(STORAGE_KEYS.guestPhone);
+        localStorage.removeItem(STORAGE_KEYS.guestName);
         this.currentUserSignal.set(null);
         this.router.navigate(['/auth/login']);
     }

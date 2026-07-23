@@ -18,15 +18,38 @@ export const APP_CONFIG = {
   allowedFileTypes: ['image/jpeg', 'image/png', 'image/gif', 'application/pdf'],
 } as const;
 
+/**
+ * Claves de localStorage/sessionStorage REALES usadas en la app (reconciliadas
+ * 2026-07-23 con el código; antes eran aspiracionales y no coincidían).
+ * Se eliminaron entradas sin uso (refreshToken/user/theme/companyId/tenantId).
+ */
 export const STORAGE_KEYS = {
+  /** JWT de sesión — AuthService (TOKEN_KEY). */
   token: 'auth_token',
-  refreshToken: 'refresh_token',
-  user: 'current_user',
-  language: 'app_language',
-  theme: 'app_theme',
-  cart: 'shopping_cart',
-  companyId: 'company_id',
-  tenantId: 'tenant_id',
+  /**
+   * Idioma UI — clave canónica de LanguageService (APP_INITIALIZER) y bootstrap.
+   * Antes 'app_language' (guion bajo), desalineado con el 'app-language' real que
+   * escribe el servicio primario; unificado a 'app-language'.
+   */
+  language: 'app-language',
+  /** Carrito de compras (storefront). Antes 'shopping_cart' (no coincidía). */
+  cart: 'cart',
+  /** URL de retorno tras login (auth guard). */
+  returnUrl: 'returnUrl',
+  /** Búsquedas recientes (storefront). */
+  recentSearches: 'recentSearches',
+  /** Historial de navegación de productos (storefront). */
+  browseHistory: 'browse_history',
+  /** Tema del storefront. */
+  shopTheme: 'shop_theme',
+  /** Tema del panel admin/ERP. */
+  adminTheme: 'admin_theme',
+  /** Tema del POS. */
+  posTheme: 'pos_theme',
+  /** Datos de invitado en checkout. */
+  guestName: 'guest_name',
+  guestEmail: 'guest_email',
+  guestPhone: 'guest_phone',
 } as const;
 
 export const ROUTES = {

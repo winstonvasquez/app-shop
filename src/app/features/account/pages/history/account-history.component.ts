@@ -3,6 +3,7 @@ import { RouterLink } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
 import { AuthService } from '@core/auth/auth.service';
 import { DsAccountShellComponent } from '@shared/ui/ds';
+import { STORAGE_KEYS } from '@shared/constants/app.constants';
 
 interface BrowseHistoryItem {
     id: number;
@@ -106,7 +107,7 @@ export class AccountHistoryComponent implements OnInit {
 
     ngOnInit(): void {
         try {
-            const raw = localStorage.getItem('browse_history');
+            const raw = localStorage.getItem(STORAGE_KEYS.browseHistory);
             this.items.set(raw ? JSON.parse(raw) : []);
         } catch {
             this.items.set([]);

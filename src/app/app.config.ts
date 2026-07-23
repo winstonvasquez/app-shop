@@ -52,6 +52,7 @@ registerLocaleData(localeEsPE, 'es-PE');
 import { SystemParameterService } from '@core/services/system-parameter.service';
 import { StoreConfigService } from '@core/services/store-config.service';
 import { WishlistService } from '@core/services/wishlist.service';
+import { STORAGE_KEYS } from '@shared/constants/app.constants';
 
 /**
  * APP_INITIALIZER factory: returns a Promise Angular awaits before rendering.
@@ -69,7 +70,7 @@ export function initSystemParameters(systemParameterService: SystemParameterServ
 
 export function initStoreConfig(storeConfigService: StoreConfigService) {
   return (): Promise<unknown> => {
-    const savedLang = localStorage.getItem('app-language') || 'es';
+    const savedLang = localStorage.getItem(STORAGE_KEYS.language) || 'es';
     return lastValueFrom(storeConfigService.loadConfig(savedLang));
   };
 }

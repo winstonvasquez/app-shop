@@ -2,6 +2,7 @@ import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
 import { AuthService } from './auth.service';
 import { ModalStateService } from '@core/services/modal-state.service';
+import { STORAGE_KEYS } from '@shared/constants/app.constants';
 
 /**
  * Guard para rutas que requieren un cliente autenticado (ej: /checkout).
@@ -17,7 +18,7 @@ export const customerGuard: CanActivateFn = (route) => {
     if (!auth.isAuthenticated()) {
         // Guardar returnUrl para redirigir tras login
         const returnUrl = '/' + (route.url.map(s => s.path).join('/') || '');
-        sessionStorage.setItem('returnUrl', returnUrl);
+        sessionStorage.setItem(STORAGE_KEYS.returnUrl, returnUrl);
         // Abrir modal de autenticación
         modalState.openAuthModal();
         return router.createUrlTree(['/home']);
