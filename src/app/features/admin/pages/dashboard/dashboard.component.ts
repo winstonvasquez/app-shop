@@ -3,6 +3,7 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { NgApexchartsModule } from 'ng-apexcharts';
 import { ChartDefaultsService, CHART_COLORS } from '@shared/services/chart-defaults.service';
 import { ErpHealthCardComponent } from '@features/admin/components/erp-health-card/erp-health-card.component';
+import { CURRENCY_DISPLAY } from '@shared/constants/sunat.constants';
 import {
     ApexAxisChartSeries, ApexChart, ApexDataLabels, ApexFill,
     ApexGrid, ApexStroke, ApexTooltip, ApexXAxis, ApexYAxis, ApexNonAxisChartSeries, ApexLegend, ApexPlotOptions
@@ -62,13 +63,13 @@ export class DashboardComponent implements OnInit {
                   rotate: 0, hideOverlappingLabels: true },
         axisBorder: { show: false }, axisTicks: { show: false },
     };
-    areaYAxis: ApexYAxis = this.chartDefaults.yAxis('S/ ', 0);
+    areaYAxis: ApexYAxis = this.chartDefaults.yAxis(`${CURRENCY_DISPLAY.SYMBOL_PEN} `, 0);
     areaFill: ApexFill = this.chartDefaults.areaFill();
     areaStroke: ApexStroke = this.chartDefaults.areaStroke();
     areaGrid: ApexGrid = this.chartDefaults.grid();
     areaTooltip: ApexTooltip = {
         theme: 'dark',
-        y: { formatter: (val) => `S/ ${val.toLocaleString('es-PE')}` }
+        y: { formatter: (val) => `${CURRENCY_DISPLAY.SYMBOL_PEN} ${val.toLocaleString(CURRENCY_DISPLAY.LOCALE)}` }
     };
     areaColors = [CHART_COLORS[0]];
 
@@ -87,18 +88,18 @@ export class DashboardComponent implements OnInit {
 
     /* ── Pedidos recientes ─────────────────────────────────────── */
     recentOrders = signal<Order[]>([
-        { id: '#ORD-1234', customer: 'Juan Pérez',     product: 'Smartphone XYZ', date: '12 Feb 2026', total: 'S/ 899',   status: 'success',   statusLabel: '' },
-        { id: '#ORD-1233', customer: 'María García',   product: 'Laptop Pro 15"', date: '12 Feb 2026', total: 'S/ 1,299', status: 'pending',   statusLabel: '' },
-        { id: '#ORD-1232', customer: 'Carlos López',   product: 'Auriculares BT', date: '11 Feb 2026', total: 'S/ 199',   status: 'success',   statusLabel: '' },
-        { id: '#ORD-1231', customer: 'Ana Martínez',   product: 'Smartwatch Pro', date: '11 Feb 2026', total: 'S/ 349',   status: 'cancelled', statusLabel: '' },
-        { id: '#ORD-1230', customer: 'Pedro Sánchez',  product: 'Tablet 10"',     date: '10 Feb 2026', total: 'S/ 499',   status: 'success',   statusLabel: '' },
+        { id: '#ORD-1234', customer: 'Juan Pérez',     product: 'Smartphone XYZ', date: '12 Feb 2026', total: `${CURRENCY_DISPLAY.SYMBOL_PEN} 899`,   status: 'success',   statusLabel: '' },
+        { id: '#ORD-1233', customer: 'María García',   product: 'Laptop Pro 15"', date: '12 Feb 2026', total: `${CURRENCY_DISPLAY.SYMBOL_PEN} 1,299`, status: 'pending',   statusLabel: '' },
+        { id: '#ORD-1232', customer: 'Carlos López',   product: 'Auriculares BT', date: '11 Feb 2026', total: `${CURRENCY_DISPLAY.SYMBOL_PEN} 199`,   status: 'success',   statusLabel: '' },
+        { id: '#ORD-1231', customer: 'Ana Martínez',   product: 'Smartwatch Pro', date: '11 Feb 2026', total: `${CURRENCY_DISPLAY.SYMBOL_PEN} 349`,   status: 'cancelled', statusLabel: '' },
+        { id: '#ORD-1230', customer: 'Pedro Sánchez',  product: 'Tablet 10"',     date: '10 Feb 2026', total: `${CURRENCY_DISPLAY.SYMBOL_PEN} 499`,   status: 'success',   statusLabel: '' },
     ]);
 
     topProducts = signal<Product[]>([
-        { name: 'Smartphone XYZ', category: 'Electrónica',  sales: 'S/ 12,450' },
-        { name: 'Laptop Pro 15"', category: 'Computadoras', sales: 'S/ 9,800'  },
-        { name: 'Auriculares BT', category: 'Audio',         sales: 'S/ 7,230'  },
-        { name: 'Smartwatch Pro', category: 'Wearables',     sales: 'S/ 5,670'  },
+        { name: 'Smartphone XYZ', category: 'Electrónica',  sales: `${CURRENCY_DISPLAY.SYMBOL_PEN} 12,450` },
+        { name: 'Laptop Pro 15"', category: 'Computadoras', sales: `${CURRENCY_DISPLAY.SYMBOL_PEN} 9,800`  },
+        { name: 'Auriculares BT', category: 'Audio',         sales: `${CURRENCY_DISPLAY.SYMBOL_PEN} 7,230`  },
+        { name: 'Smartwatch Pro', category: 'Wearables',     sales: `${CURRENCY_DISPLAY.SYMBOL_PEN} 5,670`  },
     ]);
 
     readonly productColors = [CHART_COLORS[0], CHART_COLORS[1], CHART_COLORS[2], CHART_COLORS[3]];
@@ -107,7 +108,7 @@ export class DashboardComponent implements OnInit {
         this.metrics.set([
             {
                 label: 'Ventas Totales',
-                value: 'S/ 45,230',
+                value: `${CURRENCY_DISPLAY.SYMBOL_PEN} 45,230`,
                 change: '+12.5% vs mes anterior',
                 isPositive: true,
                 iconColor: 'red',

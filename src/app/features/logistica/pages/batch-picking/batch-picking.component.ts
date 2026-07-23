@@ -4,6 +4,7 @@ import { AuthService } from '../../../../core/auth/auth.service';
 import { PickingBatchService } from '../../services/picking-batch.service';
 import { PickingBatch } from '../../models/picking.model';
 import { ButtonComponent } from '@shared/components';
+import { NOTIFICATION_DURATION } from '@shared/constants/ui.constants';
 
 @Component({
     selector: 'app-batch-picking',
@@ -71,7 +72,7 @@ export class BatchPickingComponent implements OnInit {
                 this.batchForm.get('orderIdsInput')?.setValue('');
                 this.generating.set(false);
                 this.successMsg.set('Batch generado exitosamente');
-                setTimeout(() => this.successMsg.set(null), 3000);
+                setTimeout(() => this.successMsg.set(null), NOTIFICATION_DURATION.medium);
             },
             error: () => {
                 this.error.set('Error al generar batch');

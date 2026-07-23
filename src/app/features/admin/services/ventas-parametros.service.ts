@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, of, catchError, map } from 'rxjs';
 import { environment } from '@env/environment';
+import { CURRENCY_DISPLAY } from '@shared/constants/sunat.constants';
 
 export interface SelectOption<T = string> {
     value: T;
@@ -68,7 +69,7 @@ const ESTADOS_DEVOLUCION: SelectOption[] = [
 
 const TIPOS_PROMOCION: SelectOption[] = [
     { value: 'PORCENTAJE', label: 'Porcentaje (%)' },
-    { value: 'MONTO_FIJO', label: 'Monto fijo (S/)' },
+    { value: 'MONTO_FIJO', label: `Monto fijo (${CURRENCY_DISPLAY.SYMBOL_PEN})` },
 ];
 
 const ALCANCES_PROMOCION: SelectOption[] = [

@@ -10,6 +10,7 @@ import {
     CompanyUserResponse,
     CompanySubscriptionResponse
 } from '@features/admin/models/company.model';
+import { NOTIFICATION_DURATION } from '@shared/constants/ui.constants';
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
@@ -208,6 +209,6 @@ export class CompanyDetailComponent implements OnInit {
 
     private showSuccess(msg: string): void {
         this.successMsg.set(msg);
-        setTimeout(() => this.successMsg.set(null), 3000);
+        setTimeout(() => this.successMsg.set(null), NOTIFICATION_DURATION.medium);
     }
 }

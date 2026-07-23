@@ -10,6 +10,7 @@ import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/p
 import { PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
 import { ButtonComponent } from '@shared/components';
 import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
+import { PAGINATION } from '@shared/constants/app.constants';
 
 @Component({
     selector: 'app-almacenes-page',
@@ -44,7 +45,7 @@ export class AlmacenesPageComponent implements OnInit {
 
     // Pagination
     currentPage   = signal(0);
-    pageSize      = signal(10);
+    pageSize      = signal<number>(PAGINATION.defaultPageSize);
     totalElements = signal(0);
     totalPages    = signal(0);
 

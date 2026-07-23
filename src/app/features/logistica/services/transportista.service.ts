@@ -2,13 +2,14 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Transportista, TransportistaPage, CreateTransportistaDto } from '../models/transportista.model';
+import { PAGINATION } from '@shared/constants/app.constants';
 
 @Injectable({ providedIn: 'root' })
 export class TransportistaService {
     private readonly http = inject(HttpClient);
     private readonly baseUrl = '/logistics/api/carriers';
 
-    getTransportistas(companyId: string, page = 0, size = 10): Observable<TransportistaPage> {
+    getTransportistas(companyId: string, page = 0, size: number = PAGINATION.defaultPageSize): Observable<TransportistaPage> {
         const params = new HttpParams()
             .set('companyId', companyId)
             .set('page', String(page))

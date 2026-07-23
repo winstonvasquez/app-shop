@@ -1,5 +1,6 @@
 import { Component, input, output, HostListener, ChangeDetectionStrategy, OnInit } from '@angular/core';
 import { LucideAngularModule } from 'lucide-angular';
+import { MODAL_SIZES } from '@shared/constants/ui.constants';
 
 export type ModalSize = 'sm' | 'md' | 'lg' | 'xl' | 'full';
 
@@ -38,7 +39,7 @@ export type ModalSize = 'sm' | 'md' | 'lg' | 'xl' | 'full';
 export class ModalComponent implements OnInit {
     isOpen = input(false);
     title = input('');
-    size = input<ModalSize>('md');
+    size = input<ModalSize>(MODAL_SIZES.medium);
     closable = input(true);
     hasFooter = input(false);
 

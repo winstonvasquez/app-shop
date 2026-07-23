@@ -11,6 +11,8 @@ import { AnalyticsService } from '@core/services/analytics.service';
 import { ProductService, FiltrosDisponibles } from '@core/services/product.service';
 import { ProductResponse } from '@core/models/product.model';
 import { CartService } from '@features/cart/services/cart.service';
+import { PAGINATION } from '@shared/constants/app.constants';
+import { CURRENCY_DISPLAY } from '@shared/constants/sunat.constants';
 
 import {
     DsProductCardComponent,
@@ -113,8 +115,8 @@ export class ProductsPageComponent implements OnInit {
         if (pMin !== null || pMax !== null) {
             chips.push({
                 key: 'price',
-                label: `S/ ${pMin ?? 0}–S/ ${pMax ?? '∞'}`,
-                clear: () => { this.precioMin.set(null); this.precioMax.set(null); this.goToPage(1); },
+                label: `${CURRENCY_DISPLAY.SYMBOL_PEN} ${pMin ?? 0}–${CURRENCY_DISPLAY.SYMBOL_PEN} ${pMax ?? '∞'}`,
+                clear: () => { this.precioMin.set(null); this.precioMax.set(null); this.goToPage(PAGINATION.defaultPage); },
             });
         }
         for (const e of this.enviosSeleccionados()) {
@@ -171,7 +173,7 @@ export class ProductsPageComponent implements OnInit {
             if (params['rating'])     this.minRating.set(Number(params['rating']));
             if (params['new'])        this.showNew.set(params['new'] === 'true');
             if (params['categoryId']) this.searchService.setCategoryId(Number(params['categoryId']));
-            const page = params['page'] ? Number(params['page']) : 1;
+            const page = params['page'] ? Number(params['page']) : PAGINATION.defaultPage;
             this.currentPage.set(page);
             this.loadProducts(page);
         });
@@ -361,7 +363,7 @@ export class ProductsPageComponent implements OnInit {
         this.enviosSeleccionados.set([]);
         this.router.navigate([], {
             relativeTo: this.route,
-            queryParams: { page: 1 },
+            queryParams: { page: PAGINATION.defaultPage },
             queryParamsHandling: 'replace',
         });
         this.loadProducts(1);

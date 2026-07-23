@@ -11,6 +11,7 @@ import { ModalComponent } from '@shared/components/modal/modal.component';
 import { ButtonComponent } from '@shared/components';
 import { InventoryApiService } from '../../services/inventory-api.service';
 import { Warehouse } from '../../models/inventory.models';
+import { PAGINATION, ROUTES } from '@shared/constants/app.constants';
 
 @Component({
     selector: 'app-warehouse-management',
@@ -34,7 +35,7 @@ export class WarehouseManagementComponent implements OnInit {
     error = signal<string | null>(null);
 
     currentPage = signal(0);
-    pageSize = signal(10);
+    pageSize = signal<number>(PAGINATION.defaultPageSize);
     totalElements = signal(0);
     totalPages = signal(0);
 
@@ -48,7 +49,7 @@ export class WarehouseManagementComponent implements OnInit {
     pendingDeleteId = signal<number | null>(null);
 
     breadcrumbs: Breadcrumb[] = [
-        { label: 'Admin', url: '/admin' },
+        { label: 'Admin', url: ROUTES.admin },
         { label: 'Inventario', url: '/admin/inventario/dashboard' },
         { label: 'Almacenes' }
     ];

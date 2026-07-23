@@ -13,6 +13,8 @@ import { ButtonComponent } from '@shared/components';
 import { PagosService } from '../../services/pagos.service';
 import { AuthService } from '@core/auth/auth.service';
 import { Payment, PaymentRequest, Page } from '../../models/tesoreria.model';
+import { MONEDA } from '@shared/constants/sunat.constants';
+import { PAGINATION } from '@shared/constants/app.constants';
 
 @Component({
     selector: 'app-pagos',
@@ -38,7 +40,7 @@ export class PagosComponent implements OnInit {
     showCreateDrawer = signal(false);
 
     currentPage   = signal(0);
-    pageSize      = signal(10);
+    pageSize      = signal<number>(PAGINATION.defaultPageSize);
     totalElements = signal(0);
     totalPages    = signal(0);
 
@@ -140,7 +142,7 @@ export class PagosComponent implements OnInit {
             tenantId:              this.auth.currentUser()?.activeCompanyId ?? 1,
             tipoPago:              v.tipoPago,
             monto:                 v.monto,
-            moneda:                'PEN',
+            moneda:                MONEDA.PEN,
             metodoPago:            v.metodoPago,
             fechaSolicitud:        v.fechaSolicitud,
             beneficiarioNombre:    v.beneficiarioNombre,

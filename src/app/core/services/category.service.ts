@@ -11,6 +11,7 @@ import {
 } from '@core/models/category.model';
 import { PageResponse, PaginationConfig } from '@core/models/pagination.model';
 import { AuthService } from '@core/auth/auth.service';
+import { HTTP_STATUS } from '@shared/constants/app.constants';
 
 @Injectable({
     providedIn: 'root'
@@ -122,13 +123,13 @@ export class CategoryService {
         } else {
             if (error.status === 0) {
                 errorMessage = 'No se pudo conectar con el servidor';
-            } else if (error.status === 400) {
+            } else if (error.status === HTTP_STATUS.badRequest) {
                 errorMessage = error.error?.message || 'Datos inválidos';
-            } else if (error.status === 404) {
+            } else if (error.status === HTTP_STATUS.notFound) {
                 errorMessage = 'Categoría no encontrada';
-            } else if (error.status === 409) {
+            } else if (error.status === HTTP_STATUS.conflict) {
                 errorMessage = 'La categoría ya existe';
-            } else if (error.status === 500) {
+            } else if (error.status === HTTP_STATUS.internalServerError) {
                 errorMessage = 'Error interno del servidor';
             } else {
                 errorMessage = `Error ${error.status}: ${error.error?.message || error.statusText}`;

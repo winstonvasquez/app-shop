@@ -13,6 +13,8 @@ import { ButtonComponent } from '@shared/components';
 import { MovimientosFinancierosService, FinancialMovementRequest } from '../../services/movimientos-financieros.service';
 import { AuthService } from '@core/auth/auth.service';
 import { FinancialMovement, Page } from '../../models/tesoreria.model';
+import { MONEDA, CURRENCY_DISPLAY } from '@shared/constants/sunat.constants';
+import { PAGINATION } from '@shared/constants/app.constants';
 
 @Component({
     selector: 'app-flujo-caja',
@@ -39,7 +41,7 @@ export class FlujoCajaComponent implements OnInit {
     flujoCajaNeto    = signal<number>(0);
 
     currentPage   = signal(0);
-    pageSize      = signal(10);
+    pageSize      = signal<number>(PAGINATION.defaultPageSize);
     totalElements = signal(0);
     totalPages    = signal(0);
 
@@ -51,7 +53,7 @@ export class FlujoCajaComponent implements OnInit {
         origen:         ['', Validators.required],
         descripcion:    ['', [Validators.required, Validators.minLength(3)]],
         monto:          [null, [Validators.required, Validators.min(0.01)]],
-        moneda:         ['PEN'],
+        moneda:         [MONEDA.PEN],
         fecha:          ['', Validators.required],
         cajaId:         [null],
     });
@@ -84,10 +86,10 @@ export class FlujoCajaComponent implements OnInit {
         { key: 'monto', label: 'Monto', align: 'right',
           render: r => {
               const sign = r.tipoMovimiento === 'INGRESO' ? '+' : r.tipoMovimiento === 'EGRESO' ? '-' : '';
-              return `${sign}S/ ${(r.monto ?? 0).toFixed(2)}`;
+              return `${sign}${CURRENCY_DISPLAY.SYMBOL_PEN} ${(r.monto ?? 0).toFixed(2)}`;
           }
         },
-        { key: 'moneda', label: 'Moneda', align: 'center', render: r => r.moneda ?? 'PEN' },
+        { key: 'moneda', label: 'Moneda', align: 'center', render: r => r.moneda ?? MONEDA.PEN },
     ];
 
     ngOnInit(): void {
@@ -135,7 +137,7 @@ export class FlujoCajaComponent implements OnInit {
 
     openCreateDrawer(): void {
         const today = new Date().toISOString().split('T')[0];
-        this.movimientoForm.reset({ tipoMovimiento: 'INGRESO', moneda: 'PEN', fecha: today, monto: null, origen: '', descripcion: '', cajaId: null });
+        this.movimientoForm.reset({ tipoMovimiento: 'INGRESO', moneda: MONEDA.PEN, fecha: today, monto: null, origen: '', descripcion: '', cajaId: null });
         this.errorMsg.set(null);
         this.showCreateDrawer.set(true);
     }
@@ -149,7 +151,7 @@ export class FlujoCajaComponent implements OnInit {
             tipoMovimiento: v.tipoMovimiento,
             origen:         v.origen,
             monto:          v.monto,
-            moneda:         v.moneda ?? 'PEN',
+            moneda:         v.moneda ?? MONEDA.PEN,
             fecha:          v.fecha,
             descripcion:    v.descripcion,
             cajaId:         v.cajaId ?? undefined,

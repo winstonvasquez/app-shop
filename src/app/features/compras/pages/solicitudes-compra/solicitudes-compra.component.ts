@@ -18,6 +18,7 @@ import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/p
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { LoadingSpinnerComponent } from '@shared/ui/feedback/loading-spinner/loading-spinner.component';
 import { PaginationComponent, PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
+import { PAGINATION } from '@shared/constants/app.constants';
 
 @Component({
     selector: 'app-solicitudes-compra',
@@ -59,7 +60,7 @@ export class SolicitudesCompraComponent implements OnInit {
     // Filters & pagination
     filterEstado = signal('');
     currentPage = signal(0);
-    pageSize = signal(10);
+    pageSize = signal<number>(PAGINATION.defaultPageSize);
     totalElements = signal(0);
     totalPages = signal(0);
 

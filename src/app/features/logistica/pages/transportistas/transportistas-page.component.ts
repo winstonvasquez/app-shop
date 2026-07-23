@@ -10,6 +10,7 @@ import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
 import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
+import { PAGINATION } from '@shared/constants/app.constants';
 
 @Component({
     selector: 'app-transportistas-page',
@@ -44,7 +45,7 @@ export class TransportistasPageComponent implements OnInit {
 
     // Pagination
     currentPage   = signal(0);
-    pageSize      = signal(10);
+    pageSize      = signal<number>(PAGINATION.defaultPageSize);
     totalElements = signal(0);
     totalPages    = signal(0);
 

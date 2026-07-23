@@ -1,4 +1,5 @@
 import { Component, input, computed, ChangeDetectionStrategy } from '@angular/core';
+import { CURRENCY_DISPLAY } from '@shared/constants/sunat.constants';
 
 export type DsPriceSize = 'sm' | 'md' | 'lg' | 'xl' | '2xl';
 export type DsPriceTone = 'priceNow' | 'text' | 'brand';
@@ -41,7 +42,7 @@ export class DsPriceComponent {
     now = input.required<number | string>();
     was = input<number | string | null>(null);
     size = input<DsPriceSize>('md');
-    currency = input<string>('S/');
+    currency = input<string>(CURRENCY_DISPLAY.SYMBOL_PEN);
     tone = input<DsPriceTone>('priceNow');
 
     protected sizePx = computed<number>(() => {

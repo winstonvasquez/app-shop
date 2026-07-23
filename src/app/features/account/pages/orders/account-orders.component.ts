@@ -13,6 +13,7 @@ import {
     DsBadgeComponent,
     DsBadgeTone,
 } from '@shared/ui/ds';
+import { PAGINATION } from '@shared/constants/app.constants';
 
 @Component({
     selector: 'app-account-orders',
@@ -49,7 +50,7 @@ export class AccountOrdersComponent implements OnInit {
         this.error.set(null);
         const params = new HttpParams()
             .set('page', page.toString())
-            .set('size', '10')
+            .set('size', PAGINATION.defaultPageSize.toString())
             .set('sort', 'fechaPedido,desc');
 
         this.http.get<PageResponse<OrderResponse>>(this.baseUrl, { params }).subscribe({

@@ -4,8 +4,9 @@ import { FormsModule } from '@angular/forms';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { TipoCambioService, TipoCambio, TipoCambioRequest } from '../../services/tipo-cambio.service';
 import { ButtonComponent } from '@shared/components';
+import { MONEDA } from '@shared/constants/sunat.constants';
 
-const MONEDAS = ['USD', 'EUR', 'GBP', 'JPY', 'CHF'] as const;
+const MONEDAS = [MONEDA.USD, 'EUR', 'GBP', 'JPY', 'CHF'] as const;
 
 @Component({
     selector: 'app-tipo-cambio',
@@ -19,7 +20,7 @@ export class TipoCambioComponent implements OnInit {
     private translate = inject(TranslateService);
 
     readonly monedas = MONEDAS;
-    readonly moneda = signal<string>('USD');
+    readonly moneda = signal<string>(MONEDA.USD);
     readonly fecha = signal(new Date().toISOString().substring(0, 10));
     readonly resultado = signal<TipoCambio | null>(null);
     readonly cargando = signal(false);

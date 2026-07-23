@@ -1,4 +1,5 @@
 import { Component, input, output, ChangeDetectionStrategy, effect, inject } from '@angular/core';
+import { MODAL_SIZES } from '@shared/constants/ui.constants';
 
 @Component({
     selector: 'app-modal',
@@ -10,7 +11,7 @@ import { Component, input, output, ChangeDetectionStrategy, effect, inject } fro
 export class ModalComponent {
     isOpen = input.required<boolean>();
     title = input<string>('');
-    size = input<'sm' | 'md' | 'lg' | 'xl' | 'full'>('md');
+    size = input<'sm' | 'md' | 'lg' | 'xl' | 'full'>(MODAL_SIZES.medium);
     closeOnBackdrop = input<boolean>(true);
     showCloseButton = input<boolean>(true);
     

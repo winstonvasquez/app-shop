@@ -11,6 +11,7 @@ import {
     OrderCancelResponse
 } from '@core/models/order.model';
 import { PageResponse, PaginationConfig } from '@core/models/pagination.model';
+import { HTTP_STATUS } from '@shared/constants/app.constants';
 
 @Injectable({
     providedIn: 'root'
@@ -125,11 +126,11 @@ export class OrderService {
         } else {
             if (error.status === 0) {
                 errorMessage = 'No se pudo conectar con el servidor';
-            } else if (error.status === 400) {
+            } else if (error.status === HTTP_STATUS.badRequest) {
                 errorMessage = error.error?.message || 'Datos inválidos';
-            } else if (error.status === 404) {
+            } else if (error.status === HTTP_STATUS.notFound) {
                 errorMessage = 'Pedido no encontrado';
-            } else if (error.status === 500) {
+            } else if (error.status === HTTP_STATUS.internalServerError) {
                 errorMessage = 'Error interno del servidor';
             }
         }

@@ -5,6 +5,7 @@ import { TranslateModule } from '@ngx-translate/core';
 import { VentaPosResponse } from '../../models/venta-pos.model';
 import { PosVentaService } from '../../services/pos-venta.service';
 import QRCode from 'qrcode';
+import { NOTIFICATION_DURATION } from '@shared/constants/ui.constants';
 
 @Component({
     selector: 'app-pos-receipt',
@@ -57,7 +58,7 @@ export class PosReceiptComponent {
             next: () => {
                 this.emailSending.set(false);
                 this.emailSent.set(true);
-                setTimeout(() => this.emailSent.set(false), 3000);
+                setTimeout(() => this.emailSent.set(false), NOTIFICATION_DURATION.medium);
             },
             error: () => this.emailSending.set(false),
         });

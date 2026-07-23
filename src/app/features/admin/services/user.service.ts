@@ -9,6 +9,7 @@ import {
     UserFilter
 } from '@features/admin/models/user.model';
 import { PageResponse, PaginationConfig } from '@features/admin/models/product.model';
+import { HTTP_STATUS } from '@shared/constants/app.constants';
 
 @Injectable({
     providedIn: 'root'
@@ -120,13 +121,13 @@ export class UserService {
             // Server-side error
             if (error.status === 0) {
                 errorMessage = 'No se pudo conectar con el servidor';
-            } else if (error.status === 400) {
+            } else if (error.status === HTTP_STATUS.badRequest) {
                 errorMessage = error.error?.message || 'Datos inválidos';
-            } else if (error.status === 404) {
+            } else if (error.status === HTTP_STATUS.notFound) {
                 errorMessage = 'Usuario no encontrado';
-            } else if (error.status === 409) {
+            } else if (error.status === HTTP_STATUS.conflict) {
                 errorMessage = 'El usuario ya existe (username, email o documento duplicado)';
-            } else if (error.status === 500) {
+            } else if (error.status === HTTP_STATUS.internalServerError) {
                 errorMessage = 'Error interno del servidor';
             } else {
                 errorMessage = `Error ${error.status}: ${error.error?.message || error.statusText}`;

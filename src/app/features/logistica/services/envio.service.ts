@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Envio, EnvioPage, CreateEnvioDto, TrackingEvent } from '../models/envio.model';
+import { PAGINATION } from '@shared/constants/app.constants';
 
 @Injectable({ providedIn: 'root' })
 export class EnvioService {
@@ -9,7 +10,7 @@ export class EnvioService {
     private readonly baseUrl     = '/logistics/api/shipments';
     private readonly trackingUrl = '/logistics/api/tracking';
 
-    getEnvios(companyId: string, page = 0, size = 10, status?: string): Observable<EnvioPage> {
+    getEnvios(companyId: string, page = 0, size: number = PAGINATION.defaultPageSize, status?: string): Observable<EnvioPage> {
         let params = new HttpParams()
             .set('companyId', companyId)
             .set('page', String(page))

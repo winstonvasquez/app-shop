@@ -2,6 +2,7 @@ import { inject } from '@angular/core';
 import { HttpClient, HttpParams, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
+import { HTTP_STATUS } from '@shared/constants/app.constants';
 
 export abstract class BaseApiService<TCreate, TResponse = TCreate> {
     protected readonly http = inject(HttpClient);
@@ -45,17 +46,17 @@ export abstract class BaseApiService<TCreate, TResponse = TCreate> {
         } else {
             if (error.status === 0) {
                 errorMessage = 'No se pudo conectar con el servidor';
-            } else if (error.status === 400) {
+            } else if (error.status === HTTP_STATUS.badRequest) {
                 errorMessage = error.error?.message || 'Datos inválidos';
-            } else if (error.status === 401) {
+            } else if (error.status === HTTP_STATUS.unauthorized) {
                 errorMessage = 'No autorizado';
-            } else if (error.status === 403) {
+            } else if (error.status === HTTP_STATUS.forbidden) {
                 errorMessage = 'Acceso denegado';
-            } else if (error.status === 404) {
+            } else if (error.status === HTTP_STATUS.notFound) {
                 errorMessage = 'Recurso no encontrado';
-            } else if (error.status === 409) {
+            } else if (error.status === HTTP_STATUS.conflict) {
                 errorMessage = 'Conflicto: el registro ya existe o está en uso';
-            } else if (error.status === 500) {
+            } else if (error.status === HTTP_STATUS.internalServerError) {
                 errorMessage = 'Error interno del servidor';
             } else {
                 errorMessage = `Error ${error.status}: ${error.error?.message || error.statusText}`;

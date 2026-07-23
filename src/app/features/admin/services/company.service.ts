@@ -4,6 +4,7 @@ import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { environment } from '@env/environment';
 import { PageResponse } from '@core/models/pagination.model';
+import { HTTP_STATUS } from '@shared/constants/app.constants';
 import {
     CompanyResponse,
     CompanyRequest,
@@ -149,13 +150,13 @@ export class CompanyService {
             // Server-side error
             if (error.status === 0) {
                 errorMessage = 'No se pudo conectar con el servidor';
-            } else if (error.status === 400) {
+            } else if (error.status === HTTP_STATUS.badRequest) {
                 errorMessage = error.error?.message || 'Datos inválidos';
-            } else if (error.status === 404) {
+            } else if (error.status === HTTP_STATUS.notFound) {
                 errorMessage = 'Empresa no encontrada';
-            } else if (error.status === 409) {
+            } else if (error.status === HTTP_STATUS.conflict) {
                 errorMessage = 'La empresa ya existe o el RUC está duplicado';
-            } else if (error.status === 500) {
+            } else if (error.status === HTTP_STATUS.internalServerError) {
                 errorMessage = 'Error interno del servidor';
             } else {
                 errorMessage = `Error ${error.status}: ${error.error?.message || error.statusText}`;

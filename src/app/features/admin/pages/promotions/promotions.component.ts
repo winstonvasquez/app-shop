@@ -11,6 +11,7 @@ import { AdminFormLayoutComponent } from '@shared/ui/forms/admin-form-layout/adm
 import { ButtonComponent } from '@shared/components';
 import { PromotionsService, Promocion } from '../../services/promotions.service';
 import { VentasParametrosService, SelectOption } from '../../services/ventas-parametros.service';
+import { CURRENCY_DISPLAY } from '@shared/constants/sunat.constants';
 
 type EstadoPromocion = 'ACTIVA' | 'INACTIVA' | 'VENCIDA';
 
@@ -84,11 +85,11 @@ export class PromotionsComponent implements OnInit {
     columns: TableColumn<PromocionVM>[] = [
         { key: 'nombre',    label: 'Nombre' },
         { key: 'tipo',      label: 'Tipo', html: true,
-          render: (row) => `<span class="badge badge-neutral">${row.tipo === 'PORCENTAJE' ? '%' : 'S/'}</span> ${row.tipo.replace('_', ' ')}` },
+          render: (row) => `<span class="badge badge-neutral">${row.tipo === 'PORCENTAJE' ? '%' : CURRENCY_DISPLAY.SYMBOL_PEN}</span> ${row.tipo.replace('_', ' ')}` },
         { key: 'valor',     label: 'Valor', align: 'right',
           render: (row) => row.tipo === 'PORCENTAJE'
             ? `${row.valor}%`
-            : `S/ ${row.valor.toFixed(2)}` },
+            : `${CURRENCY_DISPLAY.SYMBOL_PEN} ${row.valor.toFixed(2)}` },
         { key: 'fechaInicio', label: 'Vigencia',
           render: (row) => `${new Date(row.fechaInicio).toLocaleDateString('es-PE')} — ${new Date(row.fechaFin).toLocaleDateString('es-PE')}` },
         { key: 'usosActuales', label: 'Usos',
@@ -128,7 +129,7 @@ export class PromotionsComponent implements OnInit {
     /** Label dinámico para el campo valor según tipo de descuento seleccionado. */
     valorLabel = computed(() => {
         const tipo = this.tipoDescuento();
-        return tipo === 'PORCENTAJE' ? 'Valor (%)' : 'Valor (S/)';
+        return tipo === 'PORCENTAJE' ? 'Valor (%)' : `Valor (${CURRENCY_DISPLAY.SYMBOL_PEN})`;
     });
 
     ngOnInit(): void {

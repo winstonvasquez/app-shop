@@ -8,6 +8,7 @@ import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { LoadingSpinnerComponent } from '@shared/ui/feedback/loading-spinner/loading-spinner.component';
+import { PAGINATION } from '@shared/constants/app.constants';
 import { ButtonComponent } from '@shared/components';
 import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 
@@ -43,7 +44,7 @@ export class RecepcionComponent implements OnInit {
 
     // Pagination
     currentPage = signal(0);
-    pageSize = signal(10);
+    pageSize = signal<number>(PAGINATION.defaultPageSize);
     totalElements = signal(0);
     totalPages = signal(0);
 

@@ -2,6 +2,8 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '@env/environment';
+import { APP_CONFIG } from '@shared/constants/app.constants';
+import { CURRENCY_DISPLAY } from '@shared/constants/sunat.constants';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Modelo
@@ -80,7 +82,7 @@ export interface PaymentAttempt {
                         @for (attempt of pagos(); track attempt.id) {
                         <tr class="table-row">
                             <td class="table-cell text-sm">
-                                {{ attempt.createdAt | date:'dd/MM/yyyy HH:mm' }}
+                                {{ attempt.createdAt | date:'${APP_CONFIG.dateTimeFormat}' }}
                             </td>
                             <td class="table-cell font-medium">
                                 #{{ attempt.pedidoId }}
@@ -94,7 +96,7 @@ export interface PaymentAttempt {
                                 </span>
                             </td>
                             <td class="table-cell text-right font-bold">
-                                S/ {{ attempt.amount | number:'1.2-2' }}
+                                ${CURRENCY_DISPLAY.SYMBOL_PEN} {{ attempt.amount | number:'1.2-2' }}
                             </td>
                             <td class="table-cell text-xs text-[var(--color-text-muted)]">
                                 {{ attempt.externalId ?? '—' }}

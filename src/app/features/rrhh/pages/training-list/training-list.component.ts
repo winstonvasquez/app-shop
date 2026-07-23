@@ -11,6 +11,7 @@ import { DateInputComponent } from '@shared/ui/forms/date-input/date-input.compo
 import { ButtonComponent } from '@shared/components';
 import { TrainingService } from '../../services/training.service';
 import { Training, TRAINING_STATUS_LABELS, TrainingStatus } from '../../models/training.model';
+import { PAGINATION } from '@shared/constants/app.constants';
 
 @Component({
     selector: 'app-training-list',
@@ -48,7 +49,7 @@ export class TrainingListComponent implements OnInit {
 
     filtroEstado = signal('');
     currentPage = signal(0);
-    pageSize = signal(10);
+    pageSize = signal<number>(PAGINATION.defaultPageSize);
 
     readonly filtered = computed(() => {
         const f = this.filtroEstado();

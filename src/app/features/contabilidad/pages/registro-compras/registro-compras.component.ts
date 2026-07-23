@@ -10,6 +10,7 @@ import { OrdenCompra } from '../../../compras/models/orden-compra.model';
 import { ExportService } from '@shared/services/export.service';
 import { DataTableComponent, TableColumn, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { ButtonComponent } from '@shared/components';
+import { CPE_TIPO, MONEDA } from '@shared/constants/sunat.constants';
 
 @Component({
     selector: 'app-registro-compras',
@@ -181,7 +182,7 @@ export class RegistroComprasComponent implements OnInit {
         const lines = this.ordenes().map((o, i) => {
             const cuo = String(i + 1).padStart(6, '0');
             const fechaFmt = this.formatFechaPLE(o.fechaEmision);
-            const tipoCpe = '01';
+            const tipoCpe = CPE_TIPO.FACTURA;
             const serie = o.codigo?.split('-')[0] ?? 'F001';
             const numero = o.codigo?.split('-').slice(1).join('') ?? String(i + 1).padStart(8, '0');
             const base = (o.subtotal ?? 0).toFixed(2);
@@ -192,7 +193,7 @@ export class RegistroComprasComponent implements OnInit {
             return [periodoStr, cuo, fechaFmt, '', tipoCpe, serie, numero,
                     '6', '', proveedor,
                     base, igv, '0.00', '0.00', '0.00', '0.00', '0.00', '0.00', '0.00',
-                    total, 'PEN', '1.000', '', '', '', '0', '0.00', '0.00',
+                    total, MONEDA.PEN, '1.000', '', '', '', '0', '0.00', '0.00',
                     estado, '0', '0'].join('|');
         });
         this.exportService.descargarTxt(lines.join('\r\n'), `LE${periodoStr}080100001100_1_1`);

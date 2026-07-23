@@ -13,6 +13,7 @@ import { TranslatePipe } from '@ngx-translate/core';
 import { of } from 'rxjs';
 import { DevolucionService } from '../../services/devolucion.service';
 import { CrearDevolucionRequest, Devolucion } from '../../models/devolucion.model';
+import { PAGINATION } from '@shared/constants/app.constants';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
@@ -59,7 +60,7 @@ export class DevolucionesComponent implements OnInit {
 
     filterEstado = signal('');
     currentPage = signal(0);
-    pageSize = signal(10);
+    pageSize = signal<number>(PAGINATION.defaultPageSize);
     totalElements = signal(0);
     totalPages = signal(0);
     searchQuery = signal('');

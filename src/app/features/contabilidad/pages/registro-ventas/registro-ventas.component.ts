@@ -7,6 +7,7 @@ import { PleService } from '../../services/ple.service';
 import { environment } from '@env/environment';
 import { ButtonComponent } from '@shared/components';
 import { DataTableComponent, TableColumn, PaginationEvent } from '@shared/ui/tables/data-table/data-table.component';
+import { CPE_TIPO } from '@shared/constants/sunat.constants';
 
 interface VentaPLE {
     id: string | number;
@@ -156,7 +157,7 @@ export class RegistroVentasComponent implements OnInit {
         const lines = this.ventas().map((v, i) => {
             const cuo = String(i + 1).padStart(6, '0');
             const correlativo = 'M' + String(i + 1).padStart(3, '0');
-            const tipoCpe = v.tipoComprobante === 'FACTURA' ? '01' : v.tipoComprobante === 'BOLETA' ? '03' : '00';
+            const tipoCpe = v.tipoComprobante === 'FACTURA' ? CPE_TIPO.FACTURA : v.tipoComprobante === 'BOLETA' ? CPE_TIPO.BOLETA : '00';
             const fechaFmt = this.formatFechaPLE(v.fecha);
             const tipoDocliente = (v.rucCliente ?? '').length === 11 ? '6' : '1';
             const base = (v.baseImponible ?? 0).toFixed(2);

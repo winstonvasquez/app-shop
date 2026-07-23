@@ -6,6 +6,7 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { LucideAngularModule } from 'lucide-angular';
 import { AuthService } from '@core/auth/auth.service';
 import { DsButtonComponent, DsWordmarkComponent } from '@shared/ui/ds';
+import { HTTP_STATUS } from '@shared/constants/app.constants';
 
 @Component({
     selector: 'app-login',
@@ -76,7 +77,7 @@ export class LoginComponent {
             },
             error: (error) => {
                 this.loading.set(false);
-                this.errorMessage.set(error.status === 401
+                this.errorMessage.set(error.status === HTTP_STATUS.unauthorized
                     ? 'auth.errorInvalidCredentials'
                     : 'auth.errorConnection',
                 );

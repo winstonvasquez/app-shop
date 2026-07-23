@@ -11,6 +11,7 @@ import { AsientoService } from '../../services/asiento.service';
 import { CuentaService, CuentaContable } from '../../services/cuenta.service';
 import { PeriodoService, PeriodoContable } from '../../services/periodo.service';
 import { Asiento, AsientoRequest, MovimientoRequest } from '../../models/asiento.model';
+import { PAGINATION } from '@shared/constants/app.constants';
 
 interface LineaForm {
     cuentaId: string;
@@ -304,7 +305,7 @@ export class AsientosComponent implements OnInit {
 
     // ── Paginación local ───────────────────────────────────────────────────
     readonly currentPage = signal(0);
-    readonly pageSize = signal(10);
+    readonly pageSize = signal<number>(PAGINATION.defaultPageSize);
     readonly totalPagesLocal = computed(() => Math.ceil(this.asientosFiltrados().length / this.pageSize()) || 1);
 
     // ── Formulario ─────────────────────────────────────────────────────────

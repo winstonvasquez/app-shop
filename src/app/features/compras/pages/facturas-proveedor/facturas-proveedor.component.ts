@@ -25,6 +25,8 @@ import {
     FilterConfig,
     FilterChangeEvent,
 } from '@shared/ui/tables/data-table/data-table.component';
+import { MONEDA } from '@shared/constants/sunat.constants';
+import { PAGINATION } from '@shared/constants/app.constants';
 
 @Component({
     selector: 'app-facturas-proveedor',
@@ -59,7 +61,7 @@ export class FacturasProveedorComponent implements OnInit {
 
     filterEstado = signal('');
     currentPage = signal(0);
-    pageSize = signal(10);
+    pageSize = signal<number>(PAGINATION.defaultPageSize);
     totalElements = signal(0);
     totalPages = signal(0);
     searchQuery = signal('');
@@ -137,7 +139,7 @@ export class FacturasProveedorComponent implements OnInit {
         tipoDocumento: ['FACTURA'],
         fechaEmision: ['', Validators.required],
         fechaVencimiento: [''],
-        moneda: ['PEN'],
+        moneda: [MONEDA.PEN],
         observaciones: [''],
         items: this.fb.array([this.createItemGroup()]),
     });
@@ -195,7 +197,7 @@ export class FacturasProveedorComponent implements OnInit {
     }
 
     openCreateForm(): void {
-        this.facturaForm.reset({ tipoDocumento: 'FACTURA', moneda: 'PEN' });
+        this.facturaForm.reset({ tipoDocumento: 'FACTURA', moneda: MONEDA.PEN });
         while (this.itemsArray.length > 0) this.itemsArray.removeAt(0);
         this.itemsArray.push(this.createItemGroup());
         this.submitError.set(null);
@@ -236,7 +238,7 @@ export class FacturasProveedorComponent implements OnInit {
             tipoDocumento: fv.tipoDocumento ?? 'FACTURA',
             fechaEmision: fv.fechaEmision ?? '',
             fechaVencimiento: fv.fechaVencimiento || undefined,
-            moneda: fv.moneda ?? 'PEN',
+            moneda: fv.moneda ?? MONEDA.PEN,
             observaciones: fv.observaciones || undefined,
             items: (fv.items ?? []).map((i: Record<string, unknown>) => ({
                 ordenItemId: (i['ordenItemId'] as string) || undefined,

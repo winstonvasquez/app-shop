@@ -15,6 +15,7 @@ import { PaginationChangeEvent } from '@shared/ui/pagination/pagination.componen
 import { DataTableComponent, TableColumn, TableAction } from '@shared/ui/tables/data-table/data-table.component';
 import { AuthService } from '@core/auth/auth.service';
 import { CustomerFormComponent } from '../customer-form/customer-form.component';
+import { CURRENCY_DISPLAY } from '@shared/constants/sunat.constants';
 
 @Component({
     selector: 'app-customer-list',
@@ -62,7 +63,7 @@ export class CustomerListComponent implements OnInit {
           render: (c) => `<span class="badge badge-neutral">${c.condicionPago}</span>` },
         { key: 'limiteCredito', label: 'Crédito', align: 'right',
           render: (c) => c.limiteCredito > 0
-              ? `S/ ${c.saldoCredito.toFixed(2)} / ${c.limiteCredito.toFixed(2)}` : '-' }
+              ? `${CURRENCY_DISPLAY.SYMBOL_PEN} ${c.saldoCredito.toFixed(2)} / ${c.limiteCredito.toFixed(2)}` : '-' }
     ];
 
     actions: TableAction<CustomerResponse>[] = [

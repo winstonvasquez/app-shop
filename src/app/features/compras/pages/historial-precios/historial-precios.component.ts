@@ -4,6 +4,7 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { EvaluacionService } from '../../services/evaluacion.service';
 import { ProveedorService } from '../../services/proveedor.service';
 import { HistorialPrecio } from '../../models/evaluacion.model';
+import { MONEDA } from '@shared/constants/sunat.constants';
 import { Proveedor } from '../../models/proveedor.model';
 import { ButtonComponent } from '@shared/components';
 
@@ -35,7 +36,7 @@ export class HistorialPreciosComponent {
         productoNombre: ['', Validators.required],
         proveedorId: ['', Validators.required],
         precioUnitario: [null, [Validators.required, Validators.min(0.01)]],
-        moneda: ['PEN'],
+        moneda: [MONEDA.PEN],
         fechaReferencia: [''],
     });
 
@@ -69,7 +70,7 @@ export class HistorialPreciosComponent {
         this.service.registrarPrecio(v).subscribe({
             next: h => {
                 this.historial.update(list => [h, ...list]);
-                this.form.reset({ moneda: 'PEN' });
+                this.form.reset({ moneda: MONEDA.PEN });
                 this.showForm.set(false);
                 this.saving.set(false);
             },

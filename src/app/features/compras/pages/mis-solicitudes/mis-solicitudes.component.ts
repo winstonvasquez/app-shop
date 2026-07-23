@@ -17,6 +17,7 @@ import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { LoadingSpinnerComponent } from '@shared/ui/feedback/loading-spinner/loading-spinner.component';
 import { PaginationComponent, PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
 import { ButtonComponent } from '@shared/components';
+import { PAGINATION } from '@shared/constants/app.constants';
 
 @Component({
     selector: 'app-mis-solicitudes',
@@ -43,7 +44,7 @@ export class MisSolicitudesComponent implements OnInit {
     actionError = signal<string | null>(null);
 
     currentPage = signal(0);
-    pageSize = signal(10);
+    pageSize = signal<number>(PAGINATION.defaultPageSize);
     totalElements = signal(0);
     totalPages = signal(0);
 

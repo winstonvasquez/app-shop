@@ -11,6 +11,7 @@ import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/p
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { LoadingSpinnerComponent } from '@shared/ui/feedback/loading-spinner/loading-spinner.component';
 import { ButtonComponent } from '@shared/components';
+import { SUNAT_RATES } from '@shared/constants/sunat.constants';
 
 export interface OcItemForm {
     productoNombre: string;
@@ -52,7 +53,7 @@ export class OrdenCompraFormComponent implements OnInit {
     totales = computed(() => {
         const items = this.formItems();
         const subtotal = items.reduce((acc, i) => acc + i.cantidad * i.precioUnitario, 0);
-        const igv = subtotal * 0.18;
+        const igv = subtotal * SUNAT_RATES.IGV;
         return { subtotal, igv, total: subtotal + igv };
     });
 

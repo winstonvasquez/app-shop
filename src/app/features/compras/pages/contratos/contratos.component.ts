@@ -4,6 +4,7 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { of } from 'rxjs';
 import { environment } from '@env/environment';
 import { AuthService } from '@core/auth/auth.service';
+import { MONEDA } from '@shared/constants/sunat.constants';
 import { ButtonComponent } from '@shared/components';
 import { DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent, PaginationEvent } from '@shared/ui/tables/data-table/data-table.component';
 
@@ -116,7 +117,7 @@ export class ContratosComponent implements OnInit {
         fechaInicio: ['', Validators.required],
         fechaFin: ['', Validators.required],
         montoContrato: [0, [Validators.required, Validators.min(0)]],
-        moneda: ['PEN'],
+        moneda: [MONEDA.PEN],
         condicionesPago: [''],
         penalidades: [''],
         renovacionAutomatica: [false],

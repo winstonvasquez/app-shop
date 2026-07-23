@@ -4,6 +4,7 @@ import {
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '@env/environment';
+import { APP_CONFIG } from '@shared/constants/app.constants';
 import { StoreConfigService } from '@core/services/store-config.service';
 
 interface FooterLink { label: string; url: string; }
@@ -159,7 +160,7 @@ export class FooterManagerComponent implements OnInit {
     errorMsg   = signal('');
 
     ngOnInit(): void {
-        this.storeConfig.loadConfig('es').subscribe(cfg => {
+        this.storeConfig.loadConfig(APP_CONFIG.defaultLanguage).subscribe(cfg => {
             this.titles.set({ ...cfg });
             this.links.set({
                 FOOTER_COMPANY_LINKS: this.parseLinks(cfg['FOOTER_COMPANY_LINKS']),
@@ -194,12 +195,12 @@ export class FooterManagerComponent implements OnInit {
                 payload[key] = JSON.stringify(this.links()[key]);
             });
 
-        const url = `${environment.apiUrls.sales}/api/ventas/tienda/config?locale=es`;
+        const url = `${environment.apiUrls.sales}/api/ventas/tienda/config?locale=${APP_CONFIG.defaultLanguage}`;
         this.http.put<void>(url, payload).subscribe({
             next: () => {
                 this.saving.set(false);
                 this.successMsg.set('Footer actualizado correctamente.');
-                this.storeConfig.loadConfig('es').subscribe();
+                this.storeConfig.loadConfig(APP_CONFIG.defaultLanguage).subscribe();
             },
             error: () => {
                 this.saving.set(false);

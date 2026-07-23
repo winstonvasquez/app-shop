@@ -4,6 +4,8 @@ import { Observable } from 'rxjs';
 import { ExportService } from '@shared/services/export.service';
 import { PaginationComponent, PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
 import { ButtonComponent } from '@shared/components';
+import { PAGINATION } from '@shared/constants/app.constants';
+import { SORT_DIRECTIONS } from '@shared/constants/ui.constants';
 
 export interface TableColumn<T = any> {
     key: string;
@@ -64,12 +66,12 @@ export class DataTableComponent<T = any> {
     selectable = input<boolean>(false);
 
     currentPage = input<number>(0);
-    pageSize = input<number>(10);
+    pageSize = input<number>(PAGINATION.defaultPageSize);
     totalElements = input<number>(0);
     totalPages = input<number>(0);
 
     sortField = input<string>('');
-    sortDirection = input<'asc' | 'desc'>('asc');
+    sortDirection = input<'asc' | 'desc'>(SORT_DIRECTIONS.asc);
 
     searchable = input<boolean>(false);
     searchPlaceholder = input<string>('Buscar...');
@@ -120,10 +122,10 @@ export class DataTableComponent<T = any> {
         const currentField = this.sortField();
         const currentDirection = this.sortDirection();
         
-        let newDirection: 'asc' | 'desc' = 'asc';
-        
+        let newDirection: 'asc' | 'desc' = SORT_DIRECTIONS.asc;
+
         if (currentField === column.key) {
-            newDirection = currentDirection === 'asc' ? 'desc' : 'asc';
+            newDirection = currentDirection === SORT_DIRECTIONS.asc ? SORT_DIRECTIONS.desc : SORT_DIRECTIONS.asc;
         }
         
         this.sortChange.emit({

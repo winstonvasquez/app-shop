@@ -7,6 +7,7 @@ import { AuthService } from '@core/auth/auth.service';
 import { ExportService } from '../../../../shared/services/export.service';
 import { ButtonComponent } from '@shared/components';
 import { DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent, PaginationEvent } from '@shared/ui/tables/data-table/data-table.component';
+import { CURRENCY_DISPLAY } from '@shared/constants/sunat.constants';
 
 interface VentaPos {
     id: number;
@@ -86,7 +87,7 @@ export class ReportesVentasComponent implements OnInit {
           render: (row) => `<span class="badge badge-neutral">${row.metodoPago}</span>` },
         { key: 'tipoCpe', label: 'CPE' },
         { key: 'total', label: 'Total', align: 'right',
-          render: (row) => `S/ ${(row.total ?? 0).toFixed(2)}` },
+          render: (row) => `${CURRENCY_DISPLAY.SYMBOL_PEN} ${(row.total ?? 0).toFixed(2)}` },
         { key: 'estado', label: 'Estado', html: true,
           render: (row) => `<span class="badge ${row.estado === 'COMPLETADA' ? 'badge-success' : 'badge-error'}">${row.estado}</span>` },
     ];

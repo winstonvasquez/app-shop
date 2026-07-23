@@ -3,6 +3,7 @@ import {
     ChangeDetectionStrategy
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { PAGINATION } from '@shared/constants/app.constants';
 
 export interface PaginationChangeEvent {
     page: number;
@@ -245,7 +246,7 @@ export class PaginationComponent {
     currentPage   = input.required<number>();
     totalPages    = input.required<number>();
     totalElements = input.required<number>();
-    pageSize      = input<number>(10);
+    pageSize      = input<number>(PAGINATION.defaultPageSize);
 
     pageChange = output<PaginationChangeEvent>();
 

@@ -13,6 +13,7 @@ import { TranslatePipe } from '@ngx-translate/core';
 import { of } from 'rxjs';
 import { CotizacionService } from '../../services/cotizacion.service';
 import { AuthService } from '@core/auth/auth.service';
+import { PAGINATION } from '@shared/constants/app.constants';
 import {
     CotizacionResumen,
     ComparativaDto,
@@ -67,7 +68,7 @@ export class CotizacionesComponent implements OnInit {
 
     filterEstado = signal('');
     currentPage = signal(0);
-    pageSize = signal(10);
+    pageSize = signal<number>(PAGINATION.defaultPageSize);
     totalElements = signal(0);
     totalPages = signal(0);
     searchQuery = signal('');

@@ -14,6 +14,7 @@ import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/p
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { LoadingSpinnerComponent } from '@shared/ui/feedback/loading-spinner/loading-spinner.component';
 import { ButtonComponent } from '@shared/components';
+import { CURRENCY_DISPLAY } from '@shared/constants/sunat.constants';
 
 @Component({
   selector: 'app-orders',
@@ -105,7 +106,7 @@ export class OrdersComponent implements OnInit {
         label: this.translate.instant('admin.orders.colTotal'),
         sortable: true,
         align: 'right',
-        render: (row) => `S/ ${row.total.toFixed(2)}`
+        render: (row) => `${CURRENCY_DISPLAY.SYMBOL_PEN} ${row.total.toFixed(2)}`
       },
       {
         key: 'estado',

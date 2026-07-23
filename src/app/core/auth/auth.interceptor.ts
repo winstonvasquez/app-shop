@@ -4,6 +4,7 @@ import { AuthService } from './auth.service';
 import { Router } from '@angular/router';
 import { catchError, throwError } from 'rxjs';
 import { environment } from '@env/environment';
+import { HTTP_STATUS } from '@shared/constants/app.constants';
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
     const authService = inject(AuthService);
@@ -25,7 +26,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
     // Handle 401 errors
     return next(req).pipe(
         catchError(error => {
-            if (error.status === 401) {
+            if (error.status === HTTP_STATUS.unauthorized) {
                 authService.logout();
             }
             return throwError(() => error);

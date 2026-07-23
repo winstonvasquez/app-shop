@@ -3,6 +3,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { Subscription, merge } from 'rxjs';
 import { StoreConfigService, TiendaPaginaDto } from '@core/services/store-config.service';
+import { APP_CONFIG } from '@shared/constants/app.constants';
 
 /** Configuración de cada página informativa */
 interface PageConfig {
@@ -79,7 +80,7 @@ export class InfoPageComponent implements OnInit, OnDestroy {
 
   private loadPageContent(slug: string, locale?: string) {
     if (!slug) return;
-    const lang = locale ?? this.translate.currentLang ?? 'es';
+    const lang = locale ?? this.translate.currentLang ?? APP_CONFIG.defaultLanguage;
     this.loading.set(true);
     this.sc.getPageContent(slug, lang).subscribe(data => {
       this.pageData.set(data);

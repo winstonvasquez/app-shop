@@ -1,5 +1,6 @@
 import { Component, inject, computed, input } from '@angular/core';
 import { AuthService } from '@core/auth/auth.service';
+import { MODULO_FLAG } from '@shared/constants/feature-flags.constants';
 import { MenuOrders } from './components/menu-orders/menu-orders.component';
 import { MenuReviews } from './components/menu-reviews/menu-reviews.component';
 import { MenuProfile } from './components/menu-profile/menu-profile.component';
@@ -32,8 +33,8 @@ export class HeaderUserMenu {
   userName = computed(() => this.authService.currentUser()?.username || 'Invitado');
 
   // Feature flags: módulos opcionales del tenant
-  hasCoupons       = computed(() => this.authService.hasModule('COUPONS'));
-  hasCredit        = computed(() => this.authService.hasModule('CREDIT'));
-  hasStoreFollows  = computed(() => this.authService.hasModule('STORE_FOLLOWS'));
-  hasSwitchAccount = computed(() => this.authService.hasModule('SWITCH_ACCOUNT'));
+  hasCoupons       = computed(() => this.authService.hasModule(MODULO_FLAG.COUPONS));
+  hasCredit        = computed(() => this.authService.hasModule(MODULO_FLAG.CREDIT));
+  hasStoreFollows  = computed(() => this.authService.hasModule(MODULO_FLAG.STORE_FOLLOWS));
+  hasSwitchAccount = computed(() => this.authService.hasModule(MODULO_FLAG.SWITCH_ACCOUNT));
 }

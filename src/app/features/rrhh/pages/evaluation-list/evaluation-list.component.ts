@@ -18,6 +18,7 @@ import {
     EVALUATION_TYPE_LABELS,
     EvaluationType,
 } from '../../models/evaluation.model';
+import { PAGINATION } from '@shared/constants/app.constants';
 
 @Component({
     selector: 'app-evaluation-list',
@@ -53,7 +54,7 @@ export class EvaluationListComponent implements OnInit {
     filtroEstado = signal('');
     filtroTipo = signal('');
     currentPage = signal(0);
-    pageSize = signal(10);
+    pageSize = signal<number>(PAGINATION.defaultPageSize);
 
     readonly filtered = computed(() => {
         let list = this.evaluations();

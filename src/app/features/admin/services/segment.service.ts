@@ -5,6 +5,7 @@ import { catchError } from 'rxjs/operators';
 import { environment } from '@env/environment';
 import { SegmentResponse, SegmentRequest } from '@features/admin/models/segment.model';
 import { PageResponse } from '@features/admin/models/product.model';
+import { HTTP_STATUS } from '@shared/constants/app.constants';
 
 @Injectable({
     providedIn: 'root'
@@ -56,9 +57,9 @@ export class SegmentService {
 
         if (error.status === 0) {
             message = 'No se pudo conectar con el servidor';
-        } else if (error.status === 404) {
+        } else if (error.status === HTTP_STATUS.notFound) {
             message = 'Segmento no encontrado';
-        } else if (error.status === 409) {
+        } else if (error.status === HTTP_STATUS.conflict) {
             message = 'Ya existe un segmento con ese nombre';
         } else {
             message = error.error?.message ?? `Error ${error.status}`;

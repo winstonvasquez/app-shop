@@ -4,6 +4,7 @@ import {
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '@env/environment';
+import { APP_CONFIG } from '@shared/constants/app.constants';
 import { StoreConfigService } from '@core/services/store-config.service';
 
 interface ConfigSection {
@@ -196,7 +197,7 @@ export class AparienciaComponent implements OnInit {
     errorMsg   = signal('');
 
     ngOnInit(): void {
-        this.storeConfig.loadConfig('es').subscribe(cfg => {
+        this.storeConfig.loadConfig(APP_CONFIG.defaultLanguage).subscribe(cfg => {
             this.form.set({ ...cfg });
         });
     }
@@ -206,12 +207,12 @@ export class AparienciaComponent implements OnInit {
         this.successMsg.set('');
         this.errorMsg.set('');
 
-        const url = `${environment.apiUrls.sales}/api/ventas/tienda/config?locale=es`;
+        const url = `${environment.apiUrls.sales}/api/ventas/tienda/config?locale=${APP_CONFIG.defaultLanguage}`;
         this.http.put<void>(url, this.form()).subscribe({
             next: () => {
                 this.saving.set(false);
                 this.successMsg.set('Configuración guardada correctamente.');
-                this.storeConfig.loadConfig('es').subscribe();
+                this.storeConfig.loadConfig(APP_CONFIG.defaultLanguage).subscribe();
             },
             error: () => {
                 this.saving.set(false);

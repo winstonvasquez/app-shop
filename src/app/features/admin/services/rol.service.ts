@@ -4,6 +4,7 @@ import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { environment } from '@env/environment';
 import { RolDto } from '@features/admin/models/user.model';
+import { HTTP_STATUS } from '@shared/constants/app.constants';
 
 @Injectable({
     providedIn: 'root'
@@ -32,7 +33,7 @@ export class RolService {
         } else {
             if (error.status === 0) {
                 errorMessage = 'No se pudo conectar con el servidor';
-            } else if (error.status === 500) {
+            } else if (error.status === HTTP_STATUS.internalServerError) {
                 errorMessage = 'Error interno del servidor';
             } else {
                 errorMessage = `Error ${error.status}: ${error.error?.message || error.statusText}`;

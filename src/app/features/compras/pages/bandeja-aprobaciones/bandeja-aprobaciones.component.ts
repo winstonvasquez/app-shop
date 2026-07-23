@@ -4,6 +4,7 @@ import { AuthService } from '@core/auth/auth.service';
 import { AprobacionService } from '../../services/aprobacion.service';
 import { AprobacionPendiente } from '../../models/aprobacion.model';
 import { ButtonComponent } from '@shared/components';
+import { ROLES } from '@shared/constants/app.constants';
 
 @Component({
     selector: 'app-bandeja-aprobaciones',
@@ -31,7 +32,7 @@ export class BandejaAprobacionesComponent implements OnInit {
     cargarPendientes(): void {
         this.loading.set(true);
         const user = this.authService.currentUser();
-        const rol = user?.role ?? 'USER';
+        const rol = user?.role ?? ROLES.user;
         this.aprobacionService.getPendientes(rol).subscribe({
             next: (data) => {
                 this.aprobaciones.set(data);

@@ -8,6 +8,7 @@ import { DataTableComponent, TableColumn, PaginationEvent, FilterConfig, FilterC
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { ButtonComponent } from '@shared/components';
+import { ROUTES } from '@shared/constants/app.constants';
 
 @Component({
     selector: 'app-stock-view',
@@ -55,7 +56,7 @@ export class StockViewComponent {
     ];
 
     breadcrumbs: Breadcrumb[] = [
-        { label: 'Admin', url: '/admin' },
+        { label: 'Admin', url: ROUTES.admin },
         { label: 'Inventario', url: '/admin/inventario/dashboard' },
         { label: 'Stock' }
     ];

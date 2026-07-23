@@ -5,6 +5,7 @@ import { ButtonComponent } from '@shared/components';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { DataTableComponent, TableColumn, TableAction, PaginationEvent } from '@shared/ui/tables/data-table/data-table.component';
+import { NOTIFICATION_DURATION } from '@shared/constants/ui.constants';
 
 @Component({
     selector: 'app-delivery-routes',
@@ -130,7 +131,7 @@ export class DeliveryRoutesComponent implements OnInit {
 
     private showSuccess(msg: string): void {
         this.successMsg.set(msg);
-        setTimeout(() => this.successMsg.set(null), 3000);
+        setTimeout(() => this.successMsg.set(null), NOTIFICATION_DURATION.medium);
     }
 
     statusBadgeClass(status: string): string {

@@ -1,6 +1,7 @@
 import { Injectable, signal, computed } from '@angular/core';
 import { CartItem, DescuentoTipo, ProductoCatalogoPOS } from '../models/catalogo-pos.model';
 import { MetodoPagoPos, PagoMixto, TipoCpe } from '../models/venta-pos.model';
+import { SUNAT_RATES } from '@shared/constants/sunat.constants';
 
 @Injectable({ providedIn: 'root' })
 export class PosCarritoService {
@@ -38,7 +39,7 @@ export class PosCarritoService {
     );
 
     readonly baseImponible = computed(() =>
-        this.totalConDescuento() / 1.18
+        this.totalConDescuento() / SUNAT_RATES.IGV_FACTOR
     );
 
     readonly igv = computed(() =>

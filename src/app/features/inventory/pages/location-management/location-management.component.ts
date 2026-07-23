@@ -13,6 +13,7 @@ import { ButtonComponent } from '@shared/components';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
+import { PAGINATION, ROUTES } from '@shared/constants/app.constants';
 
 @Component({
     selector: 'app-location-management',
@@ -43,7 +44,7 @@ export class LocationManagementComponent implements OnInit {
     selectedWarehouseId = signal<number | null>(null);
 
     currentPage = signal(0);
-    pageSize = signal(10);
+    pageSize = signal<number>(PAGINATION.defaultPageSize);
     totalElements = signal(0);
     totalPages = signal(0);
 
@@ -57,7 +58,7 @@ export class LocationManagementComponent implements OnInit {
     pendingDeleteId = signal<number | null>(null);
 
     breadcrumbs: Breadcrumb[] = [
-        { label: 'Admin', url: '/admin' },
+        { label: 'Admin', url: ROUTES.admin },
         { label: 'Inventario', url: '/admin/inventario/dashboard' },
         { label: 'Ubicaciones' }
     ];

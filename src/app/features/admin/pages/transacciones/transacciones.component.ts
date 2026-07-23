@@ -2,6 +2,7 @@ import { Component, inject, signal, OnInit } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '@env/environment';
+import { CURRENCY_DISPLAY } from '@shared/constants/sunat.constants';
 
 interface VentaPosItem {
     id: string;
@@ -57,7 +58,7 @@ interface ResumenVentas {
                     <div class="card-body">
                         <div class="text-sm" style="color:var(--color-text-muted)">Monto total</div>
                         <div class="font-bold" style="font-size:2rem;color:var(--color-success)">
-                            S/ {{ (resumen()?.montoTotal ?? 0) | number:'1.2-2' }}
+                            ${CURRENCY_DISPLAY.SYMBOL_PEN} {{ (resumen()?.montoTotal ?? 0) | number:'1.2-2' }}
                         </div>
                         <div class="text-sm" style="color:var(--color-text-muted)">ingresos brutos</div>
                     </div>
@@ -66,7 +67,7 @@ interface ResumenVentas {
                     <div class="card-body">
                         <div class="text-sm" style="color:var(--color-text-muted)">Ticket promedio</div>
                         <div class="font-bold" style="font-size:2rem">
-                            S/ {{ (resumen()?.ticketPromedio ?? 0) | number:'1.2-2' }}
+                            ${CURRENCY_DISPLAY.SYMBOL_PEN} {{ (resumen()?.ticketPromedio ?? 0) | number:'1.2-2' }}
                         </div>
                         <div class="text-sm" style="color:var(--color-text-muted)">por transacción</div>
                     </div>

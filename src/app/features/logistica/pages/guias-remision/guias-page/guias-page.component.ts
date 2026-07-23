@@ -11,6 +11,7 @@ import { DateInputComponent } from '@shared/ui/forms/date-input/date-input.compo
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
+import { PAGINATION } from '@shared/constants/app.constants';
 
 const MOTIVOS_TRASLADO: { codigo: string; descripcion: string }[] = [
     { codigo: '01', descripcion: '01 — Venta' },
@@ -57,7 +58,7 @@ export class GuiasPageComponent implements OnInit {
 
     // Pagination
     currentPage = signal(0);
-    pageSize    = signal(10);
+    pageSize    = signal<number>(PAGINATION.defaultPageSize);
     totalPages  = signal(0);
 
     breadcrumbs: Breadcrumb[] = [

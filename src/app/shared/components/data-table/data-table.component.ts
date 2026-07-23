@@ -11,6 +11,7 @@ import { NgTemplateOutlet } from '@angular/common';
 import { LucideAngularModule } from 'lucide-angular';
 import { PaginatorComponent } from './paginator.component';
 import { TableColumn, SortEvent } from './data-table.types';
+import { SORT_DIRECTIONS } from '@shared/constants/ui.constants';
 
 @Component({
   selector: 'app-data-table',
@@ -125,21 +126,21 @@ export class DataTableComponent<T extends Record<string, unknown> = Record<strin
   @ContentChild('actions') actionsTemplate?: TemplateRef<{ $implicit: T }>;
 
   sortColumn = '';
-  sortDirection: 'asc' | 'desc' = 'asc';
+  sortDirection: 'asc' | 'desc' = SORT_DIRECTIONS.asc;
 
   skeletonRows = computed(() => Array(this.pageSize() > 5 ? 5 : this.pageSize()).fill(0));
 
   sortIcon(colKey: string): string {
     if (this.sortColumn !== colKey) return 'chevrons-up-down';
-    return this.sortDirection === 'asc' ? 'chevron-up' : 'chevron-down';
+    return this.sortDirection === SORT_DIRECTIONS.asc ? 'chevron-up' : 'chevron-down';
   }
 
   onSort(colKey: string) {
     if (this.sortColumn === colKey) {
-      this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+      this.sortDirection = this.sortDirection === SORT_DIRECTIONS.asc ? SORT_DIRECTIONS.desc : SORT_DIRECTIONS.asc;
     } else {
       this.sortColumn = colKey;
-      this.sortDirection = 'asc';
+      this.sortDirection = SORT_DIRECTIONS.asc;
     }
     this.sortChange.emit({ column: colKey, direction: this.sortDirection });
   }

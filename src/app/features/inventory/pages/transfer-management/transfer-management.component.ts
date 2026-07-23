@@ -5,6 +5,7 @@ import {
 import { InventoryApiService } from '../../services/inventory-api.service';
 import { InventoryTransfer, InventoryTransferRequest, InventoryTransferStatus, Warehouse } from '../../models/inventory.models';
 import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
+import { ROUTES } from '@shared/constants/app.constants';
 import { of } from 'rxjs';
 import { DataTableComponent, TableColumn, TableAction, PaginationEvent, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
@@ -49,7 +50,7 @@ export class TransferManagementComponent {
     submitError = signal<string | null>(null);
 
     breadcrumbs: Breadcrumb[] = [
-        { label: 'Admin', url: '/admin' },
+        { label: 'Admin', url: ROUTES.admin },
         { label: 'Inventario', url: '/admin/inventario/dashboard' },
         { label: 'Transferencias' }
     ];

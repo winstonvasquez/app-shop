@@ -6,6 +6,7 @@ import { DataTableComponent, TableColumn } from '@shared/ui/tables/data-table/da
 import { ButtonComponent } from '@shared/components';
 import { VentasParametrosService } from '../../services/ventas-parametros.service';
 import { ChartDefaultsService, CHART_COLORS } from '@shared/services/chart-defaults.service';
+import { CURRENCY_DISPLAY } from '@shared/constants/sunat.constants';
 import {
     ApexAxisChartSeries, ApexChart, ApexDataLabels, ApexFill,
     ApexGrid, ApexStroke, ApexTooltip, ApexXAxis, ApexYAxis,
@@ -49,7 +50,7 @@ export class VentasDashboardComponent implements OnInit {
     /* ── Chart: Ventas diarias (área) ─────────────────────────── */
     areaChart: ApexChart = this.chartDefaults.areaChart(220);
     areaSeries: ApexAxisChartSeries = [{
-        name: 'Ventas (S/)',
+        name: `Ventas (${CURRENCY_DISPLAY.SYMBOL_PEN})`,
         data: [3200, 4100, 2800, 5600, 4900, 6800, 7200, 5500, 8100, 6700, 9200, 7800,
                8500, 10200, 9100, 7400, 11500, 10800, 8900, 12400, 11200, 9700, 13500, 12100, 10500, 14800, 13200, 11600]
     }];
@@ -59,12 +60,12 @@ export class VentasDashboardComponent implements OnInit {
                   hideOverlappingLabels: true },
         axisBorder: { show: false }, axisTicks: { show: false },
     };
-    areaYAxis: ApexYAxis = this.chartDefaults.yAxis('S/ ');
+    areaYAxis: ApexYAxis = this.chartDefaults.yAxis(`${CURRENCY_DISPLAY.SYMBOL_PEN} `);
     areaFill: ApexFill = this.chartDefaults.areaFill(CHART_COLORS[0]);
     areaStroke: ApexStroke = this.chartDefaults.areaStroke();
     areaGrid: ApexGrid = this.chartDefaults.grid();
     areaColors = [CHART_COLORS[0]];
-    areaTooltip: ApexTooltip = { theme: 'dark', y: { formatter: (v) => `S/ ${v.toLocaleString('es-PE')}` } };
+    areaTooltip: ApexTooltip = { theme: 'dark', y: { formatter: (v) => `${CURRENCY_DISPLAY.SYMBOL_PEN} ${v.toLocaleString(CURRENCY_DISPLAY.LOCALE)}` } };
 
     /* ── Chart: Estado pedidos (donut) ────────────────────────── */
     donutChart: ApexChart = this.chartDefaults.donutChart(220);
@@ -80,7 +81,7 @@ export class VentasDashboardComponent implements OnInit {
         { key: 'fechaPedido', label: 'Fecha', render: (row) => row.fechaPedido
             ? new Date(row.fechaPedido).toLocaleDateString('es-PE') : '-' },
         { key: 'usuarioId', label: 'Cliente', render: (row) => `Usuario #${row.usuarioId}` },
-        { key: 'total', label: 'Total', align: 'right', render: (row) => `S/ ${(row.total ?? 0).toFixed(2)}` },
+        { key: 'total', label: 'Total', align: 'right', render: (row) => `${CURRENCY_DISPLAY.SYMBOL_PEN} ${(row.total ?? 0).toFixed(2)}` },
         { key: 'estado', label: 'Estado', html: true, render: (row) =>
             `<span class="badge ${this.parametros.getBadgeEstadoPedido(row.estado)}">${this.parametros.getLabelEstadoPedido(row.estado)}</span>` },
     ];

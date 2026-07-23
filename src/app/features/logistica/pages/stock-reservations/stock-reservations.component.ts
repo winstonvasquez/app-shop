@@ -4,6 +4,7 @@ import { DatePipe } from '@angular/common';
 import { StockReservationService } from '../../services/stock-reservation.service';
 import { StockReservation, ReservationStatus } from '../../models/stock-reservation.model';
 import { ButtonComponent } from '@shared/components';
+import { NOTIFICATION_DURATION } from '@shared/constants/ui.constants';
 
 @Component({
     selector: 'app-stock-reservations',
@@ -83,7 +84,7 @@ export class StockReservationsComponent {
 
     private showSuccess(msg: string): void {
         this.successMsg.set(msg);
-        setTimeout(() => this.successMsg.set(null), 3000);
+        setTimeout(() => this.successMsg.set(null), NOTIFICATION_DURATION.medium);
     }
 
     statusClass(status: ReservationStatus): string {

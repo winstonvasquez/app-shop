@@ -4,6 +4,7 @@ import { ProveedorService } from '../../services/proveedor.service';
 import { Proveedor } from '../../models/proveedor.model';
 import { of } from 'rxjs';
 import { DataTableComponent, TableColumn, TableAction, SortEvent, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
+import { MONEDA } from '@shared/constants/sunat.constants';
 import { PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
@@ -129,7 +130,7 @@ export class ProveedoresComponent implements OnInit {
             banco: [''],
             cuentaBanco: [''],
             condicionPago: ['CONTADO'],
-            monedaPreferida: ['PEN']
+            monedaPreferida: [MONEDA.PEN]
         });
     }
 
@@ -189,7 +190,7 @@ export class ProveedoresComponent implements OnInit {
     openCreateModal(): void {
         this.editMode.set(false);
         this.selectedProveedor.set(null);
-        this.proveedorForm.reset({ condicionSunat: 'HABIDO', condicionPago: 'CONTADO', monedaPreferida: 'PEN' });
+        this.proveedorForm.reset({ condicionSunat: 'HABIDO', condicionPago: 'CONTADO', monedaPreferida: MONEDA.PEN });
         this.submitError.set(null);
         this.showModal.set(true);
     }
@@ -209,7 +210,7 @@ export class ProveedoresComponent implements OnInit {
             banco: proveedor.banco ?? '',
             cuentaBanco: proveedor.cuentaBanco ?? '',
             condicionPago: proveedor.condicionPago ?? 'CONTADO',
-            monedaPreferida: proveedor.monedaPreferida ?? 'PEN'
+            monedaPreferida: proveedor.monedaPreferida ?? MONEDA.PEN
         });
         this.submitError.set(null);
         this.showModal.set(true);

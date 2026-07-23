@@ -4,8 +4,10 @@ import { Router } from '@angular/router';
 import { Observable, tap } from 'rxjs';
 import { environment } from '@env/environment';
 import { CheckEmailResponse, LoginRequest, LoginResponse, User, UserRole, VerifyOtpRequest, SocialLoginRequest, RegisterWithOtpRequest } from './auth.model';
+import { STORAGE_KEYS, ROLES } from '@shared/constants/app.constants';
+import { API_ENDPOINTS } from '@shared/constants/api.constants';
 
-const TOKEN_KEY = 'auth_token';
+const TOKEN_KEY = STORAGE_KEYS.token;
 
 /**
  * Extrae el rol del payload JWT decodificado.
@@ -55,12 +57,12 @@ export class AuthService {
         if (!user) return false;
         const role = user.role;
         if (!role) return false;
-        return role === 'ADMIN' || role === 'EMPLOYEE' || role === 'ROLE_ADMIN' || role === 'ROLE_USER';
+        return role === ROLES.admin || role === ROLES.employee || role === 'ROLE_ADMIN' || role === 'ROLE_USER';
     }
 
     login(request: LoginRequest): Observable<LoginResponse> {
         return this.http.post<LoginResponse>(
-            `${environment.apiUrls.users}/api/auth/login`,
+            `${environment.apiUrls.users}${API_ENDPOINTS.auth.login}`,
             request
         ).pipe(
             tap(response => {

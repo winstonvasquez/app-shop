@@ -14,6 +14,7 @@ import { ButtonComponent } from '@shared/components';
 import { ProductLookupComponent } from '../../components/product-lookup/product-lookup.component';
 import { ProductResponse } from '@core/models/product.model';
 import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
+import { ROUTES } from '@shared/constants/app.constants';
 
 /** Línea en construcción dentro del drawer de creación. */
 interface AsnLineDraft {
@@ -227,7 +228,7 @@ export class AsnComponent {
     });
 
     breadcrumbs: Breadcrumb[] = [
-        { label: 'Admin', url: '/admin' },
+        { label: 'Admin', url: ROUTES.admin },
         { label: 'Inventario', url: '/admin/inventario/dashboard' },
         { label: 'Recepción (ASN)' }
     ];

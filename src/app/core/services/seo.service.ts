@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@angular/core';
 import { Meta, Title } from '@angular/platform-browser';
 import { DOCUMENT } from '@angular/common';
+import { MONEDA } from '@shared/constants/sunat.constants';
 
 export interface ProductSeoData {
     nombre: string;
@@ -66,7 +67,7 @@ export class SeoService {
             image: p.imagen,
             offers: {
                 '@type': 'Offer',
-                priceCurrency: 'PEN',
+                priceCurrency: MONEDA.PEN,
                 price: p.precio,
                 availability: 'https://schema.org/InStock',
                 seller: { '@type': 'Organization', name: 'MicroShop' },

@@ -18,6 +18,7 @@ import { AdminFormSectionComponent } from '@shared/ui/forms/admin-form-section/a
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { ButtonComponent } from '@shared/components';
+import { MONEDA, CURRENCY_DISPLAY } from '@shared/constants/sunat.constants';
 
 @Component({
     selector: 'app-contract-list',
@@ -112,7 +113,7 @@ export class ContractListComponent implements OnInit {
         { key: 'fechaFin', label: 'Fin', render: r => r.fechaFin ?? '—' },
         {
             key: 'salarioBase', label: 'Salario', align: 'right',
-            render: r => `${r.moneda === 'USD' ? '$' : 'S/'} ${r.salarioBase.toLocaleString('es-PE', { minimumFractionDigits: 2 })}`,
+            render: r => `${r.moneda === MONEDA.USD ? CURRENCY_DISPLAY.SYMBOL_USD : CURRENCY_DISPLAY.SYMBOL_PEN} ${r.salarioBase.toLocaleString(CURRENCY_DISPLAY.LOCALE, { minimumFractionDigits: 2 })}`,
         },
         {
             key: 'jornadaLaboral', label: 'Jornada',
@@ -156,7 +157,7 @@ export class ContractListComponent implements OnInit {
         fechaInicio:         ['', Validators.required],
         fechaFin:            [''],
         salarioBase:         [null as number | null, [Validators.required, Validators.min(0)]],
-        moneda:              ['PEN'],
+        moneda:              [MONEDA.PEN as string],
         jornadaLaboral:      [null as WorkingDay | null, Validators.required],
         horasSemanales:      [48, [Validators.required, Validators.min(1), Validators.max(60)]],
         periodoPruebaMeses:  [null as number | null],
@@ -212,7 +213,7 @@ export class ContractListComponent implements OnInit {
     openCreateModal(): void {
         this.editMode.set(false);
         this.selectedContract.set(null);
-        this.contractForm.reset({ moneda: 'PEN', horasSemanales: 48 });
+        this.contractForm.reset({ moneda: MONEDA.PEN as string, horasSemanales: 48 });
         this.contractForm.get('employeeId')!.enable();
         this.submitError.set(null);
         this.showModal.set(true);
@@ -286,7 +287,7 @@ export class ContractListComponent implements OnInit {
                 fechaInicio: val.fechaInicio!,
                 fechaFin: val.fechaFin || undefined,
                 salarioBase: val.salarioBase!,
-                moneda: val.moneda ?? 'PEN',
+                moneda: val.moneda ?? MONEDA.PEN,
                 jornadaLaboral: val.jornadaLaboral!,
                 horasSemanales: val.horasSemanales!,
                 periodoPruebaMeses: val.periodoPruebaMeses ?? undefined,

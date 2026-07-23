@@ -1,5 +1,6 @@
 import { Component, input, ChangeDetectionStrategy } from '@angular/core';
 import { LucideAngularModule } from 'lucide-angular';
+import { BUTTON_VARIANTS, BUTTON_SIZES } from '@shared/constants/ui.constants';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'success' | 'outline' | 'primary-gradient';
 export type ButtonSize = 'xs' | 'sm' | 'md' | 'lg';
@@ -31,8 +32,8 @@ export type ButtonSize = 'xs' | 'sm' | 'md' | 'lg';
 })
 export class ButtonComponent {
     label = input<string>('');
-    variant = input<ButtonVariant>('primary');
-    size = input<ButtonSize>('md');
+    variant = input<ButtonVariant>(BUTTON_VARIANTS.primary);
+    size = input<ButtonSize>(BUTTON_SIZES.medium);
     icon = input<string | undefined>(undefined);
     iconOnly = input(false);
     type = input<'button' | 'submit' | 'reset'>('button');

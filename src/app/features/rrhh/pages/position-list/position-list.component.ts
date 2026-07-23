@@ -15,6 +15,7 @@ import { PaginationComponent, PaginationChangeEvent } from '@shared/ui/paginatio
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
+import { CURRENCY_DISPLAY } from '@shared/constants/sunat.constants';
 
 @Component({
     selector: 'app-position-list',
@@ -91,8 +92,8 @@ export class PositionListComponent implements OnInit {
             key: 'salarioMinimo', label: 'Rango Salarial', html: true,
             render: r => {
                 if (!r.salarioMinimo && !r.salarioMaximo) return '<span style="color:var(--color-text-muted)">—</span>';
-                const min = r.salarioMinimo ? `S/ ${r.salarioMinimo.toLocaleString('es-PE')}` : '—';
-                const max = r.salarioMaximo ? `S/ ${r.salarioMaximo.toLocaleString('es-PE')}` : '—';
+                const min = r.salarioMinimo ? `${CURRENCY_DISPLAY.SYMBOL_PEN} ${r.salarioMinimo.toLocaleString(CURRENCY_DISPLAY.LOCALE)}` : '—';
+                const max = r.salarioMaximo ? `${CURRENCY_DISPLAY.SYMBOL_PEN} ${r.salarioMaximo.toLocaleString(CURRENCY_DISPLAY.LOCALE)}` : '—';
                 return `<span class="font-mono text-sm">${min} – ${max}</span>`;
             }
         },

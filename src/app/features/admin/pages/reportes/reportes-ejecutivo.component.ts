@@ -4,6 +4,7 @@ import { HttpClient } from '@angular/common/http';
 import { environment } from '@env/environment';
 import { ButtonComponent } from '@shared/components';
 import { ExportService } from '../../../../shared/services/export.service';
+import { CURRENCY_DISPLAY } from '@shared/constants/sunat.constants';
 
 interface KpiVentas   { totalVentas: number; montoTotal: number; ticketPromedio: number; }
 interface KpiCompras  { totalOrdenes: number; montoTotal: number; ordenesAprobadas: number; }
@@ -95,15 +96,15 @@ export class ReportesEjecutivoComponent implements OnInit {
         const cabecera = ['Modulo', 'Metrica', 'Valor'];
         const filas: string[][] = [
             ['Ventas', 'Total transacciones', String(d.ventas.totalVentas)],
-            ['Ventas', 'Monto total (S/)', String(d.ventas.montoTotal)],
-            ['Ventas', 'Ticket promedio (S/)', String(d.ventas.ticketPromedio)],
+            ['Ventas', `Monto total (${CURRENCY_DISPLAY.SYMBOL_PEN})`, String(d.ventas.montoTotal)],
+            ['Ventas', `Ticket promedio (${CURRENCY_DISPLAY.SYMBOL_PEN})`, String(d.ventas.ticketPromedio)],
             ['Compras', 'Total ordenes', String(d.compras.totalOrdenes)],
-            ['Compras', 'Monto total (S/)', String(d.compras.montoTotal)],
+            ['Compras', `Monto total (${CURRENCY_DISPLAY.SYMBOL_PEN})`, String(d.compras.montoTotal)],
             ['Compras', 'Ordenes aprobadas', String(d.compras.ordenesAprobadas)],
             ['RRHH', 'Empleados activos', String(d.rrhh.empleadosActivos)],
             ['RRHH', 'Planillas generadas', String(d.rrhh.planillasGeneradas)],
             ['Tesoreria', 'Cajas abiertas', String(d.tesoreria.cajasAbiertas)],
-            ['Tesoreria', 'Saldo total (S/)', String(d.tesoreria.saldoTotal)],
+            ['Tesoreria', `Saldo total (${CURRENCY_DISPLAY.SYMBOL_PEN})`, String(d.tesoreria.saldoTotal)],
             ['Tesoreria', 'Movimientos hoy', String(d.tesoreria.movimientosHoy)],
             ['Inventario', 'Productos con stock', String(d.inventario.productosConStock)],
             ['Inventario', 'Productos stock bajo', String(d.inventario.productosStockBajo)],
@@ -117,15 +118,15 @@ export class ReportesEjecutivoComponent implements OnInit {
         const cabecera = ['Modulo', 'Metrica', 'Valor'];
         const filas: string[][] = [
             ['Ventas', 'Total transacciones', String(d.ventas.totalVentas)],
-            ['Ventas', 'Monto total (S/)', String(d.ventas.montoTotal)],
-            ['Ventas', 'Ticket promedio (S/)', String(d.ventas.ticketPromedio)],
+            ['Ventas', `Monto total (${CURRENCY_DISPLAY.SYMBOL_PEN})`, String(d.ventas.montoTotal)],
+            ['Ventas', `Ticket promedio (${CURRENCY_DISPLAY.SYMBOL_PEN})`, String(d.ventas.ticketPromedio)],
             ['Compras', 'Total ordenes', String(d.compras.totalOrdenes)],
-            ['Compras', 'Monto total (S/)', String(d.compras.montoTotal)],
+            ['Compras', `Monto total (${CURRENCY_DISPLAY.SYMBOL_PEN})`, String(d.compras.montoTotal)],
             ['Compras', 'Ordenes aprobadas', String(d.compras.ordenesAprobadas)],
             ['RRHH', 'Empleados activos', String(d.rrhh.empleadosActivos)],
             ['RRHH', 'Planillas generadas', String(d.rrhh.planillasGeneradas)],
             ['Tesoreria', 'Cajas abiertas', String(d.tesoreria.cajasAbiertas)],
-            ['Tesoreria', 'Saldo total (S/)', String(d.tesoreria.saldoTotal)],
+            ['Tesoreria', `Saldo total (${CURRENCY_DISPLAY.SYMBOL_PEN})`, String(d.tesoreria.saldoTotal)],
             ['Tesoreria', 'Movimientos hoy', String(d.tesoreria.movimientosHoy)],
             ['Inventario', 'Productos con stock', String(d.inventario.productosConStock)],
             ['Inventario', 'Productos stock bajo', String(d.inventario.productosStockBajo)],

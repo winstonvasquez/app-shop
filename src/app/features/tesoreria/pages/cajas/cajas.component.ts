@@ -11,6 +11,7 @@ import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.compo
 import { ButtonComponent } from '@shared/components';
 import { CajasService } from '../../services/cajas.service';
 import { CashRegister, Page } from '../../models/tesoreria.model';
+import { PAGINATION } from '@shared/constants/app.constants';
 
 @Component({
     selector: 'app-cajas',
@@ -35,7 +36,7 @@ export class CajasComponent implements OnInit {
     actionErrorMsg = signal<string | null>(null);
 
     currentPage   = signal(0);
-    pageSize      = signal(10);
+    pageSize      = signal<number>(PAGINATION.defaultPageSize);
     totalElements = signal(0);
     totalPages    = signal(0);
 

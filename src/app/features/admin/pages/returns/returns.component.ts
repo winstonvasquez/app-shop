@@ -12,6 +12,7 @@ import { AdminFormLayoutComponent } from '@shared/ui/forms/admin-form-layout/adm
 import { ButtonComponent } from '@shared/components';
 import { AuthService } from '@core/auth/auth.service';
 import { VentasParametrosService, SelectOption } from '../../services/ventas-parametros.service';
+import { CURRENCY_DISPLAY } from '@shared/constants/sunat.constants';
 
 type MotivoDevolucion = 'DEFECTO' | 'CAMBIO' | 'ERROR_PEDIDO' | 'NO_LLEGÓ' | 'OTRO';
 type TipoResolucion   = 'REEMBOLSO' | 'CAMBIO_PRODUCTO' | 'CREDITO_TIENDA';
@@ -114,7 +115,7 @@ export class ReturnsComponent implements OnInit {
         { key: 'tipoResolucion', label: 'Resolución',
           render: (row) => this.resolucionOptions().find(r => r.value === row.tipoResolucion)?.label ?? row.tipoResolucion },
         { key: 'monto', label: 'Monto', align: 'right',
-          render: (row) => `S/ ${(row.monto ?? 0).toFixed(2)}` },
+          render: (row) => `${CURRENCY_DISPLAY.SYMBOL_PEN} ${(row.monto ?? 0).toFixed(2)}` },
         { key: 'estado', label: 'Estado', html: true,
           render: (row) => `<span class="badge ${this.parametros.getBadgeEstadoDevolucion(row.estado)}">${row.estado.replace('_', ' ')}</span>` },
     ];

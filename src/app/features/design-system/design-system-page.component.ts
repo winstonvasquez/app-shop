@@ -7,6 +7,7 @@ import {
     DsProduct, DsCategoryTile,
 } from '@shared/ui/ds';
 import { DsDocsComponent } from './components/ds-docs.component';
+import { CURRENCY_DISPLAY } from '@shared/constants/sunat.constants';
 
 /**
  * Design System v2 — showcase/demo page.
@@ -41,7 +42,7 @@ import { DsDocsComponent } from './components/ds-docs.component';
                         Hot Sale<br/><span class="accent">hasta 70% OFF</span>
                     </h1>
                     <p>Tecnología, hogar y moda con descuentos que no se repiten.
-                        Envío gratis en compras desde S/ 99.</p>
+                        Envío gratis en compras desde ${CURRENCY_DISPLAY.SYMBOL_PEN} 99.</p>
                     <div class="hero-cta">
                         <ds-button variant="accent" size="lg" iconRight="arrow-right">Ver ofertas</ds-button>
                         <ds-button variant="ghost" size="lg" class="ghost-light">Categorías</ds-button>
@@ -65,7 +66,7 @@ import { DsDocsComponent } from './components/ds-docs.component';
                     <div class="promo promo-alt">
                         <div>
                             <ds-badge tone="brand">App exclusivo</ds-badge>
-                            <h3>S/ 30 OFF</h3>
+                            <h3>${CURRENCY_DISPLAY.SYMBOL_PEN} 30 OFF</h3>
                             <p>En tu primera compra desde la app</p>
                         </div>
                         <a class="link">Descargar →</a>
@@ -265,7 +266,7 @@ import { DsDocsComponent } from './components/ds-docs.component';
 })
 export class DesignSystemPageComponent {
     protected readonly trust = [
-        { icon: 'truck',   title: 'Envío gratis',     sub: 'Desde S/ 99' },
+        { icon: 'truck',   title: 'Envío gratis',     sub: `Desde ${CURRENCY_DISPLAY.SYMBOL_PEN} 99` },
         { icon: 'shield',  title: 'Compra protegida', sub: 'Garantía 30 días' },
         { icon: 'zap',     title: 'Entrega rápida',   sub: '24h en Lima' },
         { icon: 'lock',    title: 'Pago seguro',      sub: 'PCI DSS · Yape' },

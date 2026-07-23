@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { tap, catchError } from 'rxjs/operators';
 import { of, Observable } from 'rxjs';
+import { MONEDA, CPE_SERIE } from '@shared/constants/sunat.constants';
 
 export interface SystemParameters {
     [key: string]: string;
@@ -22,7 +23,7 @@ export class SystemParameterService {
 
     // Useful semantic computed signals for common params
     public storeName = computed(() => this.get('STORE_NAME', 'Temo Store'));
-    public storeCurrency = computed(() => this.get('STORE_CURRENCY', 'USD'));
+    public storeCurrency = computed(() => this.get('STORE_CURRENCY', MONEDA.USD));
     public storeCountry = computed(() => this.get('STORE_COUNTRY', 'US'));
     public erpName = computed(() => this.get('ERP_NAME', 'MicroShop ERP'));
     public defaultLanguage = computed(() => this.get('DEFAULT_LANGUAGE', 'en'));
@@ -57,8 +58,8 @@ export class SystemParameterService {
     // Parámetros financieros peruanos
     public igvRate = computed(() => parseFloat(this.get('IGV_RATE', '0.18')));
     public uitAnio = computed(() => parseFloat(this.get('UIT_ANIO', '5150')));
-    public serieBoletaDefault = computed(() => this.get('SERIE_BOLETA', 'B001'));
-    public serieFacturaDefault = computed(() => this.get('SERIE_FACTURA', 'F001'));
+    public serieBoletaDefault = computed(() => this.get('SERIE_BOLETA', CPE_SERIE.BOLETA_DEFAULT));
+    public serieFacturaDefault = computed(() => this.get('SERIE_FACTURA', CPE_SERIE.FACTURA_DEFAULT));
     public rmv = computed(() => parseFloat(this.get('RMV', '1025')));
 
     /**

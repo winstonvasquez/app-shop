@@ -7,6 +7,7 @@ import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { ButtonComponent } from '@shared/components';
 import { ProductLookupComponent } from '../../components/product-lookup/product-lookup.component';
 import { ProductResponse } from '@core/models/product.model';
+import { ROUTES } from '@shared/constants/app.constants';
 
 @Component({
     selector: 'app-kardex-view',
@@ -33,7 +34,7 @@ export class KardexViewComponent {
     totalPages = signal(0);
 
     breadcrumbs: Breadcrumb[] = [
-        { label: 'Admin', url: '/admin' },
+        { label: 'Admin', url: ROUTES.admin },
         { label: 'Inventario', url: '/admin/inventario/dashboard' },
         { label: 'Kardex Valorizado' }
     ];

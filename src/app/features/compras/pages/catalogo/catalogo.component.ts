@@ -4,6 +4,7 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { environment } from '@env/environment';
 import { AuthService } from '@core/auth/auth.service';
+import { MONEDA } from '@shared/constants/sunat.constants';
 import { ProveedorService } from '../../services/proveedor.service';
 import { Proveedor } from '../../models/proveedor.model';
 import { ButtonComponent } from '@shared/components';
@@ -76,7 +77,7 @@ export class CatalogoComponent implements OnInit {
     proveedorForm: FormGroup = this.fb.group({
         proveedorId: ['', Validators.required],
         precioReferencia: [null],
-        moneda: ['PEN'],
+        moneda: [MONEDA.PEN],
         plazoEntregaDias: [null],
         esPreferido: [false],
     });
@@ -146,7 +147,7 @@ export class CatalogoComponent implements OnInit {
             next: updated => {
                 this.items.update(list => list.map(i => i.id === item.id ? updated : i));
                 this.selectedItem.set(updated);
-                this.proveedorForm.reset({ moneda: 'PEN', esPreferido: false });
+                this.proveedorForm.reset({ moneda: MONEDA.PEN, esPreferido: false });
                 this.showProveedorForm.set(false);
                 this.saving.set(false);
             },

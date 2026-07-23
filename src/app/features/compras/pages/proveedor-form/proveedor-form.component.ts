@@ -4,6 +4,7 @@ import { Router, ActivatedRoute } from '@angular/router';
 import { ProveedorService } from '../../services/proveedor.service';
 import { Proveedor } from '../../models/proveedor.model';
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
+import { MONEDA } from '@shared/constants/sunat.constants';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { LoadingSpinnerComponent } from '@shared/ui/feedback/loading-spinner/loading-spinner.component';
@@ -57,7 +58,7 @@ export class ProveedorFormComponent implements OnInit {
             banco: [''],
             cuentaBanco: [''],
             condicionPago: ['CONTADO'],
-            monedaPreferida: ['PEN']
+            monedaPreferida: [MONEDA.PEN]
         });
     }
 
@@ -91,7 +92,7 @@ export class ProveedorFormComponent implements OnInit {
                     banco: p.banco ?? '',
                     cuentaBanco: p.cuentaBanco ?? '',
                     condicionPago: p.condicionPago ?? 'CONTADO',
-                    monedaPreferida: p.monedaPreferida ?? 'PEN'
+                    monedaPreferida: p.monedaPreferida ?? MONEDA.PEN
                 });
                 this.loading.set(false);
             },

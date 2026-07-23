@@ -14,6 +14,8 @@ import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { LoadingSpinnerComponent } from '@shared/ui/feedback/loading-spinner/loading-spinner.component';
 import { ButtonComponent } from '@shared/components';
 import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
+import { SUNAT_RATES } from '@shared/constants/sunat.constants';
+import { PAGINATION } from '@shared/constants/app.constants';
 
 export interface OcItemForm {
     productoNombre: string;
@@ -68,7 +70,7 @@ export class OrdenesCompraComponent implements OnInit {
 
     // Pagination
     currentPage = signal(0);
-    pageSize = signal(10);
+    pageSize = signal<number>(PAGINATION.defaultPageSize);
     totalElements = signal(0);
     totalPages = signal(0);
 
@@ -93,7 +95,7 @@ export class OrdenesCompraComponent implements OnInit {
     totales = computed(() => {
         const items = this.formItems();
         const subtotal = items.reduce((acc, i) => acc + (i.cantidad * i.precioUnitario), 0);
-        const igv = subtotal * 0.18;
+        const igv = subtotal * SUNAT_RATES.IGV;
         return { subtotal, igv, total: subtotal + igv };
     });
 

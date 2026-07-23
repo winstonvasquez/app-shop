@@ -3,6 +3,7 @@ import { HttpClient, HttpParams, HttpErrorResponse } from '@angular/common/http'
 import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { environment } from '@env/environment';
+import { HTTP_STATUS } from '@shared/constants/app.constants';
 import {
     CustomerResponse,
     CustomerRequest,
@@ -175,11 +176,11 @@ export class CustomerService {
         let errorMessage = 'Error desconocido';
         if (error.status === 0) {
             errorMessage = 'No se pudo conectar con el servidor';
-        } else if (error.status === 400) {
+        } else if (error.status === HTTP_STATUS.badRequest) {
             errorMessage = error.error?.message || 'Datos inválidos';
-        } else if (error.status === 404) {
+        } else if (error.status === HTTP_STATUS.notFound) {
             errorMessage = 'Cliente no encontrado';
-        } else if (error.status === 409) {
+        } else if (error.status === HTTP_STATUS.conflict) {
             errorMessage = 'Ya existe un cliente con ese documento';
         } else {
             errorMessage = `Error ${error.status}: ${error.error?.message || error.statusText}`;

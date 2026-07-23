@@ -2,13 +2,14 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Devolucion, DevolucionPage, DevolucionStatus } from '../models/devolucion.model';
+import { PAGINATION } from '@shared/constants/app.constants';
 
 @Injectable({ providedIn: 'root' })
 export class DevolucionService {
     private readonly http = inject(HttpClient);
     private readonly baseUrl = '/logistics/api/returns';
 
-    getDevoluciones(companyId: string, page = 0, size = 10, status?: string): Observable<DevolucionPage> {
+    getDevoluciones(companyId: string, page = 0, size: number = PAGINATION.defaultPageSize, status?: string): Observable<DevolucionPage> {
         let params = new HttpParams()
             .set('companyId', companyId)
             .set('page', String(page))

@@ -3,6 +3,7 @@ import { Observable } from 'rxjs';
 import { HttpClient, HttpParams, HttpHeaders } from '@angular/common/http';
 import { VentaPosRequest, VentaPosResponse, PageResponse, DevolucionPosRequest, DevolucionPosResponse, TipoCambio } from '../models/venta-pos.model';
 import { environment } from '@env/environment';
+import { MONEDA } from '@shared/constants/sunat.constants';
 
 @Injectable({ providedIn: 'root' })
 export class PosVentaService {
@@ -59,7 +60,7 @@ export class PosVentaService {
         );
     }
 
-    getTipoCambioVigente(companyId: number, moneda = 'USD'): Observable<TipoCambio> {
+    getTipoCambioVigente(companyId: number, moneda = MONEDA.USD): Observable<TipoCambio> {
         return this.http.get<TipoCambio>(`${this.baseUrl}/tipo-cambio/vigente`, {
             params: { companyId: companyId.toString(), moneda }
         });

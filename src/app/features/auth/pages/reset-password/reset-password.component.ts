@@ -7,6 +7,7 @@ import { LucideAngularModule } from 'lucide-angular';
 import { environment } from '@env/environment';
 
 import { DsButtonComponent, DsWordmarkComponent } from '@shared/ui/ds';
+import { HTTP_STATUS } from '@shared/constants/app.constants';
 
 function passwordsMatchValidator(control: AbstractControl): ValidationErrors | null {
     const newPassword     = control.get('newPassword')?.value as string | null;
@@ -261,7 +262,7 @@ export class ResetPasswordComponent implements OnInit {
             error: (err: unknown) => {
                 this.isSaving.set(false);
                 const httpErr = err as { status?: number; error?: { detail?: string } };
-                if (httpErr.status === 400) {
+                if (httpErr.status === HTTP_STATUS.badRequest) {
                     this.error.set(httpErr.error?.detail ?? 'Token inválido o expirado. Solicita un nuevo enlace.');
                 } else if (httpErr.status === 0) {
                     this.error.set('No se pudo conectar con el servidor. Intenta más tarde.');

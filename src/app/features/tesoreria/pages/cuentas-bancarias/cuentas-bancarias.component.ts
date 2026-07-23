@@ -13,6 +13,8 @@ import { ButtonComponent } from '@shared/components';
 import { CuentasBancariasService } from '../../services/cuentas-bancarias.service';
 import { AuthService } from '@core/auth/auth.service';
 import { BankAccount, BankAccountRequest, Page } from '../../models/tesoreria.model';
+import { MONEDA, CURRENCY_DISPLAY } from '@shared/constants/sunat.constants';
+import { PAGINATION } from '@shared/constants/app.constants';
 
 @Component({
     selector: 'app-cuentas-bancarias',
@@ -40,19 +42,19 @@ export class CuentasBancariasComponent implements OnInit {
     selectedCuenta   = signal<BankAccount | null>(null);
 
     currentPage   = signal(0);
-    pageSize      = signal(10);
+    pageSize      = signal<number>(PAGINATION.defaultPageSize);
     totalElements = signal(0);
     totalPages    = signal(0);
 
     saldoTotalPEN = computed(() =>
         this.cuentas()
-            .filter(c => c.moneda === 'PEN' && c.estado === 'ACTIVA' && c.tipoCuenta !== 'DETRACCIONES')
+            .filter(c => c.moneda === MONEDA.PEN && c.estado === 'ACTIVA' && c.tipoCuenta !== 'DETRACCIONES')
             .reduce((s, c) => s + (c.saldoActual ?? 0), 0)
     );
 
     saldoTotalUSD = computed(() =>
         this.cuentas()
-            .filter(c => c.moneda === 'USD' && c.estado === 'ACTIVA')
+            .filter(c => c.moneda === MONEDA.USD && c.estado === 'ACTIVA')
             .reduce((s, c) => s + (c.saldoActual ?? 0), 0)
     );
 
@@ -63,15 +65,15 @@ export class CuentasBancariasComponent implements OnInit {
     );
 
     cuentasPEN = computed(() =>
-        this.cuentas().filter(c => c.moneda === 'PEN' && c.estado === 'ACTIVA').length
+        this.cuentas().filter(c => c.moneda === MONEDA.PEN && c.estado === 'ACTIVA').length
     );
 
     cuentasUSD = computed(() =>
-        this.cuentas().filter(c => c.moneda === 'USD' && c.estado === 'ACTIVA').length
+        this.cuentas().filter(c => c.moneda === MONEDA.USD && c.estado === 'ACTIVA').length
     );
 
     readonly tipoOptions = ['CORRIENTE', 'AHORROS', 'CTS', 'DETRACCIONES'];
-    readonly monedaOptions = ['PEN', 'USD', 'EUR'];
+    readonly monedaOptions = [MONEDA.PEN, MONEDA.USD, 'EUR'];
     readonly BANCOS = [
         'BCP — Banco de Crédito del Perú',
         'BBVA Perú',
@@ -91,7 +93,7 @@ export class CuentasBancariasComponent implements OnInit {
         banco:               ['', Validators.required],
         numeroCuenta:        ['', Validators.required],
         tipoCuenta:          ['CORRIENTE', Validators.required],
-        moneda:              ['PEN', Validators.required],
+        moneda:              [MONEDA.PEN, Validators.required],
         saldoInicial:        [0, [Validators.required, Validators.min(0)]],
         cuentaInterbancaria: [''],
         descripcion:         ['']
@@ -101,7 +103,7 @@ export class CuentasBancariasComponent implements OnInit {
         banco:               ['', Validators.required],
         numeroCuenta:        ['', Validators.required],
         tipoCuenta:          ['CORRIENTE', Validators.required],
-        moneda:              ['PEN', Validators.required],
+        moneda:              [MONEDA.PEN, Validators.required],
         saldoInicial:        [0, [Validators.required, Validators.min(0)]],
         cuentaInterbancaria: [''],
         descripcion:         ['']
@@ -117,7 +119,7 @@ export class CuentasBancariasComponent implements OnInit {
           render: r => `<span class="${this.badgeTipo(r.tipoCuenta)}">${r.tipoCuenta}</span>` },
         { key: 'moneda',              label: 'Moneda',       align: 'center' },
         { key: 'saldoActual',         label: 'Saldo Actual', align: 'right',
-          render: r => `${r.moneda === 'USD' ? '$' : 'S/'} ${(r.saldoActual ?? 0).toFixed(2)}` },
+          render: r => `${r.moneda === MONEDA.USD ? CURRENCY_DISPLAY.SYMBOL_USD : CURRENCY_DISPLAY.SYMBOL_PEN} ${(r.saldoActual ?? 0).toFixed(2)}` },
         { key: 'estado',              label: 'Estado',       align: 'center', html: true,
           render: r => `<span class="${this.badgeEstado(r.estado)}">${r.estado}</span>` }
     ];
@@ -161,7 +163,7 @@ export class CuentasBancariasComponent implements OnInit {
     openCreateDrawer(): void {
         this.createForm.reset({
             banco: '', numeroCuenta: '', tipoCuenta: 'CORRIENTE',
-            moneda: 'PEN', saldoInicial: 0, cuentaInterbancaria: '', descripcion: ''
+            moneda: MONEDA.PEN, saldoInicial: 0, cuentaInterbancaria: '', descripcion: ''
         });
         this.errorMsg.set(null);
         this.showCreateDrawer.set(true);
