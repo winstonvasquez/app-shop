@@ -12,6 +12,8 @@ import { ButtonComponent } from '@shared/components';
 import { TrainingService } from '../../services/training.service';
 import { Training, TRAINING_STATUS_LABELS, TrainingStatus } from '../../models/training.model';
 import { PAGINATION } from '@shared/constants/app.constants';
+import { BackendExportConfig } from '@shared/services/backend-export.service';
+import { environment } from '@env/environment';
 
 @Component({
     selector: 'app-training-list',
@@ -50,6 +52,16 @@ export class TrainingListComponent implements OnInit {
     filtroEstado = signal('');
     currentPage = signal(0);
     pageSize = signal<number>(PAGINATION.defaultPageSize);
+
+    /**
+     * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios
+     * (respeta el filtro de estado actual). Ver /hr/api/trainings/export.
+     */
+    readonly exportConfig: BackendExportConfig = {
+        url: `${environment.apiUrls.hr}/api/trainings/export`,
+        filename: 'capacitaciones',
+        params: () => ({ estado: this.filtroEstado() }),
+    };
 
     readonly filtered = computed(() => {
         const f = this.filtroEstado();

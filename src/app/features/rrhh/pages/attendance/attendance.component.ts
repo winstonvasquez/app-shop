@@ -8,6 +8,8 @@ import { EmployeeService } from '../../services/employee.service';
 import { Attendance } from '../../models/attendance.model';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { of } from 'rxjs';
+import { BackendExportConfig } from '@shared/services/backend-export.service';
+import { environment } from '@env/environment';
 import { DataTableComponent, TableColumn, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { PaginationComponent, PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
@@ -108,6 +110,16 @@ export class AttendanceComponent implements OnInit {
         },
         { key: 'observaciones', label: 'Observaciones', render: row => row.observaciones ?? '—' },
     ];
+
+    /**
+     * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios
+     * (respeta los mismos filtros actuales fecha + tipo). Ver /hr/api/attendance/export.
+     */
+    readonly exportConfig: BackendExportConfig = {
+        url: `${environment.apiUrls.hr}/api/attendance/export`,
+        filename: 'asistencia',
+        params: () => ({ fecha: this.filterFecha(), tipo: this.filterTipo() }),
+    };
 
     // ── Form ──────────────────────────────────────────────────────────────────
     readonly attendanceForm = this.fb.group({

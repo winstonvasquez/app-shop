@@ -11,6 +11,8 @@ import { Position } from '../../models/position.model';
 import { ButtonComponent } from '@shared/components';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
+import { BackendExportConfig } from '@shared/services/backend-export.service';
+import { environment } from '@env/environment';
 import { PaginationComponent, PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
@@ -65,6 +67,16 @@ export class PositionListComponent implements OnInit {
             )
         }
     ];
+
+    /**
+     * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios
+     * (respeta los filtros actuales search + departamento). Ver /hr/api/positions/export.
+     */
+    readonly exportConfig: BackendExportConfig = {
+        url: `${environment.apiUrls.hr}/api/positions/export`,
+        filename: 'puestos',
+        params: () => ({ search: this.searchQuery(), departmentId: this.filterDepartment() }),
+    };
 
     // ── Pagination (server-side) ──────────────────────────────────────────────
     currentPage   = signal(0);

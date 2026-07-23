@@ -14,6 +14,8 @@ import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.compo
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { ButtonComponent } from '@shared/components';
+import { BackendExportConfig } from '@shared/services/backend-export.service';
+import { environment } from '@env/environment';
 
 @Component({
     selector: 'app-department-list',
@@ -52,6 +54,16 @@ export class DepartmentListComponent implements OnInit {
     // ── Filters ───────────────────────────────────────────────────────────────
     searchQuery  = signal('');
     filterActivo = signal('');
+
+    // ── Exportación server-side (XLSX/CSV) ──────────────────────────────────────
+    readonly exportConfig: BackendExportConfig = {
+        url: `${environment.apiUrls.hr}/api/departments/export`,
+        filename: 'departments',
+        params: () => ({
+            search: this.searchQuery(),
+            activo: this.filterActivo(),
+        }),
+    };
 
     // Filtro de estado para el toolbar del data-table
     estadoFilters: FilterConfig[] = [

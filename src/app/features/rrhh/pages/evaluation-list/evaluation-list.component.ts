@@ -9,6 +9,8 @@ import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.compo
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { DateInputComponent } from '@shared/ui/forms/date-input/date-input.component';
+import { BackendExportConfig } from '@shared/services/backend-export.service';
+import { environment } from '@env/environment';
 import { EvaluationService } from '../../services/evaluation.service';
 import { EmployeeService } from '../../services/employee.service';
 import {
@@ -55,6 +57,16 @@ export class EvaluationListComponent implements OnInit {
     filtroTipo = signal('');
     currentPage = signal(0);
     pageSize = signal<number>(PAGINATION.defaultPageSize);
+
+    /**
+     * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios
+     * (respeta los filtros actuales estado + tipo). Ver /hr/api/evaluations/export.
+     */
+    readonly exportConfig: BackendExportConfig = {
+        url: `${environment.apiUrls.hr}/api/evaluations/export`,
+        filename: 'evaluaciones',
+        params: () => ({ estado: this.filtroEstado(), tipo: this.filtroTipo() }),
+    };
 
     readonly filtered = computed(() => {
         let list = this.evaluations();

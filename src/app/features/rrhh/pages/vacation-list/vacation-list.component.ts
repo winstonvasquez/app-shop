@@ -8,6 +8,8 @@ import { VacationService, VacationRequest } from '../../services/vacation.servic
 import { EmployeeService } from '../../services/employee.service';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
+import { BackendExportConfig } from '@shared/services/backend-export.service';
+import { environment } from '@env/environment';
 import { PaginationComponent, PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
@@ -64,6 +66,16 @@ export class VacationListComponent implements OnInit {
             { value: 'CANCELADO', label: 'Cancelado' }
         ]) }
     ];
+
+    /**
+     * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios
+     * (respeta los filtros actuales search + estado). Ver /hr/api/vacations/export.
+     */
+    readonly exportConfig: BackendExportConfig = {
+        url: `${environment.apiUrls.hr}/api/vacations/export`,
+        filename: 'vacaciones',
+        params: () => ({ search: this.searchQuery(), estado: this.filterEstado() }),
+    };
 
     // ── Pagination (server-side) ──────────────────────────────────────────────
     currentPage   = signal(0);
