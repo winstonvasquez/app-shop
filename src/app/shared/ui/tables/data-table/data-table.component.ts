@@ -2,6 +2,7 @@ import { Component, input, output, computed, inject, signal, ChangeDetectionStra
 import { AsyncPipe } from '@angular/common';
 import { Observable } from 'rxjs';
 import { ExportService } from '@shared/services/export.service';
+import { BackendExportService, BackendExportConfig } from '@shared/services/backend-export.service';
 import { PaginationComponent, PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
 import { ButtonComponent } from '@shared/components';
 import { PAGINATION } from '@shared/constants/app.constants';
@@ -78,6 +79,11 @@ export class DataTableComponent<T = any> {
     filters = input<FilterConfig[]>([]);
     exportable = input<boolean>(true);  // todas las tablas ofrecen export por defecto (CSV/XLSX)
     exportFileName = input<string>('export');
+    /**
+     * Si se provee, la exportación se hace SERVER-SIDE (el backend genera el
+     * archivo con datos limpios). Si es null, cae al export client-side legacy.
+     */
+    exportConfig = input<BackendExportConfig | null>(null);
     hidePagination = input<boolean>(false);
 
     pageChange = output<PaginationEvent>();
@@ -89,6 +95,7 @@ export class DataTableComponent<T = any> {
     filterChange = output<FilterChangeEvent>();
 
     private readonly exportService = inject(ExportService);
+    private readonly backendExport = inject(BackendExportService);
 
     /** Término de búsqueda tecleado; el filtrado se dispara con el botón "Buscar" o Enter. */
     protected readonly searchTerm = signal('');
@@ -236,14 +243,32 @@ export class DataTableComponent<T = any> {
     }
 
     onExportCsv(): void {
+        const cfg = this.exportConfig();
+        if (cfg) { this.backendExport.download(cfg, 'csv'); return; }
+        // Fallback client-side (legacy) mientras el módulo no tenga export backend.
         const headers = this.columns().map(c => c.label);
-        const rows = this.data().map(row => this.columns().map(col => this.getCellValue(row, col)));
+        const rows = this.data().map(row => this.columns().map(col => this.getExportValue(row, col)));
         this.exportService.exportCsv([headers, ...rows], this.exportFileName());
     }
 
     onExportExcel(): void {
+        const cfg = this.exportConfig();
+        if (cfg) { this.backendExport.download(cfg, 'xlsx'); return; }
+        // Fallback client-side (legacy) mientras el módulo no tenga export backend.
         const headers = this.columns().map(c => c.label);
-        const rows = this.data().map(row => this.columns().map(col => this.getCellValue(row, col)));
+        const rows = this.data().map(row => this.columns().map(col => this.getExportValue(row, col)));
         this.exportService.exportExcel(headers, rows, this.exportFileName());
+    }
+
+    /**
+     * Valor LIMPIO para exportación client-side (fallback): usa el dato crudo, NO
+     * el HTML de render() (evita que salgan `<span class="badge">…` en el CSV/XLSX).
+     */
+    private getExportValue(row: T, column: TableColumn<T>): string {
+        if (column.render && !column.html) {
+            return column.render(row);
+        }
+        const raw = (row as Record<string, unknown>)[column.key];
+        return raw === null || raw === undefined ? '' : String(raw);
     }
 }

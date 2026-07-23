@@ -9,6 +9,8 @@ import { Employee } from '../../models/employee.model';
 import { ButtonComponent } from '@shared/components';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
+import { BackendExportConfig } from '@shared/services/backend-export.service';
+import { environment } from '@env/environment';
 import { PaginationComponent, PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
 import { AdminFormSectionComponent } from '@shared/ui/forms/admin-form-section/admin-form-section.component';
@@ -65,6 +67,16 @@ export class EmployeeListComponent implements OnInit {
             { value: 'CESADO', label: 'Cesado' }
         ]) }
     ];
+
+    /**
+     * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios
+     * (respeta los filtros actuales search + estado). Ver /hr/api/employees/export.
+     */
+    readonly exportConfig: BackendExportConfig = {
+        url: `${environment.apiUrls.hr}/api/employees/export`,
+        filename: 'empleados',
+        params: () => ({ search: this.searchQuery(), status: this.filterEstado() }),
+    };
 
     // ── Pagination (server-side) ──────────────────────────────────────────────
     currentPage   = signal(0);
