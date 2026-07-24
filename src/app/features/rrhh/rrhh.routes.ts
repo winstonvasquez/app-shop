@@ -39,7 +39,7 @@ export const RRHH_ROUTES: Routes = [
         loadComponent: () => import('./pages/payroll/payroll.component').then(m => m.PayrollComponent)
     },
     {
-        path: 'boleta',
+        path: 'boleta/:id',
         loadComponent: () => import('./pages/boleta-pago/boleta-pago.component').then(m => m.BoletaPagoComponent),
         title: 'Boleta de Pago | ERP'
     },

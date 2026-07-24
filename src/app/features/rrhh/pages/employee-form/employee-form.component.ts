@@ -255,7 +255,7 @@ export class EmployeeFormComponent implements OnInit {
                 await this.employeeService.createEmployee(request);
             }
 
-            this.router.navigate(['/rrhh/employees']);
+            this.router.navigate(['/admin/rrhh/employees']);
         } catch (error) {
             console.error('Error al guardar empleado', error);
         } finally {
@@ -264,6 +264,6 @@ export class EmployeeFormComponent implements OnInit {
     }
 
     onCancel(): void {
-        this.router.navigate(['/rrhh/employees']);
+        this.router.navigate(['/admin/rrhh/employees']);
     }
 }

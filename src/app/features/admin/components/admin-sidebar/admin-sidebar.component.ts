@@ -108,7 +108,6 @@ const ALL_NAV_GROUPS: NavGroup[] = [
       { label: 'Asistencia',      route: '/admin/rrhh/attendance',  icon: 'calendar'  },
       { label: 'Vacaciones',      route: '/admin/rrhh/vacations',   icon: 'sun'       },
       { label: 'Nómina',          route: '/admin/rrhh/payroll',     icon: 'document'  },
-      { label: 'Boleta de Pago',  route: '/admin/rrhh/boleta',      icon: 'file'      },
       { label: 'Evaluaciones',    route: '/admin/rrhh/evaluations', icon: 'chart-bar' },
       { label: 'Capacitaciones',  route: '/admin/rrhh/trainings',   icon: 'book'      }
     ]

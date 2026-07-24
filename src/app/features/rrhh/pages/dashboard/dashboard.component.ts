@@ -66,16 +66,16 @@ export class DashboardComponent implements OnInit {
     barFill = { colors: this.barColors, type: 'solid' };
 
     readonly accesosRapidos: AccesoRapido[] = [
-        { ruta: '/rrhh/employees',    titulo: 'Empleados',             descripcion: 'Gestionar nómina, contratos y datos personales',      color: CHART_COLORS[0] },
-        { ruta: '/rrhh/departments',  titulo: 'Departamentos',         descripcion: 'Estructura organizacional y jerarquía de áreas',     color: CHART_COLORS[1] },
-        { ruta: '/rrhh/positions',    titulo: 'Puestos',               descripcion: 'Cargos, requisitos y rangos salariales',             color: CHART_COLORS[3] },
-        { ruta: '/rrhh/attendance',   titulo: 'Asistencia',            descripcion: 'Control de marcaciones, tardanzas y horas extras',    color: CHART_COLORS[2] },
-        { ruta: '/rrhh/vacations',    titulo: 'Vacaciones y Licencias',descripcion: 'Solicitudes, aprobaciones y saldo de días',            color: CHART_COLORS[1] },
-        { ruta: '/rrhh/payroll',      titulo: 'Planilla Remunerativa', descripcion: 'AFP, ONP, renta 5ta, ESSALUD y boletas de pago',      color: CHART_COLORS[5] },
-        { ruta: '/rrhh/contracts',    titulo: 'Contratos',             descripcion: 'Gestión de contratos laborales y renovaciones',       color: CHART_COLORS[4] },
-        { ruta: '/rrhh/evaluations',  titulo: 'Evaluaciones',          descripcion: 'Seguimiento por período y competencias',              color: CHART_COLORS[3] },
-        { ruta: '/rrhh/trainings',    titulo: 'Capacitaciones',        descripcion: 'Plan anual de formación y desarrollo',                color: CHART_COLORS[4] },
-        { ruta: '/rrhh/analytics',    titulo: 'Analytics',             descripcion: 'Dashboard analítico con métricas de RRHH',            color: CHART_COLORS[5] },
+        { ruta: '/admin/rrhh/employees',    titulo: 'Empleados',             descripcion: 'Gestionar nómina, contratos y datos personales',      color: CHART_COLORS[0] },
+        { ruta: '/admin/rrhh/departments',  titulo: 'Departamentos',         descripcion: 'Estructura organizacional y jerarquía de áreas',     color: CHART_COLORS[1] },
+        { ruta: '/admin/rrhh/positions',    titulo: 'Puestos',               descripcion: 'Cargos, requisitos y rangos salariales',             color: CHART_COLORS[3] },
+        { ruta: '/admin/rrhh/attendance',   titulo: 'Asistencia',            descripcion: 'Control de marcaciones, tardanzas y horas extras',    color: CHART_COLORS[2] },
+        { ruta: '/admin/rrhh/vacations',    titulo: 'Vacaciones y Licencias',descripcion: 'Solicitudes, aprobaciones y saldo de días',            color: CHART_COLORS[1] },
+        { ruta: '/admin/rrhh/payroll',      titulo: 'Planilla Remunerativa', descripcion: 'AFP, ONP, renta 5ta, ESSALUD y boletas de pago',      color: CHART_COLORS[5] },
+        { ruta: '/admin/rrhh/contracts',    titulo: 'Contratos',             descripcion: 'Gestión de contratos laborales y renovaciones',       color: CHART_COLORS[4] },
+        { ruta: '/admin/rrhh/evaluations',  titulo: 'Evaluaciones',          descripcion: 'Seguimiento por período y competencias',              color: CHART_COLORS[3] },
+        { ruta: '/admin/rrhh/trainings',    titulo: 'Capacitaciones',        descripcion: 'Plan anual de formación y desarrollo',                color: CHART_COLORS[4] },
+        { ruta: '/admin/rrhh/analytics',    titulo: 'Analytics',             descripcion: 'Dashboard analítico con métricas de RRHH',            color: CHART_COLORS[5] },
     ];
 
     async ngOnInit(): Promise<void> {
