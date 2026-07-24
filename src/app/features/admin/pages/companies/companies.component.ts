@@ -9,6 +9,8 @@ import {
 import { of } from 'rxjs';
 import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 import { DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
+import { BackendExportConfig } from '@shared/services/backend-export.service';
+import { environment } from '@env/environment';
 import {
   FormFieldComponent,
   AdminFormLayoutComponent,
@@ -71,6 +73,19 @@ export class CompaniesComponent implements OnInit {
 
   hasCompanies = computed(() => this.companies().length > 0);
   isEmpty = computed(() => !this.loading() && !this.hasCompanies());
+
+  /**
+   * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios
+   * (respeta los filtros actuales search + active). Ver /users/api/companies/export.
+   */
+  readonly exportConfig: BackendExportConfig = {
+    url: `${environment.apiUrls.users}/api/companies/export`,
+    filename: 'empresas',
+    params: () => ({
+      search: this.searchQuery(),
+      active: this.filterActive() === null ? undefined : this.filterActive()
+    }),
+  };
 
   // Filtro de estado para el toolbar del data-table
   estadoFilters: FilterConfig[] = [

@@ -3,6 +3,8 @@ import { DataTableComponent, TableColumn, TableAction, PaginationEvent } from '@
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { AuthService } from '@core/auth/auth.service';
 import { Sucursal, SucursalInput, SucursalService } from '@features/admin/services/sucursal.service';
+import { BackendExportConfig } from '@shared/services/backend-export.service';
+import { environment } from '@env/environment';
 
 @Component({
     selector: 'app-sucursales',
@@ -48,6 +50,12 @@ export class SucursalesComponent implements OnInit {
         { key: 'activo', label: 'Estado', html: true,
           render: (s) => `<span class="badge ${s.activo ? 'badge-success' : 'badge-neutral'}">${s.activo ? 'Activa' : 'Inactiva'}</span>` }
     ];
+
+    readonly exportConfig: BackendExportConfig = {
+        url: `${environment.apiUrls.pos}/sucursales/export`,
+        filename: 'sucursales',
+        params: () => ({ companyId: this.currentCompanyId() }),
+    };
 
     actions: TableAction<Sucursal>[] = [
         { label: 'Editar', icon: 'edit', class: 'btn-icon-edit', onClick: (s) => this.openEdit(s) },

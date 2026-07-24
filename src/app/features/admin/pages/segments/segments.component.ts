@@ -7,6 +7,8 @@ import { PaginationChangeEvent } from '@shared/ui/pagination/pagination.componen
 import { DataTableComponent, TableColumn, TableAction } from '@shared/ui/tables/data-table/data-table.component';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { ButtonComponent } from '@shared/components';
+import { BackendExportConfig } from '@shared/services/backend-export.service';
+import { environment } from '@env/environment';
 import {
     SegmentResponse,
     SegmentRequest,
@@ -68,6 +70,16 @@ export class SegmentsComponent implements OnInit {
 
     hasSegments = computed(() => this.segments().length > 0);
     isEmpty     = computed(() => !this.loading() && !this.hasSegments());
+
+    /**
+     * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios
+     * (respeta el filtro de búsqueda actual). Ver /users/api/segments/export.
+     */
+    readonly exportConfig: BackendExportConfig = {
+        url: `${environment.apiUrls.users}/api/segments/export`,
+        filename: 'segmentos',
+        params: () => ({ search: this.searchQuery() || undefined }),
+    };
 
     // Opciones
     tipoClienteOptions  = TIPO_CLIENTE_OPTIONS;

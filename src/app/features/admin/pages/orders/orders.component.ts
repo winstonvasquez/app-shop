@@ -15,6 +15,8 @@ import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { LoadingSpinnerComponent } from '@shared/ui/feedback/loading-spinner/loading-spinner.component';
 import { ButtonComponent } from '@shared/components';
 import { CURRENCY_DISPLAY } from '@shared/constants/sunat.constants';
+import { BackendExportConfig } from '@shared/services/backend-export.service';
+import { environment } from '@env/environment';
 
 @Component({
   selector: 'app-orders',
@@ -70,6 +72,16 @@ export class OrdersComponent implements OnInit {
   // Sort state
   sortField = signal('fechaPedido');
   sortDirection = signal<'asc' | 'desc'>('desc');
+
+  /**
+   * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios
+   * (respeta el filtro de búsqueda actual). Ver GET /api/pedidos/export.
+   */
+  readonly exportConfig: BackendExportConfig = {
+    url: `${environment.apiUrls.sales}/api/pedidos/export`,
+    filename: 'pedidos',
+    params: () => ({ search: this.searchQuery() || undefined }),
+  };
 
   // Computed properties
   hasOrders = computed(() => this.orders().length > 0);

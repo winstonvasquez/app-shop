@@ -4,6 +4,7 @@ import { NgApexchartsModule } from 'ng-apexcharts';
 import { environment } from '@env/environment';
 import { DataTableComponent, TableColumn } from '@shared/ui/tables/data-table/data-table.component';
 import { ButtonComponent } from '@shared/components';
+import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { VentasParametrosService } from '../../services/ventas-parametros.service';
 import { ChartDefaultsService, CHART_COLORS } from '@shared/services/chart-defaults.service';
 import { CURRENCY_DISPLAY } from '@shared/constants/sunat.constants';
@@ -85,6 +86,15 @@ export class VentasDashboardComponent implements OnInit {
         { key: 'estado', label: 'Estado', html: true, render: (row) =>
             `<span class="badge ${this.parametros.getBadgeEstadoPedido(row.estado)}">${this.parametros.getLabelEstadoPedido(row.estado)}</span>` },
     ];
+
+    /**
+     * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios.
+     * Ver GET /api/pedidos/export en PedidoController (microshopventas).
+     */
+    readonly exportConfig: BackendExportConfig = {
+        url: `${environment.apiUrls.sales}/api/pedidos/export`,
+        filename: 'ultimos-pedidos',
+    };
 
     ngOnInit(): void { this.cargar(); }
 

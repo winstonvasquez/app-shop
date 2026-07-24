@@ -35,6 +35,7 @@
         searchPlaceholder="Buscar productos..."
         [exportable]="true"
         exportFileName="productos"
+        [exportConfig]="exportConfig"
         (searchChange)="onSearchTerm($event)"
         (pageChange)="onPageChange($event)"
         (sortChange)="onSort($event)">

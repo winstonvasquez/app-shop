@@ -14,6 +14,8 @@ import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { ButtonComponent } from '@shared/components';
+import { BackendExportConfig } from '@shared/services/backend-export.service';
+import { environment } from '@env/environment';
 
 @Component({
   selector: 'app-categories',
@@ -122,6 +124,16 @@ export class CategoriesComponent implements OnInit {
   nivelFilters: FilterConfig[] = [
     { field: 'nivel', label: 'Todos los niveles', options: of(this.levelOptions) }
   ];
+
+  /**
+   * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios
+   * (respeta los filtros actuales search + nivel). Ver /sales/api/v1/categorias/export.
+   */
+  readonly exportConfig: BackendExportConfig = {
+    url: `${environment.apiUrls.sales}/api/v1/categorias/export`,
+    filename: 'categorias',
+    params: () => ({ search: this.searchQuery(), nivel: this.filterLevel() }),
+  };
 
   constructor() {
     this.categoryForm = this.fb.group({

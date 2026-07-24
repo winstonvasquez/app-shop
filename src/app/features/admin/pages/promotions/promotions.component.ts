@@ -12,6 +12,8 @@ import { ButtonComponent } from '@shared/components';
 import { PromotionsService, Promocion } from '../../services/promotions.service';
 import { VentasParametrosService, SelectOption } from '../../services/ventas-parametros.service';
 import { CURRENCY_DISPLAY } from '@shared/constants/sunat.constants';
+import { BackendExportConfig } from '@shared/services/backend-export.service';
+import { environment } from '@env/environment';
 
 type EstadoPromocion = 'ACTIVA' | 'INACTIVA' | 'VENCIDA';
 
@@ -68,6 +70,16 @@ export class PromotionsComponent implements OnInit {
         if (event.field !== 'estado') return;
         this.filtroEstado = event.value != null ? String(event.value) : '';
     }
+
+    /**
+     * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios
+     * (respeta el filtro de estado actual). Ver /sales/api/v1/promociones/export.
+     */
+    readonly exportConfig: BackendExportConfig = {
+        url: `${environment.apiUrls.sales}/api/v1/promociones/export`,
+        filename: 'promociones',
+        params: () => ({ estado: this.filtroEstado }),
+    };
 
     form = this.fb.group({
         nombre:       ['', Validators.required],

@@ -9,6 +9,8 @@ import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { ButtonComponent } from '@shared/components';
+import { BackendExportConfig } from '@shared/services/backend-export.service';
+import { environment } from '@env/environment';
 
 @Component({
   selector: 'app-products',
@@ -45,6 +47,16 @@ export class ProductsComponent implements OnInit {
   searchQuery = signal('');
   sortField = signal('nombre');
   sortDirection = signal<'asc' | 'desc'>('asc');
+
+  /**
+   * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios
+   * (respeta el filtro de búsqueda actual). Ver /sales/api/v1/productos/export.
+   */
+  readonly exportConfig: BackendExportConfig = {
+    url: `${environment.apiUrls.sales}/api/v1/productos/export`,
+    filename: 'productos',
+    params: () => ({ search: this.searchQuery() }),
+  };
 
   // Modal state
   showModal = signal(false);

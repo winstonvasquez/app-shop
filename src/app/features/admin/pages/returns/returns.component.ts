@@ -5,6 +5,7 @@ import { environment } from '@env/environment';
 import { PageResponse, pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent, PaginationEvent } from '@shared/ui/tables/data-table/data-table.component';
+import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { DateInputComponent } from '@shared/ui/forms/date-input/date-input.component';
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
 import { AdminFormSectionComponent } from '@shared/ui/forms/admin-form-section/admin-form-section.component';
@@ -119,6 +120,16 @@ export class ReturnsComponent implements OnInit {
         { key: 'estado', label: 'Estado', html: true,
           render: (row) => `<span class="badge ${this.parametros.getBadgeEstadoDevolucion(row.estado)}">${row.estado.replace('_', ' ')}</span>` },
     ];
+
+    /**
+     * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios
+     * (respeta los filtros actuales companyId + search + estado). Ver /sales/api/devoluciones/export.
+     */
+    readonly exportConfig: BackendExportConfig = {
+        url: `${this.baseUrl}/export`,
+        filename: 'devoluciones',
+        params: () => ({ companyId: this.companyId(), search: this.searchQuery(), estado: this.filtroEstado() }),
+    };
 
     actions: TableAction<Devolucion>[] = [
         { label: 'Revisar', icon: '👁', class: 'btn-view',

@@ -24,6 +24,7 @@
         [filters]="estadoFilters"
         [totalElements]="promocionesVm().length"
         [pageSize]="20"
+        [exportConfig]="exportConfig"
         (filterChange)="onFilterChangeEvent($event)">
     </app-data-table>
 

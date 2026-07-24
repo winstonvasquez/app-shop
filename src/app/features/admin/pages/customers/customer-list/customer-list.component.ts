@@ -16,6 +16,8 @@ import { DataTableComponent, TableColumn, TableAction } from '@shared/ui/tables/
 import { AuthService } from '@core/auth/auth.service';
 import { CustomerFormComponent } from '../customer-form/customer-form.component';
 import { CURRENCY_DISPLAY } from '@shared/constants/sunat.constants';
+import { BackendExportConfig } from '@shared/services/backend-export.service';
+import { environment } from '@env/environment';
 
 @Component({
     selector: 'app-customer-list',
@@ -65,6 +67,15 @@ export class CustomerListComponent implements OnInit {
           render: (c) => c.limiteCredito > 0
               ? `${CURRENCY_DISPLAY.SYMBOL_PEN} ${c.saldoCredito.toFixed(2)} / ${c.limiteCredito.toFixed(2)}` : '-' }
     ];
+
+    readonly exportConfig: BackendExportConfig = {
+        url: `${environment.apiUrls.sales}/api/clientes/export`,
+        filename: 'clientes',
+        params: () => ({
+            companyId: this.authService.currentUser()?.activeCompanyId ?? undefined,
+            search: this.searchQuery() || undefined,
+        }),
+    };
 
     actions: TableAction<CustomerResponse>[] = [
         { label: 'Ver detalle', icon: 'view', class: 'btn-view',
