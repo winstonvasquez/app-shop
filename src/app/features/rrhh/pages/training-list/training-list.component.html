@@ -120,3 +120,124 @@
         <app-button icon="save" [label]="editMode() ? 'Actualizar' : 'Crear Capacitación'" variant="primary" type="button" [loading]="submitting()" (click)="guardar()" />
     </div>
 </app-drawer>
+
+<!-- ── Drawer: Participantes de la Capacitación ─────────────────────────── -->
+<app-drawer
+    [isOpen]="showParticipantsDrawer()"
+    [title]="selectedTraining() ? 'Participantes — ' + selectedTraining()!.nombre : 'Participantes'"
+    size="lg"
+    (closed)="closeParticipantsDrawer()">
+
+    @if (participantsError()) {
+        <app-alert type="error" [message]="participantsError()!" />
+    }
+
+    <!-- Inscribir participante -->
+    <p class="text-subtle text-sm font-semibold mb-2 mt-1">Inscribir Participante</p>
+    <hr style="border-color: var(--color-border); margin-bottom: var(--space-md)">
+
+    <form [formGroup]="enrollForm" (ngSubmit)="enrollParticipant()">
+        @if (enrollError()) {
+            <app-alert type="error" [message]="enrollError()!" />
+        }
+        <div style="display: flex; gap: var(--space-sm); align-items: flex-start">
+            <div style="flex: 1">
+                <app-server-search-select
+                    [dataSource]="employeeSource"
+                    formControlName="employeeId"
+                    placeholder="Buscar empleado por nombre o código…" />
+                @if (getEnrollControl('employeeId').invalid && getEnrollControl('employeeId').touched) {
+                    <span class="input-error-message">Seleccione un empleado</span>
+                }
+            </div>
+            <app-button
+                icon="plus"
+                label="Inscribir"
+                variant="primary"
+                type="button"
+                [loading]="enrolling()"
+                (click)="enrollParticipant()" />
+        </div>
+    </form>
+
+    <!-- Lista de participantes -->
+    <p class="text-subtle text-sm font-semibold mb-2" style="margin-top: var(--space-lg)">Participantes Inscritos</p>
+    <hr style="border-color: var(--color-border); margin-bottom: var(--space-md)">
+
+    @if (participantsLoading()) {
+        <div class="loading-container"><div class="spinner"></div></div>
+    } @else if (participants().length === 0) {
+        <p style="color: var(--color-text-muted); text-align: center; padding: var(--space-lg)">Sin participantes inscritos</p>
+    } @else {
+        <table class="table">
+            <thead>
+                <tr>
+                    <th class="table-header-cell">Empleado</th>
+                    <th class="table-header-cell">Asistencia %</th>
+                    <th class="table-header-cell">Nota</th>
+                    <th class="table-header-cell">Aprobado</th>
+                    <th class="table-header-cell">Certificado</th>
+                    <th class="table-header-cell">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (p of participants(); track p.id) {
+                    <tr class="table-row">
+                        <td class="table-cell">{{ p.employeeName ?? ('Empleado #' + p.employeeId) }}</td>
+                        <td class="table-cell">
+                            <input
+                                type="number" min="0" max="100" step="1"
+                                class="form-input" style="max-width: 90px"
+                                [value]="getEdit(p.id).asistenciaPorcentaje ?? ''"
+                                (change)="setEditField(p.id, 'asistenciaPorcentaje', $any($event.target).value)" />
+                        </td>
+                        <td class="table-cell">
+                            <input
+                                type="number" min="0" max="100" step="0.1"
+                                class="form-input" style="max-width: 90px"
+                                [value]="getEdit(p.id).notaFinal ?? ''"
+                                (change)="setEditField(p.id, 'notaFinal', $any($event.target).value)" />
+                        </td>
+                        <td class="table-cell">
+                            @if (p.aprobado === true) {
+                                <span class="badge badge-success">Sí</span>
+                            } @else if (p.aprobado === false) {
+                                <span class="badge badge-error">No</span>
+                            } @else {
+                                <span class="badge badge-neutral">—</span>
+                            }
+                        </td>
+                        <td class="table-cell">
+                            @if (p.certificadoEmitido) {
+                                <span class="badge badge-success">Emitido</span>
+                            } @else {
+                                <span class="badge badge-neutral">Pendiente</span>
+                            }
+                        </td>
+                        <td class="table-cell">
+                            <div class="flex gap-2">
+                                <app-button
+                                    icon="save"
+                                    label="Guardar"
+                                    variant="secondary"
+                                    size="sm"
+                                    type="button"
+                                    [loading]="savingParticipationId() === p.id"
+                                    (click)="saveParticipation(p)" />
+                                <app-button
+                                    icon="award"
+                                    label="Emitir certificado"
+                                    variant="primary"
+                                    size="sm"
+                                    type="button"
+                                    [disabled]="!canIssueCertificate(p)"
+                                    [loading]="issuingCertificateId() === p.id"
+                                    (click)="issueCertificate(p)" />
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</app-drawer>
