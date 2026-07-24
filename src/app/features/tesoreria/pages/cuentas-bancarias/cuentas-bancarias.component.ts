@@ -15,6 +15,8 @@ import { AuthService } from '@core/auth/auth.service';
 import { BankAccount, BankAccountRequest, Page } from '../../models/tesoreria.model';
 import { MONEDA, CURRENCY_DISPLAY } from '@shared/constants/sunat.constants';
 import { PAGINATION } from '@shared/constants/app.constants';
+import { BackendExportConfig } from '@shared/services/backend-export.service';
+import { environment } from '@env/environment';
 
 @Component({
     selector: 'app-cuentas-bancarias',
@@ -123,6 +125,14 @@ export class CuentasBancariasComponent implements OnInit {
         { key: 'estado',              label: 'Estado',       align: 'center', html: true,
           render: r => `<span class="${this.badgeEstado(r.estado)}">${r.estado}</span>` }
     ];
+
+    readonly exportConfig: BackendExportConfig = {
+        url: `${environment.apiUrls.treasury}/api/tesoreria/cuentas-bancarias/export`,
+        filename: 'cuentas-bancarias',
+        params: () => ({
+            tenantId: this.auth.currentUser()?.activeCompanyId ?? 1
+        })
+    };
 
     actions: TableAction<BankAccount>[] = [
         { label: 'Editar',      icon: '✏️',  class: 'btn-icon-edit',

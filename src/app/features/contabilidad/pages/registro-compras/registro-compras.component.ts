@@ -8,6 +8,8 @@ import { OrdenCompraService } from '../../../compras/services/orden-compra.servi
 import { PleService } from '../../services/ple.service';
 import { OrdenCompra } from '../../../compras/models/orden-compra.model';
 import { ExportService } from '@shared/services/export.service';
+import { BackendExportService, BackendExportConfig } from '@shared/services/backend-export.service';
+import { environment } from '@env/environment';
 import { DataTableComponent, TableColumn, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { ButtonComponent } from '@shared/components';
 import { CPE_TIPO, MONEDA } from '@shared/constants/sunat.constants';
@@ -23,6 +25,7 @@ export class RegistroComprasComponent implements OnInit {
     private periodoService = inject(PeriodoService);
     private ordenCompraService = inject(OrdenCompraService);
     private exportService = inject(ExportService);
+    private backendExportService = inject(BackendExportService);
     private pleService = inject(PleService);
     private fb = inject(FormBuilder);
 
@@ -78,6 +81,19 @@ export class RegistroComprasComponent implements OnInit {
         { key: 'estado', label: 'Estado', html: true,
           render: (row) => `<span class="${this.badgeEstado(row.estado)}">${row.estado}</span>` },
     ];
+
+    /**
+     * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios
+     * (respeta el mismo filtro de estado que la lista).
+     * Ver GET /api/ordenes-compra/export/registro-compras (microshopcompras).
+     */
+    readonly exportConfig: BackendExportConfig = {
+        url: `${environment.apiUrls.purchases}/api/ordenes-compra/export/registro-compras`,
+        filename: 'registro-compras',
+        params: () => ({
+            estado: this.estadoFiltro(),
+        }),
+    };
 
     readonly ordenesActivas = computed(() => this.ordenes().filter(o => o.estado !== 'CANCELADA'));
     readonly totalBase = computed(() => this.ordenesActivas().reduce((s, o) => s + (o.subtotal ?? 0), 0));
@@ -200,13 +216,8 @@ export class RegistroComprasComponent implements OnInit {
     }
 
     exportarCSV() {
-        const cabecera = ['Código', 'Fecha', 'Proveedor', 'Subtotal', 'IGV', 'Total', 'Estado'];
-        const filas = this.ordenes().map(o => [
-            o.codigo, o.fechaEmision,
-            o.proveedorNombre ?? String(o.proveedorId ?? ''),
-            String(o.subtotal ?? 0), String(o.igv ?? 0), String(o.total ?? 0), o.estado
-        ]);
-        this.exportService.exportCsv([cabecera, ...filas], 'registro-compras');
+        // Exportación SERVER-SIDE (mismo endpoint /export que exportConfig, formato csv).
+        this.backendExportService.download(this.exportConfig, 'csv');
     }
 
     private formatPeriodoPLE(nombre: string): string {

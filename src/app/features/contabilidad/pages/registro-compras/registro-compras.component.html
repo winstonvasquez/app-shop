@@ -57,6 +57,7 @@
         (searchChange)="onSearchTerm($event)"
         [filters]="filtros"
         (filterChange)="onFilterChange($event)"
+        [exportConfig]="exportConfig"
         [totalPages]="1"
         [totalElements]="ordenesFiltradas().length"
         [currentPage]="0"

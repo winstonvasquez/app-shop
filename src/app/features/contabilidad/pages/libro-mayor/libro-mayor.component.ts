@@ -5,6 +5,8 @@ import { CuentaService, CuentaContable } from '../../services/cuenta.service';
 import { PeriodoService, PeriodoContable } from '../../services/periodo.service';
 import { ButtonComponent } from '@shared/components';
 import { DataTableComponent, TableColumn, PaginationEvent } from '@shared/ui/tables/data-table/data-table.component';
+import { BackendExportConfig } from '@shared/services/backend-export.service';
+import { environment } from '@env/environment';
 
 interface MayorMovimiento {
     fecha: string;
@@ -82,6 +84,15 @@ export class LibroMayorComponent implements OnInit {
             render: m => `<span class="font-mono" style="${m.saldo < 0 ? 'color:var(--color-error)' : ''}">S/ ${m.saldo.toFixed(2)}</span>`
         }
     ];
+
+    readonly exportConfig: BackendExportConfig = {
+        url: `${environment.apiUrls.accounting}/api/v1/contabilidad/libro-mayor/export`,
+        filename: 'libro-mayor',
+        params: () => ({
+            periodo: this.periodoSeleccionado() || undefined,
+            cuenta: this.cuentaSeleccionada() || undefined,
+        }),
+    };
 
     ngOnInit() {
         this.cuentaService.listarTodas().subscribe({

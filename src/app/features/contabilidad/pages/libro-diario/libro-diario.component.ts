@@ -2,6 +2,8 @@ import { Component, inject, signal, computed, OnInit, ChangeDetectionStrategy } 
 import { AsientoService } from '../../services/asiento.service';
 import { PeriodoService, PeriodoContable } from '../../services/periodo.service';
 import { ExportService } from '@shared/services/export.service';
+import { BackendExportService, BackendExportConfig } from '@shared/services/backend-export.service';
+import { environment } from '@env/environment';
 import { ButtonComponent } from '@shared/components';
 import { DataTableComponent, TableColumn, PaginationEvent } from '@shared/ui/tables/data-table/data-table.component';
 
@@ -26,6 +28,7 @@ export class LibroDiarioComponent implements OnInit {
     private asientoService = inject(AsientoService);
     private periodoService = inject(PeriodoService);
     private exportService = inject(ExportService);
+    private backendExportService = inject(BackendExportService);
 
     periodos = signal<PeriodoContable[]>([]);
     periodoSeleccionado = signal<string>('');
@@ -85,6 +88,21 @@ export class LibroDiarioComponent implements OnInit {
             render: l => `<span class="font-mono">${l.haber > 0 ? 'S/ ' + l.haber.toFixed(2) : ''}</span>`
         },
     ];
+
+    /**
+     * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios
+     * (respeta los mismos filtros actuales periodo + fechaDesde/fechaHasta).
+     * Ver GET /api/v1/contabilidad/libro-diario/export.
+     */
+    readonly exportConfig: BackendExportConfig = {
+        url: `${environment.apiUrls.accounting}/api/v1/contabilidad/libro-diario/export`,
+        filename: 'libro-diario',
+        params: () => ({
+            periodo: this.periodoSeleccionado(),
+            fechaDesde: this.fechaDesde(),
+            fechaHasta: this.fechaHasta(),
+        }),
+    };
 
     ngOnInit() {
         this.cargarPeriodos();
@@ -154,12 +172,8 @@ export class LibroDiarioComponent implements OnInit {
     }
 
     exportarCSV() {
-        const cabecera = ['Fecha', 'N° Asiento', 'Cta. Código', 'Cta. Nombre', 'Descripción', 'Debe', 'Haber'];
-        const filas = this.lineas().map(l => [
-            l.fecha, l.codigoAsiento, l.cuentaCodigo, l.cuentaNombre,
-            l.descripcion, String(l.debe), String(l.haber)
-        ]);
-        this.exportService.exportCsv([cabecera, ...filas], 'libro-diario');
+        // Exportación SERVER-SIDE (mismo endpoint /export que exportConfig, formato csv).
+        this.backendExportService.download(this.exportConfig, 'csv');
     }
 
     private formatPeriodoPLE(nombre: string): string {

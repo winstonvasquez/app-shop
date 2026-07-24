@@ -4,6 +4,8 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ButtonComponent } from '@shared/components';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { DataTableComponent, TableColumn, TableAction, PaginationEvent } from '@shared/ui/tables/data-table/data-table.component';
+import { BackendExportConfig } from '@shared/services/backend-export.service';
+import { environment } from '@env/environment';
 import {
     ReglaAsientoService, ReglaAsiento, ReglaAsientoRequest, DetalleRegla, TransactionType
 } from '../../services/regla-asiento.service';
@@ -47,6 +49,15 @@ export class ReglasAsientoComponent implements OnInit {
         return this.reglasFiltradas().slice(inicio, inicio + this.pageSize());
     });
     readonly totalPagesLocal = computed(() => Math.ceil(this.reglasFiltradas().length / this.pageSize()) || 1);
+
+    /**
+     * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios.
+     * Ver /finance/api/v1/contabilidad/reglas-asiento/export.
+     */
+    readonly exportConfig: BackendExportConfig = {
+        url: `${environment.apiUrls.accounting}/api/v1/contabilidad/reglas-asiento/export`,
+        filename: 'reglas-asiento',
+    };
 
     readonly columns: TableColumn<ReglaAsiento>[] = [
         {

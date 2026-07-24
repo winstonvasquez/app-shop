@@ -28,6 +28,8 @@ import {
     AsientoRecurrenteRequest,
     RecurringLineItem,
 } from '../../services/asiento-recurrente.service';
+import { BackendExportConfig } from '@shared/services/backend-export.service';
+import { environment } from '@env/environment';
 
 const FRECUENCIA_LABELS: Record<string, string> = {
     MENSUAL: 'Mensual',
@@ -110,6 +112,16 @@ export class AsientosRecurrentesComponent implements OnInit {
                 : '<span class="badge badge-neutral">Inactivo</span>'
         },
     ];
+
+    /**
+     * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios.
+     * Este listado no tiene filtros de servidor (trae todo); sin params.
+     * Ver /finance/api/v1/contabilidad/asientos-recurrentes/export.
+     */
+    readonly exportConfig: BackendExportConfig = {
+        url: `${environment.apiUrls.accounting}/api/v1/contabilidad/asientos-recurrentes/export`,
+        filename: 'asientos-recurrentes',
+    };
 
     readonly actions: TableAction<AsientoRecurrente>[] = [
         {

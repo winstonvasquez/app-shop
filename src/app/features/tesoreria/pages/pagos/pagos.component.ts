@@ -15,6 +15,8 @@ import { AuthService } from '@core/auth/auth.service';
 import { Payment, PaymentRequest, Page } from '../../models/tesoreria.model';
 import { MONEDA } from '@shared/constants/sunat.constants';
 import { PAGINATION } from '@shared/constants/app.constants';
+import { BackendExportConfig } from '@shared/services/backend-export.service';
+import { environment } from '@env/environment';
 
 @Component({
     selector: 'app-pagos',
@@ -90,6 +92,17 @@ export class PagosComponent implements OnInit {
         { key: 'estado', label: 'Estado', align: 'center', html: true,
           render: r => `<span class="${this.badgePago(r.estado)}">${r.estado}</span>` },
     ];
+
+    /**
+     * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios
+     * (mismo listado completo de pagos, sin filtros adicionales en esta vista).
+     * Ver GET /api/tesoreria/pagos/export.
+     */
+    readonly exportConfig: BackendExportConfig = {
+        url: `${environment.apiUrls.treasury}/api/tesoreria/pagos/export`,
+        filename: 'pagos',
+        params: () => ({ tenantId: this.auth.currentUser()?.activeCompanyId ?? 1 }),
+    };
 
     actions: TableAction<Payment>[] = [
         { label: 'Aprobar',  icon: '✓', class: 'btn-view',

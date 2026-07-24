@@ -7,6 +7,8 @@ import { of, map } from 'rxjs';
 import { AuthService } from '@core/auth/auth.service';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { DataTableComponent, TableColumn, TableAction, PaginationEvent, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
+import { BackendExportConfig } from '@shared/services/backend-export.service';
+import { environment } from '@env/environment';
 import { AsientoService } from '../../services/asiento.service';
 import { CuentaService, CuentaContable } from '../../services/cuenta.service';
 import { PeriodoService, PeriodoContable } from '../../services/periodo.service';
@@ -205,6 +207,7 @@ interface LineaForm {
             [pageSize]="pageSize()"
             [totalElements]="asientosFiltrados().length"
             [totalPages]="totalPagesLocal()"
+            [exportConfig]="exportConfig"
             (searchChange)="onSearchTerm($event)"
             (filterChange)="onFilterChange($event)"
             (pageChange)="onPaginationChange($event)">
@@ -302,6 +305,13 @@ export class AsientosComponent implements OnInit {
             ])
         }
     ];
+
+    // ── Exportación server-side (mismos filtros que la lista) ──────────────
+    readonly exportConfig: BackendExportConfig = {
+        url: `${environment.apiUrls.accounting}/api/v1/contabilidad/asientos/export`,
+        filename: 'asientos',
+        params: () => ({ periodo: this.periodoSeleccionado() }),
+    };
 
     // ── Paginación local ───────────────────────────────────────────────────
     readonly currentPage = signal(0);

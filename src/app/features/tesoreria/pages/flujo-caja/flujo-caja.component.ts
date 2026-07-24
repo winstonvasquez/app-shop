@@ -15,6 +15,8 @@ import { AuthService } from '@core/auth/auth.service';
 import { FinancialMovement, Page } from '../../models/tesoreria.model';
 import { MONEDA, CURRENCY_DISPLAY } from '@shared/constants/sunat.constants';
 import { PAGINATION } from '@shared/constants/app.constants';
+import { BackendExportConfig } from '@shared/services/backend-export.service';
+import { environment } from '@env/environment';
 
 @Component({
     selector: 'app-flujo-caja',
@@ -91,6 +93,20 @@ export class FlujoCajaComponent implements OnInit {
         },
         { key: 'moneda', label: 'Moneda', align: 'center', render: r => r.moneda ?? MONEDA.PEN },
     ];
+
+    /**
+     * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios
+     * (mismos filtros actuales fechaInicio/fechaFin). Ver GET /treasury/api/tesoreria/movimientos/export.
+     */
+    readonly exportConfig: BackendExportConfig = {
+        url: `${environment.apiUrls.treasury}/api/tesoreria/movimientos/export`,
+        filename: 'flujo-caja',
+        params: () => ({
+            tenantId: this.auth.currentUser()?.activeCompanyId ?? 1,
+            fechaInicio: this.fechaInicio(),
+            fechaFin: this.fechaFin(),
+        }),
+    };
 
     ngOnInit(): void {
         const today    = new Date();

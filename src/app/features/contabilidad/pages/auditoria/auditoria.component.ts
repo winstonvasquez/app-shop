@@ -4,6 +4,8 @@ import { AuditLogService, AuditLog } from '../../services/audit-log.service';
 import { ButtonComponent } from '@shared/components';
 import { pageTotalElements } from '@core/models/pagination.model';
 import { DataTableComponent, TableColumn, TableAction, PaginationEvent } from '@shared/ui/tables/data-table/data-table.component';
+import { BackendExportConfig } from '@shared/services/backend-export.service';
+import { environment } from '@env/environment';
 
 @Component({
     selector: 'app-auditoria',
@@ -60,6 +62,21 @@ export class AuditoriaComponent implements OnInit {
     actions: TableAction<AuditLog>[] = [
         { label: 'Ver detalle', icon: 'view', onClick: l => this.verDetalle(l) },
     ];
+
+    /**
+     * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios,
+     * aplicando los mismos filtros vigentes en la búsqueda (entidadTipo/desde/hasta).
+     * Ver /finance/api/v1/contabilidad/audit-log/export.
+     */
+    readonly exportConfig: BackendExportConfig = {
+        url: `${environment.apiUrls.accounting}/api/v1/contabilidad/audit-log/export`,
+        filename: 'auditoria',
+        params: () => ({
+            entidadTipo: this.filtroTipo() || undefined,
+            desde: this.filtroDesde() ? new Date(this.filtroDesde()).toISOString() : undefined,
+            hasta: this.filtroHasta() ? new Date(this.filtroHasta()).toISOString() : undefined,
+        }),
+    };
 
     ngOnInit() {
         this.buscar();

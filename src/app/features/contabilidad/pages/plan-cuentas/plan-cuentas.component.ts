@@ -3,6 +3,8 @@ import { of } from 'rxjs';
 import { CuentaService } from '../../services/cuenta.service';
 import { PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
 import { DataTableComponent, TableColumn, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
+import { BackendExportConfig } from '@shared/services/backend-export.service';
+import { environment } from '@env/environment';
 
 interface CuentaPCGE {
     id?: string | number;
@@ -80,11 +82,6 @@ const PCGE_DEMO: CuentaPCGE[] = [
                     }
                 </p>
             </div>
-            <div class="page-actions">
-                <button class="btn btn-secondary" (click)="exportarCSV()">
-                    Exportar CSV
-                </button>
-            </div>
         </div>
 
         <app-data-table
@@ -96,6 +93,7 @@ const PCGE_DEMO: CuentaPCGE[] = [
             [filters]="tipoFilters"
             [exportable]="true"
             exportFileName="plan-cuentas"
+            [exportConfig]="exportConfig"
             [currentPage]="currentPage()"
             [pageSize]="pageSize()"
             [totalElements]="cuentasFiltradas().length"
@@ -129,6 +127,17 @@ export class PlanCuentasComponent implements OnInit {
             ])
         }
     ];
+
+    /**
+     * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios
+     * (respeta los mismos filtros actuales de búsqueda + tipo). Ver
+     * /finance/api/v1/contabilidad/cuentas/export.
+     */
+    readonly exportConfig: BackendExportConfig = {
+        url: `${environment.apiUrls.accounting}/api/v1/contabilidad/cuentas/export`,
+        filename: 'plan-cuentas',
+        params: () => ({ busqueda: this.busqueda(), tipo: this.tipoFiltro() }),
+    };
 
     // Paginación (client-side)
     readonly currentPage = signal(0);
@@ -229,21 +238,5 @@ export class PlanCuentasComponent implements OnInit {
             'INGRESO': 'badge badge-neutral',
         };
         return map[tipo] ?? 'badge badge-neutral';
-    }
-
-    exportarCSV(): void {
-        const filas = this.cuentasFiltradas();
-        const cabecera = 'codigo,nombre,tipo,nivel,acepta_movimiento';
-        const lineas = filas.map(c =>
-            `"${c.codigo}","${c.nombre.replace(/"/g, '""')}","${c.tipo}",${c.nivel},${c.aceptaMovimiento}`
-        );
-        const csv = [cabecera, ...lineas].join('\n');
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = 'plan-cuentas-pcge-2020.csv';
-        link.click();
-        URL.revokeObjectURL(url);
     }
 }

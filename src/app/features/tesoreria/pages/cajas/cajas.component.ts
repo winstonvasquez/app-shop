@@ -12,6 +12,9 @@ import { ButtonComponent } from '@shared/components';
 import { CajasService } from '../../services/cajas.service';
 import { CashRegister, Page } from '../../models/tesoreria.model';
 import { PAGINATION } from '@shared/constants/app.constants';
+import { BackendExportConfig } from '@shared/services/backend-export.service';
+import { environment } from '@env/environment';
+import { AuthService } from '@core/auth/auth.service';
 
 @Component({
     selector: 'app-cajas',
@@ -28,6 +31,7 @@ export class CajasComponent implements OnInit {
     private cajasService = inject(CajasService);
     private fb           = inject(FormBuilder);
     private destroyRef   = inject(DestroyRef);
+    private auth         = inject(AuthService);
 
     cajas         = signal<CashRegister[]>([]);
     cargando      = signal(false);
@@ -71,6 +75,17 @@ export class CajasComponent implements OnInit {
         { key: 'fechaApertura', label: 'Apertura',
           render: r => r.fechaApertura ? new Date(r.fechaApertura).toLocaleDateString('es-PE') : '—' },
     ];
+
+    /**
+     * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios
+     * (mismo listado completo de cajas, sin filtros adicionales en esta vista).
+     * Ver GET /api/tesoreria/cajas/export.
+     */
+    readonly exportConfig: BackendExportConfig = {
+        url: `${environment.apiUrls.treasury}/api/tesoreria/cajas/export`,
+        filename: 'cajas',
+        params: () => ({ tenantId: this.auth.currentUser()?.activeCompanyId ?? 1 }),
+    };
 
     actions: TableAction<CashRegister>[] = [
         { label: 'Abrir',  icon: '🔓', class: 'btn-view',
