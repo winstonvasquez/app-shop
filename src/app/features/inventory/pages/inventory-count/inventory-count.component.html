@@ -49,12 +49,8 @@
     <div class="drawer-form-grid">
       <div>
         <label class="input-label">Almacén <span class="text-error">*</span></label>
-        <select class="form-input" formControlName="warehouseId">
-          <option [value]="null">Seleccionar...</option>
-          @for (w of warehouses(); track w.id) {
-            <option [value]="w.id">{{ w.name }}</option>
-          }
-        </select>
+        <app-server-search-select [dataSource]="warehouseSource" formControlName="warehouseId"
+          placeholder="Buscar almacén…" />
       </div>
 
       <div>

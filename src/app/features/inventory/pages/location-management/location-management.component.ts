@@ -9,13 +9,14 @@ import { toObservable } from '@angular/core/rxjs-interop';
 import { DataTableComponent, TableColumn, TableAction, PaginationEvent, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { ModalComponent } from '@shared/components/modal/modal.component';
-import { ButtonComponent, CatalogSelectComponent } from '@shared/components';
+import { ButtonComponent, CatalogSelectComponent, ServerSearchSelectComponent } from '@shared/components';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
 import { PAGINATION, ROUTES } from '@shared/constants/app.constants';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
+import { warehouseSelectSource } from '../../components/select-sources';
 
 @Component({
     selector: 'app-location-management',
@@ -25,7 +26,7 @@ import { environment } from '@env/environment';
         ReactiveFormsModule,
         DataTableComponent, DrawerComponent, ModalComponent,
         PageHeaderComponent, AlertComponent, FormFieldComponent, ButtonComponent,
-        CatalogSelectComponent
+        CatalogSelectComponent, ServerSearchSelectComponent
     ],
     templateUrl: './location-management.component.html',
     styleUrl: './location-management.component.scss'
@@ -33,6 +34,8 @@ import { environment } from '@env/environment';
 export class LocationManagementComponent implements OnInit {
     private readonly api = inject(InventoryApiService);
     private readonly fb = inject(FormBuilder);
+
+    readonly warehouseSource = warehouseSelectSource(this.api);
 
     warehouses = signal<Warehouse[]>([]);
 

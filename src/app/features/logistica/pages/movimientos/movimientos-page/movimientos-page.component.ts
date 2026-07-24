@@ -6,11 +6,11 @@ import { FormBuilder, ReactiveFormsModule, Validators, FormGroup } from '@angula
 import { map } from 'rxjs';
 import { MovimientoService, Movimiento, MovimientoPage } from '../../../services/movimiento.service';
 import { AlmacenService } from '../../../services/almacen.service';
-import { Almacen } from '../../../models/almacen.model';
 import { MovimientoItem, CreateMovimientoDto } from '../../../models/movimiento.model';
 import { AuthService } from '../../../../../core/auth/auth.service';
 import { CatalogService } from '@core/services/catalog.service';
-import { ButtonComponent, CatalogSelectComponent } from '@shared/components';
+import { ButtonComponent, CatalogSelectComponent, ServerSearchSelectComponent } from '@shared/components';
+import { almacenSelectSource } from '../../../components/select-sources';
 import { DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { DateInputComponent } from '@shared/ui/forms/date-input/date-input.component';
@@ -35,6 +35,7 @@ interface ItemForm {
         ReactiveFormsModule,
         ButtonComponent,
         CatalogSelectComponent,
+        ServerSearchSelectComponent,
         DataTableComponent,
         DrawerComponent,
         DateInputComponent,
@@ -52,7 +53,6 @@ export class MovimientosPageComponent implements OnInit {
 
     // Data
     movimientos = signal<Movimiento[]>([]);
-    almacenes   = signal<Almacen[]>([]);
     formItems   = signal<ItemForm[]>([]);
 
     // UI state
@@ -131,20 +131,17 @@ export class MovimientosPageComponent implements OnInit {
         observaciones:     ['']
     });
 
+    readonly almacenSource = almacenSelectSource(
+        this.almacenService,
+        () => this.authService.currentUser()?.activeCompanyId
+    );
+
     private get companyId(): string {
         return String(this.authService.currentUser()?.activeCompanyId ?? 1);
     }
 
     ngOnInit() {
-        this.loadAlmacenes();
         this.loadMovimientos();
-    }
-
-    loadAlmacenes() {
-        this.almacenService.getAlmacenes(this.companyId).subscribe({
-            next: (res) => this.almacenes.set(res.content),
-            error: () => this.almacenes.set([])
-        });
     }
 
     loadMovimientos() {

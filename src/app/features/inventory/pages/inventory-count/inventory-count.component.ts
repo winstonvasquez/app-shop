@@ -4,7 +4,7 @@ import {
     FormBuilder, ReactiveFormsModule, Validators, FormGroup, FormArray, FormControl
 } from '@angular/forms';
 import { InventoryApiService } from '../../services/inventory-api.service';
-import { InventoryCount, InventoryCountRequest, InventoryCountStatus, Warehouse } from '../../models/inventory.models';
+import { InventoryCount, InventoryCountRequest, InventoryCountStatus } from '../../models/inventory.models';
 import { map } from 'rxjs';
 import { DataTableComponent, TableColumn, TableAction, PaginationEvent, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
@@ -14,12 +14,13 @@ import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/p
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
 import { DateInputComponent } from '@shared/ui/forms/date-input/date-input.component';
-import { ButtonComponent } from '@shared/components';
+import { ButtonComponent, ServerSearchSelectComponent } from '@shared/components';
 import { ProductLookupComponent } from '../../components/product-lookup/product-lookup.component';
 import { ProductResponse } from '@core/models/product.model';
 import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 import { ROUTES } from '@shared/constants/app.constants';
 import { CatalogService } from '@core/services/catalog.service';
+import { warehouseSelectSource } from '../../components/select-sources';
 
 @Component({
     selector: 'app-inventory-count',
@@ -30,7 +31,7 @@ import { CatalogService } from '@core/services/catalog.service';
         DataTableComponent, DrawerComponent,
         PageHeaderComponent, AlertComponent,
         FormFieldComponent, DateInputComponent,
-        ButtonComponent, ProductLookupComponent
+        ButtonComponent, ProductLookupComponent, ServerSearchSelectComponent
     ],
     templateUrl: './inventory-count.component.html',
     styleUrl: './inventory-count.component.scss'
@@ -40,8 +41,9 @@ export class InventoryCountComponent {
     private readonly fb = inject(FormBuilder);
     private readonly catalog = inject(CatalogService);
 
+    readonly warehouseSource = warehouseSelectSource(this.api);
+
     counts = signal<InventoryCount[]>([]);
-    warehouses = signal<Warehouse[]>([]);
     loading = signal(false);
     error = signal<string | null>(null);
     info = signal<string | null>(null);
@@ -134,12 +136,7 @@ export class InventoryCountComponent {
     }
 
     constructor() {
-        this.loadWarehouses();
         this.loadCounts();
-    }
-
-    loadWarehouses(): void {
-        this.api.getWarehouses().subscribe({ next: (d) => this.warehouses.set(d) });
     }
 
     loadCounts(): void {

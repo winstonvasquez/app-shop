@@ -3,7 +3,7 @@ import {
     FormBuilder, ReactiveFormsModule, Validators, FormGroup, FormArray, FormControl
 } from '@angular/forms';
 import { InventoryApiService } from '../../services/inventory-api.service';
-import { InventoryTransfer, InventoryTransferRequest, InventoryTransferStatus, Warehouse } from '../../models/inventory.models';
+import { InventoryTransfer, InventoryTransferRequest, InventoryTransferStatus } from '../../models/inventory.models';
 import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 import { ROUTES } from '@shared/constants/app.constants';
 import { map } from 'rxjs';
@@ -14,10 +14,11 @@ import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/p
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
 import { DateInputComponent } from '@shared/ui/forms/date-input/date-input.component';
-import { ButtonComponent } from '@shared/components';
+import { ButtonComponent, ServerSearchSelectComponent } from '@shared/components';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
 import { CatalogService } from '@core/services/catalog.service';
+import { warehouseSelectSource } from '../../components/select-sources';
 
 @Component({
     selector: 'app-transfer-management',
@@ -28,7 +29,7 @@ import { CatalogService } from '@core/services/catalog.service';
         DataTableComponent, DrawerComponent,
         PageHeaderComponent, AlertComponent,
         FormFieldComponent, DateInputComponent,
-        ButtonComponent
+        ButtonComponent, ServerSearchSelectComponent
     ],
     templateUrl: './transfer-management.component.html',
     styleUrl: './transfer-management.component.scss'
@@ -39,7 +40,6 @@ export class TransferManagementComponent {
     private readonly catalog = inject(CatalogService);
 
     transfers = signal<InventoryTransfer[]>([]);
-    warehouses = signal<Warehouse[]>([]);
     loading = signal(false);
     error = signal<string | null>(null);
 
@@ -49,6 +49,9 @@ export class TransferManagementComponent {
     totalPages = signal(0);
 
     filterStatus = signal('');
+
+    /** Fuente server-side del search-select de almacén (origen y destino comparten el mismo dataSource). */
+    readonly warehouseSource = warehouseSelectSource(this.api);
 
     showDrawer = signal(false);
     submitting = signal(false);
@@ -123,12 +126,7 @@ export class TransferManagementComponent {
     }
 
     constructor() {
-        this.loadWarehouses();
         this.loadTransfers();
-    }
-
-    loadWarehouses(): void {
-        this.api.getWarehouses().subscribe({ next: (d) => this.warehouses.set(d) });
     }
 
     loadTransfers(): void {

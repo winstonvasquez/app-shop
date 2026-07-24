@@ -12,6 +12,9 @@ import { LoadingSpinnerComponent } from '@shared/ui/feedback/loading-spinner/loa
 import { ButtonComponent, CatalogSelectComponent, ServerSearchSelectComponent } from '@shared/components';
 import { SUNAT_RATES } from '@shared/constants/sunat.constants';
 import { proveedorSelectSource } from '../../components/select-sources';
+import { AlmacenService } from '../../../logistica/services/almacen.service';
+import { almacenSelectSource } from '../../../logistica/components/select-sources';
+import { AuthService } from '@core/auth/auth.service';
 
 export interface OcItemForm {
     productoNombre: string;
@@ -40,6 +43,8 @@ export interface OcItemForm {
 export class OrdenCompraFormComponent implements OnInit {
     private readonly ordenService = inject(OrdenCompraService);
     private readonly proveedorService = inject(ProveedorService);
+    private readonly almacenService = inject(AlmacenService);
+    private readonly authService = inject(AuthService);
     private readonly fb = inject(FormBuilder);
     private readonly router = inject(Router);
     private readonly route = inject(ActivatedRoute);
@@ -52,6 +57,7 @@ export class OrdenCompraFormComponent implements OnInit {
     formItems = signal<OcItemForm[]>([{ productoNombre: '', sku: '', cantidad: 1, precioUnitario: 0 }]);
 
     readonly proveedorSource = proveedorSelectSource(this.proveedorService);
+    readonly almacenSource = almacenSelectSource(this.almacenService, () => this.authService.currentUser()?.activeCompanyId);
 
     totales = computed(() => {
         const items = this.formItems();
@@ -67,11 +73,6 @@ export class OrdenCompraFormComponent implements OnInit {
         { label: 'Nueva Orden' }
     ];
 
-    readonly almacenOptions = [
-        { value: 'ALM1', label: 'Almacén Principal (ALM1)' },
-        { value: 'ALM2', label: 'Almacén Secundario (ALM2)' }
-    ];
-
     ocForm: FormGroup;
 
     constructor() {
@@ -80,7 +81,7 @@ export class OrdenCompraFormComponent implements OnInit {
             fechaEmision: ['', Validators.required],
             fechaEntregaEstimada: [''],
             condicionPago: ['CONTADO', Validators.required],
-            almacenDestino: ['ALM1', Validators.required],
+            almacenDestino: ['', Validators.required],
             observaciones: ['']
         });
     }

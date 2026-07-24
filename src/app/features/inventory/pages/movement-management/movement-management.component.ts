@@ -14,13 +14,14 @@ import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/p
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
 import { DateInputComponent } from '@shared/ui/forms/date-input/date-input.component';
-import { ButtonComponent, CatalogSelectComponent } from '@shared/components';
+import { ButtonComponent, CatalogSelectComponent, ServerSearchSelectComponent } from '@shared/components';
 import { ProductLookupComponent } from '../../components/product-lookup/product-lookup.component';
 import { ProductResponse } from '@core/models/product.model';
 import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 import { ROUTES } from '@shared/constants/app.constants';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
+import { warehouseSelectSource } from '../../components/select-sources';
 
 @Component({
     selector: 'app-movement-management',
@@ -31,7 +32,7 @@ import { environment } from '@env/environment';
         DataTableComponent, DrawerComponent,
         PageHeaderComponent, AlertComponent,
         FormFieldComponent, DateInputComponent,
-        ButtonComponent, ProductLookupComponent, CatalogSelectComponent
+        ButtonComponent, ProductLookupComponent, CatalogSelectComponent, ServerSearchSelectComponent
     ],
     templateUrl: './movement-management.component.html'
 })
@@ -39,6 +40,9 @@ export class MovementManagementComponent {
     private readonly api = inject(InventoryApiService);
     private readonly fb = inject(FormBuilder);
     private readonly catalog = inject(CatalogService);
+
+    /** Fuente server-side para el select de almacén del formulario de alta. */
+    readonly warehouseSource = warehouseSelectSource(this.api);
 
     movements = signal<InventoryMovement[]>([]);
     warehouses = signal<Warehouse[]>([]);

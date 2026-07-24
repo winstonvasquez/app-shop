@@ -2,6 +2,7 @@ import { Injectable, inject, signal, computed } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, firstValueFrom } from 'rxjs';
 import { environment } from '@env/environment';
+import type { PageResponse } from '@core/models/pagination.model';
 import { Almacen, CreateAlmacenDto, Pagination } from '../models/almacen.model';
 
 @Injectable({ providedIn: 'root' })
@@ -17,6 +18,20 @@ export class AlmacenService {
       if (params.sort) httpParams = httpParams.set('sort', params.sort);
     }
     return this.http.get<Pagination<Almacen>>(this.baseUrl, { params: httpParams });
+  }
+
+  /**
+   * Variante pura (Promise) pensada para adapters `ServerSelectDataSource`
+   * (ver `almacenSelectSource`). No muta ningún signal de estado compartido —
+   * solo envuelve la misma llamada HTTP con `search` server-side.
+   */
+  async searchPage(companyId: number, page = 0, size = 10, search?: string): Promise<PageResponse<Almacen>> {
+    let httpParams = new HttpParams()
+      .set('companyId', String(companyId))
+      .set('page', String(page))
+      .set('size', String(size));
+    if (search) httpParams = httpParams.set('search', search);
+    return firstValueFrom(this.http.get<PageResponse<Almacen>>(this.baseUrl, { params: httpParams }));
   }
 
   getAlmacenById(id: string, companyId: string): Observable<Almacen> {

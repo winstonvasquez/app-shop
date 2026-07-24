@@ -159,6 +159,17 @@ export class InventoryApiService {
         return this.http.get<Warehouse[]>(`${this.baseUrl}/warehouses`);
     }
 
+    /**
+     * Página de warehouses con `search` server-side. Pensado para el adapter
+     * `ServerSelectDataSource` (ver `warehouseSelectSource`) — no muta ningún
+     * estado compartido, solo envuelve la llamada HTTP.
+     */
+    searchWarehousesPaged(page = 0, size = 10, search?: string): Observable<PageResponse<Warehouse>> {
+        return this.http.get<PageResponse<Warehouse>>(`${this.baseUrl}/warehouses/paged`, {
+            params: this.buildParams({ page, size, search })
+        });
+    }
+
     createWarehouse(payload: Partial<Warehouse>): Observable<Warehouse> {
         return this.http.post<Warehouse>(`${this.baseUrl}/warehouses`, payload);
     }

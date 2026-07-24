@@ -46,22 +46,16 @@
     <div class="drawer-form-grid">
       <div>
         <label class="input-label">Almacén Origen <span class="text-error">*</span></label>
-        <select class="form-input" formControlName="sourceWarehouseId">
-          <option [value]="null">Seleccionar...</option>
-          @for (w of warehouses(); track w.id) {
-            <option [value]="w.id">{{ w.name }}</option>
-          }
-        </select>
+        <app-server-search-select [dataSource]="warehouseSource"
+                                  formControlName="sourceWarehouseId"
+                                  placeholder="Buscar almacén…" />
       </div>
 
       <div>
         <label class="input-label">Almacén Destino <span class="text-error">*</span></label>
-        <select class="form-input" formControlName="destinationWarehouseId">
-          <option [value]="null">Seleccionar...</option>
-          @for (w of warehouses(); track w.id) {
-            <option [value]="w.id">{{ w.name }}</option>
-          }
-        </select>
+        <app-server-search-select [dataSource]="warehouseSource"
+                                  formControlName="destinationWarehouseId"
+                                  placeholder="Buscar almacén…" />
       </div>
 
       <div class="col-span-2">

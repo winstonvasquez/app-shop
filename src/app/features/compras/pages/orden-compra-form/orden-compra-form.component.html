@@ -41,11 +41,7 @@
                         </app-form-field>
 
                         <app-form-field label="Almacén Destino" [required]="true" [control]="getControl('almacenDestino')">
-                            <select class="form-input" formControlName="almacenDestino">
-                                @for (opt of almacenOptions; track opt.value) {
-                                    <option [value]="opt.value">{{ opt.label }}</option>
-                                }
-                            </select>
+                            <app-server-search-select [dataSource]="almacenSource" formControlName="almacenDestino" placeholder="Buscar almacén…" />
                         </app-form-field>
 
                         <app-form-field label="Observaciones" [control]="getControl('observaciones')" class="md:col-span-2">

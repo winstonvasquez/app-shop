@@ -61,22 +61,12 @@
 
       <div class="form-field-wrapper">
         <label class="input-label">Almacén Origen</label>
-        <select class="form-input" formControlName="almacenOrigenId">
-          <option value="">-- Sin origen --</option>
-          @for (alm of almacenes(); track alm.id) {
-            <option [value]="alm.id">{{ alm.nombre }}</option>
-          }
-        </select>
+        <app-server-search-select [dataSource]="almacenSource" formControlName="almacenOrigenId" placeholder="Buscar almacén…" />
       </div>
 
       <div class="form-field-wrapper">
         <label class="input-label">Almacén Destino</label>
-        <select class="form-input" formControlName="almacenDestinoId">
-          <option value="">-- Sin destino --</option>
-          @for (alm of almacenes(); track alm.id) {
-            <option [value]="alm.id">{{ alm.nombre }}</option>
-          }
-        </select>
+        <app-server-search-select [dataSource]="almacenSource" formControlName="almacenDestinoId" placeholder="Buscar almacén…" />
       </div>
     </div>
 
