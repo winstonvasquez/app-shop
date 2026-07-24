@@ -104,12 +104,18 @@ const ALL_NAV_GROUPS: NavGroup[] = [
     title: 'RRHH',
     moduleCode: 'RRHH',
     items: [
-      { label: 'Empleados',       route: '/admin/rrhh/employees',   icon: 'users'     },
-      { label: 'Asistencia',      route: '/admin/rrhh/attendance',  icon: 'calendar'  },
-      { label: 'Vacaciones',      route: '/admin/rrhh/vacations',   icon: 'sun'       },
-      { label: 'Nómina',          route: '/admin/rrhh/payroll',     icon: 'document'  },
-      { label: 'Evaluaciones',    route: '/admin/rrhh/evaluations', icon: 'chart-bar' },
-      { label: 'Capacitaciones',  route: '/admin/rrhh/trainings',   icon: 'book'      }
+      { label: 'Dashboard',       route: '/admin/rrhh/dashboard',   icon: 'layout'        },
+      { label: 'Empleados',       route: '/admin/rrhh/employees',   icon: 'users'         },
+      { label: 'Departamentos',   route: '/admin/rrhh/departments', icon: 'building'      },
+      { label: 'Puestos',         route: '/admin/rrhh/positions',   icon: 'clipboard'     },
+      { label: 'Contratos',       route: '/admin/rrhh/contracts',   icon: 'document-text' },
+      { label: 'Asistencia',      route: '/admin/rrhh/attendance',  icon: 'calendar'      },
+      { label: 'Vacaciones',      route: '/admin/rrhh/vacations',   icon: 'sun'           },
+      { label: 'Nómina',          route: '/admin/rrhh/payroll',     icon: 'document'      },
+      { label: 'Evaluaciones',    route: '/admin/rrhh/evaluations', icon: 'chart-bar'     },
+      { label: 'Capacitaciones',  route: '/admin/rrhh/trainings',   icon: 'book'          },
+      { label: 'Analytics',       route: '/admin/rrhh/analytics',   icon: 'chart-line'    },
+      { label: 'Portal Empleado', route: '/admin/rrhh/portal',      icon: 'user-group'    }
     ]
   },
   {

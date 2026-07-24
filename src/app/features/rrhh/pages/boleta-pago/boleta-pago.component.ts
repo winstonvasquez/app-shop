@@ -86,6 +86,7 @@ import { AuthService } from '@core/auth/auth.service';
         <!-- Acciones -->
         <div class="acciones-bar no-print">
           <button class="btn btn-secondary" (click)="volver()">← Volver a Planilla</button>
+          <button class="btn btn-secondary" (click)="verEmpleado(p.employeeId)">Ver empleado</button>
           <button class="btn btn-primary" (click)="imprimir()">Imprimir</button>
           @if (p.estado === 'GENERADO') {
             <button class="btn btn-primary" [disabled]="accionando()" (click)="aprobar(p)">Aprobar</button>
@@ -305,6 +306,10 @@ export class BoletaPagoComponent implements OnInit {
 
     volver(): void {
         void this.router.navigate(['/admin/rrhh/payroll']);
+    }
+
+    verEmpleado(employeeId: number): void {
+        void this.router.navigate(['/admin/rrhh/employees', employeeId, 'detail']);
     }
 
     estadoBadge(estado: PayrollStatus): string {

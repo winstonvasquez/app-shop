@@ -2,10 +2,13 @@ import {
     Component, OnInit, inject, signal,
     ChangeDetectionStrategy
 } from '@angular/core';
+import { DecimalPipe } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { EmployeeService } from '../../services/employee.service';
 import { ContractService } from '../../services/contract.service';
+import { PayrollService } from '../../services/payroll.service';
+import { Payroll } from '../../models/payroll.model';
 import {
     Employee, EmergencyContact, EmployeeDependent,
     EmployeeDocument, SalaryRecord, SalaryRequest,
@@ -15,13 +18,13 @@ import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/p
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { ButtonComponent, CatalogSelectComponent } from '@shared/components';
 
-type TabKey = 'personal' | 'laboral' | 'direccion' | 'educacion' | 'contratos' | 'emergencia' | 'dependientes' | 'documentos' | 'salarios';
+type TabKey = 'personal' | 'laboral' | 'direccion' | 'educacion' | 'contratos' | 'emergencia' | 'dependientes' | 'documentos' | 'salarios' | 'boletas';
 
 @Component({
     selector: 'app-employee-detail',
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [PageHeaderComponent, AlertComponent, ButtonComponent, ReactiveFormsModule, CatalogSelectComponent],
+    imports: [PageHeaderComponent, AlertComponent, ButtonComponent, ReactiveFormsModule, CatalogSelectComponent, DecimalPipe],
     templateUrl: './employee-detail.component.html',
 })
 export class EmployeeDetailComponent implements OnInit {
@@ -30,6 +33,7 @@ export class EmployeeDetailComponent implements OnInit {
     private readonly fb = inject(FormBuilder);
     private readonly employeeService = inject(EmployeeService);
     private readonly contractService = inject(ContractService);
+    private readonly payrollService = inject(PayrollService);
 
     employee           = signal<Employee | null>(null);
     loading            = signal(true);
@@ -41,6 +45,7 @@ export class EmployeeDetailComponent implements OnInit {
     dependentsData     = signal<EmployeeDependent[]>([]);
     documentsData      = signal<EmployeeDocument[]>([]);
     salaryHistory      = signal<SalaryRecord[]>([]);
+    payrollHistory     = signal<Payroll[]>([]);
 
     // Alta de sueldo (tab Salarios). El motor de planilla toma el Salary con
     // fechaFin==null y mayor fechaInicio → registrar aquí impacta la próxima boleta.
@@ -71,6 +76,7 @@ export class EmployeeDetailComponent implements OnInit {
         { key: 'dependientes', label: 'Dependientes' },
         { key: 'documentos',   label: 'Documentos' },
         { key: 'salarios',     label: 'Salarios' },
+        { key: 'boletas',      label: 'Boletas' },
     ];
 
     ngOnInit(): void {
@@ -90,18 +96,20 @@ export class EmployeeDetailComponent implements OnInit {
             this.employee.set(emp);
 
             // Load sub-resources in parallel
-            const [contracts, contacts, deps, docs, salary] = await Promise.all([
+            const [contracts, contacts, deps, docs, salary, payrolls] = await Promise.all([
                 this.contractService.loadContractsByEmployee(id),
                 this.employeeService.getEmergencyContacts(id),
                 this.employeeService.getDependents(id),
                 this.employeeService.getDocuments(id),
                 this.employeeService.getSalaryHistory(id),
+                this.payrollService.getByEmployee(id).catch(() => [] as Payroll[]),
             ]);
             this.contractsData.set(contracts);
             this.emergencyContacts.set(contacts);
             this.dependentsData.set(deps);
             this.documentsData.set(docs);
             this.salaryHistory.set(salary);
+            this.payrollHistory.set(payrolls);
         } catch (err) {
             this.error.set((err as Error).message ?? 'Error al cargar empleado');
         } finally {
@@ -111,6 +119,19 @@ export class EmployeeDetailComponent implements OnInit {
 
     goBack(): void {
         this.router.navigate(['/admin/rrhh/employees']);
+    }
+
+    verBoleta(payrollId: number): void {
+        this.router.navigate(['/admin/rrhh/boleta', payrollId]);
+    }
+
+    estadoBadge(estado: string): string {
+        switch (estado) {
+            case 'GENERADO':  return 'badge-info';
+            case 'APROBADO':  return 'badge-warning';
+            case 'PAGADO':    return 'badge-success';
+            default:          return 'badge-error';
+        }
     }
 
     toggleSalaryForm(): void {
