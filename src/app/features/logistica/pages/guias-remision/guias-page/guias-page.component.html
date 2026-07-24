@@ -21,8 +21,7 @@
     [searchable]="true"
     searchPlaceholder="Buscar por serie, N° o destinatario..."
     [filters]="estadoFilters"
-    [exportable]="true"
-    exportFileName="guias-remision"
+    [exportConfig]="exportConfig"
     (filterChange)="onFilterChangeEvent($event)"
     (pageChange)="onPageChange($event)">
   </app-data-table>

@@ -4,17 +4,18 @@ import { KardexEntry } from '../../models/inventory.models';
 import { DataTableComponent, TableColumn, PaginationEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
-import { ButtonComponent } from '@shared/components';
 import { ProductLookupComponent } from '../../components/product-lookup/product-lookup.component';
 import { ProductResponse } from '@core/models/product.model';
 import { ROUTES } from '@shared/constants/app.constants';
+import { BackendExportConfig } from '@shared/services/backend-export.service';
+import { environment } from '@env/environment';
 
 @Component({
     selector: 'app-kardex-view',
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
-        DataTableComponent, PageHeaderComponent, AlertComponent, ButtonComponent,
+        DataTableComponent, PageHeaderComponent, AlertComponent,
         ProductLookupComponent
     ],
     templateUrl: './kardex-view.component.html'
@@ -88,28 +89,17 @@ export class KardexViewComponent {
         });
     }
 
-    exportCsv(): void {
-        const bom = '\uFEFF';
-        const headers = ['N° Mov.', 'Fecha', 'Tipo', 'Almacén', 'Cantidad', 'Costo Unit.', 'Costo Total', 'Saldo', 'Referencia', 'Realizado por'];
-        const rows = this.entries().map(e => [
-            e.movementNumber ?? e.movementId,
-            new Date(e.movementDate).toLocaleDateString('es-PE'),
-            e.movementType,
-            e.warehouseName ?? '',
-            e.quantity,
-            e.unitCost ?? '',
-            e.totalCost ?? '',
-            e.balanceAfter,
-            e.referenceNumber ?? '',
-            e.performedBy ?? ''
-        ]);
-        const csv = bom + [headers, ...rows]
-            .map(r => r.map(c => `"${String(c)}"`).join(','))
-            .join('\r\n');
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
-        a.download = `kardex-producto-${this.currentProductId()}-${new Date().toISOString().split('T')[0]}.csv`;
-        a.click();
+    /**
+     * Exportacion SERVER-SIDE: el backend genera XLSX/CSV con datos limpios
+     * (mismo producto que la lista). Ver /inventory/api/kardex/product/{id}/export.
+     * Getter (no readonly) porque la URL depende del producto elegido en runtime.
+     */
+    get exportConfig(): BackendExportConfig {
+        const productId = this.currentProductId();
+        return {
+            url: `${environment.apiUrls.inventory}/api/kardex/product/${productId}/export`,
+            filename: `kardex-producto-${productId}`
+        };
     }
 
     onPageChange(e: PaginationEvent): void {

@@ -11,6 +11,8 @@ import { PaginationChangeEvent } from '@shared/ui/pagination/pagination.componen
 import { ButtonComponent } from '@shared/components';
 import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 import { PAGINATION } from '@shared/constants/app.constants';
+import { BackendExportConfig } from '@shared/services/backend-export.service';
+import { environment } from '@env/environment';
 
 @Component({
     selector: 'app-almacenes-page',
@@ -74,6 +76,16 @@ export class AlmacenesPageComponent implements OnInit {
             onClick: (row) => this.openEditForm(row)
         }
     ];
+
+    /**
+     * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios.
+     * Ver /logistics/api/almacenes/export.
+     */
+    readonly exportConfig: BackendExportConfig = {
+        url: `${environment.apiUrls.logistics}/api/almacenes/export`,
+        filename: 'almacenes',
+        params: () => ({ companyId: this.companyId }),
+    };
 
     form: FormGroup = this.fb.group({
         codigo:    ['', Validators.required],

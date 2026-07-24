@@ -6,6 +6,8 @@ import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { DataTableComponent, TableColumn, TableAction, PaginationEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { NOTIFICATION_DURATION } from '@shared/constants/ui.constants';
+import { BackendExportConfig } from '@shared/services/backend-export.service';
+import { environment } from '@env/environment';
 
 @Component({
     selector: 'app-delivery-routes',
@@ -33,6 +35,16 @@ export class DeliveryRoutesComponent implements OnInit {
     pageSize = signal(20);
     totalElements = signal(0);
     totalPages = signal(0);
+
+    /**
+     * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios
+     * (misma lista, sin filtros adicionales). Ver /logistics/api/routes/export.
+     */
+    readonly exportConfig: BackendExportConfig = {
+        url: `${environment.apiUrls.logistics}/api/routes/export`,
+        filename: 'rutas-entrega',
+        params: () => ({})
+    };
 
     readonly columns: TableColumn<DeliveryRoute>[] = [
         {

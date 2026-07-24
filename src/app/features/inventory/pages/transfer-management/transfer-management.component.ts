@@ -14,6 +14,8 @@ import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
 import { DateInputComponent } from '@shared/ui/forms/date-input/date-input.component';
 import { ButtonComponent } from '@shared/components';
+import { BackendExportConfig } from '@shared/services/backend-export.service';
+import { environment } from '@env/environment';
 
 @Component({
     selector: 'app-transfer-management',
@@ -84,6 +86,12 @@ export class TransferManagementComponent {
             }
         }
     ];
+
+    readonly exportConfig: BackendExportConfig = {
+        url: `${environment.apiUrls.inventory}/api/transfers/export`,
+        filename: 'transferencias',
+        params: () => ({ status: this.filterStatus() || undefined })
+    };
 
     actions: TableAction<InventoryTransfer>[] = [
         {

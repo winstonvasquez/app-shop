@@ -11,6 +11,8 @@ import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/p
 import { PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
 import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 import { PAGINATION } from '@shared/constants/app.constants';
+import { BackendExportConfig } from '@shared/services/backend-export.service';
+import { environment } from '@env/environment';
 
 @Component({
     selector: 'app-transportistas-page',
@@ -62,6 +64,16 @@ export class TransportistasPageComponent implements OnInit {
         { label: 'Logística', url: '/logistica/dashboard' },
         { label: 'Transportistas' }
     ];
+
+    /**
+     * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios
+     * (misma lista, sin filtros adicionales). Ver /logistics/api/carriers/export.
+     */
+    readonly exportConfig: BackendExportConfig = {
+        url: `${environment.apiUrls.logistics}/api/carriers/export`,
+        filename: 'transportistas',
+        params: () => ({})
+    };
 
     columns: TableColumn<Transportista>[] = [
         { key: 'code',        label: 'Código',   width: '100px' },

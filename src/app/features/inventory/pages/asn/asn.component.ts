@@ -15,6 +15,8 @@ import { ProductLookupComponent } from '../../components/product-lookup/product-
 import { ProductResponse } from '@core/models/product.model';
 import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 import { ROUTES } from '@shared/constants/app.constants';
+import { BackendExportConfig } from '@shared/services/backend-export.service';
+import { environment } from '@env/environment';
 
 /** Línea en construcción dentro del drawer de creación. */
 interface AsnLineDraft {
@@ -75,6 +77,7 @@ type AsnRow = Asn & { warehouseName: string };
                 [pageSize]="pageSize()"
                 [totalElements]="totalElements()"
                 [totalPages]="totalPages()"
+                [exportConfig]="exportConfig"
                 (pageChange)="onPageChange($event)">
             </app-data-table>
         </div>
@@ -208,6 +211,12 @@ export class AsnComponent {
     totalElements = signal(0);
     totalPages = signal(0);
     filterStatus = signal('');
+
+    readonly exportConfig: BackendExportConfig = {
+        url: `${environment.apiUrls.inventory}/api/inventory/asn/export`,
+        filename: 'asn',
+        params: () => ({ status: this.filterStatus() || undefined })
+    };
 
     // create
     showCreate = signal(false);

@@ -4,10 +4,6 @@
     title="Kardex Valorizado"
     subtitle="Historial de movimientos y valorización por producto"
     [breadcrumbs]="breadcrumbs">
-    <div actions>
-      <app-button icon="download" label="Exportar CSV" variant="secondary"
-        [disabled]="!entries().length" (click)="exportCsv()" />
-    </div>
   </app-page-header>
 
   <!-- Búsqueda de producto -->
@@ -40,6 +36,7 @@
       [pageSize]="pageSize()"
       [totalElements]="totalElements()"
       [totalPages]="totalPages()"
+      [exportConfig]="exportConfig"
       (pageChange)="onPageChange($event)">
     </app-data-table>
   }

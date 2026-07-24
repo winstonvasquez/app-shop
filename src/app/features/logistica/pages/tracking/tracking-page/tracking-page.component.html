@@ -86,6 +86,9 @@
   [totalElements]="envios().length"
   [currentPage]="currentPage()"
   [pageSize]="pageSize()"
+  [exportable]="true"
+  exportFileName="envios-tracking"
+  [exportConfig]="exportConfig"
   (pageChange)="onPageChange($event)">
 </app-data-table>
 </div>

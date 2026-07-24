@@ -16,6 +16,8 @@ import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
 import { PAGINATION } from '@shared/constants/app.constants';
+import { BackendExportConfig } from '@shared/services/backend-export.service';
+import { environment } from '@env/environment';
 
 interface ItemForm {
     productoNombre: string;
@@ -102,6 +104,19 @@ export class MovimientosPageComponent implements OnInit {
         { key: 'estado', label: 'Estado', html: true,
           render: () => `<span class="badge badge-success">PROCESADO</span>` }
     ];
+
+    /**
+     * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios
+     * (respeta los mismos filtros que la lista). Ver /logistics/api/movimientos/export.
+     */
+    readonly exportConfig: BackendExportConfig = {
+        url: `${environment.apiUrls.logistics}/api/movimientos/export`,
+        filename: 'movimientos-stock',
+        params: () => ({
+            companyId: this.companyId,
+            tipo: this.filterForm.value.tipoFilter || undefined
+        })
+    };
 
     actions: TableAction<Movimiento>[] = [
         {

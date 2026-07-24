@@ -11,6 +11,8 @@ import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
 import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
+import { BackendExportConfig } from '@shared/services/backend-export.service';
+import { environment } from '@env/environment';
 
 @Component({
     selector: 'app-inventario-page',
@@ -80,6 +82,20 @@ export class InventarioPageComponent implements OnInit {
     ];
 
     actions: TableAction<InventarioItem>[] = [];
+
+    /**
+     * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios.
+     * Ver /logistics/api/inventarios/export.
+     */
+    readonly exportConfig: BackendExportConfig = {
+        url: `${environment.apiUrls.logistics}/api/inventarios/export`,
+        filename: 'inventario',
+        params: () => ({
+            companyId: this.companyId,
+            almacenId: this.filtroAlmacen() || undefined,
+            busqueda:  this.searchQuery()   || undefined,
+        }),
+    };
 
     private get companyId(): string {
         return String(this.authService.currentUser()?.activeCompanyId ?? 1);

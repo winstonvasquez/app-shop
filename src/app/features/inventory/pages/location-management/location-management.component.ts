@@ -14,6 +14,8 @@ import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/p
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
 import { PAGINATION, ROUTES } from '@shared/constants/app.constants';
+import { BackendExportConfig } from '@shared/services/backend-export.service';
+import { environment } from '@env/environment';
 
 @Component({
     selector: 'app-location-management',
@@ -82,6 +84,12 @@ export class LocationManagementComponent implements OnInit {
         { label: 'Editar',   icon: 'edit',  class: 'btn-icon-edit',   onClick: (r) => this.openEdit(r) },
         { label: 'Eliminar', icon: 'trash', class: 'btn-icon-delete', onClick: (r) => this.confirmDelete(r.id) }
     ];
+
+    readonly exportConfig: BackendExportConfig = {
+        url: `${environment.apiUrls.inventory}/api/locations/export`,
+        filename: 'ubicaciones',
+        params: () => ({ warehouseId: this.selectedWarehouseId() })
+    };
 
     form: FormGroup = this.fb.nonNullable.group({
         warehouseId:  [null as number | null, Validators.required],

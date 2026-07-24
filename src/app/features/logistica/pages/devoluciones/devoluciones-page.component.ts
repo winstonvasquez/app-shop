@@ -13,6 +13,8 @@ import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/p
 import { PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
 import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 import { PAGINATION } from '@shared/constants/app.constants';
+import { BackendExportConfig } from '@shared/services/backend-export.service';
+import { environment } from '@env/environment';
 
 const STATUS_LABELS: Record<DevolucionStatus, string> = {
     REQUESTED: 'Solicitada',
@@ -100,6 +102,16 @@ export class DevolucionesPageComponent implements OnInit {
         { label: 'Logística', url: '/logistica/dashboard' },
         { label: 'Devoluciones' }
     ];
+
+    /**
+     * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios
+     * (mismo filtro de estado que la lista). Ver /logistics/api/returns/export.
+     */
+    readonly exportConfig: BackendExportConfig = {
+        url: `${environment.apiUrls.logistics}/api/returns/export`,
+        filename: 'devoluciones',
+        params: () => ({ status: this.filterForm.value.status || undefined })
+    };
 
     columns: TableColumn<Devolucion>[] = [
         { key: 'id', label: 'ID', render: (r) => r.id.slice(0, 8) + '…' },

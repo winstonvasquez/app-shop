@@ -12,6 +12,8 @@ import { ButtonComponent } from '@shared/components';
 import { InventoryApiService } from '../../services/inventory-api.service';
 import { Warehouse } from '../../models/inventory.models';
 import { PAGINATION, ROUTES } from '@shared/constants/app.constants';
+import { BackendExportConfig } from '@shared/services/backend-export.service';
+import { environment } from '@env/environment';
 
 @Component({
     selector: 'app-warehouse-management',
@@ -74,6 +76,15 @@ export class WarehouseManagementComponent implements OnInit {
             html: true
         }
     ];
+
+    /**
+     * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios.
+     * Ver /inventory/api/warehouses/export.
+     */
+    readonly exportConfig: BackendExportConfig = {
+        url: `${environment.apiUrls.inventory}/api/warehouses/export`,
+        filename: 'almacenes'
+    };
 
     actions: TableAction<Warehouse>[] = [
         {

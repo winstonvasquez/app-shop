@@ -30,6 +30,7 @@
     [filters]="estadoFilters"
     [exportable]="true"
     exportFileName="envios-export"
+    [exportConfig]="exportConfig"
     (filterChange)="onFilterChangeEvent($event)"
     (pageChange)="onPaginationChange($event)">
   </app-data-table>

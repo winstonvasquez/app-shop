@@ -6,6 +6,8 @@ import { InventoryApiService } from '../../services/inventory-api.service';
 import { InventoryCount, InventoryCountRequest, InventoryCountStatus, Warehouse } from '../../models/inventory.models';
 import { of } from 'rxjs';
 import { DataTableComponent, TableColumn, TableAction, PaginationEvent, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
+import { BackendExportConfig } from '@shared/services/backend-export.service';
+import { environment } from '@env/environment';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
@@ -84,6 +86,16 @@ export class InventoryCountComponent {
             }
         }
     ];
+
+    /**
+     * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios
+     * (respeta el filtro de estado actual). Ver /api/inventory/counts/export.
+     */
+    readonly exportConfig: BackendExportConfig = {
+        url: `${environment.apiUrls.inventory}/api/inventory/counts/export`,
+        filename: 'inventarios-fisicos',
+        params: () => ({ status: this.filterStatus() })
+    };
 
     actions: TableAction<InventoryCount>[] = [
         {

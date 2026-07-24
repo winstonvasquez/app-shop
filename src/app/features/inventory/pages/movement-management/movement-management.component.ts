@@ -18,6 +18,8 @@ import { ProductLookupComponent } from '../../components/product-lookup/product-
 import { ProductResponse } from '@core/models/product.model';
 import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 import { ROUTES } from '@shared/constants/app.constants';
+import { BackendExportConfig } from '@shared/services/backend-export.service';
+import { environment } from '@env/environment';
 
 @Component({
     selector: 'app-movement-management',
@@ -116,6 +118,16 @@ export class MovementManagementComponent {
         { key: 'balanceAfter', label: 'Saldo', align: 'right',
           render: (r) => r.balanceAfter != null ? r.balanceAfter.toLocaleString('es-PE') : '—' }
     ];
+
+    /**
+     * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios
+     * (respeta el filtro de almacén actual). Ver /inventory/api/inventory/movements/export.
+     */
+    readonly exportConfig: BackendExportConfig = {
+        url: `${environment.apiUrls.inventory}/api/inventory/movements/export`,
+        filename: 'movimientos-inventario',
+        params: () => ({ warehouseId: this.filterWarehouseId() }),
+    };
 
     form: FormGroup = this.fb.nonNullable.group({
         productId:       [null as number | null, Validators.required],

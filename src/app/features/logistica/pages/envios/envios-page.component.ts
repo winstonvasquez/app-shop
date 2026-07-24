@@ -18,6 +18,8 @@ import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/p
 import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 import { PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
 import { PAGINATION } from '@shared/constants/app.constants';
+import { BackendExportConfig } from '@shared/services/backend-export.service';
+import { environment } from '@env/environment';
 
 const STATUS_MAP: Record<EnvioStatus, string> = {
     PENDING_DISPATCH:  'Pendiente despacho',
@@ -124,6 +126,16 @@ export class EnviosPageComponent implements OnInit {
         { key: 'createdAt', label: 'Registrado',
           render: (r) => new Date(r.createdAt).toLocaleDateString('es-PE') }
     ];
+
+    /**
+     * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios.
+     * Ver /logistics/api/shipments/export.
+     */
+    readonly exportConfig: BackendExportConfig = {
+        url: `${environment.apiUrls.logistics}/api/shipments/export`,
+        filename: 'envios',
+        params: () => ({ status: this.filterStatus || undefined }),
+    };
 
     actions: TableAction<Envio>[] = [
         {

@@ -12,6 +12,8 @@ import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 import { PAGINATION } from '@shared/constants/app.constants';
+import { BackendExportConfig } from '@shared/services/backend-export.service';
+import { environment } from '@env/environment';
 
 const MOTIVOS_TRASLADO: { codigo: string; descripcion: string }[] = [
     { codigo: '01', descripcion: '01 — Venta' },
@@ -83,6 +85,16 @@ export class GuiasPageComponent implements OnInit {
     readonly estadoFilters: FilterConfig[] = [
         { field: 'estado', label: 'Todos los estados', options: of(this.estadoGuiaOptions) }
     ];
+
+    /**
+     * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios.
+     * Ver /logistics/api/guias-remision/export.
+     */
+    readonly exportConfig: BackendExportConfig = {
+        url: `${environment.apiUrls.logistics}/api/guias-remision/export`,
+        filename: 'guias-remision',
+        params: () => ({ companyId: this.companyId }),
+    };
 
     // Form GRE — reactive
     private readonly hoy = new Date().toISOString().split('T')[0];

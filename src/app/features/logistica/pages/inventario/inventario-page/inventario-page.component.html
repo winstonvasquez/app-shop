@@ -22,8 +22,7 @@
     [pageSize]="pageSize()"
     [totalElements]="totalElements()"
     [totalPages]="totalPages()"
-    [exportable]="true"
-    exportFileName="inventario-export"
+    [exportConfig]="exportConfig"
     (searchChange)="onSearchTerm($event)"
     (filterChange)="onFilterChangeEvent($event)"
     (pageChange)="onPaginationChange($event)">

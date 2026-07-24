@@ -23,8 +23,7 @@
     [totalPages]="totalPages()"
     [searchable]="true"
     searchPlaceholder="Buscar almacén..."
-    [exportable]="true"
-    exportFileName="almacenes-export"
+    [exportConfig]="exportConfig"
     (pageChange)="onPaginationChange($event)">
   </app-data-table>
 </div>

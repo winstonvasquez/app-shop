@@ -5,6 +5,8 @@ import { ShipmentService, TrackingInfoResponse, ShipmentResponse } from '../../.
 import { DataTableComponent, TableColumn, TableAction, PaginationEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { ButtonComponent } from '@shared/components';
+import { BackendExportConfig } from '@shared/services/backend-export.service';
+import { environment } from '@env/environment';
 
 @Component({
     selector: 'app-tracking-page',
@@ -23,6 +25,16 @@ export class TrackingPageComponent {
         { label: 'Logística', url: '/logistica/dashboard' },
         { label: 'Tracking' }
     ];
+
+    /**
+     * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios
+     * (misma lista, sin filtros adicionales). Ver /logistics/api/shipments/export.
+     */
+    readonly exportConfig: BackendExportConfig = {
+        url: `${environment.apiUrls.logistics}/api/shipments/export`,
+        filename: 'envios-tracking',
+        params: () => ({})
+    };
 
     columns: TableColumn<ShipmentResponse>[] = [
         { key: 'trackingNumber', label: 'Tracking' },

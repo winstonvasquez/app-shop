@@ -9,6 +9,8 @@ import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/p
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { ButtonComponent } from '@shared/components';
 import { ROUTES } from '@shared/constants/app.constants';
+import { BackendExportService, BackendExportConfig } from '@shared/services/backend-export.service';
+import { environment } from '@env/environment';
 
 @Component({
     selector: 'app-stock-view',
@@ -20,6 +22,7 @@ import { ROUTES } from '@shared/constants/app.constants';
 export class StockViewComponent {
     private readonly api = inject(InventoryApiService);
     private readonly productsApi = inject(ProductsApiService);
+    private readonly backendExportService = inject(BackendExportService);
 
     /** Mapa productId → nombre (el maestro de productos vive en ventas, cross-service). */
     private readonly productNames = signal<Map<number, string>>(new Map());
@@ -60,6 +63,17 @@ export class StockViewComponent {
         { label: 'Inventario', url: '/admin/inventario/dashboard' },
         { label: 'Stock' }
     ];
+
+    /**
+     * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios
+     * (respeta el mismo filtro de almacén que la lista). Ver
+     * GET /inventory/api/inventory/stock/export.
+     */
+    readonly exportConfig: BackendExportConfig = {
+        url: `${environment.apiUrls.inventory}/api/inventory/stock/export`,
+        filename: 'stock',
+        params: () => ({ warehouseId: this.selectedWarehouseId() }),
+    };
 
     columns: TableColumn<InventoryStock>[] = [
         { key: 'productId',         label: 'Producto',     sortable: true,
@@ -159,25 +173,8 @@ export class StockViewComponent {
     }
 
     exportCsv(): void {
-        const bom = '\uFEFF';
-        const headers = ['Producto ID', 'Producto', 'Almacén', 'Stock', 'Reservado', 'Disponible', 'Mínimo', 'Bajo mínimo'];
-        const rows = this.stock().map(s => [
-            s.productId,
-            this.productNames().get(s.productId) ?? '',
-            s.warehouseName ?? s.warehouseId,
-            s.quantity,
-            s.reservedQuantity ?? 0,
-            s.availableQuantity ?? 0,
-            s.minimumStock ?? '',
-            s.belowMinimum ? 'Sí' : 'No'
-        ]);
-        const csv = bom + [headers, ...rows]
-            .map(r => r.map(c => `"${String(c)}"`).join(','))
-            .join('\r\n');
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
-        a.download = `stock-${new Date().toISOString().split('T')[0]}.csv`;
-        a.click();
+        // Exportacion SERVER-SIDE (mismo endpoint /export que exportConfig, formato csv).
+        this.backendExportService.download(this.exportConfig, 'csv');
     }
 
     onPageChange(e: PaginationEvent): void {
