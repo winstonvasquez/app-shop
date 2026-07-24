@@ -4,7 +4,7 @@ import { HttpClient } from '@angular/common/http';
 import { of } from 'rxjs';
 import { environment } from '@env/environment';
 import { AuthService } from '@core/auth/auth.service';
-import { ExportService } from '../../../../shared/services/export.service';
+import { BackendExportService } from '@shared/services/backend-export.service';
 import { ButtonComponent } from '@shared/components';
 import { DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent, PaginationEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { CURRENCY_DISPLAY } from '@shared/constants/sunat.constants';
@@ -43,7 +43,7 @@ interface PageResponse<T> {
 export class ReportesVentasComponent implements OnInit {
     private readonly http = inject(HttpClient);
     private readonly auth = inject(AuthService);
-    private readonly exportService = inject(ExportService);
+    private readonly backendExportService = inject(BackendExportService);
 
     ventas = signal<VentaPos[]>([]);
     cargando = signal(false);
@@ -149,39 +149,33 @@ export class ReportesVentasComponent implements OnInit {
         window.print();
     }
 
+    /**
+     * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios
+     * (mismos filtros companyId + search + estado que el listado actual).
+     * Ver GET /api/pos/ventas/export en microshopventas.
+     */
+    private exportParams(): Record<string, string | number | boolean | null | undefined> {
+        const companyId = this.auth.currentUser()?.activeCompanyId ?? 1;
+        return {
+            companyId,
+            search: this.searchQuery(),
+            estado: this.filtroEstado(),
+        };
+    }
+
     onExportarCsv(): void {
-        const cabecera = ['N°Ticket', 'Fecha', 'Cajero', 'Cliente', 'Metodo Pago', 'CPE', 'Subtotal', 'IGV', 'Descuento', 'Total', 'Estado'];
-        const filas = this.ventas().map(v => [
-            v.numeroTicket ?? '',
-            v.fechaCreacion ?? '',
-            v.cajeroNombre ?? '',
-            v.clienteNombre ?? 'Consumidor final',
-            v.metodoPago ?? '',
-            v.tipoCpe ?? '',
-            String(v.subtotal ?? 0),
-            String(v.igv ?? 0),
-            String(v.descuento ?? 0),
-            String(v.total ?? 0),
-            v.estado ?? '',
-        ]);
-        this.exportService.exportCsv([cabecera, ...filas], `reporte-ventas-pos-${new Date().toISOString().substring(0, 10)}`);
+        this.backendExportService.download({
+            url: `${environment.apiUrls.sales}/api/pos/ventas/export`,
+            filename: 'reporte-ventas-pos',
+            params: () => this.exportParams(),
+        }, 'csv');
     }
 
     exportarExcel(): void {
-        const cabecera = ['N°Ticket', 'Fecha', 'Cajero', 'Cliente', 'Metodo Pago', 'CPE', 'Subtotal', 'IGV', 'Descuento', 'Total', 'Estado'];
-        const filas = this.ventas().map(v => [
-            v.numeroTicket ?? '',
-            v.fechaCreacion ?? '',
-            v.cajeroNombre ?? '',
-            v.clienteNombre ?? 'Consumidor final',
-            v.metodoPago ?? '',
-            v.tipoCpe ?? '',
-            String(v.subtotal ?? 0),
-            String(v.igv ?? 0),
-            String(v.descuento ?? 0),
-            String(v.total ?? 0),
-            v.estado ?? '',
-        ]);
-        this.exportService.exportExcel(cabecera, filas, 'reporte-ventas');
+        this.backendExportService.download({
+            url: `${environment.apiUrls.sales}/api/pos/ventas/export`,
+            filename: 'reporte-ventas-pos',
+            params: () => this.exportParams(),
+        }, 'xlsx');
     }
 }

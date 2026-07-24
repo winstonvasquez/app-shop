@@ -4,7 +4,7 @@ import { DatePipe } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '@env/environment';
-import { ExportService } from '../../../../shared/services/export.service';
+import { BackendExportService } from '@shared/services/backend-export.service';
 import { ButtonComponent } from '@shared/components';
 
 interface EmpleadoReporte {
@@ -38,7 +38,7 @@ interface PageResponse<T> {
 })
 export class ReportesRrhhComponent implements OnInit {
     private readonly http = inject(HttpClient);
-    private readonly exportService = inject(ExportService);
+    private readonly backendExportService = inject(BackendExportService);
     private readonly fb = inject(FormBuilder);
     private readonly destroyRef = inject(DestroyRef);
 
@@ -117,32 +117,16 @@ export class ReportesRrhhComponent implements OnInit {
     }
 
     onExportarCsv(): void {
-        const cabecera = ['Codigo', 'Nombres', 'Apellidos', 'DNI', 'Cargo', 'Area', 'Estado', 'Fecha Ingreso'];
-        const filas = this.empleados().map(e => [
-            e.codigoEmpleado ?? '',
-            e.nombres ?? '',
-            e.apellidos ?? '',
-            e.documentoIdentidad ?? '',
-            e.cargo ?? '',
-            e.area ?? '',
-            e.estado ?? '',
-            e.fechaIngreso ?? '',
-        ]);
-        this.exportService.exportCsv([cabecera, ...filas], `reporte-rrhh-${new Date().toISOString().substring(0, 10)}`);
+        this.backendExportService.download({
+            url: `${environment.apiUrls.hr}/api/employees/report/export`,
+            filename: `reporte-rrhh-${new Date().toISOString().substring(0, 10)}`,
+        }, 'csv');
     }
 
     exportarExcel(): void {
-        const cabecera = ['Codigo', 'Nombres', 'Apellidos', 'DNI', 'Cargo', 'Area', 'Estado', 'Fecha Ingreso'];
-        const filas = this.empleados().map(e => [
-            e.codigoEmpleado ?? '',
-            e.nombres ?? '',
-            e.apellidos ?? '',
-            e.documentoIdentidad ?? '',
-            e.cargo ?? '',
-            e.area ?? '',
-            e.estado ?? '',
-            e.fechaIngreso ?? '',
-        ]);
-        this.exportService.exportExcel(cabecera, filas, 'reporte-rrhh');
+        this.backendExportService.download({
+            url: `${environment.apiUrls.hr}/api/employees/report/export`,
+            filename: 'reporte-rrhh',
+        }, 'xlsx');
     }
 }

@@ -3,8 +3,7 @@ import { DecimalPipe } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '@env/environment';
 import { ButtonComponent } from '@shared/components';
-import { ExportService } from '../../../../shared/services/export.service';
-import { CURRENCY_DISPLAY } from '@shared/constants/sunat.constants';
+import { BackendExportService } from '@shared/services/backend-export.service';
 
 interface KpiVentas   { totalVentas: number; montoTotal: number; ticketPromedio: number; }
 interface KpiCompras  { totalOrdenes: number; montoTotal: number; ordenesAprobadas: number; }
@@ -34,7 +33,7 @@ interface DashboardEjecutivo {
 })
 export class ReportesEjecutivoComponent implements OnInit {
     private readonly http = inject(HttpClient);
-    private readonly exportService = inject(ExportService);
+    private readonly backendExportService = inject(BackendExportService);
     private readonly analyticsBase = `${environment.apiUrls.analytics}/api/analytics`;
     readonly Math = Math;
 
@@ -90,47 +89,23 @@ export class ReportesEjecutivoComponent implements OnInit {
         window.print();
     }
 
+    /**
+     * Exportación SERVER-SIDE: reutiliza el endpoint de dashboard ejecutivo de
+     * microshoprepoanalitica (GET /api/analytics/dashboard/export). Sin
+     * filtros adicionales — produce las mismas filas Módulo/Métrica/Valor
+     * que este reporte arma hoy, con datos limpios generados en backend.
+     */
     onExportarCsv(): void {
-        const d = this.dashboard();
-        if (!d) return;
-        const cabecera = ['Modulo', 'Metrica', 'Valor'];
-        const filas: string[][] = [
-            ['Ventas', 'Total transacciones', String(d.ventas.totalVentas)],
-            ['Ventas', `Monto total (${CURRENCY_DISPLAY.SYMBOL_PEN})`, String(d.ventas.montoTotal)],
-            ['Ventas', `Ticket promedio (${CURRENCY_DISPLAY.SYMBOL_PEN})`, String(d.ventas.ticketPromedio)],
-            ['Compras', 'Total ordenes', String(d.compras.totalOrdenes)],
-            ['Compras', `Monto total (${CURRENCY_DISPLAY.SYMBOL_PEN})`, String(d.compras.montoTotal)],
-            ['Compras', 'Ordenes aprobadas', String(d.compras.ordenesAprobadas)],
-            ['RRHH', 'Empleados activos', String(d.rrhh.empleadosActivos)],
-            ['RRHH', 'Planillas generadas', String(d.rrhh.planillasGeneradas)],
-            ['Tesoreria', 'Cajas abiertas', String(d.tesoreria.cajasAbiertas)],
-            ['Tesoreria', `Saldo total (${CURRENCY_DISPLAY.SYMBOL_PEN})`, String(d.tesoreria.saldoTotal)],
-            ['Tesoreria', 'Movimientos hoy', String(d.tesoreria.movimientosHoy)],
-            ['Inventario', 'Productos con stock', String(d.inventario.productosConStock)],
-            ['Inventario', 'Productos stock bajo', String(d.inventario.productosStockBajo)],
-        ];
-        this.exportService.exportCsv([cabecera, ...filas], `dashboard-ejecutivo-${new Date().toISOString().substring(0, 10)}`);
+        this.backendExportService.download({
+            url: `${this.analyticsBase}/dashboard/export`,
+            filename: `dashboard-ejecutivo-${new Date().toISOString().substring(0, 10)}`,
+        }, 'csv');
     }
 
     exportarExcel(): void {
-        const d = this.dashboard();
-        if (!d) return;
-        const cabecera = ['Modulo', 'Metrica', 'Valor'];
-        const filas: string[][] = [
-            ['Ventas', 'Total transacciones', String(d.ventas.totalVentas)],
-            ['Ventas', `Monto total (${CURRENCY_DISPLAY.SYMBOL_PEN})`, String(d.ventas.montoTotal)],
-            ['Ventas', `Ticket promedio (${CURRENCY_DISPLAY.SYMBOL_PEN})`, String(d.ventas.ticketPromedio)],
-            ['Compras', 'Total ordenes', String(d.compras.totalOrdenes)],
-            ['Compras', `Monto total (${CURRENCY_DISPLAY.SYMBOL_PEN})`, String(d.compras.montoTotal)],
-            ['Compras', 'Ordenes aprobadas', String(d.compras.ordenesAprobadas)],
-            ['RRHH', 'Empleados activos', String(d.rrhh.empleadosActivos)],
-            ['RRHH', 'Planillas generadas', String(d.rrhh.planillasGeneradas)],
-            ['Tesoreria', 'Cajas abiertas', String(d.tesoreria.cajasAbiertas)],
-            ['Tesoreria', `Saldo total (${CURRENCY_DISPLAY.SYMBOL_PEN})`, String(d.tesoreria.saldoTotal)],
-            ['Tesoreria', 'Movimientos hoy', String(d.tesoreria.movimientosHoy)],
-            ['Inventario', 'Productos con stock', String(d.inventario.productosConStock)],
-            ['Inventario', 'Productos stock bajo', String(d.inventario.productosStockBajo)],
-        ];
-        this.exportService.exportExcel(cabecera, filas, 'reporte-ejecutivo');
+        this.backendExportService.download({
+            url: `${this.analyticsBase}/dashboard/export`,
+            filename: `dashboard-ejecutivo-${new Date().toISOString().substring(0, 10)}`,
+        }, 'xlsx');
     }
 }

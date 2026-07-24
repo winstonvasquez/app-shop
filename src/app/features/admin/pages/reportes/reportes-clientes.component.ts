@@ -4,7 +4,7 @@ import { DatePipe } from '@angular/common';
 
 import { HttpClient } from '@angular/common/http';
 import { environment } from '@env/environment';
-import { ExportService } from '../../../../shared/services/export.service';
+import { BackendExportService } from '@shared/services/backend-export.service';
 import { ButtonComponent } from '@shared/components';
 
 interface Usuario {
@@ -36,7 +36,7 @@ interface PageResponse<T> {
 })
 export class ReportesClientesComponent implements OnInit {
     private readonly http = inject(HttpClient);
-    private readonly exportService = inject(ExportService);
+    private readonly backendExportService = inject(BackendExportService);
     private readonly destroyRef = inject(DestroyRef);
 
     usuarios = signal<Usuario[]>([]);
@@ -97,30 +97,16 @@ export class ReportesClientesComponent implements OnInit {
     }
 
     onExportarCsv(): void {
-        const cabecera = ['ID', 'Usuario', 'Email', 'Nombre', 'Apellido', 'Estado', 'Fecha Registro'];
-        const filas = this.usuarios().map(u => [
-            String(u.id),
-            u.username ?? '',
-            u.email ?? '',
-            u.nombre ?? '',
-            u.apellido ?? '',
-            u.activo ? 'ACTIVO' : 'INACTIVO',
-            u.fechaCreacion ?? '',
-        ]);
-        this.exportService.exportCsv([cabecera, ...filas], `reporte-clientes-${new Date().toISOString().substring(0, 10)}`);
+        this.backendExportService.download({
+            url: `${environment.apiUrls.users}/api/users/report/export`,
+            filename: `reporte-clientes-${new Date().toISOString().substring(0, 10)}`,
+        }, 'csv');
     }
 
     exportarExcel(): void {
-        const cabecera = ['ID', 'Usuario', 'Email', 'Nombre', 'Apellido', 'Estado', 'Fecha Registro'];
-        const filas = this.usuarios().map(u => [
-            String(u.id),
-            u.username ?? '',
-            u.email ?? '',
-            u.nombre ?? '',
-            u.apellido ?? '',
-            u.activo ? 'ACTIVO' : 'INACTIVO',
-            u.fechaCreacion ?? '',
-        ]);
-        this.exportService.exportExcel(cabecera, filas, 'reporte-clientes');
+        this.backendExportService.download({
+            url: `${environment.apiUrls.users}/api/users/report/export`,
+            filename: 'reporte-clientes',
+        }, 'xlsx');
     }
 }

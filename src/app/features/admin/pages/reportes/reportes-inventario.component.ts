@@ -1,7 +1,7 @@
 import { Component, ChangeDetectionStrategy, inject, signal, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '@env/environment';
-import { ExportService } from '../../../../shared/services/export.service';
+import { BackendExportService, BackendExportConfig } from '@shared/services/backend-export.service';
 import { ButtonComponent } from '@shared/components';
 
 interface DashboardInventario {
@@ -32,12 +32,23 @@ interface StockItem {
 })
 export class ReportesInventarioComponent implements OnInit {
     private readonly http = inject(HttpClient);
-    private readonly exportService = inject(ExportService);
+    private readonly backendExportService = inject(BackendExportService);
 
     dashboard = signal<DashboardInventario | null>(null);
     stockBajo = signal<StockItem[]>([]);
     cargando = signal(false);
     error = signal<string | null>(null);
+
+    /**
+     * Exportación SERVER-SIDE: reutiliza el endpoint de stock de
+     * microshoplogistica (GET /inventory/api/inventory/stock/export). Sin
+     * filtros retorna los mismos registros bajo stock mínimo que arma este
+     * reporte (findBelowMinimum), con datos limpios generados en backend.
+     */
+    private readonly exportConfig: BackendExportConfig = {
+        url: `${environment.apiUrls.inventory}/api/inventory/stock/export`,
+        filename: `reporte-inventario-${new Date().toISOString().substring(0, 10)}`,
+    };
 
     ngOnInit() { this.cargar(); }
 
@@ -71,26 +82,10 @@ export class ReportesInventarioComponent implements OnInit {
     }
 
     onExportarCsv(): void {
-        const cabecera = ['Producto ID', 'Almacen ID', 'Stock Actual', 'Stock Minimo', 'Estado'];
-        const filas = this.stockBajo().map(item => [
-            String(item.productoId),
-            String(item.almacenId),
-            String(item.cantidadActual),
-            String(item.stockMinimo),
-            'STOCK BAJO',
-        ]);
-        this.exportService.exportCsv([cabecera, ...filas], `reporte-inventario-${new Date().toISOString().substring(0, 10)}`);
+        this.backendExportService.download(this.exportConfig, 'csv');
     }
 
     exportarExcel(): void {
-        const cabecera = ['Producto ID', 'Almacen ID', 'Stock Actual', 'Stock Minimo', 'Estado'];
-        const filas = this.stockBajo().map(item => [
-            String(item.productoId),
-            String(item.almacenId),
-            String(item.cantidadActual),
-            String(item.stockMinimo),
-            'STOCK BAJO',
-        ]);
-        this.exportService.exportExcel(cabecera, filas, 'reporte-inventario');
+        this.backendExportService.download(this.exportConfig, 'xlsx');
     }
 }
