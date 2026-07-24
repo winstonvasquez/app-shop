@@ -134,6 +134,46 @@
                     formControlName="planMejora"
                     style="resize: vertical"></textarea>
             </div>
+
+            <!-- ── Detalle por Criterios (evaluación 360) ─────────────────────── -->
+            <div class="flex justify-between items-center mt-2">
+                <p class="text-subtle text-sm font-semibold mb-0">Detalle por Criterios</p>
+                <app-button label="Agregar Criterio" variant="secondary" icon="plus" size="sm" type="button" (click)="addDetailRow()" />
+            </div>
+            <hr style="border-color: var(--color-border); margin-bottom: var(--space-md)">
+
+            <div formArrayName="details" class="flex flex-col gap-3">
+                @for (row of detailsArray.controls; track $index) {
+                    <div [formGroupName]="$index" class="card p-3">
+                        <div class="flex justify-between items-start mb-2">
+                            <span class="text-sm text-muted">Criterio {{ $index + 1 }}</span>
+                            <button type="button" class="btn-icon btn-icon-delete" (click)="removeDetailRow($index)">✕</button>
+                        </div>
+                        <div class="grid grid-cols-3 gap-3">
+                            <div>
+                                <label class="input-label">Criterio <span style="color:var(--color-error)">*</span></label>
+                                <select class="form-select" formControlName="criteriaId">
+                                    <option [ngValue]="null">— Seleccionar —</option>
+                                    @for (c of activeCriteria(); track c.id) {
+                                        <option [ngValue]="c.id">{{ c.nombre }} ({{ c.pesoPorcentaje }}%)</option>
+                                    }
+                                </select>
+                            </div>
+                            <app-form-field
+                                label="Puntaje (0-100)"
+                                [control]="getDetailControl($index, 'puntaje')"
+                                type="number"
+                                [required]="true" />
+                            <app-form-field
+                                label="Comentarios"
+                                [control]="getDetailControl($index, 'comentarios')"
+                                placeholder="Comentarios del criterio..." />
+                        </div>
+                    </div>
+                } @empty {
+                    <p class="text-muted text-sm">Sin criterios agregados. Use "Agregar Criterio" para calificar por criterio.</p>
+                }
+            </div>
         </div>
     </form>
 

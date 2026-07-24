@@ -31,6 +31,24 @@
     (filterChange)="onFilterChangeEvent($event)"
     (pageChange)="onPaginationChange($event)" />
 
+<!-- ── Balance de Vacaciones ──────────────────────────────────────────────── -->
+<div style="margin-top: var(--space-xl); display: flex; align-items: center; justify-content: space-between; gap: var(--space-md)">
+    <h3 class="text-lg font-semibold">Balance de Vacaciones {{ balanceYear() }}</h3>
+    <app-button
+        icon="refresh-cw"
+        [label]="generatingBalance() ? 'Generando...' : 'Generar balance anual'"
+        variant="secondary"
+        [loading]="generatingBalance()"
+        (click)="onGenerateAnnualBalance()" />
+</div>
+
+<app-data-table
+    [data]="balances()"
+    [columns]="balanceColumns"
+    [loading]="balancesLoading()"
+    [exportable]="false"
+    [hidePagination]="true" />
+
 <!-- ── Drawer: Nueva Solicitud ─────────────────────────────────────────── -->
 <app-drawer
     [isOpen]="showModal()"

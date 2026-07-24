@@ -1,5 +1,5 @@
 import { Component, inject, signal, computed, ChangeDetectionStrategy, OnInit } from '@angular/core';
-import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormControl, FormArray, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { map } from 'rxjs';
 import { ButtonComponent, CatalogSelectComponent, ServerSearchSelectComponent } from '@shared/components';
@@ -49,6 +49,8 @@ export class EvaluationListComponent implements OnInit {
 
     readonly evaluations = this.evaluationService.evaluations;
     readonly loading = this.evaluationService.loading;
+    /** Criterios activos disponibles para agregar filas de detalle en el drawer. */
+    readonly activeCriteria = this.evaluationService.activeCriteria;
     /** Fuente server-side de los search-select de empleado y evaluador. */
     readonly employeeSource = employeeSelectSource(this.employeeService);
 
@@ -160,11 +162,37 @@ export class EvaluationListComponent implements OnInit {
         fortalezas: [''],
         areasMejora: [''],
         planMejora: [''],
+        details: this.fb.array<FormGroup>([]),
     });
+
+    get detailsArray(): FormArray {
+        return this.evaluationForm.get('details') as FormArray;
+    }
 
     ngOnInit(): void {
         this.evaluationService.loadEvaluations();
+        this.evaluationService.loadCriteria();
         // Los selects de empleado/evaluador cargan sus opciones bajo demanda (server-side).
+    }
+
+    private createDetailGroup(criteriaId: number | null = null, puntaje = 0, comentarios = ''): FormGroup {
+        return this.fb.group({
+            criteriaId: [criteriaId as number | null, Validators.required],
+            puntaje: [puntaje, [Validators.required, Validators.min(0), Validators.max(100)]],
+            comentarios: [comentarios],
+        });
+    }
+
+    addDetailRow(): void {
+        this.detailsArray.push(this.createDetailGroup());
+    }
+
+    removeDetailRow(index: number): void {
+        this.detailsArray.removeAt(index);
+    }
+
+    getDetailControl(index: number, name: string): FormControl {
+        return (this.detailsArray.at(index) as FormGroup).get(name) as FormControl;
     }
 
     readonly toolbarFilters: FilterConfig[] = [
@@ -197,6 +225,7 @@ export class EvaluationListComponent implements OnInit {
 
     openCreate(): void {
         this.evaluationForm.reset({ tipoEvaluacion: 'ANUAL', puntaje: 0 });
+        this.clearDetailsArray();
         this.editMode.set(false);
         this.selectedId.set(null);
         this.submitError.set(null);
@@ -216,6 +245,10 @@ export class EvaluationListComponent implements OnInit {
             areasMejora: ev.areasMejora || '',
             planMejora: ev.planMejora || '',
         });
+        this.clearDetailsArray();
+        (ev.details || []).forEach(d => {
+            this.detailsArray.push(this.createDetailGroup(d.criteriaId, d.puntaje, d.comentarios || ''));
+        });
         this.editMode.set(true);
         this.selectedId.set(ev.id);
         this.submitError.set(null);
@@ -225,6 +258,11 @@ export class EvaluationListComponent implements OnInit {
     closeDrawer(): void {
         this.showDrawer.set(false);
         this.evaluationForm.reset();
+        this.clearDetailsArray();
+    }
+
+    private clearDetailsArray(): void {
+        while (this.detailsArray.length > 0) this.detailsArray.removeAt(0);
     }
 
     async guardar(): Promise<void> {
@@ -236,6 +274,13 @@ export class EvaluationListComponent implements OnInit {
         this.submitError.set(null);
         try {
             const val = this.evaluationForm.value;
+            const details = (this.detailsArray.value as Array<{ criteriaId: number | null; puntaje: number; comentarios: string }>)
+                .filter(d => d.criteriaId != null)
+                .map(d => ({
+                    criteriaId: d.criteriaId!,
+                    puntaje: d.puntaje,
+                    comentarios: d.comentarios || undefined,
+                }));
             const request = {
                 employeeId: val.employeeId!,
                 evaluadorId: val.evaluadorId!,
@@ -247,6 +292,7 @@ export class EvaluationListComponent implements OnInit {
                 fortalezas: val.fortalezas || undefined,
                 areasMejora: val.areasMejora || undefined,
                 planMejora: val.planMejora || undefined,
+                details: details.length > 0 ? details : undefined,
             };
             if (this.editMode() && this.selectedId()) {
                 await this.evaluationService.updateEvaluation(this.selectedId()!, request);

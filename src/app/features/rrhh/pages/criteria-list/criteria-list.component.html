@@ -1,0 +1,86 @@
+<app-page-header
+    title="Criterios de Evaluación"
+    subtitle="Configuración de criterios usados en la evaluación 360"
+    [breadcrumbs]="breadcrumbs">
+    <div actions>
+        <app-button label="Nuevo Criterio" icon="plus" variant="primary" (click)="openCreate()" />
+    </div>
+</app-page-header>
+
+@if (error()) {
+    <app-alert type="error" [message]="error()!" />
+}
+
+<!-- Tabla (client-side: activo + paginación) -->
+<app-data-table
+    [data]="pagedData()"
+    [columns]="columns"
+    [actions]="actions"
+    [filters]="estadoFilters"
+    [exportable]="true"
+    exportFileName="criterios-evaluacion"
+    [currentPage]="currentPage()"
+    [pageSize]="pageSize()"
+    [totalElements]="totalElements()"
+    [totalPages]="totalPages()"
+    (filterChange)="onFilterChangeEvent($event)"
+    (pageChange)="onPaginationChange($event)" />
+
+<!-- Drawer: Crear / Editar Criterio -->
+<app-drawer
+    [isOpen]="showDrawer()"
+    [title]="editMode() ? 'Editar Criterio' : 'Nuevo Criterio'"
+    size="md"
+    [hasFooter]="true"
+    (closed)="closeDrawer()">
+
+    <form [formGroup]="criteriaForm" (ngSubmit)="guardar()">
+
+        @if (submitError()) {
+            <app-alert type="error" [message]="submitError()!" />
+        }
+
+        <app-form-field
+            label="Nombre"
+            [control]="getControl('nombre')"
+            placeholder="Ej: Calidad de trabajo"
+            [required]="true" />
+
+        <div style="margin-top: var(--space-md)">
+            <app-form-field
+                label="Descripción"
+                [control]="getControl('descripcion')"
+                placeholder="Descripción del criterio" />
+        </div>
+
+        <div class="grid grid-cols-3 gap-4 mt-4">
+            <app-form-field
+                label="Peso (%)"
+                [control]="getControl('pesoPorcentaje')"
+                type="number"
+                [required]="true" />
+
+            <app-form-field
+                label="Puntaje Mínimo"
+                [control]="getControl('puntajeMinimo')"
+                type="number" />
+
+            <app-form-field
+                label="Puntaje Máximo"
+                [control]="getControl('puntajeMaximo')"
+                type="number" />
+        </div>
+
+    </form>
+
+    <div slot="footer" class="flex justify-end gap-2">
+        <app-button label="Cancelar" icon="x" variant="secondary" type="button" (click)="closeDrawer()" />
+        <!-- btn-migration: SKIP — label condicional multi-línea (submitting ? 'Guardando...' : editMode ? 'Actualizar' : 'Crear Criterio') -->
+        <button class="btn btn-primary" type="button"
+                [disabled]="submitting()"
+                (click)="guardar()">
+            {{ submitting() ? 'Guardando...' : (editMode() ? 'Actualizar' : 'Crear Criterio') }}
+        </button>
+    </div>
+
+</app-drawer>

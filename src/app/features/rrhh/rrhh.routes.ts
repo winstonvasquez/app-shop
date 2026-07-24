@@ -60,6 +60,10 @@ export const RRHH_ROUTES: Routes = [
         loadComponent: () => import('./pages/evaluation-list/evaluation-list.component').then(m => m.EvaluationListComponent)
     },
     {
+        path: 'evaluations/criteria',
+        loadComponent: () => import('./pages/criteria-list/criteria-list.component').then(m => m.CriteriaListComponent)
+    },
+    {
         path: 'trainings',
         loadComponent: () => import('./pages/training-list/training-list.component').then(m => m.TrainingListComponent)
     },
@@ -73,6 +77,6 @@ export const RRHH_ROUTES: Routes = [
     },
     {
         path: 'goals',
-        loadComponent: () => import('./pages/evaluation-list/evaluation-list.component').then(m => m.EvaluationListComponent)
+        loadComponent: () => import('./pages/goal-list/goal-list.component').then(m => m.GoalListComponent)
     }
 ];

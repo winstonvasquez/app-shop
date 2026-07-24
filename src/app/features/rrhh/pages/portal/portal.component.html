@@ -90,7 +90,7 @@
 
     <!-- Evaluaciones recientes -->
     @if (evaluations().length > 0) {
-        <div class="card">
+        <div class="card" style="margin-bottom: var(--space-lg)">
             <div class="card-header">
                 <h3 class="card-title">Mis Evaluaciones ({{ evaluations().length }})</h3>
             </div>
@@ -120,4 +120,99 @@
             </div>
         </div>
     }
+
+    <!-- Mis Boletas -->
+    <div class="card" style="margin-bottom: var(--space-lg)">
+        <div class="card-header">
+            <h3 class="card-title">Mis Boletas ({{ payslips().length }})</h3>
+        </div>
+        <div class="card-body">
+            <app-data-table
+                [data]="payslips()"
+                [columns]="payslipColumns"
+                [exportable]="false"
+                [hidePagination]="true">
+            </app-data-table>
+        </div>
+    </div>
+
+    <!-- Mis Vacaciones -->
+    <div class="card" style="margin-bottom: var(--space-lg)">
+        <div class="card-header" style="display: flex; align-items: center; justify-content: space-between">
+            <h3 class="card-title">Mis Vacaciones ({{ vacations().length }})</h3>
+            @if (!showVacationForm()) {
+                <app-button label="Solicitar vacaciones" variant="primary" size="sm" (click)="openVacationForm()" />
+            }
+        </div>
+        <div class="card-body">
+            @if (showVacationForm()) {
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4" style="margin-bottom: var(--space-md); padding: var(--space-md); border: 1px solid var(--color-border); border-radius: var(--radius-md)">
+                    <app-date-input label="Fecha Inicio" [required]="true"
+                        [ngModel]="vacFechaInicio()" (ngModelChange)="vacFechaInicio.set($event)">
+                    </app-date-input>
+                    <app-date-input label="Fecha Fin" [required]="true"
+                        [ngModel]="vacFechaFin()" (ngModelChange)="vacFechaFin.set($event)">
+                    </app-date-input>
+                    <div>
+                        <label class="text-muted" style="display:block; font-size: 0.8125rem; margin-bottom: 6px">Motivo</label>
+                        <input type="text" class="form-input"
+                            [ngModel]="vacMotivo()" (ngModelChange)="vacMotivo.set($event)"
+                            placeholder="Ej. Descanso familiar" />
+                    </div>
+                    <div style="grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: var(--space-md)">
+                        <span class="text-muted" style="font-size: 0.8125rem">Días solicitados: <strong>{{ diasSolicitadosLabel() }}</strong></span>
+                        <div style="display: flex; gap: var(--space-sm)">
+                            <app-button label="Cancelar" variant="secondary" size="sm" (click)="closeVacationForm()" [disabled]="vacationSubmitting()" />
+                            <app-button label="Enviar solicitud" variant="primary" size="sm" (click)="onSubmitVacation()" [disabled]="vacationSubmitting()" />
+                        </div>
+                    </div>
+                    @if (vacationError()) {
+                        <div style="grid-column: 1 / -1">
+                            <app-alert type="error" [message]="vacationError()!" />
+                        </div>
+                    }
+                </div>
+            }
+            <app-data-table
+                [data]="vacations()"
+                [columns]="vacationColumns"
+                [exportable]="false"
+                [hidePagination]="true">
+            </app-data-table>
+        </div>
+    </div>
+
+    <!-- Mi Asistencia -->
+    <div class="card" style="margin-bottom: var(--space-lg)">
+        <div class="card-header" style="display: flex; align-items: center; justify-content: space-between">
+            <h3 class="card-title">Mi Asistencia</h3>
+            <input type="month" class="form-input" style="max-width: 180px"
+                [value]="attendanceMonth()"
+                (change)="onMonthChange($any($event.target).value)" />
+        </div>
+        <div class="card-body">
+            <app-data-table
+                [data]="attendance()"
+                [columns]="attendanceColumns"
+                [loading]="attendanceLoading()"
+                [exportable]="false"
+                [hidePagination]="true">
+            </app-data-table>
+        </div>
+    </div>
+
+    <!-- Mis Capacitaciones -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Mis Capacitaciones ({{ trainings().length }})</h3>
+        </div>
+        <div class="card-body">
+            <app-data-table
+                [data]="trainings()"
+                [columns]="trainingColumns"
+                [exportable]="false"
+                [hidePagination]="true">
+            </app-data-table>
+        </div>
+    </div>
 }

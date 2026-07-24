@@ -3,8 +3,11 @@ import { HttpClient } from '@angular/common/http';
 import { environment } from '@env/environment';
 import { firstValueFrom } from 'rxjs';
 import { Employee } from '../models/employee.model';
-import { Evaluation } from '../models/evaluation.model';
-import { Goal } from '../models/evaluation.model';
+import { Evaluation, Goal } from '../models/evaluation.model';
+import { Payroll } from '../models/payroll.model';
+import { Attendance } from '../models/attendance.model';
+import { TrainingParticipation } from '../models/training.model';
+import { VacationRequest, VacationRequestDto } from './vacation.service';
 
 @Injectable({ providedIn: 'root' })
 export class SelfServiceService {
@@ -15,16 +18,20 @@ export class SelfServiceService {
         return firstValueFrom(this.http.get<Employee>(`${this.baseUrl}/profile`));
     }
 
-    async getPayslips(): Promise<unknown[]> {
-        return firstValueFrom(this.http.get<unknown[]>(`${this.baseUrl}/payslips`));
+    async getPayslips(): Promise<Payroll[]> {
+        return firstValueFrom(this.http.get<Payroll[]>(`${this.baseUrl}/payslips`));
     }
 
-    async getVacations(): Promise<unknown[]> {
-        return firstValueFrom(this.http.get<unknown[]>(`${this.baseUrl}/vacations`));
+    async getVacations(): Promise<VacationRequest[]> {
+        return firstValueFrom(this.http.get<VacationRequest[]>(`${this.baseUrl}/vacations`));
     }
 
-    async getAttendance(month: string): Promise<unknown[]> {
-        return firstValueFrom(this.http.get<unknown[]>(`${this.baseUrl}/attendance`, { params: { month } }));
+    async requestVacation(request: VacationRequestDto): Promise<VacationRequest> {
+        return firstValueFrom(this.http.post<VacationRequest>(`${this.baseUrl}/vacations`, request));
+    }
+
+    async getAttendance(month: string): Promise<Attendance[]> {
+        return firstValueFrom(this.http.get<Attendance[]>(`${this.baseUrl}/attendance`, { params: { month } }));
     }
 
     async getEvaluations(): Promise<Evaluation[]> {
@@ -35,7 +42,7 @@ export class SelfServiceService {
         return firstValueFrom(this.http.get<Goal[]>(`${this.baseUrl}/goals`));
     }
 
-    async getTrainings(): Promise<unknown[]> {
-        return firstValueFrom(this.http.get<unknown[]>(`${this.baseUrl}/trainings`));
+    async getTrainings(): Promise<TrainingParticipation[]> {
+        return firstValueFrom(this.http.get<TrainingParticipation[]>(`${this.baseUrl}/trainings`));
     }
 }

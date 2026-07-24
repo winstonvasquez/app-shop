@@ -7,6 +7,7 @@ import { map } from 'rxjs';
 import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { VacationService, VacationRequest } from '../../services/vacation.service';
 import { EmployeeService } from '../../services/employee.service';
+import { LeaveBalance } from '../../models/leave-balance.model';
 import { CatalogService } from '@core/services/catalog.service';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
@@ -47,6 +48,11 @@ export class VacationListComponent implements OnInit {
     // ── Data ─────────────────────────────────────────────────────────────────
     readonly loading   = this.vacationService.loading;
     readonly vacations = this.vacationService.vacations;
+    // Balance de vacaciones por año (sección aparte, no paginada).
+    readonly balances        = this.vacationService.balances;
+    readonly balancesLoading = this.vacationService.balancesLoading;
+    readonly balanceYear     = signal(new Date().getFullYear());
+    generatingBalance         = signal(false);
     // Se mantiene para resolver el nombre del empleado en la tabla (getEmployeeName).
     readonly employees = this.employeeService.activeEmployees;
     /** Fuente server-side del search-select de empleado del formulario. */
@@ -116,6 +122,18 @@ export class VacationListComponent implements OnInit {
         },
     ];
 
+    // Columnas de la tabla de balances (sección aparte, debajo de las solicitudes).
+    balanceColumns: TableColumn<LeaveBalance>[] = [
+        {
+            key: 'employeeId', label: 'Empleado',
+            render: r => r.employeeName ?? this.getEmployeeName(r.employeeId)
+        },
+        { key: 'diasGanados', label: 'Días Ganados', align: 'center', render: r => `${r.diasGanados}` },
+        { key: 'diasUsados', label: 'Días Tomados', align: 'center', render: r => `${r.diasUsados}` },
+        { key: 'diasDisponibles', label: 'Días Disponibles', align: 'center', render: r => `${r.diasDisponibles}` },
+        { key: 'diasVencidos', label: 'Días Vencidos', align: 'center', render: r => `${r.diasVencidos}` },
+    ];
+
     actions: TableAction<VacationRequest>[] = [
         {
             label: 'Aprobar', icon: '✓', class: 'btn-view',
@@ -163,6 +181,14 @@ export class VacationListComponent implements OnInit {
     ngOnInit(): void {
         this.employeeService.loadEmployees().catch(() => { /* nombres/empleado dropdown */ });
         this.loadPage();
+        this.loadBalances();
+    }
+
+    /** Carga los balances de vacaciones del año seleccionado. */
+    private loadBalances(): void {
+        this.vacationService.getBalancesByYear(this.balanceYear()).catch(err => {
+            this.error.set((err as Error).message ?? 'Error al cargar balances de vacaciones');
+        });
     }
 
     /** Carga la página actual server-side (search + estado + 20/pág). */
@@ -275,6 +301,22 @@ export class VacationListComponent implements OnInit {
             this.error.set((err as Error).message ?? 'Error al rechazar');
         } finally {
             this.submitting.set(false);
+        }
+    }
+
+    async onGenerateAnnualBalance(): Promise<void> {
+        const year = this.balanceYear();
+        if (!confirm(`¿Generar el balance de vacaciones ${year} para todos los empleados activos?`)) return;
+        this.generatingBalance.set(true);
+        this.error.set(null);
+        try {
+            const count = await this.vacationService.generateAnnualBalance(year);
+            this.loadBalances();
+            alert(`Se generaron ${count} balance(s) de vacaciones para el año ${year}.`);
+        } catch (err) {
+            this.error.set((err as Error).message ?? 'Error al generar el balance anual');
+        } finally {
+            this.generatingBalance.set(false);
         }
     }
 

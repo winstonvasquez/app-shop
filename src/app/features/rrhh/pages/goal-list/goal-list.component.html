@@ -1,0 +1,169 @@
+<app-page-header
+    title="Metas y Objetivos"
+    subtitle="Administración de metas de desempeño por empleado"
+    [breadcrumbs]="breadcrumbs">
+    <div actions>
+        <app-button icon="plus" label="Nueva Meta" variant="primary" (click)="openCreate()" />
+    </div>
+</app-page-header>
+
+<!-- KPIs -->
+<div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-6">
+    <div class="card">
+        <div class="card-body">
+            <div class="text-muted" style="font-size: 0.875rem">En Progreso</div>
+            <div style="font-size: 2.5rem; font-weight: 700; color: var(--color-primary)">{{ enProgreso() }}</div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-body">
+            <div class="text-muted" style="font-size: 0.875rem">Completadas</div>
+            <div style="font-size: 2.5rem; font-weight: 700; color: var(--color-success)">{{ completadas() }}</div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-body">
+            <div class="text-muted" style="font-size: 0.875rem">Retrasadas</div>
+            <div style="font-size: 2.5rem; font-weight: 700"
+                 [style.color]="retrasadas() > 0 ? 'var(--color-error)' : 'var(--color-text-muted)'">
+                {{ retrasadas() }}
+            </div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-body">
+            <div class="text-muted" style="font-size: 0.875rem">Total</div>
+            <div style="font-size: 2.5rem; font-weight: 700; color: var(--color-primary)">{{ goals().length }}</div>
+        </div>
+    </div>
+</div>
+
+<!-- Tabla -->
+<app-data-table
+    [data]="pagedData()"
+    [columns]="columns"
+    [actions]="actions"
+    [filters]="toolbarFilters"
+    [currentPage]="currentPage()"
+    [pageSize]="pageSize()"
+    [totalElements]="totalElements()"
+    [totalPages]="totalPages()"
+    (filterChange)="onFilterChangeEvent($event)"
+    (pageChange)="onPaginationChange($event)" />
+
+<!-- ── Drawer: Crear/Editar Meta ────────────────────────────────────────── -->
+<app-drawer
+    [isOpen]="showDrawer()"
+    [title]="editMode() ? 'Editar Meta' : 'Nueva Meta'"
+    size="md"
+    [hasFooter]="true"
+    (closed)="closeDrawer()">
+
+    <form [formGroup]="goalForm" (ngSubmit)="guardar()">
+
+        @if (submitError()) {
+            <app-alert type="error" [message]="submitError()!" />
+        }
+
+        <p class="text-subtle text-sm font-semibold mb-2 mt-1">Datos de la Meta</p>
+        <hr style="border-color: var(--color-border); margin-bottom: var(--space-md)">
+
+        <div class="flex flex-col gap-4">
+
+            <div>
+                <label class="input-label">Empleado <span style="color:var(--color-error)">*</span></label>
+                <app-server-search-select [dataSource]="employeeSource"
+                                          formControlName="employeeId"
+                                          placeholder="Buscar empleado por nombre o código…" />
+            </div>
+
+            <app-form-field
+                label="Título"
+                [control]="getControl('titulo')"
+                placeholder="Título de la meta"
+                [required]="true" />
+
+            <div>
+                <label class="input-label">Descripción</label>
+                <textarea
+                    class="form-input"
+                    rows="3"
+                    placeholder="Descripción de la meta..."
+                    formControlName="descripcion"
+                    style="resize: vertical"></textarea>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <app-date-input
+                    label="Fecha Inicio"
+                    [required]="true"
+                    formControlName="fechaInicio" />
+
+                <app-date-input
+                    label="Fecha Fin"
+                    [required]="true"
+                    formControlName="fechaFin" />
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="input-label">Prioridad</label>
+                    <select class="form-select" formControlName="prioridad">
+                        @for (opt of priorityOptions; track opt.value) {
+                            <option [value]="opt.value">{{ opt.label }}</option>
+                        }
+                    </select>
+                </div>
+
+                <app-form-field
+                    label="Progreso (%)"
+                    [control]="getControl('porcentajeAvance')"
+                    type="number" />
+            </div>
+        </div>
+    </form>
+
+    <div slot="footer" class="flex justify-end gap-2">
+        <app-button icon="x" label="Cancelar" variant="secondary" type="button" (click)="closeDrawer()" />
+        <button class="btn btn-primary" type="button"
+                [disabled]="submitting()"
+                (click)="guardar()">
+            {{ submitting() ? 'Guardando...' : (editMode() ? 'Actualizar' : 'Crear Meta') }}
+        </button>
+    </div>
+</app-drawer>
+
+<!-- ── Drawer: Actualizar Progreso ──────────────────────────────────────── -->
+<app-drawer
+    [isOpen]="showProgressDrawer()"
+    title="Actualizar Progreso"
+    size="sm"
+    [hasFooter]="true"
+    (closed)="closeProgressDrawer()">
+
+    @if (progressGoal(); as goal) {
+        @if (progressError()) {
+            <app-alert type="error" [message]="progressError()!" />
+        }
+
+        <p class="text-subtle text-sm font-semibold mb-2 mt-1">{{ goal.titulo }}</p>
+        <p class="text-muted" style="font-size: 0.875rem; margin-bottom: var(--space-md)">
+            {{ goal.employeeName || ('Emp #' + goal.employeeId) }}
+        </p>
+
+        <div class="flex flex-col gap-2">
+            <label class="input-label">Porcentaje de avance (0-100)</label>
+            <input type="number" class="form-input" min="0" max="100" [formControl]="progressControl" />
+            <input type="range" min="0" max="100" [formControl]="progressControl" style="width: 100%" />
+        </div>
+    }
+
+    <div slot="footer" class="flex justify-end gap-2">
+        <app-button icon="x" label="Cancelar" variant="secondary" type="button" (click)="closeProgressDrawer()" />
+        <button class="btn btn-primary" type="button"
+                [disabled]="progressSubmitting()"
+                (click)="guardarProgreso()">
+            {{ progressSubmitting() ? 'Guardando...' : 'Actualizar Progreso' }}
+        </button>
+    </div>
+</app-drawer>

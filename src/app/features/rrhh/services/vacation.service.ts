@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { environment } from '@env/environment';
 import { firstValueFrom } from 'rxjs';
 import { PageResponse, pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
+import { LeaveBalance } from '../models/leave-balance.model';
 
 export interface VacationRequest {
     id: number;
@@ -41,8 +42,14 @@ export class VacationService {
     private readonly _vacations = signal<VacationRequest[]>([]);
     private readonly _loading = signal(false);
 
+    private readonly _balances = signal<LeaveBalance[]>([]);
+    private readonly _balancesLoading = signal(false);
+
     readonly vacations = this._vacations.asReadonly();
     readonly loading = this._loading.asReadonly();
+
+    readonly balances = this._balances.asReadonly();
+    readonly balancesLoading = this._balancesLoading.asReadonly();
 
     async loadVacationsPaged(page: number, size: number, search?: string, estado?: string):
         Promise<{ totalElements: number; totalPages: number }> {
@@ -85,9 +92,50 @@ export class VacationService {
         const vacation = await firstValueFrom(
             this.http.put<VacationRequest>(`${this.baseUrl}/${id}/approve`, approval)
         );
-        this._vacations.update(list => 
+        this._vacations.update(list =>
             list.map(v => v.id === id ? vacation : v)
         );
         return vacation;
+    }
+
+    // ── Leave Balance ──────────────────────────────────────────────────────
+
+    /** Balance de vacaciones de un empleado. Si no existe balance para ese año, retorna null (404). */
+    async getBalance(employeeId: number, year?: number): Promise<LeaveBalance | null> {
+        const params: Record<string, string> = {};
+        if (year != null) params['year'] = String(year);
+        try {
+            return await firstValueFrom(
+                this.http.get<LeaveBalance>(`${this.baseUrl}/balance/${employeeId}`, { params })
+            );
+        } catch {
+            return null;
+        }
+    }
+
+    /** Lista los balances de todos los empleados para un año (default: año actual). */
+    async getBalancesByYear(year?: number): Promise<LeaveBalance[]> {
+        this._balancesLoading.set(true);
+        try {
+            const params: Record<string, string> = {};
+            if (year != null) params['year'] = String(year);
+            const balances = await firstValueFrom(
+                this.http.get<LeaveBalance[]>(`${this.baseUrl}/balance`, { params })
+            );
+            this._balances.set(balances);
+            return balances;
+        } finally {
+            this._balancesLoading.set(false);
+        }
+    }
+
+    /** Genera el balance anual para todos los empleados activos. Retorna la cantidad de balances generados. */
+    async generateAnnualBalance(year?: number): Promise<number> {
+        const params: Record<string, string> = {};
+        if (year != null) params['year'] = String(year);
+        const res = await firstValueFrom(
+            this.http.post<{ generated: number }>(`${this.baseUrl}/balance/generate`, null, { params })
+        );
+        return res.generated;
     }
 }
