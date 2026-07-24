@@ -45,6 +45,29 @@ export class PositionService {
         }
     }
 
+    /**
+     * Página server-side SIN mutar el estado compartido (`_positions`).
+     * Pensado para el search-select: cada consulta es independiente del listado.
+     * Nota: el backend ordena siempre por `nombre` asc (no soporta `sort`); el
+     * parámetro se mantiene solo por paridad de firma con Employee/Department.
+     */
+    async searchPage(page: number, size: number, search?: string, sort?: string, departmentId?: number):
+        Promise<PageResponse<Position>> {
+        const params: Record<string, string> = { page: String(page), size: String(size) };
+        if (search) params['search'] = search;
+        if (sort) params['sort'] = sort;
+        if (departmentId != null) params['departmentId'] = String(departmentId);
+        return firstValueFrom(
+            this.http.get<PageResponse<Position>>(`${this.baseUrl}/paged`, { params })
+        );
+    }
+
+    async getPositionById(id: number): Promise<Position> {
+        return firstValueFrom(
+            this.http.get<Position>(`${this.baseUrl}/${id}`)
+        );
+    }
+
     async loadPositions(): Promise<void> {
         this._loading.set(true);
         this._error.set(null);

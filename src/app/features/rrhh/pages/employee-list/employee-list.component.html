@@ -93,6 +93,27 @@
                 <label class="input-label">Estado</label>
                 <app-catalog-select tabla="ESTADO_EMPLEADO" formControlName="estado"></app-catalog-select>
             </div>
+
+            <div>
+                <label class="input-label">Departamento</label>
+                <app-server-search-select [dataSource]="departmentSource"
+                                          formControlName="departmentId"
+                                          placeholder="Buscar departamento…" />
+            </div>
+
+            <div>
+                <label class="input-label">Puesto</label>
+                <app-server-search-select [dataSource]="positionSource"
+                                          formControlName="positionId"
+                                          placeholder="Buscar puesto…" />
+            </div>
+
+            <div>
+                <label class="input-label">Supervisor</label>
+                <app-server-search-select [dataSource]="supervisorSource"
+                                          formControlName="supervisorId"
+                                          placeholder="Buscar supervisor…" />
+            </div>
         </app-admin-form-section>
 
         <app-admin-form-section title="Contacto" [columns]="2">

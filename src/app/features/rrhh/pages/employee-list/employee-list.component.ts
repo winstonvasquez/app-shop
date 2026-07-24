@@ -6,9 +6,12 @@ import { toObservable } from '@angular/core/rxjs-interop';
 import { map } from 'rxjs';
 import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { EmployeeService } from '../../services/employee.service';
+import { DepartmentService } from '../../services/department.service';
+import { PositionService } from '../../services/position.service';
 import { Employee, EmployeeRequest } from '../../models/employee.model';
-import { ButtonComponent, CatalogSelectComponent } from '@shared/components';
+import { ButtonComponent, CatalogSelectComponent, ServerSearchSelectComponent } from '@shared/components';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
+import { employeeSelectSource, departmentSelectSource, positionSelectSource } from '../../components/select-sources';
 import { DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
@@ -37,14 +40,22 @@ import { CatalogService } from '@core/services/catalog.service';
         AlertComponent,
         DateInputComponent,
         CatalogSelectComponent,
+        ServerSearchSelectComponent,
     ],
     templateUrl: './employee-list.component.html',
 })
 export class EmployeeListComponent implements OnInit {
     private readonly employeeService = inject(EmployeeService);
+    private readonly departmentService = inject(DepartmentService);
+    private readonly positionService = inject(PositionService);
     private readonly fb = inject(FormBuilder);
     private readonly router = inject(Router);
     private readonly catalog = inject(CatalogService);
+
+    // ── Server search-select sources ──────────────────────────────────────────
+    readonly departmentSource = departmentSelectSource(this.departmentService);
+    readonly positionSource   = positionSelectSource(this.positionService);
+    readonly supervisorSource = employeeSelectSource(this.employeeService);
 
     // ── Data ─────────────────────────────────────────────────────────────────
     readonly loading   = this.employeeService.loading;
@@ -142,6 +153,9 @@ export class EmployeeListComponent implements OnInit {
         email:              ['', Validators.email],
         telefono:           [''],
         estado:             ['ACTIVO'],
+        departmentId:       [null as number | null],
+        positionId:         [null as number | null],
+        supervisorId:       [null as number | null],
     });
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
@@ -207,6 +221,9 @@ export class EmployeeListComponent implements OnInit {
             email:              employee.email     ?? '',
             telefono:           employee.telefono  ?? '',
             estado:             employee.estado,
+            departmentId:       employee.departmentId ?? null,
+            positionId:         employee.positionId   ?? null,
+            supervisorId:       employee.supervisorId ?? null,
         });
         this.submitError.set(null);
         this.showModal.set(true);
@@ -270,3 +287,4 @@ export class EmployeeListComponent implements OnInit {
         return map[estado] ?? 'neutral';
     }
 }
+

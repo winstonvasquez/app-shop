@@ -2,6 +2,7 @@ import { pageTotalPages } from '@core/models/pagination.model';
 import type { ServerSelectDataSource, ServerSelectOption } from '@shared/components';
 import type { EmployeeService } from '../services/employee.service';
 import type { DepartmentService } from '../services/department.service';
+import type { PositionService } from '../services/position.service';
 
 /**
  * Adapters de `ServerSelectDataSource` para el `<app-server-search-select>`.
@@ -54,6 +55,34 @@ export function departmentSelectSource(
         async resolveOption(id) {
             const d = await svc.getDepartmentById(Number(id));
             return d ? toOption(d) : null;
+        },
+    };
+}
+
+/**
+ * Fuente de puestos: al abrir muestra los últimos registrados (createdAt desc).
+ * `departmentId` permite acotar la búsqueda a un departamento (filtro server-side,
+ * soportado nativamente por `GET /positions/paged?departmentId=`).
+ */
+export function positionSelectSource(
+    svc: PositionService,
+    opts?: { departmentId?: () => number | null | undefined },
+): ServerSelectDataSource {
+    const toOption = (p: { id: number; nombre: string; codigo: string }): ServerSelectOption => ({
+        id: p.id,
+        label: p.nombre,
+        sublabel: p.codigo,
+    });
+    return {
+        async fetchPage(search, page, size) {
+            const departmentId = opts?.departmentId?.() ?? undefined;
+            const res = await svc.searchPage(page, size, search || undefined, undefined, departmentId ?? undefined);
+            const items = (res.content ?? []).map(toOption);
+            return { items, last: page >= pageTotalPages(res) - 1 };
+        },
+        async resolveOption(id) {
+            const p = await svc.getPositionById(Number(id));
+            return p ? toOption(p) : null;
         },
     };
 }
