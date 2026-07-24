@@ -1,5 +1,6 @@
 import { Component, DestroyRef, inject, OnInit, signal, computed } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { FormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
@@ -13,6 +14,7 @@ import { ProductResponse } from '@core/models/product.model';
 import { CartService } from '@features/cart/services/cart.service';
 import { PAGINATION } from '@shared/constants/app.constants';
 import { CURRENCY_DISPLAY } from '@shared/constants/sunat.constants';
+import { CatalogSelectComponent } from '@shared/components';
 
 import {
     DsProductCardComponent,
@@ -39,12 +41,14 @@ interface ShippingFilter {
     standalone: true,
     imports: [
         RouterLink,
+        FormsModule,
         TranslateModule,
         LucideAngularModule,
         DsProductCardComponent,
         DsProductRowComponent,
         DsButtonComponent,
         DsStarsComponent,
+        CatalogSelectComponent,
     ],
     templateUrl: './products-page.component.html',
 })

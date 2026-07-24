@@ -3,13 +3,14 @@ import {
 } from '@angular/core';
 
 import { Router } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import { CustomerService } from '@features/admin/services/customer.service';
 import {
     CustomerResponse,
     TIPO_CLIENTE_OPTIONS,
     CONDICION_PAGO_OPTIONS,
 } from '@features/admin/models/customer.model';
-import { ButtonComponent } from '@shared/components';
+import { ButtonComponent, CatalogSelectComponent } from '@shared/components';
 import { PageHeaderComponent } from '@shared/ui/layout/page-header/page-header.component';
 import { PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
 import { DataTableComponent, TableColumn, TableAction } from '@shared/ui/tables/data-table/data-table.component';
@@ -22,7 +23,7 @@ import { environment } from '@env/environment';
 @Component({
     selector: 'app-customer-list',
     standalone: true,
-    imports: [PageHeaderComponent, DataTableComponent, CustomerFormComponent, ButtonComponent],
+    imports: [PageHeaderComponent, DataTableComponent, CustomerFormComponent, ButtonComponent, CatalogSelectComponent, FormsModule],
     templateUrl: './customer-list.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -88,6 +89,7 @@ export class CustomerListComponent implements OnInit {
         this.selectedIds.set(new Set(rows.map(r => r.id)));
     }
     showBulkSegment = signal(false);
+    bulkSegmentoId = signal('');
 
     isEmpty = computed(() => !this.loading() && this.customers().length === 0);
 
@@ -183,9 +185,16 @@ export class CustomerListComponent implements OnInit {
             next: () => {
                 this.selectedIds.set(new Set());
                 this.showBulkSegment.set(false);
+                this.bulkSegmentoId.set('');
                 this.loadCustomers();
             },
         });
+    }
+
+    onBulkSegmentoChange(value: string): void {
+        this.bulkSegmentoId.set(value);
+        if (!value) return;
+        this.assignSegment(+value);
     }
 
     onDeactivate(customer: CustomerResponse): void {

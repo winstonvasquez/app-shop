@@ -26,11 +26,9 @@
                 </div>
                 <div>
                     <label class="input-label">Tipo de cierre</label>
-                    <select class="form-input" [ngModel]="tipoCierre()"
-                            (ngModelChange)="tipoCierre.set($event)">
-                        <option value="MENSUAL">Cierre Mensual</option>
-                        <option value="ANUAL">Cierre Anual (todos los períodos del año)</option>
-                    </select>
+                    <app-catalog-select tabla="TIPO_CIERRE_CONTABLE"
+                            [ngModel]="tipoCierre()"
+                            (ngModelChange)="tipoCierre.set($event)"></app-catalog-select>
                 </div>
                 <div style="display: flex; gap: 0.75rem; padding-top: 0.5rem">
                     <app-button

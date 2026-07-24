@@ -8,7 +8,7 @@ import { MONEDA } from '@shared/constants/sunat.constants';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { LoadingSpinnerComponent } from '@shared/ui/feedback/loading-spinner/loading-spinner.component';
-import { ButtonComponent } from '@shared/components';
+import { ButtonComponent, CatalogSelectComponent } from '@shared/components';
 
 @Component({
     selector: 'app-proveedor-form',
@@ -20,7 +20,8 @@ import { ButtonComponent } from '@shared/components';
         PageHeaderComponent,
         AlertComponent,
         LoadingSpinnerComponent,
-        ButtonComponent
+        ButtonComponent,
+        CatalogSelectComponent
     ],
     templateUrl: './proveedor-form.component.html'
 })

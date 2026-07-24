@@ -63,12 +63,8 @@
             <!-- Tipo de Cliente -->
             <div class="form-group">
                 <label for="seg-tipo">Tipo de Cliente <span class="required">*</span></label>
-                <select id="seg-tipo" formControlName="tipoCliente" class="form-input"
-                    [class.error]="hasError('tipoCliente')">
-                    @for (tipo of tipoClienteOptions; track tipo.value) {
-                    <option [value]="tipo.value">{{ tipo.label }}</option>
-                    }
-                </select>
+                <app-catalog-select tabla="CATEGORIA_CLIENTE" formControlName="tipoCliente" class="form-input"
+                    [class.error]="hasError('tipoCliente')"></app-catalog-select>
                 @if (hasError('tipoCliente')) {
                 <span class="error-message">{{ getErrorMessage('tipoCliente') }}</span>
                 }

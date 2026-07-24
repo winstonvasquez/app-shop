@@ -9,7 +9,7 @@ import {
     CierreResult,
     CierreRequest,
 } from '../../services/cierre-contable.service';
-import { ButtonComponent } from '@shared/components';
+import { ButtonComponent, CatalogSelectComponent } from '@shared/components';
 
 type Paso = 'seleccion' | 'validacion' | 'reapertura' | 'resultado';
 
@@ -17,7 +17,7 @@ type Paso = 'seleccion' | 'validacion' | 'reapertura' | 'resultado';
     selector: 'app-cierre-contable',
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [FormsModule, ButtonComponent],
+    imports: [FormsModule, ButtonComponent, CatalogSelectComponent],
     templateUrl: './cierre-contable.component.html',
 })
 export class CierreContableComponent implements OnInit {

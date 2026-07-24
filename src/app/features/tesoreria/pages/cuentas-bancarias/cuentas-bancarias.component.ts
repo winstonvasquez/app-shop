@@ -9,7 +9,7 @@ import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { DataTableComponent, TableColumn, TableAction } from '@shared/ui/tables/data-table/data-table.component';
 import { PageHeaderComponent } from '@shared/ui/layout/page-header/page-header.component';
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
-import { ButtonComponent } from '@shared/components';
+import { ButtonComponent, CatalogSelectComponent } from '@shared/components';
 import { CuentasBancariasService } from '../../services/cuentas-bancarias.service';
 import { AuthService } from '@core/auth/auth.service';
 import { BankAccount, BankAccountRequest, Page } from '../../models/tesoreria.model';
@@ -25,7 +25,7 @@ import { environment } from '@env/environment';
     imports: [
         DecimalPipe, ReactiveFormsModule,
         DrawerComponent, DataTableComponent, PageHeaderComponent, FormFieldComponent,
-        ButtonComponent
+        ButtonComponent, CatalogSelectComponent
     ],
     templateUrl: './cuentas-bancarias.component.html'
 })
@@ -73,23 +73,6 @@ export class CuentasBancariasComponent implements OnInit {
     cuentasUSD = computed(() =>
         this.cuentas().filter(c => c.moneda === MONEDA.USD && c.estado === 'ACTIVA').length
     );
-
-    readonly tipoOptions = ['CORRIENTE', 'AHORROS', 'CTS', 'DETRACCIONES'];
-    readonly monedaOptions = [MONEDA.PEN, MONEDA.USD, 'EUR'];
-    readonly BANCOS = [
-        'BCP — Banco de Crédito del Perú',
-        'BBVA Perú',
-        'Scotiabank Perú',
-        'Interbank',
-        'Banco Pichincha',
-        'Banco GNB',
-        'Banco Falabella',
-        'Banbif',
-        'Banco Ripley',
-        'Caja Municipal Arequipa',
-        'Caja Huancayo',
-        'Banco de la Nación'
-    ];
 
     createForm: FormGroup = this.fb.group({
         banco:               ['', Validators.required],

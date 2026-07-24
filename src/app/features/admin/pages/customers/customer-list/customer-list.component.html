@@ -29,13 +29,12 @@
                 <span class="text-on">{{ selectedIds().size }} seleccionados</span>
                 <app-button label="Asignar Segmento" variant="secondary" size="sm" (click)="showBulkSegment.set(!showBulkSegment())" />
                 @if (showBulkSegment()) {
-                    <select class="form-input" style="width: auto;" (change)="assignSegment(+$any($event.target).value)">
-                        <option value="">Seleccionar...</option>
-                        <option value="1">VIP</option>
-                        <option value="2">Regular</option>
-                        <option value="3">Ocasional</option>
-                        <option value="4">Mayorista</option>
-                    </select>
+                    <app-catalog-select
+                        tabla="SEGMENTO_CLIENTE"
+                        placeholder="Seleccionar..."
+                        [ngModel]="bulkSegmentoId()"
+                        (ngModelChange)="onBulkSegmentoChange($event)">
+                    </app-catalog-select>
                 }
             </div>
         </div>

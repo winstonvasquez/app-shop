@@ -69,11 +69,7 @@
     <!-- Tipo de Movimiento -->
     <div>
       <label class="input-label">Tipo de Movimiento <span style="color:var(--color-error)">*</span></label>
-      <select class="form-input" formControlName="tipoMovimiento">
-        @for (opt of tipoOptions; track opt.value) {
-          <option [value]="opt.value">{{ opt.label }}</option>
-        }
-      </select>
+      <app-catalog-select tabla="TIPO_MOVIMIENTO_CAJA" formControlName="tipoMovimiento"></app-catalog-select>
       @if (getControl('tipoMovimiento').invalid && getControl('tipoMovimiento').touched) {
         <span class="input-error-message">Campo requerido</span>
       }

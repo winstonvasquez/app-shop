@@ -16,7 +16,7 @@ import {
     ValidatorFn,
     Validators,
 } from '@angular/forms';
-import { ButtonComponent } from '@shared/components';
+import { ButtonComponent, CatalogSelectComponent } from '@shared/components';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
 import { AdminFormSectionComponent } from '@shared/ui/forms/admin-form-section/admin-form-section.component';
@@ -45,6 +45,7 @@ const FRECUENCIA_LABELS: Record<string, string> = {
     imports: [
         ReactiveFormsModule,
         ButtonComponent,
+        CatalogSelectComponent,
         DrawerComponent,
         FormFieldComponent,
         AdminFormSectionComponent,
@@ -65,7 +66,6 @@ export class AsientosRecurrentesComponent implements OnInit {
 
     mostrarForm = signal(false);
 
-    readonly frecuencias = ['MENSUAL', 'TRIMESTRAL', 'SEMESTRAL', 'ANUAL'];
     readonly frecuenciaLabel = (f: string) => FRECUENCIA_LABELS[f] ?? f;
 
     // ── Tabla ─────────────────────────────────────────────────────────────────

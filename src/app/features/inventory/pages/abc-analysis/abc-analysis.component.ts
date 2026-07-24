@@ -1,9 +1,11 @@
 import { Component, ChangeDetectionStrategy, computed, inject, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { InventoryApiService, AbcAnalysis, AbcItem } from '../../services/inventory-api.service';
 import { ProductsApiService } from '@features/products/services/products-api.service';
 import { DataTableComponent, TableColumn, PaginationEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
+import { CatalogSelectComponent } from '@shared/components';
 
 /** Fila enriquecida para la tabla: agrega nombre resuelto y valor formateado. */
 interface AbcRow extends AbcItem {
@@ -15,7 +17,7 @@ interface AbcRow extends AbcItem {
     selector: 'app-abc-analysis',
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [DataTableComponent, PageHeaderComponent, AlertComponent],
+    imports: [FormsModule, DataTableComponent, PageHeaderComponent, AlertComponent, CatalogSelectComponent],
     template: `
         <div class="page-container">
             <app-page-header
@@ -24,11 +26,10 @@ interface AbcRow extends AbcItem {
                 [breadcrumbs]="breadcrumbs">
                 <div actions>
                     <label class="input-label" style="margin:0 0.5rem 0 0">Período</label>
-                    <select class="form-input" style="min-width:160px" (change)="onDiasChange($event)">
-                        <option value="90"  [selected]="dias() === 90">Últimos 90 días</option>
-                        <option value="180" [selected]="dias() === 180">Últimos 180 días</option>
-                        <option value="365" [selected]="dias() === 365">Últimos 365 días</option>
-                    </select>
+                    <app-catalog-select tabla="PERIODO_DIAS_ANALISIS"
+                        [ngModel]="dias().toString()"
+                        (ngModelChange)="onDiasChange($event)">
+                    </app-catalog-select>
                 </div>
             </app-page-header>
 
@@ -155,8 +156,8 @@ export class AbcAnalysisComponent {
         });
     }
 
-    onDiasChange(event: Event): void {
-        this.dias.set(Number((event.target as HTMLSelectElement).value));
+    onDiasChange(value: string): void {
+        this.dias.set(Number(value));
         this.load();
     }
 

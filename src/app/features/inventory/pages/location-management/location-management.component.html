@@ -70,13 +70,8 @@
 
       <div>
         <label class="input-label">Tipo Ubicación</label>
-        <select class="form-input" formControlName="locationType">
-          <option value="">General</option>
-          <option value="PICKING">Picking</option>
-          <option value="ALMACENAMIENTO">Almacenamiento</option>
-          <option value="RECEPCION">Recepción</option>
-          <option value="DESPACHO">Despacho</option>
-        </select>
+        <app-catalog-select tabla="TIPO_UBICACION" formControlName="locationType"
+          placeholder="General"></app-catalog-select>
       </div>
       <app-form-field label="Capacidad (unid.)" [control]="getCtrl('capacity')"
         type="number" placeholder="0" />

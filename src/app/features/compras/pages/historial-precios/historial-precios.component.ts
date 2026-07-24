@@ -1,19 +1,19 @@
 import { Component, ChangeDetectionStrategy, signal, inject } from '@angular/core';
 import { DatePipe, DecimalPipe } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { EvaluacionService } from '../../services/evaluacion.service';
 import { ProveedorService } from '../../services/proveedor.service';
 import { HistorialPrecio } from '../../models/evaluacion.model';
 import { MONEDA } from '@shared/constants/sunat.constants';
 import { Proveedor } from '../../models/proveedor.model';
-import { ButtonComponent } from '@shared/components';
+import { ButtonComponent, CatalogSelectComponent } from '@shared/components';
 
 type BusquedaTipo = 'sku' | 'producto' | 'proveedor';
 
 @Component({
     selector: 'app-historial-precios',
     standalone: true,
-    imports: [DatePipe, DecimalPipe, ReactiveFormsModule, ButtonComponent],
+    imports: [DatePipe, DecimalPipe, FormsModule, ReactiveFormsModule, ButtonComponent, CatalogSelectComponent],
     templateUrl: './historial-precios.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
 })

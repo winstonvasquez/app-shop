@@ -1,6 +1,7 @@
 import { Component, ChangeDetectionStrategy, inject, input, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
+import { CatalogSelectComponent } from '@shared/components';
 import { PosCarritoService } from '../../services/pos-carrito.service';
 import { DescuentoTipo } from '../../models/catalogo-pos.model';
 import { MetodoPagoPos, PagoMixto, TipoCpe } from '../../models/venta-pos.model';
@@ -8,7 +9,7 @@ import { MetodoPagoPos, PagoMixto, TipoCpe } from '../../models/venta-pos.model'
 @Component({
     selector: 'app-pos-order-panel',
     standalone: true,
-    imports: [FormsModule, TranslateModule],
+    imports: [FormsModule, TranslateModule, CatalogSelectComponent],
     templateUrl: './pos-order-panel.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -97,10 +98,6 @@ export class PosOrderPanelComponent {
     removeLineDiscount(varianteId: number): void {
         this.carrito.clearLineDiscount(varianteId);
         this.discountPopoverFor.set(null);
-    }
-
-    onDiscountTypeChange(event: Event): void {
-        this.discountType.set((event.target as HTMLSelectElement).value as DescuentoTipo);
     }
 
     onDiscountValueChange(event: Event): void {

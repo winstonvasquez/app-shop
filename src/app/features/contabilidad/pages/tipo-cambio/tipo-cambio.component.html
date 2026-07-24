@@ -19,11 +19,7 @@
                 </div>
                 <div>
                     <label class="input-label">{{ 'contabilidad.tipo_cambio.moneda' | translate }}</label>
-                    <select class="form-input" [ngModel]="moneda()" (ngModelChange)="moneda.set($event)">
-                        @for (m of monedas; track m) {
-                            <option [value]="m">{{ m }}</option>
-                        }
-                    </select>
+                    <app-catalog-select tabla="MONEDA" [ngModel]="moneda()" (ngModelChange)="moneda.set($event)"></app-catalog-select>
                 </div>
             </div>
             <app-button

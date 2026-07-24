@@ -140,13 +140,8 @@
 
       <div>
         <label class="input-label">Tipo Referencia</label>
-        <select class="form-input" formControlName="referenceType">
-          <option value="">Ninguno</option>
-          <option value="ORDEN_COMPRA">Orden de Compra</option>
-          <option value="PEDIDO_VENTA">Pedido de Venta</option>
-          <option value="TRANSFERENCIA">Transferencia</option>
-          <option value="AJUSTE">Ajuste</option>
-        </select>
+        <app-catalog-select tabla="TIPO_REFERENCIA_MOVIMIENTO" formControlName="referenceType"
+          placeholder="Ninguno"></app-catalog-select>
       </div>
 
       <app-form-field label="N° Referencia" [control]="getCtrl('referenceNumber')"

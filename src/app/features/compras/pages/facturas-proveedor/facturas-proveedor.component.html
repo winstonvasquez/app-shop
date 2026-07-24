@@ -50,18 +50,11 @@
             </div>
             <div>
                 <label class="input-label">Tipo Documento</label>
-                <select class="form-input" formControlName="tipoDocumento">
-                    <option value="FACTURA">Factura</option>
-                    <option value="BOLETA">Boleta</option>
-                    <option value="NOTA_CREDITO">Nota de Crédito</option>
-                </select>
+                <app-catalog-select tabla="TIPO_COMPROBANTE" formControlName="tipoDocumento"></app-catalog-select>
             </div>
             <div>
                 <label class="input-label">Moneda</label>
-                <select class="form-input" formControlName="moneda">
-                    <option value="PEN">Soles (PEN)</option>
-                    <option value="USD">Dólares (USD)</option>
-                </select>
+                <app-catalog-select tabla="MONEDA" formControlName="moneda"></app-catalog-select>
             </div>
             <div>
                 <label class="input-label">Fecha Emisión *</label>

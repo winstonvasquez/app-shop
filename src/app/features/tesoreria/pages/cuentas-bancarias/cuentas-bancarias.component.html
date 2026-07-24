@@ -48,20 +48,11 @@
     <div class="grid grid-cols-2 gap-3">
       <div>
         <label class="input-label">Banco *</label>
-        <select class="form-input" formControlName="banco">
-          <option value="">Seleccionar banco...</option>
-          @for (b of BANCOS; track b) {
-            <option [value]="b">{{ b }}</option>
-          }
-        </select>
+        <app-catalog-select tabla="BANCO" formControlName="banco" placeholder="Seleccionar banco..."></app-catalog-select>
       </div>
       <div>
         <label class="input-label">Tipo de Cuenta *</label>
-        <select class="form-input" formControlName="tipoCuenta">
-          @for (t of tipoOptions; track t) {
-            <option [value]="t">{{ t }}</option>
-          }
-        </select>
+        <app-catalog-select tabla="TIPO_CUENTA_BANCARIA" formControlName="tipoCuenta"></app-catalog-select>
       </div>
     </div>
 
@@ -75,11 +66,7 @@
       </app-form-field>
       <div>
         <label class="input-label">Moneda *</label>
-        <select class="form-input" formControlName="moneda">
-          @for (m of monedaOptions; track m) {
-            <option [value]="m">{{ m }}</option>
-          }
-        </select>
+        <app-catalog-select tabla="MONEDA" formControlName="moneda"></app-catalog-select>
       </div>
     </div>
 
@@ -132,20 +119,11 @@
     <div class="grid grid-cols-2 gap-3">
       <div>
         <label class="input-label">Banco *</label>
-        <select class="form-input" formControlName="banco">
-          <option value="">Seleccionar banco...</option>
-          @for (b of BANCOS; track b) {
-            <option [value]="b">{{ b }}</option>
-          }
-        </select>
+        <app-catalog-select tabla="BANCO" formControlName="banco" placeholder="Seleccionar banco..."></app-catalog-select>
       </div>
       <div>
         <label class="input-label">Tipo de Cuenta *</label>
-        <select class="form-input" formControlName="tipoCuenta">
-          @for (t of tipoOptions; track t) {
-            <option [value]="t">{{ t }}</option>
-          }
-        </select>
+        <app-catalog-select tabla="TIPO_CUENTA_BANCARIA" formControlName="tipoCuenta"></app-catalog-select>
       </div>
     </div>
 
@@ -159,11 +137,7 @@
       </app-form-field>
       <div>
         <label class="input-label">Moneda *</label>
-        <select class="form-input" formControlName="moneda">
-          @for (m of monedaOptions; track m) {
-            <option [value]="m">{{ m }}</option>
-          }
-        </select>
+        <app-catalog-select tabla="MONEDA" formControlName="moneda"></app-catalog-select>
       </div>
     </div>
 

@@ -50,22 +50,14 @@
     <div class="grid grid-cols-2 gap-3">
       <div>
         <label class="input-label">Tipo de Pago <span class="text-[var(--color-error)]">*</span></label>
-        <select class="form-input" formControlName="tipoPago">
-          @for (opt of tipoPagoOptions; track opt.value) {
-            <option [value]="opt.value">{{ opt.label }}</option>
-          }
-        </select>
+        <app-catalog-select tabla="TIPO_PAGO" formControlName="tipoPago"></app-catalog-select>
         @if (getControl('tipoPago').invalid && getControl('tipoPago').touched) {
           <span class="input-error-message">Campo requerido</span>
         }
       </div>
       <div>
         <label class="input-label">Método de Pago <span class="text-[var(--color-error)]">*</span></label>
-        <select class="form-input" formControlName="metodoPago">
-          @for (opt of metodoPagoOptions; track opt.value) {
-            <option [value]="opt.value">{{ opt.label }}</option>
-          }
-        </select>
+        <app-catalog-select tabla="METODO_PAGO" formControlName="metodoPago"></app-catalog-select>
         @if (getControl('metodoPago').invalid && getControl('metodoPago').touched) {
           <span class="input-error-message">Campo requerido</span>
         }

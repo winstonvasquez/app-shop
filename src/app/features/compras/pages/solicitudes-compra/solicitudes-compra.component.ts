@@ -12,7 +12,7 @@ import { RouterModule } from '@angular/router';
 import { SolicitudCompraService } from '../../services/solicitud-compra.service';
 import { AuthService } from '@core/auth/auth.service';
 import { SolicitudCompra, SolicitudCompraItem } from '../../models/solicitud-compra.model';
-import { ButtonComponent } from '@shared/components';
+import { ButtonComponent, CatalogSelectComponent } from '@shared/components';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
@@ -28,6 +28,7 @@ import { PAGINATION } from '@shared/constants/app.constants';
         ReactiveFormsModule,
         RouterModule,
         ButtonComponent,
+        CatalogSelectComponent,
         DrawerComponent,
         PageHeaderComponent,
         AlertComponent,

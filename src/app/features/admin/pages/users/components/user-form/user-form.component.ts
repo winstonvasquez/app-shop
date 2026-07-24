@@ -1,13 +1,13 @@
 import { Component, ChangeDetectionStrategy, input, output, computed } from '@angular/core';
 import { ReactiveFormsModule, FormGroup } from '@angular/forms';
 import { DrawerComponent } from '../../../../../../shared/components/drawer/drawer.component';
-import { ButtonComponent } from '@shared/components';
-import { RolDto, TIPO_DOCUMENTO_OPTIONS } from '@features/admin/models/user.model';
+import { ButtonComponent, CatalogSelectComponent } from '@shared/components';
+import { RolDto } from '@features/admin/models/user.model';
 
 @Component({
     selector: 'app-user-form',
     standalone: true,
-    imports: [ReactiveFormsModule, DrawerComponent, ButtonComponent],
+    imports: [ReactiveFormsModule, DrawerComponent, ButtonComponent, CatalogSelectComponent],
     templateUrl: './user-form.component.html',
     styleUrl: './user-form.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -22,8 +22,6 @@ export class UserFormComponent {
 
     save   = output<void>();
     cancel = output<void>();
-
-    tipoDocumentoOptions = TIPO_DOCUMENTO_OPTIONS;
 
     /** Fecha máxima para el campo fechaNacimiento (hoy en formato yyyy-MM-dd) */
     todayISO = computed(() => new Date().toISOString().split('T')[0]);

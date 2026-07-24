@@ -6,7 +6,7 @@ import { of } from 'rxjs';
 import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { EmployeeService } from '../../services/employee.service';
 import { Employee } from '../../models/employee.model';
-import { ButtonComponent } from '@shared/components';
+import { ButtonComponent, CatalogSelectComponent } from '@shared/components';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
@@ -34,6 +34,7 @@ import { Router } from '@angular/router';
         PageHeaderComponent,
         AlertComponent,
         DateInputComponent,
+        CatalogSelectComponent,
     ],
     templateUrl: './employee-list.component.html',
 })

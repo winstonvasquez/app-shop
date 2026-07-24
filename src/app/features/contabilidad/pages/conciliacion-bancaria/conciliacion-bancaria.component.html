@@ -291,17 +291,13 @@
                     <div class="grid grid-cols-3 gap-3">
                         <div>
                             <label class="input-label">Origen</label>
-                            <select class="form-input" [ngModel]="partidaOrigen()" (ngModelChange)="partidaOrigen.set($event)">
-                                <option value="BANCO">Banco</option>
-                                <option value="LIBRO">Libro</option>
-                            </select>
+                            <app-catalog-select tabla="ORIGEN_PARTIDA_CONCILIACION"
+                                [ngModel]="partidaOrigen()" (ngModelChange)="partidaOrigen.set($event)"></app-catalog-select>
                         </div>
                         <div>
                             <label class="input-label">Tipo</label>
-                            <select class="form-input" [ngModel]="partidaTipoMovimiento()" (ngModelChange)="partidaTipoMovimiento.set($event)">
-                                <option value="DEBITO">Débito</option>
-                                <option value="CREDITO">Crédito</option>
-                            </select>
+                            <app-catalog-select tabla="TIPO_MOVIMIENTO_BANCARIO"
+                                [ngModel]="partidaTipoMovimiento()" (ngModelChange)="partidaTipoMovimiento.set($event)"></app-catalog-select>
                         </div>
                         <div>
                             <label class="input-label">Fecha</label>

@@ -6,13 +6,12 @@ import { SegmentService } from '@features/admin/services/segment.service';
 import { PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
 import { DataTableComponent, TableColumn, TableAction } from '@shared/ui/tables/data-table/data-table.component';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
-import { ButtonComponent } from '@shared/components';
+import { ButtonComponent, CatalogSelectComponent } from '@shared/components';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
 import {
     SegmentResponse,
     SegmentRequest,
-    TIPO_CLIENTE_OPTIONS,
     SEGMENT_COLOR_OPTIONS
 } from '@features/admin/models/segment.model';
 
@@ -20,7 +19,7 @@ import {
     selector: 'app-segments',
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [ReactiveFormsModule, DataTableComponent, DrawerComponent, ButtonComponent],
+    imports: [ReactiveFormsModule, DataTableComponent, DrawerComponent, ButtonComponent, CatalogSelectComponent],
     templateUrl: './segments.component.html',
     styleUrl: './segments.component.scss'
 })
@@ -82,7 +81,6 @@ export class SegmentsComponent implements OnInit {
     };
 
     // Opciones
-    tipoClienteOptions  = TIPO_CLIENTE_OPTIONS;
     colorOptions        = SEGMENT_COLOR_OPTIONS;
 
     segmentForm: FormGroup;

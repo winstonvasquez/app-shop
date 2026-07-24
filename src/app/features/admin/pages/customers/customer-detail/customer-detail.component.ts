@@ -8,7 +8,7 @@ import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.compo
 import { AdminFormSectionComponent } from '@shared/ui/forms/admin-form-section/admin-form-section.component';
 import { AdminFormLayoutComponent } from '@shared/ui/forms/admin-form-layout/admin-form-layout.component';
 import { DataTableComponent, TableColumn, TableAction } from '@shared/ui/tables/data-table/data-table.component';
-import { ButtonComponent } from '@shared/components';
+import { ButtonComponent, CatalogSelectComponent } from '@shared/components';
 import { CustomerService } from '@features/admin/services/customer.service';
 import {
     CustomerResponse,
@@ -16,7 +16,6 @@ import {
     CustomerContactoResponse,
     CustomerDireccionRequest,
     CustomerContactoRequest,
-    TIPO_DIRECCION_OPTIONS,
 } from '@features/admin/models/customer.model';
 
 @Component({
@@ -31,6 +30,7 @@ import {
         AdminFormLayoutComponent,
         DataTableComponent,
         ButtonComponent,
+        CatalogSelectComponent,
     ],
     templateUrl: './customer-detail.component.html',
     styleUrl: './customer-detail.component.scss',
@@ -46,8 +46,6 @@ export class CustomerDetailComponent implements OnInit {
     contactos = signal<CustomerContactoResponse[]>([]);
     loading = signal(true);
     activeTab = signal<'general' | 'direcciones' | 'contactos'>('general');
-
-    tipoDireccionOptions = TIPO_DIRECCION_OPTIONS;
 
     breadcrumbs = [
         { label: 'Admin', url: '/admin' },

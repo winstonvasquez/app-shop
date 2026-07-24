@@ -3,7 +3,7 @@ import {
 } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators, FormGroup } from '@angular/forms';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
-import { ButtonComponent } from '@shared/components';
+import { ButtonComponent, CatalogSelectComponent } from '@shared/components';
 import {
     AdminFormLayoutComponent,
     AdminFormSectionComponent,
@@ -13,15 +13,15 @@ import { AuthService } from '@core/auth/auth.service';
 import {
     CustomerResponse,
     CustomerRequest,
-    TIPO_CLIENTE_OPTIONS,
-    TIPO_DOCUMENTO_OPTIONS,
-    CONDICION_PAGO_OPTIONS,
 } from '@features/admin/models/customer.model';
 
 @Component({
     selector: 'app-customer-form',
     standalone: true,
-    imports: [ReactiveFormsModule, DrawerComponent, ButtonComponent, AdminFormLayoutComponent, AdminFormSectionComponent],
+    imports: [
+        ReactiveFormsModule, DrawerComponent, ButtonComponent, AdminFormLayoutComponent,
+        AdminFormSectionComponent, CatalogSelectComponent,
+    ],
     templateUrl: './customer-form.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -38,10 +38,6 @@ export class CustomerFormComponent {
 
     submitting = signal(false);
     submitError = signal<string | null>(null);
-
-    tipoClienteOptions = TIPO_CLIENTE_OPTIONS;
-    tipoDocumentoOptions = TIPO_DOCUMENTO_OPTIONS;
-    condicionPagoOptions = CONDICION_PAGO_OPTIONS;
 
     form: FormGroup = this.fb.group({
         tipoCliente: ['PERSONA_NATURAL', Validators.required],
@@ -62,6 +58,12 @@ export class CustomerFormComponent {
     isJuridica = signal(false);
 
     constructor() {
+        // app-catalog-select no expone (change) nativo del <select>; el control
+        // reactivo sigue notificando via valueChanges (reemplaza el (change) previo).
+        this.form.get('tipoCliente')!.valueChanges.subscribe((value: string) => {
+            this.onTipoClienteChange(value);
+        });
+
         effect(() => {
             const c = this.customer();
             if (c) {

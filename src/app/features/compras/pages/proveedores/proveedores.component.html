@@ -69,10 +69,7 @@
                 </app-form-field>
                 <div>
                     <label class="input-label">Condición SUNAT</label>
-                    <select class="form-input" formControlName="condicionSunat">
-                        <option value="HABIDO">HABIDO</option>
-                        <option value="NO HABIDO">NO HABIDO</option>
-                    </select>
+                    <app-catalog-select tabla="CONDICION_SUNAT" formControlName="condicionSunat"></app-catalog-select>
                 </div>
                 <div class="md:col-span-2">
                     <app-form-field label="Domicilio Fiscal" [control]="getControl('domicilioFiscal')" type="text"
@@ -108,20 +105,11 @@
                 </app-form-field>
                 <div>
                     <label class="input-label">Condición de Pago</label>
-                    <select class="form-input" formControlName="condicionPago">
-                        <option value="CONTADO">Contado</option>
-                        <option value="CREDITO_15">Crédito 15 días</option>
-                        <option value="CREDITO_30">Crédito 30 días</option>
-                        <option value="CREDITO_60">Crédito 60 días</option>
-                        <option value="CREDITO_90">Crédito 90 días</option>
-                    </select>
+                    <app-catalog-select tabla="CONDICION_PAGO" formControlName="condicionPago"></app-catalog-select>
                 </div>
                 <div>
                     <label class="input-label">Moneda Preferida</label>
-                    <select class="form-input" formControlName="monedaPreferida">
-                        <option value="PEN">Soles (PEN)</option>
-                        <option value="USD">Dólares (USD)</option>
-                    </select>
+                    <app-catalog-select tabla="MONEDA" formControlName="monedaPreferida"></app-catalog-select>
                 </div>
             </div>
         </form>

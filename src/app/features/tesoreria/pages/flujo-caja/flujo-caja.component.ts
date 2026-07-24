@@ -9,7 +9,7 @@ import { DataTableComponent, TableColumn } from '@shared/ui/tables/data-table/da
 import { PageHeaderComponent } from '@shared/ui/layout/page-header/page-header.component';
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
 import { DatePickerComponent } from '@shared/ui/forms/date-picker/date-picker.component';
-import { ButtonComponent } from '@shared/components';
+import { ButtonComponent, CatalogSelectComponent } from '@shared/components';
 import { MovimientosFinancierosService, FinancialMovementRequest } from '../../services/movimientos-financieros.service';
 import { AuthService } from '@core/auth/auth.service';
 import { FinancialMovement, Page } from '../../models/tesoreria.model';
@@ -25,7 +25,7 @@ import { environment } from '@env/environment';
     imports: [
         DecimalPipe, ReactiveFormsModule,
         DrawerComponent, DataTableComponent, PageHeaderComponent, FormFieldComponent, DatePickerComponent,
-        ButtonComponent
+        ButtonComponent, CatalogSelectComponent
     ],
     templateUrl: './flujo-caja.component.html'
 })
@@ -59,12 +59,6 @@ export class FlujoCajaComponent implements OnInit {
         fecha:          ['', Validators.required],
         cajaId:         [null],
     });
-
-    readonly tipoOptions = [
-        { value: 'INGRESO',       label: 'Ingreso' },
-        { value: 'EGRESO',        label: 'Egreso' },
-        { value: 'TRANSFERENCIA', label: 'Transferencia' },
-    ];
 
     ingresos = computed(() =>
         this.movimientos()

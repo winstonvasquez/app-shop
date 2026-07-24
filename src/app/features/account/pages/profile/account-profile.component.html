@@ -59,11 +59,7 @@
                     <div class="grid-2">
                         <div class="field">
                             <label class="lbl">Tipo de documento</label>
-                            <select formControlName="tipoDocumento" class="input">
-                                <option value="DNI">DNI</option>
-                                <option value="CE">Carnet de Extranjería</option>
-                                <option value="PASAPORTE">Pasaporte</option>
-                            </select>
+                            <app-catalog-select tabla="TIPO_DOCUMENTO_IDENTIDAD" formControlName="tipoDocumento" />
                         </div>
                         <div class="field">
                             <label class="lbl">N° Documento</label>

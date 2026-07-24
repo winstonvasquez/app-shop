@@ -118,14 +118,7 @@
       </div>
       <div class="mb-4">
         <label class="input-label">Unidad de Medida</label>
-        <select class="form-input" formControlName="unidadMedida">
-          <option value="UND">UND</option>
-          <option value="KG">KG</option>
-          <option value="LT">LT</option>
-          <option value="MT">MT</option>
-          <option value="CAJA">CAJA</option>
-          <option value="HRS">HRS</option>
-        </select>
+        <app-catalog-select tabla="UNIDAD_MEDIDA" formControlName="unidadMedida"></app-catalog-select>
       </div>
       <div class="mb-4">
         <label class="input-label">Especificaciones</label>
@@ -169,10 +162,7 @@
         </div>
         <div>
           <label class="input-label">Moneda</label>
-          <select class="form-input" formControlName="moneda">
-            <option value="PEN">PEN</option>
-            <option value="USD">USD</option>
-          </select>
+          <app-catalog-select tabla="MONEDA" formControlName="moneda"></app-catalog-select>
         </div>
       </div>
       <div class="mb-4">

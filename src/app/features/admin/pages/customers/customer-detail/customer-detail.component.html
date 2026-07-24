@@ -106,11 +106,7 @@
                             <app-admin-form-layout [errorMessage]="dirSaveError()">
                                 <app-admin-form-section [columns]="3">
                                     <app-form-field label="Tipo" [required]="true" [error]="errDir('tipoDireccion')">
-                                        <select class="form-input" formControlName="tipoDireccion">
-                                            @for (opt of tipoDireccionOptions; track opt.value) {
-                                                <option [value]="opt.value">{{ opt.label }}</option>
-                                            }
-                                        </select>
+                                        <app-catalog-select tabla="TIPO_DIRECCION" formControlName="tipoDireccion"></app-catalog-select>
                                     </app-form-field>
                                     <app-form-field label="Departamento" [required]="true" [error]="errDir('departamento')">
                                         <input type="text" class="form-input" formControlName="departamento" />

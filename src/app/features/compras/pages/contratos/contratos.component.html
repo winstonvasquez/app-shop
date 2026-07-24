@@ -53,11 +53,7 @@
                     </div>
                     <div>
                         <label class="input-label">Tipo de Contrato *</label>
-                        <select class="form-input" formControlName="tipoContrato">
-                            <option value="MARCO">Marco</option>
-                            <option value="ESPECIFICO">Específico</option>
-                            <option value="SERVICIO">Servicio</option>
-                        </select>
+                        <app-catalog-select tabla="TIPO_CONTRATO" formControlName="tipoContrato"></app-catalog-select>
                     </div>
                     <div>
                         <label class="input-label">Descripción *</label>
@@ -80,10 +76,7 @@
                         </div>
                         <div>
                             <label class="input-label">Moneda</label>
-                            <select class="form-input" formControlName="moneda">
-                                <option value="PEN">PEN</option>
-                                <option value="USD">USD</option>
-                            </select>
+                            <app-catalog-select tabla="MONEDA" formControlName="moneda"></app-catalog-select>
                         </div>
                     </div>
                     <div>

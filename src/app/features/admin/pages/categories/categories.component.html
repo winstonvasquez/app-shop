@@ -175,11 +175,10 @@
 
             <div class="form-group">
                 <label for="nivel">Nivel Jerárquico <span class="required">*</span></label>
-                <select id="nivel" formControlName="nivel" class="form-input">
-                    @for (option of levelOptions; track option.value) {
-                        <option [value]="option.value">{{ option.label }}</option>
-                    }
-                </select>
+                <app-catalog-select
+                    tabla="NIVEL_JERARQUICO_CATEGORIA"
+                    formControlName="nivel">
+                </app-catalog-select>
                 <small class="form-hint">Nivel 0 = Categoría raíz, niveles superiores = subcategorías</small>
             </div>
         </form>

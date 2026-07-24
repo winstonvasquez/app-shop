@@ -9,7 +9,7 @@ import { toObservable } from '@angular/core/rxjs-interop';
 import { DataTableComponent, TableColumn, TableAction, PaginationEvent, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { ModalComponent } from '@shared/components/modal/modal.component';
-import { ButtonComponent } from '@shared/components';
+import { ButtonComponent, CatalogSelectComponent } from '@shared/components';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
@@ -24,7 +24,8 @@ import { environment } from '@env/environment';
     imports: [
         ReactiveFormsModule,
         DataTableComponent, DrawerComponent, ModalComponent,
-        PageHeaderComponent, AlertComponent, FormFieldComponent, ButtonComponent
+        PageHeaderComponent, AlertComponent, FormFieldComponent, ButtonComponent,
+        CatalogSelectComponent
     ],
     templateUrl: './location-management.component.html',
     styleUrl: './location-management.component.scss'

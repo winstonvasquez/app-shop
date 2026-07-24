@@ -3,13 +3,13 @@ import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { PickingBatchService } from '../../services/picking-batch.service';
 import { PickingBatch } from '../../models/picking.model';
-import { ButtonComponent } from '@shared/components';
+import { ButtonComponent, CatalogSelectComponent } from '@shared/components';
 import { NOTIFICATION_DURATION } from '@shared/constants/ui.constants';
 
 @Component({
     selector: 'app-batch-picking',
     standalone: true,
-    imports: [ReactiveFormsModule, ButtonComponent],
+    imports: [ReactiveFormsModule, ButtonComponent, CatalogSelectComponent],
     templateUrl: './batch-picking.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
 })

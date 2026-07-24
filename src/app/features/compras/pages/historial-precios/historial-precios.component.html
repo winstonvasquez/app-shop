@@ -13,13 +13,10 @@
       <div class="flex gap-3 items-end flex-wrap">
         <div>
           <label class="input-label">Buscar por</label>
-          <select class="form-input"
-                  [value]="tipoBusqueda()"
-                  (change)="tipoBusqueda.set($any($event.target).value); busquedaValor.set('')">
-            <option value="sku">SKU</option>
-            <option value="producto">ID Producto</option>
-            <option value="proveedor">ID Proveedor</option>
-          </select>
+          <app-catalog-select tabla="TIPO_BUSQUEDA_HISTORIAL_PRECIOS"
+              [ngModel]="tipoBusqueda()"
+              (ngModelChange)="tipoBusqueda.set($event); busquedaValor.set('')">
+          </app-catalog-select>
         </div>
         <div class="flex-1">
           <label class="input-label">
@@ -119,10 +116,7 @@
         </div>
         <div>
           <label class="input-label">Moneda</label>
-          <select class="form-input" formControlName="moneda">
-            <option value="PEN">PEN (S/)</option>
-            <option value="USD">USD ($)</option>
-          </select>
+          <app-catalog-select tabla="MONEDA" formControlName="moneda"></app-catalog-select>
         </div>
       </div>
       <div class="mb-4">

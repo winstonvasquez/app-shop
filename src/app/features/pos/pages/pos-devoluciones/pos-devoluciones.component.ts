@@ -1,6 +1,7 @@
 import { Component, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
 import { DecimalPipe, DatePipe } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { CatalogSelectComponent } from '@shared/components';
 import { PosVentaService } from '../../services/pos-venta.service';
 import { VentaPosResponse, DetalleVentaPosResponse, DevolucionPosResponse } from '../../models/venta-pos.model';
 
@@ -25,7 +26,7 @@ interface LineaDevolucion {
 @Component({
     selector: 'app-pos-devoluciones',
     standalone: true,
-    imports: [DecimalPipe, DatePipe, ReactiveFormsModule],
+    imports: [DecimalPipe, DatePipe, ReactiveFormsModule, CatalogSelectComponent],
     changeDetection: ChangeDetectionStrategy.OnPush,
     template: `
     <!-- Header -->
@@ -44,10 +45,7 @@ interface LineaDevolucion {
       </div>
       <div class="w-36">
         <label class="text-xs font-semibold text-subtle uppercase tracking-wide mb-1 block">Buscar por</label>
-        <select class="input-field !h-10" formControlName="tipoBusqueda">
-          <option value="ticket">N° Ticket</option>
-          <option value="id">ID de Venta</option>
-        </select>
+        <app-catalog-select class="input-field !h-10" tabla="TIPO_BUSQUEDA_VENTA" formControlName="tipoBusqueda"></app-catalog-select>
       </div>
       <button type="button" class="btn-primary !h-10 !px-5 shrink-0" (click)="buscarVenta()" [disabled]="buscando() || !puedeBuscar()">
         @if (buscando()) {

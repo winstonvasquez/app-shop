@@ -135,16 +135,9 @@
                         (click)="showFilterPanel.set(!showFilterPanel())">
                         {{ showFilterPanel() ? 'Ocultar filtros' : 'Filtros' }}
                     </ds-button>
-                    <select class="sort"
-                        [value]="sortBy() ?? '__placeholder__'"
-                        (change)="setSort($any($event.target).value)">
-                        <option value="__placeholder__" disabled>Seleccionar</option>
-                        <option value="">Más relevantes</option>
-                        <option value="sales">Más vendidos</option>
-                        <option value="price-asc">Menor precio</option>
-                        <option value="price-desc">Mayor precio</option>
-                        <option value="rating">Mejor valorados</option>
-                    </select>
+                    <app-catalog-select class="sort" tabla="CRITERIO_ORDEN_PRODUCTOS"
+                        [ngModel]="sortBy() ?? ''" (ngModelChange)="setSort($event)"
+                        placeholder="Más relevantes"></app-catalog-select>
                     <div class="view-toggle">
                         <button class="vbtn"
                             [class.is-active]="viewMode() === 'grid'"

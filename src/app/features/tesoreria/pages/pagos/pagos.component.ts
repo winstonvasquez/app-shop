@@ -9,7 +9,7 @@ import { DataTableComponent, TableColumn, TableAction } from '@shared/ui/tables/
 import { PageHeaderComponent } from '@shared/ui/layout/page-header/page-header.component';
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
 import { DatePickerComponent } from '@shared/ui/forms/date-picker/date-picker.component';
-import { ButtonComponent } from '@shared/components';
+import { ButtonComponent, CatalogSelectComponent } from '@shared/components';
 import { PagosService } from '../../services/pagos.service';
 import { AuthService } from '@core/auth/auth.service';
 import { Payment, PaymentRequest, Page } from '../../models/tesoreria.model';
@@ -25,7 +25,7 @@ import { environment } from '@env/environment';
     imports: [
         DecimalPipe, ReactiveFormsModule,
         DrawerComponent, DataTableComponent, PageHeaderComponent, FormFieldComponent, DatePickerComponent,
-        ButtonComponent
+        ButtonComponent, CatalogSelectComponent
     ],
     templateUrl: './pagos.component.html'
 })
@@ -55,19 +55,6 @@ export class PagosComponent implements OnInit {
         metodoPago:            ['TRANSFERENCIA', Validators.required],
         fechaSolicitud:        ['', Validators.required],
     });
-
-    readonly tipoPagoOptions = [
-        { value: 'PROVEEDOR', label: 'Proveedor' },
-        { value: 'NOMINA',    label: 'Nómina' },
-        { value: 'IMPUESTO',  label: 'Impuesto' },
-        { value: 'OTRO',      label: 'Otro' },
-    ];
-
-    readonly metodoPagoOptions = [
-        { value: 'TRANSFERENCIA', label: 'Transferencia Bancaria' },
-        { value: 'CHEQUE',        label: 'Cheque' },
-        { value: 'EFECTIVO',      label: 'Efectivo' },
-    ];
 
     countPendientes   = computed(() => this.pagos().filter(p => p.estado === 'PENDING').length);
     countAprobados    = computed(() => this.pagos().filter(p => p.estado === 'APPROVED').length);

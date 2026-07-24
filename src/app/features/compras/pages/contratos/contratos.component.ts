@@ -5,7 +5,7 @@ import { of } from 'rxjs';
 import { environment } from '@env/environment';
 import { AuthService } from '@core/auth/auth.service';
 import { MONEDA } from '@shared/constants/sunat.constants';
-import { ButtonComponent } from '@shared/components';
+import { ButtonComponent, CatalogSelectComponent } from '@shared/components';
 import { DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent, PaginationEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 
@@ -30,7 +30,7 @@ interface ContratoDto {
 @Component({
     selector: 'app-contratos',
     standalone: true,
-    imports: [ReactiveFormsModule, ButtonComponent, DataTableComponent],
+    imports: [ReactiveFormsModule, ButtonComponent, CatalogSelectComponent, DataTableComponent],
     templateUrl: './contratos.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
 })

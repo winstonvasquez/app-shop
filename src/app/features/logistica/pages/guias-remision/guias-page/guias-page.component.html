@@ -70,10 +70,7 @@
         </div>
         <div class="form-field-wrapper">
           <label class="input-label">Modalidad *</label>
-          <select class="form-input" formControlName="modalidadTraslado">
-            <option value="01">01 — Transporte Público</option>
-            <option value="02">02 — Transporte Privado</option>
-          </select>
+          <app-catalog-select tabla="MODALIDAD_TRASLADO_SUNAT" formControlName="modalidadTraslado"></app-catalog-select>
         </div>
         <div class="form-field-wrapper">
           <label class="input-label">Peso Bruto Total (kg)</label>

@@ -91,12 +91,7 @@
 
             <div>
                 <label class="input-label">Estado</label>
-                <select class="form-input" formControlName="estado">
-                    <option value="ACTIVO">Activo</option>
-                    <option value="INACTIVO">Inactivo</option>
-                    <option value="SUSPENDIDO">Suspendido</option>
-                    <option value="CESADO">Cesado</option>
-                </select>
+                <app-catalog-select tabla="ESTADO_EMPLEADO" formControlName="estado"></app-catalog-select>
             </div>
         </app-admin-form-section>
 

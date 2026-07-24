@@ -10,6 +10,7 @@ import {
     DsAccountShellComponent,
     DsButtonComponent,
 } from '@shared/ui/ds';
+import { CatalogSelectComponent } from '@shared/components';
 
 interface UserProfile {
     id: number;
@@ -31,6 +32,7 @@ interface UserProfile {
         LucideAngularModule,
         DsAccountShellComponent,
         DsButtonComponent,
+        CatalogSelectComponent,
     ],
     templateUrl: './account-profile.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,

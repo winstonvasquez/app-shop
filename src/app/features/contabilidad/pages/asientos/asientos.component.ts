@@ -14,6 +14,7 @@ import { CuentaService, CuentaContable } from '../../services/cuenta.service';
 import { PeriodoService, PeriodoContable } from '../../services/periodo.service';
 import { Asiento, AsientoRequest, MovimientoRequest } from '../../models/asiento.model';
 import { PAGINATION } from '@shared/constants/app.constants';
+import { CatalogSelectComponent } from '@shared/components';
 
 interface LineaForm {
     cuentaId: string;
@@ -28,7 +29,7 @@ interface LineaForm {
     selector: 'app-asientos',
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [DecimalPipe, FormsModule, DrawerComponent, DataTableComponent],
+    imports: [DecimalPipe, FormsModule, DrawerComponent, DataTableComponent, CatalogSelectComponent],
     template: `
         <div class="page-header">
             <div>
@@ -59,10 +60,7 @@ interface LineaForm {
                 </div>
                 <div>
                     <label class="input-label">Tipo *</label>
-                    <select class="input-field" [(ngModel)]="form.tipo">
-                        <option value="MANUAL">Manual</option>
-                        <option value="CIERRE">Cierre</option>
-                    </select>
+                    <app-catalog-select tabla="TIPO_ASIENTO_CONTABLE" [(ngModel)]="form.tipo"></app-catalog-select>
                 </div>
                 <div>
                     <label class="input-label">Glosa *</label>

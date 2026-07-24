@@ -69,11 +69,7 @@
             <!-- Sección: Programación -->
             <app-admin-form-section title="Programación" [columns]="2">
                 <app-form-field label="Frecuencia" [required]="true" [error]="err('frecuencia')">
-                    <select class="form-input" formControlName="frecuencia">
-                        @for (f of frecuencias; track f) {
-                            <option [value]="f">{{ frecuenciaLabel(f) }}</option>
-                        }
-                    </select>
+                    <app-catalog-select tabla="FRECUENCIA_RECURRENCIA" formControlName="frecuencia"></app-catalog-select>
                 </app-form-field>
                 <app-form-field label="Día del mes (1–31)" [required]="true" [error]="err('diaEjecucion')">
                     <input class="form-input" type="number" min="1" max="31"
@@ -111,10 +107,7 @@
                             </app-form-field>
                             <app-form-field label="Tipo" [required]="true"
                                             [error]="errLinea(i, 'movementType')">
-                                <select class="form-input" formControlName="movementType">
-                                    <option value="DEBE">DEBE</option>
-                                    <option value="HABER">HABER</option>
-                                </select>
+                                <app-catalog-select tabla="TIPO_MOVIMIENTO_CONTABLE" formControlName="movementType"></app-catalog-select>
                             </app-form-field>
                             <app-form-field label="Monto S/" [required]="true"
                                             [error]="errLinea(i, 'amount')">

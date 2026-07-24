@@ -48,11 +48,8 @@
     <div class="grid grid-cols-2 gap-4 mb-4">
         <div>
             <label class="input-label">Tipo de transacción *</label>
-            <select class="form-input" [ngModel]="tipoTransaccion()" (ngModelChange)="tipoTransaccion.set($event)">
-                @for (t of tiposTransaccion; track t) {
-                    <option [value]="t">{{ t }}</option>
-                }
-            </select>
+            <app-catalog-select tabla="TIPO_TRANSACCION"
+                    [ngModel]="tipoTransaccion()" (ngModelChange)="tipoTransaccion.set($event)"></app-catalog-select>
         </div>
         <div>
             <label class="input-label">Nombre *</label>
@@ -93,21 +90,14 @@
                                        (ngModelChange)="actualizarDetalle(i, 'codigoCuenta', $event)" />
                             </td>
                             <td class="table-cell">
-                                <select class="form-input py-1"
+                                <app-catalog-select tabla="CAMPO_ORIGEN_REGLA_ASIENTO"
                                         [ngModel]="d.campoOrigen"
-                                        (ngModelChange)="actualizarDetalle(i, 'campoOrigen', $event)">
-                                    @for (c of camposOrigen; track c) {
-                                        <option [value]="c">{{ c }}</option>
-                                    }
-                                </select>
+                                        (ngModelChange)="actualizarDetalle(i, 'campoOrigen', $event)"></app-catalog-select>
                             </td>
                             <td class="table-cell">
-                                <select class="form-input py-1"
+                                <app-catalog-select tabla="TIPO_MOVIMIENTO_CONTABLE"
                                         [ngModel]="d.movimientoTipo"
-                                        (ngModelChange)="actualizarDetalle(i, 'movimientoTipo', $event)">
-                                    <option value="DEBE">DEBE</option>
-                                    <option value="HABER">HABER</option>
-                                </select>
+                                        (ngModelChange)="actualizarDetalle(i, 'movimientoTipo', $event)"></app-catalog-select>
                             </td>
                             <td class="table-cell">
                                 <input class="form-input py-1 w-20"

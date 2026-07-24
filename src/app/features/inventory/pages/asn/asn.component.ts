@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators, FormGroup, FormControl } from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule, FormsModule, Validators, FormGroup, FormControl } from '@angular/forms';
 import {
     InventoryApiService, Asn, CreateAsnLineRequest, ReceiveAsnLine
 } from '../../services/inventory-api.service';
@@ -10,7 +10,7 @@ import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/p
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
 import { DateInputComponent } from '@shared/ui/forms/date-input/date-input.component';
-import { ButtonComponent } from '@shared/components';
+import { ButtonComponent, CatalogSelectComponent } from '@shared/components';
 import { ProductLookupComponent } from '../../components/product-lookup/product-lookup.component';
 import { ProductResponse } from '@core/models/product.model';
 import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
@@ -34,9 +34,9 @@ type AsnRow = Asn & { warehouseName: string };
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
-        ReactiveFormsModule, DataTableComponent, DrawerComponent,
+        ReactiveFormsModule, FormsModule, DataTableComponent, DrawerComponent,
         PageHeaderComponent, AlertComponent, FormFieldComponent, DateInputComponent,
-        ButtonComponent, ProductLookupComponent
+        ButtonComponent, ProductLookupComponent, CatalogSelectComponent
     ],
     template: `
         <div class="page-container">
@@ -52,12 +52,11 @@ type AsnRow = Asn & { warehouseName: string };
             <div class="filters-bar">
                 <div class="filter-field">
                     <label class="input-label">Estado</label>
-                    <select class="form-input" style="min-width:200px" (change)="onFilterStatus($event)">
-                        <option value="">Todos</option>
-                        <option value="PENDIENTE">Pendiente</option>
-                        <option value="CONFORME">Conforme</option>
-                        <option value="CON_DIFERENCIAS">Con diferencias</option>
-                    </select>
+                    <app-catalog-select tabla="ESTADO_ASN" style="min-width:200px"
+                        [ngModel]="filterStatus()"
+                        (ngModelChange)="onFilterStatus($event)"
+                        placeholder="Todos">
+                    </app-catalog-select>
                 </div>
             </div>
 
@@ -315,8 +314,8 @@ export class AsnComponent {
         });
     }
 
-    onFilterStatus(event: Event): void {
-        this.filterStatus.set((event.target as HTMLSelectElement).value);
+    onFilterStatus(value: string): void {
+        this.filterStatus.set(value);
         this.currentPage.set(0);
         this.load();
     }

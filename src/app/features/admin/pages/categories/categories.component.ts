@@ -13,7 +13,7 @@ import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.compo
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
-import { ButtonComponent } from '@shared/components';
+import { ButtonComponent, CatalogSelectComponent } from '@shared/components';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
 
@@ -27,7 +27,8 @@ import { environment } from '@env/environment';
     DrawerComponent,
     PageHeaderComponent,
     AlertComponent,
-    ButtonComponent
+    ButtonComponent,
+    CatalogSelectComponent
   ],
   templateUrl: './categories.component.html',
   styleUrl: './categories.component.scss'

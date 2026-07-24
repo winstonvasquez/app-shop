@@ -13,7 +13,7 @@ import { TranslatePipe } from '@ngx-translate/core';
 import { of } from 'rxjs';
 import { FacturaProveedorService } from '../../services/factura-proveedor.service';
 import { FacturaProveedor, RegistrarFacturaRequest } from '../../models/factura-proveedor.model';
-import { ButtonComponent } from '@shared/components';
+import { ButtonComponent, CatalogSelectComponent } from '@shared/components';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
@@ -42,6 +42,7 @@ import { PAGINATION } from '@shared/constants/app.constants';
         PageHeaderComponent,
         AlertComponent,
         DataTableComponent,
+        CatalogSelectComponent,
     ],
     templateUrl: './facturas-proveedor.component.html',
 })

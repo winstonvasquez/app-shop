@@ -19,7 +19,7 @@ import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.compo
 import { AdminFormSectionComponent } from '@shared/ui/forms/admin-form-section/admin-form-section.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
-import { ButtonComponent } from '@shared/components';
+import { ButtonComponent, CatalogSelectComponent } from '@shared/components';
 import { MONEDA, CURRENCY_DISPLAY } from '@shared/constants/sunat.constants';
 
 @Component({
@@ -36,6 +36,7 @@ import { MONEDA, CURRENCY_DISPLAY } from '@shared/constants/sunat.constants';
         PageHeaderComponent,
         AlertComponent,
         ButtonComponent,
+        CatalogSelectComponent,
     ],
     templateUrl: './contract-list.component.html',
 })

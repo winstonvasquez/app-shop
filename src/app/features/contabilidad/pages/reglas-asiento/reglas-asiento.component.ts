@@ -1,7 +1,7 @@
 import { Component, inject, signal, computed, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
-import { ButtonComponent } from '@shared/components';
+import { ButtonComponent, CatalogSelectComponent } from '@shared/components';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { DataTableComponent, TableColumn, TableAction, PaginationEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
@@ -14,7 +14,7 @@ import {
     selector: 'app-reglas-asiento',
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [FormsModule, ButtonComponent, DrawerComponent, DataTableComponent],
+    imports: [FormsModule, ButtonComponent, DrawerComponent, DataTableComponent, CatalogSelectComponent],
     templateUrl: './reglas-asiento.component.html',
 })
 export class ReglasAsientoComponent implements OnInit {
@@ -102,9 +102,6 @@ export class ReglasAsientoComponent implements OnInit {
         { codigoCuenta: '', campoOrigen: 'BASE', movimientoTipo: 'DEBE', porcentaje: 100, orden: 1 },
         { codigoCuenta: '', campoOrigen: 'BASE', movimientoTipo: 'HABER', porcentaje: 100, orden: 2 },
     ]);
-
-    readonly tiposTransaccion: TransactionType[] = ['VENTA', 'COMPRA', 'NOMINA', 'TESORERIA', 'INVENTARIO', 'LOGISTICA'];
-    readonly camposOrigen = ['TOTAL', 'BASE', 'IGV', 'ISC', 'OTROS_CARGOS'] as const;
 
     ngOnInit() { this.cargar(); }
 

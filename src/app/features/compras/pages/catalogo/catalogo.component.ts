@@ -7,7 +7,7 @@ import { AuthService } from '@core/auth/auth.service';
 import { MONEDA } from '@shared/constants/sunat.constants';
 import { ProveedorService } from '../../services/proveedor.service';
 import { Proveedor } from '../../models/proveedor.model';
-import { ButtonComponent } from '@shared/components';
+import { ButtonComponent, CatalogSelectComponent } from '@shared/components';
 
 interface ProveedorHomologado {
     id: string;
@@ -41,7 +41,7 @@ interface CatalogoPage {
 @Component({
     selector: 'app-catalogo',
     standalone: true,
-    imports: [DecimalPipe, ReactiveFormsModule, ButtonComponent],
+    imports: [DecimalPipe, ReactiveFormsModule, ButtonComponent, CatalogSelectComponent],
     templateUrl: './catalogo.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
 })

@@ -17,7 +17,7 @@ import { PAGINATION } from '@shared/constants/app.constants';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
-import { ButtonComponent } from '@shared/components';
+import { ButtonComponent, CatalogSelectComponent } from '@shared/components';
 import {
     DataTableComponent,
     TableColumn,
@@ -41,6 +41,7 @@ import { environment } from '@env/environment';
         AlertComponent,
         ButtonComponent,
         DataTableComponent,
+        CatalogSelectComponent,
     ],
     templateUrl: './devoluciones.component.html',
 })
