@@ -2,12 +2,14 @@ import { Component, OnInit, inject, signal, ChangeDetectionStrategy } from '@ang
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { EmployeeService } from '../../services/employee.service';
+import { CatalogSelectComponent } from '@shared/components';
 
 @Component({
     selector: 'app-employee-form',
     standalone: true,
     imports: [
-        ReactiveFormsModule
+        ReactiveFormsModule,
+        CatalogSelectComponent
     ],
     template: `
         <div class="form-container">
@@ -82,12 +84,7 @@ import { EmployeeService } from '../../services/employee.service';
 
                             <div class="form-group">
                                 <label for="estado">Estado</label>
-                                <select id="estado" class="form-control" formControlName="estado">
-                                    <option value="ACTIVO">Activo</option>
-                                    <option value="INACTIVO">Inactivo</option>
-                                    <option value="SUSPENDIDO">Suspendido</option>
-                                    <option value="CESADO">Cesado</option>
-                                </select>
+                                <app-catalog-select tabla="ESTADO_EMPLEADO" formControlName="estado" />
                             </div>
                         </div>
 
@@ -109,6 +106,20 @@ import { EmployeeService } from '../../services/employee.service';
                                     class="form-control" 
                                     formControlName="area">
                             </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="sistemaPrevisional">Sistema Previsional</label>
+                                <app-catalog-select tabla="SISTEMA_PREVISIONAL" formControlName="sistemaPrevisional" />
+                            </div>
+
+                            @if (employeeForm.get('sistemaPrevisional')?.value === 'AFP') {
+                                <div class="form-group">
+                                    <label for="afpNombre">AFP</label>
+                                    <app-catalog-select tabla="AFP" formControlName="afpNombre" placeholder="Seleccione una AFP…" />
+                                </div>
+                            }
                         </div>
 
                         <div class="form-row">
@@ -202,6 +213,8 @@ export class EmployeeFormComponent implements OnInit {
         fechaIngreso: ['', Validators.required],
         cargo: [''],
         area: [''],
+        sistemaPrevisional: ['ONP'],
+        afpNombre: [''],
         email: ['', Validators.email],
         telefono: [''],
         estado: ['ACTIVO']
@@ -227,6 +240,8 @@ export class EmployeeFormComponent implements OnInit {
                 fechaIngreso: employee.fechaIngreso,
                 cargo: employee.cargo,
                 area: employee.area,
+                sistemaPrevisional: employee.sistemaPrevisional ?? 'ONP',
+                afpNombre: employee.afpNombre ?? '',
                 email: employee.email,
                 telefono: employee.telefono,
                 estado: employee.estado
