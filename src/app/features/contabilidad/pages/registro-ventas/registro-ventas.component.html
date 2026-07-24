@@ -69,6 +69,7 @@
         searchPlaceholder="Buscar por serie, número, cliente o RUC..."
         [exportable]="true"
         exportFileName="registro-ventas"
+        [exportConfig]="exportConfig"
         [currentPage]="currentPage()"
         [pageSize]="pageSize()"
         [totalElements]="ventasFiltradas().length"

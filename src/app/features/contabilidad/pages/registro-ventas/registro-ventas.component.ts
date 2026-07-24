@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { PeriodoService, PeriodoContable } from '../../services/periodo.service';
 import { ExportService } from '@shared/services/export.service';
+import { BackendExportService, BackendExportConfig } from '@shared/services/backend-export.service';
 import { PleService } from '../../services/ple.service';
 import { environment } from '@env/environment';
 import { ButtonComponent } from '@shared/components';
@@ -34,6 +35,7 @@ export class RegistroVentasComponent implements OnInit {
     private http = inject(HttpClient);
     private periodoService = inject(PeriodoService);
     private exportService = inject(ExportService);
+    private backendExportService = inject(BackendExportService);
     private pleService = inject(PleService);
 
     periodos = signal<PeriodoContable[]>([]);
@@ -79,6 +81,19 @@ export class RegistroVentasComponent implements OnInit {
     readonly totalVentas = computed(() =>
         this.ventas().filter(v => v.estado !== 'ANULADO').reduce((s, v) => s + v.total, 0)
     );
+
+    /**
+     * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios
+     * (respeta el mismo filtro de periodo que la lista).
+     * Ver GET .../registro-ventas/export (microshopcontabilidad).
+     */
+    readonly exportConfig: BackendExportConfig = {
+        url: `${environment.apiUrls.accounting}/api/v1/contabilidad/registro-ventas/export`,
+        filename: 'registro-ventas',
+        params: () => ({
+            periodoId: this.periodoSeleccionado(),
+        }),
+    };
 
     columns: TableColumn<VentaPLE>[] = [
         {
@@ -173,13 +188,8 @@ export class RegistroVentasComponent implements OnInit {
     }
 
     exportarCSV() {
-        const cabecera = ['Fecha', 'Tipo', 'Serie', 'Número', 'RUC/DNI', 'Cliente', 'Base Imp.', 'IGV', 'Total', 'Estado'];
-        const filas = this.ventas().map(v => [
-            v.fecha, v.tipoComprobante, v.serie, v.numero,
-            v.rucCliente, v.razonSocial,
-            String(v.baseImponible), String(v.igv), String(v.total), v.estado
-        ]);
-        this.exportService.exportCsv([cabecera, ...filas], 'registro-ventas');
+        // Exportación SERVER-SIDE (mismo endpoint /export que exportConfig, formato csv).
+        this.backendExportService.download(this.exportConfig, 'csv');
     }
 
     onSearchTerm(term: string) {
