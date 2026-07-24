@@ -13,17 +13,12 @@
       <div class="flex gap-3 items-end">
         <div class="flex-1">
           <label class="input-label">Proveedor</label>
-          <select class="form-input"
-                  [value]="selectedProveedor()"
-                  (change)="selectedProveedor.set($any($event.target).value)">
-            <option value="">Seleccionar proveedor...</option>
-            @for (p of proveedores(); track p.id) {
-              <option [value]="p.id">{{ p.razonSocial }}</option>
-            }
-          </select>
+          <app-server-search-select [dataSource]="proveedorSource"
+                                    [formControl]="filtroProveedorId"
+                                    placeholder="Buscar proveedor por nombre o RUC…" />
         </div>
         <app-button label="Ver Historial" variant="secondary" icon="search"
-                    [disabled]="!selectedProveedor()" (click)="buscarEvaluaciones()" />
+                    [disabled]="!filtroProveedorId.value" (click)="buscarEvaluaciones()" />
       </div>
     </div>
   </div>
@@ -90,12 +85,9 @@
     <form [formGroup]="form" (ngSubmit)="guardar()">
       <div class="mb-4">
         <label class="input-label">Proveedor *</label>
-        <select class="form-input" formControlName="proveedorId">
-          <option value="">Seleccionar...</option>
-          @for (p of proveedores(); track p.id) {
-            <option [value]="p.id">{{ p.razonSocial }}</option>
-          }
-        </select>
+        <app-server-search-select [dataSource]="proveedorSource"
+                                  formControlName="proveedorId"
+                                  placeholder="Buscar proveedor por nombre o RUC…" />
       </div>
 
       @for (criterio of ['puntajeEntrega', 'puntajeCalidad', 'puntajePrecio', 'puntajeServicio']; track criterio) {

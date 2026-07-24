@@ -50,10 +50,3 @@ export interface TrainingParticipationRequest {
     notaFinal?: number;
     comentarios?: string;
 }
-
-export const TRAINING_STATUS_LABELS: Record<TrainingStatus, string> = {
-    PLANIFICADO: 'Planificado',
-    EN_CURSO: 'En Curso',
-    COMPLETADO: 'Completado',
-    CANCELADO: 'Cancelado',
-};

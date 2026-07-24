@@ -10,9 +10,11 @@ import {
 import { ReactiveFormsModule, FormBuilder, Validators, FormArray, FormGroup } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
-import { of } from 'rxjs';
+import { toObservable } from '@angular/core/rxjs-interop';
+import { map } from 'rxjs';
 import { CotizacionService } from '../../services/cotizacion.service';
 import { AuthService } from '@core/auth/auth.service';
+import { CatalogService } from '@core/services/catalog.service';
 import { PAGINATION } from '@shared/constants/app.constants';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
@@ -54,6 +56,7 @@ export class CotizacionesComponent implements OnInit {
     private readonly authService = inject(AuthService);
     private readonly fb = inject(FormBuilder);
     private readonly cdr = inject(ChangeDetectorRef);
+    private readonly catalog = inject(CatalogService);
 
     cotizaciones = signal<CotizacionResumen[]>([]);
     selectedCotizacion = signal<CotizacionResumen | null>(null);
@@ -91,15 +94,6 @@ export class CotizacionesComponent implements OnInit {
         { label: 'Cotizaciones' },
     ];
 
-    estadoOptions = [
-        { value: 'CREADA', label: 'Creada' },
-        { value: 'ENVIADA', label: 'Enviada' },
-        { value: 'EN_RESPUESTA', label: 'En Respuesta' },
-        { value: 'ADJUDICADA', label: 'Adjudicada' },
-        { value: 'CONVERTIDA_OC', label: 'Convertida en OC' },
-        { value: 'CANCELADA', label: 'Cancelada' },
-    ];
-
     columns: TableColumn<CotizacionResumen>[] = [
         { key: 'codigo', label: 'Código' },
         { key: 'titulo', label: 'Título' },
@@ -107,7 +101,7 @@ export class CotizacionesComponent implements OnInit {
             key: 'estado',
             label: 'Estado',
             html: true,
-            render: (row) => `<span class="${this.getBadgeClass(row.estado)}">${this.getEstadoLabel(row.estado)}</span>`,
+            render: (row) => `<span class="${this.getBadgeClass(row.estado)}">${this.catalog.label('ESTADO_COTIZACION', row.estado)}</span>`,
         },
         { key: 'fechaEmision', label: 'Emisión' },
         { key: 'fechaVencimiento', label: 'Vencimiento' },
@@ -154,7 +148,9 @@ export class CotizacionesComponent implements OnInit {
         {
             field: 'estado',
             label: 'Todos los estados',
-            options: of(this.estadoOptions.map((o) => ({ value: o.value, label: o.label }))),
+            options: toObservable(this.catalog.options('ESTADO_COTIZACION')).pipe(
+                map((o) => o.map((x) => ({ value: x.codigo, label: x.valor })))
+            ),
         },
     ];
 
@@ -369,10 +365,6 @@ export class CotizacionesComponent implements OnInit {
         }
     }
 
-    getEstadoLabel(estado: string): string {
-        return this.estadoOptions.find((o) => o.value === estado)?.label ?? estado;
-    }
-
     isMinPrecio(precio: number | null, precios: (number | null)[]): boolean {
         if (precio === null) return false;
         const valid = precios.filter((p): p is number => p !== null);
@@ -389,3 +381,4 @@ export class CotizacionesComponent implements OnInit {
         });
     }
 }
+

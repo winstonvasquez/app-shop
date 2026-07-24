@@ -53,12 +53,9 @@
             <label class="input-label">
                 Empleado <span style="color: var(--color-error)">*</span>
             </label>
-            <select class="form-input" formControlName="employeeId">
-                <option [ngValue]="null">— Seleccione un empleado —</option>
-                @for (emp of employees(); track emp.id) {
-                    <option [ngValue]="emp.id">{{ emp.nombres }} {{ emp.apellidos }}</option>
-                }
-            </select>
+            <app-server-search-select [dataSource]="employeeSource"
+                                      formControlName="employeeId"
+                                      placeholder="Buscar empleado por nombre o código…" />
             @if (getControl('vacation','employeeId').invalid && getControl('vacation','employeeId').touched) {
                 <span class="input-error-message">Seleccione un empleado</span>
             }

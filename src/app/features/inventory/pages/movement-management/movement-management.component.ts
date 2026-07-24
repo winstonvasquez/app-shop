@@ -5,8 +5,9 @@ import { InventoryApiService, PutawaySuggestion } from '../../services/inventory
 import {
     InventoryMovement, InventoryMovementRequest, InventoryMovementType, Warehouse
 } from '../../models/inventory.models';
-import { of, map } from 'rxjs';
+import { map } from 'rxjs';
 import { toObservable } from '@angular/core/rxjs-interop';
+import { CatalogService } from '@core/services/catalog.service';
 import { DataTableComponent, TableColumn, PaginationEvent, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
@@ -37,6 +38,7 @@ import { environment } from '@env/environment';
 export class MovementManagementComponent {
     private readonly api = inject(InventoryApiService);
     private readonly fb = inject(FormBuilder);
+    private readonly catalog = inject(CatalogService);
 
     movements = signal<InventoryMovement[]>([]);
     warehouses = signal<Warehouse[]>([]);
@@ -68,27 +70,6 @@ export class MovementManagementComponent {
     putawaySearched = signal(false);
     selectedLocationLabel = signal<string | null>(null);
 
-    readonly movementTypes: InventoryMovementType[] = [
-        'ENTRADA_COMPRA', 'ENTRADA_DEVOLUCION', 'ENTRADA_AJUSTE',
-        'ENTRADA_TRANSFERENCIA', 'ENTRADA_PRODUCCION',
-        'SALIDA_VENTA', 'SALIDA_DEVOLUCION', 'SALIDA_AJUSTE',
-        'SALIDA_TRANSFERENCIA', 'SALIDA_CONSUMO', 'SALIDA_MERMA'
-    ];
-
-    readonly movementTypeLabels: Record<InventoryMovementType, string> = {
-        ENTRADA_COMPRA:        'Entrada — Compra',
-        ENTRADA_DEVOLUCION:    'Entrada — Devolución',
-        ENTRADA_AJUSTE:        'Entrada — Ajuste',
-        ENTRADA_TRANSFERENCIA: 'Entrada — Transferencia',
-        ENTRADA_PRODUCCION:    'Entrada — Producción',
-        SALIDA_VENTA:          'Salida — Venta',
-        SALIDA_DEVOLUCION:     'Salida — Devolución',
-        SALIDA_AJUSTE:         'Salida — Ajuste',
-        SALIDA_TRANSFERENCIA:  'Salida — Transferencia',
-        SALIDA_CONSUMO:        'Salida — Consumo',
-        SALIDA_MERMA:          'Salida — Merma'
-    };
-
     breadcrumbs: Breadcrumb[] = [
         { label: 'Admin', url: ROUTES.admin },
         { label: 'Inventario', url: '/admin/inventario/dashboard' },
@@ -105,7 +86,7 @@ export class MovementManagementComponent {
             render: (r) => {
                 const isEntry = r.movementType.startsWith('ENTRADA');
                 const cls = isEntry ? 'badge-success' : 'badge-error';
-                const label = this.movementTypeLabels[r.movementType] ?? r.movementType;
+                const label = this.catalog.label('TIPO_MOVIMIENTO_INVENTARIO', r.movementType);
                 return `<span class="badge ${cls}">${label}</span>`;
             }
         },
@@ -183,7 +164,8 @@ export class MovementManagementComponent {
         { field: 'warehouse', label: 'Todos los almacenes', options: toObservable(this.warehouses).pipe(
             map(list => list.map(w => ({ value: w.id, label: w.name }))) ) },
         { field: 'tipo', label: 'Todos los tipos',
-          options: of(this.movementTypes.map(t => ({ value: t, label: this.movementTypeLabels[t] }))) }
+          options: toObservable(this.catalog.options('TIPO_MOVIMIENTO_INVENTARIO'))
+            .pipe(map(o => o.map(x => ({ value: x.codigo, label: x.valor })))) }
     ];
 
     onFilterChangeEvent(event: FilterChangeEvent): void {

@@ -70,7 +70,7 @@
                 <div class="p-md bg-surface/5 border border-[var(--color-border)] rounded-md">
                     <h3 class="text-lg font-bold text-on mb-sm">Estado</h3>
                     <span class="badge badge-{{ badgeEstado(selectedRecepcion()?.estado ?? '') }}">
-                        {{ selectedRecepcion()?.estado }}
+                        {{ catalog.label('ESTADO_RECEPCION', selectedRecepcion()?.estado) }}
                     </span>
                     @if (selectedRecepcion()?.observaciones) {
                         <p class="text-sm text-subtle mt-md">

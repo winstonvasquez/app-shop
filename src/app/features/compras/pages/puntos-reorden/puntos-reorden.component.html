@@ -102,12 +102,7 @@
       </div>
       <div class="mb-4">
         <label class="input-label">Proveedor Preferido</label>
-        <select class="form-input" formControlName="proveedorId">
-          <option value="">Sin proveedor</option>
-          @for (p of proveedores(); track p.id) {
-            <option [value]="p.id">{{ p.razonSocial }}</option>
-          }
-        </select>
+        <app-server-search-select [dataSource]="proveedorSource" formControlName="proveedorId" placeholder="Buscar proveedor por nombre o RUC…" />
       </div>
       <div class="grid grid-cols-3 gap-3 mb-4">
         <div>

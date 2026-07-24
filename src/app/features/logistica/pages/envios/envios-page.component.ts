@@ -8,7 +8,8 @@ import { Envio, EnvioStatus, TrackingEvent } from '../../models/envio.model';
 import { Transportista } from '../../models/transportista.model';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { ButtonComponent } from '@shared/components';
-import { of } from 'rxjs';
+import { map } from 'rxjs';
+import { toObservable } from '@angular/core/rxjs-interop';
 import { DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { DateInputComponent } from '@shared/ui/forms/date-input/date-input.component';
@@ -20,16 +21,7 @@ import { PaginationChangeEvent } from '@shared/ui/pagination/pagination.componen
 import { PAGINATION } from '@shared/constants/app.constants';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
-
-const STATUS_MAP: Record<EnvioStatus, string> = {
-    PENDING_DISPATCH:  'Pendiente despacho',
-    DISPATCHED:        'Despachado',
-    IN_TRANSIT:        'En tránsito',
-    OUT_FOR_DELIVERY:  'En reparto',
-    DELIVERED:         'Entregado',
-    FAILED:            'Fallido',
-    RETURNED:          'Devuelto'
-};
+import { CatalogService } from '@core/services/catalog.service';
 
 @Component({
     selector: 'app-envios-page',
@@ -55,6 +47,7 @@ export class EnviosPageComponent implements OnInit {
     private readonly deliveryService     = inject(DeliveryService);
     private readonly authService         = inject(AuthService);
     private readonly fb                  = inject(FormBuilder);
+    private readonly catalog             = inject(CatalogService);
 
     // Data
     envios         = signal<Envio[]>([]);
@@ -91,19 +84,12 @@ export class EnviosPageComponent implements OnInit {
     totalElements = signal(0);
     totalPages    = signal(0);
 
-    readonly statusOptions: { value: EnvioStatus; label: string }[] = [
-        { value: 'PENDING_DISPATCH', label: 'Pendiente despacho' },
-        { value: 'DISPATCHED',       label: 'Despachado' },
-        { value: 'IN_TRANSIT',       label: 'En tránsito' },
-        { value: 'OUT_FOR_DELIVERY', label: 'En reparto' },
-        { value: 'DELIVERED',        label: 'Entregado' },
-        { value: 'FAILED',           label: 'Fallido' },
-        { value: 'RETURNED',         label: 'Devuelto' }
-    ];
-
     // Filtro de estado en el toolbar del data-table
     readonly estadoFilters: FilterConfig[] = [
-        { field: 'status', label: 'Todos los estados', options: of(this.statusOptions) }
+        { field: 'status', label: 'Todos los estados',
+          options: toObservable(this.catalog.options('ESTADO_ENVIO')).pipe(
+            map(o => o.map(x => ({ value: x.codigo, label: x.valor }))))
+        }
     ];
 
     breadcrumbs: Breadcrumb[] = [
@@ -122,7 +108,7 @@ export class EnviosPageComponent implements OnInit {
           render: (r) => r.estimatedDeliveryDate
             ? new Date(r.estimatedDeliveryDate).toLocaleDateString('es-PE') : '—' },
         { key: 'status', label: 'Estado', html: true,
-          render: (r) => `<span class="badge ${this.badgeStatus(r.status)}">${STATUS_MAP[r.status] ?? r.status}</span>` },
+          render: (r) => `<span class="badge ${this.badgeStatus(r.status)}">${this.catalog.label('ESTADO_ENVIO', r.status)}</span>` },
         { key: 'createdAt', label: 'Registrado',
           render: (r) => new Date(r.createdAt).toLocaleDateString('es-PE') }
     ];
@@ -351,5 +337,5 @@ export class EnviosPageComponent implements OnInit {
         return map[status] ?? 'badge-neutral';
     }
 
-    readonly statusMapLabel = STATUS_MAP;
+    readonly statusLabel = (status: EnvioStatus): string => this.catalog.label('ESTADO_ENVIO', status);
 }

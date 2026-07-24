@@ -1,7 +1,8 @@
-import { Component, ChangeDetectionStrategy, inject, input, output, signal } from '@angular/core';
+import { Component, ChangeDetectionStrategy, computed, inject, input, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
 import { CatalogSelectComponent } from '@shared/components';
+import { CatalogService } from '@core/services/catalog.service';
 import { PosCarritoService } from '../../services/pos-carrito.service';
 import { DescuentoTipo } from '../../models/catalogo-pos.model';
 import { MetodoPagoPos, PagoMixto, TipoCpe } from '../../models/venta-pos.model';
@@ -16,6 +17,7 @@ import { MetodoPagoPos, PagoMixto, TipoCpe } from '../../models/venta-pos.model'
 export class PosOrderPanelComponent {
 
     readonly carrito = inject(PosCarritoService);
+    private readonly catalog = inject(CatalogService);
 
     /** True mientras la venta se está procesando — deshabilita Cobrar (anti doble-venta). */
     readonly isProcessing = input(false);
@@ -29,25 +31,39 @@ export class PosOrderPanelComponent {
     /** Descuento máximo (%) que un cajero puede aplicar sin autorización de supervisor. */
     readonly MAX_DESCUENTO_SIN_AUTH = 10;
 
-    readonly paymentMethods: { id: MetodoPagoPos; label: string; icon: string; i18nKey: string }[] = [
-        { id: 'EFECTIVO', label: 'Efectivo',  icon: 'cash', i18nKey: 'pos.panel.cash' },
-        { id: 'TARJETA',  label: 'Tarjeta',   icon: 'card', i18nKey: 'pos.panel.card' },
-        { id: 'YAPE',     label: 'Yape',      icon: 'yape', i18nKey: 'pos.panel.yape' },
-        { id: 'PLIN',     label: 'Plin',      icon: 'plin', i18nKey: 'pos.panel.plin' },
-    ];
+    /** Icono e i18nKey por código no vienen del catálogo (solo lista válida + label ES) — se mantienen localmente. */
+    private readonly PAYMENT_ICON: Partial<Record<MetodoPagoPos, string>> = {
+        EFECTIVO: 'cash', TARJETA: 'card', YAPE: 'yape', PLIN: 'plin',
+    };
+    private readonly PAYMENT_I18N: Partial<Record<MetodoPagoPos, string>> = {
+        EFECTIVO: 'pos.panel.cash', TARJETA: 'pos.panel.card', YAPE: 'pos.panel.yape', PLIN: 'pos.panel.plin',
+    };
+    private readonly CPE_I18N: Record<TipoCpe, string> = {
+        BOLETA: 'pos.panel.boleta', FACTURA: 'pos.panel.factura', SIN_CPE: 'pos.panel.sinCpe',
+    };
 
-    readonly splitMethods: { id: Exclude<MetodoPagoPos, 'MIXTO'>; label: string; i18nKey: string }[] = [
-        { id: 'EFECTIVO', label: 'Efectivo', i18nKey: 'pos.panel.cash' },
-        { id: 'TARJETA',  label: 'Tarjeta',  i18nKey: 'pos.panel.card' },
-        { id: 'YAPE',     label: 'Yape',     i18nKey: 'pos.panel.yape' },
-        { id: 'PLIN',     label: 'Plin',     i18nKey: 'pos.panel.plin' },
-    ];
+    /** Métodos de pago disponibles como botón rápido (excluye MIXTO/GIFT_CARD, que tienen flujo propio). */
+    readonly paymentMethods = computed(() =>
+        this.catalog.options('METODO_PAGO_POS')()
+            .filter(o => o.codigo in this.PAYMENT_ICON)
+            .map(o => ({
+                id: o.codigo as MetodoPagoPos,
+                icon: this.PAYMENT_ICON[o.codigo as MetodoPagoPos] ?? 'cash',
+                i18nKey: this.PAYMENT_I18N[o.codigo as MetodoPagoPos] ?? o.valor,
+            }))
+    );
 
-    readonly cpeOptions: { id: TipoCpe; label: string; i18nKey: string }[] = [
-        { id: 'BOLETA',  label: 'Boleta',  i18nKey: 'pos.panel.boleta' },
-        { id: 'FACTURA', label: 'Factura', i18nKey: 'pos.panel.factura' },
-        { id: 'SIN_CPE', label: 'Sin CPE', i18nKey: 'pos.panel.sinCpe' },
-    ];
+    /** Métodos seleccionables por línea en pago dividido (mismo universo que paymentMethods). */
+    readonly splitMethods = computed(() =>
+        this.paymentMethods().map(m => ({ id: m.id as Exclude<MetodoPagoPos, 'MIXTO'>, i18nKey: m.i18nKey }))
+    );
+
+    readonly cpeOptions = computed(() =>
+        this.catalog.options('TIPO_CPE')().map(o => ({
+            id: o.codigo as TipoCpe,
+            i18nKey: this.CPE_I18N[o.codigo as TipoCpe] ?? o.valor,
+        }))
+    );
 
     /** ID de variante con popover de descuento abierto */
     readonly discountPopoverFor = signal<number | null>(null);

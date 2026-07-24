@@ -8,7 +8,8 @@ import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angu
 import { PositionService } from '../../services/position.service';
 import { DepartmentService } from '../../services/department.service';
 import { Position } from '../../models/position.model';
-import { ButtonComponent } from '@shared/components';
+import { ButtonComponent, ServerSearchSelectComponent } from '@shared/components';
+import { departmentSelectSource } from '../../components/select-sources';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
@@ -32,6 +33,7 @@ import { CURRENCY_DISPLAY } from '@shared/constants/sunat.constants';
         FormFieldComponent,
         PageHeaderComponent,
         AlertComponent,
+        ServerSearchSelectComponent,
     ],
     templateUrl: './position-list.component.html',
 })
@@ -43,7 +45,10 @@ export class PositionListComponent implements OnInit {
     // ── Data ─────────────────────────────────────────────────────────────────
     readonly loading     = this.positionService.loading;
     readonly positions   = this.positionService.positions;
+    // Se mantiene para el filtro de departamento del toolbar del data-table.
     readonly departments = this.departmentService.activeDepartments;
+    /** Fuente server-side del search-select de departamento del formulario. */
+    readonly departmentSource = departmentSelectSource(this.departmentService);
 
     // ── UI state ──────────────────────────────────────────────────────────────
     error        = signal<string | null>(null);

@@ -10,7 +10,8 @@ import {
 import { ReactiveFormsModule, FormBuilder, Validators, FormArray, FormGroup } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
-import { of } from 'rxjs';
+import { toObservable } from '@angular/core/rxjs-interop';
+import { map } from 'rxjs';
 import { FacturaProveedorService } from '../../services/factura-proveedor.service';
 import { FacturaProveedor, RegistrarFacturaRequest } from '../../models/factura-proveedor.model';
 import { ButtonComponent, CatalogSelectComponent } from '@shared/components';
@@ -29,6 +30,7 @@ import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
 import { MONEDA } from '@shared/constants/sunat.constants';
 import { PAGINATION } from '@shared/constants/app.constants';
+import { CatalogService } from '@core/services/catalog.service';
 
 @Component({
     selector: 'app-facturas-proveedor',
@@ -50,6 +52,7 @@ export class FacturasProveedorComponent implements OnInit {
     private readonly facturaService = inject(FacturaProveedorService);
     private readonly fb = inject(FormBuilder);
     private readonly cdr = inject(ChangeDetectorRef);
+    readonly catalog = inject(CatalogService);
 
     facturas = signal<FacturaProveedor[]>([]);
     selectedFactura = signal<FacturaProveedor | null>(null);
@@ -88,20 +91,6 @@ export class FacturasProveedorComponent implements OnInit {
         { label: 'Facturas Proveedor' },
     ];
 
-    estadoOptions = [
-        { value: 'PENDIENTE', label: 'Pendiente' },
-        { value: 'APROBADA', label: 'Aprobada' },
-        { value: 'RECHAZADA', label: 'Rechazada' },
-    ];
-
-    matchOptions = [
-        { value: 'OK_TOTAL', label: '✓ Match Total', cls: 'badge-success' },
-        { value: 'OK_PARCIAL', label: '~ Match Parcial', cls: 'badge-warning' },
-        { value: 'DIFERENCIA_PRECIO', label: '✗ Dif. Precio', cls: 'badge-error' },
-        { value: 'DIFERENCIA_CANTIDAD', label: '✗ Dif. Cantidad', cls: 'badge-error' },
-        { value: 'RECHAZADA', label: '✗ Rechazada', cls: 'badge-error' },
-    ];
-
     columns: TableColumn<FacturaProveedor>[] = [
         { key: 'proveedorNombre', label: 'Proveedor' },
         { key: 'factura', label: 'Factura', render: (row) => `${row.serie}-${row.numero}` },
@@ -112,14 +101,14 @@ export class FacturasProveedorComponent implements OnInit {
             key: 'estado',
             label: 'Estado',
             html: true,
-            render: (row) => `<span class="${this.getEstadoBadge(row.estado)}">${row.estado}</span>`,
+            render: (row) => `<span class="${this.getEstadoBadge(row.estado)}">${this.catalog.label('ESTADO_FACTURA_PROVEEDOR', row.estado)}</span>`,
         },
         {
             key: 'resultadoMatch',
             label: '3-Way Match',
             html: true,
             render: (row) =>
-                `<span class="${this.getMatchBadge(row.resultadoMatch)}">${this.getMatchLabel(row.resultadoMatch)}</span>`,
+                `<span class="${this.getMatchBadge(row.resultadoMatch)}">${this.catalog.label('RESULTADO_MATCH_3VIA', row.resultadoMatch)}</span>`,
         },
     ];
 
@@ -131,7 +120,9 @@ export class FacturasProveedorComponent implements OnInit {
         {
             field: 'estado',
             label: 'Todos los estados',
-            options: of(this.estadoOptions.map((o) => ({ value: o.value, label: o.label }))),
+            options: toObservable(this.catalog.options('ESTADO_FACTURA_PROVEEDOR')).pipe(
+                map((o) => o.map((x) => ({ value: x.codigo, label: x.valor })))
+            ),
         },
     ];
 
@@ -335,10 +326,6 @@ export class FacturasProveedorComponent implements OnInit {
         return match === 'OK_TOTAL' ? 'badge badge-success'
             : match === 'OK_PARCIAL' ? 'badge badge-warning'
             : 'badge badge-error';
-    }
-
-    getMatchLabel(match: string | undefined): string {
-        return this.matchOptions.find(o => o.value === match)?.label ?? (match ?? '—');
     }
 
     validarSunat(id: string): void {

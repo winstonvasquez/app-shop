@@ -1,10 +1,11 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { toObservable } from '@angular/core/rxjs-interop';
 import {
     FormBuilder, ReactiveFormsModule, Validators, FormGroup, FormArray, FormControl
 } from '@angular/forms';
 import { InventoryApiService } from '../../services/inventory-api.service';
 import { InventoryCount, InventoryCountRequest, InventoryCountStatus, Warehouse } from '../../models/inventory.models';
-import { of } from 'rxjs';
+import { map } from 'rxjs';
 import { DataTableComponent, TableColumn, TableAction, PaginationEvent, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
@@ -18,6 +19,7 @@ import { ProductLookupComponent } from '../../components/product-lookup/product-
 import { ProductResponse } from '@core/models/product.model';
 import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 import { ROUTES } from '@shared/constants/app.constants';
+import { CatalogService } from '@core/services/catalog.service';
 
 @Component({
     selector: 'app-inventory-count',
@@ -36,6 +38,7 @@ import { ROUTES } from '@shared/constants/app.constants';
 export class InventoryCountComponent {
     private readonly api = inject(InventoryApiService);
     private readonly fb = inject(FormBuilder);
+    private readonly catalog = inject(CatalogService);
 
     counts = signal<InventoryCount[]>([]);
     warehouses = signal<Warehouse[]>([]);
@@ -61,12 +64,6 @@ export class InventoryCountComponent {
         { label: 'Inventarios Físicos' }
     ];
 
-    readonly statusLabels: Record<InventoryCountStatus, string> = {
-        EN_PROCESO: 'En proceso',
-        CERRADO:    'Cerrado',
-        AJUSTADO:   'Ajustado'
-    };
-
     columns: TableColumn<InventoryCount>[] = [
         { key: 'countNumber', label: 'N°', width: '130px',
           render: (r) => r.countNumber ?? String(r.id) },
@@ -82,7 +79,7 @@ export class InventoryCountComponent {
                     CERRADO:    'badge-neutral',
                     AJUSTADO:   'badge-success'
                 };
-                return `<span class="badge ${cls[r.status]}">${this.statusLabels[r.status]}</span>`;
+                return `<span class="badge ${cls[r.status]}">${this.catalog.label('ESTADO_CONTEO_INVENTARIO', r.status)}</span>`;
             }
         }
     ];
@@ -198,11 +195,9 @@ export class InventoryCountComponent {
     }
 
     readonly estadoFilters: FilterConfig[] = [
-        { field: 'estado', label: 'Todos', options: of([
-            { value: 'EN_PROCESO', label: 'En proceso' },
-            { value: 'CERRADO', label: 'Cerrado' },
-            { value: 'AJUSTADO', label: 'Ajustado' }
-        ]) }
+        { field: 'estado', label: 'Todos', options: toObservable(this.catalog.options('ESTADO_CONTEO_INVENTARIO')).pipe(
+            map(o => o.map(x => ({ value: x.codigo, label: x.valor })))
+        ) }
     ];
 
     onFilterChangeEvent(event: FilterChangeEvent): void {

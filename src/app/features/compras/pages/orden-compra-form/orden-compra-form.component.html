@@ -25,20 +25,11 @@
                 <div class="card-body">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <app-form-field label="Proveedor" [required]="true" [control]="getControl('proveedorId')">
-                            <select class="form-input" formControlName="proveedorId">
-                                <option value="">Seleccionar proveedor...</option>
-                                @for (p of proveedores(); track p.id) {
-                                    <option [value]="p.id">{{ p.razonSocial }} ({{ p.ruc }})</option>
-                                }
-                            </select>
+                            <app-server-search-select [dataSource]="proveedorSource" formControlName="proveedorId" placeholder="Buscar proveedor por nombre o RUC…" />
                         </app-form-field>
 
                         <app-form-field label="Condición de Pago" [required]="true" [control]="getControl('condicionPago')">
-                            <select class="form-input" formControlName="condicionPago">
-                                @for (opt of condicionPagoOptions; track opt.value) {
-                                    <option [value]="opt.value">{{ opt.label }}</option>
-                                }
-                            </select>
+                            <app-catalog-select tabla="CONDICION_PAGO" formControlName="condicionPago" placeholder="— Seleccionar —" />
                         </app-form-field>
 
                         <app-form-field label="Fecha de Emisión" [required]="true" [control]="getControl('fechaEmision')">

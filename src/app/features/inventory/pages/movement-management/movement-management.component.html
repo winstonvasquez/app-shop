@@ -51,12 +51,8 @@
     <div class="drawer-form-grid">
       <div class="col-span-2">
         <label class="input-label">Tipo de Movimiento <span class="text-error">*</span></label>
-        <select class="form-input" formControlName="movementType">
-          <option value="">Seleccionar...</option>
-          @for (t of movementTypes; track t) {
-            <option [value]="t">{{ movementTypeLabels[t] }}</option>
-          }
-        </select>
+        <app-catalog-select tabla="TIPO_MOVIMIENTO_INVENTARIO" formControlName="movementType"
+          placeholder="Seleccionar..."></app-catalog-select>
       </div>
 
       <div>

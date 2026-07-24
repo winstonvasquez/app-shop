@@ -2,10 +2,11 @@ import {
     Component, OnInit, inject, signal,
     ChangeDetectionStrategy
 } from '@angular/core';
-import { of } from 'rxjs';
+import { toObservable } from '@angular/core/rxjs-interop';
+import { map } from 'rxjs';
 import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { EmployeeService } from '../../services/employee.service';
-import { Employee } from '../../models/employee.model';
+import { Employee, EmployeeRequest } from '../../models/employee.model';
 import { ButtonComponent, CatalogSelectComponent } from '@shared/components';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
@@ -18,6 +19,7 @@ import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/p
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { DateInputComponent } from '@shared/ui/forms/date-input/date-input.component';
 import { Router } from '@angular/router';
+import { CatalogService } from '@core/services/catalog.service';
 
 @Component({
     selector: 'app-employee-list',
@@ -42,6 +44,7 @@ export class EmployeeListComponent implements OnInit {
     private readonly employeeService = inject(EmployeeService);
     private readonly fb = inject(FormBuilder);
     private readonly router = inject(Router);
+    private readonly catalog = inject(CatalogService);
 
     // ── Data ─────────────────────────────────────────────────────────────────
     readonly loading   = this.employeeService.loading;
@@ -59,14 +62,14 @@ export class EmployeeListComponent implements OnInit {
     searchQuery  = signal('');
     filterEstado = signal('');
 
-    // Filtro de estado para el toolbar del data-table
+    // Filtro de estado para el toolbar del data-table (catálogo ESTADO_EMPLEADO)
     estadoFilters: FilterConfig[] = [
-        { field: 'estado', label: 'Todos los estados', options: of([
-            { value: 'ACTIVO', label: 'Activo' },
-            { value: 'INACTIVO', label: 'Inactivo' },
-            { value: 'SUSPENDIDO', label: 'Suspendido' },
-            { value: 'CESADO', label: 'Cesado' }
-        ]) }
+        {
+            field: 'estado', label: 'Todos los estados',
+            options: toObservable(this.catalog.options('ESTADO_EMPLEADO')).pipe(
+                map(o => o.map(x => ({ value: x.codigo, label: x.valor })))
+            ),
+        }
     ];
 
     /**
@@ -107,7 +110,7 @@ export class EmployeeListComponent implements OnInit {
         { key: 'positionName',   label: 'Puesto',       render: r => r.positionName ?? r.cargo ?? '—' },
         {
             key: 'estado', label: 'Estado', html: true,
-            render: r => `<span class="badge badge-${this.badgeEstado(r.estado)}">${r.estado}</span>`
+            render: r => `<span class="badge badge-${this.badgeEstado(r.estado)}">${this.catalog.label('ESTADO_EMPLEADO', r.estado)}</span>`
         },
     ];
 
@@ -223,8 +226,13 @@ export class EmployeeListComponent implements OnInit {
         this.submitError.set(null);
         try {
             const val = this.employeeForm.value as Record<string, unknown>;
-            if (this.editMode() && this.selectedEmployee()) {
-                await this.employeeService.updateEmployee(this.selectedEmployee()!.id, val as never);
+            const original = this.selectedEmployee();
+            if (this.editMode() && original) {
+                // PUT = reemplazo completo: mergeamos los campos del empleado original
+                // (género, dirección, educación, AFP, departamento/puesto/supervisor, etc.)
+                // con los editados en el form, para que el backend NO los sobrescriba a null.
+                const request = { ...original, ...val } as unknown as EmployeeRequest;
+                await this.employeeService.updateEmployee(original.id, request);
             } else {
                 await this.employeeService.createEmployee(val as never);
             }

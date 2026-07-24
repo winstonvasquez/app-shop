@@ -10,7 +10,8 @@ import {
 import { ReactiveFormsModule, FormBuilder, Validators, FormArray, FormGroup } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
-import { of } from 'rxjs';
+import { toObservable } from '@angular/core/rxjs-interop';
+import { map } from 'rxjs';
 import { DevolucionService } from '../../services/devolucion.service';
 import { CrearDevolucionRequest, Devolucion } from '../../models/devolucion.model';
 import { PAGINATION } from '@shared/constants/app.constants';
@@ -18,6 +19,7 @@ import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { ButtonComponent, CatalogSelectComponent } from '@shared/components';
+import { CatalogService } from '@core/services/catalog.service';
 import {
     DataTableComponent,
     TableColumn,
@@ -49,6 +51,7 @@ export class DevolucionesComponent implements OnInit {
     private readonly devolucionService = inject(DevolucionService);
     private readonly fb = inject(FormBuilder);
     private readonly cdr = inject(ChangeDetectorRef);
+    readonly catalog = inject(CatalogService);
 
     devoluciones = signal<Devolucion[]>([]);
     selected = signal<Devolucion | null>(null);
@@ -87,33 +90,17 @@ export class DevolucionesComponent implements OnInit {
         { label: 'Devoluciones' },
     ];
 
-    estadoOptions = [
-        { value: 'BORRADOR', label: 'Borrador' },
-        { value: 'ENVIADA', label: 'Enviada' },
-        { value: 'ACEPTADA', label: 'Aceptada' },
-        { value: 'RECHAZADA', label: 'Rechazada' },
-        { value: 'COMPLETADA', label: 'Completada' },
-    ];
-
-    motivoOptions = [
-        { value: 'PRODUCTO_DEFECTUOSO', label: 'Producto Defectuoso' },
-        { value: 'CANTIDAD_INCORRECTA', label: 'Cantidad Incorrecta' },
-        { value: 'PRECIO_INCORRECTO', label: 'Precio Incorrecto' },
-        { value: 'ENTREGA_TARDIA', label: 'Entrega Tardía' },
-        { value: 'OTRO', label: 'Otro' },
-    ];
-
     columns: TableColumn<Devolucion>[] = [
         { key: 'codigo', label: 'Código' },
         { key: 'ordenCompraCodigo', label: 'OC' },
         { key: 'proveedorNombre', label: 'Proveedor' },
-        { key: 'motivo', label: 'Motivo', render: (row) => this.getMotivoLabel(row.motivo) },
+        { key: 'motivo', label: 'Motivo', render: (row) => this.catalog.label('MOTIVO_DEVOLUCION_COMPRA', row.motivo) },
         { key: 'tipo', label: 'Tipo' },
         {
             key: 'estado',
             label: 'Estado',
             html: true,
-            render: (row) => `<span class="${this.getBadge(row.estado)}">${this.getEstadoLabel(row.estado)}</span>`,
+            render: (row) => `<span class="${this.getBadge(row.estado)}">${this.catalog.label('ESTADO_DEVOLUCION_COMPRA', row.estado)}</span>`,
         },
     ];
 
@@ -125,7 +112,9 @@ export class DevolucionesComponent implements OnInit {
         {
             field: 'estado',
             label: 'Todos los estados',
-            options: of(this.estadoOptions.map((o) => ({ value: o.value, label: o.label }))),
+            options: toObservable(this.catalog.options('ESTADO_DEVOLUCION_COMPRA')).pipe(
+                map((o) => o.map((x) => ({ value: x.codigo, label: x.valor })))
+            ),
         },
     ];
 
@@ -273,14 +262,6 @@ export class DevolucionesComponent implements OnInit {
             case 'RECHAZADA': return 'badge badge-error';
             default: return 'badge badge-neutral';
         }
-    }
-
-    getEstadoLabel(estado: string | undefined): string {
-        return this.estadoOptions.find(o => o.value === estado)?.label ?? (estado ?? '—');
-    }
-
-    getMotivoLabel(motivo: string | undefined): string {
-        return this.motivoOptions.find(o => o.value === motivo)?.label ?? (motivo ?? '—');
     }
 
     private createItemGroup(): FormGroup {

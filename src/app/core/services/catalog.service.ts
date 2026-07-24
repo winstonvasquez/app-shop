@@ -61,4 +61,18 @@ export class CatalogService {
         if (!codigo) return '';
         return this.cache.get(tabla)?.().find(o => o.codigo === codigo)?.valor ?? codigo;
     }
+
+    /**
+     * Devuelve un closure `(codigo) => label` que AUTO-PRIMA el catálogo (dispara el fetch
+     * la primera vez) y es reactivo. Pensado para los `render` fns de columnas del data-table:
+     * `{ key: 'estado', render: this.catalog.labelFn('ESTADO_CONTRATO') }`.
+     * La celda se re-renderiza sola al resolver el HTTP (lee el signal en el CD del data-table).
+     */
+    labelFn(tabla: string): (codigo: string | null | undefined) => string {
+        return (codigo) => {
+            const opts = this.options(tabla)();
+            if (!codigo) return '';
+            return opts.find(o => o.codigo === codigo)?.valor ?? codigo;
+        };
+    }
 }

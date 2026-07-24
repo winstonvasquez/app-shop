@@ -12,8 +12,8 @@
     <div class="mb-lg">
         <select class="form-input" style="width:220px" [value]="filterEstado()" (change)="onFilterEstado($event)">
             <option value="">Todos los estados</option>
-            @for (opt of estadoOptions; track opt.value) {
-                <option [value]="opt.value">{{ opt.label }}</option>
+            @for (opt of catalog.options('ESTADO_SOLICITUD_COMPRA')(); track opt.codigo) {
+                <option [value]="opt.codigo">{{ opt.valor }}</option>
             }
         </select>
     </div>
@@ -105,11 +105,7 @@
         <div class="mb-md" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
             <div>
                 <label class="input-label">Prioridad</label>
-                <select class="form-input" formControlName="prioridad">
-                    @for (opt of prioridadOptions; track opt.value) {
-                        <option [value]="opt.value">{{ opt.label }}</option>
-                    }
-                </select>
+                <app-catalog-select tabla="PRIORIDAD_SOLICITUD" formControlName="prioridad" placeholder="— Seleccionar —" />
             </div>
             <div>
                 <label class="input-label">Fecha Requerida</label>

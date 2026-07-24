@@ -44,7 +44,7 @@
             <div>
               <p class="input-label">Estado actual</p>
               <span class="badge" [class]="badgeStatus(selected()!.status)">
-                {{ statusLabels[selected()!.status] }}
+                {{ catalog.label('ESTADO_DEVOLUCION_LOGISTICA', selected()!.status) }}
               </span>
             </div>
             <div>

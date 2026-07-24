@@ -50,6 +50,21 @@ export class DepartmentService {
         }
     }
 
+    /**
+     * Página server-side SIN mutar el estado compartido (`_departments`).
+     * Pensado para el search-select: cada consulta es independiente del listado.
+     */
+    async searchPage(page: number, size: number, search?: string, sort?: string, activo?: string):
+        Promise<PageResponse<Department>> {
+        const params: Record<string, string> = { page: String(page), size: String(size) };
+        if (search) params['search'] = search;
+        if (sort) params['sort'] = sort;
+        if (activo) params['activo'] = activo;
+        return firstValueFrom(
+            this.http.get<PageResponse<Department>>(`${this.baseUrl}/paged`, { params })
+        );
+    }
+
     async loadDepartments(): Promise<void> {
         this._loading.set(true);
         this._error.set(null);

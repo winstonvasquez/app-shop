@@ -2,7 +2,8 @@ import { Component, inject, signal, computed, OnInit, ChangeDetectionStrategy } 
 import { toObservable } from '@angular/core/rxjs-interop';
 import { DecimalPipe } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
-import { of, map } from 'rxjs';
+import { map } from 'rxjs';
+import { CatalogService } from '@core/services/catalog.service';
 import { PeriodoService, PeriodoContable } from '../../services/periodo.service';
 import { OrdenCompraService } from '../../../compras/services/orden-compra.service';
 import { PleService } from '../../services/ple.service';
@@ -28,6 +29,7 @@ export class RegistroComprasComponent implements OnInit {
     private backendExportService = inject(BackendExportService);
     private pleService = inject(PleService);
     private fb = inject(FormBuilder);
+    private readonly catalog = inject(CatalogService);
 
     filterForm = this.fb.group({
         rucEmpresa: [''],
@@ -42,14 +44,7 @@ export class RegistroComprasComponent implements OnInit {
     error = signal<string | null>(null);
     readonly descargandoPLE = signal(false);
 
-    readonly estadoOptions = [
-        { value: 'APROBADA',  label: 'Aprobadas' },
-        { value: 'PENDIENTE', label: 'Pendientes' },
-        { value: 'RECIBIDA',  label: 'Recibidas' },
-        { value: 'CANCELADA', label: 'Canceladas' },
-    ];
-
-    // Filtros del toolbar del data-table: periodo (dinámico) + estado (estático)
+    // Filtros del toolbar del data-table: periodo (dinámico) + estado (catálogo)
     filtros: FilterConfig[] = [
         {
             field: 'periodo',
@@ -61,7 +56,9 @@ export class RegistroComprasComponent implements OnInit {
         {
             field: 'estado',
             label: 'Todos los estados',
-            options: of(this.estadoOptions)
+            options: toObservable(this.catalog.options('ESTADO_ORDEN_COMPRA')).pipe(
+                map(o => o.map(x => ({ value: x.codigo, label: x.valor })))
+            )
         }
     ];
 

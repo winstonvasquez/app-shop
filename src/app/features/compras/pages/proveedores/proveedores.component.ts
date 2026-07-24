@@ -2,7 +2,8 @@ import { Component, OnInit, inject, signal, computed, ChangeDetectionStrategy } 
 import { FormBuilder, ReactiveFormsModule, Validators, FormGroup, FormControl } from '@angular/forms';
 import { ProveedorService } from '../../services/proveedor.service';
 import { Proveedor } from '../../models/proveedor.model';
-import { of } from 'rxjs';
+import { map } from 'rxjs';
+import { toObservable } from '@angular/core/rxjs-interop';
 import { DataTableComponent, TableColumn, TableAction, SortEvent, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { MONEDA } from '@shared/constants/sunat.constants';
 import { PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
@@ -11,6 +12,7 @@ import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.compo
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { ButtonComponent, CatalogSelectComponent } from '@shared/components';
+import { CatalogService } from '@core/services/catalog.service';
 import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
@@ -34,6 +36,7 @@ import { environment } from '@env/environment';
 export class ProveedoresComponent implements OnInit {
     private readonly proveedorService = inject(ProveedorService);
     private readonly fb = inject(FormBuilder);
+    private readonly catalog = inject(CatalogService);
 
     // Data
     proveedores = signal<Proveedor[]>([]);
@@ -56,10 +59,9 @@ export class ProveedoresComponent implements OnInit {
         {
             field: 'estado',
             label: 'Todos los estados',
-            options: of([
-                { value: 'ACTIVO', label: 'Activo' },
-                { value: 'INACTIVO', label: 'Inactivo' }
-            ])
+            options: toObservable(this.catalog.options('ESTADO_PROVEEDOR')).pipe(
+                map(opts => opts.map(o => ({ value: o.codigo, label: o.valor })))
+            )
         }
     ];
 
@@ -113,7 +115,7 @@ export class ProveedoresComponent implements OnInit {
         },
         {
             key: 'estado', label: 'Estado', html: true,
-            render: (r) => `<span class="badge badge-${r.estado === 'ACTIVO' ? 'success' : 'neutral'}">${r.estado ?? '—'}</span>`
+            render: (r) => `<span class="badge badge-${r.estado === 'ACTIVO' ? 'success' : 'neutral'}">${this.catalog.label('ESTADO_PROVEEDOR', r.estado)}</span>`
         }
     ];
 

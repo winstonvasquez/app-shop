@@ -1,5 +1,5 @@
 import {
-    Component, OnInit, inject, signal, computed,
+    Component, OnInit, inject, signal,
     ChangeDetectionStrategy
 } from '@angular/core';
 import { of } from 'rxjs';
@@ -13,7 +13,8 @@ import { PaginationComponent, PaginationChangeEvent } from '@shared/ui/paginatio
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
-import { ButtonComponent } from '@shared/components';
+import { ButtonComponent, ServerSearchSelectComponent } from '@shared/components';
+import { employeeSelectSource, departmentSelectSource } from '../../components/select-sources';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
 
@@ -30,6 +31,7 @@ import { environment } from '@env/environment';
         PageHeaderComponent,
         AlertComponent,
         ButtonComponent,
+        ServerSearchSelectComponent,
     ],
     templateUrl: './department-list.component.html',
 })
@@ -41,7 +43,12 @@ export class DepartmentListComponent implements OnInit {
     // ── Data ─────────────────────────────────────────────────────────────────
     readonly loading = this.departmentService.loading;
     readonly departments = this.departmentService.departments;
-    readonly employees = this.employeeService.activeEmployees;
+    /** Fuente server-side del search-select de "jefe" (managerId). */
+    readonly employeeSource = employeeSelectSource(this.employeeService);
+    /** Fuente server-side del search-select de "departamento padre" (excluye el que se edita). */
+    readonly parentSource = departmentSelectSource(this.departmentService, {
+        excludeId: () => this.selectedDept()?.id,
+    });
 
     // ── UI state ──────────────────────────────────────────────────────────────
     error            = signal<string | null>(null);
@@ -78,16 +85,6 @@ export class DepartmentListComponent implements OnInit {
     pageSize      = signal(20);
     totalElements = signal(0);
     totalPages    = signal(0);
-
-    // Lista completa para el dropdown de departamento padre (independiente de la paginación)
-    readonly allDepartments = signal<Department[]>([]);
-
-    readonly parentOptions = computed(() =>
-        this.allDepartments().filter(d => {
-            const sel = this.selectedDept();
-            return d.activo && (!sel || d.id !== sel.id);
-        })
-    );
 
     // ── Breadcrumbs ───────────────────────────────────────────────────────────
     breadcrumbs: Breadcrumb[] = [
@@ -142,10 +139,7 @@ export class DepartmentListComponent implements OnInit {
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
     ngOnInit(): void {
-        this.departmentService.fetchAll()
-            .then(list => this.allDepartments.set(list))
-            .catch(() => { /* dropdown de padre es opcional */ });
-        this.employeeService.loadEmployees().catch(() => { /* dropdown responsable opcional */ });
+        // Los selects de jefe y departamento padre cargan sus opciones bajo demanda (server-side).
         this.loadPage();
     }
 
@@ -235,7 +229,6 @@ export class DepartmentListComponent implements OnInit {
             }
             this.closeModal();
             this.loadPage();
-            this.departmentService.fetchAll().then(list => this.allDepartments.set(list)).catch(() => {});
         } catch (err) {
             this.submitError.set((err as Error).message ?? 'Error al guardar departamento');
         } finally {

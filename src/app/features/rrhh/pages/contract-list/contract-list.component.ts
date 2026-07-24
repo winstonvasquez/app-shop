@@ -2,13 +2,13 @@ import {
     Component, OnInit, inject, signal, computed,
     ChangeDetectionStrategy
 } from '@angular/core';
-import { of } from 'rxjs';
+import { toObservable } from '@angular/core/rxjs-interop';
+import { map } from 'rxjs';
 import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ContractService } from '../../services/contract.service';
 import { EmployeeService } from '../../services/employee.service';
 import {
     Contract, ContractType, ContractStatus, WorkingDay,
-    CONTRACT_TYPE_LABELS, CONTRACT_STATUS_LABELS, WORKING_DAY_LABELS,
 } from '../../models/contract.model';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
@@ -19,8 +19,10 @@ import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.compo
 import { AdminFormSectionComponent } from '@shared/ui/forms/admin-form-section/admin-form-section.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
-import { ButtonComponent, CatalogSelectComponent } from '@shared/components';
+import { ButtonComponent, CatalogSelectComponent, ServerSearchSelectComponent } from '@shared/components';
+import { employeeSelectSource } from '../../components/select-sources';
 import { MONEDA, CURRENCY_DISPLAY } from '@shared/constants/sunat.constants';
+import { CatalogService } from '@core/services/catalog.service';
 
 @Component({
     selector: 'app-contract-list',
@@ -37,6 +39,7 @@ import { MONEDA, CURRENCY_DISPLAY } from '@shared/constants/sunat.constants';
         AlertComponent,
         ButtonComponent,
         CatalogSelectComponent,
+        ServerSearchSelectComponent,
     ],
     templateUrl: './contract-list.component.html',
 })
@@ -44,11 +47,13 @@ export class ContractListComponent implements OnInit {
     private readonly contractService = inject(ContractService);
     private readonly employeeService = inject(EmployeeService);
     private readonly fb = inject(FormBuilder);
+    private readonly catalog = inject(CatalogService);
 
     // ── Data ─────────────────────────────────────────────────────────────────
     readonly loading = this.contractService.loading;
     readonly contracts = this.contractService.contracts;
-    readonly employees = this.employeeService.activeEmployees;
+    /** Fuente server-side del search-select de empleado (últimos registrados + búsqueda paginada). */
+    readonly employeeSource = employeeSelectSource(this.employeeService);
 
     // ── UI state ──────────────────────────────────────────────────────────────
     error              = signal<string | null>(null);
@@ -66,19 +71,18 @@ export class ContractListComponent implements OnInit {
 
     // Filtros (estado + tipo) para el toolbar del data-table
     contratoFilters: FilterConfig[] = [
-        { field: 'status', label: 'Todos los estados', options: of([
-            { value: 'ACTIVO', label: 'Activo' },
-            { value: 'FINALIZADO', label: 'Finalizado' },
-            { value: 'SUSPENDIDO', label: 'Suspendido' },
-            { value: 'RENOVADO', label: 'Renovado' }
-        ]) },
-        { field: 'type', label: 'Todos los tipos', options: of([
-            { value: 'INDEFINIDO', label: 'Indefinido' },
-            { value: 'PLAZO_FIJO', label: 'Plazo Fijo' },
-            { value: 'TEMPORAL', label: 'Temporal' },
-            { value: 'PRACTICAS', label: 'Prácticas' },
-            { value: 'LOCACION_SERVICIOS', label: 'Locación de Servicios' }
-        ]) }
+        {
+            field: 'status', label: 'Todos los estados',
+            options: toObservable(this.catalog.options('ESTADO_CONTRATO_LABORAL')).pipe(
+                map(o => o.map(x => ({ value: x.codigo, label: x.valor })))
+            ),
+        },
+        {
+            field: 'type', label: 'Todos los tipos',
+            options: toObservable(this.catalog.options('TIPO_CONTRATO')).pipe(
+                map(o => o.map(x => ({ value: x.codigo, label: x.valor })))
+            ),
+        },
     ];
 
     /**
@@ -111,16 +115,12 @@ export class ContractListComponent implements OnInit {
         { label: 'Contratos' },
     ];
 
-    // ── Dropdown options ──────────────────────────────────────────────────────
-    contractTypes = Object.entries(CONTRACT_TYPE_LABELS).map(([value, label]) => ({ value, label }));
-    workingDays   = Object.entries(WORKING_DAY_LABELS).map(([value, label]) => ({ value, label }));
-
     // ── Columns ───────────────────────────────────────────────────────────────
     columns: TableColumn<Contract>[] = [
         { key: 'employeeName', label: 'Empleado', sortable: true },
         {
             key: 'tipoContrato', label: 'Tipo', sortable: true,
-            render: r => CONTRACT_TYPE_LABELS[r.tipoContrato] ?? r.tipoContrato,
+            render: r => this.catalog.labelFn('TIPO_CONTRATO')(r.tipoContrato),
         },
         { key: 'fechaInicio', label: 'Inicio', sortable: true },
         { key: 'fechaFin', label: 'Fin', render: r => r.fechaFin ?? '—' },
@@ -130,7 +130,7 @@ export class ContractListComponent implements OnInit {
         },
         {
             key: 'jornadaLaboral', label: 'Jornada',
-            render: r => WORKING_DAY_LABELS[r.jornadaLaboral] ?? r.jornadaLaboral,
+            render: r => this.catalog.labelFn('JORNADA_LABORAL')(r.jornadaLaboral),
         },
         {
             key: 'estado', label: 'Estado', html: true,
@@ -140,7 +140,7 @@ export class ContractListComponent implements OnInit {
                     : r.estado === 'RENOVADO' ? 'accent'
                     : 'warning';
                 const extra = r.expiringSoon ? ' <span class="badge badge-warning" style="margin-left:4px">Por vencer</span>' : '';
-                return `<span class="badge badge-${badge}">${CONTRACT_STATUS_LABELS[r.estado]}</span>${extra}`;
+                return `<span class="badge badge-${badge}">${this.catalog.label('ESTADO_CONTRATO_LABORAL', r.estado)}</span>${extra}`;
             },
         },
     ];
@@ -181,7 +181,7 @@ export class ContractListComponent implements OnInit {
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
     ngOnInit(): void {
-        this.employeeService.loadEmployees().catch(() => { /* dropdown empleado opcional */ });
+        // El select de empleado carga sus opciones bajo demanda (server-side).
         this.loadPage();
     }
 
@@ -346,3 +346,4 @@ export class ContractListComponent implements OnInit {
         return this.contractForm.get(name) as FormControl;
     }
 }
+

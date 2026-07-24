@@ -3,7 +3,7 @@ import { FormBuilder, ReactiveFormsModule, Validators, FormGroup } from '@angula
 import { TransportistaService } from '../../services/transportista.service';
 import { Transportista } from '../../models/transportista.model';
 import { AuthService } from '../../../../core/auth/auth.service';
-import { ButtonComponent } from '@shared/components';
+import { ButtonComponent, CatalogSelectComponent } from '@shared/components';
 import { DataTableComponent, TableColumn, TableAction } from '@shared/ui/tables/data-table/data-table.component';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
@@ -13,6 +13,7 @@ import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model
 import { PAGINATION } from '@shared/constants/app.constants';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
+import { CatalogService } from '@core/services/catalog.service';
 
 @Component({
     selector: 'app-transportistas-page',
@@ -24,7 +25,8 @@ import { environment } from '@env/environment';
         DataTableComponent,
         DrawerComponent,
         AlertComponent,
-        PageHeaderComponent
+        PageHeaderComponent,
+        CatalogSelectComponent
     ],
     templateUrl: './transportistas-page.component.html'
 })
@@ -32,6 +34,7 @@ export class TransportistasPageComponent implements OnInit {
     private readonly service   = inject(TransportistaService);
     private readonly authService = inject(AuthService);
     private readonly fb        = inject(FormBuilder);
+    private readonly catalog = inject(CatalogService);
 
     // Data
     items    = signal<Transportista[]>([]);
@@ -50,14 +53,6 @@ export class TransportistasPageComponent implements OnInit {
     pageSize      = signal<number>(PAGINATION.defaultPageSize);
     totalElements = signal(0);
     totalPages    = signal(0);
-
-    readonly serviceTypeOptions = [
-        { value: 'NACIONAL',       label: 'Nacional' },
-        { value: 'INTERNACIONAL',  label: 'Internacional' },
-        { value: 'EXPRES',         label: 'Express' },
-        { value: 'ECONOMICO',      label: 'Económico' },
-        { value: 'PROPIO',         label: 'Flota propia' }
-    ];
 
     breadcrumbs: Breadcrumb[] = [
         { label: 'Inicio',    url: '/admin/dashboard' },
@@ -79,7 +74,7 @@ export class TransportistasPageComponent implements OnInit {
         { key: 'code',        label: 'Código',   width: '100px' },
         { key: 'name',        label: 'Nombre' },
         { key: 'serviceType', label: 'Tipo Servicio',
-          render: (r) => this.serviceTypeOptions.find(o => o.value === r.serviceType)?.label ?? r.serviceType },
+          render: (r) => this.catalog.label('TIPO_SERVICIO_TRANSPORTISTA', r.serviceType) },
         { key: 'contactPhone', label: 'Teléfono', render: (r) => r.contactPhone || '—' },
         { key: 'contactEmail', label: 'Email',    render: (r) => r.contactEmail || '—' },
         { key: 'active', label: 'Estado', html: true,
@@ -111,7 +106,7 @@ export class TransportistasPageComponent implements OnInit {
         this.form = this.fb.group({
             code:         ['', [Validators.required, Validators.maxLength(50)]],
             name:         ['', [Validators.required, Validators.maxLength(100)]],
-            serviceType:  ['NACIONAL', Validators.required],
+            serviceType:  ['STANDARD', Validators.required],
             contactPhone: [''],
             contactEmail: ['', Validators.email],
             apiUrl:       [''],
@@ -153,7 +148,7 @@ export class TransportistasPageComponent implements OnInit {
     openCreateForm() {
         this.editMode.set(false);
         this.selected.set(null);
-        this.form.reset({ serviceType: 'NACIONAL', active: true });
+        this.form.reset({ serviceType: 'STANDARD', active: true });
         this.submitError.set(null);
         this.showForm.set(true);
     }

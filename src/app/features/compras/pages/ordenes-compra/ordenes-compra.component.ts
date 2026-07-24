@@ -1,11 +1,12 @@
 import { Component, OnInit, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
 import { DatePipe } from '@angular/common';
+import { toObservable } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators, FormGroup, FormControl } from '@angular/forms';
-import { of } from 'rxjs';
+import { map } from 'rxjs';
+import { CatalogService } from '@core/services/catalog.service';
 import { OrdenCompraService } from '../../services/orden-compra.service';
 import { ProveedorService } from '../../services/proveedor.service';
 import { OrdenCompra, OrdenCompraItem } from '../../models/orden-compra.model';
-import { Proveedor } from '../../models/proveedor.model';
 import { DataTableComponent, TableColumn, TableAction, SortEvent, FilterConfig, FilterChangeEvent, PaginationEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
@@ -14,10 +15,11 @@ import { DateInputComponent } from '@shared/ui/forms/date-input/date-input.compo
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { LoadingSpinnerComponent } from '@shared/ui/feedback/loading-spinner/loading-spinner.component';
-import { ButtonComponent } from '@shared/components';
+import { ButtonComponent, ServerSearchSelectComponent } from '@shared/components';
 import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 import { SUNAT_RATES } from '@shared/constants/sunat.constants';
 import { PAGINATION } from '@shared/constants/app.constants';
+import { proveedorSelectSource } from '../../components/select-sources';
 
 export interface OcItemForm {
     productoNombre: string;
@@ -39,7 +41,8 @@ export interface OcItemForm {
     AlertComponent,
     LoadingSpinnerComponent,
     DatePipe,
-    ButtonComponent
+    ButtonComponent,
+    ServerSearchSelectComponent
   ],
     templateUrl: './ordenes-compra.component.html'
 })
@@ -47,11 +50,14 @@ export class OrdenesCompraComponent implements OnInit {
     private readonly ordenService = inject(OrdenCompraService);
     private readonly proveedorService = inject(ProveedorService);
     private readonly fb = inject(FormBuilder);
+    readonly catalog = inject(CatalogService);
 
     // Data
     ordenes = signal<OrdenCompra[]>([]);
     selectedOrden = signal<OrdenCompra | null>(null);
-    proveedores = signal<Proveedor[]>([]);
+
+    // Data source para <app-server-search-select> de proveedor
+    readonly proveedorSource = proveedorSelectSource(this.proveedorService);
 
     // UI state
     loading = signal(false);
@@ -107,21 +113,14 @@ export class OrdenesCompraComponent implements OnInit {
         { label: 'Órdenes de Compra' }
     ];
 
-    readonly estadoOptions = [
-        { value: 'BORRADOR', label: 'Borrador' },
-        { value: 'PENDIENTE', label: 'Pendiente' },
-        { value: 'APROBADA', label: 'Aprobada' },
-        { value: 'ENVIADA', label: 'Enviada' },
-        { value: 'RECIBIDA', label: 'Recibida' },
-        { value: 'CANCELADA', label: 'Cancelada' }
-    ];
-
     // Filtro de estado para el toolbar del data-table
     estadoFilters: FilterConfig[] = [
         {
             field: 'estado',
             label: 'Todos los estados',
-            options: of(this.estadoOptions)
+            options: toObservable(this.catalog.options('ESTADO_ORDEN_COMPRA')).pipe(
+                map(o => o.map(x => ({ value: x.codigo, label: x.valor })))
+            )
         }
     ];
 
@@ -165,7 +164,7 @@ export class OrdenesCompraComponent implements OnInit {
         },
         {
             key: 'estado', label: 'Estado', html: true,
-            render: (r) => `<span class="badge badge-${this.badgeEstado(r.estado)}">${r.estado}</span>`
+            render: (r) => `<span class="badge badge-${this.badgeEstado(r.estado)}">${this.catalog.label('ESTADO_ORDEN_COMPRA', r.estado)}</span>`
         }
     ];
 
@@ -196,7 +195,6 @@ export class OrdenesCompraComponent implements OnInit {
 
     ngOnInit(): void {
         this.loadOrdenes();
-        this.loadProveedores();
     }
 
     loadOrdenes(): void {
@@ -217,13 +215,6 @@ export class OrdenesCompraComponent implements OnInit {
                 this.error.set(err.message);
                 this.loading.set(false);
             }
-        });
-    }
-
-    loadProveedores(): void {
-        this.proveedorService.getProveedores(0, 200).subscribe({
-            next: (res) => this.proveedores.set(res.content),
-            error: () => { /* silent — proveedor dropdown optional */ }
         });
     }
 
@@ -420,9 +411,5 @@ export class OrdenesCompraComponent implements OnInit {
 
     getControl(name: string): FormControl {
         return this.ocForm.get(name) as FormControl;
-    }
-
-    proveedorNombre(id: string): string {
-        return this.proveedores().find(p => p.id === id)?.razonSocial ?? id;
     }
 }

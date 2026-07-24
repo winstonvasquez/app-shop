@@ -1,27 +1,28 @@
-import { Component, ChangeDetectionStrategy, signal, inject, OnInit } from '@angular/core';
+import { Component, ChangeDetectionStrategy, signal, inject } from '@angular/core';
 import { DatePipe, DecimalPipe } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { EvaluacionService } from '../../services/evaluacion.service';
 import { ProveedorService } from '../../services/proveedor.service';
 import { EvaluacionProveedor } from '../../models/evaluacion.model';
-import { Proveedor } from '../../models/proveedor.model';
-import { ButtonComponent } from '@shared/components';
+import { ButtonComponent, ServerSearchSelectComponent } from '@shared/components';
+import { proveedorSelectSource } from '../../components/select-sources';
 
 @Component({
     selector: 'app-evaluaciones',
     standalone: true,
-    imports: [DatePipe, DecimalPipe, ReactiveFormsModule, ButtonComponent],
+    imports: [DatePipe, DecimalPipe, ReactiveFormsModule, ButtonComponent, ServerSearchSelectComponent],
     templateUrl: './evaluaciones.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class EvaluacionesComponent implements OnInit {
+export class EvaluacionesComponent {
     private service = inject(EvaluacionService);
     private proveedorService = inject(ProveedorService);
     private fb = inject(FormBuilder);
 
-    proveedores = signal<Proveedor[]>([]);
+    readonly proveedorSource = proveedorSelectSource(this.proveedorService);
+
     evaluaciones = signal<EvaluacionProveedor[]>([]);
-    selectedProveedor = signal<string>('');
+    filtroProveedorId = new FormControl<string>('');
     showForm = signal(false);
     saving = signal(false);
     loading = signal(false);
@@ -35,14 +36,8 @@ export class EvaluacionesComponent implements OnInit {
         comentarios: [''],
     });
 
-    ngOnInit(): void {
-        this.proveedorService.getProveedores(0, 200).subscribe(r => {
-            this.proveedores.set(r.content ?? []);
-        });
-    }
-
     buscarEvaluaciones(): void {
-        const id = this.selectedProveedor();
+        const id = this.filtroProveedorId.value;
         if (!id) return;
         this.loading.set(true);
         this.service.getEvaluacionesByProveedor(id).subscribe({
@@ -57,7 +52,7 @@ export class EvaluacionesComponent implements OnInit {
         const v = this.form.value;
         this.service.crearEvaluacion(v).subscribe({
             next: ev => {
-                if (this.selectedProveedor() === v.proveedorId) {
+                if (this.filtroProveedorId.value === v.proveedorId) {
                     this.evaluaciones.update(list => [ev, ...list]);
                 }
                 this.form.reset({ puntajeEntrega: 80, puntajeCalidad: 80, puntajePrecio: 80, puntajeServicio: 80 });

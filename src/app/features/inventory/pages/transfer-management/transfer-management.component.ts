@@ -6,7 +6,8 @@ import { InventoryApiService } from '../../services/inventory-api.service';
 import { InventoryTransfer, InventoryTransferRequest, InventoryTransferStatus, Warehouse } from '../../models/inventory.models';
 import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 import { ROUTES } from '@shared/constants/app.constants';
-import { of } from 'rxjs';
+import { map } from 'rxjs';
+import { toObservable } from '@angular/core/rxjs-interop';
 import { DataTableComponent, TableColumn, TableAction, PaginationEvent, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
@@ -16,6 +17,7 @@ import { DateInputComponent } from '@shared/ui/forms/date-input/date-input.compo
 import { ButtonComponent } from '@shared/components';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
+import { CatalogService } from '@core/services/catalog.service';
 
 @Component({
     selector: 'app-transfer-management',
@@ -34,6 +36,7 @@ import { environment } from '@env/environment';
 export class TransferManagementComponent {
     private readonly api = inject(InventoryApiService);
     private readonly fb = inject(FormBuilder);
+    private readonly catalog = inject(CatalogService);
 
     transfers = signal<InventoryTransfer[]>([]);
     warehouses = signal<Warehouse[]>([]);
@@ -57,13 +60,6 @@ export class TransferManagementComponent {
         { label: 'Transferencias' }
     ];
 
-    readonly statusLabels: Record<InventoryTransferStatus, string> = {
-        PENDIENTE: 'Pendiente',
-        ENVIADA:   'Enviada',
-        RECIBIDA:  'Recibida',
-        CANCELADA: 'Cancelada'
-    };
-
     columns: TableColumn<InventoryTransfer>[] = [
         { key: 'transferNumber', label: 'N°', width: '130px',
           render: (r) => r.transferNumber ?? String(r.id) },
@@ -82,7 +78,7 @@ export class TransferManagementComponent {
                     RECIBIDA:  'badge-success',
                     CANCELADA: 'badge-error'
                 };
-                return `<span class="badge ${cls[r.status] ?? 'badge-neutral'}">${this.statusLabels[r.status] ?? r.status}</span>`;
+                return `<span class="badge ${cls[r.status] ?? 'badge-neutral'}">${this.catalog.label('ESTADO_TRANSFERENCIA_INVENTARIO', r.status)}</span>`;
             }
         }
     ];
@@ -153,12 +149,8 @@ export class TransferManagementComponent {
     }
 
     readonly estadoFilters: FilterConfig[] = [
-        { field: 'estado', label: 'Todos', options: of([
-            { value: 'PENDIENTE', label: 'Pendiente' },
-            { value: 'ENVIADA', label: 'Enviada' },
-            { value: 'RECIBIDA', label: 'Recibida' },
-            { value: 'CANCELADA', label: 'Cancelada' }
-        ]) }
+        { field: 'estado', label: 'Todos', options: toObservable(this.catalog.options('ESTADO_TRANSFERENCIA_INVENTARIO'))
+            .pipe(map(o => o.map(x => ({ value: x.codigo, label: x.valor })))) }
     ];
 
     onFilterChangeEvent(event: FilterChangeEvent): void {

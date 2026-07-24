@@ -1,8 +1,10 @@
 import { Component, inject, signal, computed, ChangeDetectionStrategy, OnInit } from '@angular/core';
 import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ButtonComponent } from '@shared/components';
+import { toObservable } from '@angular/core/rxjs-interop';
+import { map } from 'rxjs';
+import { ButtonComponent, CatalogSelectComponent, ServerSearchSelectComponent } from '@shared/components';
+import { employeeSelectSource } from '../../components/select-sources';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
-import { of } from 'rxjs';
 import { DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { PaginationComponent, PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
@@ -13,12 +15,10 @@ import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
 import { EvaluationService } from '../../services/evaluation.service';
 import { EmployeeService } from '../../services/employee.service';
+import { CatalogService } from '@core/services/catalog.service';
 import {
     Evaluation,
     EvaluationStatus,
-    EVALUATION_STATUS_LABELS,
-    EVALUATION_TYPE_LABELS,
-    EvaluationType,
 } from '../../models/evaluation.model';
 import { PAGINATION } from '@shared/constants/app.constants';
 
@@ -36,6 +36,8 @@ import { PAGINATION } from '@shared/constants/app.constants';
         PageHeaderComponent,
         AlertComponent,
         DateInputComponent,
+        ServerSearchSelectComponent,
+        CatalogSelectComponent,
     ],
     templateUrl: './evaluation-list.component.html',
 })
@@ -43,9 +45,12 @@ export class EvaluationListComponent implements OnInit {
     private readonly fb = inject(FormBuilder);
     private readonly evaluationService = inject(EvaluationService);
     private readonly employeeService = inject(EmployeeService);
+    private readonly catalog = inject(CatalogService);
 
     readonly evaluations = this.evaluationService.evaluations;
     readonly loading = this.evaluationService.loading;
+    /** Fuente server-side de los search-select de empleado y evaluador. */
+    readonly employeeSource = employeeSelectSource(this.employeeService);
 
     showDrawer = signal(false);
     editMode = signal(false);
@@ -93,21 +98,6 @@ export class EvaluationListComponent implements OnInit {
         { label: 'Evaluaciones' },
     ];
 
-    readonly estadoOptions = [
-        { value: 'BORRADOR', label: 'Borrador' },
-        { value: 'COMPLETADA', label: 'Completada' },
-        { value: 'APROBADA', label: 'Aprobada' },
-        { value: 'CANCELADA', label: 'Cancelada' },
-    ];
-
-    readonly tipoOptions = [
-        { value: 'ANUAL', label: 'Anual' },
-        { value: 'SEMESTRAL', label: 'Semestral' },
-        { value: 'TRIMESTRAL', label: 'Trimestral' },
-        { value: 'PERIODO_PRUEBA', label: 'Periodo de Prueba' },
-        { value: 'PROMOCION', label: 'Promoción' },
-    ];
-
     columns: TableColumn<Evaluation>[] = [
         {
             key: 'employeeName', label: 'Empleado',
@@ -120,7 +110,7 @@ export class EvaluationListComponent implements OnInit {
         { key: 'periodo', label: 'Período' },
         {
             key: 'tipoEvaluacion', label: 'Tipo',
-            render: row => EVALUATION_TYPE_LABELS[row.tipoEvaluacion] || row.tipoEvaluacion
+            render: row => this.catalog.label('TIPO_EVALUACION', row.tipoEvaluacion)
         },
         {
             key: 'fechaEvaluacion', label: 'Fecha',
@@ -132,7 +122,7 @@ export class EvaluationListComponent implements OnInit {
         },
         {
             key: 'estado', label: 'Estado', html: true,
-            render: row => `<span class="badge badge-${this.badgeEstado(row.estado)}">${EVALUATION_STATUS_LABELS[row.estado]}</span>`
+            render: row => `<span class="badge badge-${this.badgeEstado(row.estado)}">${this.catalog.label('ESTADO_EVALUACION', row.estado)}</span>`
         },
     ];
 
@@ -162,7 +152,7 @@ export class EvaluationListComponent implements OnInit {
     readonly evaluationForm = this.fb.group({
         employeeId: [null as number | null, Validators.required],
         evaluadorId: [null as number | null, Validators.required],
-        periodo: ['', Validators.required],
+        periodo: ['', [Validators.required, Validators.pattern(/^\d{4}-\d{2}$/)]],
         tipoEvaluacion: ['ANUAL'],
         puntaje: [0, [Validators.required, Validators.min(0), Validators.max(100)]],
         fechaEvaluacion: ['', Validators.required],
@@ -174,12 +164,22 @@ export class EvaluationListComponent implements OnInit {
 
     ngOnInit(): void {
         this.evaluationService.loadEvaluations();
-        this.employeeService.loadEmployees();
+        // Los selects de empleado/evaluador cargan sus opciones bajo demanda (server-side).
     }
 
     readonly toolbarFilters: FilterConfig[] = [
-        { field: 'estado', label: 'Todos los estados', options: of(this.estadoOptions) },
-        { field: 'tipo', label: 'Todos los tipos', options: of(this.tipoOptions) }
+        {
+            field: 'estado', label: 'Todos los estados',
+            options: toObservable(this.catalog.options('ESTADO_EVALUACION')).pipe(
+                map(o => o.map(x => ({ value: x.codigo, label: x.valor })))
+            )
+        },
+        {
+            field: 'tipo', label: 'Todos los tipos',
+            options: toObservable(this.catalog.options('TIPO_EVALUACION')).pipe(
+                map(o => o.map(x => ({ value: x.codigo, label: x.valor })))
+            )
+        }
     ];
 
     onFilterChangeEvent(event: FilterChangeEvent): void {
@@ -294,3 +294,4 @@ export class EvaluationListComponent implements OnInit {
         return 'error';
     }
 }
+

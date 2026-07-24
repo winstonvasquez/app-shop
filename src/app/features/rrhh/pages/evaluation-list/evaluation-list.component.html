@@ -69,19 +69,19 @@
         <div class="flex flex-col gap-4">
 
             <div class="grid grid-cols-2 gap-4">
-                <app-form-field
-                    label="ID Empleado"
-                    [control]="getControl('employeeId')"
-                    type="number"
-                    placeholder="ID del empleado"
-                    [required]="true" />
+                <div>
+                    <label class="input-label">Empleado <span style="color:var(--color-error)">*</span></label>
+                    <app-server-search-select [dataSource]="employeeSource"
+                                              formControlName="employeeId"
+                                              placeholder="Buscar empleado por nombre o código…" />
+                </div>
 
-                <app-form-field
-                    label="ID Evaluador"
-                    [control]="getControl('evaluadorId')"
-                    type="number"
-                    placeholder="ID del evaluador"
-                    [required]="true" />
+                <div>
+                    <label class="input-label">Evaluador <span style="color:var(--color-error)">*</span></label>
+                    <app-server-search-select [dataSource]="employeeSource"
+                                              formControlName="evaluadorId"
+                                              placeholder="Buscar evaluador por nombre o código…" />
+                </div>
             </div>
 
             <div class="grid grid-cols-2 gap-4">
@@ -100,11 +100,7 @@
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <label class="input-label">Tipo de Evaluación</label>
-                    <select class="form-input" formControlName="tipoEvaluacion">
-                        @for (opt of tipoOptions; track opt.value) {
-                            <option [value]="opt.value">{{ opt.label }}</option>
-                        }
-                    </select>
+                    <app-catalog-select tabla="TIPO_EVALUACION" formControlName="tipoEvaluacion" placeholder="— Seleccionar —" />
                 </div>
 
                 <app-form-field

@@ -6,8 +6,8 @@ import { environment } from '@env/environment';
 import { AuthService } from '@core/auth/auth.service';
 import { MONEDA } from '@shared/constants/sunat.constants';
 import { ProveedorService } from '../../services/proveedor.service';
-import { Proveedor } from '../../models/proveedor.model';
-import { ButtonComponent, CatalogSelectComponent } from '@shared/components';
+import { ButtonComponent, CatalogSelectComponent, ServerSearchSelectComponent } from '@shared/components';
+import { proveedorSelectSource } from '../../components/select-sources';
 
 interface ProveedorHomologado {
     id: string;
@@ -41,7 +41,7 @@ interface CatalogoPage {
 @Component({
     selector: 'app-catalogo',
     standalone: true,
-    imports: [DecimalPipe, ReactiveFormsModule, ButtonComponent, CatalogSelectComponent],
+    imports: [DecimalPipe, ReactiveFormsModule, ButtonComponent, CatalogSelectComponent, ServerSearchSelectComponent],
     templateUrl: './catalogo.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -54,7 +54,6 @@ export class CatalogoComponent implements OnInit {
 
     items = signal<CatalogoItem[]>([]);
     categorias = signal<string[]>([]);
-    proveedores = signal<Proveedor[]>([]);
     totalElements = signal(0);
     totalPages = signal(0);
     currentPage = signal(0);
@@ -82,6 +81,8 @@ export class CatalogoComponent implements OnInit {
         esPreferido: [false],
     });
 
+    readonly proveedorSource = proveedorSelectSource(this.proveedorService);
+
     private getHeaders(): HttpHeaders {
         const companyId = this.authService.currentUser()?.activeCompanyId ?? '';
         return new HttpHeaders({ 'X-Company-Id': companyId });
@@ -91,9 +92,6 @@ export class CatalogoComponent implements OnInit {
         this.cargar();
         this.http.get<string[]>(`${this.baseUrl}/categorias`, { headers: this.getHeaders() })
             .subscribe(cats => this.categorias.set(cats));
-        this.proveedorService.getProveedores(0, 200).subscribe(r => {
-            this.proveedores.set(r.content ?? []);
-        });
     }
 
     cargar(page = 0): void {

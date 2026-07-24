@@ -1,11 +1,12 @@
 import { Component, inject, signal, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder } from '@angular/forms';
+import { toObservable } from '@angular/core/rxjs-interop';
+import { map } from 'rxjs';
 import { DevolucionService } from '../../services/devolucion.service';
 import { Devolucion, DevolucionStatus } from '../../models/devolucion.model';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { ButtonComponent } from '@shared/components';
-import { of } from 'rxjs';
 import { DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
@@ -15,15 +16,7 @@ import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model
 import { PAGINATION } from '@shared/constants/app.constants';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
-
-const STATUS_LABELS: Record<DevolucionStatus, string> = {
-    REQUESTED: 'Solicitada',
-    APPROVED:  'Aprobada',
-    REJECTED:  'Rechazada',
-    RECEIVED:  'Recibida',
-    INSPECTED: 'Inspeccionada',
-    REFUNDED:  'Reembolsada'
-};
+import { CatalogService } from '@core/services/catalog.service';
 
 @Component({
     selector: 'app-devoluciones-page',
@@ -44,6 +37,7 @@ export class DevolucionesPageComponent implements OnInit {
     private readonly service     = inject(DevolucionService);
     private readonly authService = inject(AuthService);
     private readonly fb          = inject(FormBuilder);
+    protected readonly catalog   = inject(CatalogService);
 
     // Data
     devoluciones    = signal<Devolucion[]>([]);
@@ -74,27 +68,12 @@ export class DevolucionesPageComponent implements OnInit {
     totalElements = signal(0);
     totalPages    = signal(0);
 
-    readonly statusOptions: { value: DevolucionStatus; label: string }[] = [
-        { value: 'REQUESTED', label: 'Solicitada' },
-        { value: 'APPROVED',  label: 'Aprobada' },
-        { value: 'REJECTED',  label: 'Rechazada' },
-        { value: 'RECEIVED',  label: 'Recibida' },
-        { value: 'INSPECTED', label: 'Inspeccionada' },
-        { value: 'REFUNDED',  label: 'Reembolsada' }
-    ];
-
     // Filtro de estado en el toolbar del data-table
     readonly estadoFilters: FilterConfig[] = [
-        { field: 'status', label: 'Todos los estados', options: of(this.statusOptions) }
-    ];
-
-    readonly reasonOptions = [
-        'Producto defectuoso',
-        'Producto incorrecto',
-        'No llegó en el tiempo acordado',
-        'El cliente cambió de opinión',
-        'Daño en el transporte',
-        'Otro'
+        { field: 'status', label: 'Todos los estados',
+          options: toObservable(this.catalog.options('ESTADO_DEVOLUCION_LOGISTICA')).pipe(
+              map(o => o.map(x => ({ value: x.codigo, label: x.valor })))
+          ) }
     ];
 
     breadcrumbs: Breadcrumb[] = [
@@ -122,7 +101,7 @@ export class DevolucionesPageComponent implements OnInit {
         { key: 'requestedAt', label: 'Solicitado',
           render: (r) => new Date(r.requestedAt).toLocaleDateString('es-PE') },
         { key: 'status', label: 'Estado', html: true,
-          render: (r) => `<span class="badge ${this.badgeStatus(r.status)}">${STATUS_LABELS[r.status]}</span>` }
+          render: (r) => `<span class="badge ${this.badgeStatus(r.status)}">${this.catalog.label('ESTADO_DEVOLUCION_LOGISTICA', r.status)}</span>` }
     ];
 
     actions: TableAction<Devolucion>[] = [
@@ -253,6 +232,4 @@ export class DevolucionesPageComponent implements OnInit {
         };
         return map[status] ?? 'badge-neutral';
     }
-
-    readonly statusLabels = STATUS_LABELS;
 }

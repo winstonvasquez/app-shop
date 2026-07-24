@@ -1,11 +1,13 @@
 import { Component, OnInit, ChangeDetectionStrategy, signal, computed, inject } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { of } from 'rxjs';
+import { toObservable } from '@angular/core/rxjs-interop';
+import { map } from 'rxjs';
 import { environment } from '@env/environment';
 import { AuthService } from '@core/auth/auth.service';
 import { MONEDA } from '@shared/constants/sunat.constants';
 import { ButtonComponent, CatalogSelectComponent } from '@shared/components';
+import { CatalogService } from '@core/services/catalog.service';
 import { DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent, PaginationEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 
@@ -38,6 +40,7 @@ export class ContratosComponent implements OnInit {
     private http = inject(HttpClient);
     private fb = inject(FormBuilder);
     private authService = inject(AuthService);
+    private readonly catalog = inject(CatalogService);
     private baseUrl = `${environment.apiUrls.purchases}/api/contratos`;
 
     contratos = signal<ContratoDto[]>([]);
@@ -58,12 +61,9 @@ export class ContratosComponent implements OnInit {
         {
             field: 'estado',
             label: 'Todos los estados',
-            options: of([
-                { value: 'ACTIVO', label: 'Activo' },
-                { value: 'VENCIDO', label: 'Vencido' },
-                { value: 'SUSPENDIDO', label: 'Suspendido' },
-                { value: 'RESCINDIDO', label: 'Rescindido' }
-            ])
+            options: toObservable(this.catalog.options('ESTADO_CONTRATO_PROVEEDOR')).pipe(
+                map(o => o.map(x => ({ value: x.codigo, label: x.valor })))
+            )
         }
     ];
 
@@ -109,7 +109,7 @@ export class ContratosComponent implements OnInit {
         },
         {
             key: 'estado', label: 'Estado', html: true,
-            render: (r) => `<span class="badge ${this.estadoClass(r.estado)}">${r.estado}</span>`
+            render: (r) => `<span class="badge ${this.estadoClass(r.estado)}">${this.catalog.label('ESTADO_CONTRATO_PROVEEDOR', r.estado)}</span>`
         }
     ];
 

@@ -46,11 +46,7 @@
         <div class="grid grid-cols-2 gap-4 mb-4">
             <div>
                 <label class="input-label">Motivo *</label>
-                <select class="form-input" formControlName="motivo">
-                    @for (opt of motivoOptions; track opt.value) {
-                        <option [value]="opt.value">{{ opt.label }}</option>
-                    }
-                </select>
+                <app-catalog-select tabla="MOTIVO_DEVOLUCION_COMPRA" formControlName="motivo" placeholder="— Seleccionar —" />
             </div>
             <div>
                 <label class="input-label">Tipo</label>
@@ -110,8 +106,8 @@
                 <div><span class="text-muted">OC:</span> <span class="font-mono">{{ dev.ordenCompraCodigo }}</span></div>
                 <div><span class="text-muted">Proveedor:</span> {{ dev.proveedorNombre }}</div>
                 <div><span class="text-muted">Tipo:</span> {{ dev.tipo }}</div>
-                <div><span class="text-muted">Motivo:</span> {{ getMotivoLabel(dev.motivo) }}</div>
-                <div><span class="text-muted">Estado:</span> <span [class]="getBadge(dev.estado)">{{ getEstadoLabel(dev.estado) }}</span></div>
+                <div><span class="text-muted">Motivo:</span> {{ catalog.label('MOTIVO_DEVOLUCION_COMPRA', dev.motivo) }}</div>
+                <div><span class="text-muted">Estado:</span> <span [class]="getBadge(dev.estado)">{{ catalog.label('ESTADO_DEVOLUCION_COMPRA', dev.estado) }}</span></div>
             </div>
 
             @if (dev.items && dev.items.length > 0) {

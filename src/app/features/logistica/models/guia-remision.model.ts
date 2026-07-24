@@ -1,4 +1,4 @@
-export type EstadoGuia = 'EMITIDA' | 'ACEPTADA' | 'RECHAZADA' | 'ANULADA';
+export type EstadoGuia = 'EMITIDA' | 'EN_TRASLADO' | 'RECIBIDA' | 'ANULADA';
 
 export interface GuiaRemisionItem {
     id: string;

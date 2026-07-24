@@ -53,33 +53,20 @@
         <!-- Empleado -->
         <div style="margin-bottom: var(--space-md)">
             <label class="input-label">Empleado *</label>
-            <select class="form-input" formControlName="employeeId">
-                <option [ngValue]="null">— Seleccionar empleado —</option>
-                @for (emp of employees(); track emp.id) {
-                    <option [ngValue]="emp.id">{{ emp.nombres }} {{ emp.apellidos }} ({{ emp.codigoEmpleado }})</option>
-                }
-            </select>
+            <app-server-search-select [dataSource]="employeeSource"
+                                      formControlName="employeeId"
+                                      placeholder="Buscar empleado por nombre o código…" />
         </div>
 
         <app-admin-form-section title="Tipo y Jornada" [columns]="2">
             <div>
                 <label class="input-label">Tipo de Contrato *</label>
-                <select class="form-input" formControlName="tipoContrato">
-                    <option [ngValue]="null">— Seleccionar —</option>
-                    @for (type of contractTypes; track type.value) {
-                        <option [value]="type.value">{{ type.label }}</option>
-                    }
-                </select>
+                <app-catalog-select tabla="TIPO_CONTRATO" formControlName="tipoContrato" placeholder="— Seleccionar —" />
             </div>
 
             <div>
                 <label class="input-label">Jornada Laboral *</label>
-                <select class="form-input" formControlName="jornadaLaboral">
-                    <option [ngValue]="null">— Seleccionar —</option>
-                    @for (wd of workingDays; track wd.value) {
-                        <option [value]="wd.value">{{ wd.label }}</option>
-                    }
-                </select>
+                <app-catalog-select tabla="JORNADA_LABORAL" formControlName="jornadaLaboral" placeholder="— Seleccionar —" />
             </div>
         </app-admin-form-section>
 

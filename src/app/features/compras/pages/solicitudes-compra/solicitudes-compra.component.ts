@@ -11,6 +11,7 @@ import { ReactiveFormsModule, FormBuilder, Validators, FormArray, FormGroup } fr
 import { RouterModule } from '@angular/router';
 import { SolicitudCompraService } from '../../services/solicitud-compra.service';
 import { AuthService } from '@core/auth/auth.service';
+import { CatalogService } from '@core/services/catalog.service';
 import { SolicitudCompra, SolicitudCompraItem } from '../../models/solicitud-compra.model';
 import { ButtonComponent, CatalogSelectComponent } from '@shared/components';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
@@ -42,6 +43,7 @@ export class SolicitudesCompraComponent implements OnInit {
     private readonly authService = inject(AuthService);
     private readonly fb = inject(FormBuilder);
     private readonly cdr = inject(ChangeDetectorRef);
+    protected readonly catalog = inject(CatalogService);
 
     // Data
     solicitudes = signal<SolicitudCompra[]>([]);
@@ -72,22 +74,6 @@ export class SolicitudesCompraComponent implements OnInit {
     breadcrumbs: Breadcrumb[] = [
         { label: 'Compras', url: '/compras' },
         { label: 'Solicitudes' },
-    ];
-
-    estadoOptions = [
-        { value: 'BORRADOR', label: 'Borrador' },
-        { value: 'PENDIENTE_APROBACION', label: 'Pendiente Aprobación' },
-        { value: 'APROBADA', label: 'Aprobada' },
-        { value: 'RECHAZADA', label: 'Rechazada' },
-        { value: 'CONVERTIDA_OC', label: 'Convertida en OC' },
-        { value: 'CANCELADA', label: 'Cancelada' },
-    ];
-
-    prioridadOptions = [
-        { value: 'BAJA', label: 'Baja' },
-        { value: 'NORMAL', label: 'Normal' },
-        { value: 'ALTA', label: 'Alta' },
-        { value: 'URGENTE', label: 'Urgente' },
     ];
 
     // Forms
@@ -355,7 +341,7 @@ export class SolicitudesCompraComponent implements OnInit {
     }
 
     getEstadoLabel(estado: string | undefined): string {
-        return this.estadoOptions.find((o) => o.value === estado)?.label ?? (estado ?? '—');
+        return estado ? this.catalog.label('ESTADO_SOLICITUD_COMPRA', estado) : '—';
     }
 
     private createItemFormGroup(): FormGroup {

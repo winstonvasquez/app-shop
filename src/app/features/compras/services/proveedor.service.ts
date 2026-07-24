@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, firstValueFrom } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { environment } from '@env/environment';
 import { Proveedor, ProveedorPage } from '../models/proveedor.model';
@@ -31,6 +31,15 @@ export class ProveedorService {
                 } as ProveedorPage;
             })
         );
+    }
+
+    /**
+     * Variante pura (Promise) de `getProveedores`, pensada para adapters
+     * `ServerSelectDataSource` (ver `proveedorSelectSource`). No muta ningún
+     * signal de estado compartido — solo envuelve la misma llamada HTTP.
+     */
+    async searchPage(page = 0, size = 10, search?: string): Promise<ProveedorPage> {
+        return firstValueFrom(this.getProveedores(page, size, search));
     }
 
     getProveedorById(id: string): Observable<Proveedor> {

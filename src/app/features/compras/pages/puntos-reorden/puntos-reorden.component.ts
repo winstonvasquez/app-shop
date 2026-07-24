@@ -1,15 +1,15 @@
 import { Component, ChangeDetectionStrategy, signal, inject, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ButtonComponent } from '@shared/components';
+import { ButtonComponent, ServerSearchSelectComponent } from '@shared/components';
 import { EvaluacionService } from '../../services/evaluacion.service';
 import { ProveedorService } from '../../services/proveedor.service';
 import { PuntoReorden } from '../../models/evaluacion.model';
-import { Proveedor } from '../../models/proveedor.model';
+import { proveedorSelectSource } from '../../components/select-sources';
 
 @Component({
     selector: 'app-puntos-reorden',
     standalone: true,
-    imports: [ReactiveFormsModule, ButtonComponent],
+    imports: [ReactiveFormsModule, ButtonComponent, ServerSearchSelectComponent],
     templateUrl: './puntos-reorden.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -18,7 +18,8 @@ export class PuntosReordenComponent implements OnInit {
     private proveedorService = inject(ProveedorService);
     private fb = inject(FormBuilder);
 
-    proveedores = signal<Proveedor[]>([]);
+    readonly proveedorSource = proveedorSelectSource(this.proveedorService);
+
     items = signal<PuntoReorden[]>([]);
     loading = signal(false);
     showForm = signal(false);
@@ -39,9 +40,6 @@ export class PuntosReordenComponent implements OnInit {
 
     ngOnInit(): void {
         this.cargar();
-        this.proveedorService.getProveedores(0, 200).subscribe(r => {
-            this.proveedores.set(r.content ?? []);
-        });
     }
 
     cargar(): void {

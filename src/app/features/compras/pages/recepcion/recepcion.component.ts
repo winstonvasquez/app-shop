@@ -1,6 +1,8 @@
 import { Component, OnInit, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
 import { DatePipe } from '@angular/common';
-import { of } from 'rxjs';
+import { toObservable } from '@angular/core/rxjs-interop';
+import { map } from 'rxjs';
+import { CatalogService } from '@core/services/catalog.service';
 import { RecepcionService, RecepcionPage } from '../../services/recepcion.service';
 import { Recepcion, RecepcionItem } from '../../models/orden-compra.model';
 import { DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent, PaginationEvent } from '@shared/ui/tables/data-table/data-table.component';
@@ -31,6 +33,7 @@ import { environment } from '@env/environment';
 })
 export class RecepcionComponent implements OnInit {
     private readonly recepcionService = inject(RecepcionService);
+    readonly catalog = inject(CatalogService);
 
     recepciones = signal<Recepcion[]>([]);
     selectedRecepcion = signal<Recepcion | null>(null);
@@ -63,18 +66,14 @@ export class RecepcionComponent implements OnInit {
         );
     });
 
-    readonly estadoOptions = [
-        { value: 'PENDIENTE', label: 'Pendiente' },
-        { value: 'CONFORME', label: 'Conforme' },
-        { value: 'DIFERENCIA', label: 'Con Diferencia' }
-    ];
-
     // Filtro de estado para el toolbar del data-table
     estadoFilters: FilterConfig[] = [
         {
             field: 'estado',
             label: 'Todos los estados',
-            options: of(this.estadoOptions)
+            options: toObservable(this.catalog.options('ESTADO_RECEPCION')).pipe(
+                map(o => o.map(x => ({ value: x.codigo, label: x.valor })))
+            )
         }
     ];
 
@@ -114,7 +113,7 @@ export class RecepcionComponent implements OnInit {
         },
         {
             key: 'estado', label: 'Estado', html: true,
-            render: (row) => `<span class="badge badge-${this.badgeEstado(row.estado)}">${row.estado}</span>`
+            render: (row) => `<span class="badge badge-${this.badgeEstado(row.estado)}">${this.catalog.label('ESTADO_RECEPCION', row.estado)}</span>`
         }
     ];
 
@@ -221,3 +220,4 @@ export class RecepcionComponent implements OnInit {
         return map[estado] ?? 'neutral';
     }
 }
+

@@ -115,8 +115,8 @@
                 <div><span class="text-muted">Factura:</span> <span class="font-mono">{{ fac.serie }}-{{ fac.numero }}</span></div>
                 <div><span class="text-muted">OC:</span> <span class="font-mono">{{ fac.ordenCompraCodigo }}</span></div>
                 <div><span class="text-muted">Emisión:</span> {{ fac.fechaEmision }}</div>
-                <div><span class="text-muted">Estado:</span> <span [class]="getEstadoBadge(fac.estado)">{{ fac.estado }}</span></div>
-                <div><span class="text-muted">3-Way Match:</span> <span [class]="getMatchBadge(fac.resultadoMatch)">{{ getMatchLabel(fac.resultadoMatch) }}</span></div>
+                <div><span class="text-muted">Estado:</span> <span [class]="getEstadoBadge(fac.estado)">{{ catalog.label('ESTADO_FACTURA_PROVEEDOR', fac.estado) }}</span></div>
+                <div><span class="text-muted">3-Way Match:</span> <span [class]="getMatchBadge(fac.resultadoMatch)">{{ catalog.label('RESULTADO_MATCH_3VIA', fac.resultadoMatch) }}</span></div>
             </div>
 
             <div class="card p-3 text-sm">

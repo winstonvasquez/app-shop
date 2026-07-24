@@ -5,13 +5,13 @@ import { Router, ActivatedRoute } from '@angular/router';
 import { OrdenCompraService } from '../../services/orden-compra.service';
 import { ProveedorService } from '../../services/proveedor.service';
 import { OrdenCompra, OrdenCompraItem } from '../../models/orden-compra.model';
-import { Proveedor } from '../../models/proveedor.model';
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { LoadingSpinnerComponent } from '@shared/ui/feedback/loading-spinner/loading-spinner.component';
-import { ButtonComponent } from '@shared/components';
+import { ButtonComponent, CatalogSelectComponent, ServerSearchSelectComponent } from '@shared/components';
 import { SUNAT_RATES } from '@shared/constants/sunat.constants';
+import { proveedorSelectSource } from '../../components/select-sources';
 
 export interface OcItemForm {
     productoNombre: string;
@@ -31,7 +31,9 @@ export interface OcItemForm {
     AlertComponent,
     LoadingSpinnerComponent,
     DecimalPipe,
-    ButtonComponent
+    ButtonComponent,
+    CatalogSelectComponent,
+    ServerSearchSelectComponent
   ],
     templateUrl: './orden-compra-form.component.html'
 })
@@ -47,8 +49,9 @@ export class OrdenCompraFormComponent implements OnInit {
     submitting = signal(false);
     error = signal<string | null>(null);
     submitError = signal<string | null>(null);
-    proveedores = signal<Proveedor[]>([]);
     formItems = signal<OcItemForm[]>([{ productoNombre: '', sku: '', cantidad: 1, precioUnitario: 0 }]);
+
+    readonly proveedorSource = proveedorSelectSource(this.proveedorService);
 
     totales = computed(() => {
         const items = this.formItems();
@@ -62,14 +65,6 @@ export class OrdenCompraFormComponent implements OnInit {
         { label: 'Compras', url: '/admin/compras/dashboard' },
         { label: 'Órdenes de Compra', url: '/admin/compras/ordenes' },
         { label: 'Nueva Orden' }
-    ];
-
-    readonly condicionPagoOptions = [
-        { value: 'CONTADO', label: 'Contado' },
-        { value: 'CREDITO_15', label: 'Crédito 15 días' },
-        { value: 'CREDITO_30', label: 'Crédito 30 días' },
-        { value: 'CREDITO_60', label: 'Crédito 60 días' },
-        { value: 'CREDITO_90', label: 'Crédito 90 días' }
     ];
 
     readonly almacenOptions = [
@@ -91,7 +86,6 @@ export class OrdenCompraFormComponent implements OnInit {
     }
 
     ngOnInit(): void {
-        this.loadProveedores();
         const id = this.route.snapshot.paramMap.get('id');
         if (id) {
             this.editMode.set(true);
@@ -103,13 +97,6 @@ export class OrdenCompraFormComponent implements OnInit {
             ];
             this.loadOrden(id);
         }
-    }
-
-    private loadProveedores(): void {
-        this.proveedorService.getProveedores(0, 200).subscribe({
-            next: (res) => this.proveedores.set(res.content),
-            error: () => { /* silent */ }
-        });
     }
 
     private loadOrden(id: string): void {

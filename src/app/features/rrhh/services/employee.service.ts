@@ -70,6 +70,20 @@ export class EmployeeService {
         }
     }
 
+    /**
+     * Página server-side SIN mutar el estado compartido (`_employees`).
+     * Pensado para el search-select: cada consulta es independiente del listado.
+     */
+    async searchPage(page: number, size: number, search?: string, sort?: string):
+        Promise<PageResponse<Employee>> {
+        const params: Record<string, string> = { page: String(page), size: String(size) };
+        if (search) params['search'] = search;
+        if (sort) params['sort'] = sort;
+        return firstValueFrom(
+            this.http.get<PageResponse<Employee>>(`${this.baseUrl}/paged`, { params })
+        );
+    }
+
     async getEmployeeById(id: number): Promise<Employee> {
         return firstValueFrom(
             this.http.get<Employee>(`${this.baseUrl}/${id}`)

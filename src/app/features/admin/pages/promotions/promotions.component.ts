@@ -1,8 +1,8 @@
 import { Component, inject, signal, computed, OnInit, ChangeDetectionStrategy } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { toSignal, toObservable } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
-import { of } from 'rxjs';
+import { map } from 'rxjs';
 import { DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { DateInputComponent } from '@shared/ui/forms/date-input/date-input.component';
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
@@ -14,6 +14,7 @@ import { VentasParametrosService, SelectOption } from '../../services/ventas-par
 import { CURRENCY_DISPLAY } from '@shared/constants/sunat.constants';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
+import { CatalogService } from '@core/services/catalog.service';
 
 type EstadoPromocion = 'ACTIVA' | 'INACTIVA' | 'VENCIDA';
 
@@ -41,6 +42,7 @@ export class PromotionsComponent implements OnInit {
     private readonly service    = inject(PromotionsService);
     private readonly parametros = inject(VentasParametrosService);
     private readonly fb         = inject(FormBuilder);
+    private readonly catalog    = inject(CatalogService);
 
     promociones  = signal<PromocionVM[]>([]);
     cargando     = signal(false);
@@ -53,17 +55,13 @@ export class PromotionsComponent implements OnInit {
 
     tipoOptions    = signal<SelectOption[]>([]);
     alcanceOptions = signal<SelectOption[]>([]);
-    readonly estadoOptions: { value: EstadoPromocion | ''; label: string }[] = [
-        { value: '',         label: 'Todos' },
-        { value: 'ACTIVA',   label: 'Activas' },
-        { value: 'INACTIVA', label: 'Inactivas' },
-        { value: 'VENCIDA',  label: 'Vencidas' },
-    ];
 
-    // Filtro de estado en el toolbar del data-table
+    // Filtro de estado en el toolbar del data-table (catálogo ESTADO_PROMOCION)
     readonly estadoFilters: FilterConfig[] = [
         { field: 'estado', label: 'Todos los estados',
-          options: of(this.estadoOptions.filter(o => o.value !== '')) }
+          options: toObservable(this.catalog.options('ESTADO_PROMOCION')).pipe(
+              map(o => o.map(x => ({ value: x.codigo, label: x.valor })))
+          ) }
     ];
 
     onFilterChangeEvent(event: FilterChangeEvent): void {

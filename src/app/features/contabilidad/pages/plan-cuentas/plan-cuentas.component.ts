@@ -1,6 +1,8 @@
 import { Component, inject, signal, computed, OnInit, ChangeDetectionStrategy } from '@angular/core';
-import { of } from 'rxjs';
+import { toObservable } from '@angular/core/rxjs-interop';
+import { map } from 'rxjs';
 import { CuentaService } from '../../services/cuenta.service';
+import { CatalogService } from '@core/services/catalog.service';
 import { PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
 import { DataTableComponent, TableColumn, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
@@ -15,7 +17,7 @@ interface CuentaPCGE {
     aceptaMovimiento: boolean;
 }
 
-type TipoFiltro = 'TODOS' | 'ACTIVO' | 'PASIVO' | 'PATRIMONIO' | 'GASTO' | 'INGRESO';
+type TipoFiltro = 'TODOS' | string;
 
 const PCGE_DEMO: CuentaPCGE[] = [
     { codigo: '10', nombre: 'Efectivo y Equivalentes de Efectivo', tipo: 'ACTIVO', nivel: 2, aceptaMovimiento: false },
@@ -49,21 +51,21 @@ const PCGE_DEMO: CuentaPCGE[] = [
     { codigo: '501', nombre: 'Capital Social', tipo: 'PATRIMONIO', nivel: 3, aceptaMovimiento: true },
     { codigo: '59', nombre: 'Resultados Acumulados', tipo: 'PATRIMONIO', nivel: 2, aceptaMovimiento: false },
     { codigo: '591', nombre: 'Utilidades No Distribuidas', tipo: 'PATRIMONIO', nivel: 3, aceptaMovimiento: true },
-    { codigo: '60', nombre: 'Compras', tipo: 'GASTO', nivel: 2, aceptaMovimiento: false },
-    { codigo: '601', nombre: 'Mercaderías', tipo: 'GASTO', nivel: 3, aceptaMovimiento: true },
-    { codigo: '62', nombre: 'Gastos de Personal, Directores y Gerentes', tipo: 'GASTO', nivel: 2, aceptaMovimiento: false },
-    { codigo: '621', nombre: 'Remuneraciones', tipo: 'GASTO', nivel: 3, aceptaMovimiento: true },
-    { codigo: '6211', nombre: 'Sueldos y Salarios', tipo: 'GASTO', nivel: 4, aceptaMovimiento: true },
-    { codigo: '627', nombre: 'Seguridad y Previsión Social', tipo: 'GASTO', nivel: 3, aceptaMovimiento: false },
-    { codigo: '6271', nombre: 'Régimen de Prestaciones de Salud', tipo: 'GASTO', nivel: 4, aceptaMovimiento: true },
-    { codigo: '63', nombre: 'Gastos de Servicios Prestados por Terceros', tipo: 'GASTO', nivel: 2, aceptaMovimiento: false },
-    { codigo: '631', nombre: 'Transporte, Correos y Gastos de Viaje', tipo: 'GASTO', nivel: 3, aceptaMovimiento: true },
-    { codigo: '70', nombre: 'Ventas', tipo: 'INGRESO', nivel: 2, aceptaMovimiento: false },
-    { codigo: '701', nombre: 'Mercaderías', tipo: 'INGRESO', nivel: 3, aceptaMovimiento: false },
-    { codigo: '7011', nombre: 'Mercaderías Manufacturadas', tipo: 'INGRESO', nivel: 4, aceptaMovimiento: true },
-    { codigo: '7012', nombre: 'Mercaderías - Relacionadas', tipo: 'INGRESO', nivel: 4, aceptaMovimiento: true },
-    { codigo: '75', nombre: 'Otros Ingresos de Gestión', tipo: 'INGRESO', nivel: 2, aceptaMovimiento: false },
-    { codigo: '751', nombre: 'Servicios en Beneficio del Personal', tipo: 'INGRESO', nivel: 3, aceptaMovimiento: true },
+    { codigo: '60', nombre: 'Compras', tipo: 'RESULTADO', nivel: 2, aceptaMovimiento: false },
+    { codigo: '601', nombre: 'Mercaderías', tipo: 'RESULTADO', nivel: 3, aceptaMovimiento: true },
+    { codigo: '62', nombre: 'Gastos de Personal, Directores y Gerentes', tipo: 'RESULTADO', nivel: 2, aceptaMovimiento: false },
+    { codigo: '621', nombre: 'Remuneraciones', tipo: 'RESULTADO', nivel: 3, aceptaMovimiento: true },
+    { codigo: '6211', nombre: 'Sueldos y Salarios', tipo: 'RESULTADO', nivel: 4, aceptaMovimiento: true },
+    { codigo: '627', nombre: 'Seguridad y Previsión Social', tipo: 'RESULTADO', nivel: 3, aceptaMovimiento: false },
+    { codigo: '6271', nombre: 'Régimen de Prestaciones de Salud', tipo: 'RESULTADO', nivel: 4, aceptaMovimiento: true },
+    { codigo: '63', nombre: 'Gastos de Servicios Prestados por Terceros', tipo: 'RESULTADO', nivel: 2, aceptaMovimiento: false },
+    { codigo: '631', nombre: 'Transporte, Correos y Gastos de Viaje', tipo: 'RESULTADO', nivel: 3, aceptaMovimiento: true },
+    { codigo: '70', nombre: 'Ventas', tipo: 'RESULTADO', nivel: 2, aceptaMovimiento: false },
+    { codigo: '701', nombre: 'Mercaderías', tipo: 'RESULTADO', nivel: 3, aceptaMovimiento: false },
+    { codigo: '7011', nombre: 'Mercaderías Manufacturadas', tipo: 'RESULTADO', nivel: 4, aceptaMovimiento: true },
+    { codigo: '7012', nombre: 'Mercaderías - Relacionadas', tipo: 'RESULTADO', nivel: 4, aceptaMovimiento: true },
+    { codigo: '75', nombre: 'Otros Ingresos de Gestión', tipo: 'RESULTADO', nivel: 2, aceptaMovimiento: false },
+    { codigo: '751', nombre: 'Servicios en Beneficio del Personal', tipo: 'RESULTADO', nivel: 3, aceptaMovimiento: true },
 ];
 
 @Component({
@@ -106,6 +108,7 @@ const PCGE_DEMO: CuentaPCGE[] = [
 })
 export class PlanCuentasComponent implements OnInit {
     private cuentaService = inject(CuentaService);
+    private readonly catalog = inject(CatalogService);
 
     readonly cargando = signal(true);
     readonly modoDemo = signal(false);
@@ -118,13 +121,9 @@ export class PlanCuentasComponent implements OnInit {
         {
             field: 'tipo',
             label: 'Todos los tipos',
-            options: of([
-                { value: 'ACTIVO', label: 'Activo' },
-                { value: 'PASIVO', label: 'Pasivo' },
-                { value: 'PATRIMONIO', label: 'Patrimonio' },
-                { value: 'GASTO', label: 'Gasto' },
-                { value: 'INGRESO', label: 'Ingreso' },
-            ])
+            options: toObservable(this.catalog.options('TIPO_CUENTA_PCGE')).pipe(
+                map(o => o.map(x => ({ value: x.codigo, label: x.valor })))
+            )
         }
     ];
 
@@ -181,7 +180,7 @@ export class PlanCuentasComponent implements OnInit {
         },
         {
             key: 'tipo', label: 'Tipo', width: '130px',
-            html: true, render: (r) => `<span class="${this.badgeTipo(r.tipo)}">${r.tipo}</span>`
+            html: true, render: (r) => `<span class="${this.badgeTipo(r.tipo)}">${this.catalog.label('TIPO_CUENTA_PCGE', r.tipo)}</span>`
         },
         { key: 'nivel', label: 'Nivel', align: 'center', width: '80px' },
         {
@@ -234,8 +233,8 @@ export class PlanCuentasComponent implements OnInit {
             'ACTIVO': 'badge badge-success',
             'PASIVO': 'badge badge-warning',
             'PATRIMONIO': 'badge badge-accent',
-            'GASTO': 'badge badge-error',
-            'INGRESO': 'badge badge-neutral',
+            'RESULTADO': 'badge badge-error',
+            'ANALITICA': 'badge badge-neutral',
         };
         return map[tipo] ?? 'badge badge-neutral';
     }

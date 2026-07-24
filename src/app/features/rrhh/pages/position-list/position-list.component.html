@@ -61,12 +61,9 @@
 
         <div style="margin-top: var(--space-md)">
             <label class="input-label">Departamento <span style="color:var(--color-error)">*</span></label>
-            <select class="form-input" formControlName="departmentId">
-                <option [ngValue]="null">— Seleccionar departamento —</option>
-                @for (dept of departments(); track dept.id) {
-                    <option [ngValue]="dept.id">{{ dept.nombre }}</option>
-                }
-            </select>
+            <app-server-search-select [dataSource]="departmentSource"
+                                      formControlName="departmentId"
+                                      placeholder="Buscar departamento…" />
         </div>
 
         <div style="margin-top: var(--space-md)">

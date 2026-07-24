@@ -1,7 +1,8 @@
 import { Component, inject, signal, computed, ChangeDetectionStrategy, OnInit } from '@angular/core';
 import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
+import { toObservable } from '@angular/core/rxjs-interop';
+import { map } from 'rxjs';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
-import { of } from 'rxjs';
 import { DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { PaginationComponent, PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
@@ -10,10 +11,11 @@ import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { DateInputComponent } from '@shared/ui/forms/date-input/date-input.component';
 import { ButtonComponent } from '@shared/components';
 import { TrainingService } from '../../services/training.service';
-import { Training, TRAINING_STATUS_LABELS, TrainingStatus } from '../../models/training.model';
+import { Training, TrainingStatus } from '../../models/training.model';
 import { PAGINATION } from '@shared/constants/app.constants';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
+import { CatalogService } from '@core/services/catalog.service';
 
 @Component({
     selector: 'app-training-list',
@@ -35,6 +37,7 @@ import { environment } from '@env/environment';
 export class TrainingListComponent implements OnInit {
     private readonly fb = inject(FormBuilder);
     private readonly trainingService = inject(TrainingService);
+    private readonly catalog = inject(CatalogService);
 
     readonly trainings = this.trainingService.trainings;
     readonly loading = this.trainingService.loading;
@@ -81,13 +84,6 @@ export class TrainingListComponent implements OnInit {
         { label: 'Capacitaciones' },
     ];
 
-    readonly estadoOptions = [
-        { value: 'PLANIFICADO', label: 'Planificado' },
-        { value: 'EN_CURSO', label: 'En Curso' },
-        { value: 'COMPLETADO', label: 'Completado' },
-        { value: 'CANCELADO', label: 'Cancelado' },
-    ];
-
     columns: TableColumn<Training>[] = [
         { key: 'nombre', label: 'Curso' },
         { key: 'instructor', label: 'Instructor', render: row => row.instructor || '—' },
@@ -103,7 +99,7 @@ export class TrainingListComponent implements OnInit {
         { key: 'participantes', label: 'Partic.', align: 'center', render: row => `${row.participantes}` },
         {
             key: 'estado', label: 'Estado', html: true,
-            render: row => `<span class="badge badge-${this.badgeEstado(row.estado)}">${TRAINING_STATUS_LABELS[row.estado]}</span>`
+            render: row => `<span class="badge badge-${this.badgeEstado(row.estado)}">${this.catalog.label('ESTADO_CAPACITACION', row.estado)}</span>`
         },
     ];
 
@@ -144,7 +140,12 @@ export class TrainingListComponent implements OnInit {
     }
 
     readonly toolbarFilters: FilterConfig[] = [
-        { field: 'estado', label: 'Todos los estados', options: of(this.estadoOptions) }
+        {
+            field: 'estado', label: 'Todos los estados',
+            options: toObservable(this.catalog.options('ESTADO_CAPACITACION')).pipe(
+                map(o => o.map(x => ({ value: x.codigo, label: x.valor })))
+            )
+        }
     ];
 
     onFilterChangeEvent(event: FilterChangeEvent): void {

@@ -1,11 +1,13 @@
 import { Component, inject, signal, OnInit, ChangeDetectionStrategy, computed } from '@angular/core';
+import { toObservable } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { ButtonComponent, CatalogSelectComponent } from '@shared/components';
 import { DrawerComponent } from '../../../../../shared/components/drawer/drawer.component';
 import { GuiaRemisionService } from '../../../services/guia-remision.service';
 import { GuiaRemision, EstadoGuia, CreateGuiaRemisionDto, GuiaRemisionItemDto } from '../../../models/guia-remision.model';
 import { AuthService } from '../../../../../core/auth/auth.service';
-import { of } from 'rxjs';
+import { CatalogService } from '@core/services/catalog.service';
+import { map } from 'rxjs';
 import { DataTableComponent, TableColumn, TableAction, PaginationEvent, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { DateInputComponent } from '@shared/ui/forms/date-input/date-input.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
@@ -14,18 +16,6 @@ import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model
 import { PAGINATION } from '@shared/constants/app.constants';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
-
-const MOTIVOS_TRASLADO: { codigo: string; descripcion: string }[] = [
-    { codigo: '01', descripcion: '01 — Venta' },
-    { codigo: '02', descripcion: '02 — Compra' },
-    { codigo: '04', descripcion: '04 — Traslado entre establecimientos del mismo emisor' },
-    { codigo: '08', descripcion: '08 — Importación' },
-    { codigo: '09', descripcion: '09 — Exportación' },
-    { codigo: '13', descripcion: '13 — Otros' },
-    { codigo: '14', descripcion: '14 — Venta sujeta a confirmación del comprador' },
-    { codigo: '18', descripcion: '18 — Traslado emisor itinerante CP' },
-    { codigo: '19', descripcion: '19 — Traslado a zona primaria' },
-];
 
 interface ItemForm {
     productoNombre: string;
@@ -46,6 +36,7 @@ export class GuiasPageComponent implements OnInit {
     private readonly guiaService = inject(GuiaRemisionService);
     private readonly authService = inject(AuthService);
     private readonly fb          = inject(FormBuilder);
+    private readonly catalog     = inject(CatalogService);
 
     readonly guias           = signal<GuiaRemision[]>([]);
     readonly guiasFiltradas  = signal<GuiaRemision[]>([]);
@@ -55,8 +46,6 @@ export class GuiasPageComponent implements OnInit {
     readonly guardando       = signal(false);
     readonly errorMsg        = signal<string | null>(null);
     readonly itemForms       = signal<ItemForm[]>([]);
-
-    readonly motivos = MOTIVOS_TRASLADO;
 
     // Pagination
     currentPage = signal(0);
@@ -69,21 +58,19 @@ export class GuiasPageComponent implements OnInit {
         { label: 'Guías de Remisión' }
     ];
 
-    readonly estadoGuiaOptions: { value: EstadoGuia; label: string }[] = [
-        { value: 'EMITIDA',   label: 'Emitida' },
-        { value: 'ACEPTADA',  label: 'Aceptada' },
-        { value: 'RECHAZADA', label: 'Rechazada' },
-        { value: 'ANULADA',   label: 'Anulada' },
-    ];
-
     // Filter — reactive (1 campo compacto)
     filterForm = this.fb.group({
         estado: ['']
     });
 
-    // Filtro de estado en el toolbar del data-table
+    // Filtro de estado en el toolbar del data-table (opciones desde catálogo ESTADO_GUIA_REMISION)
     readonly estadoFilters: FilterConfig[] = [
-        { field: 'estado', label: 'Todos los estados', options: of(this.estadoGuiaOptions) }
+        {
+            field: 'estado', label: 'Todos los estados',
+            options: toObservable(this.catalog.options('ESTADO_GUIA_REMISION')).pipe(
+                map(opts => opts.map(o => ({ value: o.codigo, label: o.valor })))
+            )
+        }
     ];
 
     /**
@@ -137,7 +124,7 @@ export class GuiasPageComponent implements OnInit {
           render: (row) => row.fechaEmision
             ? new Date(row.fechaEmision).toLocaleDateString('es-PE') : '-' },
         { key: 'motivoTraslado', label: 'Motivo',
-          render: (row) => this.motivoLabel(row.motivoTraslado) },
+          render: (row) => this.catalog.label('MOTIVO_TRASLADO_SUNAT', row.motivoTraslado) },
         { key: 'destinatarioRazonSocial', label: 'Destinatario',
           render: (row) => row.destinatarioRazonSocial || '—' },
         { key: 'vehiculoPlaca', label: 'Placa/Conductor',
@@ -145,14 +132,14 @@ export class GuiasPageComponent implements OnInit {
             ? `${row.vehiculoPlaca}${row.conductorNombre ? ' — ' + row.conductorNombre : ''}`
             : '—' },
         { key: 'estado', label: 'Estado', html: true,
-          render: (row) => `<span class="${this.badgeClass(row.estado)}">${row.estado}</span>` },
+          render: (row) => `<span class="${this.badgeClass(row.estado)}">${this.catalog.label('ESTADO_GUIA_REMISION', row.estado)}</span>` },
     ];
 
     actions: TableAction<GuiaRemision>[] = [
         {
-            label: 'Aceptar', icon: '✓', class: 'btn-view',
+            label: 'Iniciar traslado', icon: '✓', class: 'btn-view',
             show: (row) => row.estado === 'EMITIDA',
-            onClick: (row) => this.cambiarEstado(row.id, 'ACEPTADA')
+            onClick: (row) => this.cambiarEstado(row.id, 'EN_TRASLADO')
         },
         {
             label: 'Anular', icon: '✕', class: 'btn-view',
@@ -317,16 +304,12 @@ export class GuiasPageComponent implements OnInit {
         this.errorMsg.set(null);
     }
 
-    motivoLabel(codigo: string): string {
-        return MOTIVOS_TRASLADO.find(m => m.codigo === codigo)?.descripcion ?? codigo ?? '—';
-    }
-
     badgeClass(estado: EstadoGuia): string {
         const map: Record<EstadoGuia, string> = {
-            EMITIDA:   'badge badge-accent',
-            ACEPTADA:  'badge badge-success',
-            RECHAZADA: 'badge badge-error',
-            ANULADA:   'badge badge-neutral'
+            EMITIDA:     'badge badge-accent',
+            EN_TRASLADO: 'badge badge-warning',
+            RECIBIDA:    'badge badge-success',
+            ANULADA:     'badge badge-neutral'
         };
         return map[estado] ?? 'badge';
     }

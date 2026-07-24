@@ -7,7 +7,8 @@ import { AttendanceService } from '../../services/attendance.service';
 import { EmployeeService } from '../../services/employee.service';
 import { Attendance } from '../../models/attendance.model';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
-import { of } from 'rxjs';
+import { toObservable } from '@angular/core/rxjs-interop';
+import { map } from 'rxjs';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
 import { DataTableComponent, TableColumn, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
@@ -16,7 +17,9 @@ import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/p
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { DateInputComponent } from '@shared/ui/forms/date-input/date-input.component';
 import { AdminFormSectionComponent } from '@shared/ui/forms/admin-form-section/admin-form-section.component';
-import { ButtonComponent } from '@shared/components';
+import { ButtonComponent, CatalogSelectComponent, ServerSearchSelectComponent } from '@shared/components';
+import { employeeSelectSource } from '../../components/select-sources';
+import { CatalogService } from '@core/services/catalog.service';
 
 type TipoRegistro = 'NORMAL' | 'TARDANZA' | 'FALTA' | 'PERMISO' | 'LICENCIA' | 'VACACIONES';
 
@@ -34,6 +37,8 @@ type TipoRegistro = 'NORMAL' | 'TARDANZA' | 'FALTA' | 'PERMISO' | 'LICENCIA' | '
         DateInputComponent,
         AdminFormSectionComponent,
         ButtonComponent,
+        CatalogSelectComponent,
+        ServerSearchSelectComponent,
     ],
     templateUrl: './attendance.component.html',
 })
@@ -41,10 +46,14 @@ export class AttendanceComponent implements OnInit {
     private readonly fb = inject(FormBuilder);
     private readonly attendanceService = inject(AttendanceService);
     private readonly employeeService = inject(EmployeeService);
+    private readonly catalog = inject(CatalogService);
 
     // ── Data ─────────────────────────────────────────────────────────────────
     readonly loading   = this.attendanceService.loading;
+    // Se mantiene para resolver el nombre del empleado en la tabla (getEmployeeName).
     readonly employees = this.employeeService.activeEmployees;
+    /** Fuente server-side del search-select de empleado del formulario. */
+    readonly employeeSource = employeeSelectSource(this.employeeService);
     readonly attendances = signal<Attendance[]>([]);
 
     // ── UI state ──────────────────────────────────────────────────────────────
@@ -87,16 +96,6 @@ export class AttendanceComponent implements OnInit {
         { label: 'Asistencia' },
     ];
 
-    // ── Tipos de registro ────────────────────────────────────────────────────
-    readonly tipoRegistroOptions = [
-        { value: 'NORMAL',     label: 'Normal'     },
-        { value: 'TARDANZA',   label: 'Tardanza'   },
-        { value: 'FALTA',      label: 'Falta'      },
-        { value: 'PERMISO',    label: 'Permiso'    },
-        { value: 'LICENCIA',   label: 'Licencia'   },
-        { value: 'VACACIONES', label: 'Vacaciones' },
-    ];
-
     // ── Columns ───────────────────────────────────────────────────────────────
     columns: TableColumn<Attendance>[] = [
         { key: 'employeeId', label: 'Empleado', render: row => this.getEmployeeName(row.employeeId) },
@@ -106,7 +105,7 @@ export class AttendanceComponent implements OnInit {
         { key: 'horaSalida',  label: 'Salida',  render: row => row.horaSalida  ?? '—' },
         {
             key: 'tipoRegistro', label: 'Tipo', html: true,
-            render: row => `<span class="badge badge-${this.badgeTipo(row.tipoRegistro)}">${row.tipoRegistro}</span>`
+            render: row => `<span class="badge badge-${this.badgeTipo(row.tipoRegistro)}">${this.catalog.label('TIPO_REGISTRO_ASISTENCIA', row.tipoRegistro)}</span>`
         },
         { key: 'observaciones', label: 'Observaciones', render: row => row.observaciones ?? '—' },
     ];
@@ -136,18 +135,30 @@ export class AttendanceComponent implements OnInit {
         try {
             await this.employeeService.loadEmployees();
         } catch { /* servicio puede no estar disponible */ }
-        this.attendances.set(this.attendanceService.attendances());
+        await this.loadByDate();
+    }
+
+    /** Carga desde el backend los registros de asistencia de la fecha filtrada. */
+    private async loadByDate(): Promise<void> {
+        try {
+            const data = await this.attendanceService.getByDate(this.filterFecha());
+            this.attendances.set(data ?? []);
+        } catch {
+            this.attendances.set([]);
+        }
     }
 
     // ── Handlers ─────────────────────────────────────────────────────────────
     onFilterFecha(event: Event): void {
         this.filterFecha.set((event.target as HTMLInputElement).value);
         this.currentPage.set(0);
+        void this.loadByDate();
     }
 
     readonly tipoFilters: FilterConfig[] = [
         { field: 'tipo', label: 'Todos los tipos',
-          options: of(this.tipoRegistroOptions.map(o => ({ value: o.value, label: o.label }))) }
+          options: toObservable(this.catalog.options('TIPO_REGISTRO_ASISTENCIA'))
+              .pipe(map(o => o.map(x => ({ value: x.codigo, label: x.valor })))) }
     ];
 
     onFilterChangeEvent(event: FilterChangeEvent): void {
@@ -188,10 +199,15 @@ export class AttendanceComponent implements OnInit {
                 ...formValue,
                 fecha: typeof formValue.fecha === 'string' ? formValue.fecha
                     : (formValue.fecha as unknown as Date)?.toISOString?.()?.split('T')[0] ?? '',
+                // LocalTime no acepta "" — omitir las horas vacías (registros sin marca de hora).
+                horaEntrada: formValue.horaEntrada || undefined,
+                horaSalida: formValue.horaSalida || undefined,
             };
-            const registered = await this.attendanceService.registerAttendance(request as never);
-            this.attendances.update(list => [...list, registered]);
+            await this.attendanceService.registerAttendance(request as never);
             this.closeModal();
+            // Refresca desde el backend para reflejar el registro real (y su fecha).
+            this.filterFecha.set(request.fecha);
+            await this.loadByDate();
         } catch {
             this.submitError.set('Error al registrar asistencia. Verifique los datos.');
         } finally {

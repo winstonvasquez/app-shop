@@ -1,0 +1,50 @@
+<div class="ss-control" [class.ss-open]="open()" [class.ss-disabled]="disabled()">
+    <input
+        #searchInput
+        type="text"
+        class="form-input ss-input"
+        role="combobox"
+        aria-autocomplete="list"
+        [attr.aria-expanded]="open()"
+        [attr.aria-activedescendant]="activeIndex() >= 0 ? 'ss-opt-' + activeIndex() : null"
+        [value]="inputText()"
+        [disabled]="disabled()"
+        [placeholder]="placeholder()"
+        (focus)="onFocus()"
+        (input)="onInput($any($event.target).value)"
+        (keydown)="onKeydown($event)"
+        autocomplete="off" />
+
+    @if (allowClear() && value() !== null && !disabled()) {
+        <button type="button" class="ss-clear" aria-label="Limpiar selección"
+                (click)="clearSelection($event)">×</button>
+    }
+    <span class="ss-caret" aria-hidden="true"></span>
+
+    @if (open()) {
+        <ul class="ss-dropdown" role="listbox" (scroll)="onScroll($any($event.target))">
+            @for (opt of options(); track opt.id; let i = $index) {
+                <li [id]="'ss-opt-' + i"
+                    role="option"
+                    class="ss-option"
+                    [class.ss-active]="i === activeIndex()"
+                    [attr.aria-selected]="opt.id === value()"
+                    (click)="select(opt)"
+                    (mouseenter)="activeIndex.set(i)">
+                    <span class="ss-option-label">{{ opt.label }}</span>
+                    @if (opt.sublabel) {
+                        <span class="ss-option-sub">{{ opt.sublabel }}</span>
+                    }
+                </li>
+            }
+
+            @if (loading()) {
+                <li class="ss-status" aria-live="polite">Cargando…</li>
+            } @else if (options().length === 0) {
+                <li class="ss-status">Sin resultados</li>
+            } @else if (!last()) {
+                <li class="ss-status ss-more">Desplázate para ver más…</li>
+            }
+        </ul>
+    }
+</div>

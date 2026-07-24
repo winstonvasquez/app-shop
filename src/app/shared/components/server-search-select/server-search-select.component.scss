@@ -1,0 +1,118 @@
+:host {
+    display: block;
+    position: relative;
+}
+
+.ss-control {
+    position: relative;
+}
+
+.ss-input {
+    width: 100%;
+    // Espacio a la derecha para el caret + botón limpiar.
+    padding-right: 2.5rem;
+    cursor: text;
+}
+
+.ss-caret {
+    position: absolute;
+    top: 50%;
+    right: 0.75rem;
+    width: 0;
+    height: 0;
+    transform: translateY(-50%);
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 6px solid var(--color-text-muted, #6b7280);
+    pointer-events: none;
+    transition: transform 0.15s ease;
+}
+
+.ss-open .ss-caret {
+    transform: translateY(-50%) rotate(180deg);
+}
+
+.ss-clear {
+    position: absolute;
+    top: 50%;
+    right: 1.75rem;
+    transform: translateY(-50%);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.25rem;
+    height: 1.25rem;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--color-text-muted, #6b7280);
+    font-size: 1.1rem;
+    line-height: 1;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+
+    &:hover {
+        background: var(--color-surface-2, #f0f0f0);
+        color: var(--color-text, #111);
+    }
+}
+
+.ss-disabled {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.ss-dropdown {
+    position: absolute;
+    z-index: 60;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    margin: 0;
+    padding: 0.25rem 0;
+    list-style: none;
+    max-height: 16rem; // ~ 8 filas antes de scroll
+    overflow-y: auto;
+    background: var(--color-surface, #fff);
+    border: 1px solid var(--color-border, #d1d5db);
+    border-radius: var(--radius-md, 8px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.ss-option {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    padding: 0.5rem 0.85rem;
+    cursor: pointer;
+    line-height: 1.25;
+
+    &.ss-active {
+        background: var(--color-primary-soft, rgba(11, 61, 145, 0.08));
+    }
+
+    &[aria-selected='true'] {
+        font-weight: 600;
+    }
+}
+
+.ss-option-label {
+    color: var(--color-text, #111827);
+}
+
+.ss-option-sub {
+    font-size: 0.78rem;
+    color: var(--color-text-muted, #6b7280);
+}
+
+.ss-status {
+    padding: 0.5rem 0.85rem;
+    font-size: 0.85rem;
+    color: var(--color-text-muted, #6b7280);
+    text-align: center;
+
+    &.ss-more {
+        font-style: italic;
+    }
+}

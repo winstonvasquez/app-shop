@@ -61,12 +61,7 @@
       <div class="form-grid form-grid-3">
         <div class="form-field-wrapper">
           <label class="input-label">Motivo de Traslado *</label>
-          <select class="form-input" formControlName="motivoTraslado">
-            <option value="">Seleccionar...</option>
-            @for (m of motivos; track m.codigo) {
-              <option [value]="m.codigo">{{ m.descripcion }}</option>
-            }
-          </select>
+          <app-catalog-select tabla="MOTIVO_TRASLADO_SUNAT" formControlName="motivoTraslado" placeholder="— Seleccionar —" />
         </div>
         <div class="form-field-wrapper">
           <label class="input-label">Modalidad *</label>

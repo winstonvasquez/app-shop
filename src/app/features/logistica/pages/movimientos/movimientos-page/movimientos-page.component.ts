@@ -1,14 +1,16 @@
 import {
     Component, inject, signal, OnInit, ChangeDetectionStrategy
 } from '@angular/core';
+import { toObservable } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators, FormGroup } from '@angular/forms';
+import { map } from 'rxjs';
 import { MovimientoService, Movimiento, MovimientoPage } from '../../../services/movimiento.service';
 import { AlmacenService } from '../../../services/almacen.service';
 import { Almacen } from '../../../models/almacen.model';
 import { MovimientoItem, CreateMovimientoDto } from '../../../models/movimiento.model';
 import { AuthService } from '../../../../../core/auth/auth.service';
-import { ButtonComponent } from '@shared/components';
-import { of } from 'rxjs';
+import { CatalogService } from '@core/services/catalog.service';
+import { ButtonComponent, CatalogSelectComponent } from '@shared/components';
 import { DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { DateInputComponent } from '@shared/ui/forms/date-input/date-input.component';
@@ -32,6 +34,7 @@ interface ItemForm {
     imports: [
         ReactiveFormsModule,
         ButtonComponent,
+        CatalogSelectComponent,
         DataTableComponent,
         DrawerComponent,
         DateInputComponent,
@@ -44,6 +47,7 @@ export class MovimientosPageComponent implements OnInit {
     private readonly movimientoService = inject(MovimientoService);
     private readonly almacenService    = inject(AlmacenService);
     private readonly authService       = inject(AuthService);
+    private readonly catalog           = inject(CatalogService);
     private readonly fb                = inject(FormBuilder);
 
     // Data
@@ -71,17 +75,11 @@ export class MovimientosPageComponent implements OnInit {
     totalElements = signal(0);
     totalPages    = signal(1);
 
-    readonly tipoOptions = [
-        { value: 'ENTRADA_COMPRA', label: 'Entrada Compra' },
-        { value: 'SALIDA_VENTA',   label: 'Salida Venta' },
-        { value: 'TRASLADO',       label: 'Traslado' },
-        { value: 'AJUSTE',         label: 'Ajuste de inventario' },
-        { value: 'DEVOLUCION',     label: 'Devolución' }
-    ];
-
     // Filtro de tipo en el toolbar del data-table (fechas van proyectadas via toolbarExtra)
     readonly tipoFilters: FilterConfig[] = [
-        { field: 'tipo', label: 'Todos los tipos', options: of(this.tipoOptions) }
+        { field: 'tipo', label: 'Todos los tipos',
+          options: toObservable(this.catalog.options('TIPO_MOVIMIENTO_INVENTARIO'))
+            .pipe(map(o => o.map(x => ({ value: x.codigo, label: x.valor })))) }
     ];
 
     breadcrumbs: Breadcrumb[] = [
@@ -96,7 +94,7 @@ export class MovimientosPageComponent implements OnInit {
             ? new Date(r.createdAt).toLocaleString('es-PE', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })
             : '—' },
         { key: 'tipo', label: 'Tipo', html: true,
-          render: (r) => `<span class="badge ${this.badgeTipo(r.tipo)}">${r.tipo.replace(/_/g, ' ')}</span>` },
+          render: (r) => `<span class="badge ${this.badgeTipo(r.tipo)}">${this.catalog.label('TIPO_MOVIMIENTO_INVENTARIO', r.tipo)}</span>` },
         { key: 'codigo',         label: 'Código' },
         { key: 'almacenOrigen',  label: 'Almacén Origen',  render: (r) => r.almacenOrigen  || '—' },
         { key: 'almacenDestino', label: 'Destino',          render: (r) => r.almacenDestino || '—' },

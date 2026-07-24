@@ -175,7 +175,7 @@
 
         <!-- Grid de métodos de pago -->
         <div class="payment-methods mt-2">
-            @for (m of paymentMethods; track m.id) {
+            @for (m of paymentMethods(); track m.id) {
             <button class="pay-btn flex-col !h-[56px] relative overflow-hidden"
                 [class.pay-btn--active]="carrito.metodoPago() === m.id"
                 [class.pay-btn--yape]="m.id === 'YAPE'"
@@ -239,7 +239,7 @@
             <div style="display:flex;align-items:center;gap:6px">
                 <select style="flex:0 0 90px;height:34px;border-radius:8px;border:1px solid var(--color-border);background:var(--color-surface-raised);color:var(--color-text-on);font-size:12px;padding:0 6px"
                     [value]="pago.metodo" (change)="onPagoMetodoChange($index, $event)">
-                    @for (m of splitMethods; track m.id) {
+                    @for (m of splitMethods(); track m.id) {
                     <option [value]="m.id">{{ m.i18nKey | translate }}</option>
                     }
                 </select>
@@ -273,7 +273,7 @@
 
         <p class="payment-section-label mt-[2px]">Comprobante</p>
         <div class="cpe-options mt-2">
-            @for (cpe of cpeOptions; track cpe.id) {
+            @for (cpe of cpeOptions(); track cpe.id) {
             <button class="cpe-btn"
                 [class.cpe-btn--active]="carrito.tipoCpe() === cpe.id"
                 (click)="carrito.setTipoCpe(cpe.id)">

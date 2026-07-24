@@ -3,7 +3,7 @@ import { toObservable } from '@angular/core/rxjs-interop';
 import { DecimalPipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
-import { of, map } from 'rxjs';
+import { map } from 'rxjs';
 import { AuthService } from '@core/auth/auth.service';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { DataTableComponent, TableColumn, TableAction, PaginationEvent, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
@@ -15,6 +15,7 @@ import { PeriodoService, PeriodoContable } from '../../services/periodo.service'
 import { Asiento, AsientoRequest, MovimientoRequest } from '../../models/asiento.model';
 import { PAGINATION } from '@shared/constants/app.constants';
 import { CatalogSelectComponent } from '@shared/components';
+import { CatalogService } from '@core/services/catalog.service';
 
 interface LineaForm {
     cuentaId: string;
@@ -265,6 +266,7 @@ export class AsientosComponent implements OnInit {
     private cuentaService = inject(CuentaService);
     private periodoService = inject(PeriodoService);
     private auth = inject(AuthService);
+    private readonly catalog = inject(CatalogService);
 
     // ── Lista ──────────────────────────────────────────────────────────────
     readonly asientos = signal<Asiento[]>([]);
@@ -296,11 +298,9 @@ export class AsientosComponent implements OnInit {
         {
             field: 'tipo',
             label: 'Tipo ▼',
-            options: of([
-                { value: 'MANUAL', label: 'Manual' },
-                { value: 'AUTOMATICO', label: 'Automático' },
-                { value: 'CIERRE', label: 'Cierre' }
-            ])
+            options: toObservable(this.catalog.options('TIPO_ASIENTO_CONTABLE')).pipe(
+                map(o => o.map(x => ({ value: x.codigo, label: x.valor })))
+            )
         }
     ];
 
@@ -369,7 +369,7 @@ export class AsientosComponent implements OnInit {
             key: 'tipo',
             label: 'Tipo',
             html: true,
-            render: (r) => `<span class="badge badge-neutral">${r.tipo}</span>`
+            render: (r) => `<span class="badge badge-neutral">${this.catalog.label('TIPO_ASIENTO_CONTABLE', r.tipo)}</span>`
         },
         {
             key: 'origen',

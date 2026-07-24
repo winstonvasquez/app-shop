@@ -5,15 +5,15 @@ import { EvaluacionService } from '../../services/evaluacion.service';
 import { ProveedorService } from '../../services/proveedor.service';
 import { HistorialPrecio } from '../../models/evaluacion.model';
 import { MONEDA } from '@shared/constants/sunat.constants';
-import { Proveedor } from '../../models/proveedor.model';
-import { ButtonComponent, CatalogSelectComponent } from '@shared/components';
+import { proveedorSelectSource } from '../../components/select-sources';
+import { ButtonComponent, CatalogSelectComponent, ServerSearchSelectComponent } from '@shared/components';
 
 type BusquedaTipo = 'sku' | 'producto' | 'proveedor';
 
 @Component({
     selector: 'app-historial-precios',
     standalone: true,
-    imports: [DatePipe, DecimalPipe, FormsModule, ReactiveFormsModule, ButtonComponent, CatalogSelectComponent],
+    imports: [DatePipe, DecimalPipe, FormsModule, ReactiveFormsModule, ButtonComponent, CatalogSelectComponent, ServerSearchSelectComponent],
     templateUrl: './historial-precios.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -22,7 +22,8 @@ export class HistorialPreciosComponent {
     private proveedorService = inject(ProveedorService);
     private fb = inject(FormBuilder);
 
-    proveedores = signal<Proveedor[]>([]);
+    readonly proveedorSource = proveedorSelectSource(this.proveedorService);
+
     historial = signal<HistorialPrecio[]>([]);
     loading = signal(false);
     showForm = signal(false);
@@ -39,12 +40,6 @@ export class HistorialPreciosComponent {
         moneda: [MONEDA.PEN],
         fechaReferencia: [''],
     });
-
-    constructor() {
-        this.proveedorService.getProveedores(0, 200).subscribe(r => {
-            this.proveedores.set(r.content ?? []);
-        });
-    }
 
     buscar(): void {
         const val = this.busquedaValor().trim();

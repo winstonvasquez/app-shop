@@ -2,10 +2,12 @@ import {
     Component, OnInit, inject, signal, effect,
     ChangeDetectionStrategy
 } from '@angular/core';
-import { of } from 'rxjs';
+import { toObservable } from '@angular/core/rxjs-interop';
+import { map } from 'rxjs';
 import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { VacationService, VacationRequest } from '../../services/vacation.service';
 import { EmployeeService } from '../../services/employee.service';
+import { CatalogService } from '@core/services/catalog.service';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
@@ -15,7 +17,8 @@ import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.compo
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { DateInputComponent } from '@shared/ui/forms/date-input/date-input.component';
-import { ButtonComponent } from '@shared/components';
+import { ButtonComponent, ServerSearchSelectComponent } from '@shared/components';
+import { employeeSelectSource } from '../../components/select-sources';
 
 @Component({
     selector: 'app-vacation-list',
@@ -31,18 +34,23 @@ import { ButtonComponent } from '@shared/components';
         AlertComponent,
         DateInputComponent,
         ButtonComponent,
+        ServerSearchSelectComponent,
     ],
     templateUrl: './vacation-list.component.html',
 })
 export class VacationListComponent implements OnInit {
     private readonly vacationService = inject(VacationService);
     private readonly employeeService = inject(EmployeeService);
+    private readonly catalog = inject(CatalogService);
     private readonly fb = inject(FormBuilder);
 
     // ── Data ─────────────────────────────────────────────────────────────────
     readonly loading   = this.vacationService.loading;
     readonly vacations = this.vacationService.vacations;
+    // Se mantiene para resolver el nombre del empleado en la tabla (getEmployeeName).
     readonly employees = this.employeeService.activeEmployees;
+    /** Fuente server-side del search-select de empleado del formulario. */
+    readonly employeeSource = employeeSelectSource(this.employeeService);
 
     // ── UI state ──────────────────────────────────────────────────────────────
     error           = signal<string | null>(null);
@@ -58,13 +66,9 @@ export class VacationListComponent implements OnInit {
 
     // Filtro de estado para el toolbar del data-table
     estadoFilters: FilterConfig[] = [
-        { field: 'estado', label: 'Todos los estados', options: of([
-            { value: 'SOLICITADO', label: 'Solicitado' },
-            { value: 'APROBADO', label: 'Aprobado' },
-            { value: 'RECHAZADO', label: 'Rechazado' },
-            { value: 'TOMADO', label: 'Tomado' },
-            { value: 'CANCELADO', label: 'Cancelado' }
-        ]) }
+        { field: 'estado', label: 'Todos los estados', options: toObservable(this.catalog.options('ESTADO_VACACION')).pipe(
+            map(o => o.map(x => ({ value: x.codigo, label: x.valor })))
+        ) }
     ];
 
     /**
@@ -108,7 +112,7 @@ export class VacationListComponent implements OnInit {
         { key: 'motivo', label: 'Motivo', render: r => r.motivo ?? '—' },
         {
             key: 'estado', label: 'Estado', html: true,
-            render: r => `<span class="badge badge-${this.badgeEstado(r.estado)}">${r.estado}</span>`
+            render: r => `<span class="badge badge-${this.badgeEstado(r.estado)}">${this.catalog.label('ESTADO_VACACION', r.estado)}</span>`
         },
     ];
 

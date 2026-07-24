@@ -53,11 +53,7 @@
 
       <div class="form-field-wrapper">
         <label class="input-label">Tipo de servicio *</label>
-        <select class="form-input" formControlName="serviceType">
-          @for (opt of serviceTypeOptions; track opt.value) {
-            <option [value]="opt.value">{{ opt.label }}</option>
-          }
-        </select>
+        <app-catalog-select tabla="TIPO_SERVICIO_TRANSPORTISTA" formControlName="serviceType" placeholder="— Seleccionar —" />
       </div>
 
       <div class="form-field-wrapper" style="grid-column:1/-1">

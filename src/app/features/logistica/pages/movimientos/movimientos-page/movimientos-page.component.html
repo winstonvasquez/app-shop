@@ -53,12 +53,7 @@
     <div class="form-grid">
       <div class="form-field-wrapper" style="grid-column:1/-1">
         <label class="input-label">Tipo de movimiento *</label>
-        <select class="form-input" formControlName="tipo">
-          <option value="">-- Seleccione tipo --</option>
-          @for (opt of tipoOptions; track opt.value) {
-            <option [value]="opt.value">{{ opt.label }}</option>
-          }
-        </select>
+        <app-catalog-select tabla="TIPO_MOVIMIENTO_INVENTARIO" formControlName="tipo" placeholder="— Seleccionar —" />
         @if (err('tipo')) {
           <span class="input-error-message">{{ err('tipo') }}</span>
         }

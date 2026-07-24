@@ -69,22 +69,16 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
             <div>
                 <label class="input-label">Departamento Padre</label>
-                <select class="form-input" formControlName="parentId">
-                    <option [ngValue]="null">— Ninguno (raíz) —</option>
-                    @for (dept of parentOptions(); track dept.id) {
-                        <option [ngValue]="dept.id">{{ dept.nombre }}</option>
-                    }
-                </select>
+                <app-server-search-select [dataSource]="parentSource"
+                                          formControlName="parentId"
+                                          placeholder="Buscar departamento…" />
             </div>
 
             <div>
                 <label class="input-label">Jefe / Gerente</label>
-                <select class="form-input" formControlName="managerId">
-                    <option [ngValue]="null">— Sin asignar —</option>
-                    @for (emp of employees(); track emp.id) {
-                        <option [ngValue]="emp.id">{{ emp.nombres }} {{ emp.apellidos }}</option>
-                    }
-                </select>
+                <app-server-search-select [dataSource]="employeeSource"
+                                          formControlName="managerId"
+                                          placeholder="Buscar empleado por nombre o código…" />
             </div>
         </div>
 
