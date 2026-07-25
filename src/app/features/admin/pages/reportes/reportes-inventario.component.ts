@@ -1,26 +1,10 @@
 import { Component, ChangeDetectionStrategy, inject, signal, OnInit } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
 import { environment } from '@env/environment';
 import { BackendExportService, BackendExportConfig } from '@shared/services/backend-export.service';
 import { ButtonComponent } from '@shared/components';
-
-interface DashboardInventario {
-    totalAlmacenes: number;
-    almacenesActivos: number;
-    productosStockBajo: number;
-    productosNecesitanReorden: number;
-    movimientosHoy: number;
-}
-
-interface StockItem {
-    productoId: number;
-    productNombre?: string;
-    almacenId: number;
-    almacenNombre?: string;
-    cantidadActual: number;
-    stockMinimo: number;
-    stockMaximo: number;
-}
+import { InventoryApiService, DashboardSummary } from '@features/inventory/services/inventory-api.service';
+import { InventoryStock } from '@features/inventory/models/inventory.models';
+import { ProductsApiService } from '@features/products/services/products-api.service';
 
 @Component({
     selector: 'app-reportes-inventario',
@@ -31,11 +15,15 @@ interface StockItem {
     styleUrls: ['./reportes-inventario.component.scss'],
 })
 export class ReportesInventarioComponent implements OnInit {
-    private readonly http = inject(HttpClient);
+    private readonly api = inject(InventoryApiService);
+    private readonly productsApi = inject(ProductsApiService);
     private readonly backendExportService = inject(BackendExportService);
 
-    dashboard = signal<DashboardInventario | null>(null);
-    stockBajo = signal<StockItem[]>([]);
+    /** Mapa productId → nombre (el maestro de productos vive en ventas, cross-service). */
+    private readonly productNames = signal<Map<number, string>>(new Map());
+
+    dashboard = signal<DashboardSummary | null>(null);
+    stockBajo = signal<InventoryStock[]>([]);
     cargando = signal(false);
     error = signal<string | null>(null);
 
@@ -43,37 +31,59 @@ export class ReportesInventarioComponent implements OnInit {
      * Exportación SERVER-SIDE: reutiliza el endpoint de stock de
      * microshoplogistica (GET /inventory/api/inventory/stock/export). Sin
      * filtros retorna los mismos registros bajo stock mínimo que arma este
-     * reporte (findBelowMinimum), con datos limpios generados en backend.
+     * reporte (getLowStock), con datos limpios generados en backend.
      */
     private readonly exportConfig: BackendExportConfig = {
         url: `${environment.apiUrls.inventory}/api/inventory/stock/export`,
         filename: `reporte-inventario-${new Date().toISOString().substring(0, 10)}`,
     };
 
-    ngOnInit() { this.cargar(); }
+    ngOnInit() {
+        this.loadProductNames();
+        this.cargar();
+    }
 
     cargar() {
         this.cargando.set(true);
         this.error.set(null);
 
-        const base = `${environment.apiUrls.inventory}/api`;
-        this.http.get<DashboardInventario>(`${base}/dashboard/inventory`).subscribe({
+        this.api.getDashboardSummary().subscribe({
             next: (data) => {
                 this.dashboard.set(data);
-                this.cargarStockBajo(base);
+                this.cargarStockBajo();
             },
             error: () => {
                 this.error.set('No disponible');
-                this.dashboard.set({ totalAlmacenes: 0, almacenesActivos: 0, productosStockBajo: 0, productosNecesitanReorden: 0, movimientosHoy: 0 });
+                this.dashboard.set({
+                    totalAlmacenes: 0, almacenesActivos: 0, productosStockBajo: 0,
+                    productosNecesitanReorden: 0, movimientosHoy: 0, inventoryAccuracyPct: null
+                });
                 this.cargando.set(false);
             }
         });
     }
 
-    private cargarStockBajo(base: string) {
-        this.http.get<StockItem[]>(`${base}/inventory/stock/below-minimum`).subscribe({
+    productName(item: InventoryStock): string {
+        return this.productNames().get(item.productId) ?? `Producto #${item.productId}`;
+    }
+
+    private cargarStockBajo() {
+        this.api.getLowStock().subscribe({
             next: (items) => { this.stockBajo.set(items); this.cargando.set(false); },
             error: () => { this.stockBajo.set([]); this.cargando.set(false); }
+        });
+    }
+
+    /** Resuelve nombres de producto en bulk; degrada graceful (queda "Producto #id"). */
+    private loadProductNames(): void {
+        this.productsApi.getProducts({ page: 0, size: 500 }).subscribe({
+            next: (page) => {
+                const map = new Map<number, string>();
+                for (const p of page.content) { map.set(p.id, p.nombre); }
+                this.productNames.set(map);
+                if (this.stockBajo().length > 0) { this.stockBajo.set([...this.stockBajo()]); }
+            },
+            error: () => this.productNames.set(new Map())
         });
     }
 

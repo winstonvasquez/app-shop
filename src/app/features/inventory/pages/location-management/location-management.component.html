@@ -19,7 +19,7 @@
   }
 
   <app-data-table
-    [data]="locations()"
+    [data]="pagedLocations()"
     [columns]="columns"
     [actions]="actions"
     [loading]="loading()"
@@ -58,7 +58,7 @@
       <app-form-field label="Código" [control]="getCtrl('code')"
         type="text" placeholder="UB-001" [required]="true" />
       <app-form-field label="Nombre" [control]="getCtrl('name')"
-        type="text" placeholder="Zona A - Rack 1" />
+        type="text" placeholder="Zona A - Rack 1" [required]="true" />
       <app-form-field label="Pasillo" [control]="getCtrl('aisle')" type="text" placeholder="A" />
       <app-form-field label="Estante" [control]="getCtrl('rack')"  type="text" placeholder="R1" />
       <app-form-field label="Nivel"   [control]="getCtrl('shelf')" type="text" placeholder="N2" />

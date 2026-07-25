@@ -8,7 +8,7 @@ import { Almacen, CreateAlmacenDto, Pagination } from '../models/almacen.model';
 @Injectable({ providedIn: 'root' })
 export class AlmacenService {
   private http = inject(HttpClient);
-  private baseUrl = '/logistics/api/almacenes';
+  private baseUrl = `${environment.apiUrls.logistics}/api/almacenes`;
 
   getAlmacenes(companyId: string, params?: { page?: number; size?: number; sort?: string }): Observable<Pagination<Almacen>> {
     let httpParams = new HttpParams().set('companyId', companyId);

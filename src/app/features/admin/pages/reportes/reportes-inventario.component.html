@@ -84,20 +84,20 @@
                 <table class="table">
                     <thead class="table-header">
                         <tr>
-                            <th class="table-header-cell">Producto ID</th>
-                            <th class="table-header-cell">Almacén ID</th>
+                            <th class="table-header-cell">Producto</th>
+                            <th class="table-header-cell">Almacén</th>
                             <th class="table-header-cell text-right">Stock actual</th>
                             <th class="table-header-cell text-right">Stock mínimo</th>
                             <th class="table-header-cell">Estado</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @for (item of stockBajo(); track item.productoId) {
+                        @for (item of stockBajo(); track item.productId) {
                             <tr class="table-row">
-                                <td class="table-cell font-mono">{{ item.productoId }}</td>
-                                <td class="table-cell font-mono">{{ item.almacenId }}</td>
-                                <td class="table-cell text-right font-bold text-[var(--color-warning)]">{{ item.cantidadActual }}</td>
-                                <td class="table-cell text-right">{{ item.stockMinimo }}</td>
+                                <td class="table-cell">{{ productName(item) }}</td>
+                                <td class="table-cell">{{ item.warehouseName ?? item.warehouseId }}</td>
+                                <td class="table-cell text-right font-bold text-[var(--color-warning)]">{{ item.quantity }}</td>
+                                <td class="table-cell text-right">{{ item.minimumStock ?? '—' }}</td>
                                 <td class="table-cell"><span class="badge badge-warning">STOCK BAJO</span></td>
                             </tr>
                         } @empty {

@@ -45,5 +45,25 @@ export const inventoryRoutes: Routes = [
     {
         path: 'asn',
         loadComponent: () => import('./pages/asn/asn.component').then(m => m.AsnComponent)
+    },
+    {
+        path: 'zonas',
+        loadComponent: () => import('./pages/zone-management/zone-management.component').then(m => m.ZoneManagementComponent)
+    },
+    {
+        path: 'lotes',
+        loadComponent: () => import('./pages/lot-management/lot-management.component').then(m => m.LotManagementComponent)
+    },
+    {
+        path: 'series',
+        loadComponent: () => import('./pages/serial-number-management/serial-number-management.component').then(m => m.SerialNumberManagementComponent)
+    },
+    {
+        path: 'reglas-reposicion',
+        loadComponent: () => import('./pages/replenishment-rules/replenishment-rules.component').then(m => m.ReplenishmentRulesComponent)
+    },
+    {
+        path: 'kardex-almacen',
+        loadComponent: () => import('./pages/kardex-warehouse/kardex-warehouse.component').then(m => m.KardexWarehouseComponent)
     }
 ];

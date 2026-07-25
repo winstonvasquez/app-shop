@@ -1,5 +1,5 @@
 import {
-    ChangeDetectionStrategy, Component, inject, signal, OnInit
+    ChangeDetectionStrategy, Component, computed, inject, signal, OnInit
 } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators, FormGroup, FormControl } from '@angular/forms';
 import { DataTableComponent, TableColumn, TableAction, PaginationEvent } from '@shared/ui/tables/data-table/data-table.component';
@@ -40,6 +40,12 @@ export class WarehouseManagementComponent implements OnInit {
     pageSize = signal<number>(PAGINATION.defaultPageSize);
     totalElements = signal(0);
     totalPages = signal(0);
+
+    /** Página visible (slicing local: el listado de almacenes llega completo). */
+    readonly pagedWarehouses = computed(() => {
+        const start = this.currentPage() * this.pageSize();
+        return this.warehouses().slice(start, start + this.pageSize());
+    });
 
     showDrawer = signal(false);
     editMode = signal(false);

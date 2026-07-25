@@ -4,7 +4,7 @@ import {
     FormBuilder, ReactiveFormsModule, Validators, FormGroup, FormArray, FormControl
 } from '@angular/forms';
 import { InventoryApiService } from '../../services/inventory-api.service';
-import { InventoryCount, InventoryCountRequest, InventoryCountStatus } from '../../models/inventory.models';
+import { InventoryCount, InventoryCountDetail, InventoryCountRequest, InventoryCountStatus } from '../../models/inventory.models';
 import { map } from 'rxjs';
 import { DataTableComponent, TableColumn, TableAction, PaginationEvent, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
@@ -60,6 +60,34 @@ export class InventoryCountComponent {
     submitting = signal(false);
     submitError = signal<string | null>(null);
 
+    showDetailDrawer = signal(false);
+    detailTarget = signal<InventoryCount | null>(null);
+
+    detailColumns: TableColumn<InventoryCountDetail>[] = [
+        { key: 'productId', label: 'Producto', render: (r) => `#${r.productId}` },
+        { key: 'systemQuantity', label: 'Cant. Sistema', align: 'right',
+          render: (r) => r.systemQuantity.toLocaleString('es-PE') },
+        { key: 'countedQuantity', label: 'Cant. Contada', align: 'right',
+          render: (r) => r.countedQuantity.toLocaleString('es-PE') },
+        {
+            key: 'difference', label: 'Diferencia', align: 'right', html: true,
+            render: (r) => {
+                const cls = r.difference === 0 ? 'badge-neutral' : r.difference > 0 ? 'badge-success' : 'badge-error';
+                return `<span class="badge ${cls}">${r.difference > 0 ? '+' : ''}${r.difference}</span>`;
+            }
+        },
+        { key: 'lotNumber', label: 'Lote/Serie',
+          render: (r) => r.lotNumber ?? r.serialNumber ?? '—' },
+        { key: 'locationName', label: 'Ubicación', render: (r) => r.locationName ?? '—' },
+        { key: 'notes', label: 'Notas', render: (r) => r.notes ?? '—' },
+        {
+            key: 'adjusted', label: 'Ajustado', html: true,
+            render: (r) => r.adjusted
+                ? '<span class="badge badge-success">Sí</span>'
+                : '<span class="badge badge-neutral">No</span>'
+        }
+    ];
+
     breadcrumbs: Breadcrumb[] = [
         { label: 'Admin', url: ROUTES.admin },
         { label: 'Inventario', url: '/admin/inventario/dashboard' },
@@ -97,6 +125,11 @@ export class InventoryCountComponent {
     };
 
     actions: TableAction<InventoryCount>[] = [
+        {
+            label: 'Ver detalle',
+            class: 'btn btn-secondary',
+            onClick: (r) => this.openDetail(r)
+        },
         {
             label: 'Cerrar',
             class: 'btn btn-secondary',
@@ -214,6 +247,17 @@ export class InventoryCountComponent {
     closeDrawer(): void { this.showDrawer.set(false); }
     removeDetail(i: number): void { this.details.removeAt(i); }
 
+    /** El detalle línea-por-línea ya viaja en getInventoryCounts(), sin llamada HTTP nueva. */
+    openDetail(count: InventoryCount): void {
+        this.detailTarget.set(count);
+        this.showDetailDrawer.set(true);
+    }
+
+    closeDetailDrawer(): void {
+        this.showDetailDrawer.set(false);
+        this.detailTarget.set(null);
+    }
+
     onSubmit(): void {
         if (this.details.length === 0) { this.submitError.set('Agregá al menos un producto al conteo.'); return; }
         if (this.form.invalid) { this.form.markAllAsTouched(); return; }
@@ -230,7 +274,12 @@ export class InventoryCountComponent {
             }))
         };
         this.api.createInventoryCount(payload).subscribe({
-            next: () => { this.submitting.set(false); this.closeDrawer(); this.loadCounts(); },
+            next: (c) => {
+                this.submitting.set(false);
+                this.closeDrawer();
+                this.info.set(`Conteo ${c.countNumber ?? c.id} creado en estado EN_PROCESO.`);
+                this.loadCounts();
+            },
             error: (err: Error) => { this.submitting.set(false); this.submitError.set(err.message); }
         });
     }

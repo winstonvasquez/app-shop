@@ -100,3 +100,24 @@
       [loading]="submitting()" [disabled]="form.invalid || details.length === 0" (click)="onSubmit()" />
   </div>
 </app-drawer>
+
+<!-- Drawer: Ver detalle (solo lectura, sin llamada HTTP — el detalle ya viaja en el listado) -->
+<app-drawer
+  [isOpen]="showDetailDrawer()"
+  [title]="'Detalle de Conteo ' + (detailTarget()?.countNumber ?? detailTarget()?.id ?? '')"
+  size="lg" side="right"
+  (closed)="closeDetailDrawer()">
+
+  @if (detailTarget()) {
+    <div class="text-sm text-subtle" style="margin-bottom:0.75rem">
+      Almacén: <strong>{{ detailTarget()!.warehouseName ?? detailTarget()!.warehouseId }}</strong>
+      — Estado: <strong>{{ detailTarget()!.status }}</strong>
+      @if (detailTarget()!.notes) { — Notas: {{ detailTarget()!.notes }} }
+    </div>
+
+    <app-data-table
+      [data]="detailTarget()!.details ?? []"
+      [columns]="detailColumns">
+    </app-data-table>
+  }
+</app-drawer>

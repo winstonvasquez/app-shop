@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { InventoryApiService } from '../../services/inventory-api.service';
 import { KardexEntry } from '../../models/inventory.models';
 import { DataTableComponent, TableColumn, PaginationEvent } from '@shared/ui/tables/data-table/data-table.component';
@@ -33,6 +33,12 @@ export class KardexViewComponent {
     pageSize = signal(20);
     totalElements = signal(0);
     totalPages = signal(0);
+
+    /** Página visible (slicing local: el kardex del producto llega completo). */
+    readonly pagedEntries = computed(() => {
+        const start = this.currentPage() * this.pageSize();
+        return this.entries().slice(start, start + this.pageSize());
+    });
 
     breadcrumbs: Breadcrumb[] = [
         { label: 'Admin', url: ROUTES.admin },

@@ -152,6 +152,22 @@ export interface InventoryTransferRequest {
     details: InventoryTransferItem[];
 }
 
+export interface InventoryCountDetail {
+    id: number;
+    productId: number;
+    systemQuantity: number;
+    countedQuantity: number;
+    difference: number;
+    lotId?: number;
+    lotNumber?: string;
+    serialNumberId?: number;
+    serialNumber?: string;
+    locationId?: number;
+    locationName?: string;
+    notes?: string;
+    adjusted: boolean;
+}
+
 export interface InventoryCount {
     id: number;
     countNumber?: string;
@@ -161,7 +177,13 @@ export interface InventoryCount {
     countDate?: string;
     closedDate?: string;
     adjustedDate?: string;
+    notes?: string;
+    performedBy?: string;
+    closedBy?: string;
+    adjustedBy?: string;
+    details?: InventoryCountDetail[];
     createdAt: string;
+    updatedAt?: string;
     tenantId?: string;
 }
 

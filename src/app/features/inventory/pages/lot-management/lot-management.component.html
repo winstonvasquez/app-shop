@@ -1,0 +1,87 @@
+<div class="page-container">
+
+  <app-page-header
+    title="Lotes"
+    subtitle="Trazabilidad de lotes por producto — vencimiento, cantidad disponible, FIFO/FEFO"
+    [breadcrumbs]="breadcrumbs">
+    <div actions>
+      <app-button icon="plus" label="Nuevo Lote" variant="primary"
+        [disabled]="!currentProductId()" (click)="openCreate()" />
+    </div>
+  </app-page-header>
+
+  <div style="max-width:560px;margin-bottom:1rem">
+    <app-product-lookup placeholder="Buscar producto por nombre o SKU"
+      (selected)="onProductSelected($event)" />
+  </div>
+
+  @if (currentProductName()) {
+    <div class="text-subtle" style="font-size:0.9rem;margin-bottom:0.5rem">
+      Lotes de <strong>{{ currentProductName() }}</strong>
+      <span style="font-size:0.75rem">#{{ currentProductId() }}</span>
+    </div>
+  }
+
+  @if (error()) {
+    <app-alert type="error" [message]="error()!" [dismissible]="true" (dismiss)="error.set(null)" />
+  }
+
+  @if (alertas().length > 0) {
+    <app-alert type="warning"
+      [message]="alertas().length + ' lote(s) próximos a vencer en los próximos 30 días (todos los productos).'"
+      [dismissible]="true" />
+  }
+
+  @if (!currentProductId() && !loading()) {
+    <div class="empty-state">
+      <p class="empty-state-desc">Buscá un producto por nombre para ver y administrar sus lotes.</p>
+    </div>
+  } @else {
+    <app-data-table
+      [data]="lots()"
+      [columns]="columns"
+      [actions]="actions"
+      [loading]="loading()">
+    </app-data-table>
+  }
+
+</div>
+
+<!-- Drawer: crear / editar -->
+<app-drawer
+  [isOpen]="showDrawer()"
+  [title]="editMode() ? 'Editar Lote' : 'Nuevo Lote'"
+  size="lg" side="right" [hasFooter]="true"
+  (closed)="closeDrawer()">
+
+  <form [formGroup]="form">
+    @if (submitError()) {
+      <app-alert type="error" [message]="submitError()!" [dismissible]="true"
+                 (dismiss)="submitError.set(null)" />
+    }
+
+    <div class="drawer-form-grid">
+      <app-form-field label="SKU" [control]="getCtrl('sku')"
+        type="text" placeholder="SKU-001" [required]="true" />
+      <app-form-field label="N° de Lote" [control]="getCtrl('loteNumero')"
+        type="text" placeholder="LOTE-2026-001" [required]="true" />
+      <app-date-input label="Fecha Fabricación" formControlName="fechaFabricacion" />
+      <app-date-input label="Fecha Vencimiento" formControlName="fechaVencimiento" />
+      <app-form-field label="Cantidad Inicial" [control]="getCtrl('cantidadInicial')"
+        type="number" placeholder="0" [required]="true" />
+      <app-form-field label="Proveedor" [control]="getCtrl('proveedorNombre')"
+        type="text" placeholder="Nombre del proveedor" />
+      <div class="col-span-2">
+        <app-form-field label="Notas" [control]="getCtrl('notas')"
+          type="text" placeholder="Observaciones" />
+      </div>
+    </div>
+  </form>
+
+  <div slot="footer">
+    <app-button icon="x" label="Cancelar" variant="secondary" type="button" (click)="closeDrawer()" />
+    <app-button icon="save" [label]="editMode() ? 'Actualizar' : 'Crear Lote'" variant="primary"
+                type="button" [loading]="submitting()" [disabled]="submitting() || form.invalid"
+                (click)="onSubmit()" />
+  </div>
+</app-drawer>

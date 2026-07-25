@@ -1,0 +1,42 @@
+<div class="page-container">
+
+  <app-page-header
+    title="Kardex por Almacén"
+    subtitle="Historial de movimientos de todos los productos de un almacén, con saldo acumulado"
+    [breadcrumbs]="breadcrumbs">
+  </app-page-header>
+
+  @if (error()) {
+    <app-alert type="error" [message]="error()!" [dismissible]="true" (dismiss)="error.set(null)" />
+  }
+
+  <form [formGroup]="form" class="filters-bar" style="display:flex;gap:1rem;align-items:flex-end;flex-wrap:wrap;margin-bottom:1rem">
+    <div style="min-width:280px">
+      <label class="input-label">Almacén <span class="text-error">*</span></label>
+      <app-server-search-select [dataSource]="almacenSource" formControlName="almacenId"
+        placeholder="Buscar almacén…" />
+    </div>
+    <app-date-input label="Desde" formControlName="from" [required]="true" />
+    <app-date-input label="Hasta" formControlName="to" [required]="true" />
+    <app-button label="Buscar" icon="search" variant="primary"
+      [disabled]="form.invalid" [loading]="loading()" (click)="buscar()" />
+  </form>
+
+  @if (!entries().length && !loading()) {
+    <div class="empty-state">
+      <p class="empty-state-desc">Elegí un almacén y un rango de fechas para ver el kardex.</p>
+    </div>
+  } @else {
+    <app-data-table
+      [data]="entries()"
+      [columns]="columns"
+      [loading]="loading()"
+      [currentPage]="currentPage()"
+      [pageSize]="pageSize()"
+      [totalElements]="totalElements()"
+      [totalPages]="totalPages()"
+      (pageChange)="onPageChange($event)">
+    </app-data-table>
+  }
+
+</div>

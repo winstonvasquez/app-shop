@@ -29,7 +29,7 @@
     </div>
   } @else {
     <app-data-table
-      [data]="entries()"
+      [data]="pagedEntries()"
       [columns]="columns"
       [loading]="loading()"
       [currentPage]="currentPage()"

@@ -19,6 +19,8 @@ import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
 import { CatalogService } from '@core/services/catalog.service';
 import { warehouseSelectSource } from '../../components/select-sources';
+import { ProductLookupComponent } from '../../components/product-lookup/product-lookup.component';
+import { ProductResponse } from '@core/models/product.model';
 
 @Component({
     selector: 'app-transfer-management',
@@ -29,7 +31,7 @@ import { warehouseSelectSource } from '../../components/select-sources';
         DataTableComponent, DrawerComponent,
         PageHeaderComponent, AlertComponent,
         FormFieldComponent, DateInputComponent,
-        ButtonComponent, ServerSearchSelectComponent
+        ButtonComponent, ServerSearchSelectComponent, ProductLookupComponent
     ],
     templateUrl: './transfer-management.component.html',
     styleUrl: './transfer-management.component.scss'
@@ -117,12 +119,19 @@ export class TransferManagementComponent {
 
     get details(): FormArray { return this.form.get('details') as FormArray; }
 
-    newDetailRow(): FormGroup {
+    newDetailRow(productId: number | null = null, productName = ''): FormGroup {
         return this.fb.nonNullable.group({
-            productId:         [null as number | null, Validators.required],
+            productId:         [productId, Validators.required],
+            productName:       [productName],
             requestedQuantity: [null as number | null, [Validators.required, Validators.min(1)]],
             notes:             ['']
         });
+    }
+
+    /** Agrega una fila prellenada con el producto elegido en el buscador (evita duplicados). */
+    onAddProductRow(p: ProductResponse): void {
+        if (this.details.controls.some(c => Number(c.get('productId')?.value) === p.id)) return;
+        this.details.push(this.newDetailRow(p.id, p.nombre));
     }
 
     constructor() {
@@ -159,18 +168,17 @@ export class TransferManagementComponent {
     }
 
     openCreate(): void {
-        while (this.details.length > 1) this.details.removeAt(this.details.length - 1);
-        this.details.at(0).reset();
+        while (this.details.length > 0) this.details.removeAt(0);
         this.form.reset({ requestDate: new Date().toISOString().split('T')[0] });
         this.submitError.set(null);
         this.showDrawer.set(true);
     }
 
     closeDrawer(): void { this.showDrawer.set(false); }
-    addDetail(): void { this.details.push(this.newDetailRow()); }
-    removeDetail(i: number): void { if (this.details.length > 1) this.details.removeAt(i); }
+    removeDetail(i: number): void { this.details.removeAt(i); }
 
     onSubmit(): void {
+        if (this.details.length === 0) { this.submitError.set('Agregá al menos un producto a la transferencia.'); return; }
         if (this.form.invalid) { this.form.markAllAsTouched(); return; }
         this.submitting.set(true);
         const v = this.form.getRawValue();

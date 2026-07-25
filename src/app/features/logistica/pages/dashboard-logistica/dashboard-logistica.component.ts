@@ -1,17 +1,21 @@
-import { Component, inject, signal, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, signal, computed, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { NgApexchartsModule } from 'ng-apexcharts';
-import { AlmacenService } from '../../services/almacen.service';
-import { Almacen } from '../../models/almacen.model';
-import { MovimientoService } from '../../services/movimiento.service';
-import { Movimiento } from '../../models/movimiento.model';
-import { AuthService } from '../../../../core/auth/auth.service';
+import { LogisticsDashboardService } from '../../services/logistics-dashboard.service';
+import { LogisticsKpi, CarrierKpi } from '../../models/logistics-dashboard.model';
 import { ChartDefaultsService, CHART_COLORS } from '@shared/services/chart-defaults.service';
 import {
     ApexAxisChartSeries, ApexChart, ApexDataLabels, ApexGrid,
     ApexNonAxisChartSeries, ApexPlotOptions, ApexLegend, ApexTooltip, ApexXAxis, ApexYAxis
 } from 'ng-apexcharts';
 
+/**
+ * Landing de Logística — fulfillment/transporte (últimos 30 días), SIEMPRE actualizado.
+ * Antes mostraba almacenes/movimientos (dominio WMS, ya migrado a Inventario) — corregido
+ * para reflejar el propio comentario del sidebar: "Logística = fulfillment + transporte,
+ * NO duplica el dominio WMS". Complementa a KpiDashboardComponent (consulta puntual con
+ * rango de fechas a demanda, en /admin/logistica/kpi) — este es el resumen siempre-vigente.
+ */
 @Component({
     selector: 'app-dashboard-logistica',
     standalone: true,
@@ -20,32 +24,35 @@ import {
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DashboardLogisticaComponent implements OnInit {
-    private almacenService = inject(AlmacenService);
-    private movimientoService = inject(MovimientoService);
-    private authService = inject(AuthService);
+    private readonly dashboardService = inject(LogisticsDashboardService);
     private readonly chartDefaults = inject(ChartDefaultsService);
 
-    almacenes = signal<Almacen[]>([]);
-    ultimosMovimientos = signal<Movimiento[]>([]);
-    totalItems = signal(0);
-    movimientosHoy = signal(0);
-    movimientosPendientes = signal(0);
-    stockBajo = signal(0);
+    loading = signal(false);
+    error = signal<string | null>(null);
+    kpi = signal<LogisticsKpi | null>(null);
 
-    private get companyId(): string {
-        return String(this.authService.currentUser()?.activeCompanyId ?? 1);
-    }
+    readonly fulfillmentRatePct = computed(() => {
+        const k = this.kpi();
+        return k ? (k.fulfillmentRate * 100).toFixed(1) : '0.0';
+    });
 
-    /* ── Chart: Bar — stock por almacén ──────────────────────── */
+    readonly returnRatePct = computed(() => {
+        const k = this.kpi();
+        return k ? (k.returnRate * 100).toFixed(1) : '0.0';
+    });
+
+    readonly carriers = computed<CarrierKpi[]>(() => this.kpi()?.byCarrier ?? []);
+
+    /* ── Chart: Bar — envíos entregados por transportista ────── */
     barChart: ApexChart = this.chartDefaults.barChart(true, 260);
-    barSeries: ApexAxisChartSeries = [{ name: 'Stock', data: [] }];
+    barSeries: ApexAxisChartSeries = [{ name: 'Entregados', data: [] }];
     barXAxis: ApexXAxis = {
         categories: [],
         labels: { style: { colors: this.chartDefaults.textColor, fontSize: '12px' } },
         axisBorder: { show: false }, axisTicks: { show: false },
     };
     barYAxis: ApexYAxis = { labels: { style: { colors: this.chartDefaults.textColor } } };
-    barTooltip: ApexTooltip = { theme: 'dark', y: { formatter: (v: number) => v + ' items' } };
+    barTooltip: ApexTooltip = { theme: 'dark', y: { formatter: (v: number) => v + ' envíos' } };
     barPlot: ApexPlotOptions = this.chartDefaults.barPlotOptions(true, 6);
     barGrid: ApexGrid = this.chartDefaults.grid(3);
     barColors = [CHART_COLORS[0]];
@@ -55,75 +62,51 @@ export class DashboardLogisticaComponent implements OnInit {
         offsetX: -6,
     };
 
-    /* ── Chart: Donut — estado almacenes ─────────────────────── */
+    /* ── Chart: Donut — estado de envíos ─────────────────────── */
     donutChart: ApexChart = this.chartDefaults.donutChart(200);
     donutSeries: ApexNonAxisChartSeries = [0, 0, 0];
-    donutLabels = ['Activo', 'Mantenimiento', 'Inactivo'];
+    donutLabels = ['Entregados', 'Pendientes', 'Devueltos'];
     donutColors = [CHART_COLORS[2], CHART_COLORS[1], CHART_COLORS[6]];
     donutPlot: ApexPlotOptions = this.chartDefaults.donutPlotOptions('60%');
     donutLegend: ApexLegend = { ...this.chartDefaults.legend(), position: 'bottom' };
 
-    ngOnInit() {
-        this.loadAlmacenes();
-        this.loadMovimientos();
+    ngOnInit(): void {
+        this.loadKpis();
     }
 
-    loadAlmacenes() {
-        this.almacenService.getAlmacenes(this.companyId, { size: 10 }).subscribe({
-            next: (res) => {
-                this.almacenes.set(res.content);
-                const total = res.content.reduce((sum, a) => sum + (a.totalItems || 0), 0);
-                this.totalItems.set(total);
-                this._updateBarChart(res.content);
-                this._updateDonut(res.content);
+    loadKpis(): void {
+        this.loading.set(true);
+        this.error.set(null);
+        const to = new Date();
+        const from = new Date();
+        from.setDate(from.getDate() - 30);
+        this.dashboardService.getKpis(this.toIsoDate(from), this.toIsoDate(to)).subscribe({
+            next: (data) => {
+                this.kpi.set(data);
+                this._updateBarChart(data.byCarrier);
+                this._updateDonut(data);
+                this.loading.set(false);
             },
-            error: () => this.almacenes.set([])
+            error: () => { this.error.set('No se pudieron cargar los KPIs de logística.'); this.loading.set(false); }
         });
     }
 
-    loadMovimientos() {
-        this.movimientoService.getMovimientos(this.companyId, { size: 5 }).subscribe({
-            next: (res: { content: Movimiento[]; totalElements: number }) => {
-                this.ultimosMovimientos.set(res.content || []);
-                this.movimientosHoy.set(res.totalElements || 0);
-            },
-            error: () => this.ultimosMovimientos.set([])
-        });
+    private toIsoDate(d: Date): string {
+        return d.toISOString().substring(0, 10);
     }
 
-    private _updateBarChart(almacenes: Almacen[]): void {
-        this.barSeries = [{ name: 'Items en stock', data: almacenes.map(a => a.totalItems || 0) }];
-        this.barXAxis = {
-            ...this.barXAxis,
-            categories: almacenes.map(a => a.nombre.slice(0, 18)),
-        };
+    private _updateBarChart(byCarrier: CarrierKpi[]): void {
+        this.barSeries = [{ name: 'Entregados', data: byCarrier.map(c => c.deliveredCount) }];
+        this.barXAxis = { ...this.barXAxis, categories: byCarrier.map(c => c.carrierName.slice(0, 18)) };
     }
 
-    private _updateDonut(almacenes: Almacen[]): void {
-        this.donutSeries = [
-            almacenes.filter(a => a.estado === 'ACTIVO').length,
-            almacenes.filter(a => a.estado === 'MANTENIMIENTO').length,
-            almacenes.filter(a => a.estado !== 'ACTIVO' && a.estado !== 'MANTENIMIENTO').length,
-        ];
+    private _updateDonut(k: LogisticsKpi): void {
+        this.donutSeries = [k.deliveredShipments, k.pendingShipments, k.returnedShipments];
     }
 
-    getStockPercent(almacen: Almacen): number {
-        const total = this.totalItems();
-        if (total === 0) return 0;
-        return ((almacen.totalItems || 0) / total) * 100;
-    }
-
-    getTipoIcon(tipo: string): string {
-        if (tipo?.startsWith('ENTRADA')) return '📥';
-        if (tipo?.startsWith('SALIDA')) return '📤';
-        if (tipo === 'TRASLADO') return '🔄';
-        return '📦';
-    }
-
-    formatTipo(tipo: string): string { return tipo?.replace(/_/g, ' ') || ''; }
-
-    formatDate(dateStr: string): string {
-        if (!dateStr) return '-';
-        return new Date(dateStr).toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit' });
+    onTimeRateClass(rate: number): string {
+        if (rate >= 0.9) return 'text-success';
+        if (rate >= 0.75) return 'text-warning';
+        return 'text-error';
     }
 }

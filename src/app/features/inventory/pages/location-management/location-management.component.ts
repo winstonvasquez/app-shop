@@ -1,5 +1,5 @@
 import {
-    ChangeDetectionStrategy, Component, inject, signal, OnInit
+    ChangeDetectionStrategy, Component, computed, inject, signal, OnInit
 } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators, FormGroup, FormControl } from '@angular/forms';
 import { InventoryApiService } from '../../services/inventory-api.service';
@@ -54,6 +54,12 @@ export class LocationManagementComponent implements OnInit {
     totalElements = signal(0);
     totalPages = signal(0);
 
+    /** Página visible (slicing local: las ubicaciones del almacén llegan completas). */
+    readonly pagedLocations = computed(() => {
+        const start = this.currentPage() * this.pageSize();
+        return this.locations().slice(start, start + this.pageSize());
+    });
+
     showDrawer = signal(false);
     editMode = signal(false);
     selectedId = signal<number | null>(null);
@@ -98,7 +104,7 @@ export class LocationManagementComponent implements OnInit {
     form: FormGroup = this.fb.nonNullable.group({
         warehouseId:  [null as number | null, Validators.required],
         code:         ['', [Validators.required, Validators.maxLength(20)]],
-        name:         ['', Validators.maxLength(200)],
+        name:         ['', [Validators.required, Validators.maxLength(200)]],
         description:  [''],
         aisle:        [''],
         rack:         [''],

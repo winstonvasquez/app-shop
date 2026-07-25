@@ -10,13 +10,14 @@ import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/p
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
 import { DateInputComponent } from '@shared/ui/forms/date-input/date-input.component';
-import { ButtonComponent, CatalogSelectComponent } from '@shared/components';
+import { ButtonComponent, CatalogSelectComponent, ServerSearchSelectComponent } from '@shared/components';
 import { ProductLookupComponent } from '../../components/product-lookup/product-lookup.component';
 import { ProductResponse } from '@core/models/product.model';
 import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 import { ROUTES } from '@shared/constants/app.constants';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
+import { warehouseSelectSource } from '../../components/select-sources';
 
 /** Línea en construcción dentro del drawer de creación. */
 interface AsnLineDraft {
@@ -36,7 +37,7 @@ type AsnRow = Asn & { warehouseName: string };
     imports: [
         ReactiveFormsModule, FormsModule, DataTableComponent, DrawerComponent,
         PageHeaderComponent, AlertComponent, FormFieldComponent, DateInputComponent,
-        ButtonComponent, ProductLookupComponent, CatalogSelectComponent
+        ButtonComponent, ProductLookupComponent, CatalogSelectComponent, ServerSearchSelectComponent
     ],
     template: `
         <div class="page-container">
@@ -95,12 +96,8 @@ type AsnRow = Asn & { warehouseName: string };
                         placeholder="Ej: OC-001 / guía" />
                     <div>
                         <label class="input-label">Almacén destino <span class="text-error">*</span></label>
-                        <select class="form-input" formControlName="warehouseId">
-                            <option [value]="null">Seleccionar...</option>
-                            @for (w of warehouses(); track w.id) {
-                                <option [value]="w.id">{{ w.name }}</option>
-                            }
-                        </select>
+                        <app-server-search-select [dataSource]="warehouseSource" formControlName="warehouseId"
+                            placeholder="Buscar almacén…" />
                     </div>
                     <div>
                         <app-date-input label="Fecha esperada" formControlName="expectedDate" />
@@ -198,6 +195,8 @@ type AsnRow = Asn & { warehouseName: string };
 export class AsnComponent {
     private readonly api = inject(InventoryApiService);
     private readonly fb = inject(FormBuilder);
+
+    readonly warehouseSource = warehouseSelectSource(this.api);
 
     asns = signal<Asn[]>([]);
     warehouses = signal<Warehouse[]>([]);
