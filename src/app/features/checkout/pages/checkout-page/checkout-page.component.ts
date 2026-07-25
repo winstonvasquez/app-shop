@@ -160,14 +160,10 @@ export class CheckoutPageComponent implements OnInit {
     this.configService.getMediosPago().subscribe(data => this.paymentMethods.set(data));
     this.configService.getCertificaciones().subscribe(data => this.certifications.set(data));
     this.analyticsService.trackBeginCheckout(this.cartTotal(), this.cartItems().length);
-    this.zonaEnvioService.getZonas().subscribe({
-      next: zonas => {
-        this.zonas.set(zonas);
-        // Auto-seleccionar la primera zona para reflejar costo de envío real desde el inicio.
-        if (zonas.length && !this.selectedZona()) this.selectedZona.set(zonas[0]);
-      },
-      error: () => { /* sin zonas configuradas → envío gratis por defecto */ },
-    });
+    // F2.2: la resolución de zona/costo de envío se dispara cuando se conoce una dirección
+    // real (loadAddresses/selectAddress/saveNewAddress) — antes se traía TODA la lista de
+    // zonas sin filtrar y se autoseleccionaba zonas[0], sin relación con la dirección del
+    // usuario. Hasta entonces zonas queda vacío → shippingCost() cae al fallback gratuito.
 
     if (this.isGuest()) {
       // Pre-llenar formulario de invitado con datos guardados si existen
@@ -197,11 +193,29 @@ export class CheckoutPageComponent implements OnInit {
         this.addresses.set(dirs);
         const principal = dirs.find(d => d.esPrincipal) ?? dirs[0] ?? null;
         this.selectedAddress.set(principal);
+        if (principal) this.resolverZonaPorDireccion(principal);
       },
       error: () => {
         this.addresses.set([]);
         this.selectedAddress.set(null);
       }
+    });
+  }
+
+  /**
+   * F2.2: resuelve y autoselecciona la zona de envío que corresponde al distrito de la
+   * dirección efectiva, en vez de una zona arbitraria sin relación con la dirección real.
+   */
+  private resolverZonaPorDireccion(addr: Address): void {
+    this.zonaEnvioService.getZonas(addr.distrito).subscribe({
+      next: zonas => {
+        this.zonas.set(zonas);
+        this.selectedZona.set(zonas.find(z => z.distrito === addr.distrito) ?? zonas[0] ?? null);
+      },
+      error: () => {
+        this.zonas.set([]);
+        this.selectedZona.set(null);
+      },
     });
   }
 
@@ -228,6 +242,7 @@ export class CheckoutPageComponent implements OnInit {
 
   selectAddress(addr: Address) {
     this.selectedAddress.set(addr);
+    this.resolverZonaPorDireccion(addr);
     this.closeAddressModal();
   }
 
@@ -246,6 +261,7 @@ export class CheckoutPageComponent implements OnInit {
       next: (newAddr) => {
         this.savingAddress.set(false);
         this.selectedAddress.set(newAddr);
+        this.resolverZonaPorDireccion(newAddr);
         this.closeAddressModal();
         this.loadAddresses();
       },
@@ -281,7 +297,7 @@ export class CheckoutPageComponent implements OnInit {
    * Construye el OrderRequest a partir del estado actual del componente.
    * Centraliza la creación del DTO para que todos los métodos de pago usen el mismo.
    */
-  private buildOrderRequest(estado: string = 'PENDIENTE_PAGO'): OrderRequest {
+  private buildOrderRequest(): OrderRequest {
     const addr = this.selectedAddress()!;
     const guestEmail = this.isGuest() ? (this.guestForm.value.guestEmail ?? undefined) : undefined;
 
@@ -295,7 +311,6 @@ export class CheckoutPageComponent implements OnInit {
     return {
       usuarioId: this.userId(),
       guestEmail,
-      estado,
       detalles: this.cartItems().map(item => ({
         productoId: item.productId,
         varianteId: item.variantId ?? 0,
@@ -342,7 +357,7 @@ export class CheckoutPageComponent implements OnInit {
    * Si falla, lanza excepción — el llamador debe capturarla y NO proceder con el pago.
    */
   private async crearPedidoPendiente(): Promise<number> {
-    const orderRequest = this.buildOrderRequest('PENDIENTE_PAGO');
+    const orderRequest = this.buildOrderRequest();
     const response = await firstValueFrom(this.orderService.createOrder(orderRequest, crypto.randomUUID()));
     const orderId = response.id ?? (response as unknown as { orderId?: number }).orderId;
     if (!orderId) {

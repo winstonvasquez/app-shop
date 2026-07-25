@@ -55,9 +55,9 @@
             <!-- Sección: Datos de la devolución -->
             <app-admin-form-section title="Datos de la devolución" [columns]="2">
 
-                <app-form-field label="N° de Pedido / Orden" [required]="true" [error]="err('numeroOrden')">
-                    <input formControlName="numeroOrden" type="text" class="form-input"
-                           placeholder="Ej: #1234 o OC-001" />
+                <app-form-field label="Pedido" [required]="true" [error]="err('pedidoId')">
+                    <app-server-search-select [dataSource]="pedidoSource" formControlName="pedidoId"
+                        placeholder="Buscar pedido…" />
                 </app-form-field>
 
                 <app-form-field label="Nombre del Cliente" [error]="err('clienteNombre')">

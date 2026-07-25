@@ -1,9 +1,10 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams, HttpErrorResponse } from '@angular/common/http';
-import { Observable, throwError } from 'rxjs';
+import { Observable, of, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { environment } from '@env/environment';
 import { HTTP_STATUS } from '@shared/constants/app.constants';
+import { PageResponse } from '@core/models/pagination.model';
 import {
     CustomerResponse,
     CustomerRequest,
@@ -13,16 +14,6 @@ import {
     CustomerContactoRequest,
     CustomerDashboard,
 } from '@features/admin/models/customer.model';
-
-interface PageResponse<T> {
-    content: T[];
-    page: {
-        size: number;
-        number: number;
-        totalElements: number;
-        totalPages: number;
-    };
-}
 
 @Injectable({ providedIn: 'root' })
 export class CustomerService {
@@ -61,6 +52,21 @@ export class CustomerService {
         return this.http
             .get<CustomerResponse>(`${this.baseUrl}/${id}`)
             .pipe(catchError(this.handleError));
+    }
+
+    /**
+     * Busca un cliente por tipo+número de documento exacto (match único).
+     * Usado por POS para resolver un DNI/RUC tipeado antes de cobrar.
+     * Devuelve null en 404 (no encontrado) en vez de propagar el error.
+     */
+    findByDocumento(companyId: number, documento: string): Observable<CustomerResponse | null> {
+        const params = new HttpParams()
+            .set('companyId', companyId.toString())
+            .set('documento', documento);
+        return this.http
+            .get<CustomerResponse>(`${this.baseUrl}/by-documento`, { params })
+            .pipe(catchError((err: HttpErrorResponse) =>
+                err.status === HTTP_STATUS.notFound ? of(null) : this.handleError(err)));
     }
 
     /**

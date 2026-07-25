@@ -9,6 +9,7 @@ import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.compo
 import { AdminFormSectionComponent } from '@shared/ui/forms/admin-form-section/admin-form-section.component';
 import { AdminFormLayoutComponent } from '@shared/ui/forms/admin-form-layout/admin-form-layout.component';
 import { ButtonComponent } from '@shared/components';
+import { AlertComponent } from '@shared/ui';
 import { PromotionsService, Promocion } from '../../services/promotions.service';
 import { VentasParametrosService, SelectOption } from '../../services/ventas-parametros.service';
 import { CURRENCY_DISPLAY } from '@shared/constants/sunat.constants';
@@ -35,6 +36,7 @@ interface PromocionVM extends Promocion {
         AdminFormSectionComponent,
         AdminFormLayoutComponent,
         ButtonComponent,
+        AlertComponent,
     ],
     templateUrl: './promotions.component.html',
 })
@@ -51,6 +53,7 @@ export class PromotionsComponent implements OnInit {
     editMode     = signal(false);
     editId       = signal<number | null>(null);
     submitError  = signal('');
+    listError    = signal<string | null>(null);
     filtroEstado = '';
 
     tipoOptions    = signal<SelectOption[]>([]);
@@ -234,15 +237,9 @@ export class PromotionsComponent implements OnInit {
                     this.guardando.set(false);
                     this.cerrarModal();
                 },
-                error: () => {
-                    this.promociones.update(list =>
-                        list.map(p => p.id === this.editId()
-                            ? { ...p, ...dto, estado: this.calcularEstado({ ...p, ...dto }) }
-                            : p
-                        )
-                    );
+                error: (err: Error) => {
+                    this.submitError.set(err.message);
                     this.guardando.set(false);
-                    this.cerrarModal();
                 }
             });
         } else {
@@ -255,31 +252,20 @@ export class PromotionsComponent implements OnInit {
                     this.guardando.set(false);
                     this.cerrarModal();
                 },
-                error: () => {
-                    const local: PromocionVM = {
-                        id: Date.now(), ...dto, usosActuales: 0,
-                        estado: this.calcularEstado({ ...dto, usosActuales: 0 })
-                    };
-                    this.promociones.update(list => [local, ...list]);
+                error: (err: Error) => {
+                    this.submitError.set(err.message);
                     this.guardando.set(false);
-                    this.cerrarModal();
                 }
             });
         }
     }
 
     toggleActivo(row: PromocionVM): void {
-        const updated = { ...row, activo: !row.activo };
-        this.service.update(row.id!, { activo: updated.activo }).subscribe({
-            next: () => {},
-            error: () => {}
+        this.listError.set(null);
+        this.service.update(row.id!, { activo: !row.activo }).subscribe({
+            next: () => this.cargar(),
+            error: (err: Error) => this.listError.set(err.message)
         });
-        this.promociones.update(list =>
-            list.map(p => p.id === row.id
-                ? { ...p, activo: !p.activo, estado: this.calcularEstado({ ...p, activo: !p.activo }) }
-                : p
-            )
-        );
     }
 
     cerrarModal(): void {

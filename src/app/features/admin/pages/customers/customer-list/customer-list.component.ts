@@ -19,6 +19,7 @@ import { CustomerFormComponent } from '../customer-form/customer-form.component'
 import { CURRENCY_DISPLAY } from '@shared/constants/sunat.constants';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
+import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 
 @Component({
     selector: 'app-customer-list',
@@ -121,8 +122,8 @@ export class CustomerListComponent implements OnInit {
             .subscribe({
                 next: (res) => {
                     this.customers.set(res.content);
-                    this.totalElements.set(res.page.totalElements);
-                    this.totalPages.set(res.page.totalPages);
+                    this.totalElements.set(pageTotalElements(res));
+                    this.totalPages.set(pageTotalPages(res));
                     this.loading.set(false);
                 },
                 error: (err: Error) => {

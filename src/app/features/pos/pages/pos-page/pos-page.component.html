@@ -178,6 +178,7 @@
                 <div class="flex flex-col h-full" style="min-width: 0;">
                     <!-- Customer Lookup -->
                     <app-pos-customer-lookup
+                        [companyId]="companyId"
                         (clientSelected)="onClientSelected($event)"
                         (clientCleared)="onClientCleared()" />
                     <app-pos-order-panel [isProcessing]="isLoading()" (procesarVenta)="procesarVenta()" (irAlNumpad)="showScreen('pago')"

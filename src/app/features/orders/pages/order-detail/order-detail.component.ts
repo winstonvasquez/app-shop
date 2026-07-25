@@ -68,6 +68,7 @@ export class OrderDetailComponent implements OnInit {
         for (const d of o.detalles) {
             this.cartService.addToCart({
                 id: d.productoId,
+                variantId: d.varianteId,
                 sku: d.sku,
                 variantName: d.varianteNombre,
                 name: d.productoNombre,

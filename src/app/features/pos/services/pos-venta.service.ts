@@ -1,7 +1,8 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { HttpClient, HttpParams, HttpHeaders } from '@angular/common/http';
-import { VentaPosRequest, VentaPosResponse, PageResponse, DevolucionPosRequest, DevolucionPosResponse, TipoCambio } from '../models/venta-pos.model';
+import { VentaPosRequest, VentaPosResponse, DevolucionPosRequest, DevolucionPosResponse, TipoCambio } from '../models/venta-pos.model';
+import { PageResponse } from '@core/models/pagination.model';
 import { environment } from '@env/environment';
 import { MONEDA } from '@shared/constants/sunat.constants';
 

@@ -15,6 +15,7 @@ export interface OrderResponse {
 export interface OrderDetail {
     id: number;
     productoId: number;
+    varianteId?: number; // ID de la variante (talla/color) — usado al "Volver a comprar"
     productoNombre: string; // Nombre del producto
     varianteNombre?: string; // Nombre de la variante
     sku: string; // SKU del producto
@@ -41,8 +42,6 @@ export interface OrderRequest {
     metodoPago: string;
     codigoCupon?: string;
     zonaEnvioId?: number;
-    /** Estado inicial del pedido. Usar 'PENDIENTE_PAGO' cuando el gateway se llama después de crear el pedido. */
-    estado?: string;
 }
 
 /** Respuesta de confirmación de pago en el backend. */

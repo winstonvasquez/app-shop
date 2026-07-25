@@ -12,7 +12,7 @@ import {
   RolDto,
   TIPO_DOCUMENTO_OPTIONS
 } from '@features/admin/models/user.model';
-import { PaginationConfig, PageResponse } from '@features/admin/models/product.model';
+import { PaginationConfig, PageResponse } from '@core/models/pagination.model';
 
 @Component({
   selector: 'app-users',

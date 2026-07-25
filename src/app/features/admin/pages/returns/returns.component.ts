@@ -14,6 +14,9 @@ import { ButtonComponent } from '@shared/components';
 import { AuthService } from '@core/auth/auth.service';
 import { VentasParametrosService, SelectOption } from '../../services/ventas-parametros.service';
 import { CURRENCY_DISPLAY } from '@shared/constants/sunat.constants';
+import { ServerSearchSelectComponent } from '@shared/components';
+import { OrderService } from '@core/services/order.service';
+import { pedidoSelectSource } from '../../components/select-sources';
 
 type MotivoDevolucion = 'DEFECTO' | 'CAMBIO' | 'ERROR_PEDIDO' | 'NO_LLEGÓ' | 'OTRO';
 type TipoResolucion   = 'REEMBOLSO' | 'CAMBIO_PRODUCTO' | 'CREDITO_TIENDA';
@@ -52,6 +55,7 @@ interface DevolucionStats {
         AdminFormSectionComponent,
         AdminFormLayoutComponent,
         ButtonComponent,
+        ServerSearchSelectComponent,
     ],
     templateUrl: './returns.component.html',
 })
@@ -59,7 +63,10 @@ export class ReturnsComponent implements OnInit {
     private readonly http = inject(HttpClient);
     private readonly fb   = inject(FormBuilder);
     private readonly auth = inject(AuthService);
+    private readonly orderService = inject(OrderService);
     readonly parametros   = inject(VentasParametrosService);
+
+    readonly pedidoSource = pedidoSelectSource(this.orderService);
 
     private readonly baseUrl = `${environment.apiUrls.sales}/api/devoluciones`;
 
@@ -97,6 +104,7 @@ export class ReturnsComponent implements OnInit {
 
     // Formulario de devolución
     returnForm: FormGroup = this.fb.group({
+        pedidoId:      [null as number | null, Validators.required],
         numeroOrden:   ['', Validators.required],
         clienteNombre: [''],
         motivo:        ['DEFECTO' as MotivoDevolucion, Validators.required],
@@ -150,6 +158,12 @@ export class ReturnsComponent implements OnInit {
         this.parametros.getTiposResolucion().subscribe(opts => this.resolucionOptions.set(opts));
         this.loadPage();
         this.loadStats();
+
+        // F4.2: numeroOrden se deriva automáticamente del pedido real seleccionado
+        // (antes era texto libre desconectado del pedidoId, que siempre se enviaba null).
+        this.returnForm.get('pedidoId')!.valueChanges.subscribe((id: number | null) => {
+            this.returnForm.get('numeroOrden')!.setValue(id != null ? `#${id}` : '');
+        });
     }
 
     /** Carga la página actual server-side (search + estado + 20/pág). */
@@ -216,6 +230,7 @@ export class ReturnsComponent implements OnInit {
 
     abrirDetalle(row: Devolucion): void {
         this.returnForm.patchValue({
+            pedidoId:       row.pedidoId,
             numeroOrden:    row.numeroOrden,
             clienteNombre:  row.clienteNombre,
             motivo:         row.motivo,
@@ -240,7 +255,7 @@ export class ReturnsComponent implements OnInit {
         this.submitError.set('');
         const v = this.returnForm.getRawValue();
         const body = {
-            pedidoId:       null,
+            pedidoId:       v.pedidoId,
             numeroOrden:    v.numeroOrden,
             clienteNombre:  v.clienteNombre,
             fechaSolicitud: v.fechaSolicitud,
@@ -295,6 +310,7 @@ export class ReturnsComponent implements OnInit {
 
     private resetForm(): void {
         this.returnForm.reset({
+            pedidoId:       null,
             numeroOrden:    '',
             clienteNombre:  '',
             motivo:         'DEFECTO',

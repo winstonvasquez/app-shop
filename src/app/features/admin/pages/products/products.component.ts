@@ -11,6 +11,9 @@ import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { ButtonComponent } from '@shared/components';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
+import { AuthService } from '@core/auth/auth.service';
+import { CategoryService } from '@core/services/category.service';
+import { CategoryResponse } from '@core/models/category.model';
 
 @Component({
   selector: 'app-products',
@@ -31,6 +34,10 @@ import { environment } from '@env/environment';
 export class ProductsComponent implements OnInit {
   private readonly productService = inject(ProductService);
   private readonly fb = inject(FormBuilder);
+  private readonly authService = inject(AuthService);
+  private readonly categoryService = inject(CategoryService);
+
+  categorias = signal<CategoryResponse[]>([]);
 
   // Signals for reactive state
   products = signal<ProductResponse[]>([]);
@@ -146,15 +153,26 @@ export class ProductsComponent implements OnInit {
       marca: ['', [
         Validators.maxLength(50)
       ]],
-      companyId: [null, [
-        Validators.required
-      ]],
-      categoriaIds: [[]]
+      categoriaIds: [[] as number[]]
     });
   }
 
   ngOnInit(): void {
     this.loadProducts();
+    this.categoryService.getAllSimple().subscribe(categorias => this.categorias.set(categorias));
+  }
+
+  toggleCategoria(id: number): void {
+    const control = this.productForm.get('categoriaIds')!;
+    const current: number[] = control.value || [];
+    control.setValue(
+      current.includes(id) ? current.filter(c => c !== id) : [...current, id]
+    );
+  }
+
+  isCategoriaSelected(id: number): boolean {
+    const current: number[] = this.productForm.get('categoriaIds')?.value || [];
+    return current.includes(id);
   }
 
   /**
@@ -250,7 +268,6 @@ export class ProductsComponent implements OnInit {
       descripcion: product.descripcion,
       precioBase: product.precioBase,
       marca: product.marca,
-      companyId: product.companyId,
       categoriaIds: product.categorias?.map((c: { id: number }) => c.id) || []
     });
 
@@ -275,6 +292,12 @@ export class ProductsComponent implements OnInit {
       return;
     }
 
+    const companyId = this.authService.currentUser()?.activeCompanyId ?? null;
+    if (!companyId) {
+      this.submitError.set('No se pudo determinar la empresa activa');
+      return;
+    }
+
     this.submitting.set(true);
     this.submitError.set(null);
 
@@ -284,7 +307,7 @@ export class ProductsComponent implements OnInit {
       descripcion: formValue.descripcion || null,
       precioBase: formValue.precioBase,
       marca: formValue.marca || null,
-      companyId: formValue.companyId,
+      companyId,
       categoriaIds: formValue.categoriaIds || []
     };
 

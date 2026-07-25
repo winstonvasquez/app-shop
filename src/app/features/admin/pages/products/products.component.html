@@ -95,14 +95,21 @@
                 placeholder="Ej: HP, Dell, Samsung">
             </app-form-field>
 
-            <app-form-field
-                label="ID de Empresa"
-                [control]="getControl('companyId')"
-                type="number"
-                placeholder="1"
-                hint="Nota: Esto será un selector de empresas en la versión final"
-                [required]="true">
-            </app-form-field>
+            <div class="form-group">
+                <label>Categorías</label>
+                <div class="category-checkbox-list">
+                    @for (cat of categorias(); track cat.id) {
+                        <label class="category-checkbox-item">
+                            <input type="checkbox"
+                                [checked]="isCategoriaSelected(cat.id)"
+                                (change)="toggleCategoria(cat.id)">
+                            {{ cat.nombre }}
+                        </label>
+                    } @empty {
+                        <span class="text-subtle">Sin categorías disponibles</span>
+                    }
+                </div>
+            </div>
         </form>
 
         <div slot="footer">

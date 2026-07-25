@@ -7,7 +7,12 @@
         </svg>
         <input type="text" class="input-field !pl-9 !h-9 !text-sm" placeholder="DNI, RUC o nombre del cliente..."
             [value]="query()" (input)="onSearch($any($event.target).value)" autocomplete="off">
-        @if (query().length > 0) {
+        @if (buscando()) {
+        <svg class="absolute right-2 top-1/2 -translate-y-1/2 text-muted animate-spin" viewBox="0 0 24 24" fill="none" width="14" height="14">
+            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" opacity="0.25"/>
+            <path d="M12 2a10 10 0 0110 10" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+        </svg>
+        } @else if (query().length > 0) {
         <button class="absolute right-2 top-1/2 -translate-y-1/2 text-muted hover:text-on"
             (click)="clear()">
             <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14">
@@ -18,6 +23,26 @@
         </button>
         }
     </div>
+
+    @if (resultados().length > 0) {
+    <div class="customer-results">
+        @for (c of resultados(); track c.id) {
+        <button type="button" class="customer-result-item" (click)="seleccionar(c)">
+            <span class="text-sm font-medium text-on">{{ c.nombreCompleto }}</span>
+            <span class="text-xs text-muted">{{ c.tipoDocumento }}: {{ c.numeroDocumento }}</span>
+        </button>
+        }
+    </div>
+    }
+
+    @if (notFound() && !buscando()) {
+    <div class="customer-not-found">
+        <span class="text-xs text-muted">Cliente no encontrado — {{ query() }}</span>
+        <button type="button" class="text-xs text-[var(--color-primary)] font-medium" (click)="crearRapido()">
+            Crear nuevo
+        </button>
+    </div>
+    }
 
     @if (selectedClient()) {
     <div class="customer-selected">

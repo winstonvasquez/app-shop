@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable, Subject, debounceTime, distinctUntilChanged, switchMap } from 'rxjs';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { ProductoCatalogoPOS } from '../models/catalogo-pos.model';
-import { PageResponse } from '../models/venta-pos.model';
+import { PageResponse } from '@core/models/pagination.model';
 import { environment } from '@env/environment';
 
 @Injectable({ providedIn: 'root' })

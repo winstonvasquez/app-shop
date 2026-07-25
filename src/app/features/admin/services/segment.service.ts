@@ -4,7 +4,7 @@ import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { environment } from '@env/environment';
 import { SegmentResponse, SegmentRequest } from '@features/admin/models/segment.model';
-import { PageResponse } from '@features/admin/models/product.model';
+import { PageResponse } from '@core/models/pagination.model';
 import { HTTP_STATUS } from '@shared/constants/app.constants';
 
 @Injectable({

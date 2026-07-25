@@ -29,8 +29,11 @@ const ALL_NAV_GROUPS: NavGroup[] = [
     items: [
       { label: 'Dashboard Ventas', route: '/admin/ventas/dashboard', icon: 'chart-line' },
       { label: 'Pedidos', route: '/admin/orders', icon: 'cart' },
+      { label: 'Productos', route: '/admin/products', icon: 'box' },
+      { label: 'Categorías', route: '/admin/categories', icon: 'tag' },
       { label: 'Devoluciones', route: '/admin/returns', icon: 'return' },
-      { label: 'Promociones', route: '/admin/promotions', icon: 'tag' }
+      { label: 'Promociones', route: '/admin/promotions', icon: 'tag' },
+      { label: 'Clientes', route: '/admin/customers', icon: 'users' }
     ]
   },
   {
@@ -70,7 +73,12 @@ const ALL_NAV_GROUPS: NavGroup[] = [
       { label: 'Transferencias',      route: '/admin/inventario/transferencias', icon: 'truck' },
       { label: 'Inventarios Físicos', route: '/admin/inventario/conteos',        icon: 'list' },
       { label: 'Kardex Valorizado',   route: '/admin/inventario/kardex',         icon: 'document' },
-      { label: 'Análisis ABC',        route: '/admin/inventario/abc',            icon: 'chart-bar' }
+      { label: 'Análisis ABC',        route: '/admin/inventario/abc',            icon: 'chart-bar' },
+      { label: 'Zonas',               route: '/admin/inventario/zonas',          icon: 'layout' },
+      { label: 'Lotes',               route: '/admin/inventario/lotes',          icon: 'tag' },
+      { label: 'Números de Serie',    route: '/admin/inventario/series',         icon: 'list' },
+      { label: 'Reglas de Reposición', route: '/admin/inventario/reglas-reposicion', icon: 'sliders' },
+      { label: 'Kardex por Almacén',  route: '/admin/inventario/kardex-almacen', icon: 'book-open' }
     ]
   },
   {

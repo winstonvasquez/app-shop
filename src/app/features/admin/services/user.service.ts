@@ -8,7 +8,7 @@ import {
     UserRequest,
     UserFilter
 } from '@features/admin/models/user.model';
-import { PageResponse, PaginationConfig } from '@features/admin/models/product.model';
+import { PageResponse, PaginationConfig } from '@core/models/pagination.model';
 import { HTTP_STATUS } from '@shared/constants/app.constants';
 
 @Injectable({

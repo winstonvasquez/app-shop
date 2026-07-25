@@ -8,13 +8,13 @@ import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { VentasParametrosService } from '../../services/ventas-parametros.service';
 import { ChartDefaultsService, CHART_COLORS } from '@shared/services/chart-defaults.service';
 import { CURRENCY_DISPLAY } from '@shared/constants/sunat.constants';
+import { PageResponse } from '@core/models/pagination.model';
 import {
     ApexAxisChartSeries, ApexChart, ApexDataLabels, ApexFill,
     ApexGrid, ApexStroke, ApexTooltip, ApexXAxis, ApexYAxis,
     ApexNonAxisChartSeries, ApexPlotOptions, ApexLegend
 } from 'ng-apexcharts';
 
-interface PageResponse<T> { content: T[]; totalElements: number; }
 interface OrderSummary {
     id: number; usuarioId: number; fechaPedido: string; estado: string; total: number;
 }
@@ -70,9 +70,9 @@ export class VentasDashboardComponent implements OnInit {
 
     /* ── Chart: Estado pedidos (donut) ────────────────────────── */
     donutChart: ApexChart = this.chartDefaults.donutChart(220);
-    donutSeries: ApexNonAxisChartSeries = [45, 25, 20, 10];
-    donutLabels = ['Entregado', 'Pagado', 'Pendiente', 'Cancelado'];
-    donutColors = [CHART_COLORS[2], CHART_COLORS[3], CHART_COLORS[1], '#ef4444'];
+    donutSeries: ApexNonAxisChartSeries = [0, 0, 0, 0, 0];
+    donutLabels = ['Pendiente', 'Pagado', 'Enviado', 'Entregado', 'Cancelado'];
+    donutColors = [CHART_COLORS[1], CHART_COLORS[3], CHART_COLORS[4], CHART_COLORS[2], '#ef4444'];
     donutPlot: ApexPlotOptions = this.chartDefaults.donutPlotOptions('60%');
     donutLegend: ApexLegend = { ...this.chartDefaults.legend(), position: 'bottom' };
     donutDataLabels: ApexDataLabels = { enabled: false };
@@ -102,8 +102,27 @@ export class VentasDashboardComponent implements OnInit {
         this.cargando.set(true);
         const url = `${environment.apiUrls.sales}/api/pedidos?page=0&size=50&sort=fechaPedido,desc`;
         this.http.get<PageResponse<OrderSummary>>(url).subscribe({
-            next: (res) => { this.pedidos.set(res.content ?? []); this.cargando.set(false); },
+            next: (res) => {
+                this.pedidos.set(res.content ?? []);
+                this._updateDonut(res.content ?? []);
+                this.cargando.set(false);
+            },
             error: () => { this.pedidos.set([]); this.cargando.set(false); }
         });
+    }
+
+    /**
+     * F2.4: reemplaza el donut hardcodeado [45,25,20,10] por conteos reales derivados de
+     * la muestra de pedidos ya cargada (limitada a los últimos 50 — el mismo límite que ya
+     * tiene el resto del dashboard). La tendencia diaria (areaSeries) requiere un endpoint
+     * de agregación en el backend que hoy no existe — queda como dependencia cross-stream
+     * documentada, no bloquea este quick-win.
+     */
+    private _updateDonut(pedidos: OrderSummary[]): void {
+        const counts: Record<string, number> = { PENDIENTE: 0, PAGADO: 0, ENVIADO: 0, ENTREGADO: 0, CANCELADO: 0 };
+        for (const p of pedidos) {
+            if (p.estado in counts) counts[p.estado]++;
+        }
+        this.donutSeries = [counts['PENDIENTE'], counts['PAGADO'], counts['ENVIADO'], counts['ENTREGADO'], counts['CANCELADO']];
     }
 }
