@@ -259,6 +259,9 @@ export class InventoryCountComponent {
     }
 
     onSubmit(): void {
+        // Guard de doble-submit: ignora clicks re-entrantes mientras la petición está en curso
+        // (además del disabled del botón vía [loading]="submitting()", defensa explícita aquí).
+        if (this.submitting()) return;
         if (this.details.length === 0) { this.submitError.set('Agregá al menos un producto al conteo.'); return; }
         if (this.form.invalid) { this.form.markAllAsTouched(); return; }
         this.submitting.set(true);

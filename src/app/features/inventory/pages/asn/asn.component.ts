@@ -353,6 +353,9 @@ export class AsnComponent {
     }
 
     submitCreate(): void {
+        // Guard de doble-submit: ignora clicks re-entrantes mientras la petición está en curso
+        // (además del disabled del botón vía [loading]="submittingCreate()", defensa explícita aquí).
+        if (this.submittingCreate()) return;
         if (this.form.invalid || this.createLines().length === 0) { this.form.markAllAsTouched(); return; }
         const v = this.form.getRawValue();
         const lines: CreateAsnLineRequest[] = this.createLines().map(l => ({

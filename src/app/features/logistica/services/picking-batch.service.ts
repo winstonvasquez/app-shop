@@ -10,15 +10,15 @@ export class PickingBatchService {
     private readonly baseUrl = `${environment.apiUrls.logistics}/api/picking/batches`;
 
     generate(body: GenerateBatchBody): Observable<PickingBatch> {
-        return this.http.post<PickingBatch>(this.baseUrl, body);
+        return this.http.post<PickingBatch>(`${this.baseUrl}/generate`, body);
     }
 
     start(id: string): Observable<PickingBatch> {
-        return this.http.post<PickingBatch>(`${this.baseUrl}/${id}/start`, {});
+        return this.http.put<PickingBatch>(`${this.baseUrl}/${id}/start`, {});
     }
 
     complete(id: string): Observable<PickingBatch> {
-        return this.http.post<PickingBatch>(`${this.baseUrl}/${id}/complete`, {});
+        return this.http.put<PickingBatch>(`${this.baseUrl}/${id}/complete`, {});
     }
 
     list(page = 0, size = 20): Observable<PickingBatchPage> {

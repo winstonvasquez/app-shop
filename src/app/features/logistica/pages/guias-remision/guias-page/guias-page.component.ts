@@ -1,9 +1,11 @@
 import { Component, inject, signal, OnInit, ChangeDetectionStrategy, computed } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
-import { ButtonComponent, CatalogSelectComponent } from '@shared/components';
+import { ButtonComponent, CatalogSelectComponent, ServerSearchSelectComponent } from '@shared/components';
 import { DrawerComponent } from '../../../../../shared/components/drawer/drawer.component';
 import { GuiaRemisionService } from '../../../services/guia-remision.service';
+import { AlmacenService } from '../../../services/almacen.service';
+import { almacenSelectSource } from '../../../components/select-sources';
 import { GuiaRemision, EstadoGuia, CreateGuiaRemisionDto, GuiaRemisionItemDto } from '../../../models/guia-remision.model';
 import { AuthService } from '../../../../../core/auth/auth.service';
 import { CatalogService } from '@core/services/catalog.service';
@@ -28,15 +30,22 @@ interface ItemForm {
 @Component({
     selector: 'app-guias-page',
     standalone: true,
-    imports: [ReactiveFormsModule, ButtonComponent, DrawerComponent, DataTableComponent, DateInputComponent, AlertComponent, PageHeaderComponent, CatalogSelectComponent],
+    imports: [ReactiveFormsModule, ButtonComponent, DrawerComponent, DataTableComponent, DateInputComponent, AlertComponent, PageHeaderComponent, CatalogSelectComponent, ServerSearchSelectComponent],
     changeDetection: ChangeDetectionStrategy.OnPush,
     templateUrl: './guias-page.component.html'
 })
 export class GuiasPageComponent implements OnInit {
-    private readonly guiaService = inject(GuiaRemisionService);
-    private readonly authService = inject(AuthService);
-    private readonly fb          = inject(FormBuilder);
-    private readonly catalog     = inject(CatalogService);
+    private readonly guiaService   = inject(GuiaRemisionService);
+    private readonly almacenService = inject(AlmacenService);
+    private readonly authService   = inject(AuthService);
+    private readonly fb            = inject(FormBuilder);
+    private readonly catalog       = inject(CatalogService);
+
+    /** Fuente server-side para el selector de almacén de origen, scopeada a companyId. */
+    readonly almacenOrigenSource = almacenSelectSource(
+        this.almacenService,
+        () => this.authService.currentUser()?.activeCompanyId
+    );
 
     readonly guias           = signal<GuiaRemision[]>([]);
     readonly guiasFiltradas  = signal<GuiaRemision[]>([]);
@@ -93,6 +102,7 @@ export class GuiasPageComponent implements OnInit {
         fechaEmision:       [this.hoy],
         fechaInicioTraslado:[this.hoy],
         // Punto de partida
+        almacenOrigenId:    ['',     [Validators.required]],
         direccionOrigen:    ['',     [Validators.required]],
         ubigeoOrigen:       [''],
         // Destinatario
@@ -152,6 +162,7 @@ export class GuiasPageComponent implements OnInit {
         const v = this.greForm.value;
         return !!v.serie &&
             !!v.numeroDocumento &&
+            !!v.almacenOrigenId &&
             !!v.direccionOrigen &&
             !!v.motivoTraslado &&
             this.itemForms().length > 0;
@@ -233,7 +244,7 @@ export class GuiasPageComponent implements OnInit {
             numeroDocumento:    f.numeroDocumento ?? '',
             fechaEmision:       f.fechaEmision       || undefined,
             fechaInicioTraslado:f.fechaInicioTraslado || undefined,
-            almacenOrigenId:    '00000000-0000-0000-0000-000000000001',
+            almacenOrigenId:    f.almacenOrigenId ?? '',
             direccionOrigen:    f.direccionOrigen ?? '',
             ubigeoOrigen:       f.ubigeoOrigen       || undefined,
             destinatarioRuc:    f.destinatarioRuc    || undefined,

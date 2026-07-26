@@ -1,44 +1,60 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Devolucion, DevolucionPage, DevolucionStatus } from '../models/devolucion.model';
-import { PAGINATION } from '@shared/constants/app.constants';
+import { Devolucion } from '../models/devolucion.model';
 
 @Injectable({ providedIn: 'root' })
 export class DevolucionService {
     private readonly http = inject(HttpClient);
     private readonly baseUrl = '/logistics/api/returns';
 
-    getDevoluciones(companyId: string, page = 0, size: number = PAGINATION.defaultPageSize, status?: string): Observable<DevolucionPage> {
-        let params = new HttpParams()
-            .set('companyId', companyId)
-            .set('page', String(page))
-            .set('size', String(size));
-        if (status) params = params.set('status', status);
-        return this.http.get<DevolucionPage>(this.baseUrl, { params });
+    /**
+     * Lista devoluciones del tenant. El backend (ReturnController.getAllReturnRequests /
+     * getReturnRequestsByStatus) devuelve una lista plana sin paginar — ver nota en
+     * devolucion.model.ts. La paginación se aplica client-side en el componente.
+     */
+    getDevoluciones(companyId: string, status?: string): Observable<Devolucion[]> {
+        const url = status ? `${this.baseUrl}/status/${status}` : this.baseUrl;
+        return this.http.get<Devolucion[]>(url, { params: { companyId } });
     }
 
     getById(id: string, companyId: string): Observable<Devolucion> {
         return this.http.get<Devolucion>(`${this.baseUrl}/${id}`, { params: { companyId } });
     }
 
-    aprobar(id: string, companyId: string): Observable<Devolucion> {
-        return this.http.patch<Devolucion>(`${this.baseUrl}/${id}/approve`, {}, { params: { companyId } });
+    aprobar(id: string, companyId: string, returnTrackingNumber?: string): Observable<Devolucion> {
+        return this.http.put<Devolucion>(
+            `${this.baseUrl}/${id}/approve`,
+            returnTrackingNumber ? { returnTrackingNumber } : {},
+            { params: { companyId } }
+        );
     }
 
-    rechazar(id: string, companyId: string): Observable<Devolucion> {
-        return this.http.patch<Devolucion>(`${this.baseUrl}/${id}/reject`, {}, { params: { companyId } });
+    rechazar(id: string, motivo: string, companyId: string): Observable<Devolucion> {
+        return this.http.put<Devolucion>(`${this.baseUrl}/${id}/reject`, { motivo }, { params: { companyId } });
     }
 
-    marcarRecibida(id: string, companyId: string): Observable<Devolucion> {
-        return this.http.patch<Devolucion>(`${this.baseUrl}/${id}/receive`, {}, { params: { companyId } });
+    marcarRecibida(id: string, companyId: string, warehouseId?: string): Observable<Devolucion> {
+        return this.http.put<Devolucion>(
+            `${this.baseUrl}/${id}/receive`,
+            warehouseId ? { warehouseId } : {},
+            { params: { companyId } }
+        );
     }
 
     registrarInspeccion(id: string, notes: string, companyId: string): Observable<Devolucion> {
-        return this.http.patch<Devolucion>(`${this.baseUrl}/${id}/inspect`, { inspectionNotes: notes }, { params: { companyId } });
+        return this.http.put<Devolucion>(
+            `${this.baseUrl}/${id}/inspect`,
+            { inspectionNotes: notes },
+            { params: { companyId } }
+        );
     }
 
-    registrarReembolso(id: string, amount: number, companyId: string): Observable<Devolucion> {
-        return this.http.patch<Devolucion>(`${this.baseUrl}/${id}/refund`, { refundAmount: amount }, { params: { companyId } });
+    registrarReembolso(id: string, amount: number, notas: string, companyId: string): Observable<Devolucion> {
+        return this.http.put<Devolucion>(
+            `${this.baseUrl}/${id}/refund`,
+            { monto: amount, notas },
+            { params: { companyId } }
+        );
     }
 }

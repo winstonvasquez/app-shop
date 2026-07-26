@@ -26,6 +26,7 @@
   <app-data-table
     [data]="pagedStock()"
     [columns]="columns"
+    [actions]="actions"
     [loading]="loading()"
     [searchable]="true"
     searchPlaceholder="Buscar por producto..."
@@ -43,3 +44,36 @@
   </app-data-table>
 
 </div>
+
+<!-- Drawer: editar umbrales de stock (mín./máx./punto de reorden) -->
+<app-drawer
+  [isOpen]="showThresholdsDrawer()"
+  title="Editar umbrales de stock"
+  size="sm" side="right" [hasFooter]="true"
+  (closed)="closeThresholdsDrawer()">
+
+  <form [formGroup]="thresholdsForm" (ngSubmit)="submitThresholds()">
+    @if (thresholdsError()) {
+      <app-alert type="error" [message]="thresholdsError()!" [dismissible]="true"
+                 (dismiss)="thresholdsError.set(null)" />
+    }
+
+    <p class="text-sm text-subtle mb-sm">
+      Producto #{{ selectedStock()?.productId }} — {{ selectedStock()?.warehouseName }}
+    </p>
+
+    <app-form-field label="Stock mínimo" [control]="getThresholdsCtrl('minimumStock')"
+      type="number" [required]="true" />
+    <app-form-field label="Stock máximo" [control]="getThresholdsCtrl('maximumStock')"
+      type="number" [required]="true" />
+    <app-form-field label="Punto de reorden" [control]="getThresholdsCtrl('reorderPoint')"
+      type="number" [required]="true" />
+  </form>
+
+  <div slot="footer">
+    <app-button icon="x" label="Cancelar" variant="secondary" type="button" (click)="closeThresholdsDrawer()" />
+    <app-button icon="save" label="Guardar" variant="primary" type="button"
+                [loading]="submittingThresholds()" [disabled]="submittingThresholds() || thresholdsForm.invalid"
+                (click)="submitThresholds()" />
+  </div>
+</app-drawer>

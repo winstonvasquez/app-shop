@@ -14,7 +14,8 @@ import {
     InventoryCount,
     InventoryCountRequest,
     KardexEntry,
-    PageResponse
+    PageResponse,
+    StockThresholdsRequest
 } from '../models/inventory.models';
 
 /**
@@ -210,6 +211,12 @@ export class InventoryApiService {
         return this.http.get<InventoryStock[]>(`${this.baseUrl}/inventory/stock/below-minimum`);
     }
 
+    /** Define stock mínimo, máximo y punto de reorden — sin esto quedan en 0 y las alertas nunca disparan. */
+    setStockThresholds(warehouseId: number, productId: number, payload: StockThresholdsRequest): Observable<InventoryStock> {
+        return this.http.put<InventoryStock>(
+            `${this.baseUrl}/inventory/stock/${warehouseId}/${productId}/thresholds`, payload);
+    }
+
     createMovement(payload: InventoryMovementRequest): Observable<InventoryMovement> {
         return this.http.post<InventoryMovement>(`${this.baseUrl}/inventory/movements`, payload);
     }
@@ -249,6 +256,10 @@ export class InventoryApiService {
 
     receiveTransfer(id: number): Observable<InventoryTransfer> {
         return this.http.post<InventoryTransfer>(`${this.baseUrl}/transfers/${id}/receive`, {});
+    }
+
+    cancelTransfer(id: number, motivo?: string): Observable<InventoryTransfer> {
+        return this.http.post<InventoryTransfer>(`${this.baseUrl}/transfers/${id}/cancel`, { motivo: motivo || undefined });
     }
 
     getTransfers(params?: {

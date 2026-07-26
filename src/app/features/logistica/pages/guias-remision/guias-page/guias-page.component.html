@@ -85,6 +85,11 @@
       <legend class="gre-legend">PUNTO DE PARTIDA</legend>
       <div class="form-grid">
         <div class="form-field-wrapper">
+          <label class="input-label">Almacén de Origen *</label>
+          <app-server-search-select [dataSource]="almacenOrigenSource" formControlName="almacenOrigenId"
+            placeholder="Buscar almacén de origen…" />
+        </div>
+        <div class="form-field-wrapper">
           <label class="input-label">Dirección de Origen *</label>
           <input class="form-input" formControlName="direccionOrigen"
                  placeholder="Av. Principal 123, Lima">

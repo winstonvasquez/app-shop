@@ -1,4 +1,4 @@
-import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { DatePipe } from '@angular/common';
 import { StockReservationService } from '../../services/stock-reservation.service';
@@ -25,7 +25,26 @@ export class StockReservationsComponent {
     actionId   = signal<string | null>(null);
     error      = signal<string | null>(null);
     successMsg = signal<string | null>(null);
-    reservation = signal<StockReservation | null>(null);
+
+    /**
+     * El backend devuelve UNA reserva POR PRODUCTO del pedido
+     * (`List<StockReservationResponse>`), no un agregado con `items[]`.
+     * Fix 2026-07-26: antes se guardaba el array crudo en una señal tipada como
+     * objeto singular y el template reventaba con `res.items.length` (undefined).
+     */
+    reservations = signal<StockReservation[]>([]);
+
+    /** Pedido consultado (todas las filas comparten orderId) */
+    orderId = computed(() => this.reservations()[0]?.orderId ?? null);
+
+    /** Estado del pedido: RESERVED si al menos una línea sigue reservada. */
+    estadoGlobal = computed<ReservationStatus | null>(() => {
+        const rows = this.reservations();
+        if (rows.length === 0) return null;
+        return rows.some(r => r.status === 'RESERVED') ? 'RESERVED' : rows[0].status;
+    });
+
+    totalUnidades = computed(() => this.reservations().reduce((acc, r) => acc + (r.cantidad ?? 0), 0));
 
     buscar(): void {
         const orderId = (this.searchForm.value.orderId ?? '').trim();
@@ -35,10 +54,13 @@ export class StockReservationsComponent {
         }
         this.loading.set(true);
         this.error.set(null);
-        this.reservation.set(null);
+        this.reservations.set([]);
         this.reservationService.getByOrder(orderId).subscribe({
             next: (res) => {
-                this.reservation.set(res);
+                this.reservations.set(res ?? []);
+                if ((res ?? []).length === 0) {
+                    this.error.set('No se encontraron reservas para la orden indicada');
+                }
                 this.loading.set(false);
             },
             error: () => {
@@ -49,14 +71,14 @@ export class StockReservationsComponent {
     }
 
     release(): void {
-        const res = this.reservation();
-        if (!res) return;
+        const orderId = this.orderId();
+        if (!orderId) return;
         this.actionId.set('release');
-        this.reservationService.release(res.orderId, 'Liberado manualmente').subscribe({
+        this.reservationService.release(orderId, 'Liberado manualmente').subscribe({
             next: () => {
-                this.reservation.update(r => r ? { ...r, status: 'RELEASED' as ReservationStatus } : r);
+                this.marcarTodas('RELEASED');
                 this.actionId.set(null);
-                this.showSuccess('Reserva liberada correctamente');
+                this.showSuccess('Reservas liberadas correctamente');
             },
             error: () => {
                 this.error.set('Error al liberar la reserva');
@@ -66,20 +88,26 @@ export class StockReservationsComponent {
     }
 
     consume(): void {
-        const res = this.reservation();
-        if (!res) return;
+        const orderId = this.orderId();
+        if (!orderId) return;
         this.actionId.set('consume');
-        this.reservationService.consume(res.orderId).subscribe({
+        this.reservationService.consume(orderId).subscribe({
             next: () => {
-                this.reservation.update(r => r ? { ...r, status: 'CONSUMED' as ReservationStatus } : r);
+                this.marcarTodas('CONSUMED');
                 this.actionId.set(null);
-                this.showSuccess('Reserva consumida correctamente');
+                this.showSuccess('Reservas consumidas correctamente');
             },
             error: () => {
                 this.error.set('Error al consumir la reserva');
                 this.actionId.set(null);
             }
         });
+    }
+
+    /** liberar()/consumir() del backend operan sobre TODAS las reservas RESERVED del pedido. */
+    private marcarTodas(status: ReservationStatus): void {
+        this.reservations.update(rows =>
+            rows.map(r => r.status === 'RESERVED' ? { ...r, status } : r));
     }
 
     private showSuccess(msg: string): void {
@@ -108,10 +136,10 @@ export class StockReservationsComponent {
     }
 
     canRelease(): boolean {
-        return this.reservation()?.status === 'RESERVED';
+        return this.estadoGlobal() === 'RESERVED';
     }
 
     canConsume(): boolean {
-        return this.reservation()?.status === 'RESERVED';
+        return this.estadoGlobal() === 'RESERVED';
     }
 }

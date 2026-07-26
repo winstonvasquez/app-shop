@@ -70,6 +70,12 @@ export interface InventoryStock {
     updatedAt?: string;
 }
 
+export interface StockThresholdsRequest {
+    minimumStock: number;
+    maximumStock: number;
+    reorderPoint: number;
+}
+
 export interface InventoryMovement {
     id: number;
     movementNumber?: string;

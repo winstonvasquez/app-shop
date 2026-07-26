@@ -79,17 +79,28 @@
       <div style="display:flex;flex-direction:column;gap:var(--space-md)">
 
         @if (selected()!.status === 'REQUESTED') {
-          <div class="card">
-            <div class="card-body">
-              <p class="card-title" style="margin-bottom:var(--space-md)">Revisar solicitud</p>
-              <div style="display:flex;gap:var(--space-sm)">
-                <app-button label="Aprobar" variant="success" icon="check-circle"
-                  [loading]="actionLoading()" (click)="aprobar()" />
-                <app-button label="Rechazar" variant="danger" icon="x-circle"
-                  [loading]="actionLoading()" (click)="rechazar()" />
+          <form [formGroup]="actionForm">
+            <div class="card">
+              <div class="card-body">
+                <p class="card-title" style="margin-bottom:var(--space-md)">Revisar solicitud</p>
+                <div class="form-field-wrapper" style="margin-bottom:var(--space-md)">
+                  <label class="input-label">Motivo de rechazo (obligatorio para rechazar)</label>
+                  <textarea class="form-input" rows="2" formControlName="motivoRechazo"
+                            placeholder="Ej: producto fuera de plazo, sin comprobante..."
+                            style="resize:vertical"></textarea>
+                  @if (actionForm.controls.motivoRechazo.invalid && actionForm.controls.motivoRechazo.touched) {
+                    <p class="text-error" style="font-size:0.85em;margin-top:4px">El motivo es obligatorio.</p>
+                  }
+                </div>
+                <div style="display:flex;gap:var(--space-sm)">
+                  <app-button label="Aprobar" variant="success" icon="check-circle"
+                    [loading]="actionLoading()" (click)="aprobar()" />
+                  <app-button label="Rechazar" variant="danger" icon="x-circle"
+                    [loading]="actionLoading()" (click)="rechazar()" />
+                </div>
               </div>
             </div>
-          </div>
+          </form>
         }
 
         @if (selected()!.status === 'APPROVED') {
@@ -112,6 +123,9 @@
                   <textarea class="form-input" rows="3" formControlName="inspectionNotes"
                             placeholder="Estado del producto, daños encontrados..."
                             style="resize:vertical"></textarea>
+                  @if (actionForm.controls.inspectionNotes.invalid && actionForm.controls.inspectionNotes.touched) {
+                    <p class="text-error" style="font-size:0.85em;margin-top:4px">Las notas de inspección son obligatorias.</p>
+                  }
                 </div>
                 <app-button label="Registrar inspección" variant="primary" icon="eye"
                   [loading]="actionLoading()" (click)="registrarInspeccion()" />
@@ -127,8 +141,17 @@
                 <p class="card-title" style="margin-bottom:var(--space-md)">Procesar reembolso</p>
                 <div class="form-field-wrapper" style="margin-bottom:var(--space-md)">
                   <label class="input-label">Monto a reembolsar (S/)</label>
-                  <input class="form-input" type="number" min="0" step="0.01"
+                  <input class="form-input" type="number" min="0.01" step="0.01"
                          formControlName="refundAmount" placeholder="0.00">
+                  @if (actionForm.controls.refundAmount.invalid && actionForm.controls.refundAmount.touched) {
+                    <p class="text-error" style="font-size:0.85em;margin-top:4px">El monto debe ser mayor a 0.</p>
+                  }
+                </div>
+                <div class="form-field-wrapper" style="margin-bottom:var(--space-md)">
+                  <label class="input-label">Notas del reembolso (opcional)</label>
+                  <textarea class="form-input" rows="2" formControlName="refundNotas"
+                            placeholder="Observaciones del reembolso..."
+                            style="resize:vertical"></textarea>
                 </div>
                 <app-button label="Registrar reembolso" variant="primary" icon="save"
                   [loading]="actionLoading()" (click)="registrarReembolso()" />

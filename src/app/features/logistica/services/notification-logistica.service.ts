@@ -18,11 +18,11 @@ export class NotificationLogisticaService {
     }
 
     markRead(id: string): Observable<void> {
-        return this.http.post<void>(`${this.baseUrl}/${id}/read`, {});
+        return this.http.put<void>(`${this.baseUrl}/${id}/read`, {});
     }
 
     markAllRead(): Observable<void> {
-        return this.http.post<void>(`${this.baseUrl}/read-all`, {});
+        return this.http.put<void>(`${this.baseUrl}/read-all`, {});
     }
 
     getStream(): EventSource {

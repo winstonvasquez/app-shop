@@ -106,6 +106,12 @@ export class TransferManagementComponent {
             class: 'btn btn-primary',
             show: (r) => r.status === 'ENVIADA',
             onClick: (r) => this.onReceive(r.id)
+        },
+        {
+            label: 'Cancelar',
+            class: 'btn btn-danger',
+            show: (r) => r.status === 'PENDIENTE' || r.status === 'ENVIADA',
+            onClick: (r) => this.onCancel(r.id)
         }
     ];
 
@@ -178,6 +184,7 @@ export class TransferManagementComponent {
     removeDetail(i: number): void { this.details.removeAt(i); }
 
     onSubmit(): void {
+        if (this.submitting()) return;
         if (this.details.length === 0) { this.submitError.set('Agregá al menos un producto a la transferencia.'); return; }
         if (this.form.invalid) { this.form.markAllAsTouched(); return; }
         this.submitting.set(true);
@@ -210,6 +217,15 @@ export class TransferManagementComponent {
     onReceive(id: number): void {
         if (!confirm('¿Confirmar recepción de esta transferencia?')) return;
         this.api.receiveTransfer(id).subscribe({
+            next: () => this.loadTransfers(),
+            error: (err: Error) => this.error.set(err.message)
+        });
+    }
+
+    onCancel(id: number): void {
+        if (!confirm('¿Cancelar esta transferencia? Si ya fue enviada, se revertirá el stock descontado del almacén origen.')) return;
+        const motivo = prompt('Motivo de cancelación (opcional):') ?? undefined;
+        this.api.cancelTransfer(id, motivo || undefined).subscribe({
             next: () => this.loadTransfers(),
             error: (err: Error) => this.error.set(err.message)
         });
