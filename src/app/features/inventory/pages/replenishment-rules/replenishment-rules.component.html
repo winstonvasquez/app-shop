@@ -28,6 +28,55 @@
     (pageChange)="onPageChange($event)">
   </app-data-table>
 
+  <div class="card" style="margin-top:1.5rem">
+    <div class="card-header">
+      <h3>Sugerencias de Reposición</h3>
+      <p class="text-subtle text-xs">
+        Productos cuyo stock actual es menor a la demanda pronosticada para el próximo mes
+        (forecast mensual — DemandForecastService).
+      </p>
+    </div>
+
+    @if (suggestionsError()) {
+      <app-alert type="error" [message]="suggestionsError()!" [dismissible]="true"
+                 (dismiss)="suggestionsError.set(null)" />
+    }
+
+    @if (suggestionsLoading()) {
+      <p class="text-subtle text-xs" style="padding:0.75rem">Cargando sugerencias…</p>
+    } @else if (suggestions().length === 0) {
+      <p class="text-subtle text-xs" style="padding:0.75rem">
+        Sin sugerencias de reposición por ahora. Se recalculan con cada forecast mensual.
+      </p>
+    } @else {
+      <table class="table" style="width:100%">
+        <thead>
+          <tr>
+            <th>Producto</th>
+            <th style="width:110px">Stock Actual</th>
+            <th style="width:150px">Demanda Pronosticada</th>
+            <th style="width:130px">Cant. Sugerida</th>
+            <th style="width:160px"></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (s of suggestions(); track s.productoId) {
+            <tr>
+              <td>{{ s.productoNombre }} <span class="text-subtle text-xs">({{ s.sku }})</span></td>
+              <td>{{ s.currentStock }}</td>
+              <td>{{ s.forecastDemand }}</td>
+              <td>{{ s.suggestedReorder }}</td>
+              <td>
+                <app-button icon="plus" label="Crear regla" variant="secondary"
+                            (click)="crearReglaDesdeSugerencia(s)" />
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  </div>
+
 </div>
 
 <!-- Drawer: crear / editar -->

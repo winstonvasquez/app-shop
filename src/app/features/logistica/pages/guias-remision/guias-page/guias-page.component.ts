@@ -147,6 +147,14 @@ export class GuiasPageComponent implements OnInit {
 
     actions: TableAction<GuiaRemision>[] = [
         {
+            // GRE auto-generadas (GuiaRemisionAutoService#generarDesdeEnvio) nacen en
+            // PENDIENTE — este es HOY el único camino de salida visible en la UI
+            // (backend: POST /{id}/enviar-sunat, ronda 2 2026-07-26).
+            label: 'Enviar a SUNAT', icon: '📤', class: 'btn-view',
+            show: (row) => row.estado === 'PENDIENTE',
+            onClick: (row) => this.enviarSunat(row.id)
+        },
+        {
             label: 'Iniciar traslado', icon: '✓', class: 'btn-view',
             show: (row) => row.estado === 'EMITIDA',
             onClick: (row) => this.cambiarEstado(row.id, 'EN_TRASLADO')
@@ -285,6 +293,13 @@ export class GuiasPageComponent implements OnInit {
         });
     }
 
+    enviarSunat(id: string) {
+        this.guiaService.enviarSunat(id, this.companyId).subscribe({
+            next: () => this.cargarGuias(),
+            error: () => this.errorMsg.set('Error al enviar la guía a SUNAT. Intente nuevamente.')
+        });
+    }
+
     // ── Items ──────────────────────────────────────────
     agregarItem() {
         this.itemForms.update(items => [
@@ -317,6 +332,7 @@ export class GuiasPageComponent implements OnInit {
 
     badgeClass(estado: EstadoGuia): string {
         const map: Record<EstadoGuia, string> = {
+            PENDIENTE:   'badge badge-neutral',
             EMITIDA:     'badge badge-accent',
             EN_TRASLADO: 'badge badge-warning',
             RECIBIDA:    'badge badge-success',

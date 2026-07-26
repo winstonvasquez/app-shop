@@ -40,6 +40,11 @@ export const logisticaRoutes: Routes = [
           .then(m => m.TransportistasPageComponent)
       },
       {
+        path: 'transportistas-sla',
+        loadComponent: () => import('./pages/carrier-sla-management/carrier-sla-management.component')
+          .then(m => m.CarrierSlaManagementComponent)
+      },
+      {
         path: 'envios',
         loadComponent: () => import('./pages/envios/envios-page.component')
           .then(m => m.EnviosPageComponent)
@@ -73,6 +78,11 @@ export const logisticaRoutes: Routes = [
         path: 'notificaciones',
         loadComponent: () => import('./pages/notifications/notifications.component')
           .then(m => m.NotificationsComponent)
+      },
+      {
+        path: 'mapeo-contable',
+        loadComponent: () => import('./pages/accounting-mapping/accounting-mapping.component')
+          .then(m => m.AccountingMappingComponent)
       }
     ]
   }

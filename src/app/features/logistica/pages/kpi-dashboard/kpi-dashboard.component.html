@@ -103,6 +103,59 @@
         </div>
       }
     </div>
+
+    <!-- Costos de envío -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6 mb-6">
+      <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+        <p class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Costo Total Envíos</p>
+        <p class="text-3xl font-bold text-gray-800">S/ {{ (costAnalytics()?.totalCost ?? 0) | number:'1.2-2' }}</p>
+        <p class="text-xs text-gray-400 mt-1">{{ costAnalytics()?.totalShipments ?? 0 }} envíos con costo registrado</p>
+      </div>
+      <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+        <p class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Costo Prom. por Envío</p>
+        <p class="text-3xl font-bold" style="color:var(--color-primary)">S/ {{ (costAnalytics()?.avgCostPerShipment ?? 0) | number:'1.2-2' }}</p>
+        <p class="text-xs text-gray-400 mt-1">Promedio del período</p>
+      </div>
+      <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+        <p class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Costo Prom. por Kg</p>
+        <p class="text-3xl font-bold" style="color:var(--color-accent)">S/ {{ (costAnalytics()?.avgCostPerKg ?? 0) | number:'1.2-2' }}</p>
+        <p class="text-xs text-gray-400 mt-1">Solo envíos con peso registrado</p>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+      <div class="p-4 border-b border-gray-50">
+        <h2 class="text-base font-semibold text-gray-700">Costos por Transportista</h2>
+      </div>
+      @if (costLoading()) {
+        <div class="text-center py-10 text-gray-400 text-sm">Cargando costos de envío...</div>
+      } @else if (costByCarrier().length === 0) {
+        <div class="text-center py-10 text-gray-400 text-sm">Sin costos de envío registrados para el período seleccionado</div>
+      } @else {
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="bg-gray-50 text-left text-xs text-gray-500 uppercase tracking-wide">
+                <th class="px-4 py-3">Transportista</th>
+                <th class="px-4 py-3 text-right">Envíos</th>
+                <th class="px-4 py-3 text-right">Costo Total</th>
+                <th class="px-4 py-3 text-right">Costo Promedio</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-50">
+              @for (row of costByCarrier(); track row.carrierId) {
+                <tr class="hover:bg-gray-50 transition-colors">
+                  <td class="px-4 py-3 font-medium text-gray-700">{{ row.carrierName }}</td>
+                  <td class="px-4 py-3 text-right text-gray-600">{{ row.shipments | number }}</td>
+                  <td class="px-4 py-3 text-right text-gray-600">S/ {{ row.totalCost | number:'1.2-2' }}</td>
+                  <td class="px-4 py-3 text-right text-gray-600">S/ {{ row.avgCost | number:'1.2-2' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
   } @else {
     @if (!loading()) {
       <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-10 text-center text-gray-400 text-sm">

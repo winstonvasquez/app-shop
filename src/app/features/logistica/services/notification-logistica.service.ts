@@ -1,8 +1,12 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { environment } from '@env/environment';
 import { LogisticsNotification, UnreadCountResponse } from '../models/notification.model';
+
+interface StreamTicketResponse {
+    ticket: string;
+}
 
 @Injectable({ providedIn: 'root' })
 export class NotificationLogisticaService {
@@ -25,7 +29,15 @@ export class NotificationLogisticaService {
         return this.http.put<void>(`${this.baseUrl}/read-all`, {});
     }
 
-    getStream(): EventSource {
-        return new EventSource(`${this.baseUrl}/stream`);
+    /**
+     * EventSource nativo del browser no puede enviar el header Authorization, así que el
+     * stream se abre en dos pasos: 1) pedir un ticket de un solo uso vía POST autenticado
+     * normal (el interceptor HTTP inyecta el JWT), 2) abrir el EventSource pasando el
+     * ticket como query param. El backend valida/invalida el ticket en GET /stream.
+     */
+    getStream(): Observable<EventSource> {
+        return this.http.post<StreamTicketResponse>(`${this.baseUrl}/stream-ticket`, {}).pipe(
+            map(({ ticket }) => new EventSource(`${this.baseUrl}/stream?ticket=${ticket}`))
+        );
     }
 }

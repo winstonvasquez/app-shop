@@ -1,0 +1,102 @@
+<div class="page-container">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Mapeo Contable de Logística</h1>
+            <p class="page-subtitle">Configura qué cuentas PCGE se afectan por cada evento logístico (envíos, devoluciones, ajustes de inventario)</p>
+        </div>
+        <div class="page-actions">
+            <app-button label="Nuevo Mapeo" icon="plus" variant="primary" (click)="abrirNuevo()" />
+        </div>
+    </div>
+
+    @if (error()) {
+        <div class="badge badge-error mb-4 block">{{ error() }}</div>
+    }
+
+    @if (resultadoPrueba(); as resultado) {
+        <div class="badge mb-4 block" [class.badge-success]="resultado.ok" [class.badge-error]="!resultado.ok">
+            {{ resultado.mensaje }}
+        </div>
+    }
+
+    <app-data-table
+        [data]="mapeosPaginados()"
+        [columns]="columns"
+        [actions]="actions"
+        [loading]="cargando()"
+        [searchable]="true"
+        searchPlaceholder="Buscar por tipo de evento o cuenta..."
+        [exportable]="false"
+        [currentPage]="currentPage()"
+        [pageSize]="pageSize()"
+        [totalElements]="mapeosFiltrados().length"
+        [totalPages]="totalPagesLocal()"
+        (searchChange)="onSearchTerm($event)"
+        (pageChange)="onPageChange($event)">
+    </app-data-table>
+</div>
+
+<!-- ── DRAWER FORMULARIO ──────────────────────────────────────────── -->
+<app-drawer
+    [isOpen]="mostrarForm()"
+    [title]="editandoId() ? 'Editar Mapeo Contable' : 'Nuevo Mapeo Contable'"
+    size="md"
+    side="right"
+    [hasFooter]="true"
+    (closed)="cerrarForm()">
+
+    @if (errorForm()) {
+        <div class="badge badge-error mb-4 block">{{ errorForm() }}</div>
+    }
+
+    <div class="grid grid-cols-1 gap-4 mb-4">
+        <div>
+            <label class="input-label">Tipo de evento *</label>
+            <input class="form-input" type="text" list="event-types-conocidos"
+                   placeholder="Ej: SHIPMENT_COST"
+                   [disabled]="!!editandoId()"
+                   [ngModel]="eventType()" (ngModelChange)="eventType.set($event)" />
+            <datalist id="event-types-conocidos">
+                @for (t of eventTypesConocidos; track t.value) {
+                    <option [value]="t.value">{{ t.label }}</option>
+                }
+            </datalist>
+            <p class="text-muted text-sm mt-1">
+                Los eventos que el backend dispara automáticamente hoy son SHIPMENT_COST, RETURN_REFUND e INVENTORY_ADJUSTMENT.
+                No se permite cambiar el tipo de evento al editar (evita romper el enrutamiento automático hacia este mapeo);
+                para renombrarlo, crea uno nuevo y elimina el anterior.
+            </p>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label class="input-label">Cuenta débito (PCGE) *</label>
+                <input class="form-input" type="text" placeholder="Ej: 6511"
+                       [ngModel]="debitAccount()" (ngModelChange)="debitAccount.set($event)" />
+            </div>
+            <div>
+                <label class="input-label">Cuenta crédito (PCGE) *</label>
+                <input class="form-input" type="text" placeholder="Ej: 421"
+                       [ngModel]="creditAccount()" (ngModelChange)="creditAccount.set($event)" />
+            </div>
+        </div>
+        <div>
+            <label class="input-label">Plantilla de descripción</label>
+            <input class="form-input" type="text" placeholder="Ej: Costo de envío [{referencia}]"
+                   [ngModel]="descriptionTemplate()" (ngModelChange)="descriptionTemplate.set($event)" />
+            <p class="text-muted text-sm mt-1">Opcional. Usa <code>{referencia}</code> como placeholder del ID del evento.</p>
+        </div>
+    </div>
+
+    <ng-container slot="footer">
+        <div class="flex gap-3 justify-end">
+            <app-button label="Cancelar" icon="x" variant="secondary"
+                    [disabled]="guardando()"
+                    (click)="cerrarForm()" />
+            <app-button [label]="guardando() ? 'Guardando...' : 'Guardar'"
+                    icon="save" variant="primary"
+                    [loading]="guardando()"
+                    [disabled]="guardando() || !eventType() || !debitAccount() || !creditAccount()"
+                    (click)="guardar()" />
+        </div>
+    </ng-container>
+</app-drawer>

@@ -57,7 +57,9 @@ const ALL_NAV_GROUPS: NavGroup[] = [
       { label: 'Rutas de Entrega',     route: '/admin/logistica/rutas',          icon: 'clipboard' },
       { label: 'Guías de Remisión',    route: '/admin/logistica/guias',          icon: 'document-text' },
       { label: 'Transportistas',       route: '/admin/logistica/transportistas', icon: 'factory' },
-      { label: 'Devoluciones',         route: '/admin/logistica/devoluciones',   icon: 'return' }
+      { label: 'SLA Transportistas',   route: '/admin/logistica/transportistas-sla', icon: 'chart-bar' },
+      { label: 'Devoluciones',         route: '/admin/logistica/devoluciones',   icon: 'return' },
+      { label: 'Mapeo Contable',       route: '/admin/logistica/mapeo-contable', icon: 'calculator' }
     ]
   },
   {

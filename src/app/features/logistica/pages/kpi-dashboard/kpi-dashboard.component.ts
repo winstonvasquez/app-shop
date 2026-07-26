@@ -2,7 +2,9 @@ import { Component, inject, signal, computed, ChangeDetectionStrategy } from '@a
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { DecimalPipe } from '@angular/common';
 import { LogisticsDashboardService } from '../../services/logistics-dashboard.service';
+import { ShippingCostService } from '../../services/shipping-cost.service';
 import { LogisticsKpi, CarrierKpi } from '../../models/logistics-dashboard.model';
+import { CostAnalytics, CostByCarrier } from '../../models/shipping-cost.model';
 import { ButtonComponent } from '@shared/components';
 
 @Component({
@@ -14,6 +16,7 @@ import { ButtonComponent } from '@shared/components';
 })
 export class KpiDashboardComponent {
     private readonly dashboardService = inject(LogisticsDashboardService);
+    private readonly shippingCostService = inject(ShippingCostService);
     private readonly fb = inject(FormBuilder);
 
     filterForm = this.fb.group({
@@ -24,6 +27,9 @@ export class KpiDashboardComponent {
     loading = signal(false);
     error   = signal<string | null>(null);
     kpi     = signal<LogisticsKpi | null>(null);
+
+    costLoading  = signal(false);
+    costAnalytics = signal<CostAnalytics | null>(null);
 
     fulfillmentRatePct = computed(() => {
         const k = this.kpi();
@@ -36,6 +42,8 @@ export class KpiDashboardComponent {
     });
 
     carrierComparison = computed<CarrierKpi[]>(() => this.kpi()?.byCarrier ?? []);
+
+    costByCarrier = computed<CostByCarrier[]>(() => this.costAnalytics()?.byCarrier ?? []);
 
     consultar(): void {
         const { fromDate, toDate } = this.filterForm.value;
@@ -53,6 +61,19 @@ export class KpiDashboardComponent {
             error: () => {
                 this.error.set('Error al cargar KPIs');
                 this.loading.set(false);
+            }
+        });
+
+        // Costos de envío: widget independiente — un fallo acá no debe tumbar los KPIs principales.
+        this.costLoading.set(true);
+        this.shippingCostService.getAnalytics(fromDate, toDate).subscribe({
+            next: (data) => {
+                this.costAnalytics.set(data);
+                this.costLoading.set(false);
+            },
+            error: () => {
+                this.costAnalytics.set(null);
+                this.costLoading.set(false);
             }
         });
     }

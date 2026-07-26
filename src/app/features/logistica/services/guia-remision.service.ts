@@ -34,4 +34,17 @@ export class GuiaRemisionService {
             { params: { estado, companyId } }
         );
     }
+
+    /**
+     * Envía la GRE a SUNAT vía microshopcommon. Transiciona PENDIENTE -> EMITIDA en el
+     * backend (GuiaRemisionCommandService#enviarSunat). Único camino de salida para las
+     * GRE auto-generadas desde despacho (GuiaRemisionAutoService#generarDesdeEnvio).
+     */
+    enviarSunat(id: string, companyId: string): Observable<GuiaRemision> {
+        return this.http.post<GuiaRemision>(
+            `${this.baseUrl}/${id}/enviar-sunat`,
+            null,
+            { params: { companyId } }
+        );
+    }
 }

@@ -7,6 +7,8 @@ import { ProductLookupComponent } from '../../components/product-lookup/product-
 import { ProductResponse } from '@core/models/product.model';
 import { AlmacenService } from '@features/logistica/services/almacen.service';
 import { almacenSelectSource } from '@features/logistica/components/select-sources';
+import { ForecastService } from '@features/logistica/services/forecast.service';
+import { ReorderSuggestion } from '@features/logistica/models/forecast.model';
 import { AuthService } from '@core/auth/auth.service';
 import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 import { DataTableComponent, TableColumn, TableAction, PaginationEvent } from '@shared/ui/tables/data-table/data-table.component';
@@ -33,6 +35,7 @@ import { ROUTES } from '@shared/constants/app.constants';
 export class ReplenishmentRulesComponent {
     private readonly api = inject(WmsApiService);
     private readonly almacenApi = inject(AlmacenService);
+    private readonly forecastApi = inject(ForecastService);
     private readonly authService = inject(AuthService);
     private readonly fb = inject(FormBuilder);
 
@@ -42,6 +45,11 @@ export class ReplenishmentRulesComponent {
     loading = signal(false);
     error = signal<string | null>(null);
     info = signal<string | null>(null);
+
+    /** Sugerencias de reposición calculadas por DemandForecastService (forecast del próximo mes). */
+    suggestions = signal<ReorderSuggestion[]>([]);
+    suggestionsLoading = signal(false);
+    suggestionsError = signal<string | null>(null);
 
     currentPage = signal(0);
     pageSize = signal(20);
@@ -138,6 +146,37 @@ export class ReplenishmentRulesComponent {
 
     constructor() {
         this.loadRules();
+        this.loadSuggestions();
+    }
+
+    loadSuggestions(): void {
+        this.suggestionsLoading.set(true);
+        this.forecastApi.getReorderSuggestions().subscribe({
+            next: (res) => {
+                this.suggestions.set(res);
+                this.suggestionsLoading.set(false);
+            },
+            error: (err: Error) => {
+                this.suggestionsError.set(err.message);
+                this.suggestionsLoading.set(false);
+            }
+        });
+    }
+
+    /** Abre el formulario de alta pre-rellenado con los datos de la sugerencia de reorden. */
+    crearReglaDesdeSugerencia(s: ReorderSuggestion): void {
+        this.editMode.set(false);
+        this.selectedId.set(null);
+        this.selectedProductoIdUuid.set(s.productoId);
+        this.form.reset({
+            sku: s.sku,
+            productoNombre: s.productoNombre,
+            reorderPoint: s.stockMinimo,
+            reorderQuantity: s.suggestedReorder,
+            autoCreatePo: false
+        });
+        this.submitError.set(null);
+        this.showDrawer.set(true);
     }
 
     openCreate(): void {
