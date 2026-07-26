@@ -121,14 +121,23 @@ export class AuthService {
         localStorage.removeItem(STORAGE_KEYS.shopTheme);
         localStorage.removeItem(STORAGE_KEYS.adminTheme);
         localStorage.removeItem(STORAGE_KEYS.posTheme);
-        // Hardening 2026-05-28: limpiar también carrito y datos de invitado, para que
-        // el siguiente usuario en el mismo dispositivo no herede sesión anterior.
+        this.clearTenantScopedLocalState();
+        this.currentUserSignal.set(null);
+        this.router.navigate(['/auth/login']);
+    }
+
+    /**
+     * Limpia carrito y datos de invitado guardados en localStorage. Ninguno de los dos
+     * está namespaced por companyId — si un registro/login de una empresa nueva no los
+     * limpia, un carrito con productId de OTRA empresa (misma pestaña/dispositivo) queda
+     * visible en la tienda de la empresa recién creada. Llamar SIEMPRE antes de establecer
+     * la sesión de una empresa nueva (ver register-page.component.ts).
+     */
+    clearTenantScopedLocalState(): void {
         localStorage.removeItem(STORAGE_KEYS.cart);
         localStorage.removeItem(STORAGE_KEYS.guestEmail);
         localStorage.removeItem(STORAGE_KEYS.guestPhone);
         localStorage.removeItem(STORAGE_KEYS.guestName);
-        this.currentUserSignal.set(null);
-        this.router.navigate(['/auth/login']);
     }
 
     getToken(): string | null {

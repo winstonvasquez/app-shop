@@ -1,6 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Title, Meta } from '@angular/platform-browser';
+import { Hero3dSceneComponent } from './hero-3d-scene.component';
 
 interface ModuleCard {
     code: string;
@@ -12,7 +13,7 @@ interface ModuleCard {
 @Component({
     selector: 'app-landing-page',
     standalone: true,
-    imports: [RouterLink],
+    imports: [RouterLink, Hero3dSceneComponent],
     template: `
     <div class="landing">
       <!-- Hero Section -->
@@ -52,52 +53,8 @@ interface ModuleCard {
         </div>
 
         <div class="hero-visual">
-          <div class="visual-container animate-float">
-            <!-- Rocket & Space SVG Illustration -->
-            <svg viewBox="0 0 200 200" class="rocket-svg">
-              <defs>
-                <linearGradient id="rocketBodyGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stop-color="#ffffff" />
-                  <stop offset="50%" stop-color="#a5b4fc" />
-                  <stop offset="100%" stop-color="#4f46e5" />
-                </linearGradient>
-                <linearGradient id="fireGradient" x1="0" y1="0" x2="1" y2="1">
-                  <stop offset="0%" stop-color="#f43f5e" />
-                  <stop offset="60%" stop-color="#a855f7" />
-                  <stop offset="100%" stop-color="#06b6d4" stop-opacity="0" />
-                </linearGradient>
-                <radialGradient id="glowBack" cx="50%" cy="50%" r="50%">
-                  <stop offset="0%" stop-color="#a855f7" stop-opacity="0.3" />
-                  <stop offset="100%" stop-color="#a855f7" stop-opacity="0" />
-                </radialGradient>
-              </defs>
-              <!-- Back Glow -->
-              <circle cx="100" cy="100" r="70" fill="url(#glowBack)" />
-              
-              <!-- Stars inside visual -->
-              <circle cx="30" cy="50" r="1.5" fill="#fff" opacity="0.6" />
-              <circle cx="170" cy="80" r="2" fill="#fff" opacity="0.8" />
-              <circle cx="150" cy="30" r="1" fill="#fff" opacity="0.4" />
-              <circle cx="60" cy="150" r="1.5" fill="#fff" opacity="0.5" />
-              
-              <!-- Fire Trail -->
-              <path d="M 65,135 Q 85,115 75,95 Q 90,85 110,115 Q 95,140 65,135 Z" fill="url(#fireGradient)" />
-              
-              <!-- Rocket Body (rotated to fly up-right) -->
-              <g transform="rotate(45, 100, 100)">
-                <!-- Fins -->
-                <path d="M 85,125 L 68,145 L 85,138 Z" fill="#818cf8" />
-                <path d="M 115,125 L 132,145 L 115,138 Z" fill="#818cf8" />
-                <!-- Main Core -->
-                <path d="M 85,80 C 85,50 100,28 100,28 C 100,28 115,50 115,80 L 115,130 L 85,130 Z" fill="url(#rocketBodyGradient)" />
-                <!-- Window -->
-                <circle cx="100" cy="72" r="8" fill="#0f172a" stroke="#818cf8" stroke-width="1.5" />
-                <circle cx="100" cy="72" r="4" fill="#38bdf8" />
-                <!-- Body Stripes -->
-                <path d="M 85,96 L 115,96" stroke="#ffffff" stroke-width="2.5" opacity="0.4" />
-                <path d="M 85,108 L 115,108" stroke="#ffffff" stroke-width="2.5" opacity="0.4" />
-              </g>
-            </svg>
+          <div class="visual-container">
+            <app-hero-3d-scene />
           </div>
         </div>
       </section>
@@ -357,7 +314,7 @@ interface ModuleCard {
         font-weight: 500;
       }
 
-      /* Hero Visual Rocket */
+      /* Hero Visual — 3D scene */
       .hero-visual {
         display: flex;
         justify-content: center;
@@ -367,11 +324,7 @@ interface ModuleCard {
       .visual-container {
         width: 100%;
         max-width: 320px;
-      }
-
-      .rocket-svg {
-        width: 100%;
-        height: auto;
+        aspect-ratio: 1 / 1;
       }
 
       /* Modules Section */

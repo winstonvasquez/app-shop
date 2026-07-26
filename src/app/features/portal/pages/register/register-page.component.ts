@@ -507,6 +507,9 @@ export class RegisterPageComponent implements OnInit {
             next: (res: unknown) => {
                 const response = res as LoginResponse;
                 if (response?.token) {
+                    // Evita que un carrito/datos de invitado de OTRA empresa (misma pestaña)
+                    // se cuelen en la tienda de la empresa recién registrada.
+                    this.authService.clearTenantScopedLocalState();
                     this.authService.setSessionFromResponse(response);
                 }
                 this.router.navigate(['/admin']);
