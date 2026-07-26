@@ -16,6 +16,12 @@ export interface OrdenCompra {
     items?: OrdenCompraItem[];
     createdAt?: string;
     updatedAt?: string;
+    /** Contrato Marco asociado (opcional). UUID de `ContratoProveedor`. */
+    contratoId?: string;
+    /** ISO 4217, default 'PEN' server-side si no se envía (ver MONEDA en sunat.constants). */
+    moneda?: string;
+    /** Solo relevante cuando `moneda` no es 'PEN'. */
+    tipoCambio?: number;
 }
 
 export interface OrdenCompraItem {

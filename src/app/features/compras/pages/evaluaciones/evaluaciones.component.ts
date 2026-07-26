@@ -41,7 +41,7 @@ export class EvaluacionesComponent {
         if (!id) return;
         this.loading.set(true);
         this.service.getEvaluacionesByProveedor(id).subscribe({
-            next: data => { this.evaluaciones.set(data); this.loading.set(false); },
+            next: data => { this.evaluaciones.set(data.content); this.loading.set(false); },
             error: () => this.loading.set(false),
         });
     }

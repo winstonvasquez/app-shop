@@ -31,9 +31,9 @@
     </app-data-table>
 </div>
 
-<!-- Create Cotizacion Drawer -->
-<app-drawer title="Nueva Cotización" [isOpen]="showForm()" (closed)="closeForm()">
-    <form [formGroup]="cotizacionForm" (ngSubmit)="crearCotizacion()">
+<!-- Create/Edit Cotizacion Drawer -->
+<app-drawer [title]="isEditMode() ? 'Editar Cotización' : 'Nueva Cotización'" [isOpen]="showForm()" (closed)="closeForm()">
+    <form [formGroup]="cotizacionForm" (ngSubmit)="onSubmitForm()">
         @if (submitError()) { <app-alert type="error" [message]="submitError()!" /> }
 
         <div class="mb-4">
@@ -49,6 +49,44 @@
         <div class="mb-4">
             <label class="input-label">Fecha de Vencimiento *</label>
             <input type="date" class="form-input" formControlName="fechaVencimiento" />
+        </div>
+
+        <!-- Proveedores -->
+        <div class="mb-4">
+            <label class="input-label">Proveedores *</label>
+            @if (isEditMode()) {
+                <!-- La edición (PUT /cotizaciones/{id}) no acepta proveedorIds — solo se muestran de referencia. -->
+                <p class="text-xs text-muted mb-2">Los proveedores invitados no se modifican al editar.</p>
+                @if (proveedoresSeleccionados().length > 0) {
+                    <div class="flex flex-wrap gap-2">
+                        @for (prov of proveedoresSeleccionados(); track prov.id) {
+                            <span class="badge badge-neutral">{{ prov.label }}</span>
+                        }
+                    </div>
+                }
+            } @else {
+                <div class="flex gap-2 items-end mb-2">
+                    <div class="flex-1">
+                        <app-server-search-select [dataSource]="proveedorSource"
+                            [formControl]="proveedorParaAgregar"
+                            placeholder="Buscar proveedor por nombre o RUC…" />
+                    </div>
+                    <app-button label="Agregar" variant="secondary" icon="plus" size="sm" type="button"
+                        [disabled]="!proveedorParaAgregar.value" (click)="agregarProveedor()" />
+                </div>
+                @if (proveedoresSeleccionados().length > 0) {
+                    <div class="flex flex-wrap gap-2">
+                        @for (prov of proveedoresSeleccionados(); track prov.id) {
+                            <span class="badge badge-neutral flex items-center gap-1">
+                                {{ prov.label }}
+                                <button type="button" class="btn-icon btn-icon-delete" (click)="quitarProveedor(prov.id)">✕</button>
+                            </span>
+                        }
+                    </div>
+                } @else {
+                    <p class="text-xs text-muted">Agregue al menos un proveedor invitado a cotizar.</p>
+                }
+            }
         </div>
 
         <!-- Items -->
@@ -67,9 +105,17 @@
                             }
                         </div>
                         <div class="grid grid-cols-2 gap-2">
-                            <div class="col-span-2">
-                                <input class="form-input" formControlName="productoNombre" placeholder="Nombre del producto *" />
+                            <div class="col-span-2 flex gap-1 items-center">
+                                <input class="form-input flex-1" formControlName="productoNombre" placeholder="Nombre del producto *" />
+                                <button type="button" class="btn btn-secondary" title="Buscar producto"
+                                    style="padding:4px 8px;font-size:0.75rem" (click)="toggleLookup($index)">🔍</button>
                             </div>
+                            @if (lookupOpenIndex() === $index) {
+                                <div class="col-span-2">
+                                    <app-product-lookup placeholder="Buscar producto por nombre o SKU"
+                                        (selected)="onProductoSeleccionado($index, $event)" />
+                                </div>
+                            }
                             <input class="form-input" formControlName="sku" placeholder="SKU" />
                             <input type="number" class="form-input" formControlName="cantidad" placeholder="Cantidad" min="1" />
                             <input class="form-input" formControlName="unidadMedida" placeholder="Unidad (UNIDAD)" />
@@ -82,7 +128,9 @@
 
         <div class="flex gap-3 justify-end mt-6">
             <app-button label="Cancelar" variant="secondary" icon="x" type="button" (click)="closeForm()" />
-            <app-button [label]="submitting() ? 'Creando...' : 'Crear Cotización'" variant="primary" icon="save" type="submit" [disabled]="cotizacionForm.invalid" [loading]="submitting()" />
+            <app-button
+                [label]="submitting() ? (isEditMode() ? 'Guardando...' : 'Creando...') : (isEditMode() ? 'Guardar Cambios' : 'Crear Cotización')"
+                variant="primary" icon="save" type="submit" [disabled]="cotizacionForm.invalid" [loading]="submitting()" />
         </div>
     </form>
 </app-drawer>
@@ -153,6 +201,68 @@
     }
 </app-drawer>
 
+<!-- Detalle Cotización Drawer -->
+<app-drawer title="Detalle de Cotización" [isOpen]="showDetalle()" (closed)="closeDetalle()">
+    @if (loadingDetalle()) {
+        <p class="text-muted text-sm">Cargando…</p>
+    } @else if (detalleCotizacion(); as det) {
+        <div class="mb-4">
+            <div class="flex justify-between items-start mb-2">
+                <div>
+                    <p class="text-muted text-sm">{{ det.codigo }}</p>
+                    <h4 class="text-on font-semibold text-lg">{{ det.titulo }}</h4>
+                </div>
+                <span class="badge" [class]="getBadgeClass(det.estado)">{{ estadoLabel(det.estado) }}</span>
+            </div>
+            @if (det.descripcion) {
+                <p class="text-sm text-muted mt-1">{{ det.descripcion }}</p>
+            }
+            <div class="grid grid-cols-2 gap-3 mt-3 text-sm">
+                <div><span class="text-muted">Emisión:</span> {{ det.fechaEmision }}</div>
+                <div><span class="text-muted">Vencimiento:</span> {{ det.fechaVencimiento }}</div>
+            </div>
+        </div>
+
+        <h4 class="text-on font-semibold mb-2">Ítems</h4>
+        <div class="overflow-x-auto mb-6">
+            <table class="table text-sm">
+                <thead>
+                    <tr>
+                        <th class="table-header-cell">Producto</th>
+                        <th class="table-header-cell">SKU</th>
+                        <th class="table-header-cell text-center">Cant.</th>
+                        <th class="table-header-cell">Unidad</th>
+                        <th class="table-header-cell">Especificaciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (item of det.items; track item.id) {
+                        <tr class="table-row">
+                            <td class="table-cell">{{ item.productoNombre }}</td>
+                            <td class="table-cell">{{ item.sku || '—' }}</td>
+                            <td class="table-cell text-center">{{ item.cantidad }}</td>
+                            <td class="table-cell">{{ item.unidadMedida || '—' }}</td>
+                            <td class="table-cell">{{ item.especificaciones || '—' }}</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <h4 class="text-on font-semibold mb-2">Proveedores Invitados</h4>
+        <div class="grid gap-2">
+            @for (prov of det.proveedores; track prov.proveedorId) {
+                <div class="card p-3 flex justify-between items-center">
+                    <span class="font-medium">{{ prov.razonSocial }}</span>
+                    <span class="badge" [class]="prov.estado === 'RESPONDIO' ? 'badge-success' : 'badge-neutral'">
+                        {{ prov.estado }}
+                    </span>
+                </div>
+            }
+        </div>
+    }
+</app-drawer>
+
 <!-- Adjudicar Modal -->
 @if (showAdjudicarModal()) {
     <div class="modal-overlay" (click)="closeAdjudicarModal()">
@@ -166,9 +276,10 @@
                     <strong>{{ selectedCotizacion()?.codigo }}</strong>.
                 </p>
                 <form [formGroup]="adjudicarForm">
-                    <label class="input-label">ID del Proveedor *</label>
-                    <input class="form-input" formControlName="proveedorId"
-                        placeholder="UUID del proveedor adjudicado" />
+                    <label class="input-label">Proveedor *</label>
+                    <app-server-search-select [dataSource]="proveedorSource"
+                        formControlName="proveedorId"
+                        placeholder="Buscar proveedor por nombre o RUC…" />
                 </form>
             </div>
             <div class="modal-footer">

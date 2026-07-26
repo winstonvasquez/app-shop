@@ -51,3 +51,26 @@ export interface ItemFacturaRequest {
     cantidad: number;
     precioUnitario: number;
 }
+
+/** Espejo de `CpeItem` (record backend) — línea de detalle extraída del XML UBL 2.1. */
+export interface CpeItem {
+    descripcion: string;
+    sku?: string;
+    cantidad: number;
+    precioUnitario: number;
+}
+
+/** Espejo de `CpeParsedInvoice` (record backend) — resultado de `POST /cpe/parse`. */
+export interface CpeParsedInvoice {
+    rucEmisor: string;
+    razonSocial: string;
+    serie: string;
+    numero: string;
+    tipoDocumento: string;
+    fechaEmision: string;
+    moneda: string;
+    subtotal: number;
+    igv: number;
+    total: number;
+    items: CpeItem[];
+}

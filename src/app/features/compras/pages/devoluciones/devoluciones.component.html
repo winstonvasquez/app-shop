@@ -127,6 +127,7 @@
                 }
                 @if (dev.estado === 'ENVIADA') {
                     <app-button label="Registrar Aceptación" variant="primary" icon="check" (click)="cambiarEstado('aceptar')" />
+                    <app-button label="Rechazar" variant="secondary" icon="x" (click)="abrirRechazarModal()" />
                 }
                 @if (dev.estado === 'ACEPTADA') {
                     <app-button label="Completar" variant="success" icon="check-circle" (click)="cambiarEstado('completar')" />
@@ -135,3 +136,28 @@
         </div>
     }
 </app-drawer>
+
+<!-- Rechazar Modal -->
+@if (showRechazarModal()) {
+    <div class="modal-overlay" (click)="cerrarRechazarModal()">
+        <div class="modal-content" (click)="$event.stopPropagation()">
+            <div class="modal-header">
+                <h3 class="modal-title">Rechazar Devolución</h3>
+                <button class="modal-close-btn" (click)="cerrarRechazarModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted text-sm mb-4">Indique el motivo de rechazo para la devolución
+                    <strong>{{ selected()?.codigo }}</strong>.
+                </p>
+                <form [formGroup]="rechazarForm">
+                    <label class="input-label">Motivo *</label>
+                    <textarea class="form-input" formControlName="motivo" rows="3" placeholder="Motivo del rechazo"></textarea>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <app-button label="Cancelar" variant="secondary" icon="x" (click)="cerrarRechazarModal()" />
+                <app-button label="Rechazar" variant="primary" icon="x" (click)="confirmarRechazo()" [disabled]="rechazarForm.invalid" />
+            </div>
+        </div>
+    </div>
+}

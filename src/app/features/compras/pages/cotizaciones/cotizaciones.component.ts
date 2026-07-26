@@ -7,12 +7,23 @@ import {
     ChangeDetectionStrategy,
     ChangeDetectorRef,
 } from '@angular/core';
-import { ReactiveFormsModule, FormBuilder, Validators, FormArray, FormGroup } from '@angular/forms';
+import {
+    ReactiveFormsModule,
+    FormBuilder,
+    FormControl,
+    Validators,
+    FormArray,
+    FormGroup,
+    AbstractControl,
+    ValidationErrors,
+} from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { map } from 'rxjs';
 import { CotizacionService } from '../../services/cotizacion.service';
+import { ProveedorService } from '../../services/proveedor.service';
+import { proveedorSelectSource } from '../../components/select-sources';
 import { AuthService } from '@core/auth/auth.service';
 import { CatalogService } from '@core/services/catalog.service';
 import { PAGINATION } from '@shared/constants/app.constants';
@@ -22,8 +33,10 @@ import {
     CotizacionResumen,
     ComparativaDto,
     CrearCotizacionRequest,
+    ActualizarCotizacionRequest,
+    CotizacionDetalleDto,
 } from '../../models/cotizacion.model';
-import { ButtonComponent } from '@shared/components';
+import { ButtonComponent, ServerSearchSelectComponent, ServerSelectOption, ServerSelectId } from '@shared/components';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
@@ -35,6 +48,15 @@ import {
     FilterConfig,
     FilterChangeEvent,
 } from '@shared/ui/tables/data-table/data-table.component';
+import { ProductLookupComponent } from '../../../inventory/components/product-lookup/product-lookup.component';
+import { ProductResponse } from '@core/models/product.model';
+import { productIdToUuid } from '../../../inventory/utils/synthetic-uuid.util';
+
+/** Al menos un proveedor seleccionado — `Validators.required` no alcanza para arrays (`[]` no es "vacío" para Angular). */
+function proveedoresRequeridosValidator(control: AbstractControl): ValidationErrors | null {
+    const value = control.value as string[] | null;
+    return value && value.length > 0 ? null : { proveedoresRequeridos: true };
+}
 
 @Component({
     selector: 'app-cotizaciones',
@@ -44,19 +66,30 @@ import {
         ReactiveFormsModule,
         RouterModule,
         ButtonComponent,
+        ServerSearchSelectComponent,
         DrawerComponent,
         PageHeaderComponent,
         AlertComponent,
         DataTableComponent,
+        ProductLookupComponent,
     ],
     templateUrl: './cotizaciones.component.html',
 })
 export class CotizacionesComponent implements OnInit {
     private readonly cotizacionService = inject(CotizacionService);
+    private readonly proveedorService = inject(ProveedorService);
     private readonly authService = inject(AuthService);
     private readonly fb = inject(FormBuilder);
     private readonly cdr = inject(ChangeDetectorRef);
     private readonly catalog = inject(CatalogService);
+
+    readonly proveedorSource = proveedorSelectSource(this.proveedorService);
+    /** Control standalone (fuera de `cotizacionForm`) para el picker "buscar y agregar" proveedor. */
+    proveedorParaAgregar = new FormControl<string | null>(null);
+    proveedoresSeleccionados = signal<ServerSelectOption[]>([]);
+
+    /** Índice del ítem con el mini-panel de búsqueda de producto abierto (null = cerrado). */
+    lookupOpenIndex = signal<number | null>(null);
 
     cotizaciones = signal<CotizacionResumen[]>([]);
     selectedCotizacion = signal<CotizacionResumen | null>(null);
@@ -70,6 +103,14 @@ export class CotizacionesComponent implements OnInit {
     submitError = signal<string | null>(null);
     actionError = signal<string | null>(null);
     showAdjudicarModal = signal(false);
+
+    /** id de la cotización en edición (null = el drawer/form está en modo "crear"). */
+    editingCotizacionId = signal<string | null>(null);
+    isEditMode = computed(() => this.editingCotizacionId() !== null);
+
+    showDetalle = signal(false);
+    loadingDetalle = signal(false);
+    detalleCotizacion = signal<CotizacionDetalleDto | null>(null);
 
     filterEstado = signal('');
     currentPage = signal(0);
@@ -118,6 +159,23 @@ export class CotizacionesComponent implements OnInit {
     ];
 
     actions: TableAction<CotizacionResumen>[] = [
+        {
+            label: 'Ver detalle',
+            icon: 'view',
+            onClick: (row) => this.verDetalle(row.id),
+        },
+        {
+            label: 'Editar',
+            icon: 'edit',
+            onClick: (row) => this.editarCotizacion(row.id),
+            show: (row) => row.estado === 'CREADA',
+        },
+        {
+            label: 'Cancelar',
+            icon: 'x',
+            onClick: (row) => this.cancelarCotizacion(row.id),
+            show: (row) => row.estado === 'CREADA',
+        },
         {
             label: 'Enviar',
             icon: 'check',
@@ -168,7 +226,7 @@ export class CotizacionesComponent implements OnInit {
         titulo: ['', Validators.required],
         descripcion: [''],
         fechaVencimiento: ['', Validators.required],
-        proveedorIds: [[] as string[]],
+        proveedorIds: [[] as string[], proveedoresRequeridosValidator],
         items: this.fb.array([this.createItemGroup()]),
     });
 
@@ -224,15 +282,30 @@ export class CotizacionesComponent implements OnInit {
     }
 
     openCreateForm(): void {
-        this.cotizacionForm.reset();
+        this.editingCotizacionId.set(null);
+        this.cotizacionForm.reset({ proveedorIds: [] });
+        this.proveedoresSeleccionados.set([]);
+        this.proveedorParaAgregar.setValue(null);
         while (this.itemsArray.length > 0) this.itemsArray.removeAt(0);
         this.itemsArray.push(this.createItemGroup());
+        this.lookupOpenIndex.set(null);
         this.submitError.set(null);
         this.showForm.set(true);
     }
 
     closeForm(): void {
         this.showForm.set(false);
+        this.lookupOpenIndex.set(null);
+        this.editingCotizacionId.set(null);
+    }
+
+    /** Submit único del drawer de crear/editar: enruta según el modo activo. */
+    onSubmitForm(): void {
+        if (this.isEditMode()) {
+            this.actualizarCotizacion();
+        } else {
+            this.crearCotizacion();
+        }
     }
 
     addItem(): void {
@@ -241,6 +314,49 @@ export class CotizacionesComponent implements OnInit {
 
     removeItem(index: number): void {
         if (this.itemsArray.length > 1) this.itemsArray.removeAt(index);
+        if (this.lookupOpenIndex() === index) {
+            this.lookupOpenIndex.set(null);
+        }
+    }
+
+    /** Abre/cierra el mini-panel de búsqueda de producto para el ítem `index`. */
+    toggleLookup(index: number): void {
+        this.lookupOpenIndex.set(this.lookupOpenIndex() === index ? null : index);
+    }
+
+    /** Aplica el producto elegido en `<app-product-lookup>` al ítem `index` (captura `productoId` para que la OC generada al adjudicar no pierda stock). */
+    onProductoSeleccionado(index: number, product: ProductResponse): void {
+        this.itemsArray.at(index).patchValue({
+            productoId: productIdToUuid(product.id),
+            productoNombre: product.nombre,
+        });
+        this.lookupOpenIndex.set(null);
+    }
+
+    /** Resuelve el proveedor elegido en el picker standalone y lo agrega al array `proveedorIds`. */
+    async agregarProveedor(): Promise<void> {
+        const id = this.proveedorParaAgregar.value;
+        if (!id) return;
+        if (this.proveedoresSeleccionados().some((p) => String(p.id) === id)) {
+            this.proveedorParaAgregar.setValue(null);
+            return;
+        }
+        const opt = await this.proveedorSource.resolveOption(id);
+        if (opt) {
+            this.proveedoresSeleccionados.update((list) => [...list, opt]);
+            this.cotizacionForm.patchValue({
+                proveedorIds: this.proveedoresSeleccionados().map((p) => String(p.id)),
+            });
+        }
+        this.proveedorParaAgregar.setValue(null);
+        this.cdr.markForCheck();
+    }
+
+    quitarProveedor(id: ServerSelectId): void {
+        this.proveedoresSeleccionados.update((list) => list.filter((p) => p.id !== id));
+        this.cotizacionForm.patchValue({
+            proveedorIds: this.proveedoresSeleccionados().map((p) => String(p.id)),
+        });
     }
 
     crearCotizacion(): void {
@@ -253,6 +369,7 @@ export class CotizacionesComponent implements OnInit {
             fechaVencimiento: formValue.fechaVencimiento ?? '',
             proveedorIds: (formValue.proveedorIds ?? []).filter((id): id is string => !!id),
             items: (formValue.items ?? []).map((i: Record<string, unknown>) => ({
+                productoId: (i['productoId'] as string) || undefined,
                 productoNombre: i['productoNombre'] as string,
                 sku: (i['sku'] as string) || undefined,
                 cantidad: Number(i['cantidad']),
@@ -278,11 +395,137 @@ export class CotizacionesComponent implements OnInit {
         });
     }
 
+    /** Solo se llama en modo edición (estado CREADA); ver `onSubmitForm()`. */
+    actualizarCotizacion(): void {
+        if (this.cotizacionForm.invalid) return;
+        const id = this.editingCotizacionId();
+        if (!id) return;
+        const formValue = this.cotizacionForm.value;
+
+        const request: ActualizarCotizacionRequest = {
+            titulo: formValue.titulo ?? '',
+            descripcion: formValue.descripcion ?? undefined,
+            fechaVencimiento: formValue.fechaVencimiento ?? '',
+            items: (formValue.items ?? []).map((i: Record<string, unknown>) => ({
+                productoId: (i['productoId'] as string) || undefined,
+                productoNombre: i['productoNombre'] as string,
+                sku: (i['sku'] as string) || undefined,
+                cantidad: Number(i['cantidad']),
+                unidadMedida: (i['unidadMedida'] as string) || 'UNIDAD',
+                especificaciones: (i['especificaciones'] as string) || undefined,
+            })),
+        };
+
+        this.submitting.set(true);
+        this.submitError.set(null);
+        this.cotizacionService.actualizar(id, request).subscribe({
+            next: () => {
+                this.submitting.set(false);
+                this.showForm.set(false);
+                this.editingCotizacionId.set(null);
+                this.loadCotizaciones();
+            },
+            error: (err) => {
+                this.submitError.set('Error al actualizar la cotización');
+                this.submitting.set(false);
+                console.error(err);
+                this.cdr.markForCheck();
+            },
+        });
+    }
+
     enviarCotizacion(id: string): void {
         this.cotizacionService.enviar(id).subscribe({
             next: () => this.loadCotizaciones(),
             error: (err) => {
                 this.actionError.set('Error al enviar cotización');
+                console.error(err);
+                this.cdr.markForCheck();
+            },
+        });
+    }
+
+    /** "Ver detalle" — siempre visible; abre el drawer de solo lectura con items + proveedores invitados. */
+    verDetalle(id: string): void {
+        this.actionError.set(null);
+        this.loadingDetalle.set(true);
+        this.showDetalle.set(true);
+        this.cotizacionService.getById(id).subscribe({
+            next: (detalle) => {
+                this.detalleCotizacion.set(detalle);
+                this.loadingDetalle.set(false);
+                this.cdr.markForCheck();
+            },
+            error: (err) => {
+                this.actionError.set('Error al cargar detalle de cotización');
+                this.loadingDetalle.set(false);
+                this.showDetalle.set(false);
+                console.error(err);
+                this.cdr.markForCheck();
+            },
+        });
+    }
+
+    closeDetalle(): void {
+        this.showDetalle.set(false);
+        this.detalleCotizacion.set(null);
+    }
+
+    /** "Editar" — solo visible en estado CREADA; carga el detalle y precarga el drawer/form de creación en modo edición. */
+    editarCotizacion(id: string): void {
+        this.actionError.set(null);
+        this.cotizacionService.getById(id).subscribe({
+            next: (detalle) => this.openEditForm(detalle),
+            error: (err) => {
+                this.actionError.set('Error al cargar cotización para editar');
+                console.error(err);
+                this.cdr.markForCheck();
+            },
+        });
+    }
+
+    private openEditForm(detalle: CotizacionDetalleDto): void {
+        this.editingCotizacionId.set(detalle.id);
+
+        this.proveedoresSeleccionados.set(
+            detalle.proveedores.map((p) => ({ id: p.proveedorId, label: p.razonSocial }))
+        );
+        this.proveedorParaAgregar.setValue(null);
+
+        while (this.itemsArray.length > 0) this.itemsArray.removeAt(0);
+        detalle.items.forEach(() => this.itemsArray.push(this.createItemGroup()));
+
+        this.cotizacionForm.patchValue({
+            titulo: detalle.titulo,
+            descripcion: detalle.descripcion ?? '',
+            fechaVencimiento: detalle.fechaVencimiento,
+            proveedorIds: detalle.proveedores.map((p) => p.proveedorId),
+        });
+
+        detalle.items.forEach((item, idx) => {
+            this.itemsArray.at(idx).patchValue({
+                productoId: item.productoId ?? undefined,
+                productoNombre: item.productoNombre,
+                sku: item.sku ?? '',
+                cantidad: item.cantidad,
+                unidadMedida: item.unidadMedida ?? 'UNIDAD',
+                especificaciones: item.especificaciones ?? '',
+            });
+        });
+
+        this.lookupOpenIndex.set(null);
+        this.submitError.set(null);
+        this.showForm.set(true);
+    }
+
+    /** "Cancelar" — solo visible en estado CREADA. */
+    cancelarCotizacion(id: string): void {
+        if (!confirm('¿Desea cancelar esta cotización? Esta acción no se puede deshacer.')) return;
+        this.actionError.set(null);
+        this.cotizacionService.cancelar(id).subscribe({
+            next: () => this.loadCotizaciones(),
+            error: (err) => {
+                this.actionError.set('Error al cancelar cotización');
                 console.error(err);
                 this.cdr.markForCheck();
             },
@@ -353,6 +596,11 @@ export class CotizacionesComponent implements OnInit {
         });
     }
 
+    /** Wrapper público: el drawer de detalle usa esto para el label legible del estado (`catalog` es privado). */
+    estadoLabel(estado: string): string {
+        return this.catalog.label('ESTADO_COTIZACION', estado);
+    }
+
     getBadgeClass(estado: string): string {
         switch (estado) {
             case 'CREADA': return 'badge badge-neutral';
@@ -373,6 +621,7 @@ export class CotizacionesComponent implements OnInit {
 
     private createItemGroup(): FormGroup {
         return this.fb.group({
+            productoId: [undefined as string | undefined],
             productoNombre: ['', Validators.required],
             sku: [''],
             cantidad: [1, [Validators.required, Validators.min(1)]],

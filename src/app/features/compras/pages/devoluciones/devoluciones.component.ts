@@ -60,6 +60,7 @@ export class DevolucionesComponent implements OnInit {
     error = signal<string | null>(null);
     showForm = signal(false);
     showDetail = signal(false);
+    showRechazarModal = signal(false);
     submitting = signal(false);
     submitError = signal<string | null>(null);
     actionError = signal<string | null>(null);
@@ -135,6 +136,10 @@ export class DevolucionesComponent implements OnInit {
         tipo: ['DEVOLUCION'],
         observaciones: [''],
         items: this.fb.array([this.createItemGroup()]),
+    });
+
+    rechazarForm = this.fb.group({
+        motivo: ['', Validators.required],
     });
 
     get itemsArray(): FormArray { return this.devolucionForm.get('items') as FormArray; }
@@ -247,6 +252,36 @@ export class DevolucionesComponent implements OnInit {
             next: () => { this.closeDetail(); this.loadDevoluciones(); },
             error: (err) => {
                 this.actionError.set('Error al cambiar estado');
+                console.error(err);
+                this.cdr.markForCheck();
+            },
+        });
+    }
+
+    abrirRechazarModal(): void {
+        this.rechazarForm.reset();
+        this.actionError.set(null);
+        this.showRechazarModal.set(true);
+    }
+
+    cerrarRechazarModal(): void {
+        this.showRechazarModal.set(false);
+    }
+
+    confirmarRechazo(): void {
+        if (this.rechazarForm.invalid) return;
+        const dev = this.selected();
+        if (!dev?.id) return;
+        const motivo = this.rechazarForm.value.motivo ?? '';
+
+        this.devolucionService.rechazar(dev.id, motivo).subscribe({
+            next: () => {
+                this.showRechazarModal.set(false);
+                this.closeDetail();
+                this.loadDevoluciones();
+            },
+            error: (err) => {
+                this.actionError.set('Error al rechazar devolución');
                 console.error(err);
                 this.cdr.markForCheck();
             },

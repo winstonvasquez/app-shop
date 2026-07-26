@@ -63,6 +63,11 @@ export class AprobacionService {
             request, { headers: this.getHeaders() });
     }
 
+    actualizarNivel(nivelId: string, request: ConfigAprobacionRequest): Observable<NivelAprobacion> {
+        return this.http.put<NivelAprobacion>(`${this.baseUrl}/config/niveles-aprobacion/${nivelId}`,
+            request, { headers: this.getHeaders() });
+    }
+
     eliminarNivel(nivelId: string): Observable<void> {
         return this.http.delete<void>(`${this.baseUrl}/config/niveles-aprobacion/${nivelId}`, {
             headers: this.getHeaders(),

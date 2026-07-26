@@ -68,6 +68,7 @@
                         <strong class="text-on">Cond. Pago:</strong>
                         {{ selectedOrden()?.condicionPago?.replace('_', ' ') }}
                     </p>
+                    <!-- TODO: almacenDestino es UUID desde esta sesión; falta que el backend devuelva el nombre del almacén en OrdenCompraResponseDto para mostrarlo legible aquí -->
                     <p class="text-sm text-subtle">
                         <strong class="text-on">Almacén:</strong> {{ selectedOrden()?.almacenDestino }}
                     </p>
@@ -179,20 +180,34 @@
                 </div>
                 <div>
                     <label class="input-label">Condición de Pago <span class="text-error">*</span></label>
-                    <select class="form-input" formControlName="condicionPago">
-                        @for (opt of condicionPagoOptions; track opt.value) {
-                            <option [value]="opt.value">{{ opt.label }}</option>
+                    <app-catalog-select tabla="CONDICION_PAGO" formControlName="condicionPago"
+                        placeholder="— Seleccionar —" />
+                </div>
+                <div>
+                    <label class="input-label">Almacén Destino <span class="text-error">*</span></label>
+                    <app-server-search-select [dataSource]="almacenSource" formControlName="almacenDestino"
+                        placeholder="Buscar almacén…" />
+                </div>
+                <div>
+                    <label class="input-label">Contrato Marco</label>
+                    <select class="form-input" formControlName="contratoId">
+                        <option value="">— Sin contrato —</option>
+                        @for (c of contratosActivos(); track c.id) {
+                            <option [value]="c.id">{{ c.codigo }} — {{ c.proveedorNombre ?? '—' }}</option>
                         }
                     </select>
                 </div>
                 <div>
-                    <label class="input-label">Almacén Destino <span class="text-error">*</span></label>
-                    <select class="form-input" formControlName="almacenDestino">
-                        @for (opt of almacenOptions; track opt.value) {
-                            <option [value]="opt.value">{{ opt.label }}</option>
-                        }
-                    </select>
+                    <label class="input-label">Moneda</label>
+                    <app-catalog-select tabla="MONEDA" formControlName="moneda" />
                 </div>
+                @if (monedaDistintaDePEN()) {
+                    <div>
+                        <label class="input-label">Tipo de Cambio</label>
+                        <input type="number" class="form-input" min="0" step="0.0001"
+                            formControlName="tipoCambio" placeholder="Ej. 3.75" />
+                    </div>
+                }
             </div>
 
             <!-- Items -->
@@ -218,9 +233,13 @@
                         @for (item of formItems(); track $index; let i = $index) {
                             <tr>
                                 <td>
-                                    <input type="text" class="form-input" placeholder="Nombre del producto"
-                                        [value]="item.productoNombre"
-                                        (input)="updateItem(i, 'productoNombre', $any($event.target).value)" />
+                                    <div style="display:flex;gap:4px;align-items:center">
+                                        <input type="text" class="form-input" placeholder="Nombre del producto"
+                                            [value]="item.productoNombre"
+                                            (input)="updateItem(i, 'productoNombre', $any($event.target).value)" />
+                                        <button type="button" class="btn btn-secondary" title="Buscar producto"
+                                            style="padding:4px 8px;font-size:0.75rem" (click)="toggleLookup(i)">🔍</button>
+                                    </div>
                                 </td>
                                 <td>
                                     <input type="text" class="form-input" placeholder="SKU"
@@ -245,6 +264,14 @@
                                         (click)="removeItem(i)">✕</button>
                                 </td>
                             </tr>
+                            @if (lookupOpenIndex() === i) {
+                                <tr>
+                                    <td colspan="6" style="background:var(--color-surface-raised, rgba(0,0,0,0.03))">
+                                        <app-product-lookup placeholder="Buscar producto por nombre o SKU"
+                                            (selected)="onProductoSeleccionado(i, $event)" />
+                                    </td>
+                                </tr>
+                            }
                         }
                         @empty {
                             <tr>

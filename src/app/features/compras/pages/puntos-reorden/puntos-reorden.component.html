@@ -67,8 +67,28 @@
                   }
                 </td>
                 <td class="table-cell text-center">
-                  <button class="btn-icon btn-icon-edit" title="Actualizar stock"
-                          (click)="iniciarEditStock(item)">✏</button>
+                  @if (editingConfig() === item.id) {
+                    <form [formGroup]="configForm" (ngSubmit)="guardarConfig(item.id)" class="flex flex-col items-center gap-1">
+                      <div class="flex items-center gap-1">
+                        <input type="number" class="form-input w-16 text-center py-1" formControlName="stockMinimo" title="Stock Mín." min="0" />
+                        <input type="number" class="form-input w-16 text-center py-1" formControlName="puntoReorden" title="Punto Reorden" min="0" />
+                        <input type="number" class="form-input w-16 text-center py-1" formControlName="cantidadSugerida" title="Cant. Sugerida" min="1" />
+                      </div>
+                      <div class="flex items-center gap-1">
+                        <button type="submit" class="btn btn-primary py-1 px-2 text-xs" [disabled]="configForm.invalid">✓</button>
+                        <button type="button" class="btn btn-secondary py-1 px-2 text-xs" (click)="editingConfig.set(null)">✕</button>
+                      </div>
+                    </form>
+                  } @else {
+                    <div class="flex items-center justify-center gap-1">
+                      <button class="btn-icon btn-icon-edit" title="Actualizar stock"
+                              (click)="iniciarEditStock(item)">✏</button>
+                      <button class="btn-icon btn-icon-edit" title="Editar configuración"
+                              (click)="iniciarEditConfig(item)">⚙</button>
+                      <button class="btn-icon btn-icon-delete" title="Desactivar"
+                              (click)="desactivar(item.id)">🗑</button>
+                    </div>
+                  }
                 </td>
               </tr>
             }

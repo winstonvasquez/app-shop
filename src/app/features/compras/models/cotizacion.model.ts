@@ -72,3 +72,41 @@ export interface TotalProveedorDto {
 }
 
 export type CotizacionesPage = Page<CotizacionResumen>;
+
+/** Mapea 1:1 CotizacionDetalleDto (microshopcompras) — GET /api/cotizaciones/{id}. */
+export interface CotizacionDetalleDto {
+    id: string;
+    codigo: string;
+    titulo: string;
+    descripcion: string | null;
+    estado: string;
+    fechaEmision: string;
+    fechaVencimiento: string;
+    items: CotizacionItemDetalleDto[];
+    proveedores: CotizacionProveedorDetalleDto[];
+    companyId: string;
+}
+
+export interface CotizacionItemDetalleDto {
+    id: string;
+    productoId: string | null;
+    productoNombre: string;
+    sku: string | null;
+    cantidad: number;
+    unidadMedida: string | null;
+    especificaciones: string | null;
+}
+
+export interface CotizacionProveedorDetalleDto {
+    proveedorId: string;
+    razonSocial: string;
+    estado: string;
+}
+
+/** Mapea ActualizarCotizacionRequest (microshopcompras) — PUT /api/cotizaciones/{id}. Solo permitido en estado CREADA. */
+export interface ActualizarCotizacionRequest {
+    titulo: string;
+    descripcion?: string;
+    fechaVencimiento: string;
+    items: CotizacionItemRequest[];
+}

@@ -21,6 +21,8 @@ export class PresupuestosComponent implements OnInit {
     showForm = signal(false);
     saving = signal(false);
     filtroPeriodo = signal('');
+    editingMonto = signal<string | null>(null);
+    nuevoMonto = signal(0);
 
     form: FormGroup = this.fb.group({
         periodo: ['', Validators.required],
@@ -53,6 +55,20 @@ export class PresupuestosComponent implements OnInit {
                 this.saving.set(false);
             },
             error: () => this.saving.set(false),
+        });
+    }
+
+    iniciarEditMonto(p: PresupuestoCompras): void {
+        this.editingMonto.set(p.id);
+        this.nuevoMonto.set(p.montoAsignado);
+    }
+
+    guardarMonto(id: string): void {
+        this.service.actualizarMontoAsignado(id, this.nuevoMonto()).subscribe({
+            next: updated => {
+                this.presupuestos.update(list => list.map(p => p.id === id ? updated : p));
+                this.editingMonto.set(null);
+            },
         });
     }
 

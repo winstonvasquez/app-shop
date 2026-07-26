@@ -39,6 +39,7 @@
               <th class="table-header-cell text-right">Disponible</th>
               <th class="table-header-cell text-center">Ejecución</th>
               <th class="table-header-cell text-center">Estado</th>
+              <th class="table-header-cell text-center">Acciones</th>
             </tr>
           </thead>
           <tbody>
@@ -68,6 +69,20 @@
                 </td>
                 <td class="table-cell text-center">
                   <span [class]="estadoClass(p.estado)">{{ p.estado }}</span>
+                </td>
+                <td class="table-cell text-center">
+                  @if (editingMonto() === p.id) {
+                    <div class="flex items-center gap-1 justify-center">
+                      <input type="number" class="form-input w-24 text-center py-1" min="0" step="0.01"
+                             [value]="nuevoMonto()"
+                             (input)="nuevoMonto.set(+$any($event.target).value)" />
+                      <button class="btn btn-primary py-1 px-2 text-xs" (click)="guardarMonto(p.id)">✓</button>
+                      <button class="btn btn-secondary py-1 px-2 text-xs" (click)="editingMonto.set(null)">✕</button>
+                    </div>
+                  } @else {
+                    <button class="btn-icon btn-icon-edit" title="Editar monto asignado"
+                            (click)="iniciarEditMonto(p)">✏</button>
+                  }
                 </td>
               </tr>
             }

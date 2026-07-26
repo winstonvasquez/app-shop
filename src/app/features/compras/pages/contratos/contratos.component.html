@@ -4,7 +4,7 @@
             <h1 class="page-title">Contratos con Proveedores</h1>
             <p class="page-subtitle">Gestión de contratos marco, específicos y de servicios</p>
         </div>
-        <app-button label="Nuevo Contrato" icon="plus" variant="primary" (click)="mostrarForm.set(true)" />
+        <app-button label="Nuevo Contrato" icon="plus" variant="primary" (click)="abrirCrear()" />
     </div>
 
     @if (error()) {
@@ -20,7 +20,7 @@
     }
 
     <app-data-table
-        [data]="pagedContratos()"
+        [data]="contratos()"
         [columns]="columns"
         [actions]="actions"
         [loading]="cargando()"
@@ -42,13 +42,15 @@
 
 <!-- Drawer crear contrato -->
 @if (mostrarForm()) {
-    <div class="drawer-overlay" (click)="mostrarForm.set(false)">
+    <div class="drawer-overlay" (click)="cerrarForm()">
         <div class="drawer" style="width:480px; padding:1.5rem" (click)="$event.stopPropagation()">
-            <h2 style="font-size:1.1rem; font-weight:700; margin-bottom:1.25rem">Nuevo Contrato</h2>
+            <h2 style="font-size:1.1rem; font-weight:700; margin-bottom:1.25rem">
+                {{ modoEdicion() ? 'Editar Contrato ' + modoEdicion()?.codigo : 'Nuevo Contrato' }}
+            </h2>
             <form [formGroup]="form" (ngSubmit)="guardar()">
                 <div style="display:grid; gap:.75rem">
                     <div>
-                        <label class="input-label">ID Proveedor *</label>
+                        <label class="input-label">ID Proveedor {{ modoEdicion() ? '(no editable)' : '*' }}</label>
                         <input class="form-input" formControlName="proveedorId" placeholder="UUID del proveedor" />
                     </div>
                     <div>
@@ -61,7 +63,7 @@
                     </div>
                     <div style="display:grid; grid-template-columns:1fr 1fr; gap:.75rem">
                         <div>
-                            <label class="input-label">Fecha Inicio *</label>
+                            <label class="input-label">Fecha Inicio {{ modoEdicion() ? '(no editable)' : '*' }}</label>
                             <input class="form-input" type="date" formControlName="fechaInicio" />
                         </div>
                         <div>
@@ -93,8 +95,8 @@
                     </div>
                 </div>
                 <div style="display:flex; gap:.75rem; justify-content:flex-end; margin-top:1.25rem">
-                    <app-button type="button" label="Cancelar" icon="x" variant="secondary" (click)="mostrarForm.set(false)" />
-                    <app-button type="submit" label="Crear Contrato" icon="file-text" variant="primary" [loading]="guardando()" [disabled]="form.invalid" />
+                    <app-button type="button" label="Cancelar" icon="x" variant="secondary" (click)="cerrarForm()" />
+                    <app-button type="submit" [label]="modoEdicion() ? 'Guardar Cambios' : 'Crear Contrato'" icon="file-text" variant="primary" [loading]="guardando()" [disabled]="form.invalid" />
                 </div>
             </form>
         </div>

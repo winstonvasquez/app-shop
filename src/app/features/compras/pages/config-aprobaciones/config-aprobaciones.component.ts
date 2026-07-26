@@ -16,6 +16,7 @@ export class ConfigAprobacionesComponent implements OnInit {
     niveles = signal<NivelAprobacion[]>([]);
     loading = signal(false);
     showForm = signal(false);
+    editingNivelId = signal<string | null>(null);
 
     form = signal<ConfigAprobacionRequest>({
         nombre: '',
@@ -41,16 +42,32 @@ export class ConfigAprobacionesComponent implements OnInit {
     }
 
     abrirFormulario(): void {
+        this.editingNivelId.set(null);
         this.form.set({ nombre: '', montoMinimo: 0, montoMaximo: null, rolAprobador: '', orden: this.niveles().length + 1 });
+        this.showForm.set(true);
+    }
+
+    abrirEdicion(nivel: NivelAprobacion): void {
+        this.editingNivelId.set(nivel.id);
+        this.form.set({
+            nombre: nivel.nombre,
+            montoMinimo: nivel.montoMinimo,
+            montoMaximo: nivel.montoMaximo,
+            rolAprobador: nivel.rolAprobador,
+            orden: nivel.orden,
+        });
         this.showForm.set(true);
     }
 
     guardar(): void {
         const f = this.form();
         if (!f.nombre || !f.rolAprobador) return;
-        this.aprobacionService.crearNivel(f).subscribe({
+        const editingId = this.editingNivelId();
+        const obs = editingId ? this.aprobacionService.actualizarNivel(editingId, f) : this.aprobacionService.crearNivel(f);
+        obs.subscribe({
             next: () => {
                 this.showForm.set(false);
+                this.editingNivelId.set(null);
                 this.cargarNiveles();
             },
         });

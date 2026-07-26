@@ -13,7 +13,7 @@ import { TranslatePipe } from '@ngx-translate/core';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { map } from 'rxjs';
 import { FacturaProveedorService } from '../../services/factura-proveedor.service';
-import { FacturaProveedor, RegistrarFacturaRequest } from '../../models/factura-proveedor.model';
+import { FacturaProveedor, RegistrarFacturaRequest, CpeParsedInvoice } from '../../models/factura-proveedor.model';
 import { ButtonComponent, CatalogSelectComponent } from '@shared/components';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
@@ -154,6 +154,8 @@ export class FacturasProveedorComponent implements OnInit {
 
     showRechazarModal = signal(false);
     validandoSunatId = signal<string | null>(null);
+    importingCpe = signal(false);
+    cpeImportMessage = signal<string | null>(null);
 
     get itemsArray(): FormArray {
         return this.facturaForm.get('items') as FormArray;
@@ -205,11 +207,75 @@ export class FacturasProveedorComponent implements OnInit {
         while (this.itemsArray.length > 0) this.itemsArray.removeAt(0);
         this.itemsArray.push(this.createItemGroup());
         this.submitError.set(null);
+        this.cpeImportMessage.set(null);
         this.showForm.set(true);
     }
 
     closeForm(): void {
         this.showForm.set(false);
+        this.cpeImportMessage.set(null);
+    }
+
+    /**
+     * Importa un XML de CPE (UBL 2.1) del proveedor y precarga `facturaForm`
+     * con los datos extraídos por el backend (serie/número/fecha/items...).
+     */
+    importarCpe(file: File | null | undefined): void {
+        if (!file) {
+            this.submitError.set('Seleccione un archivo XML para importar');
+            return;
+        }
+        this.importingCpe.set(true);
+        this.submitError.set(null);
+        this.cpeImportMessage.set(null);
+        this.facturaService.parseCpe(file).subscribe({
+            next: (parsed) => {
+                this.aplicarCpeParseado(parsed);
+                this.importingCpe.set(false);
+                this.cpeImportMessage.set('Factura precargada desde XML, revise y confirme.');
+                this.cdr.markForCheck();
+            },
+            error: (err) => {
+                this.submitError.set('No se pudo leer el XML: verifique que sea un CPE UBL 2.1 válido');
+                this.importingCpe.set(false);
+                console.error(err);
+                this.cdr.markForCheck();
+            },
+        });
+    }
+
+    private aplicarCpeParseado(parsed: CpeParsedInvoice): void {
+        this.facturaForm.patchValue({
+            serie: parsed.serie,
+            numero: parsed.numero,
+            tipoDocumento: parsed.tipoDocumento,
+            fechaEmision: this.toDateInputValue(parsed.fechaEmision),
+            // El control se infirió como literal `'PEN'` desde el default del form; el backend
+            // puede devolver cualquier código ISO 4217 soportado (ver MONEDA.PEN/USD).
+            moneda: parsed.moneda as unknown as typeof MONEDA.PEN,
+        });
+
+        while (this.itemsArray.length > 0) this.itemsArray.removeAt(0);
+        if (parsed.items.length > 0) {
+            for (const item of parsed.items) {
+                this.itemsArray.push(
+                    this.fb.group({
+                        ordenItemId: [''],
+                        productoNombre: [item.descripcion, Validators.required],
+                        sku: [item.sku ?? ''],
+                        cantidad: [item.cantidad, [Validators.required, Validators.min(1)]],
+                        precioUnitario: [item.precioUnitario, [Validators.required, Validators.min(0)]],
+                    })
+                );
+            }
+        } else {
+            this.itemsArray.push(this.createItemGroup());
+        }
+    }
+
+    /** Normaliza `fechaEmision` (LocalDate ISO o datetime) al formato `yyyy-MM-dd` del `<input type="date">`. */
+    private toDateInputValue(fecha: string): string {
+        return fecha && fecha.length >= 10 ? fecha.substring(0, 10) : fecha;
     }
 
     openDetail(factura: FacturaProveedor): void {

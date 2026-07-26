@@ -69,6 +69,8 @@
                     @if (pv.esPreferido) {
                       <span class="badge badge-success text-xs">★</span>
                     }
+                    <button class="btn-icon btn-icon-delete" title="Quitar proveedor"
+                            (click)="desactivarProveedor(item.id, pv.proveedorId)">✕</button>
                   </div>
                 }
               </div>
@@ -76,9 +78,11 @@
               <p class="text-muted text-xs mt-2 italic">Sin proveedores homologados</p>
             }
           </div>
-          <div class="card-footer">
+          <div class="card-footer flex gap-2">
             <app-button label="Proveedor" icon="plus" variant="secondary" size="sm"
               (click)="abrirProveedorForm(item)"></app-button>
+            <app-button label="Desactivar" icon="trash" variant="danger" size="sm"
+              (click)="desactivarItem(item.id)"></app-button>
           </div>
         </div>
       }

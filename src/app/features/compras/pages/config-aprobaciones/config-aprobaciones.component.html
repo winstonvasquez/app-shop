@@ -45,7 +45,8 @@
                     </span>
                   </td>
                   <td class="table-cell">
-                    <button class="btn-icon btn-icon-delete" (click)="eliminar(nivel.id)">🗑</button>
+                    <button class="btn-icon btn-icon-edit" title="Editar" (click)="abrirEdicion(nivel)">✏</button>
+                    <button class="btn-icon btn-icon-delete" title="Desactivar" (click)="eliminar(nivel.id)">🗑</button>
                   </td>
                 </tr>
               }
@@ -62,7 +63,7 @@
   <div class="modal-overlay" (click)="showForm.set(false)">
     <div class="modal-content" (click)="$event.stopPropagation()">
       <div class="modal-header">
-        <h3 class="modal-title">Nuevo Nivel de Aprobación</h3>
+        <h3 class="modal-title">{{ editingNivelId() ? 'Editar Nivel de Aprobación' : 'Nuevo Nivel de Aprobación' }}</h3>
         <button class="modal-close-btn" (click)="showForm.set(false)">✕</button>
       </div>
       <div class="modal-body">

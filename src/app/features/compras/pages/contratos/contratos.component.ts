@@ -1,11 +1,11 @@
-import { Component, OnInit, ChangeDetectionStrategy, signal, computed, inject } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy, signal, inject } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { map } from 'rxjs';
 import { environment } from '@env/environment';
 import { AuthService } from '@core/auth/auth.service';
-import { MONEDA } from '@shared/constants/sunat.constants';
+import { MONEDA, Moneda } from '@shared/constants/sunat.constants';
 import { ButtonComponent, CatalogSelectComponent } from '@shared/components';
 import { CatalogService } from '@core/services/catalog.service';
 import { DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent, PaginationEvent } from '@shared/ui/tables/data-table/data-table.component';
@@ -51,10 +51,14 @@ export class ContratosComponent implements OnInit {
     guardando = signal(false);
     filtroEstado = signal('');
     searchQuery = signal('');
+    /** Contrato en edición (null = el drawer está en modo creación). */
+    modoEdicion = signal<ContratoDto | null>(null);
 
-    // Pagination (client-side — el backend no pagina /api/contratos)
+    // Pagination (server-side — /api/contratos ahora acepta Pageable)
     currentPage = signal(0);
     pageSize = signal(20);
+    totalElements = signal(0);
+    totalPages = signal(0);
 
     // Filtro de estado para el toolbar del data-table
     estadoFilters: FilterConfig[] = [
@@ -77,23 +81,8 @@ export class ContratosComponent implements OnInit {
         params: () => ({ search: this.searchQuery(), estado: this.filtroEstado() }),
     };
 
-    /** Filtrado client-side por búsqueda + estado (todo el listado se carga en un solo fetch). */
-    filteredContratos = computed(() => {
-        const term = this.searchQuery().trim().toLowerCase();
-        const estado = this.filtroEstado();
-        return this.contratos().filter(c =>
-            (!estado || c.estado === estado) &&
-            (!term || c.codigo?.toLowerCase().includes(term) || c.proveedorNombre?.toLowerCase().includes(term))
-        );
-    });
-
-    totalElements = computed(() => this.filteredContratos().length);
-    totalPages = computed(() => Math.ceil(this.totalElements() / this.pageSize()) || 0);
-
-    pagedContratos = computed(() => {
-        const start = this.currentPage() * this.pageSize();
-        return this.filteredContratos().slice(start, start + this.pageSize());
-    });
+    // 'search' ahora se envía como query param a GET /api/contratos (server-side, igual que /export),
+    // por lo que contratos() ya viene filtrado y paginado por el backend — no hace falta filtrado client-side.
 
     columns: TableColumn<ContratoDto>[] = [
         { key: 'codigo', label: 'Código', sortable: true },
@@ -115,6 +104,11 @@ export class ContratosComponent implements OnInit {
 
     actions: TableAction<ContratoDto>[] = [
         {
+            label: 'Editar', icon: 'edit', class: 'btn-icon-edit',
+            show: (row) => row.estado !== 'RESCINDIDO',
+            onClick: (row) => this.abrirEditar(row)
+        },
+        {
             label: 'Rescindir', icon: 'x', class: 'btn-icon-delete',
             show: (row) => row.estado === 'ACTIVO',
             onClick: (row) => this.rescindir(row.id)
@@ -128,7 +122,7 @@ export class ContratosComponent implements OnInit {
         fechaInicio: ['', Validators.required],
         fechaFin: ['', Validators.required],
         montoContrato: [0, [Validators.required, Validators.min(0)]],
-        moneda: [MONEDA.PEN],
+        moneda: [MONEDA.PEN as Moneda],
         condicionesPago: [''],
         penalidades: [''],
         renovacionAutomatica: [false],
@@ -140,17 +134,42 @@ export class ContratosComponent implements OnInit {
         return new HttpHeaders({ 'X-Company-Id': companyId });
     }
 
-    ngOnInit(): void { this.cargar(); }
+    ngOnInit(): void {
+        this.cargar();
+        this.cargarProximosVencer();
+    }
 
     cargar(): void {
         this.cargando.set(true);
-        this.http.get<ContratoDto[]>(this.baseUrl, { headers: this.getHeaders() }).subscribe({
-            next: (d) => {
-                this.contratos.set(d);
+        let params = new HttpParams()
+            .set('page', this.currentPage().toString())
+            .set('size', this.pageSize().toString());
+        if (this.filtroEstado()) params = params.set('estado', this.filtroEstado());
+        if (this.searchQuery()) params = params.set('search', this.searchQuery());
+
+        this.http.get<unknown>(this.baseUrl, { params, headers: this.getHeaders() }).pipe(
+            map((raw: unknown) => {
+                const r = raw as Record<string, unknown>;
+                const nested = r['page'] as Record<string, unknown> | undefined;
+                return {
+                    content: (r['content'] as ContratoDto[]) ?? [],
+                    totalElements: (r['totalElements'] as number) ?? (nested?.['totalElements'] as number) ?? 0,
+                    totalPages: (r['totalPages'] as number) ?? (nested?.['totalPages'] as number) ?? 0,
+                };
+            })
+        ).subscribe({
+            next: (page) => {
+                this.contratos.set(page.content);
+                this.totalElements.set(page.totalElements);
+                this.totalPages.set(page.totalPages);
                 this.cargando.set(false);
             },
             error: () => { this.error.set('Error al cargar contratos'); this.cargando.set(false); }
         });
+    }
+
+    /** Se llama SOLO una vez desde ngOnInit — no depende de la página/filtro actual, no hace falta re-pedirla en cada cargar(). */
+    private cargarProximosVencer(): void {
         this.http.get<ContratoDto[]>(`${this.baseUrl}/proximos-vencer?dias=30`, { headers: this.getHeaders() }).subscribe({
             next: (d) => this.proximosVencer.set(d),
             error: () => {}
@@ -161,14 +180,60 @@ export class ContratosComponent implements OnInit {
         if (this.form.invalid) return;
         this.guardando.set(true);
         const v = this.form.value;
-        this.http.post<ContratoDto>(this.baseUrl, v, { headers: this.getHeaders() }).subscribe({
+        const editando = this.modoEdicion();
+        const req = editando
+            ? this.http.put<ContratoDto>(`${this.baseUrl}/${editando.id}`, v, { headers: this.getHeaders() })
+            : this.http.post<ContratoDto>(this.baseUrl, v, { headers: this.getHeaders() });
+        req.subscribe({
             next: () => {
                 this.guardando.set(false);
-                this.mostrarForm.set(false);
+                this.cerrarForm();
                 this.cargar();
             },
-            error: () => { this.guardando.set(false); this.error.set('Error al crear contrato'); }
+            error: () => { this.guardando.set(false); this.error.set(editando ? 'Error al actualizar contrato' : 'Error al crear contrato'); }
         });
+    }
+
+    /** Abre el drawer en modo creación, con el form limpio en sus valores por defecto. */
+    abrirCrear(): void {
+        this.modoEdicion.set(null);
+        this.form.get('proveedorId')?.enable();
+        this.form.get('fechaInicio')?.enable();
+        this.form.reset({
+            proveedorId: '', tipoContrato: 'MARCO', descripcion: '',
+            fechaInicio: '', fechaFin: '', montoContrato: 0, moneda: MONEDA.PEN,
+            condicionesPago: '', penalidades: '', renovacionAutomatica: false, diasAvisoVencimiento: 30,
+        });
+        this.mostrarForm.set(true);
+    }
+
+    /**
+     * Abre el drawer en modo edición, precargado con los datos de la fila (mismo shape que GET /{id}).
+     * proveedorId y fechaInicio no son editables (ActualizarContratoRequest no los acepta) — se deshabilitan.
+     */
+    abrirEditar(contrato: ContratoDto): void {
+        this.modoEdicion.set(contrato);
+        this.form.reset({
+            proveedorId: contrato.proveedorId,
+            tipoContrato: contrato.tipoContrato,
+            descripcion: contrato.descripcion,
+            fechaInicio: contrato.fechaInicio,
+            fechaFin: contrato.fechaFin,
+            montoContrato: contrato.montoContrato,
+            moneda: contrato.moneda as Moneda,
+            condicionesPago: contrato.condicionesPago,
+            penalidades: '',
+            renovacionAutomatica: contrato.renovacionAutomatica,
+            diasAvisoVencimiento: contrato.diasAvisoVencimiento,
+        });
+        this.form.get('proveedorId')?.disable();
+        this.form.get('fechaInicio')?.disable();
+        this.mostrarForm.set(true);
+    }
+
+    cerrarForm(): void {
+        this.mostrarForm.set(false);
+        this.modoEdicion.set(null);
     }
 
     rescindir(id: string): void {
@@ -189,17 +254,20 @@ export class ContratosComponent implements OnInit {
     onSearchTerm(term: string): void {
         this.searchQuery.set(term);
         this.currentPage.set(0);
+        this.cargar();
     }
 
     onFilterChangeEvent(event: FilterChangeEvent): void {
         if (event.field === 'estado') {
             this.filtroEstado.set(event.value != null ? String(event.value) : '');
             this.currentPage.set(0);
+            this.cargar();
         }
     }
 
     onPageChange(event: PaginationEvent): void {
         this.currentPage.set(event.page);
         this.pageSize.set(event.size);
+        this.cargar();
     }
 }

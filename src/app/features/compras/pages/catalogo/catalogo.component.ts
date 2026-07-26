@@ -152,4 +152,31 @@ export class CatalogoComponent implements OnInit {
             error: () => this.saving.set(false),
         });
     }
+
+    desactivarProveedor(catalogoId: string, proveedorId: string): void {
+        if (!confirm('¿Quitar este proveedor homologado del ítem?')) return;
+        this.http.delete<void>(
+            `${this.baseUrl}/${catalogoId}/proveedores/${proveedorId}`,
+            { headers: this.getHeaders() }
+        ).subscribe({
+            next: () => {
+                this.selectedItem.update(item => item && item.id === catalogoId
+                    ? { ...item, proveedores: item.proveedores.filter(p => p.proveedorId !== proveedorId) }
+                    : item);
+                this.items.update(list => list.map(i => i.id === catalogoId
+                    ? { ...i, proveedores: i.proveedores.filter(p => p.proveedorId !== proveedorId) }
+                    : i));
+            },
+        });
+    }
+
+    desactivarItem(id: string): void {
+        if (!confirm('¿Desactivar este ítem del catálogo?')) return;
+        this.http.delete<void>(
+            `${this.baseUrl}/${id}`,
+            { headers: this.getHeaders() }
+        ).subscribe({
+            next: () => this.items.update(list => list.filter(i => i.id !== id)),
+        });
+    }
 }

@@ -4,6 +4,7 @@
             <h1 class="page-title">Compras Centralizadas</h1>
             <p class="page-subtitle">Consolidación de solicitudes multi-tienda</p>
         </div>
+        <app-button label="Nueva Consolidación" variant="primary" icon="plus" (click)="abrirForm()" />
     </div>
 
     @if (error()) {
@@ -38,11 +39,6 @@
                         </div>
                         <div class="card-body">
                             <p style="color:var(--color-text-subtle); margin-bottom:.75rem">{{ sol.descripcion }}</p>
-                            @if (sol.proveedorNombre) {
-                                <p style="font-size:.85rem; margin-bottom:.75rem">
-                                    <strong>Proveedor:</strong> {{ sol.proveedorNombre }}
-                                </p>
-                            }
                             <!-- Líneas -->
                             <table class="table" style="font-size:.82rem">
                                 <thead>
@@ -50,19 +46,37 @@
                                         <th class="table-header-cell">Producto</th>
                                         <th class="table-header-cell">Total</th>
                                         <th class="table-header-cell">Tiendas</th>
+                                        <th class="table-header-cell">Proveedor</th>
+                                        <th class="table-header-cell">Precio</th>
+                                        <th class="table-header-cell">Acción</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @for (linea of sol.lineas; track linea.productoId) {
+                                    @for (linea of sol.lineas; track linea.id) {
                                         <tr class="table-row">
                                             <td class="table-cell">{{ linea.productoNombre }}</td>
-                                            <td class="table-cell">{{ linea.cantidadTotal }}</td>
+                                            <td class="table-cell">{{ linea.cantidadTotal }} {{ linea.unidadMedida ?? '' }}</td>
                                             <td class="table-cell">
-                                                @for (t of linea.tiendas; track t.storeId) {
+                                                @for (t of linea.tiendas; track t.id) {
                                                     <span style="display:block; font-size:.75rem; color:var(--color-text-subtle)">
                                                         {{ t.storeNombre }}: {{ t.cantidad }}
                                                     </span>
                                                 }
+                                            </td>
+                                            <td class="table-cell">
+                                                @if (linea.proveedorId) {
+                                                    <span class="badge badge-success" style="font-size:.7rem">Asignado</span>
+                                                } @else {
+                                                    <span class="badge badge-neutral" style="font-size:.7rem">Sin asignar</span>
+                                                }
+                                            </td>
+                                            <td class="table-cell">{{ linea.precioUnitario ? (linea.precioUnitario | number:'1.2-2') : '—' }}</td>
+                                            <td class="table-cell">
+                                                <app-button
+                                                    label="Asignar proveedor"
+                                                    variant="secondary"
+                                                    size="sm"
+                                                    (click)="abrirAsignarProveedor(sol.id, linea.id)" />
                                             </td>
                                         </tr>
                                     }
@@ -75,3 +89,111 @@
         }
     }
 </div>
+
+<!-- Drawer nueva consolidación -->
+@if (mostrarForm()) {
+    <div class="drawer-overlay" (click)="cerrarForm()">
+        <div class="drawer" style="width:560px; padding:1.5rem" (click)="$event.stopPropagation()">
+            <h2 style="font-size:1.1rem; font-weight:700; margin-bottom:1.25rem">Nueva Consolidación</h2>
+            <form [formGroup]="form" (ngSubmit)="crear()">
+                <div>
+                    <label class="input-label">Descripción *</label>
+                    <textarea class="form-input" formControlName="descripcion" rows="2"
+                              placeholder="Ej: Reposición semanal de abarrotes"></textarea>
+                </div>
+
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-top:1.25rem">
+                    <h3 style="font-size:.95rem; font-weight:600">Líneas por producto</h3>
+                    <app-button type="button" label="Agregar línea" icon="plus" variant="secondary" size="sm" (click)="addLinea()" />
+                </div>
+
+                <div formArrayName="lineas" style="display:flex; flex-direction:column; gap:1rem; margin-top:.75rem">
+                    @for (linea of lineasArray.controls; track linea; let i = $index) {
+                        <div [formGroupName]="i" style="border:1px solid var(--color-border); border-radius:8px; padding:.75rem">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:.5rem">
+                                <span style="font-size:.8rem; font-weight:600; color:var(--color-text-subtle)">Línea {{ i + 1 }}</span>
+                                <app-button type="button" label="Quitar" icon="x" variant="secondary" size="sm"
+                                            [disabled]="lineasArray.length <= 1" (click)="removeLinea(i)" />
+                            </div>
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:.75rem">
+                                <div>
+                                    <label class="input-label">ID Producto *</label>
+                                    <input class="form-input" formControlName="productoId" placeholder="UUID del producto" />
+                                </div>
+                                <div>
+                                    <label class="input-label">SKU</label>
+                                    <input class="form-input" formControlName="sku" />
+                                </div>
+                            </div>
+                            <div style="margin-top:.5rem">
+                                <label class="input-label">Nombre del producto *</label>
+                                <input class="form-input" formControlName="productoNombre" />
+                            </div>
+                            <div style="margin-top:.5rem; max-width:160px">
+                                <label class="input-label">Unidad</label>
+                                <input class="form-input" formControlName="unidadMedida" />
+                            </div>
+
+                            <div style="display:flex; align-items:center; justify-content:space-between; margin-top:.75rem">
+                                <span style="font-size:.78rem; font-weight:600; color:var(--color-text-subtle)">Tiendas</span>
+                                <app-button type="button" label="Agregar tienda" icon="plus" variant="secondary" size="sm" (click)="addTienda(i)" />
+                            </div>
+                            <div formArrayName="tiendas" style="display:flex; flex-direction:column; gap:.5rem; margin-top:.5rem">
+                                @for (tienda of tiendasArray(i).controls; track tienda; let j = $index) {
+                                    <div [formGroupName]="j" style="display:grid; grid-template-columns:1fr 1fr 80px auto; gap:.5rem; align-items:end">
+                                        <div>
+                                            <label class="input-label">ID Tienda *</label>
+                                            <input class="form-input" formControlName="storeId" />
+                                        </div>
+                                        <div>
+                                            <label class="input-label">Nombre tienda *</label>
+                                            <input class="form-input" formControlName="storeNombre" />
+                                        </div>
+                                        <div>
+                                            <label class="input-label">Cant. *</label>
+                                            <input class="form-input" type="number" formControlName="cantidad" min="1" />
+                                        </div>
+                                        <app-button type="button" label="✕" variant="secondary" size="sm"
+                                                    [disabled]="tiendasArray(i).length <= 1" (click)="removeTienda(i, j)" />
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <div style="display:flex; gap:.75rem; justify-content:flex-end; margin-top:1.25rem">
+                    <app-button type="button" label="Cancelar" icon="x" variant="secondary" (click)="cerrarForm()" />
+                    <app-button type="submit" label="Crear Consolidación" icon="save" variant="primary"
+                                [loading]="guardando()" [disabled]="form.invalid" />
+                </div>
+            </form>
+        </div>
+    </div>
+}
+
+<!-- Mini-modal asignar proveedor a línea -->
+@if (asignandoLineaId()) {
+    <div class="drawer-overlay" (click)="cerrarAsignarProveedor()">
+        <div class="drawer" style="width:420px; padding:1.5rem" (click)="$event.stopPropagation()">
+            <h2 style="font-size:1.1rem; font-weight:700; margin-bottom:1.25rem">Asignar Proveedor</h2>
+            <form [formGroup]="proveedorForm" (ngSubmit)="asignarProveedor()">
+                <div>
+                    <label class="input-label">Proveedor *</label>
+                    <app-server-search-select [dataSource]="proveedorSource"
+                                              formControlName="proveedorId"
+                                              placeholder="Buscar proveedor por nombre o RUC…" />
+                </div>
+                <div style="margin-top:.75rem">
+                    <label class="input-label">Precio Unitario *</label>
+                    <input class="form-input" type="number" formControlName="precioUnitario" min="0" step="0.01" />
+                </div>
+                <div style="display:flex; gap:.75rem; justify-content:flex-end; margin-top:1.25rem">
+                    <app-button type="button" label="Cancelar" icon="x" variant="secondary" (click)="cerrarAsignarProveedor()" />
+                    <app-button type="submit" label="Asignar" icon="save" variant="primary"
+                                [loading]="asignando()" [disabled]="proveedorForm.invalid" />
+                </div>
+            </form>
+        </div>
+    </div>
+}

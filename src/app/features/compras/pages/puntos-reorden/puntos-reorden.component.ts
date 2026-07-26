@@ -27,6 +27,7 @@ export class PuntosReordenComponent implements OnInit {
     soloAlerta = signal(false);
     editingStock = signal<string | null>(null);
     nuevoStock = signal(0);
+    editingConfig = signal<string | null>(null);
 
     form: FormGroup = this.fb.group({
         productoId: ['', Validators.required],
@@ -36,6 +37,12 @@ export class PuntosReordenComponent implements OnInit {
         stockMinimo: [5, [Validators.required, Validators.min(0)]],
         puntoReorden: [10, [Validators.required, Validators.min(0)]],
         cantidadSugerida: [20, [Validators.required, Validators.min(1)]],
+    });
+
+    configForm: FormGroup = this.fb.group({
+        stockMinimo: [0, [Validators.required, Validators.min(0)]],
+        puntoReorden: [0, [Validators.required, Validators.min(0)]],
+        cantidadSugerida: [0, [Validators.required, Validators.min(1)]],
     });
 
     ngOnInit(): void {
@@ -69,6 +76,32 @@ export class PuntosReordenComponent implements OnInit {
                 this.items.update(list => list.map(i => i.id === id ? updated : i));
                 this.editingStock.set(null);
             },
+        });
+    }
+
+    iniciarEditConfig(item: PuntoReorden): void {
+        this.editingConfig.set(item.id);
+        this.configForm.setValue({
+            stockMinimo: item.stockMinimo,
+            puntoReorden: item.puntoReorden,
+            cantidadSugerida: item.cantidadSugerida,
+        });
+    }
+
+    guardarConfig(id: string): void {
+        if (this.configForm.invalid) return;
+        this.service.actualizarConfiguracion(id, this.configForm.value).subscribe({
+            next: updated => {
+                this.items.update(list => list.map(i => i.id === id ? updated : i));
+                this.editingConfig.set(null);
+            },
+        });
+    }
+
+    desactivar(id: string): void {
+        if (!confirm('¿Desactivar este punto de reorden?')) return;
+        this.service.desactivarPuntoReorden(id).subscribe({
+            next: () => this.items.update(list => list.filter(i => i.id !== id)),
         });
     }
 

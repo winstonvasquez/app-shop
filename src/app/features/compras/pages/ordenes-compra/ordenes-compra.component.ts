@@ -2,8 +2,10 @@ import { Component, OnInit, inject, signal, computed, ChangeDetectionStrategy } 
 import { DatePipe } from '@angular/common';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators, FormGroup, FormControl } from '@angular/forms';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { map } from 'rxjs';
 import { CatalogService } from '@core/services/catalog.service';
+import { AuthService } from '@core/auth/auth.service';
 import { OrdenCompraService } from '../../services/orden-compra.service';
 import { ProveedorService } from '../../services/proveedor.service';
 import { OrdenCompra, OrdenCompraItem } from '../../models/orden-compra.model';
@@ -15,17 +17,30 @@ import { DateInputComponent } from '@shared/ui/forms/date-input/date-input.compo
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { LoadingSpinnerComponent } from '@shared/ui/feedback/loading-spinner/loading-spinner.component';
-import { ButtonComponent, ServerSearchSelectComponent } from '@shared/components';
+import { ButtonComponent, CatalogSelectComponent, ServerSearchSelectComponent } from '@shared/components';
 import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
-import { SUNAT_RATES } from '@shared/constants/sunat.constants';
+import { SUNAT_RATES, MONEDA, Moneda } from '@shared/constants/sunat.constants';
 import { PAGINATION } from '@shared/constants/app.constants';
 import { proveedorSelectSource } from '../../components/select-sources';
+import { AlmacenService } from '../../../logistica/services/almacen.service';
+import { almacenSelectSource } from '../../../logistica/components/select-sources';
+import { ProductLookupComponent } from '../../../inventory/components/product-lookup/product-lookup.component';
+import { ProductResponse } from '@core/models/product.model';
+import { productIdToUuid } from '../../../inventory/utils/synthetic-uuid.util';
 
 export interface OcItemForm {
+    productoId?: string;
     productoNombre: string;
     sku: string;
     cantidad: number;
     precioUnitario: number;
+}
+
+/** Opción de Contrato Marco para el select del formulario de OC (GET /api/contratos?estado=ACTIVO). */
+export interface ContratoActivoOption {
+    id: string;
+    codigo: string;
+    proveedorNombre?: string;
 }
 
 @Component({
@@ -42,13 +57,18 @@ export interface OcItemForm {
     LoadingSpinnerComponent,
     DatePipe,
     ButtonComponent,
-    ServerSearchSelectComponent
+    CatalogSelectComponent,
+    ServerSearchSelectComponent,
+    ProductLookupComponent
   ],
     templateUrl: './ordenes-compra.component.html'
 })
 export class OrdenesCompraComponent implements OnInit {
     private readonly ordenService = inject(OrdenCompraService);
     private readonly proveedorService = inject(ProveedorService);
+    private readonly almacenService = inject(AlmacenService);
+    private readonly authService = inject(AuthService);
+    private readonly http = inject(HttpClient);
     private readonly fb = inject(FormBuilder);
     readonly catalog = inject(CatalogService);
 
@@ -56,8 +76,15 @@ export class OrdenesCompraComponent implements OnInit {
     ordenes = signal<OrdenCompra[]>([]);
     selectedOrden = signal<OrdenCompra | null>(null);
 
-    // Data source para <app-server-search-select> de proveedor
+    /** Contratos Marco ACTIVOS, para el select opcional del formulario de OC. */
+    contratosActivos = signal<ContratoActivoOption[]>([]);
+
+    // Data source para <app-server-search-select> de proveedor y de almacén
     readonly proveedorSource = proveedorSelectSource(this.proveedorService);
+    readonly almacenSource = almacenSelectSource(this.almacenService, () => this.authService.currentUser()?.activeCompanyId);
+
+    /** Índice del ítem con el mini-panel de búsqueda de producto abierto (null = cerrado). */
+    lookupOpenIndex = signal<number | null>(null);
 
     // UI state
     loading = signal(false);
@@ -134,19 +161,6 @@ export class OrdenesCompraComponent implements OnInit {
         params: () => ({ estado: this.filterEstado() }),
     };
 
-    readonly condicionPagoOptions = [
-        { value: 'CONTADO', label: 'Contado' },
-        { value: 'CREDITO_15', label: 'Crédito 15 días' },
-        { value: 'CREDITO_30', label: 'Crédito 30 días' },
-        { value: 'CREDITO_60', label: 'Crédito 60 días' },
-        { value: 'CREDITO_90', label: 'Crédito 90 días' }
-    ];
-
-    readonly almacenOptions = [
-        { value: 'ALM1', label: 'Almacén Principal (ALM1)' },
-        { value: 'ALM2', label: 'Almacén Secundario (ALM2)' }
-    ];
-
     columns: TableColumn<OrdenCompra>[] = [
         { key: 'codigo', label: 'OC #', sortable: true, width: '130px' },
         {
@@ -188,13 +202,36 @@ export class OrdenesCompraComponent implements OnInit {
             fechaEmision: ['', Validators.required],
             fechaEntregaEstimada: [''],
             condicionPago: ['CONTADO', Validators.required],
-            almacenDestino: ['ALM1', Validators.required],
-            observaciones: ['']
+            almacenDestino: ['', Validators.required],
+            observaciones: [''],
+            contratoId: [''],
+            moneda: [MONEDA.PEN as Moneda],
+            tipoCambio: [null as number | null]
         });
     }
 
     ngOnInit(): void {
         this.loadOrdenes();
+        this.loadContratosActivos();
+    }
+
+    /** Contratos Marco ACTIVOS para el select opcional del form (lista chica, no requiere server-search). */
+    private loadContratosActivos(): void {
+        const params = new HttpParams()
+            .set('estado', 'ACTIVO')
+            .set('page', '0')
+            .set('size', String(PAGINATION.maxPageSize));
+        this.http.get<{ content?: ContratoActivoOption[] }>(
+            `${environment.apiUrls.purchases}/api/contratos`, { params }
+        ).subscribe({
+            next: (res) => this.contratosActivos.set(res.content ?? []),
+            error: () => this.contratosActivos.set([])
+        });
+    }
+
+    /** true si la moneda seleccionada en el form NO es PEN (habilita el campo Tipo de Cambio). */
+    monedaDistintaDePEN(): boolean {
+        return this.ocForm.get('moneda')?.value !== MONEDA.PEN;
     }
 
     loadOrdenes(): void {
@@ -294,8 +331,15 @@ export class OrdenesCompraComponent implements OnInit {
     openCreateForm(): void {
         this.editMode.set(false);
         this.selectedOrden.set(null);
-        this.ocForm.reset({ condicionPago: 'CONTADO', almacenDestino: 'ALM1' });
+        this.ocForm.reset({
+            condicionPago: 'CONTADO',
+            almacenDestino: '',
+            contratoId: '',
+            moneda: MONEDA.PEN,
+            tipoCambio: null
+        });
         this.formItems.set([this.emptyItem()]);
+        this.lookupOpenIndex.set(null);
         this.submitError.set(null);
         this.showForm.set(true);
     }
@@ -309,14 +353,19 @@ export class OrdenesCompraComponent implements OnInit {
             fechaEntregaEstimada: orden.fechaEntregaEstimada ?? '',
             condicionPago: orden.condicionPago,
             almacenDestino: orden.almacenDestino,
-            observaciones: orden.observaciones ?? ''
+            observaciones: orden.observaciones ?? '',
+            contratoId: orden.contratoId ?? '',
+            moneda: orden.moneda ?? MONEDA.PEN,
+            tipoCambio: orden.tipoCambio ?? null
         });
         this.formItems.set((orden.items ?? []).map(i => ({
+            productoId: i.productoId,
             productoNombre: i.productoNombre,
             sku: i.sku ?? '',
             cantidad: i.cantidad,
             precioUnitario: i.precioUnitario
         })));
+        this.lookupOpenIndex.set(null);
         this.submitError.set(null);
         this.showForm.set(true);
     }
@@ -325,6 +374,7 @@ export class OrdenesCompraComponent implements OnInit {
         this.showForm.set(false);
         this.ocForm.reset();
         this.formItems.set([]);
+        this.lookupOpenIndex.set(null);
     }
 
     addItem(): void {
@@ -333,6 +383,9 @@ export class OrdenesCompraComponent implements OnInit {
 
     removeItem(index: number): void {
         this.formItems.update(items => items.filter((_, i) => i !== index));
+        if (this.lookupOpenIndex() === index) {
+            this.lookupOpenIndex.set(null);
+        }
     }
 
     updateItem(index: number, field: keyof OcItemForm, value: string | number): void {
@@ -343,8 +396,23 @@ export class OrdenesCompraComponent implements OnInit {
         });
     }
 
+    /** Abre/cierra el mini-panel de búsqueda de producto para el ítem `index`. */
+    toggleLookup(index: number): void {
+        this.lookupOpenIndex.set(this.lookupOpenIndex() === index ? null : index);
+    }
+
+    /** Aplica el producto elegido en `<app-product-lookup>` al ítem `index`. */
+    onProductoSeleccionado(index: number, product: ProductResponse): void {
+        this.updateItem(index, 'productoId', productIdToUuid(product.id));
+        this.updateItem(index, 'productoNombre', product.nombre);
+        if (!this.formItems()[index].precioUnitario) {
+            this.updateItem(index, 'precioUnitario', product.precioBase);
+        }
+        this.lookupOpenIndex.set(null);
+    }
+
     private emptyItem(): OcItemForm {
-        return { productoNombre: '', sku: '', cantidad: 1, precioUnitario: 0 };
+        return { productoId: undefined, productoNombre: '', sku: '', cantidad: 1, precioUnitario: 0 };
     }
 
     onSubmit(): void {
@@ -366,12 +434,18 @@ export class OrdenesCompraComponent implements OnInit {
         this.submitError.set(null);
 
         const { subtotal, igv, total } = this.totales();
+        const formValue = this.ocForm.value;
+        const moneda: string = formValue.moneda || MONEDA.PEN;
         const payload: Partial<OrdenCompra> = {
-            ...this.ocForm.value,
+            ...formValue,
+            contratoId: formValue.contratoId || undefined,
+            moneda,
+            tipoCambio: moneda !== MONEDA.PEN ? (formValue.tipoCambio ?? undefined) : undefined,
             subtotal,
             igv,
             total,
             items: this.formItems().map(i => ({
+                productoId: i.productoId || undefined,
                 productoNombre: i.productoNombre,
                 sku: i.sku || undefined,
                 cantidad: i.cantidad,

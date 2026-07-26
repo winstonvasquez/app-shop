@@ -4,7 +4,7 @@ import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { environment } from '@env/environment';
 import { AuthService } from '@core/auth/auth.service';
-import { FacturaProveedor, RegistrarFacturaRequest } from '../models/factura-proveedor.model';
+import { FacturaProveedor, RegistrarFacturaRequest, CpeParsedInvoice } from '../models/factura-proveedor.model';
 import { Page } from '@core/models/pagination.model';
 
 @Injectable({ providedIn: 'root' })
@@ -71,5 +71,19 @@ export class FacturaProveedorService {
     validarSunat(id: string): Observable<FacturaProveedor> {
         const sunatUrl = `${environment.apiUrls.purchases}/api/sunat/facturas/${id}/validar`;
         return this.http.post<FacturaProveedor>(sunatUrl, {}, { headers: this.getHeaders() });
+    }
+
+    /**
+     * Parsea un XML de Comprobante de Pago Electrónico (UBL 2.1) del proveedor
+     * y devuelve los datos para precargar el formulario de registro de factura.
+     * NOTA: con `FormData` no se debe fijar `Content-Type` manualmente — el
+     * browser agrega el boundary del multipart automáticamente.
+     */
+    parseCpe(file: File): Observable<CpeParsedInvoice> {
+        const formData = new FormData();
+        formData.append('file', file);
+        return this.http.post<CpeParsedInvoice>(`${this.baseUrl}/cpe/parse`, formData, {
+            headers: this.getHeaders(),
+        });
     }
 }

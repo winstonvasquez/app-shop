@@ -5,7 +5,9 @@ import { map } from 'rxjs/operators';
 import { environment } from '@env/environment';
 import { AuthService } from '@core/auth/auth.service';
 import {
+    ActualizarCotizacionRequest,
     ComparativaDto,
+    CotizacionDetalleDto,
     CotizacionResumen,
     CotizacionesPage,
     CrearCotizacionRequest,
@@ -49,6 +51,20 @@ export class CotizacionService {
 
     crear(request: CrearCotizacionRequest): Observable<CotizacionResumen> {
         return this.http.post<CotizacionResumen>(this.baseUrl, request, { headers: this.getHeaders() });
+    }
+
+    getById(id: string): Observable<CotizacionDetalleDto> {
+        return this.http.get<CotizacionDetalleDto>(`${this.baseUrl}/${id}`, { headers: this.getHeaders() });
+    }
+
+    /** Solo permitido si la cotización está en estado CREADA (400 BusinessException en otro caso). */
+    actualizar(id: string, request: ActualizarCotizacionRequest): Observable<CotizacionResumen> {
+        return this.http.put<CotizacionResumen>(`${this.baseUrl}/${id}`, request, { headers: this.getHeaders() });
+    }
+
+    /** Solo permitido si la cotización está en estado CREADA (400 BusinessException en otro caso). */
+    cancelar(id: string): Observable<void> {
+        return this.http.post<void>(`${this.baseUrl}/${id}/cancelar`, {}, { headers: this.getHeaders() });
     }
 
     enviar(id: string): Observable<void> {

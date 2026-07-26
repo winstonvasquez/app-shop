@@ -61,4 +61,8 @@ export class DevolucionService {
     completar(id: string): Observable<Devolucion> {
         return this.http.post<Devolucion>(`${this.baseUrl}/${id}/completar`, {}, { headers: this.getHeaders() });
     }
+
+    rechazar(id: string, motivo: string): Observable<Devolucion> {
+        return this.http.post<Devolucion>(`${this.baseUrl}/${id}/rechazar`, { motivo }, { headers: this.getHeaders() });
+    }
 }
