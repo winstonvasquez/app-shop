@@ -4,15 +4,7 @@ import { Title, Meta } from '@angular/platform-browser';
 import { forkJoin } from 'rxjs';
 import { PortalService } from '../../services/portal.service';
 import { SaasModuleInfo, SaasPlanInfo } from '../../../../core/models/saas.model';
-import { MODULE_CONTENT, MODULE_DOMAINS, ModuleDomainKey, minPlanForModule } from '../../../../shared/constants';
-
-/** Acento por DOMINIO (no por módulo): paleta Confianza extendida, 4 tonos disciplinados, no arcoíris neón. */
-const DOMAIN_ACCENT_COLORS: Record<ModuleDomainKey, string> = {
-    comercial: '#0B3D91', // Ink Blue — mismo azul de marca
-    'cadena-suministro': '#0B6FB8', // Info Blue — hermano del azul de marca
-    finanzas: '#0E8A5F', // Success Green — dinero, cumplimiento
-    personas: '#8B5E34', // Terracota cálido — el único tono "de calor humano"
-};
+import { DOMAIN_ACCENT_COLORS, MODULE_CONTENT, MODULE_DOMAINS, ModuleDomainKey, minPlanForModule } from '../../../../shared/constants';
 
 interface ModuleCardView {
     code: string;
@@ -80,9 +72,9 @@ const FAQ_ITEMS: { question: string; answer: string }[] = [
                 <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(255, 255, 255, 0.04)" stroke-width="1"/>
               </pattern>
               <linearGradient id="flow-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stop-color="#0B6FB8" stop-opacity="0.4"/>
-                <stop offset="50%" stop-color="#0E8A5F" stop-opacity="0.3"/>
-                <stop offset="100%" stop-color="#F08C00" stop-opacity="0.2"/>
+                <stop offset="0%" style="stop-color: var(--color-info)" stop-opacity="0.4"/>
+                <stop offset="50%" style="stop-color: var(--color-success)" stop-opacity="0.3"/>
+                <stop offset="100%" style="stop-color: var(--color-accent)" stop-opacity="0.2"/>
               </linearGradient>
             </defs>
             <rect width="100%" height="100%" fill="url(#hero-grid)"/>
@@ -95,14 +87,14 @@ const FAQ_ITEMS: { question: string; answer: string }[] = [
               <path d="M-100,260 C250,300 500,120 800,220 C1100,320 1300,140 1600,160" stroke="rgba(255,255,255,0.08)" stroke-dasharray="8 6" stroke-width="1.5" fill="none" class="flow-path-2"/>
             </g>
 
-            <!-- Decorative glow nodes -->
+            <!-- Decorative glow nodes (posicionados fuera de la columna de texto: x>900 cae en la zona de la ilustracion, no sobre hero-copy) -->
             <g class="glow-nodes">
-              <circle cx="200" cy="100" r="4" fill="#ffffff" opacity="0.6"/>
-              <circle cx="400" cy="280" r="5" fill="#F08C00" class="pulse-node-1"/>
-              <circle cx="700" cy="160" r="4" fill="#ffffff" opacity="0.6"/>
-              <circle cx="800" cy="220" r="6" fill="#0E8A5F" class="pulse-node-2"/>
-              <circle cx="1000" cy="40" r="4" fill="#ffffff" opacity="0.6"/>
-              <circle cx="1200" cy="260" r="5" fill="#0B6FB8" class="pulse-node-3"/>
+              <circle cx="200" cy="80" r="4" style="fill: var(--color-primary-contrast)" opacity="0.6"/>
+              <circle cx="950" cy="70" r="5" style="fill: var(--color-accent)" class="pulse-node-1"/>
+              <circle cx="1080" cy="160" r="4" style="fill: var(--color-primary-contrast)" opacity="0.6"/>
+              <circle cx="1150" cy="230" r="6" style="fill: var(--color-success)" class="pulse-node-2"/>
+              <circle cx="1000" cy="40" r="4" style="fill: var(--color-primary-contrast)" opacity="0.6"/>
+              <circle cx="1300" cy="270" r="5" style="fill: var(--color-info)" class="pulse-node-3"/>
             </g>
           </svg>
         </div>
@@ -141,12 +133,12 @@ const FAQ_ITEMS: { question: string; answer: string }[] = [
               <rect x="248" y="46" width="86" height="68" rx="10" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.28)" stroke-width="1.5" transform="rotate(9 291 80)"/>
 
               <g transform="rotate(-3 180 190)">
-                <rect x="88" y="46" width="184" height="284" rx="16" fill="#FFFFFF" stroke="#DCD8CE" stroke-width="1.5"/>
+                <rect x="88" y="46" width="184" height="284" rx="16" style="fill: var(--color-surface); stroke: var(--color-border)" stroke-width="1.5"/>
 
-                <rect x="110" y="72" width="92" height="11" rx="3" fill="#0B3D91"/>
-                <rect x="110" y="91" width="60" height="7" rx="3" fill="#8C95A3"/>
+                <rect x="110" y="72" width="92" height="11" rx="3" style="fill: var(--color-primary)"/>
+                <rect x="110" y="91" width="60" height="7" rx="3" style="fill: var(--color-text-muted)"/>
 
-                <g fill="#0E1B2C">
+                <g style="fill: var(--color-text-primary)">
                   <rect x="220" y="68" width="9" height="9"/>
                   <rect x="233" y="68" width="9" height="9"/>
                   <rect x="220" y="81" width="9" height="9"/>
@@ -155,23 +147,23 @@ const FAQ_ITEMS: { question: string; answer: string }[] = [
                   <rect x="246" y="94" width="9" height="9"/>
                 </g>
 
-                <line x1="110" y1="116" x2="250" y2="116" stroke="#DCD8CE" stroke-width="1.5" stroke-dasharray="3 4"/>
+                <line x1="110" y1="116" x2="250" y2="116" style="stroke: var(--color-border)" stroke-width="1.5" stroke-dasharray="3 4"/>
 
-                <rect x="110" y="134" width="122" height="7" rx="3" fill="#DCD8CE"/>
-                <rect x="110" y="152" width="98" height="7" rx="3" fill="#DCD8CE"/>
-                <rect x="110" y="170" width="112" height="7" rx="3" fill="#DCD8CE"/>
-                <rect x="110" y="188" width="86" height="7" rx="3" fill="#DCD8CE"/>
+                <rect x="110" y="134" width="122" height="7" rx="3" style="fill: var(--color-border)"/>
+                <rect x="110" y="152" width="98" height="7" rx="3" style="fill: var(--color-border)"/>
+                <rect x="110" y="170" width="112" height="7" rx="3" style="fill: var(--color-border)"/>
+                <rect x="110" y="188" width="86" height="7" rx="3" style="fill: var(--color-border)"/>
 
-                <line x1="110" y1="214" x2="250" y2="214" stroke="#0E1B2C" stroke-width="1.5"/>
-                <text x="110" y="242" font-family="'Source Serif 4', Georgia, serif" font-size="22" font-weight="700" fill="#0E1B2C">S/ 248.50</text>
+                <line x1="110" y1="214" x2="250" y2="214" style="stroke: var(--color-text-primary)" stroke-width="1.5"/>
+                <text x="110" y="242" font-family="'Source Serif 4', Georgia, serif" font-size="22" font-weight="700" style="fill: var(--color-text-primary)">S/ 248.50</text>
               </g>
 
               <g transform="translate(238 268) rotate(-11)">
-                <circle r="48" fill="none" stroke="#0E8A5F" stroke-width="3"/>
-                <circle r="39" fill="none" stroke="#0E8A5F" stroke-width="1.5" stroke-dasharray="2 3"/>
-                <text x="0" y="-6" text-anchor="middle" font-family="'Inter', sans-serif" font-size="11" font-weight="800" fill="#0E8A5F" letter-spacing="1">SUNAT</text>
-                <text x="0" y="11" text-anchor="middle" font-family="'Inter', sans-serif" font-size="11" font-weight="800" fill="#0E8A5F" letter-spacing="1">VÁLIDO</text>
-                <path d="M -11 24 L -3 32 L 13 13" stroke="#0E8A5F" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle r="48" fill="none" style="stroke: var(--color-success)" stroke-width="3"/>
+                <circle r="39" fill="none" style="stroke: var(--color-success)" stroke-width="1.5" stroke-dasharray="2 3"/>
+                <text x="0" y="-6" text-anchor="middle" font-family="'Inter', sans-serif" font-size="11" font-weight="800" style="fill: var(--color-success)" letter-spacing="1">SUNAT</text>
+                <text x="0" y="11" text-anchor="middle" font-family="'Inter', sans-serif" font-size="11" font-weight="800" style="fill: var(--color-success)" letter-spacing="1">VÁLIDO</text>
+                <path d="M -11 24 L -3 32 L 13 13" style="stroke: var(--color-success)" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
               </g>
             </svg>
           </div>
@@ -185,25 +177,25 @@ const FAQ_ITEMS: { question: string; answer: string }[] = [
           <svg viewBox="0 0 320 280" class="problem-svg" xmlns="http://www.w3.org/2000/svg">
             <!-- Floating disconnected spreadsheet cells & papers -->
             <g transform="rotate(-8 180 140)">
-              <rect x="170" y="70" width="70" height="40" rx="4" fill="#FFFFFF" stroke="#B45309" stroke-width="1.5" opacity="0.95"/>
-              <line x1="180" y1="85" x2="230" y2="85" stroke="#B45309" stroke-width="1.5"/>
-              <line x1="180" y1="95" x2="210" y2="95" stroke="#B45309" stroke-width="1.5"/>
-              <circle cx="225" cy="95" r="3" fill="#B45309"/>
+              <rect x="170" y="70" width="70" height="40" rx="4" style="fill: var(--color-surface); stroke: var(--color-warning)" stroke-width="1.5" opacity="0.95"/>
+              <line x1="180" y1="85" x2="230" y2="85" style="stroke: var(--color-warning)" stroke-width="1.5"/>
+              <line x1="180" y1="95" x2="210" y2="95" style="stroke: var(--color-warning)" stroke-width="1.5"/>
+              <circle cx="225" cy="95" r="3" style="fill: var(--color-warning)"/>
             </g>
             <g transform="rotate(12 210 180)">
-              <rect x="200" y="150" width="60" height="35" rx="4" fill="#FFFFFF" stroke="#DCD8CE" stroke-width="1.2" opacity="0.9"/>
-              <line x1="210" y1="162" x2="250" y2="162" stroke="#5A6473" stroke-width="1"/>
-              <line x1="210" y1="172" x2="235" y2="172" stroke="#5A6473" stroke-width="1"/>
+              <rect x="200" y="150" width="60" height="35" rx="4" style="fill: var(--color-surface); stroke: var(--color-border)" stroke-width="1.2" opacity="0.9"/>
+              <line x1="210" y1="162" x2="250" y2="162" style="stroke: var(--color-text-secondary)" stroke-width="1"/>
+              <line x1="210" y1="172" x2="235" y2="172" style="stroke: var(--color-text-secondary)" stroke-width="1"/>
             </g>
             <g transform="rotate(-15 60 160)">
-              <rect x="30" y="110" width="50" height="65" rx="5" fill="#FFFFFF" stroke="#B45309" stroke-width="1.5" opacity="0.95"/>
-              <rect x="40" y="122" width="30" height="8" rx="1" fill="rgba(180, 83, 9, 0.1)"/>
-              <circle cx="45" cy="142" r="2.5" fill="#B45309"/>
-              <circle cx="55" cy="142" r="2.5" fill="#B45309"/>
-              <circle cx="65" cy="142" r="2.5" fill="#B45309"/>
-              <circle cx="45" cy="155" r="2.5" fill="#B45309"/>
-              <circle cx="55" cy="155" r="2.5" fill="#B45309"/>
-              <circle cx="65" cy="155" r="2.5" fill="#B45309"/>
+              <rect x="30" y="110" width="50" height="65" rx="5" style="fill: var(--color-surface); stroke: var(--color-warning)" stroke-width="1.5" opacity="0.95"/>
+              <rect x="40" y="122" width="30" height="8" rx="1" style="fill: color-mix(in srgb, var(--color-warning) 10%, transparent)"/>
+              <circle cx="45" cy="142" r="2.5" style="fill: var(--color-warning)"/>
+              <circle cx="55" cy="142" r="2.5" style="fill: var(--color-warning)"/>
+              <circle cx="65" cy="142" r="2.5" style="fill: var(--color-warning)"/>
+              <circle cx="45" cy="155" r="2.5" style="fill: var(--color-warning)"/>
+              <circle cx="55" cy="155" r="2.5" style="fill: var(--color-warning)"/>
+              <circle cx="65" cy="155" r="2.5" style="fill: var(--color-warning)"/>
             </g>
           </svg>
         </div>
@@ -308,155 +300,119 @@ const FAQ_ITEMS: { question: string; answer: string }[] = [
                         @case ('POS') {
                           <svg viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <defs>
-                              <linearGradient id="pos-grad" x1="0" y1="0" x2="160" y2="160">
-                                <stop offset="0%" stop-color="#F08C00" stop-opacity="0.95"/>
-                                <stop offset="100%" stop-color="#0B3D91" stop-opacity="0.9"/>
-                              </linearGradient>
                               <radialGradient id="pos-glow" cx="80%" cy="80%" r="70%">
-                                <stop offset="0%" stop-color="#F08C00" stop-opacity="0.3"/>
-                                <stop offset="100%" stop-color="#3B82F6" stop-opacity="0"/>
+                                <stop offset="0%" style="stop-color: var(--accent)" stop-opacity="0.3"/>
+                                <stop offset="100%" style="stop-color: var(--accent)" stop-opacity="0"/>
                               </radialGradient>
                             </defs>
                             <circle cx="120" cy="120" r="60" fill="url(#pos-glow)"/>
-                            <path d="M 20,140 Q 60,80 100,110 T 150,50" stroke="url(#pos-grad)" stroke-width="3" stroke-linecap="round"/>
-                            <path d="M 40,150 Q 80,100 120,125 T 160,80" stroke="#3B82F6" stroke-width="1.8" stroke-dasharray="4 4" stroke-linecap="round" opacity="0.6"/>
-                            <circle cx="150" cy="50" r="6" fill="#F08C00"/>
-                            <circle cx="100" cy="110" r="4" fill="#3B82F6"/>
+                            <path d="M 20,140 Q 60,80 100,110 T 150,50" stroke="var(--accent)" stroke-width="3" stroke-linecap="round"/>
+                            <path d="M 40,150 Q 80,100 120,125 T 160,80" stroke="var(--accent)" stroke-width="1.8" stroke-dasharray="4 4" stroke-linecap="round" opacity="0.4"/>
+                            <circle cx="150" cy="50" r="6" fill="var(--accent)"/>
+                            <circle cx="100" cy="110" r="4" fill="var(--accent)" opacity="0.7"/>
                           </svg>
                         }
                         @case ('VENTAS') {
                           <svg viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <defs>
-                              <linearGradient id="ventas-grad" x1="0" y1="0" x2="160" y2="160">
-                                <stop offset="0%" stop-color="#F08C00" stop-opacity="0.95"/>
-                                <stop offset="100%" stop-color="#0B3D91" stop-opacity="0.9"/>
-                              </linearGradient>
                               <radialGradient id="ventas-glow" cx="80%" cy="80%" r="70%">
-                                <stop offset="0%" stop-color="#F08C00" stop-opacity="0.35"/>
-                                <stop offset="100%" stop-color="#3B82F6" stop-opacity="0"/>
+                                <stop offset="0%" style="stop-color: var(--accent)" stop-opacity="0.35"/>
+                                <stop offset="100%" style="stop-color: var(--accent)" stop-opacity="0"/>
                               </radialGradient>
                             </defs>
                             <circle cx="120" cy="120" r="65" fill="url(#ventas-glow)"/>
-                            <path d="M 15,135 Q 55,100 95,115 T 150,45" stroke="url(#ventas-grad)" stroke-width="3.5" stroke-linecap="round"/>
-                            <path d="M 30,145 Q 70,110 110,125 T 165,55" stroke="#3B82F6" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
-                            <circle cx="150" cy="45" r="7" fill="#F08C00"/>
-                            <circle cx="95" cy="115" r="4" fill="#3B82F6"/>
+                            <path d="M 15,135 Q 55,100 95,115 T 150,45" stroke="var(--accent)" stroke-width="3.5" stroke-linecap="round"/>
+                            <path d="M 30,145 Q 70,110 110,125 T 165,55" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" opacity="0.35"/>
+                            <circle cx="150" cy="45" r="7" fill="var(--accent)"/>
+                            <circle cx="95" cy="115" r="4" fill="var(--accent)" opacity="0.7"/>
                           </svg>
                         }
                         @case ('COMPRAS') {
                           <svg viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <defs>
-                              <linearGradient id="compras-grad" x1="0" y1="0" x2="160" y2="160">
-                                <stop offset="0%" stop-color="#00A4EF" stop-opacity="0.95"/>
-                                <stop offset="100%" stop-color="#0078D4" stop-opacity="0.85"/>
-                              </linearGradient>
                               <radialGradient id="compras-glow" cx="80%" cy="80%" r="70%">
-                                <stop offset="0%" stop-color="#00A4EF" stop-opacity="0.3"/>
-                                <stop offset="100%" stop-color="#60A5FA" stop-opacity="0"/>
+                                <stop offset="0%" style="stop-color: var(--accent)" stop-opacity="0.3"/>
+                                <stop offset="100%" style="stop-color: var(--accent)" stop-opacity="0"/>
                               </radialGradient>
                             </defs>
                             <circle cx="120" cy="120" r="65" fill="url(#compras-glow)"/>
-                            <path d="M 130,30 Q 90,90 80,145" stroke="url(#compras-grad)" stroke-width="3" stroke-linecap="round"/>
-                            <path d="M 150,45 Q 110,105 100,160" stroke="#60A5FA" stroke-width="1.8" stroke-dasharray="4 4" stroke-linecap="round" opacity="0.6"/>
-                            <circle cx="130" cy="30" r="5" fill="#00A4EF"/>
-                            <circle cx="80" cy="145" r="6" fill="#0078D4"/>
+                            <path d="M 130,30 Q 90,90 80,145" stroke="var(--accent)" stroke-width="3" stroke-linecap="round"/>
+                            <path d="M 150,45 Q 110,105 100,160" stroke="var(--accent)" stroke-width="1.8" stroke-dasharray="4 4" stroke-linecap="round" opacity="0.4"/>
+                            <circle cx="130" cy="30" r="5" fill="var(--accent)"/>
+                            <circle cx="80" cy="145" r="6" fill="var(--accent)" opacity="0.8"/>
                           </svg>
                         }
                         @case ('INVENTARIO') {
                           <svg viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <defs>
-                              <linearGradient id="inv-grad" x1="0" y1="0" x2="160" y2="160">
-                                <stop offset="0%" stop-color="#00A4EF" stop-opacity="0.95"/>
-                                <stop offset="100%" stop-color="#0078D4" stop-opacity="0.85"/>
-                              </linearGradient>
                               <radialGradient id="inv-glow" cx="80%" cy="80%" r="70%">
-                                <stop offset="0%" stop-color="#00A4EF" stop-opacity="0.35"/>
-                                <stop offset="100%" stop-color="#60A5FA" stop-opacity="0"/>
+                                <stop offset="0%" style="stop-color: var(--accent)" stop-opacity="0.35"/>
+                                <stop offset="100%" style="stop-color: var(--accent)" stop-opacity="0"/>
                               </radialGradient>
                             </defs>
                             <circle cx="120" cy="120" r="65" fill="url(#inv-glow)"/>
-                            <g transform="translate(100, 75)" stroke="url(#inv-grad)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                              <polygon points="0,-24 38,-4 0,16 -38,-4" fill="rgba(0,164,239,0.12)"/>
+                            <g transform="translate(100, 75)" stroke="var(--accent)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                              <polygon points="0,-24 38,-4 0,16 -38,-4" fill="var(--accent)" fill-opacity="0.12"/>
                               <line x1="-38" y1="-4" x2="-38" y2="24"/>
                               <line x1="38" y1="-4" x2="38" y2="24"/>
                               <line x1="0" y1="16" x2="0" y2="44"/>
-                              <polygon points="-38,24 0,44 38,24 0,4" fill="rgba(0,120,212,0.16)"/>
+                              <polygon points="-38,24 0,44 38,24 0,4" fill="var(--accent)" fill-opacity="0.18"/>
                             </g>
                           </svg>
                         }
                         @case ('LOGISTICA') {
                           <svg viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <defs>
-                              <linearGradient id="log-grad" x1="0" y1="0" x2="160" y2="160">
-                                <stop offset="0%" stop-color="#00A4EF" stop-opacity="0.95"/>
-                                <stop offset="100%" stop-color="#0078D4" stop-opacity="0.85"/>
-                              </linearGradient>
-                            </defs>
-                            <circle cx="120" cy="120" r="60" fill="rgba(0,164,239,0.12)"/>
-                            <path d="M 20,110 H 140" stroke="url(#log-grad)" stroke-width="3" stroke-linecap="round"/>
-                            <path d="M 125,95 L 142,110 L 125,125" stroke="url(#log-grad)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-                            <circle cx="50" cy="110" r="4" fill="#00A4EF"/>
-                            <circle cx="90" cy="110" r="4" fill="#60A5FA"/>
+                            <circle cx="120" cy="120" r="60" fill="var(--accent)" fill-opacity="0.12"/>
+                            <path d="M 20,110 H 140" stroke="var(--accent)" stroke-width="3" stroke-linecap="round"/>
+                            <path d="M 125,95 L 142,110 L 125,125" stroke="var(--accent)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                            <circle cx="50" cy="110" r="4" fill="var(--accent)"/>
+                            <circle cx="90" cy="110" r="4" fill="var(--accent)" opacity="0.7"/>
                           </svg>
                         }
                         @case ('CONTABILIDAD') {
                           <svg viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <defs>
-                              <linearGradient id="conta-grad" x1="0" y1="0" x2="160" y2="160">
-                                <stop offset="0%" stop-color="#FBBF24" stop-opacity="0.95"/>
-                                <stop offset="50%" stop-color="#10B981" stop-opacity="0.9"/>
-                                <stop offset="100%" stop-color="#0E8A5F" stop-opacity="0.95"/>
-                              </linearGradient>
                               <radialGradient id="conta-glow" cx="80%" cy="80%" r="70%">
-                                <stop offset="0%" stop-color="#10B981" stop-opacity="0.3"/>
-                                <stop offset="100%" stop-color="#0E8A5F" stop-opacity="0"/>
+                                <stop offset="0%" style="stop-color: var(--accent)" stop-opacity="0.3"/>
+                                <stop offset="100%" style="stop-color: var(--accent)" stop-opacity="0"/>
                               </radialGradient>
                             </defs>
                             <circle cx="120" cy="120" r="65" fill="url(#conta-glow)"/>
-                            <path d="M 20,130 Q 70,75 110,120 T 155,70" stroke="url(#conta-grad)" stroke-width="3" stroke-linecap="round"/>
-                            <path d="M 35,145 Q 85,90 125,135 T 165,85" stroke="#FBBF24" stroke-width="1.8" stroke-dasharray="4 3" opacity="0.7"/>
-                            <circle cx="110" cy="120" r="5" fill="#FBBF24"/>
-                            <circle cx="155" cy="70" r="6" fill="#10B981"/>
+                            <path d="M 20,130 Q 70,75 110,120 T 155,70" stroke="var(--accent)" stroke-width="3" stroke-linecap="round"/>
+                            <path d="M 35,145 Q 85,90 125,135 T 165,85" stroke="var(--accent)" stroke-width="1.8" stroke-dasharray="4 3" opacity="0.4"/>
+                            <circle cx="110" cy="120" r="5" fill="var(--accent)"/>
+                            <circle cx="155" cy="70" r="6" fill="var(--accent)" opacity="0.8"/>
                           </svg>
                         }
                         @case ('TESORERIA') {
                           <svg viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <defs>
-                              <linearGradient id="teso-grad" x1="0" y1="0" x2="160" y2="160">
-                                <stop offset="0%" stop-color="#FBBF24" stop-opacity="0.95"/>
-                                <stop offset="50%" stop-color="#10B981" stop-opacity="0.9"/>
-                                <stop offset="100%" stop-color="#0E8A5F" stop-opacity="0.95"/>
-                              </linearGradient>
                               <radialGradient id="teso-glow" cx="80%" cy="80%" r="70%">
-                                <stop offset="0%" stop-color="#10B981" stop-opacity="0.35"/>
-                                <stop offset="100%" stop-color="#FBBF24" stop-opacity="0"/>
+                                <stop offset="0%" style="stop-color: var(--accent)" stop-opacity="0.35"/>
+                                <stop offset="100%" style="stop-color: var(--accent)" stop-opacity="0"/>
                               </radialGradient>
                             </defs>
                             <circle cx="120" cy="120" r="65" fill="url(#teso-glow)"/>
-                            <path d="M 25,135 C 65,80 95,140 145,85" stroke="url(#teso-grad)" stroke-width="3" stroke-linecap="round"/>
-                            <path d="M 30,115 C 70,60 100,120 150,65" stroke="#FBBF24" stroke-width="1.8" stroke-dasharray="3 3" opacity="0.65"/>
-                            <circle cx="145" cy="85" r="6" fill="#FBBF24"/>
+                            <path d="M 25,135 C 65,80 95,140 145,85" stroke="var(--accent)" stroke-width="3" stroke-linecap="round"/>
+                            <path d="M 30,115 C 70,60 100,120 150,65" stroke="var(--accent)" stroke-width="1.8" stroke-dasharray="3 3" opacity="0.4"/>
+                            <circle cx="145" cy="85" r="6" fill="var(--accent)"/>
                           </svg>
                         }
                         @case ('RRHH') {
                           <svg viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <defs>
-                              <linearGradient id="rrhh-grad" x1="0" y1="0" x2="160" y2="160">
-                                <stop offset="0%" stop-color="#F97316" stop-opacity="0.95"/>
-                                <stop offset="100%" stop-color="#C94A29" stop-opacity="0.9"/>
-                              </linearGradient>
                               <radialGradient id="rrhh-glow" cx="80%" cy="80%" r="70%">
-                                <stop offset="0%" stop-color="#F97316" stop-opacity="0.3"/>
-                                <stop offset="100%" stop-color="#FBBF24" stop-opacity="0"/>
+                                <stop offset="0%" style="stop-color: var(--accent)" stop-opacity="0.3"/>
+                                <stop offset="100%" style="stop-color: var(--accent)" stop-opacity="0"/>
                               </radialGradient>
                             </defs>
                             <circle cx="120" cy="120" r="65" fill="url(#rrhh-glow)"/>
-                            <circle cx="85" cy="115" r="28" stroke="url(#rrhh-grad)" stroke-width="2.5"/>
-                            <circle cx="125" cy="115" r="28" stroke="#FBBF24" stroke-width="2"/>
-                            <circle cx="105" cy="85" r="20" stroke="#F97316" stroke-width="1.8" stroke-dasharray="3 3"/>
-                            <circle cx="105" cy="85" r="4" fill="#F97316"/>
-                            <circle cx="85" cy="115" r="4" fill="#C94A29"/>
-                            <circle cx="125" cy="115" r="4" fill="#FBBF24"/>
+                            <circle cx="85" cy="115" r="28" stroke="var(--accent)" stroke-width="2.5"/>
+                            <circle cx="125" cy="115" r="28" stroke="var(--accent)" stroke-width="2" opacity="0.6"/>
+                            <circle cx="105" cy="85" r="20" stroke="var(--accent)" stroke-width="1.8" stroke-dasharray="3 3" opacity="0.8"/>
+                            <circle cx="105" cy="85" r="4" fill="var(--accent)"/>
+                            <circle cx="85" cy="115" r="4" fill="var(--accent)" opacity="0.8"/>
+                            <circle cx="125" cy="115" r="4" fill="var(--accent)" opacity="0.6"/>
                           </svg>
                         }
                       }
@@ -512,11 +468,11 @@ const FAQ_ITEMS: { question: string; answer: string }[] = [
           <div class="trust-graphic">
             <svg viewBox="0 0 280 280" class="trust-svg" xmlns="http://www.w3.org/2000/svg">
               <!-- Outer decorative tech circles -->
-              <circle cx="140" cy="140" r="110" fill="none" stroke="rgba(14, 138, 95, 0.15)" stroke-width="1.5"/>
-              <circle cx="140" cy="140" r="90" fill="none" stroke="rgba(14, 138, 95, 0.2)" stroke-width="1" stroke-dasharray="4 4"/>
-              
+              <circle cx="140" cy="140" r="110" fill="none" style="stroke: color-mix(in srgb, var(--color-success) 15%, transparent)" stroke-width="1.5"/>
+              <circle cx="140" cy="140" r="90" fill="none" style="stroke: color-mix(in srgb, var(--color-success) 20%, transparent)" stroke-width="1" stroke-dasharray="4 4"/>
+
               <!-- Encrypted nodes around the central lock -->
-              <g stroke="rgba(14, 138, 95, 0.25)" stroke-width="1">
+              <g style="stroke: color-mix(in srgb, var(--color-success) 25%, transparent)" stroke-width="1">
                 <line x1="140" y1="40" x2="60" y2="100"/>
                 <line x1="140" y1="40" x2="220" y2="100"/>
                 <line x1="60" y1="100" x2="60" y2="180"/>
@@ -532,19 +488,19 @@ const FAQ_ITEMS: { question: string; answer: string }[] = [
               </g>
 
               <!-- Nodes dots -->
-              <circle cx="140" cy="40" r="5" fill="#0E8A5F"/>
-              <circle cx="60" cy="100" r="5" fill="#0E8A5F"/>
-              <circle cx="220" cy="100" r="5" fill="#0E8A5F"/>
-              <circle cx="60" cy="180" r="5" fill="#0E8A5F"/>
-              <circle cx="220" cy="180" r="5" fill="#0E8A5F"/>
-              <circle cx="140" cy="240" r="5" fill="#0E8A5F"/>
+              <circle cx="140" cy="40" r="5" style="fill: var(--color-success)"/>
+              <circle cx="60" cy="100" r="5" style="fill: var(--color-success)"/>
+              <circle cx="220" cy="100" r="5" style="fill: var(--color-success)"/>
+              <circle cx="60" cy="180" r="5" style="fill: var(--color-success)"/>
+              <circle cx="220" cy="180" r="5" style="fill: var(--color-success)"/>
+              <circle cx="140" cy="240" r="5" style="fill: var(--color-success)"/>
 
               <!-- Central Lock/Shield Graphic -->
-              <g transform="translate(110, 105)" fill="none" stroke="#0E8A5F" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="5" y="25" width="50" height="35" rx="6" fill="#FFFFFF" stroke="#0E8A5F" stroke-width="3"/>
-                <path d="M 18,25 V 15 A 12,12 0 0 1 42,15 V 25" stroke="#0E8A5F" stroke-width="3"/>
-                <circle cx="30" cy="40" r="3.5" fill="#0E8A5F" stroke="none"/>
-                <path d="M 30,43.5 V 50" stroke="#0E8A5F" stroke-width="2.5"/>
+              <g transform="translate(110, 105)" fill="none" style="stroke: var(--color-success)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="5" y="25" width="50" height="35" rx="6" style="fill: var(--color-surface); stroke: var(--color-success)" stroke-width="3"/>
+                <path d="M 18,25 V 15 A 12,12 0 0 1 42,15 V 25" style="stroke: var(--color-success)" stroke-width="3"/>
+                <circle cx="30" cy="40" r="3.5" style="fill: var(--color-success)" stroke="none"/>
+                <path d="M 30,43.5 V 50" style="stroke: var(--color-success)" stroke-width="2.5"/>
               </g>
             </svg>
           </div>
@@ -949,7 +905,7 @@ const FAQ_ITEMS: { question: string; answer: string }[] = [
         height: 38px;
         flex-shrink: 0;
         border-radius: var(--r-md, 10px);
-        background: color-mix(in srgb, var(--accent) 12%, white);
+        background: color-mix(in srgb, var(--accent) 12%, var(--color-surface, #FFFFFF));
         display: flex;
         align-items: center;
         justify-content: center;
@@ -1174,14 +1130,6 @@ const FAQ_ITEMS: { question: string; answer: string }[] = [
         justify-content: center;
       }
 
-      .trust-img {
-        width: 100%;
-        max-width: 320px;
-        height: auto;
-        border-radius: var(--r-md, 10px);
-        mix-blend-mode: multiply;
-      }
-
       .trust-svg {
         width: 100%;
         max-width: 240px;
@@ -1268,8 +1216,10 @@ const FAQ_ITEMS: { question: string; answer: string }[] = [
         height: 100%;
         pointer-events: none;
         z-index: 0;
-        opacity: 0.28;
+        opacity: 0.16;
         mix-blend-mode: screen;
+        mask-image: radial-gradient(circle at 85% 50%, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0) 65%);
+        -webkit-mask-image: radial-gradient(circle at 85% 50%, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0) 65%);
       }
 
       .cta-bg-image {

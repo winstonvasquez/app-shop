@@ -177,7 +177,7 @@
                 <div class="field">
                     <div class="lbl-row">
                         <label class="lbl">Contraseña <span class="req">*</span></label>
-                        <a routerLink="/forgot-password" class="link" id="link-forgot-password">¿Olvidaste tu contraseña?</a>
+                        <a routerLink="/auth/forgot-password" class="link" id="link-forgot-password">¿Olvidaste tu contraseña?</a>
                     </div>
                     <label class="input-wrap" [class.is-error]="!!err('password')">
                         <lucide-icon name="lock" [size]="16" class="ic"/>
@@ -225,7 +225,7 @@
                 </div>
 
                 <p class="signup-row">
-                    ¿Nuevo aquí? <a class="link strong" routerLink="/register" id="link-create-account">Crear cuenta</a>
+                    ¿Nuevo aquí? <a class="link strong" routerLink="/portal/register" id="link-create-account">Crear cuenta</a>
                 </p>
 
             </form>

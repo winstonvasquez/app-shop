@@ -13,7 +13,11 @@ import { Title, Meta } from '@angular/platform-browser';
     imports: [ReactiveFormsModule, RouterLink],
     template: `
     <div class="register-page">
-      <div class="register-card glass-card">
+      <!-- Textura sutil + glow naranja: misma firma visual (parchment + Ink Blue + Signal Orange) que el hero de landing -->
+      <div class="orb orb-primary" aria-hidden="true"></div>
+      <div class="orb orb-accent" aria-hidden="true"></div>
+
+      <div class="register-card">
         <div class="register-header">
           <h1 class="register-title">Crear Cuenta</h1>
           <p class="register-subtitle">30 días de prueba gratis · Sin tarjeta de crédito</p>
@@ -139,13 +143,55 @@ import { Title, Meta } from '@angular/platform-browser';
         padding: 60px 24px;
         position: relative;
         z-index: 10;
+        background: var(--color-background, #F7F6F3);
+        overflow: hidden;
+      }
+
+      /* Textura sutil de puntos, misma firma visual del hero de landing (login tiene su propio tratamiento oscuro, no compartido) */
+      .register-page::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background-image: radial-gradient(color-mix(in srgb, var(--color-primary, #0B3D91) 5%, transparent) 1.2px, transparent 1.2px);
+        background-size: 24px 24px;
+        pointer-events: none;
+        z-index: 1;
+      }
+
+      .orb {
+        position: absolute;
+        border-radius: 50%;
+        pointer-events: none;
+        z-index: 0;
+        filter: blur(90px);
+      }
+
+      .orb-primary {
+        top: -12%;
+        right: -8%;
+        width: 480px;
+        height: 480px;
+        background: radial-gradient(circle, color-mix(in srgb, var(--color-primary, #0B3D91) 14%, transparent) 0%, transparent 70%);
+      }
+
+      .orb-accent {
+        bottom: -14%;
+        left: -8%;
+        width: 500px;
+        height: 500px;
+        background: radial-gradient(circle, color-mix(in srgb, var(--color-accent, #F08C00) 12%, transparent) 0%, transparent 65%);
       }
 
       .register-card {
         width: 100%;
         max-width: 480px;
-        padding: 48px;
-        border-radius: 24px;
+        padding: 40px;
+        border-radius: var(--r-lg, 14px);
+        background: var(--color-surface, #FFFFFF);
+        border: 1px solid var(--color-border, #DCD8CE);
+        box-shadow: var(--s-lg, 0 24px 48px -12px rgba(15, 23, 42, 0.14));
+        position: relative;
+        z-index: 2;
       }
 
       .register-header {
@@ -154,15 +200,16 @@ import { Title, Meta } from '@angular/platform-browser';
       }
 
       .register-title {
-        font-size: 1.75rem;
-        font-weight: 800;
-        color: #ffffff;
+        font-family: var(--f-display, 'Source Serif 4', serif);
+        font-size: 1.85rem;
+        font-weight: 700;
+        color: var(--color-text-primary, #0E1B2C);
         margin: 0 0 8px;
         letter-spacing: -0.5px;
       }
 
       .register-subtitle {
-        color: var(--portal-muted);
+        color: var(--color-text-secondary, #5A6473);
         font-size: 0.875rem;
       }
 
@@ -181,7 +228,7 @@ import { Title, Meta } from '@angular/platform-browser';
         left: 10%;
         right: 10%;
         height: 2px;
-        background: rgba(255, 255, 255, 0.08);
+        background: var(--color-border, #DCD8CE);
         z-index: 0;
       }
 
@@ -198,48 +245,46 @@ import { Title, Meta } from '@angular/platform-browser';
         width: 30px;
         height: 30px;
         border-radius: 50%;
-        background: rgba(5, 8, 20, 0.8);
-        border: 2px solid rgba(255, 255, 255, 0.1);
+        background: var(--color-surface, #FFFFFF);
+        border: 2px solid var(--color-border, #DCD8CE);
         display: flex;
         align-items: center;
         justify-content: center;
         font-size: 0.8rem;
         font-weight: 700;
-        color: var(--portal-muted);
+        color: var(--color-text-muted, #8C95A3);
         transition: all 0.3s ease;
       }
 
       .step.active .step-dot {
-        border-color: var(--neon-purple);
+        border-color: var(--color-accent, #F08C00);
         color: #ffffff;
-        box-shadow: 0 0 10px rgba(168, 85, 247, 0.4);
-        background: var(--neon-purple);
+        background: var(--color-accent, #F08C00);
       }
 
       .step.done .step-dot {
-        background: var(--neon-teal);
-        border-color: var(--neon-teal);
-        color: #050814;
-        box-shadow: 0 0 10px rgba(6, 182, 212, 0.3);
+        background: var(--color-success, #0E8A5F);
+        border-color: var(--color-success, #0E8A5F);
+        color: #ffffff;
       }
 
       .step-label {
         font-size: 0.725rem;
-        color: var(--portal-muted);
+        color: var(--color-text-muted, #8C95A3);
         font-weight: 500;
       }
 
       .step.active .step-label {
-        color: #ffffff;
+        color: var(--color-text-primary, #0E1B2C);
         font-weight: 600;
       }
 
       /* Error notification */
       .error-box {
-        background: rgba(244, 63, 94, 0.1);
-        border: 1px solid rgba(244, 63, 94, 0.25);
-        color: #f43f5e;
-        border-radius: 10px;
+        background: color-mix(in srgb, var(--color-danger, #C0392B) 8%, white);
+        border: 1px solid color-mix(in srgb, var(--color-danger, #C0392B) 25%, transparent);
+        color: var(--color-danger, #C0392B);
+        border-radius: var(--r-md, 10px);
         padding: 12px 16px;
         font-size: 0.85rem;
         margin-bottom: 24px;
@@ -253,7 +298,7 @@ import { Title, Meta } from '@angular/platform-browser';
       .field label {
         display: block;
         font-size: 0.775rem;
-        color: var(--portal-muted);
+        color: var(--color-text-secondary, #5A6473);
         margin-bottom: 8px;
         font-weight: 600;
         text-transform: uppercase;
@@ -262,26 +307,25 @@ import { Title, Meta } from '@angular/platform-browser';
 
       .field input {
         width: 100%;
-        background: rgba(255, 255, 255, 0.03);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 10px;
+        background: var(--color-surface, #FFFFFF);
+        border: 1px solid var(--color-border, #DCD8CE);
+        border-radius: var(--r-md, 10px);
         padding: 12px 16px;
-        color: #ffffff;
+        color: var(--color-text-primary, #0E1B2C);
         font-size: 0.95rem;
         box-sizing: border-box;
         transition: all 0.25s ease;
 
         &:focus {
           outline: none;
-          border-color: var(--neon-purple);
-          background: rgba(255, 255, 255, 0.05);
-          box-shadow: 0 0 10px rgba(168, 85, 247, 0.2), inset 0 1px 2px rgba(0, 0, 0, 0.2);
+          border-color: var(--color-primary, #0B3D91);
+          box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary, #0B3D91) 15%, transparent);
         }
       }
 
       .field-error {
         font-size: 0.775rem;
-        color: #f43f5e;
+        color: var(--color-danger, #C0392B);
         margin-top: 6px;
         display: block;
       }
@@ -295,10 +339,10 @@ import { Title, Meta } from '@angular/platform-browser';
       /* Buttons & Actions */
       .btn-next {
         width: 100%;
-        background: linear-gradient(135deg, var(--neon-purple) 0%, var(--neon-blue) 100%);
+        background: var(--color-accent, #F08C00);
         color: #ffffff;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 10px;
+        border: none;
+        border-radius: var(--r-md, 10px);
         padding: 14px;
         font-weight: 700;
         font-size: 0.95rem;
@@ -307,13 +351,13 @@ import { Title, Meta } from '@angular/platform-browser';
         align-items: center;
         justify-content: center;
         gap: 8px;
-        box-shadow: 0 4px 15px rgba(168, 85, 247, 0.25);
+        box-shadow: var(--s-sm, 0 1px 2px rgba(15,23,42,.08));
         transition: all 0.25s ease;
 
         &:hover:not(:disabled) {
+          background: var(--color-accent-dark, #C97300);
           transform: translateY(-1px);
-          box-shadow: 0 6px 20px rgba(168, 85, 247, 0.4);
-          filter: brightness(1.1);
+          box-shadow: var(--s-md, 0 4px 12px rgba(15,23,42,.12));
         }
 
         &:disabled {
@@ -324,10 +368,10 @@ import { Title, Meta } from '@angular/platform-browser';
       }
 
       .btn-back {
-        background: rgba(255, 255, 255, 0.04);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        color: var(--portal-muted);
-        border-radius: 10px;
+        background: transparent;
+        border: 1px solid var(--color-border, #DCD8CE);
+        color: var(--color-text-secondary, #5A6473);
+        border-radius: var(--r-md, 10px);
         padding: 14px 20px;
         cursor: pointer;
         font-size: 0.95rem;
@@ -335,9 +379,9 @@ import { Title, Meta } from '@angular/platform-browser';
         transition: all 0.2s ease;
 
         &:hover {
-          background: rgba(255, 255, 255, 0.08);
-          color: #ffffff;
-          border-color: rgba(255, 255, 255, 0.15);
+          background: var(--color-surface-raised, #EFEDE7);
+          color: var(--color-text-primary, #0E1B2C);
+          border-color: var(--color-primary, #0B3D91);
         }
       }
 
@@ -353,7 +397,7 @@ import { Title, Meta } from '@angular/platform-browser';
 
       /* Step 3: Plan selection */
       .plan-label {
-        color: var(--portal-muted);
+        color: var(--color-text-secondary, #5A6473);
         font-size: 0.9rem;
         margin-bottom: 16px;
       }
@@ -366,9 +410,9 @@ import { Title, Meta } from '@angular/platform-browser';
       }
 
       .plan-opt {
-        background: rgba(255, 255, 255, 0.02);
-        border: 1px solid rgba(255, 255, 255, 0.06);
-        border-radius: 12px;
+        background: var(--color-surface, #FFFFFF);
+        border: 1px solid var(--color-border, #DCD8CE);
+        border-radius: var(--r-lg, 14px);
         padding: 16px;
         cursor: pointer;
         text-align: left;
@@ -384,52 +428,48 @@ import { Title, Meta } from '@angular/platform-browser';
         }
 
         .opt-name {
-          color: #ffffff;
+          color: var(--color-text-primary, #0E1B2C);
           font-size: 0.95rem;
           font-weight: 700;
         }
 
         .opt-desc {
-          color: var(--portal-muted);
+          color: var(--color-text-secondary, #5A6473);
           font-size: 0.775rem;
         }
 
         .opt-price {
-          color: var(--neon-teal);
-          font-weight: 700;
+          color: var(--color-accent-dark, #C97300);
+          font-weight: 800;
           font-size: 0.95rem;
-          text-shadow: 0 0 10px rgba(6, 182, 212, 0.2);
         }
 
         &.selected {
-          border-color: var(--neon-teal);
-          background: rgba(6, 182, 212, 0.05);
-          box-shadow: 0 0 15px rgba(6, 182, 212, 0.15);
+          border-color: var(--color-accent, #F08C00);
+          background: color-mix(in srgb, var(--color-accent, #F08C00) 6%, white);
         }
 
         &:hover:not(.selected) {
-          background: rgba(255, 255, 255, 0.05);
-          border-color: rgba(255, 255, 255, 0.12);
+          border-color: var(--color-primary, #0B3D91);
+          background: var(--color-surface-raised, #EFEDE7);
         }
       }
 
       .login-link {
         text-align: center;
-        color: var(--portal-muted);
+        color: var(--color-text-secondary, #5A6473);
         font-size: 0.85rem;
         margin-top: 28px;
-        border-top: 1px solid rgba(255, 255, 255, 0.05);
+        border-top: 1px solid var(--color-border, #DCD8CE);
         padding-top: 20px;
 
         a {
-          color: var(--neon-teal);
+          color: var(--color-primary, #0B3D91);
+          font-weight: 700;
           text-decoration: none;
-          font-weight: 600;
-          transition: all 0.2s ease;
 
           &:hover {
-            color: #ffffff;
-            text-shadow: 0 0 8px rgba(6, 182, 212, 0.4);
+            text-decoration: underline;
           }
         }
       }
@@ -438,7 +478,7 @@ import { Title, Meta } from '@angular/platform-browser';
         .register-card {
           padding: 32px 20px;
         }
-        
+
         .field-row {
           grid-template-columns: 1fr;
           gap: 0;
@@ -487,7 +527,7 @@ export class RegisterPageComponent implements OnInit {
     ngOnInit(): void {
         this.titleService.setTitle('Crear Cuenta Gratis - AppShop ERP');
         this.metaService.updateTag({ name: 'description', content: 'Regístrate en AppShop ERP y disfruta de 30 días de prueba gratuita sin tarjeta de crédito. Automatiza tu facturación, POS, inventarios y contabilidad hoy mismo.' });
-        
+
         // OpenGraph
         this.metaService.updateTag({ property: 'og:title', content: 'Crear Cuenta Gratis - AppShop ERP' });
         this.metaService.updateTag({ property: 'og:description', content: 'Regístrate en pocos pasos y comienza tu prueba gratuita sin tarjeta de crédito.' });
@@ -530,4 +570,3 @@ export class RegisterPageComponent implements OnInit {
         });
     }
 }
-

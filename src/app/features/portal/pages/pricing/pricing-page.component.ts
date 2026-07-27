@@ -5,7 +5,7 @@ import { Title, Meta } from '@angular/platform-browser';
 import { forkJoin } from 'rxjs';
 import { PortalService } from '../../services/portal.service';
 import { SaasModuleInfo, SaasPlanInfo } from '../../../../core/models/saas.model';
-import { PLAN_CONTENT, SECURITY_BASELINE, SECURITY_PARITY_NOTE, UNLIMITED_ACROSS_PLANS, COMPLIANCE_BY_PLAN, MODULE_CONTENT, ModuleDomainKey, PlanContentMeta } from '../../../../shared/constants';
+import { PLAN_CONTENT, SECURITY_BASELINE, SECURITY_PARITY_NOTE, UNLIMITED_ACROSS_PLANS, COMPLIANCE_BY_PLAN, MODULE_CONTENT, MODULE_DOMAINS, DOMAIN_ACCENT_COLORS, ModuleDomainKey, PlanContentMeta } from '../../../../shared/constants';
 
 interface PlanCard extends SaasPlanInfo {
     content: PlanContentMeta;
@@ -131,7 +131,10 @@ interface ComparisonRow {
               <tbody>
                 @for (row of comparisonRows(); track row.code) {
                   <tr>
-                    <td class="col-module">{{ row.name }}</td>
+                    <td class="col-module">
+                      <span class="domain-dot" [style]="'--domain-accent:' + (row.domain ? domainAccent(row.domain) : 'var(--color-text-muted)')" [title]="row.domain ? domainLabel(row.domain) : ''"></span>
+                      {{ row.name }}
+                    </td>
                     @for (plan of planCards(); track plan.code) {
                       <td [class.col-highlight]="plan.content.recommended">
                         @if (row.includedIn[plan.code]) {
@@ -214,7 +217,7 @@ interface ComparisonRow {
         font-size: 0.8rem;
         font-weight: 600;
         color: var(--color-primary, #0B3D91);
-        background: #ffffff;
+        background: var(--color-surface, #FFFFFF);
         border: 1px solid var(--color-border, #DCD8CE);
         border-radius: var(--r-full, 999px);
         padding: 6px 16px;
@@ -594,6 +597,12 @@ interface ComparisonRow {
           white-space: nowrap;
         }
 
+        td.col-module {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+
         thead th {
           font-family: var(--f-display, 'Source Serif 4', serif);
           font-size: 1rem;
@@ -620,8 +629,21 @@ interface ComparisonRow {
         }
       }
 
+      .cell-check {
+        vertical-align: middle;
+      }
+
       .cell-dash {
         color: var(--color-text-muted, #8C95A3);
+      }
+
+      .domain-dot {
+        display: inline-block;
+        flex-shrink: 0;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--domain-accent, var(--color-text-muted, #8C95A3));
       }
 
       .security-panel,
@@ -738,6 +760,15 @@ export class PricingPageComponent implements OnInit {
             includedIn: Object.fromEntries(plans.map((p) => [p.code, p.moduleCodes.includes(m.code)])),
         }));
     });
+
+    /** Mismo acento por dominio que agrupa los módulos en /portal/landing — misma fuente única, para que la tabla comparativa se lea como parte del mismo sistema. */
+    domainAccent(domain: ModuleDomainKey): string {
+        return DOMAIN_ACCENT_COLORS[domain];
+    }
+
+    domainLabel(domain: ModuleDomainKey): string {
+        return MODULE_DOMAINS.find((d) => d.key === domain)?.label ?? '';
+    }
 
     ngOnInit(): void {
         this.titleService.setTitle('Planes y Precios - AppShop ERP');

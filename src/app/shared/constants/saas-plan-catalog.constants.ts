@@ -118,6 +118,18 @@ export const MODULE_DOMAINS: ModuleDomainMeta[] = [
   { key: 'personas', label: 'Personas', description: 'Gestión completa del talento y la planilla.' },
 ];
 
+/**
+ * Acento por DOMINIO (no por módulo): 4 tonos disciplinados del sistema Confianza, no arcoíris neón.
+ * Fuente única compartida por landing y pricing — referencia siempre var(--color-*) de themes/_default.scss,
+ * nunca hex literal, para heredar correctamente confianza-dark.
+ */
+export const DOMAIN_ACCENT_COLORS: Record<ModuleDomainKey, string> = {
+  comercial: 'var(--color-primary, #0B3D91)',
+  'cadena-suministro': 'var(--color-info, #0B6FB8)',
+  finanzas: 'var(--color-success, #0E8A5F)',
+  personas: 'var(--color-domain-people, #8B5E34)',
+};
+
 export interface PlanSupportMeta {
   channel: string;
   hours: string;
