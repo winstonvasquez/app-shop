@@ -8,20 +8,34 @@ export class GuiaRemisionService {
     private http = inject(HttpClient);
     private baseUrl = '/logistics/api/guias-remision';
 
+    /** Filtros server-side del listado de GRE. Todos opcionales. */
     getGuias(
         companyId: string,
         params?: {
             page?: number; size?: number; sort?: string;
-            estado?: string; fechaEmisionDesde?: string; fechaEmisionHasta?: string;
+            /** Búsqueda por texto sobre serie/número/destinatario/vehículo/conductor. */
+            q?: string;
+            estado?: string;
+            motivoTraslado?: string;
+            modalidadTraslado?: string;
+            almacenOrigenId?: string;
+            fechaEmisionDesde?: string; fechaEmisionHasta?: string;
+            fechaInicioTrasladoDesde?: string; fechaInicioTrasladoHasta?: string;
         }
     ): Observable<Pagination<GuiaRemision>> {
         let httpParams = new HttpParams().set('companyId', companyId);
         if (params?.page !== undefined) httpParams = httpParams.set('page', params.page.toString());
         if (params?.size !== undefined) httpParams = httpParams.set('size', params.size.toString());
         if (params?.sort) httpParams = httpParams.set('sort', params.sort);
+        if (params?.q) httpParams = httpParams.set('q', params.q);
         if (params?.estado) httpParams = httpParams.set('estado', params.estado);
+        if (params?.motivoTraslado) httpParams = httpParams.set('motivoTraslado', params.motivoTraslado);
+        if (params?.modalidadTraslado) httpParams = httpParams.set('modalidadTraslado', params.modalidadTraslado);
+        if (params?.almacenOrigenId) httpParams = httpParams.set('almacenOrigenId', params.almacenOrigenId);
         if (params?.fechaEmisionDesde) httpParams = httpParams.set('fechaEmisionDesde', params.fechaEmisionDesde);
         if (params?.fechaEmisionHasta) httpParams = httpParams.set('fechaEmisionHasta', params.fechaEmisionHasta);
+        if (params?.fechaInicioTrasladoDesde) httpParams = httpParams.set('fechaInicioTrasladoDesde', params.fechaInicioTrasladoDesde);
+        if (params?.fechaInicioTrasladoHasta) httpParams = httpParams.set('fechaInicioTrasladoHasta', params.fechaInicioTrasladoHasta);
         return this.http.get<Pagination<GuiaRemision>>(this.baseUrl, { params: httpParams });
     }
 

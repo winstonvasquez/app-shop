@@ -3,10 +3,16 @@ import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ButtonComponent } from '@shared/components';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
-import { DataTableComponent, TableColumn, TableAction, PaginationEvent } from '@shared/ui/tables/data-table/data-table.component';
+import {
+    DataTableComponent, TableColumn, TableAction, PaginationEvent,
+    FilterConfig, FilterChangeEvent, DateRangeFilterConfig, DateRangeChangeEvent
+} from '@shared/ui/tables/data-table/data-table.component';
+import { catalogFilter, staticFilter, ACTIVO_OPTIONS } from '@shared/ui/tables/data-table/filter-helpers';
 import { NOTIFICATION_DURATION } from '@shared/constants/ui.constants';
 import { USER_ROLE } from '@shared/constants/feature-flags.constants';
 import { AuthService } from '@core/auth/auth.service';
+import { CatalogService } from '@core/services/catalog.service';
+import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 import {
     AccountingMappingService,
 } from '../../services/accounting-mapping.service';
@@ -24,6 +30,7 @@ import {
 export class AccountingMappingComponent implements OnInit {
     private service = inject(AccountingMappingService);
     private authService = inject(AuthService);
+    readonly catalog = inject(CatalogService);
 
     readonly eventTypesConocidos = EVENT_TYPES_CONOCIDOS;
 
@@ -48,27 +55,27 @@ export class AccountingMappingComponent implements OnInit {
     readonly probandoEventType = signal<string | null>(null);
     readonly resultadoPrueba = signal<{ eventType: string; ok: boolean; mensaje: string } | null>(null);
 
-    // ── Tabla ─────────────────────────────────────────────────────────────────
+    // ── Tabla — filtros TODOS server-side (la vista nunca filtra la página cargada) ──
     readonly searchQuery = signal('');
+    readonly filterEventType = signal('');
+    readonly filterActivo = signal('');
+    readonly filterFechaCreacionDesde = signal<string | null>(null);
+    readonly filterFechaCreacionHasta = signal<string | null>(null);
     readonly currentPage = signal(0);
     readonly pageSize = signal(20);
+    readonly totalElements = signal(0);
+    readonly totalPages = signal(0);
 
-    readonly mapeosFiltrados = computed(() => {
-        const q = this.searchQuery().trim().toLowerCase();
-        const lista = this.mapeos();
-        if (!q) return lista;
-        return lista.filter(m =>
-            m.eventType?.toLowerCase().includes(q) ||
-            m.debitAccount?.toLowerCase().includes(q) ||
-            m.creditAccount?.toLowerCase().includes(q)
-        );
-    });
+    // Filtros select del toolbar. eventType sale de erp_parameters (TIPO_EVENTO_CONTABLE_LOGISTICA);
+    // activo es una columna boolean (sin catálogo, mismo patrón que ordenes-compra).
+    readonly filters: FilterConfig[] = [
+        catalogFilter(this.catalog, 'TIPO_EVENTO_CONTABLE_LOGISTICA', 'eventType', 'Tipo de evento'),
+        staticFilter('activo', 'Estado', ACTIVO_OPTIONS)
+    ];
 
-    readonly mapeosPaginados = computed(() => {
-        const inicio = this.currentPage() * this.pageSize();
-        return this.mapeosFiltrados().slice(inicio, inicio + this.pageSize());
-    });
-    readonly totalPagesLocal = computed(() => Math.ceil(this.mapeosFiltrados().length / this.pageSize()) || 1);
+    readonly dateRangeFilters: DateRangeFilterConfig[] = [
+        { field: 'fechaCreacion', label: 'Fecha de creación' }
+    ];
 
     readonly columns: TableColumn<AccountingMapping>[] = [
         {
@@ -122,8 +129,21 @@ export class AccountingMappingComponent implements OnInit {
     cargar() {
         this.cargando.set(true);
         this.error.set('');
-        this.service.listar().subscribe({
-            next: data => { this.mapeos.set(data); this.cargando.set(false); },
+        this.service.listar({
+            page: this.currentPage(),
+            size: this.pageSize(),
+            q: this.searchQuery() || undefined,
+            eventType: this.filterEventType() || undefined,
+            activo: this.filterActivo() === '' ? undefined : this.filterActivo() === 'true',
+            fechaCreacionDesde: this.filterFechaCreacionDesde() || undefined,
+            fechaCreacionHasta: this.filterFechaCreacionHasta() || undefined,
+        }).subscribe({
+            next: res => {
+                this.mapeos.set(res.content ?? []);
+                this.totalElements.set(pageTotalElements(res));
+                this.totalPages.set(pageTotalPages(res));
+                this.cargando.set(false);
+            },
             error: (err: unknown) => {
                 this.error.set(this.mensajeError(err, 'Error al cargar mapeos contables'));
                 this.cargando.set(false);
@@ -131,14 +151,48 @@ export class AccountingMappingComponent implements OnInit {
         });
     }
 
+    /** La búsqueda por texto va al backend (`q`), no filtra la página cargada. */
     onSearchTerm(term: string) {
         this.searchQuery.set(term);
         this.currentPage.set(0);
+        this.cargar();
+    }
+
+    onFilterChangeEvent(event: FilterChangeEvent): void {
+        const valor = event.value != null ? String(event.value) : '';
+        switch (event.field) {
+            case 'eventType': this.filterEventType.set(valor); break;
+            case 'activo':    this.filterActivo.set(valor); break;
+            default: return;
+        }
+        this.currentPage.set(0);
+        this.cargar();
+    }
+
+    onDateRangeChange(event: DateRangeChangeEvent): void {
+        if (event.field === 'fechaCreacion') {
+            this.filterFechaCreacionDesde.set(event.from);
+            this.filterFechaCreacionHasta.set(event.to);
+            this.currentPage.set(0);
+            this.cargar();
+        }
+    }
+
+    /** "Limpiar filtros": resetea todo y recarga UNA sola vez. */
+    onFiltersClear(): void {
+        this.searchQuery.set('');
+        this.filterEventType.set('');
+        this.filterActivo.set('');
+        this.filterFechaCreacionDesde.set(null);
+        this.filterFechaCreacionHasta.set(null);
+        this.currentPage.set(0);
+        this.cargar();
     }
 
     onPageChange(event: PaginationEvent) {
         this.currentPage.set(event.page);
         this.pageSize.set(event.size);
+        this.cargar();
     }
 
     abrirNuevo() {
@@ -183,14 +237,10 @@ export class AccountingMappingComponent implements OnInit {
         const id = this.editandoId();
         const obs = id ? this.service.actualizar(id, req) : this.service.crear(req);
         obs.subscribe({
-            next: mapeo => {
-                if (id) {
-                    this.mapeos.update(ms => ms.map(m => m.id === id ? mapeo : m));
-                } else {
-                    this.mapeos.update(ms => [...ms, mapeo]);
-                }
+            next: () => {
                 this.mostrarForm.set(false);
                 this.guardando.set(false);
+                this.cargar();
             },
             error: (err: unknown) => {
                 this.errorForm.set(this.mensajeError(err, 'Error al guardar el mapeo'));
@@ -201,7 +251,7 @@ export class AccountingMappingComponent implements OnInit {
 
     eliminar(id: string) {
         this.service.eliminar(id).subscribe({
-            next: () => this.mapeos.update(ms => ms.map(m => m.id === id ? { ...m, activo: false } : m)),
+            next: () => this.cargar(),
             error: (err: unknown) => {
                 this.error.set(this.mensajeError(err, 'Error al eliminar el mapeo'));
             },

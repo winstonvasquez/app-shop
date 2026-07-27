@@ -1,10 +1,18 @@
 import { Component, inject, signal, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { DeliveryRouteService } from '../../services/delivery-route.service';
 import { DeliveryRoute } from '../../models/delivery-route.model';
+import { AlmacenService } from '../../services/almacen.service';
+import { Almacen } from '../../models/almacen.model';
+import { AuthService } from '@core/auth/auth.service';
+import { CatalogService } from '@core/services/catalog.service';
 import { ButtonComponent } from '@shared/components';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
-import { DataTableComponent, TableColumn, TableAction, PaginationEvent } from '@shared/ui/tables/data-table/data-table.component';
+import {
+    DataTableComponent, TableColumn, TableAction, PaginationEvent,
+    FilterConfig, FilterChangeEvent, DateRangeFilterConfig, DateRangeChangeEvent
+} from '@shared/ui/tables/data-table/data-table.component';
+import { catalogFilter, signalFilter } from '@shared/ui/tables/data-table/filter-helpers';
 import { NOTIFICATION_DURATION } from '@shared/constants/ui.constants';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
@@ -18,6 +26,9 @@ import { environment } from '@env/environment';
 })
 export class DeliveryRoutesComponent implements OnInit {
     private readonly routeService = inject(DeliveryRouteService);
+    private readonly almacenService = inject(AlmacenService);
+    private readonly authService = inject(AuthService);
+    readonly catalog = inject(CatalogService);
 
     readonly breadcrumbs: Breadcrumb[] = [
         { label: 'Inicio',    url: '/admin/dashboard' },
@@ -31,19 +42,52 @@ export class DeliveryRoutesComponent implements OnInit {
     error = signal<string | null>(null);
     successMsg = signal<string | null>(null);
 
+    // Filtros (TODOS server-side — la vista nunca filtra la página cargada)
+    searchQuery = signal('');
+    filterStatus = signal('');
+    filterWarehouseId = signal('');
+    filterRouteDateDesde = signal<string | null>(null);
+    filterRouteDateHasta = signal<string | null>(null);
+    filterStartedAtDesde = signal<string | null>(null);
+    filterStartedAtHasta = signal<string | null>(null);
+
+    /** Almacenes activos para el select de filtro del toolbar. */
+    almacenesFiltro = signal<Almacen[]>([]);
+
     currentPage = signal(0);
     pageSize = signal(20);
     totalElements = signal(0);
     totalPages = signal(0);
 
+    // Filtros select del toolbar. El estado sale de erp_parameters (ESTADO_RUTA_ENTREGA);
+    // el almacén de salida, de la lista cargada en ngOnInit.
+    filters: FilterConfig[] = [
+        catalogFilter(this.catalog, 'ESTADO_RUTA_ENTREGA', 'status', 'Todos los estados'),
+        signalFilter('warehouseId', 'Todos los almacenes', this.almacenesFiltro,
+            a => ({ value: a.id, label: a.nombre }))
+    ];
+
+    dateRangeFilters: DateRangeFilterConfig[] = [
+        { field: 'routeDate', label: 'Fecha de ruta' },
+        { field: 'startedAt', label: 'Fecha de inicio' }
+    ];
+
     /**
-     * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios
-     * (misma lista, sin filtros adicionales). Ver /logistics/api/routes/export.
+     * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios,
+     * respetando los mismos filtros que el listado. Ver /logistics/api/routes/export.
      */
     readonly exportConfig: BackendExportConfig = {
         url: `${environment.apiUrls.logistics}/api/routes/export`,
         filename: 'rutas-entrega',
-        params: () => ({})
+        params: () => ({
+            q: this.searchQuery(),
+            status: this.filterStatus(),
+            warehouseId: this.filterWarehouseId(),
+            routeDateDesde: this.filterRouteDateDesde() ?? undefined,
+            routeDateHasta: this.filterRouteDateHasta() ?? undefined,
+            startedAtDesde: this.filterStartedAtDesde() ?? undefined,
+            startedAtHasta: this.filterStartedAtHasta() ?? undefined
+        })
     };
 
     readonly columns: TableColumn<DeliveryRoute>[] = [
@@ -58,7 +102,7 @@ export class DeliveryRoutesComponent implements OnInit {
         { key: 'driverId', label: 'Conductor', render: r => r.driverId ?? '—' },
         {
             key: 'status', label: 'Estado', html: true,
-            render: r => `<span class="badge ${this.statusBadgeClass(r.status)}">${this.statusLabel(r.status)}</span>`
+            render: r => `<span class="badge ${this.statusBadgeClass(r.status)}">${this.catalog.label('ESTADO_RUTA_ENTREGA', r.status)}</span>`
         },
         { key: 'stops', label: 'Paradas', align: 'right', render: r => String(r.stops?.length ?? 0) },
         {
@@ -86,6 +130,17 @@ export class DeliveryRoutesComponent implements OnInit {
 
     ngOnInit(): void {
         this.loadRoutes();
+        this.loadAlmacenesFiltro();
+    }
+
+    /** Almacenes para el select de filtro "Almacén de salida" del toolbar. */
+    private loadAlmacenesFiltro(): void {
+        const companyId = String(this.authService.currentUser()?.activeCompanyId ?? '');
+        if (!companyId) { this.almacenesFiltro.set([]); return; }
+        this.almacenService.getAlmacenes(companyId, { page: 0, size: 100 }).subscribe({
+            next: (res) => this.almacenesFiltro.set(res.content ?? []),
+            error: () => this.almacenesFiltro.set([])
+        });
     }
 
     onPageChange(event: PaginationEvent): void {
@@ -94,10 +149,67 @@ export class DeliveryRoutesComponent implements OnInit {
         this.loadRoutes();
     }
 
+    /** La búsqueda por texto va al backend (`q`), no filtra la página cargada. */
+    onSearchTerm(term: string): void {
+        this.searchQuery.set(term);
+        this.currentPage.set(0);
+        this.loadRoutes();
+    }
+
+    onFilterChangeEvent(event: FilterChangeEvent): void {
+        const valor = event.value != null ? String(event.value) : '';
+        switch (event.field) {
+            case 'status':      this.filterStatus.set(valor); break;
+            case 'warehouseId': this.filterWarehouseId.set(valor); break;
+            default: return;
+        }
+        this.currentPage.set(0);
+        this.loadRoutes();
+    }
+
+    onDateRangeChange(event: DateRangeChangeEvent): void {
+        switch (event.field) {
+            case 'routeDate':
+                this.filterRouteDateDesde.set(event.from);
+                this.filterRouteDateHasta.set(event.to);
+                break;
+            case 'startedAt':
+                this.filterStartedAtDesde.set(event.from);
+                this.filterStartedAtHasta.set(event.to);
+                break;
+            default: return;
+        }
+        this.currentPage.set(0);
+        this.loadRoutes();
+    }
+
+    /** "Limpiar filtros": resetea todo y recarga UNA sola vez. */
+    onFiltersClear(): void {
+        this.searchQuery.set('');
+        this.filterStatus.set('');
+        this.filterWarehouseId.set('');
+        this.filterRouteDateDesde.set(null);
+        this.filterRouteDateHasta.set(null);
+        this.filterStartedAtDesde.set(null);
+        this.filterStartedAtHasta.set(null);
+        this.currentPage.set(0);
+        this.loadRoutes();
+    }
+
     loadRoutes(): void {
         this.loading.set(true);
         this.error.set(null);
-        this.routeService.list(this.currentPage(), this.pageSize()).subscribe({
+        this.routeService.list({
+            page: this.currentPage(),
+            size: this.pageSize(),
+            q: this.searchQuery() || undefined,
+            status: this.filterStatus() || undefined,
+            warehouseId: this.filterWarehouseId() || undefined,
+            routeDateDesde: this.filterRouteDateDesde() || undefined,
+            routeDateHasta: this.filterRouteDateHasta() || undefined,
+            startedAtDesde: this.filterStartedAtDesde() || undefined,
+            startedAtHasta: this.filterStartedAtHasta() || undefined
+        }).subscribe({
             next: (page) => {
                 this.routes.set(page.content);
                 this.totalElements.set(page.totalElements);

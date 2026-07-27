@@ -14,6 +14,26 @@ import {
     RegistrarRespuestaRequest,
 } from '../models/cotizacion.model';
 
+/** Filtros server-side del listado de cotizaciones. Todos opcionales. */
+export interface CotizacionFiltros {
+    page?: number;
+    size?: number;
+    /** Búsqueda por texto sobre código y título. */
+    q?: string;
+    estado?: string;
+    proveedorAdjudicadoId?: string;
+    /** Derivado del backend a partir de fechaVencimiento — códigos exactos 'VIGENTE' | 'VENCIDA'. */
+    vigencia?: string;
+    /** yyyy-MM-dd */
+    fechaEmisionDesde?: string;
+    /** yyyy-MM-dd */
+    fechaEmisionHasta?: string;
+    /** yyyy-MM-dd */
+    fechaVencimientoDesde?: string;
+    /** yyyy-MM-dd */
+    fechaVencimientoHasta?: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class CotizacionService {
     private http = inject(HttpClient);
@@ -25,19 +45,25 @@ export class CotizacionService {
         return new HttpHeaders({ 'X-Company-Id': companyId });
     }
 
-    listar(
-        page = 0,
-        size = 10,
-        estado?: string,
-        fechaEmisionDesde?: string,
-        fechaEmisionHasta?: string
-    ): Observable<CotizacionesPage> {
+    /**
+     * Filtros del listado de cotizaciones. TODO el filtrado ocurre en el backend
+     * (`GET /purchases/api/cotizaciones`); la vista nunca filtra la página cargada.
+     */
+    listar(filtros: CotizacionFiltros = {}): Observable<CotizacionesPage> {
+        const page = filtros.page ?? 0;
+        const size = filtros.size ?? 10;
+
         let params = new HttpParams()
             .set('page', page.toString())
             .set('size', size.toString());
-        if (estado) params = params.set('estado', estado);
-        if (fechaEmisionDesde) params = params.set('fechaEmisionDesde', fechaEmisionDesde);
-        if (fechaEmisionHasta) params = params.set('fechaEmisionHasta', fechaEmisionHasta);
+        if (filtros.q) params = params.set('q', filtros.q);
+        if (filtros.estado) params = params.set('estado', filtros.estado);
+        if (filtros.proveedorAdjudicadoId) params = params.set('proveedorAdjudicadoId', filtros.proveedorAdjudicadoId);
+        if (filtros.vigencia) params = params.set('vigencia', filtros.vigencia);
+        if (filtros.fechaEmisionDesde) params = params.set('fechaEmisionDesde', filtros.fechaEmisionDesde);
+        if (filtros.fechaEmisionHasta) params = params.set('fechaEmisionHasta', filtros.fechaEmisionHasta);
+        if (filtros.fechaVencimientoDesde) params = params.set('fechaVencimientoDesde', filtros.fechaVencimientoDesde);
+        if (filtros.fechaVencimientoHasta) params = params.set('fechaVencimientoHasta', filtros.fechaVencimientoHasta);
 
         return this.http.get<unknown>(this.baseUrl, { params, headers: this.getHeaders() }).pipe(
             map((raw: unknown) => {

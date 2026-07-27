@@ -2,10 +2,21 @@ import { Component, OnInit, inject, signal, computed, ChangeDetectionStrategy } 
 import { FormBuilder, ReactiveFormsModule, Validators, FormGroup } from '@angular/forms';
 import { UserService } from '@features/admin/services/user.service';
 import { RolService } from '@features/admin/services/rol.service';
-import { UserListComponent } from '@features/admin/pages/users/components/user-list/user-list.component';
 import { UserFormComponent } from '@features/admin/pages/users/components/user-form/user-form.component';
-import { PaginationComponent, PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
 import { ButtonComponent } from '@shared/components';
+import { CatalogService } from '@core/services/catalog.service';
+import {
+  DataTableComponent,
+  TableColumn,
+  TableAction,
+  SortEvent,
+  FilterConfig,
+  FilterChangeEvent,
+  PaginationEvent,
+  DateRangeFilterConfig,
+  DateRangeChangeEvent
+} from '@shared/ui/tables/data-table/data-table.component';
+import { catalogFilter, signalFilter, staticFilter, ACTIVO_OPTIONS } from '@shared/ui/tables/data-table/filter-helpers';
 import {
   UserResponse,
   UserRequest,
@@ -13,12 +24,12 @@ import {
   RolDto,
   TIPO_DOCUMENTO_OPTIONS
 } from '@features/admin/models/user.model';
-import { PaginationConfig, PageResponse } from '@core/models/pagination.model';
+import { PaginationConfig, PageResponse, pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 
 @Component({
   selector: 'app-users',
   standalone: true,
-  imports: [ReactiveFormsModule, UserListComponent, UserFormComponent, PaginationComponent, ButtonComponent],
+  imports: [ReactiveFormsModule, DataTableComponent, UserFormComponent, ButtonComponent],
   templateUrl: './users.component.html',
   styleUrl: './users.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -27,6 +38,7 @@ export class UsersComponent implements OnInit {
   private readonly userService = inject(UserService);
   private readonly rolService = inject(RolService);
   private readonly fb = inject(FormBuilder);
+  readonly catalog = inject(CatalogService);
 
   // Signals for reactive state
   users = signal<UserResponse[]>([]);
@@ -40,9 +52,11 @@ export class UsersComponent implements OnInit {
   totalElements = signal(0);
   totalPages = signal(0);
 
-  // Filter and sort state
+  // Filter and sort state (TODO server-side — la vista nunca filtra la página cargada)
   searchQuery = signal('');
-  filterRolId = signal<number | null>(null);
+  filterRolId = signal('');
+  filterActivo = signal('');
+  filterTipoDocumento = signal('');
   filterFechaCreacionDesde = signal<string | null>(null);
   filterFechaCreacionHasta = signal<string | null>(null);
   sortField = signal('id');
@@ -66,6 +80,42 @@ export class UsersComponent implements OnInit {
 
   // Constants
   tipoDocumentoOptions = TIPO_DOCUMENTO_OPTIONS;
+
+  // Filtros select del toolbar. Las opciones salen de erp_parameters / roles cargados.
+  filters: FilterConfig[] = [
+    signalFilter('rolId', 'Todos los roles', this.roles, r => ({ value: r.id, label: r.nombre })),
+    staticFilter('activo', 'Estado', ACTIVO_OPTIONS),
+    catalogFilter(this.catalog, 'TIPO_DOCUMENTO_IDENTIDAD', 'tipoDocumento', 'Tipo de documento')
+  ];
+
+  /** Rango de fecha de creación para el toolbar del data-table. */
+  dateRangeFilters: DateRangeFilterConfig[] = [
+    { field: 'fechaCreacion', label: 'Fecha de creación' }
+  ];
+
+  columns: TableColumn<UserResponse>[] = [
+    { key: 'id', label: 'ID', width: '60px' },
+    { key: 'username', label: 'Usuario' },
+    { key: 'nombreCompleto', label: 'Nombre Completo', render: (r) => r.persona.nombreCompleto },
+    { key: 'email', label: 'Email' },
+    {
+      key: 'rol', label: 'Rol', html: true,
+      render: (r) => `<span class="badge badge-neutral">${r.rol.nombre}</span>`
+    },
+    {
+      key: 'documento', label: 'Documento',
+      render: (r) => `${r.persona.tipoDocumento}: ${r.persona.numeroDocumento}`
+    },
+    {
+      key: 'activo', label: 'Estado', html: true,
+      render: (r) => `<span class="badge badge-${r.activo ? 'success' : 'error'}">${r.activo ? 'Activo' : 'Inactivo'}</span>`
+    }
+  ];
+
+  actions: TableAction<UserResponse>[] = [
+    { label: 'Editar', icon: '✏️', class: 'btn-edit', onClick: (row) => this.openEditModal(row) },
+    { label: 'Eliminar', icon: '🗑️', class: 'btn-delete', onClick: (row) => this.onDelete(row) }
+  ];
 
   constructor() {
     this.userForm = this.fb.group({
@@ -107,7 +157,10 @@ export class UsersComponent implements OnInit {
     };
 
     const filter: UserFilter = {
-      rolId: this.filterRolId() ?? undefined,
+      search: this.searchQuery() || undefined,
+      rolId: this.filterRolId() ? Number(this.filterRolId()) : undefined,
+      activo: this.filterActivo() ? this.filterActivo() === 'true' : undefined,
+      tipoDocumento: this.filterTipoDocumento() || undefined,
       fechaCreacionDesde: this.filterFechaCreacionDesde() ?? undefined,
       fechaCreacionHasta: this.filterFechaCreacionHasta() ?? undefined
     };
@@ -115,8 +168,8 @@ export class UsersComponent implements OnInit {
     this.userService.getAll(pagination, filter).subscribe({
       next: (response: PageResponse<UserResponse>) => {
         this.users.set(response?.content ?? []);
-        this.totalElements.set(response?.page?.totalElements ?? 0);
-        this.totalPages.set(response?.page?.totalPages ?? 0);
+        this.totalElements.set(pageTotalElements(response));
+        this.totalPages.set(pageTotalPages(response));
         this.loading.set(false);
       },
       error: (err: Error) => {
@@ -126,33 +179,56 @@ export class UsersComponent implements OnInit {
     });
   }
 
-  onSearch(query: string): void {
-    this.searchQuery.set(query);
+  /** La búsqueda por texto también va al backend, no filtra la página cargada. */
+  onSearchTerm(term: string): void {
+    this.searchQuery.set(term);
     this.currentPage.set(0);
     this.loadUsers();
   }
 
-  onPaginationChange(event: PaginationChangeEvent): void {
+  onFilterChangeEvent(event: FilterChangeEvent): void {
+    const valor = event.value != null ? String(event.value) : '';
+    switch (event.field) {
+      case 'rolId':         this.filterRolId.set(valor); break;
+      case 'activo':        this.filterActivo.set(valor); break;
+      case 'tipoDocumento':  this.filterTipoDocumento.set(valor); break;
+      default: return;
+    }
+    this.currentPage.set(0);
+    this.loadUsers();
+  }
+
+  onDateRangeChange(event: DateRangeChangeEvent): void {
+    if (event.field === 'fechaCreacion') {
+      this.filterFechaCreacionDesde.set(event.from);
+      this.filterFechaCreacionHasta.set(event.to);
+      this.currentPage.set(0);
+      this.loadUsers();
+    }
+  }
+
+  /** "Limpiar filtros": resetea todo y recarga UNA sola vez. */
+  onFiltersClear(): void {
+    this.searchQuery.set('');
+    this.filterRolId.set('');
+    this.filterActivo.set('');
+    this.filterTipoDocumento.set('');
+    this.filterFechaCreacionDesde.set(null);
+    this.filterFechaCreacionHasta.set(null);
+    this.currentPage.set(0);
+    this.loadUsers();
+  }
+
+  onSort(event: SortEvent): void {
+    this.sortField.set(event.field);
+    this.sortDirection.set(event.direction);
+    this.currentPage.set(0);
+    this.loadUsers();
+  }
+
+  onPaginationChange(event: PaginationEvent): void {
     this.currentPage.set(event.page);
     this.pageSize.set(event.size);
-    this.loadUsers();
-  }
-
-  onFilterRolChange(value: string): void {
-    this.filterRolId.set(value ? Number(value) : null);
-    this.currentPage.set(0);
-    this.loadUsers();
-  }
-
-  onFechaCreacionDesdeChange(value: string): void {
-    this.filterFechaCreacionDesde.set(value || null);
-    this.currentPage.set(0);
-    this.loadUsers();
-  }
-
-  onFechaCreacionHastaChange(value: string): void {
-    this.filterFechaCreacionHasta.set(value || null);
-    this.currentPage.set(0);
     this.loadUsers();
   }
 

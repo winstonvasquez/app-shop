@@ -6,14 +6,18 @@ import { map } from 'rxjs';
 import { CatalogService } from '@core/services/catalog.service';
 import { PeriodoService, PeriodoContable } from '../../services/periodo.service';
 import { OrdenCompraService } from '../../../compras/services/orden-compra.service';
+import { ProveedorService, ProveedorFiltroOption, toProveedorOptions } from '../../../compras/services/proveedor.service';
 import { PleService } from '../../services/ple.service';
 import { OrdenCompra } from '../../../compras/models/orden-compra.model';
 import { ExportService } from '@shared/services/export.service';
 import { BackendExportService, BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
-import { DataTableComponent, TableColumn, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
+import { DataTableComponent, TableColumn, FilterConfig, FilterChangeEvent, PaginationEvent, DateRangeFilterConfig, DateRangeChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
+import { catalogFilter, signalFilter } from '@shared/ui/tables/data-table/filter-helpers';
 import { ButtonComponent } from '@shared/components';
 import { CPE_TIPO, MONEDA } from '@shared/constants/sunat.constants';
+import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
+import { PAGINATION } from '@shared/constants/app.constants';
 
 @Component({
     selector: 'app-registro-compras',
@@ -25,6 +29,7 @@ import { CPE_TIPO, MONEDA } from '@shared/constants/sunat.constants';
 export class RegistroComprasComponent implements OnInit {
     private periodoService = inject(PeriodoService);
     private ordenCompraService = inject(OrdenCompraService);
+    private proveedorService = inject(ProveedorService);
     private exportService = inject(ExportService);
     private backendExportService = inject(BackendExportService);
     private pleService = inject(PleService);
@@ -38,13 +43,27 @@ export class RegistroComprasComponent implements OnInit {
     periodos = signal<PeriodoContable[]>([]);
     periodoSeleccionado = signal<string>('');
     estadoFiltro = signal<string>('');
+    filterCondicionPago = signal<string>('');
+    filterMoneda = signal<string>('');
+    filterProveedorId = signal<string>('');
+    filterFechaEmisionDesde = signal<string | null>(null);
+    filterFechaEmisionHasta = signal<string | null>(null);
     searchQuery = signal<string>('');
     ordenes = signal<OrdenCompra[]>([]);
     cargando = signal(false);
     error = signal<string | null>(null);
     readonly descargandoPLE = signal(false);
 
-    // Filtros del toolbar del data-table: periodo (dinámico) + estado (catálogo)
+    // Pagination (server-side real — antes era [totalPages]=1/[pageSize]=200 hardcodeado)
+    currentPage = signal(0);
+    pageSize = signal<number>(200);
+    totalElements = signal(0);
+    totalPages = signal(0);
+
+    /** Proveedores activos para el select de filtro (lista acotada, no requiere server-search). */
+    proveedoresFiltro = signal<ProveedorFiltroOption[]>([]);
+
+    // Filtros del toolbar del data-table: periodo (dinámico, se traduce a fechaEmisionDesde/Hasta) + catálogo
     filtros: FilterConfig[] = [
         {
             field: 'periodo',
@@ -53,13 +72,16 @@ export class RegistroComprasComponent implements OnInit {
                 map(list => list.map(p => ({ value: p.id, label: `${p.nombre} (${p.estado})` })))
             )
         },
-        {
-            field: 'estado',
-            label: 'Todos los estados',
-            options: toObservable(this.catalog.options('ESTADO_ORDEN_COMPRA')).pipe(
-                map(o => o.map(x => ({ value: x.codigo, label: x.valor })))
-            )
-        }
+        catalogFilter(this.catalog, 'ESTADO_ORDEN_COMPRA', 'estado', 'Todos los estados'),
+        catalogFilter(this.catalog, 'CONDICION_PAGO', 'condicionPago', 'Cond. de pago'),
+        catalogFilter(this.catalog, 'MONEDA', 'moneda', 'Moneda'),
+        signalFilter('proveedorId', 'Todos los proveedores', this.proveedoresFiltro,
+            p => ({ value: p.id, label: p.razonSocial }))
+    ];
+
+    /** Rango de fecha de emisión para el toolbar del data-table (se sincroniza con el periodo elegido). */
+    dateRangeFilters: DateRangeFilterConfig[] = [
+        { field: 'fechaEmision', label: 'Fecha de emisión' }
     ];
 
     columns: TableColumn<OrdenCompra>[] = [
@@ -88,24 +110,21 @@ export class RegistroComprasComponent implements OnInit {
         url: `${environment.apiUrls.purchases}/api/ordenes-compra/export/registro-compras`,
         filename: 'registro-compras',
         params: () => ({
-            estado: this.estadoFiltro(),
+            q: this.searchQuery() || undefined,
+            estado: this.estadoFiltro() || undefined,
+            condicionPago: this.filterCondicionPago() || undefined,
+            moneda: this.filterMoneda() || undefined,
+            proveedorId: this.filterProveedorId() || undefined,
+            fechaEmisionDesde: this.filterFechaEmisionDesde() ?? undefined,
+            fechaEmisionHasta: this.filterFechaEmisionHasta() ?? undefined
         }),
     };
 
+    /** KPIs calculados sobre la página actualmente cargada (no sobre el periodo completo). */
     readonly ordenesActivas = computed(() => this.ordenes().filter(o => o.estado !== 'CANCELADA'));
     readonly totalBase = computed(() => this.ordenesActivas().reduce((s, o) => s + (o.subtotal ?? 0), 0));
     readonly totalIgv = computed(() => this.ordenesActivas().reduce((s, o) => s + (o.igv ?? 0), 0));
     readonly totalCompras = computed(() => this.ordenesActivas().reduce((s, o) => s + (o.total ?? 0), 0));
-
-    /** Búsqueda client-side por código o proveedor sobre lo ya cargado del periodo/estado seleccionado. */
-    readonly ordenesFiltradas = computed(() => {
-        const q = this.searchQuery().trim().toLowerCase();
-        if (!q) return this.ordenes();
-        return this.ordenes().filter(o =>
-            (o.codigo ?? '').toLowerCase().includes(q) ||
-            (o.proveedorNombre ?? '').toLowerCase().includes(q)
-        );
-    });
 
     ngOnInit() {
         this.periodoService.listar().subscribe({
@@ -113,42 +132,105 @@ export class RegistroComprasComponent implements OnInit {
                 this.periodos.set(lista);
                 const abierto = lista.find(p => p.estado === 'ABIERTO');
                 if (abierto) {
-                    this.periodoSeleccionado.set(abierto.id);
+                    this.cambiarPeriodo(abierto.id);
                     this.cargar();
                 }
             },
             error: () => {}
         });
+        this.loadProveedoresFiltro();
     }
 
+    /** Proveedores activos para el select de filtro del toolbar. */
+    private loadProveedoresFiltro(): void {
+        this.proveedorService.getProveedores({ size: PAGINATION.maxPageSize, estado: 'ACTIVO' }).subscribe({
+            next: (res) => this.proveedoresFiltro.set(toProveedorOptions(res.content)),
+            error: () => this.proveedoresFiltro.set([])
+        });
+    }
+
+    /** Cambia de periodo contable y traduce sus fechas de inicio/fin al rango de emisión filtrado. */
     cambiarPeriodo(id: string) {
         this.periodoSeleccionado.set(id);
+        const periodo = this.periodos().find(p => p.id === id);
+        this.filterFechaEmisionDesde.set(periodo?.fechaInicio ?? null);
+        this.filterFechaEmisionHasta.set(periodo?.fechaFin ?? null);
         this.ordenes.set([]);
     }
 
-    /** Maneja los selects del toolbar del data-table (periodo dinámico + estado estático). */
+    /** Maneja los selects del toolbar del data-table (periodo dinámico + catálogos). */
     onFilterChange(event: FilterChangeEvent): void {
-        if (event.field === 'periodo') {
-            this.cambiarPeriodo(event.value != null ? String(event.value) : '');
+        const valor = event.value != null ? String(event.value) : '';
+        switch (event.field) {
+            case 'periodo':
+                this.cambiarPeriodo(valor);
+                break;
+            case 'estado':          this.estadoFiltro.set(valor); break;
+            case 'condicionPago':   this.filterCondicionPago.set(valor); break;
+            case 'moneda':          this.filterMoneda.set(valor); break;
+            case 'proveedorId':     this.filterProveedorId.set(valor); break;
+            default: return;
+        }
+        this.currentPage.set(0);
+        if (this.periodoSeleccionado()) this.cargar();
+    }
+
+    /** La búsqueda por texto también va al backend (`q`), no filtra la página cargada. */
+    onSearchTerm(term: string): void {
+        this.searchQuery.set(term);
+        this.currentPage.set(0);
+        if (this.periodoSeleccionado()) this.cargar();
+    }
+
+    /** Rango de fecha de emisión: permite acotar más allá de los límites del periodo elegido. */
+    onDateRangeChange(event: DateRangeChangeEvent): void {
+        if (event.field === 'fechaEmision') {
+            this.filterFechaEmisionDesde.set(event.from);
+            this.filterFechaEmisionHasta.set(event.to);
+            this.currentPage.set(0);
             if (this.periodoSeleccionado()) this.cargar();
-        } else if (event.field === 'estado') {
-            this.estadoFiltro.set(event.value != null ? String(event.value) : '');
-            this.cargar();
         }
     }
 
-    onSearchTerm(term: string): void {
-        this.searchQuery.set(term);
+    /** "Limpiar filtros": resetea todo salvo el periodo (ancla obligatoria) y recarga UNA sola vez. */
+    onFiltersClear(): void {
+        this.searchQuery.set('');
+        this.estadoFiltro.set('');
+        this.filterCondicionPago.set('');
+        this.filterMoneda.set('');
+        this.filterProveedorId.set('');
+        const periodo = this.periodos().find(p => p.id === this.periodoSeleccionado());
+        this.filterFechaEmisionDesde.set(periodo?.fechaInicio ?? null);
+        this.filterFechaEmisionHasta.set(periodo?.fechaFin ?? null);
+        this.currentPage.set(0);
+        if (this.periodoSeleccionado()) this.cargar();
+    }
+
+    onPaginationChange(event: PaginationEvent): void {
+        this.currentPage.set(event.page);
+        this.pageSize.set(event.size);
+        this.cargar();
     }
 
     cargar() {
         if (!this.periodoSeleccionado()) return;
         this.cargando.set(true);
         this.error.set(null);
-        const estadoFiltro = this.estadoFiltro() || undefined;
-        this.ordenCompraService.getOrdenes(0, 200, estadoFiltro).subscribe({
+        this.ordenCompraService.getOrdenes({
+            page: this.currentPage(),
+            size: this.pageSize(),
+            q: this.searchQuery() || undefined,
+            estado: this.estadoFiltro() || undefined,
+            condicionPago: this.filterCondicionPago() || undefined,
+            moneda: this.filterMoneda() || undefined,
+            proveedorId: this.filterProveedorId() || undefined,
+            fechaEmisionDesde: this.filterFechaEmisionDesde() || undefined,
+            fechaEmisionHasta: this.filterFechaEmisionHasta() || undefined
+        }).subscribe({
             next: (page) => {
                 this.ordenes.set(page.content ?? []);
+                this.totalElements.set(pageTotalElements(page));
+                this.totalPages.set(pageTotalPages(page));
                 this.cargando.set(false);
             },
             error: () => {

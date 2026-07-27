@@ -23,9 +23,15 @@
     [totalPages]="totalPages()"
     [searchable]="true"
     searchPlaceholder="Buscar transportista..."
+    [filters]="filters"
+    [dateRangeFilters]="dateRangeFilters"
     [exportable]="true"
     exportFileName="transportistas-export"
     [exportConfig]="exportConfig"
+    (searchChange)="onSearchTerm($event)"
+    (filterChange)="onFilterChangeEvent($event)"
+    (dateRangeChange)="onDateRangeChange($event)"
+    (filtersClear)="onFiltersClear()"
     (pageChange)="onPaginationChange($event)">
   </app-data-table>
 </div>

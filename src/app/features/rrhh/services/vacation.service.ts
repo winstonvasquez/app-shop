@@ -34,6 +34,25 @@ export interface VacationApprovalDto {
     comentarios?: string;
 }
 
+/** Filtros server-side del listado paginado de vacaciones. Todos opcionales. */
+export interface VacationFiltros {
+    page?: number;
+    size?: number;
+    search?: string;
+    estado?: string;
+    tipoVacacion?: string;
+    employeeId?: number | null;
+    departmentId?: number | null;
+    aprobadoPorId?: number | null;
+    /** yyyy-MM-dd */
+    fechaInicioDesde?: string;
+    fechaInicioHasta?: string;
+    fechaFinDesde?: string;
+    fechaFinHasta?: string;
+    fechaAprobacionDesde?: string;
+    fechaAprobacionHasta?: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class VacationService {
     private readonly http = inject(HttpClient);
@@ -51,13 +70,26 @@ export class VacationService {
     readonly balances = this._balances.asReadonly();
     readonly balancesLoading = this._balancesLoading.asReadonly();
 
-    async loadVacationsPaged(page: number, size: number, search?: string, estado?: string):
+    async loadVacationsPaged(filtros: VacationFiltros = {}):
         Promise<{ totalElements: number; totalPages: number }> {
         this._loading.set(true);
         try {
-            const params: Record<string, string> = { page: String(page), size: String(size) };
-            if (search) params['search'] = search;
-            if (estado) params['estado'] = estado;
+            const params: Record<string, string> = {
+                page: String(filtros.page ?? 0),
+                size: String(filtros.size ?? 20),
+            };
+            if (filtros.search) params['search'] = filtros.search;
+            if (filtros.estado) params['estado'] = filtros.estado;
+            if (filtros.tipoVacacion) params['tipoVacacion'] = filtros.tipoVacacion;
+            if (filtros.employeeId != null) params['employeeId'] = String(filtros.employeeId);
+            if (filtros.departmentId != null) params['departmentId'] = String(filtros.departmentId);
+            if (filtros.aprobadoPorId != null) params['aprobadoPorId'] = String(filtros.aprobadoPorId);
+            if (filtros.fechaInicioDesde) params['fechaInicioDesde'] = filtros.fechaInicioDesde;
+            if (filtros.fechaInicioHasta) params['fechaInicioHasta'] = filtros.fechaInicioHasta;
+            if (filtros.fechaFinDesde) params['fechaFinDesde'] = filtros.fechaFinDesde;
+            if (filtros.fechaFinHasta) params['fechaFinHasta'] = filtros.fechaFinHasta;
+            if (filtros.fechaAprobacionDesde) params['fechaAprobacionDesde'] = filtros.fechaAprobacionDesde;
+            if (filtros.fechaAprobacionHasta) params['fechaAprobacionHasta'] = filtros.fechaAprobacionHasta;
             const res = await firstValueFrom(
                 this.http.get<PageResponse<VacationRequest>>(`${this.baseUrl}/paged`, { params })
             );

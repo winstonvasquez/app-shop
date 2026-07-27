@@ -13,7 +13,7 @@
     }
 
     <app-data-table
-        [data]="filteredOrdenes()"
+        [data]="ordenes()"
         [columns]="columns"
         [actions]="actions"
         [loading]="loading()"
@@ -33,6 +33,7 @@
         (searchChange)="onSearchTerm($event)"
         (filterChange)="onFilterChangeEvent($event)"
         (dateRangeChange)="onDateRangeChange($event)"
+        (filtersClear)="onFiltersClear()"
         (pageChange)="onPaginationChange($event)"
         (sortChange)="onSort($event)">
     </app-data-table>

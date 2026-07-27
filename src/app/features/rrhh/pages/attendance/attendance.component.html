@@ -11,13 +11,15 @@
     <app-alert type="error" [message]="error()!" />
 }
 
-<!-- Filtros -->
-<!-- Tabla -->
+<!-- Tabla (server-side: búsqueda + selects + rango de fechas + paginación) -->
 <app-data-table
-    [data]="pagedData()"
+    [data]="attendances()"
     [columns]="columns"
     [loading]="loading()"
-    [filters]="tipoFilters"
+    [searchable]="true"
+    searchPlaceholder="Buscar por empleado u observaciones..."
+    [filters]="filters"
+    [dateRangeFilters]="dateRangeFilters"
     [exportable]="true"
     exportFileName="asistencia"
     [exportConfig]="exportConfig"
@@ -25,12 +27,11 @@
     [pageSize]="pageSize()"
     [totalElements]="totalElements()"
     [totalPages]="totalPages()"
+    (searchChange)="onSearchTerm($event)"
     (filterChange)="onFilterChangeEvent($event)"
-    (pageChange)="onPaginationChange($event)">
-    <div toolbarExtra class="flex items-center gap-2">
-        <input type="date" class="form-input" [value]="filterFecha()" (change)="onFilterFecha($event)" />
-    </div>
-</app-data-table>
+    (dateRangeChange)="onDateRangeChange($event)"
+    (filtersClear)="onFiltersClear()"
+    (pageChange)="onPaginationChange($event)" />
 
 <!-- ── Drawer: Registrar Asistencia ───────────────────────────────────── -->
 <app-drawer

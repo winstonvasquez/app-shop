@@ -5,6 +5,24 @@ import { firstValueFrom } from 'rxjs';
 import { PageResponse, pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 import { Contract, ContractRequest, ContractStatus } from '../models/contract.model';
 
+/** Filtros server-side del listado paginado de contratos. Todos opcionales. */
+export interface ContractFiltros {
+    page?: number;
+    size?: number;
+    search?: string;
+    status?: string;
+    type?: string;
+    jornadaLaboral?: string;
+    moneda?: string;
+    employeeId?: number | null;
+    departmentId?: number | null;
+    /** yyyy-MM-dd */
+    fechaInicioDesde?: string;
+    fechaInicioHasta?: string;
+    fechaFinDesde?: string;
+    fechaFinHasta?: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class ContractService {
     private readonly http = inject(HttpClient);
@@ -28,15 +46,29 @@ export class ContractService {
 
     readonly totalContracts = computed(() => this._contracts().length);
 
-    async loadContractsPaged(page: number, size: number, search?: string, status?: string, type?: string):
-        Promise<{ totalElements: number; totalPages: number }> {
+    /**
+     * Carga server-side paginada con TODOS los filtros avanzados (search, estado, tipo, jornada
+     * laboral, moneda, empleado, departamento y rangos de fecha de inicio/fin). Todos opcionales.
+     */
+    async loadContractsPaged(filtros: ContractFiltros = {}): Promise<{ totalElements: number; totalPages: number }> {
         this._loading.set(true);
         this._error.set(null);
         try {
-            const params: Record<string, string> = { page: String(page), size: String(size) };
-            if (search) params['search'] = search;
-            if (status) params['status'] = status;
-            if (type) params['type'] = type;
+            const params: Record<string, string> = {
+                page: String(filtros.page ?? 0),
+                size: String(filtros.size ?? 20),
+            };
+            if (filtros.search) params['search'] = filtros.search;
+            if (filtros.status) params['status'] = filtros.status;
+            if (filtros.type) params['type'] = filtros.type;
+            if (filtros.jornadaLaboral) params['jornadaLaboral'] = filtros.jornadaLaboral;
+            if (filtros.moneda) params['moneda'] = filtros.moneda;
+            if (filtros.employeeId != null) params['employeeId'] = String(filtros.employeeId);
+            if (filtros.departmentId != null) params['departmentId'] = String(filtros.departmentId);
+            if (filtros.fechaInicioDesde) params['fechaInicioDesde'] = filtros.fechaInicioDesde;
+            if (filtros.fechaInicioHasta) params['fechaInicioHasta'] = filtros.fechaInicioHasta;
+            if (filtros.fechaFinDesde) params['fechaFinDesde'] = filtros.fechaFinDesde;
+            if (filtros.fechaFinHasta) params['fechaFinHasta'] = filtros.fechaFinHasta;
             const res = await firstValueFrom(
                 this.http.get<PageResponse<Contract>>(`${this.baseUrl}/paged`, { params })
             );

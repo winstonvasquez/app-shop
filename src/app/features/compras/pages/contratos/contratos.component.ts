@@ -1,14 +1,19 @@
 import { Component, OnInit, ChangeDetectionStrategy, signal, inject } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
-import { toObservable } from '@angular/core/rxjs-interop';
 import { map } from 'rxjs';
 import { environment } from '@env/environment';
 import { AuthService } from '@core/auth/auth.service';
 import { MONEDA, Moneda } from '@shared/constants/sunat.constants';
 import { ButtonComponent, CatalogSelectComponent } from '@shared/components';
 import { CatalogService } from '@core/services/catalog.service';
-import { DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent, PaginationEvent } from '@shared/ui/tables/data-table/data-table.component';
+import {
+    DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent, PaginationEvent,
+    DateRangeFilterConfig, DateRangeChangeEvent
+} from '@shared/ui/tables/data-table/data-table.component';
+import { catalogFilter, signalFilter, staticFilter } from '@shared/ui/tables/data-table/filter-helpers';
+import { PAGINATION } from '@shared/constants/app.constants';
+import { ProveedorService, ProveedorFiltroOption, toProveedorOptions } from '../../services/proveedor.service';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 
 interface ContratoDto {
@@ -41,6 +46,7 @@ export class ContratosComponent implements OnInit {
     private fb = inject(FormBuilder);
     private authService = inject(AuthService);
     private readonly catalog = inject(CatalogService);
+    private readonly proveedorService = inject(ProveedorService);
     private baseUrl = `${environment.apiUrls.purchases}/api/contratos`;
 
     contratos = signal<ContratoDto[]>([]);
@@ -51,6 +57,17 @@ export class ContratosComponent implements OnInit {
     guardando = signal(false);
     filtroEstado = signal('');
     searchQuery = signal('');
+    // Filtros adicionales (todos server-side)
+    filterMoneda = signal('');
+    filterProveedorId = signal('');
+    filterRenovacionAutomatica = signal('');
+    filterFechaInicioDesde = signal<string | null>(null);
+    filterFechaInicioHasta = signal<string | null>(null);
+    filterFechaFinDesde = signal<string | null>(null);
+    filterFechaFinHasta = signal<string | null>(null);
+
+    /** Proveedores activos para el select de filtro del toolbar. */
+    proveedoresFiltro = signal<ProveedorFiltroOption[]>([]);
     /** Contrato en edición (null = el drawer está en modo creación). */
     modoEdicion = signal<ContratoDto | null>(null);
 
@@ -61,14 +78,24 @@ export class ContratosComponent implements OnInit {
     totalPages = signal(0);
 
     // Filtro de estado para el toolbar del data-table
+    // Filtros select del toolbar. Las opciones salen de erp_parameters (fuente única).
+    // `tipoContrato` NO se ofrece: en la BD solo existe el valor 'MARCO' → un select
+    // de una sola opción no aporta (ver V35__seed_catalogos_filtros_avanzados.sql).
     estadoFilters: FilterConfig[] = [
-        {
-            field: 'estado',
-            label: 'Todos los estados',
-            options: toObservable(this.catalog.options('ESTADO_CONTRATO_PROVEEDOR')).pipe(
-                map(o => o.map(x => ({ value: x.codigo, label: x.valor })))
-            )
-        }
+        catalogFilter(this.catalog, 'ESTADO_CONTRATO_PROVEEDOR', 'estado', 'Todos los estados'),
+        catalogFilter(this.catalog, 'MONEDA', 'moneda', 'Moneda'),
+        signalFilter('proveedorId', 'Todos los proveedores', this.proveedoresFiltro,
+            p => ({ value: p.id, label: p.razonSocial })),
+        staticFilter('renovacionAutomatica', 'Renovación', [
+            { value: 'true', label: 'Automática' },
+            { value: 'false', label: 'Manual' },
+        ]),
+    ];
+
+    /** Rangos de vigencia del contrato. */
+    dateRangeFilters: DateRangeFilterConfig[] = [
+        { field: 'fechaInicio', label: 'Inicio' },
+        { field: 'fechaFin', label: 'Fin' },
     ];
 
     /**
@@ -78,7 +105,17 @@ export class ContratosComponent implements OnInit {
     readonly exportConfig: BackendExportConfig = {
         url: `${environment.apiUrls.purchases}/api/contratos/export`,
         filename: 'contratos',
-        params: () => ({ search: this.searchQuery(), estado: this.filtroEstado() }),
+        params: () => ({
+            search: this.searchQuery() || undefined,
+            estado: this.filtroEstado() || undefined,
+            moneda: this.filterMoneda() || undefined,
+            proveedorId: this.filterProveedorId() || undefined,
+            renovacionAutomatica: this.filterRenovacionAutomatica() || undefined,
+            fechaInicioDesde: this.filterFechaInicioDesde() ?? undefined,
+            fechaInicioHasta: this.filterFechaInicioHasta() ?? undefined,
+            fechaFinDesde: this.filterFechaFinDesde() ?? undefined,
+            fechaFinHasta: this.filterFechaFinHasta() ?? undefined,
+        }),
     };
 
     // 'search' ahora se envía como query param a GET /api/contratos (server-side, igual que /export),
@@ -137,6 +174,15 @@ export class ContratosComponent implements OnInit {
     ngOnInit(): void {
         this.cargar();
         this.cargarProximosVencer();
+        this.loadProveedoresFiltro();
+    }
+
+    /** Proveedores activos para el select de filtro del toolbar. */
+    private loadProveedoresFiltro(): void {
+        this.proveedorService.getProveedores({ size: PAGINATION.maxPageSize, estado: 'ACTIVO' }).subscribe({
+            next: (res) => this.proveedoresFiltro.set(toProveedorOptions(res.content)),
+            error: () => this.proveedoresFiltro.set([])
+        });
     }
 
     cargar(): void {
@@ -146,6 +192,13 @@ export class ContratosComponent implements OnInit {
             .set('size', this.pageSize().toString());
         if (this.filtroEstado()) params = params.set('estado', this.filtroEstado());
         if (this.searchQuery()) params = params.set('search', this.searchQuery());
+        if (this.filterMoneda()) params = params.set('moneda', this.filterMoneda());
+        if (this.filterProveedorId()) params = params.set('proveedorId', this.filterProveedorId());
+        if (this.filterRenovacionAutomatica()) params = params.set('renovacionAutomatica', this.filterRenovacionAutomatica());
+        if (this.filterFechaInicioDesde()) params = params.set('fechaInicioDesde', this.filterFechaInicioDesde()!);
+        if (this.filterFechaInicioHasta()) params = params.set('fechaInicioHasta', this.filterFechaInicioHasta()!);
+        if (this.filterFechaFinDesde()) params = params.set('fechaFinDesde', this.filterFechaFinDesde()!);
+        if (this.filterFechaFinHasta()) params = params.set('fechaFinHasta', this.filterFechaFinHasta()!);
 
         this.http.get<unknown>(this.baseUrl, { params, headers: this.getHeaders() }).pipe(
             map((raw: unknown) => {
@@ -258,11 +311,45 @@ export class ContratosComponent implements OnInit {
     }
 
     onFilterChangeEvent(event: FilterChangeEvent): void {
-        if (event.field === 'estado') {
-            this.filtroEstado.set(event.value != null ? String(event.value) : '');
-            this.currentPage.set(0);
-            this.cargar();
+        const valor = event.value != null ? String(event.value) : '';
+        switch (event.field) {
+            case 'estado':               this.filtroEstado.set(valor); break;
+            case 'moneda':               this.filterMoneda.set(valor); break;
+            case 'proveedorId':          this.filterProveedorId.set(valor); break;
+            case 'renovacionAutomatica': this.filterRenovacionAutomatica.set(valor); break;
+            default: return;
         }
+        this.currentPage.set(0);
+        this.cargar();
+    }
+
+    onDateRangeChange(event: DateRangeChangeEvent): void {
+        if (event.field === 'fechaInicio') {
+            this.filterFechaInicioDesde.set(event.from);
+            this.filterFechaInicioHasta.set(event.to);
+        } else if (event.field === 'fechaFin') {
+            this.filterFechaFinDesde.set(event.from);
+            this.filterFechaFinHasta.set(event.to);
+        } else {
+            return;
+        }
+        this.currentPage.set(0);
+        this.cargar();
+    }
+
+    /** "Limpiar filtros": resetea todo y recarga UNA sola vez. */
+    onFiltersClear(): void {
+        this.searchQuery.set('');
+        this.filtroEstado.set('');
+        this.filterMoneda.set('');
+        this.filterProveedorId.set('');
+        this.filterRenovacionAutomatica.set('');
+        this.filterFechaInicioDesde.set(null);
+        this.filterFechaInicioHasta.set(null);
+        this.filterFechaFinDesde.set(null);
+        this.filterFechaFinHasta.set(null);
+        this.currentPage.set(0);
+        this.cargar();
     }
 
     onPageChange(event: PaginationEvent): void {

@@ -4,11 +4,17 @@ import {
 import { FormBuilder, ReactiveFormsModule, Validators, FormGroup } from '@angular/forms';
 import { SegmentService } from '@features/admin/services/segment.service';
 import { PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
-import { DataTableComponent, TableColumn, TableAction } from '@shared/ui/tables/data-table/data-table.component';
+import {
+    DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent,
+    DateRangeFilterConfig, DateRangeChangeEvent
+} from '@shared/ui/tables/data-table/data-table.component';
+import { catalogFilter, staticFilter, ACTIVO_OPTIONS } from '@shared/ui/tables/data-table/filter-helpers';
+import { CatalogService } from '@core/services/catalog.service';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { ButtonComponent, CatalogSelectComponent } from '@shared/components';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
+import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 import {
     SegmentResponse,
     SegmentRequest,
@@ -26,6 +32,7 @@ import {
 export class SegmentsComponent implements OnInit {
     private readonly segmentService = inject(SegmentService);
     private readonly fb = inject(FormBuilder);
+    readonly catalog = inject(CatalogService);
 
     // Datos
     segments = signal<SegmentResponse[]>([]);
@@ -39,8 +46,24 @@ export class SegmentsComponent implements OnInit {
     submitting = signal(false);
     submitError = signal<string | null>(null);
 
-    // Filtros
-    searchQuery = signal('');
+    // Filtros (TODOS server-side — la vista nunca filtra la página cargada)
+    searchQuery            = signal('');
+    filterActivo           = signal('');
+    filterTipoCliente      = signal('');
+    filterFechaCreacionDesde = signal<string | undefined>(undefined);
+    filterFechaCreacionHasta = signal<string | undefined>(undefined);
+
+    // Filtros del toolbar del data-table. tipoCliente usa el MISMO catálogo que el formulario
+    // (CATEGORIA_CLIENTE: VIP/REGULAR/OCASIONAL/MAYORISTA) para que los códigos coincidan con
+    // lo que realmente se persiste en SegmentoEntity.tipoCliente.
+    readonly filters: FilterConfig[] = [
+        catalogFilter(this.catalog, 'CATEGORIA_CLIENTE', 'tipoCliente', 'Todos los tipos de cliente'),
+        staticFilter('activo', 'Estado', ACTIVO_OPTIONS),
+    ];
+
+    readonly dateRangeFilters: DateRangeFilterConfig[] = [
+        { field: 'fechaCreacion', label: 'Fecha de creación' }
+    ];
 
     // Paginación
     currentPage   = signal(0);
@@ -72,12 +95,18 @@ export class SegmentsComponent implements OnInit {
 
     /**
      * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios
-     * (respeta el filtro de búsqueda actual). Ver /users/api/segments/export.
+     * (respeta TODOS los filtros actuales). Ver /users/api/segments/export.
      */
     readonly exportConfig: BackendExportConfig = {
         url: `${environment.apiUrls.users}/api/segments/export`,
         filename: 'segmentos',
-        params: () => ({ search: this.searchQuery() || undefined }),
+        params: () => ({
+            search: this.searchQuery() || undefined,
+            activo: this.filterActivo() || undefined,
+            tipoCliente: this.filterTipoCliente() || undefined,
+            fechaDesde: this.filterFechaCreacionDesde(),
+            fechaHasta: this.filterFechaCreacionHasta(),
+        }),
     };
 
     // Opciones
@@ -103,20 +132,19 @@ export class SegmentsComponent implements OnInit {
         this.loading.set(true);
         this.error.set(null);
 
-        this.segmentService.getAll(
-            this.currentPage(),
-            this.pageSize(),
-            this.searchQuery() || undefined
-        ).subscribe({
-            next: (res: unknown) => {
-                // Backend users devuelve Spring Page<T> nativo (totalElements al root),
-                // no PageResponse con wrapper .page. Cast necesario porque el tipo del
-                // service espera PageResponse (alineado con Spring VIA_DTO) pero el
-                // backend aún no tiene esa config. Fix detectado en audit E2E 2026-04-23.
-                const page = res as { content: SegmentResponse[]; totalElements: number; totalPages: number };
-                this.segments.set(page.content);
-                this.totalElements.set(page.totalElements);
-                this.totalPages.set(page.totalPages);
+        this.segmentService.getAll({
+            page: this.currentPage(),
+            size: this.pageSize(),
+            search: this.searchQuery() || undefined,
+            activo: this.filterActivo() === '' ? undefined : this.filterActivo() === 'true',
+            tipoCliente: this.filterTipoCliente() || undefined,
+            fechaDesde: this.filterFechaCreacionDesde(),
+            fechaHasta: this.filterFechaCreacionHasta()
+        }).subscribe({
+            next: (res) => {
+                this.segments.set(res.content);
+                this.totalElements.set(pageTotalElements(res));
+                this.totalPages.set(pageTotalPages(res));
                 this.loading.set(false);
             },
             error: (err: Error) => {
@@ -128,6 +156,36 @@ export class SegmentsComponent implements OnInit {
 
     onSearch(query: string): void {
         this.searchQuery.set(query);
+        this.currentPage.set(0);
+        this.loadSegments();
+    }
+
+    onFilterChangeEvent(event: FilterChangeEvent): void {
+        const valor = event.value != null ? String(event.value) : '';
+        switch (event.field) {
+            case 'tipoCliente': this.filterTipoCliente.set(valor); break;
+            case 'activo':      this.filterActivo.set(valor); break;
+            default: return;
+        }
+        this.currentPage.set(0);
+        this.loadSegments();
+    }
+
+    onDateRangeChange(event: DateRangeChangeEvent): void {
+        if (event.field !== 'fechaCreacion') return;
+        this.filterFechaCreacionDesde.set(event.from ?? undefined);
+        this.filterFechaCreacionHasta.set(event.to ?? undefined);
+        this.currentPage.set(0);
+        this.loadSegments();
+    }
+
+    /** "Limpiar filtros": resetea todo y recarga UNA sola vez. */
+    onFiltersClear(): void {
+        this.searchQuery.set('');
+        this.filterTipoCliente.set('');
+        this.filterActivo.set('');
+        this.filterFechaCreacionDesde.set(undefined);
+        this.filterFechaCreacionHasta.set(undefined);
         this.currentPage.set(0);
         this.loadSegments();
     }

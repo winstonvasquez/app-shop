@@ -27,7 +27,11 @@ import {
     PaginationEvent,
     FilterConfig,
     FilterChangeEvent,
+    DateRangeFilterConfig,
+    DateRangeChangeEvent,
 } from '@shared/ui/tables/data-table/data-table.component';
+import { catalogFilter, signalFilter } from '@shared/ui/tables/data-table/filter-helpers';
+import { ProveedorService, ProveedorFiltroOption, toProveedorOptions } from '../../services/proveedor.service';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
 
@@ -49,6 +53,7 @@ import { environment } from '@env/environment';
 })
 export class DevolucionesComponent implements OnInit {
     private readonly devolucionService = inject(DevolucionService);
+    private readonly proveedorService = inject(ProveedorService);
     private readonly fb = inject(FormBuilder);
     private readonly cdr = inject(ChangeDetectorRef);
     readonly catalog = inject(CatalogService);
@@ -76,16 +81,11 @@ export class DevolucionesComponent implements OnInit {
     hasItems = computed(() => this.devoluciones().length > 0);
     isEmpty = computed(() => !this.loading() && !this.hasItems());
 
-    filteredDevoluciones = computed(() => {
-        const q = this.searchQuery().trim().toLowerCase();
-        if (!q) return this.devoluciones();
-        return this.devoluciones().filter(
-            (d) =>
-                (d.codigo ?? '').toLowerCase().includes(q) ||
-                (d.ordenCompraCodigo ?? '').toLowerCase().includes(q) ||
-                (d.proveedorNombre ?? '').toLowerCase().includes(q)
-        );
-    });
+    // Filtros adicionales (server-side, igual que estado/tipo)
+    filterMotivo = signal('');
+    filterProveedorId = signal('');
+    filterCreatedAtDesde = signal<string | null>(null);
+    filterCreatedAtHasta = signal<string | null>(null);
 
     breadcrumbs: Breadcrumb[] = [
         { label: 'Compras', url: '/compras' },
@@ -110,31 +110,39 @@ export class DevolucionesComponent implements OnInit {
         { label: 'Ver', icon: 'view', onClick: (row) => this.openDetail(row) },
     ];
 
+    /** Proveedores activos para el select de filtro del toolbar. */
+    proveedoresFiltro = signal<ProveedorFiltroOption[]>([]);
+
+    // Filtros select del toolbar. Las opciones salen de erp_parameters (fuente única).
     estadoFilters: FilterConfig[] = [
-        {
-            field: 'estado',
-            label: 'Todos los estados',
-            options: toObservable(this.catalog.options('ESTADO_DEVOLUCION_COMPRA')).pipe(
-                map((o) => o.map((x) => ({ value: x.codigo, label: x.valor })))
-            ),
-        },
-        {
-            field: 'tipo',
-            label: 'Todos los tipos',
-            options: toObservable(this.catalog.options('TIPO_DEVOLUCION')).pipe(
-                map((o) => o.map((x) => ({ value: x.codigo, label: x.valor })))
-            ),
-        },
+        catalogFilter(this.catalog, 'ESTADO_DEVOLUCION_COMPRA', 'estado', 'Todos los estados'),
+        catalogFilter(this.catalog, 'TIPO_DEVOLUCION', 'tipo', 'Todos los tipos'),
+        catalogFilter(this.catalog, 'MOTIVO_DEVOLUCION_COMPRA', 'motivo', 'Todos los motivos'),
+        signalFilter('proveedorId', 'Todos los proveedores', this.proveedoresFiltro,
+            p => ({ value: p.id, label: p.razonSocial })),
+    ];
+
+    /** Rango de fecha de registro de la devolución. */
+    dateRangeFilters: DateRangeFilterConfig[] = [
+        { field: 'createdAt', label: 'Fecha de registro' }
     ];
 
     /**
      * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios
-     * (respeta el filtro de estado actual). Ver /purchases/api/devoluciones/export.
+     * respetando TODOS los filtros vigentes. Ver /purchases/api/devoluciones/export.
      */
     readonly exportConfig: BackendExportConfig = {
         url: `${environment.apiUrls.purchases}/api/devoluciones/export`,
         filename: 'devoluciones',
-        params: () => ({ estado: this.filterEstado(), tipo: this.filterTipo() || undefined }),
+        params: () => ({
+            q: this.searchQuery() || undefined,
+            estado: this.filterEstado() || undefined,
+            tipo: this.filterTipo() || undefined,
+            motivo: this.filterMotivo() || undefined,
+            proveedorId: this.filterProveedorId() || undefined,
+            createdAtDesde: this.filterCreatedAtDesde() ?? undefined,
+            createdAtHasta: this.filterCreatedAtHasta() ?? undefined,
+        }),
     };
 
     devolucionForm = this.fb.group({
@@ -152,17 +160,33 @@ export class DevolucionesComponent implements OnInit {
 
     get itemsArray(): FormArray { return this.devolucionForm.get('items') as FormArray; }
 
-    ngOnInit(): void { this.loadDevoluciones(); }
+    ngOnInit(): void {
+        this.loadDevoluciones();
+        this.loadProveedoresFiltro();
+    }
+
+    /** Proveedores activos para el select de filtro del toolbar. */
+    private loadProveedoresFiltro(): void {
+        this.proveedorService.getProveedores({ size: PAGINATION.maxPageSize, estado: 'ACTIVO' }).subscribe({
+            next: (res) => this.proveedoresFiltro.set(toProveedorOptions(res.content)),
+            error: () => this.proveedoresFiltro.set([])
+        });
+    }
 
     loadDevoluciones(): void {
         this.loading.set(true);
         this.error.set(null);
-        this.devolucionService.listar(
-            this.currentPage(),
-            this.pageSize(),
-            this.filterEstado() || undefined,
-            this.filterTipo() || undefined
-        ).subscribe({
+        this.devolucionService.listar({
+            page: this.currentPage(),
+            size: this.pageSize(),
+            q: this.searchQuery() || undefined,
+            estado: this.filterEstado() || undefined,
+            tipo: this.filterTipo() || undefined,
+            motivo: this.filterMotivo() || undefined,
+            proveedorId: this.filterProveedorId() || undefined,
+            createdAtDesde: this.filterCreatedAtDesde() || undefined,
+            createdAtHasta: this.filterCreatedAtHasta() || undefined
+        }).subscribe({
             next: (page) => {
                 this.devoluciones.set(page.content);
                 this.totalElements.set(page.totalElements);
@@ -179,20 +203,45 @@ export class DevolucionesComponent implements OnInit {
         });
     }
 
+    /** La búsqueda por texto va al backend (`q`), no filtra la página cargada. */
     onSearchTerm(term: string): void {
         this.searchQuery.set(term);
+        this.currentPage.set(0);
+        this.loadDevoluciones();
     }
 
     onFilterChangeEvent(event: FilterChangeEvent): void {
-        if (event.field === 'estado') {
-            this.filterEstado.set((event.value as string) ?? '');
-            this.currentPage.set(0);
-            this.loadDevoluciones();
-        } else if (event.field === 'tipo') {
-            this.filterTipo.set((event.value as string) ?? '');
-            this.currentPage.set(0);
-            this.loadDevoluciones();
+        const valor = event.value != null ? String(event.value) : '';
+        switch (event.field) {
+            case 'estado':      this.filterEstado.set(valor); break;
+            case 'tipo':        this.filterTipo.set(valor); break;
+            case 'motivo':      this.filterMotivo.set(valor); break;
+            case 'proveedorId': this.filterProveedorId.set(valor); break;
+            default: return;
         }
+        this.currentPage.set(0);
+        this.loadDevoluciones();
+    }
+
+    onDateRangeChange(event: DateRangeChangeEvent): void {
+        if (event.field !== 'createdAt') return;
+        this.filterCreatedAtDesde.set(event.from);
+        this.filterCreatedAtHasta.set(event.to);
+        this.currentPage.set(0);
+        this.loadDevoluciones();
+    }
+
+    /** "Limpiar filtros": resetea todo y recarga UNA sola vez. */
+    onFiltersClear(): void {
+        this.searchQuery.set('');
+        this.filterEstado.set('');
+        this.filterTipo.set('');
+        this.filterMotivo.set('');
+        this.filterProveedorId.set('');
+        this.filterCreatedAtDesde.set(null);
+        this.filterCreatedAtHasta.set(null);
+        this.currentPage.set(0);
+        this.loadDevoluciones();
     }
 
     onPageChange(event: PaginationEvent): void {

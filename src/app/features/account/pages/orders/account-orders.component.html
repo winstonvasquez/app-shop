@@ -1,5 +1,48 @@
 <ds-account-shell title="Mis pedidos" subtitle="Historial completo y seguimiento" [userName]="userName()">
 
+    <!-- Filtros server-side: búsqueda + selects + rango de fecha (TODO va al backend) -->
+    <div class="filters">
+        <ds-input class="filters-search" icon="search" placeholder="Buscar por N° de pedido o comprobante..."
+            [ngModel]="searchQuery()" (ngModelChange)="onSearch($event)" [full]="true"/>
+
+        <select class="filter-select" [value]="filterEstado()" (change)="onEstadoChange($any($event.target).value)">
+            <option value="">Todos los estados</option>
+            @for (o of estadosPedido(); track o.codigo) {
+                <option [value]="o.codigo">{{ o.valor }}</option>
+            }
+        </select>
+
+        <select class="filter-select" [value]="filterCpeTipo()" (change)="onCpeTipoChange($any($event.target).value)">
+            <option value="">Tipo de comprobante</option>
+            @for (o of tiposCpe(); track o.codigo) {
+                <option [value]="o.codigo">{{ o.valor }}</option>
+            }
+        </select>
+
+        <select class="filter-select" [value]="filterCpeEstado()" (change)="onCpeEstadoChange($any($event.target).value)">
+            <option value="">Estado SUNAT</option>
+            @for (o of estadosCpe(); track o.codigo) {
+                <option [value]="o.codigo">{{ o.valor }}</option>
+            }
+        </select>
+
+        <select class="filter-select" [value]="filterMetodoPago()" (change)="onMetodoPagoChange($any($event.target).value)">
+            <option value="">Método de pago</option>
+            @for (o of metodosPago(); track o.codigo) {
+                <option [value]="o.codigo">{{ o.valor }}</option>
+            }
+        </select>
+
+        <input class="filter-date" type="date" [value]="filterFechaDesde()"
+            (change)="onFechaDesdeChange($any($event.target).value)" title="Desde" />
+        <input class="filter-date" type="date" [value]="filterFechaHasta()"
+            (change)="onFechaHastaChange($any($event.target).value)" title="Hasta" />
+
+        @if (hasActiveFilters()) {
+            <ds-button variant="secondary" size="sm" (click)="onFiltersClear()">Limpiar</ds-button>
+        }
+    </div>
+
     @if (loading()) {
         <div class="state">
             <span class="spinner"></span> Cargando pedidos…
@@ -79,6 +122,31 @@
 </ds-account-shell>
 
 <style>
+    .filters {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-bottom: 16px;
+    }
+    .filters-search { flex: 1 1 240px; min-width: 200px; }
+    .filter-select,
+    .filter-date {
+        height: 40px;
+        padding: 0 10px;
+        border: 1px solid var(--c-border);
+        border-radius: var(--r-md);
+        background: var(--c-surface);
+        color: var(--c-text);
+        font-size: 13px;
+        font-family: var(--f-sans);
+    }
+    .filter-select:focus,
+    .filter-date:focus {
+        border-color: var(--c-brand);
+        outline: none;
+    }
+
     .state, .empty {
         background: var(--c-surface);
         border: 1px solid var(--c-border);

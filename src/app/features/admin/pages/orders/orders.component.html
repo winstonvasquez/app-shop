@@ -14,6 +14,8 @@
         [loading]="loading()"
         [searchable]="true"
         searchPlaceholder="Buscar por ID, cliente o estado..."
+        [filters]="filters"
+        [dateRangeFilters]="dateRangeFilters"
         [exportable]="true"
         exportFileName="pedidos"
         [exportConfig]="exportConfig"
@@ -24,6 +26,9 @@
         [sortField]="sortField()"
         [sortDirection]="sortDirection()"
         (searchChange)="onSearchTerm($event)"
+        (filterChange)="onFilterChangeEvent($event)"
+        (dateRangeChange)="onDateRangeChange($event)"
+        (filtersClear)="onFiltersClear()"
         (pageChange)="onPageChange($event)"
         (sortChange)="onSort($event)">
     </app-data-table>

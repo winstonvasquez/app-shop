@@ -266,8 +266,8 @@ export class ProductsPageComponent implements OnInit {
                     search: query || undefined,
                     categoriaId: catId ?? undefined,
                     marcas,
-                    minPrice: pMin ?? undefined,
-                    maxPrice: pMax ?? undefined,
+                    precioMin: pMin ?? undefined,
+                    precioMax: pMax ?? undefined,
                     minRating: rating ?? undefined,
                 }
             ).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({

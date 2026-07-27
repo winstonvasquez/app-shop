@@ -7,76 +7,28 @@
     <app-button label="Registrar Precio" icon="plus" variant="primary" (click)="showForm.set(true)" />
   </div>
 
-  <!-- Búsqueda -->
-  <div class="card mb-4">
-    <div class="card-body">
-      <div class="flex gap-3 items-end flex-wrap">
-        <div>
-          <label class="input-label">Buscar por</label>
-          <app-catalog-select tabla="TIPO_BUSQUEDA_HISTORIAL_PRECIOS"
-              [ngModel]="tipoBusqueda()"
-              (ngModelChange)="tipoBusqueda.set($event); busquedaValor.set('')">
-          </app-catalog-select>
-        </div>
-        <div class="flex-1">
-          <label class="input-label">
-            {{ tipoBusqueda() === 'sku' ? 'SKU del Producto' :
-               tipoBusqueda() === 'producto' ? 'UUID del Producto' : 'UUID del Proveedor' }}
-          </label>
-          <input class="form-input"
-                 [value]="busquedaValor()"
-                 (input)="busquedaValor.set($any($event.target).value)"
-                 (keydown.enter)="buscar()"
-                 placeholder="Ingresa el valor a buscar..." />
-        </div>
-        <app-button label="Buscar" icon="search" variant="primary" (click)="buscar()" [disabled]="!busquedaValor().trim()" />
-      </div>
-    </div>
-  </div>
-
-  <!-- Tabla historial -->
-  <div class="card">
-    <div class="card-body p-0">
-      @if (loading()) {
-        <div class="loading-container"><div class="spinner"></div></div>
-      } @else if (historial().length === 0) {
-        <div class="p-8 text-center text-muted">Realiza una búsqueda para ver el historial de precios</div>
-      } @else {
-        <table class="table">
-          <thead>
-            <tr>
-              <th class="table-header-cell">Fecha</th>
-              <th class="table-header-cell">SKU</th>
-              <th class="table-header-cell">Producto</th>
-              <th class="table-header-cell">Proveedor</th>
-              <th class="table-header-cell">OC</th>
-              <th class="table-header-cell text-right">Precio Unit.</th>
-              <th class="table-header-cell text-center">Moneda</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (h of historial(); track h.id) {
-              <tr class="table-row">
-                <td class="table-cell">{{ h.fechaReferencia | date:'dd/MM/yyyy' }}</td>
-                <td class="table-cell font-mono text-sm">{{ h.sku }}</td>
-                <td class="table-cell">{{ h.productoNombre }}</td>
-                <td class="table-cell">{{ h.proveedorNombre }}</td>
-                <td class="table-cell text-muted text-sm">{{ h.ordenCompraCodigo ?? '—' }}</td>
-                <td class="table-cell text-right font-semibold"
-                    [class.text-success]="h.precioUnitario === precioMinimo(h.sku)"
-                    [class.text-on]="h.precioUnitario !== precioMinimo(h.sku)">
-                  {{ h.precioUnitario | number:'1.2-2' }}
-                </td>
-                <td class="table-cell text-center">
-                  <span class="badge badge-neutral">{{ h.moneda }}</span>
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      }
-    </div>
-  </div>
+  <app-data-table
+      [data]="historial()"
+      [columns]="columns"
+      [loading]="loading()"
+      [searchable]="true"
+      searchPlaceholder="Buscar por SKU o producto..."
+      [filters]="filters"
+      [dateRangeFilters]="dateRangeFilters"
+      [exportable]="false"
+      [currentPage]="currentPage()"
+      [pageSize]="pageSize()"
+      [totalElements]="totalElements()"
+      [totalPages]="totalPages()"
+      [sortField]="sortField()"
+      [sortDirection]="sortDirection()"
+      (searchChange)="onSearchTerm($event)"
+      (filterChange)="onFilterChangeEvent($event)"
+      (dateRangeChange)="onDateRangeChange($event)"
+      (filtersClear)="onFiltersClear()"
+      (pageChange)="onPaginationChange($event)"
+      (sortChange)="onSort($event)">
+  </app-data-table>
 </div>
 
 <!-- Drawer registrar precio -->

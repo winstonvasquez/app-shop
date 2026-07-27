@@ -20,11 +20,13 @@
     [pageSize]="pageSize()"
     [searchable]="true"
     searchPlaceholder="Buscar por serie, N° o destinatario..."
-    [filters]="estadoFilters"
+    [filters]="filters"
     [dateRangeFilters]="dateRangeFilters"
     [exportConfig]="exportConfig"
+    (searchChange)="onSearch($event)"
     (filterChange)="onFilterChangeEvent($event)"
     (dateRangeChange)="onDateRangeChange($event)"
+    (filtersClear)="onFiltersClear()"
     (pageChange)="onPageChange($event)">
   </app-data-table>
 </div>

@@ -1,9 +1,12 @@
 import {
     ChangeDetectionStrategy, Component, inject, signal, OnInit
 } from '@angular/core';
-import { of } from 'rxjs';
 import { FormBuilder, ReactiveFormsModule, Validators, FormGroup, FormControl } from '@angular/forms';
-import { DataTableComponent, TableColumn, TableAction, PaginationEvent, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
+import {
+    DataTableComponent, TableColumn, TableAction, PaginationEvent,
+    FilterConfig, FilterChangeEvent, DateRangeFilterConfig, DateRangeChangeEvent
+} from '@shared/ui/tables/data-table/data-table.component';
+import { staticFilter, ACTIVO_OPTIONS } from '@shared/ui/tables/data-table/filter-helpers';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
@@ -43,17 +46,24 @@ export class WarehouseManagementComponent implements OnInit {
     totalElements = signal(0);
     totalPages = signal(0);
 
+    // Filtros (TODOS server-side — la vista nunca filtra la página cargada)
+    searchQuery = signal('');
     filterActive = signal<boolean | null>(null);
+    filterIsPrincipal = signal<boolean | null>(null);
+    filterCreatedAtDesde = signal<string | null>(null);
+    filterCreatedAtHasta = signal<string | null>(null);
 
+    /** `active` e `isPrincipal` son booleanos de la entidad — no hay catálogo que los respalde. */
     readonly filters: FilterConfig[] = [
-        {
-            field: 'active',
-            label: 'Estado',
-            options: of([
-                { value: 'true', label: 'Activo' },
-                { value: 'false', label: 'Inactivo' },
-            ])
-        }
+        staticFilter('active', 'Estado', ACTIVO_OPTIONS),
+        staticFilter('isPrincipal', 'Almacén principal', [
+            { value: 'true', label: 'Principal' },
+            { value: 'false', label: 'No principal' }
+        ])
+    ];
+
+    readonly dateRangeFilters: DateRangeFilterConfig[] = [
+        { field: 'createdAt', label: 'Fecha de alta' }
     ];
 
     showDrawer = signal(false);
@@ -93,12 +103,19 @@ export class WarehouseManagementComponent implements OnInit {
     ];
 
     /**
-     * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios.
-     * Ver /inventory/api/warehouses/export.
+     * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios,
+     * respetando los mismos filtros que el listado. Ver /inventory/api/warehouses/export.
      */
     readonly exportConfig: BackendExportConfig = {
         url: `${environment.apiUrls.inventory}/api/warehouses/export`,
-        filename: 'almacenes'
+        filename: 'almacenes',
+        params: () => ({
+            search: this.searchQuery(),
+            active: this.filterActive() ?? undefined,
+            isPrincipal: this.filterIsPrincipal() ?? undefined,
+            createdAtDesde: this.filterCreatedAtDesde() ?? undefined,
+            createdAtHasta: this.filterCreatedAtHasta() ?? undefined
+        })
     };
 
     actions: TableAction<Warehouse>[] = [
@@ -136,7 +153,14 @@ export class WarehouseManagementComponent implements OnInit {
     loadWarehouses(): void {
         this.loading.set(true);
         this.api.searchWarehousesPaged(
-            this.currentPage(), this.pageSize(), undefined, this.filterActive() ?? undefined
+            this.currentPage(),
+            this.pageSize(),
+            this.searchQuery() || undefined,
+            this.filterActive() ?? undefined,
+            this.filterIsPrincipal() ?? undefined,
+            undefined, // city: sin endpoint de valores distintos disponible aún, no se ofrece como select
+            this.filterCreatedAtDesde() ?? undefined,
+            this.filterCreatedAtHasta() ?? undefined
         ).subscribe({
             next: (page) => {
                 this.warehouses.set(page.content);
@@ -148,11 +172,39 @@ export class WarehouseManagementComponent implements OnInit {
         });
     }
 
+    /** La búsqueda por texto también va al backend (`search`), no filtra la página cargada. */
+    onSearchTerm(term: string): void {
+        this.searchQuery.set(term);
+        this.currentPage.set(0);
+        this.loadWarehouses();
+    }
+
     onFilterChangeEvent(event: FilterChangeEvent): void {
-        if (event.field !== 'active') return;
-        this.filterActive.set(event.value === null || event.value === ''
-            ? null
-            : String(event.value) === 'true');
+        const valor = event.value != null && event.value !== '' ? String(event.value) === 'true' : null;
+        switch (event.field) {
+            case 'active':      this.filterActive.set(valor); break;
+            case 'isPrincipal': this.filterIsPrincipal.set(valor); break;
+            default: return;
+        }
+        this.currentPage.set(0);
+        this.loadWarehouses();
+    }
+
+    onDateRangeChange(event: DateRangeChangeEvent): void {
+        if (event.field !== 'createdAt') return;
+        this.filterCreatedAtDesde.set(event.from);
+        this.filterCreatedAtHasta.set(event.to);
+        this.currentPage.set(0);
+        this.loadWarehouses();
+    }
+
+    /** "Limpiar filtros": resetea todo y recarga UNA sola vez. */
+    onFiltersClear(): void {
+        this.searchQuery.set('');
+        this.filterActive.set(null);
+        this.filterIsPrincipal.set(null);
+        this.filterCreatedAtDesde.set(null);
+        this.filterCreatedAtHasta.set(null);
         this.currentPage.set(0);
         this.loadWarehouses();
     }

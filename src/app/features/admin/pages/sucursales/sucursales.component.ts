@@ -1,10 +1,13 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
-import { DataTableComponent, TableColumn, TableAction, PaginationEvent } from '@shared/ui/tables/data-table/data-table.component';
+import { HttpClient } from '@angular/common/http';
+import { DataTableComponent, TableColumn, TableAction, PaginationEvent, FilterConfig, FilterChangeEvent, DateRangeFilterConfig, DateRangeChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
+import { staticFilter, signalFilter, ACTIVO_OPTIONS } from '@shared/ui/tables/data-table/filter-helpers';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { AuthService } from '@core/auth/auth.service';
 import { Sucursal, SucursalInput, SucursalService } from '@features/admin/services/sucursal.service';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
+import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 
 @Component({
     selector: 'app-sucursales',
@@ -18,27 +21,41 @@ export class SucursalesComponent implements OnInit {
     private readonly svc = inject(SucursalService);
     private readonly fb = inject(FormBuilder);
     private readonly auth = inject(AuthService);
+    private readonly http = inject(HttpClient);
 
     sucursales = signal<Sucursal[]>([]);
 
-    // Búsqueda por botón + paginación client-side (tabla estándar)
+    // Filtros / búsqueda (TODOS server-side — la vista nunca filtra la página cargada)
     searchQuery = signal('');
+    filterActivo = signal('');
+    filterListaPreciosId = signal('');
+    filterFechaCreacionDesde = signal<string | undefined>(undefined);
+    filterFechaCreacionHasta = signal<string | undefined>(undefined);
+
+    // Paginación server-side (GET /pos/sucursales/paged)
     currentPage = signal(0);
     pageSize = signal(20);
+    totalElements = signal(0);
+    totalPages = signal(0);
 
-    readonly filtradas = computed(() => {
-        const q = this.searchQuery().toLowerCase();
-        if (!q) return this.sucursales();
-        return this.sucursales().filter(s =>
-            s.nombre.toLowerCase().includes(q) ||
-            (s.direccion ?? '').toLowerCase().includes(q));
-    });
-    readonly totalElements = computed(() => this.filtradas().length);
-    readonly totalPages = computed(() => Math.ceil(this.totalElements() / this.pageSize()) || 1);
-    readonly pagedData = computed(() => {
-        const start = this.currentPage() * this.pageSize();
-        return this.filtradas().slice(start, start + this.pageSize());
-    });
+    /** Listas de precios de la empresa para el select de filtro (lista chica, no requiere server-search). */
+    listasPreciosFiltro = signal<{ id: number; nombre: string }[]>([]);
+
+    // Filtros select del toolbar. `almacenId` y `ubigeo` NO se cablean: `SucursalEntity.almacenId`
+    // es un Long heredado de antes de que los almacenes migraran a UUID en microshoplogistica (sin
+    // fuente Long válida de opciones) y `SucursalEntity.ubigeo` guarda el ubigeo distrital completo
+    // (6 dígitos) comparado por IGUALDAD exacta -- el catálogo UBIGEO_DEPARTAMENTO son NOMBRES de
+    // departamento ("LIMA", "CALLAO"...), nunca calzarían. Cablear cualquiera de los dos produciría
+    // un filtro que siempre devuelve 0 resultados.
+    readonly filters: FilterConfig[] = [
+        staticFilter('activo', 'Estado', ACTIVO_OPTIONS),
+        signalFilter('listaPreciosId', 'Todas las listas de precios', this.listasPreciosFiltro,
+            l => ({ value: l.id, label: l.nombre })),
+    ];
+
+    readonly dateRangeFilters: DateRangeFilterConfig[] = [
+        { field: 'fechaCreacion', label: 'Fecha de creación' },
+    ];
 
     columns: TableColumn<Sucursal>[] = [
         { key: 'nombre', label: 'Nombre', sortable: true, html: true,
@@ -54,7 +71,14 @@ export class SucursalesComponent implements OnInit {
     readonly exportConfig: BackendExportConfig = {
         url: `${environment.apiUrls.pos}/sucursales/export`,
         filename: 'sucursales',
-        params: () => ({ companyId: this.currentCompanyId() }),
+        params: () => ({
+            companyId: this.currentCompanyId(),
+            search: this.searchQuery() || undefined,
+            activo: this.filterActivo() || undefined,
+            listaPreciosId: this.filterListaPreciosId() || undefined,
+            fechaCreacionDesde: this.filterFechaCreacionDesde(),
+            fechaCreacionHasta: this.filterFechaCreacionHasta(),
+        }),
     };
 
     actions: TableAction<Sucursal>[] = [
@@ -63,15 +87,6 @@ export class SucursalesComponent implements OnInit {
           show: (s) => s.activo, onClick: (s) => this.deactivate(s) }
     ];
 
-    onSearchTerm(term: string): void {
-        this.searchQuery.set(term);
-        this.currentPage.set(0);
-    }
-
-    onPageChange(e: PaginationEvent): void {
-        this.currentPage.set(e.page);
-        this.pageSize.set(e.size);
-    }
     loading = signal(false);
     error = signal<string | null>(null);
 
@@ -89,25 +104,94 @@ export class SucursalesComponent implements OnInit {
         serieFactura: [''],
     });
 
-    activas = computed(() => this.sucursales().filter(s => s.activo));
-    total = computed(() => this.sucursales().length);
+    isEmpty = computed(() => !this.loading() && this.sucursales().length === 0);
 
-    ngOnInit() { this.load(); }
+    ngOnInit() {
+        this.load();
+        this.loadListasPreciosFiltro();
+    }
 
     private currentCompanyId(): number {
         return this.auth.currentUser()?.activeCompanyId ?? 1;
     }
 
+    /** Listas de precios activas de la empresa para el select de filtro del toolbar. */
+    private loadListasPreciosFiltro(): void {
+        this.http.get<{ id: number; nombre: string }[]>(`${environment.apiUrls.pos}/listas-precios`, {
+            params: { companyId: String(this.currentCompanyId()) }
+        }).subscribe({
+            next: (res) => this.listasPreciosFiltro.set(res ?? []),
+            error: () => this.listasPreciosFiltro.set([])
+        });
+    }
+
+    /** Carga la página actual server-side (search + filtros + fecha + 20/pág). */
     load() {
         this.loading.set(true);
         this.error.set(null);
-        this.svc.list(this.currentCompanyId()).subscribe({
-            next: list => { this.sucursales.set(list); this.loading.set(false); },
+        this.svc.listPaged(this.currentCompanyId(), {
+            page: this.currentPage(),
+            size: this.pageSize(),
+            q: this.searchQuery() || undefined,
+            activo: this.filterActivo() || undefined,
+            listaPreciosId: this.filterListaPreciosId() || undefined,
+            fechaCreacionDesde: this.filterFechaCreacionDesde(),
+            fechaCreacionHasta: this.filterFechaCreacionHasta(),
+        }).subscribe({
+            next: (res) => {
+                this.sucursales.set(res.content ?? []);
+                this.totalElements.set(pageTotalElements(res));
+                this.totalPages.set(pageTotalPages(res));
+                this.loading.set(false);
+            },
             error: err => {
                 this.error.set(err?.error?.detail ?? 'Error cargando sucursales');
                 this.loading.set(false);
             },
         });
+    }
+
+    /** La búsqueda por texto también va al backend, nunca filtra la página cargada. */
+    onSearchTerm(term: string): void {
+        this.searchQuery.set(term);
+        this.currentPage.set(0);
+        this.load();
+    }
+
+    onFilterChangeEvent(event: FilterChangeEvent): void {
+        const valor = event.value != null ? String(event.value) : '';
+        switch (event.field) {
+            case 'activo':         this.filterActivo.set(valor); break;
+            case 'listaPreciosId': this.filterListaPreciosId.set(valor); break;
+            default: return;
+        }
+        this.currentPage.set(0);
+        this.load();
+    }
+
+    onDateRangeChange(event: DateRangeChangeEvent): void {
+        if (event.field !== 'fechaCreacion') return;
+        this.filterFechaCreacionDesde.set(event.from ?? undefined);
+        this.filterFechaCreacionHasta.set(event.to ?? undefined);
+        this.currentPage.set(0);
+        this.load();
+    }
+
+    /** "Limpiar filtros": resetea TODOS los signals y recarga UNA sola vez. */
+    onFiltersClear(): void {
+        this.searchQuery.set('');
+        this.filterActivo.set('');
+        this.filterListaPreciosId.set('');
+        this.filterFechaCreacionDesde.set(undefined);
+        this.filterFechaCreacionHasta.set(undefined);
+        this.currentPage.set(0);
+        this.load();
+    }
+
+    onPageChange(e: PaginationEvent): void {
+        this.currentPage.set(e.page);
+        this.pageSize.set(e.size);
+        this.load();
     }
 
     openCreate() {

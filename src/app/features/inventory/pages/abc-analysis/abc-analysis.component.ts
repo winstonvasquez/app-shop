@@ -1,11 +1,18 @@
 import { Component, ChangeDetectionStrategy, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { InventoryApiService, AbcAnalysis, AbcItem } from '../../services/inventory-api.service';
+import { Warehouse } from '../../models/inventory.models';
 import { ProductsApiService } from '@features/products/services/products-api.service';
-import { DataTableComponent, TableColumn, PaginationEvent } from '@shared/ui/tables/data-table/data-table.component';
+import {
+    DataTableComponent, TableColumn, PaginationEvent, FilterConfig, FilterChangeEvent,
+    DateRangeFilterConfig, DateRangeChangeEvent
+} from '@shared/ui/tables/data-table/data-table.component';
+import { catalogFilter, signalFilter } from '@shared/ui/tables/data-table/filter-helpers';
+import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { CatalogSelectComponent } from '@shared/components';
+import { CatalogService } from '@core/services/catalog.service';
 
 /** Fila enriquecida para la tabla: agrega nombre resuelto y valor formateado. */
 interface AbcRow extends AbcItem {
@@ -37,7 +44,8 @@ interface AbcRow extends AbcItem {
                 <app-alert type="error" [message]="error()!" [dismissible]="true" (dismiss)="error.set(null)" />
             }
 
-            <!-- Resumen por clase (línea compacta; los KPI cards viven solo en dashboards) -->
+            <!-- Resumen por clase (línea compacta; los KPI cards viven solo en dashboards). Cubre SIEMPRE
+                 el período completo (no la página actual) — no depende de los filtros de la tabla. -->
             <div class="flex flex-wrap gap-md text-sm text-subtle mb-sm">
                 @for (r of resumen(); track r.clase) {
                     <span>
@@ -56,27 +64,28 @@ interface AbcRow extends AbcItem {
                 </div>
             }
 
-            @if (!loading() && items().length === 0) {
-                <app-alert type="info"
-                    message="No hay movimientos de demanda (ventas o consumo) en el período seleccionado. Probá ampliar el rango." />
-            } @else {
-                <app-data-table
-                    [data]="pagedItems()"
-                    [columns]="columns"
-                    [loading]="loading()"
-                    [currentPage]="currentPage()"
-                    [pageSize]="pageSize()"
-                    [totalElements]="items().length"
-                    [totalPages]="totalPages()"
-                    (pageChange)="onPageChange($event)">
-                </app-data-table>
-            }
+            <app-data-table
+                [data]="rows()"
+                [columns]="columns"
+                [loading]="loading()"
+                [currentPage]="currentPage()"
+                [pageSize]="pageSize()"
+                [totalElements]="totalElements()"
+                [totalPages]="totalPages()"
+                [filters]="filters"
+                [dateRangeFilters]="dateRangeFilters"
+                (filterChange)="onFilterChangeEvent($event)"
+                (dateRangeChange)="onDateRangeChange($event)"
+                (filtersClear)="onFiltersClear()"
+                (pageChange)="onPageChange($event)">
+            </app-data-table>
         </div>
     `
 })
 export class AbcAnalysisComponent {
     private readonly api = inject(InventoryApiService);
     private readonly productsApi = inject(ProductsApiService);
+    readonly catalog = inject(CatalogService);
 
     analysis = signal<AbcAnalysis | null>(null);
     loading = signal(false);
@@ -88,6 +97,30 @@ export class AbcAnalysisComponent {
 
     currentPage = signal(0);
     pageSize = signal(15);
+    totalElements = signal(0);
+    totalPages = signal(0);
+
+    // Filtros (TODOS server-side — la vista nunca filtra la página cargada. La búsqueda por
+    // texto NO existe: el backend no expone un parámetro `q` sobre este endpoint).
+    filterClase = signal('');
+    filterWarehouseId = signal('');
+    filterMovementDateDesde = signal<string | null>(null);
+    filterMovementDateHasta = signal<string | null>(null);
+
+    /** Almacenes para el select de filtro del toolbar. */
+    warehousesFiltro = signal<Warehouse[]>([]);
+
+    // Filtros select del toolbar. La clase ABC sale de erp_parameters (fuente única).
+    filters: FilterConfig[] = [
+        catalogFilter(this.catalog, 'CLASE_ABC', 'clase', 'Todas las clases'),
+        signalFilter('warehouseId', 'Todos los almacenes', this.warehousesFiltro,
+            w => ({ value: w.id, label: w.name }))
+    ];
+
+    /** Rango de fecha explícito del período de análisis (tiene prioridad sobre "dias" si se usa). */
+    dateRangeFilters: DateRangeFilterConfig[] = [
+        { field: 'movementDate', label: 'Período de análisis' }
+    ];
 
     readonly breadcrumbs: Breadcrumb[] = [
         { label: 'Inicio', url: '/admin/dashboard' },
@@ -96,16 +129,14 @@ export class AbcAnalysisComponent {
     ];
 
     readonly resumen = computed(() => this.analysis()?.resumen ?? []);
-    readonly items = computed(() => this.analysis()?.items ?? []);
+    readonly items = computed(() => this.analysis()?.items.content ?? []);
     readonly totalProductos = computed(() => this.analysis()?.totalProductos ?? 0);
-    readonly totalPages = computed(() => Math.max(1, Math.ceil(this.items().length / this.pageSize())));
     readonly valorTotalFmt = computed(() => this.fmt(this.analysis()?.valorTotal ?? 0));
 
-    /** Slice de la página actual, enriquecido con nombre y valor formateado (reactivo a productNames). */
-    readonly pagedItems = computed<AbcRow[]>(() => {
+    /** Página actual enriquecida con nombre y valor formateado (reactivo a productNames). */
+    readonly rows = computed<AbcRow[]>(() => {
         const names = this.productNames();
-        const start = this.currentPage() * this.pageSize();
-        return this.items().slice(start, start + this.pageSize()).map(it => ({
+        return this.items().map(it => ({
             ...it,
             productName: names.get(it.productId) ?? `Producto #${it.productId}`,
             valorFmt: 'S/ ' + this.fmt(it.valorConsumo)
@@ -128,16 +159,37 @@ export class AbcAnalysisComponent {
     ];
 
     constructor() {
+        this.loadWarehousesFiltro();
         this.load();
         this.loadProductNames();
+    }
+
+    /** Almacenes para el select de filtro del toolbar. */
+    private loadWarehousesFiltro(): void {
+        this.api.getWarehouses().subscribe({
+            next: (whs) => this.warehousesFiltro.set(whs),
+            error: () => this.warehousesFiltro.set([])
+        });
     }
 
     load(): void {
         this.loading.set(true);
         this.error.set(null);
-        this.currentPage.set(0);
-        this.api.getAbcAnalysis(this.dias()).subscribe({
-            next: (res) => { this.analysis.set(res); this.loading.set(false); },
+        this.api.getAbcAnalysis({
+            dias: this.dias(),
+            warehouseId: this.filterWarehouseId() ? Number(this.filterWarehouseId()) : undefined,
+            clase: this.filterClase() || undefined,
+            movementDateDesde: this.filterMovementDateDesde() || undefined,
+            movementDateHasta: this.filterMovementDateHasta() || undefined,
+            page: this.currentPage(),
+            size: this.pageSize()
+        }).subscribe({
+            next: (res) => {
+                this.analysis.set(res);
+                this.totalElements.set(pageTotalElements(res.items));
+                this.totalPages.set(pageTotalPages(res.items));
+                this.loading.set(false);
+            },
             error: (err: Error) => { this.error.set(err.message); this.loading.set(false); }
         });
     }
@@ -158,12 +210,43 @@ export class AbcAnalysisComponent {
 
     onDiasChange(value: string): void {
         this.dias.set(Number(value));
+        this.currentPage.set(0);
+        this.load();
+    }
+
+    onFilterChangeEvent(event: FilterChangeEvent): void {
+        const valor = event.value != null ? String(event.value) : '';
+        switch (event.field) {
+            case 'clase':       this.filterClase.set(valor); break;
+            case 'warehouseId': this.filterWarehouseId.set(valor); break;
+            default: return;
+        }
+        this.currentPage.set(0);
+        this.load();
+    }
+
+    onDateRangeChange(event: DateRangeChangeEvent): void {
+        if (event.field !== 'movementDate') return;
+        this.filterMovementDateDesde.set(event.from);
+        this.filterMovementDateHasta.set(event.to);
+        this.currentPage.set(0);
+        this.load();
+    }
+
+    /** "Limpiar filtros": resetea todo y recarga UNA sola vez. */
+    onFiltersClear(): void {
+        this.filterClase.set('');
+        this.filterWarehouseId.set('');
+        this.filterMovementDateDesde.set(null);
+        this.filterMovementDateHasta.set(null);
+        this.currentPage.set(0);
         this.load();
     }
 
     onPageChange(e: PaginationEvent): void {
         this.currentPage.set(e.page);
         this.pageSize.set(e.size);
+        this.load();
     }
 
     private fmt(v: number): string {

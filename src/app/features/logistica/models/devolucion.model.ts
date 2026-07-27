@@ -30,8 +30,7 @@ export type DevolucionStatus =
     | 'REFUNDED'
     | 'CANCELLED';
 
-// NOTA (2026-07-26): GET /logistics/api/returns devuelve una List<ReturnRequestResponse>
-// plana (ReturnController.getAllReturnRequests), NO un Page paginado — el backend no pagina
-// este listado hoy. La paginación de la tabla se resuelve client-side en
-// DevolucionesPageComponent sobre este arreglo. Si se agrega paginación real en backend,
-// reintroducir un tipo `DevolucionPage` y volver a getDevoluciones(): Observable<DevolucionPage>.
+// NOTA (2026-07-27): GET /logistics/api/returns ahora devuelve Page<ReturnRequestResponse>
+// (ReturnController.getAllReturnRequests), con filtros server-side de q/status/reason/
+// warehouseId/rangos de fecha. La paginación se resuelve enteramente en el backend —
+// ver DevolucionService.getDevoluciones() y @core/models/pagination.model#PageResponse.

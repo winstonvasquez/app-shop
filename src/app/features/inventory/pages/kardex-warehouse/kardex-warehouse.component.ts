@@ -1,16 +1,20 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators, FormGroup } from '@angular/forms';
 import { WmsApiService } from '../../services/wms-api.service';
 import { KardexLogisticoEntry } from '../../models/wms-zone.models';
 import { AlmacenService } from '@features/logistica/services/almacen.service';
-import { almacenSelectSource } from '@features/logistica/components/select-sources';
+import { Almacen } from '@features/logistica/models/almacen.model';
 import { AuthService } from '@core/auth/auth.service';
+import { CatalogService } from '@core/services/catalog.service';
 import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
-import { DataTableComponent, TableColumn, PaginationEvent } from '@shared/ui/tables/data-table/data-table.component';
+import { PAGINATION } from '@shared/constants/app.constants';
+import { DataTableComponent, TableColumn, PaginationEvent, FilterConfig, FilterChangeEvent, DateRangeFilterConfig, DateRangeChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
+import { catalogFilter, signalFilter } from '@shared/ui/tables/data-table/filter-helpers';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
-import { DateInputComponent } from '@shared/ui/forms/date-input/date-input.component';
-import { ButtonComponent, ServerSearchSelectComponent } from '@shared/components';
+import { ButtonComponent } from '@shared/components';
+import { ProductLookupComponent } from '../../components/product-lookup/product-lookup.component';
+import { ProductResponse } from '@core/models/product.model';
+import { productIdToUuid } from '../../utils/synthetic-uuid.util';
 import { ROUTES } from '@shared/constants/app.constants';
 
 @Component({
@@ -18,9 +22,8 @@ import { ROUTES } from '@shared/constants/app.constants';
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
-        ReactiveFormsModule,
         DataTableComponent, PageHeaderComponent, AlertComponent,
-        DateInputComponent, ServerSearchSelectComponent, ButtonComponent
+        ButtonComponent, ProductLookupComponent
     ],
     templateUrl: './kardex-warehouse.component.html'
 })
@@ -28,14 +31,24 @@ export class KardexWarehouseComponent {
     private readonly api = inject(WmsApiService);
     private readonly almacenApi = inject(AlmacenService);
     private readonly authService = inject(AuthService);
-    private readonly fb = inject(FormBuilder);
-
-    readonly almacenSource = almacenSelectSource(this.almacenApi, () => this.authService.currentUser()?.activeCompanyId);
+    readonly catalog = inject(CatalogService);
 
     entries = signal<KardexLogisticoEntry[]>([]);
+    almacenesFiltro = signal<Almacen[]>([]);
     loading = signal(false);
     error = signal<string | null>(null);
+
+    // Filtros (TODOS server-side — la vista nunca filtra la página cargada)
     selectedAlmacenId = signal<string | null>(null);
+    filterTipoMovimiento = signal<string>('');
+    filterProductoId = signal<string | undefined>(undefined);
+    filterProductoNombre = signal<string | null>(null);
+    filterFrom = signal<string | undefined>(undefined);
+    filterTo = signal<string | undefined>(undefined);
+    searchQuery = signal('');
+
+    /** Panel del buscador de producto para el filtro del toolbar. */
+    filterProductLookupOpen = signal(false);
 
     currentPage = signal(0);
     pageSize = signal(20);
@@ -46,6 +59,17 @@ export class KardexWarehouseComponent {
         { label: 'Admin', url: ROUTES.admin },
         { label: 'Inventario', url: '/admin/inventario/dashboard' },
         { label: 'Kardex por Almacén' }
+    ];
+
+    // Filtros select del toolbar. El almacén es OBLIGATORIO para poder consultar (path variable).
+    filters: FilterConfig[] = [
+        signalFilter('almacenId', 'Seleccionar almacén...', this.almacenesFiltro,
+            a => ({ value: a.id, label: `${a.codigo} — ${a.nombre}` })),
+        catalogFilter(this.catalog, 'TIPO_MOVIMIENTO_INVENTARIO', 'tipoMovimiento', 'Todos los tipos')
+    ];
+
+    dateRangeFilters: DateRangeFilterConfig[] = [
+        { field: 'periodo', label: 'Rango de fechas' }
     ];
 
     columns: TableColumn<KardexLogisticoEntry>[] = [
@@ -70,23 +94,34 @@ export class KardexWarehouseComponent {
         { key: 'descripcion', label: 'Descripción', render: (r) => r.descripcion ?? '—' }
     ];
 
-    form: FormGroup = this.fb.nonNullable.group({
-        almacenId: [null as string | null, Validators.required],
-        from: ['', Validators.required],
-        to: ['', Validators.required]
-    });
-
-    onAlmacenChange(): void {
-        this.currentPage.set(0);
-        this.buscar();
+    constructor() {
+        this.loadAlmacenes();
     }
 
+    private loadAlmacenes(): void {
+        const companyId = this.authService.currentUser()?.activeCompanyId;
+        if (!companyId) { this.almacenesFiltro.set([]); return; }
+        this.almacenApi.getAlmacenes(String(companyId), { page: 0, size: PAGINATION.maxPageSize }).subscribe({
+            next: (res) => this.almacenesFiltro.set(res.content ?? []),
+            error: () => this.almacenesFiltro.set([])
+        });
+    }
+
+    /** Carga el kardex del backend respetando TODOS los filtros actuales. No hace nada sin almacén. */
     buscar(): void {
-        const v = this.form.getRawValue();
-        if (!v.almacenId || !v.from || !v.to) { return; }
+        const almacenId = this.selectedAlmacenId();
+        if (!almacenId) { this.entries.set([]); this.totalElements.set(0); this.totalPages.set(0); return; }
         this.loading.set(true);
         this.error.set(null);
-        this.api.getKardexPorAlmacen(v.almacenId, v.from, v.to, this.currentPage(), this.pageSize()).subscribe({
+        this.api.getKardexPorAlmacen(almacenId, {
+            page: this.currentPage(),
+            size: this.pageSize(),
+            from: this.filterFrom(),
+            to: this.filterTo(),
+            tipoMovimiento: this.filterTipoMovimiento() || undefined,
+            productoId: this.filterProductoId(),
+            q: this.searchQuery() || undefined
+        }).subscribe({
             next: (res) => {
                 this.entries.set(res.content);
                 this.totalElements.set(pageTotalElements(res));
@@ -95,6 +130,70 @@ export class KardexWarehouseComponent {
             },
             error: (err: Error) => { this.error.set(err.message); this.loading.set(false); }
         });
+    }
+
+    onSearchTerm(term: string): void {
+        this.searchQuery.set(term);
+        this.currentPage.set(0);
+        this.buscar();
+    }
+
+    onFilterChangeEvent(event: FilterChangeEvent): void {
+        switch (event.field) {
+            case 'almacenId':
+                this.selectedAlmacenId.set(event.value != null ? String(event.value) : null);
+                break;
+            case 'tipoMovimiento':
+                this.filterTipoMovimiento.set(event.value != null ? String(event.value) : '');
+                break;
+            default:
+                return;
+        }
+        this.currentPage.set(0);
+        this.buscar();
+    }
+
+    onDateRangeChange(event: DateRangeChangeEvent): void {
+        if (event.field !== 'periodo') return;
+        this.filterFrom.set(event.from ?? undefined);
+        this.filterTo.set(event.to ?? undefined);
+        this.currentPage.set(0);
+        this.buscar();
+    }
+
+    /** "Limpiar filtros": resetea todo (incluye almacén, producto y búsqueda) y recarga UNA sola vez. */
+    onFiltersClear(): void {
+        this.searchQuery.set('');
+        this.selectedAlmacenId.set(null);
+        this.filterTipoMovimiento.set('');
+        this.filterProductoId.set(undefined);
+        this.filterProductoNombre.set(null);
+        this.filterFrom.set(undefined);
+        this.filterTo.set(undefined);
+        this.filterProductLookupOpen.set(false);
+        this.currentPage.set(0);
+        this.buscar();
+    }
+
+    /** Abre/cierra el mini-panel de búsqueda de producto para el filtro del toolbar. */
+    toggleFilterProductLookup(): void {
+        this.filterProductLookupOpen.set(!this.filterProductLookupOpen());
+    }
+
+    /** El maestro de productos es numérico (ventas); el kardex logístico usa el UUID sintético. */
+    onFilterProductSelected(p: ProductResponse): void {
+        this.filterProductoId.set(productIdToUuid(p.id));
+        this.filterProductoNombre.set(p.nombre);
+        this.filterProductLookupOpen.set(false);
+        this.currentPage.set(0);
+        this.buscar();
+    }
+
+    clearFilterProducto(): void {
+        this.filterProductoId.set(undefined);
+        this.filterProductoNombre.set(null);
+        this.currentPage.set(0);
+        this.buscar();
     }
 
     onPageChange(e: PaginationEvent): void {

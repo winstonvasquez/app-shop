@@ -33,6 +33,7 @@ export class CuentaService {
     listarPaginado(options?: {
         page?: number; size?: number; nivel?: number;
         busqueda?: string; tipo?: string; estado?: string;
+        aceptaMovimiento?: boolean; esAnalitica?: boolean;
     }): Observable<PageResponse<CuentaContable>> {
         let params = new HttpParams();
         if (options?.page !== undefined) params = params.set('page', options.page.toString());
@@ -41,6 +42,8 @@ export class CuentaService {
         if (options?.busqueda) params = params.set('busqueda', options.busqueda);
         if (options?.tipo) params = params.set('tipo', options.tipo);
         if (options?.estado) params = params.set('estado', options.estado);
+        if (options?.aceptaMovimiento !== undefined) params = params.set('aceptaMovimiento', String(options.aceptaMovimiento));
+        if (options?.esAnalitica !== undefined) params = params.set('esAnalitica', String(options.esAnalitica));
         return this.http.get<PageResponse<CuentaContable>>(this.baseUrl, { params });
     }
 

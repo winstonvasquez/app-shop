@@ -1,12 +1,14 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { toObservable } from '@angular/core/rxjs-interop';
 import {
     FormBuilder, ReactiveFormsModule, Validators, FormGroup, FormArray, FormControl
 } from '@angular/forms';
 import { InventoryApiService } from '../../services/inventory-api.service';
-import { InventoryCount, InventoryCountDetail, InventoryCountRequest, InventoryCountStatus } from '../../models/inventory.models';
-import { map } from 'rxjs';
-import { DataTableComponent, TableColumn, TableAction, PaginationEvent, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
+import { InventoryCount, InventoryCountDetail, InventoryCountRequest, InventoryCountStatus, Warehouse } from '../../models/inventory.models';
+import {
+    DataTableComponent, TableColumn, TableAction, PaginationEvent, FilterConfig, FilterChangeEvent,
+    DateRangeFilterConfig, DateRangeChangeEvent
+} from '@shared/ui/tables/data-table/data-table.component';
+import { catalogFilter, signalFilter } from '@shared/ui/tables/data-table/filter-helpers';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
@@ -39,7 +41,7 @@ import { warehouseSelectSource } from '../../components/select-sources';
 export class InventoryCountComponent {
     private readonly api = inject(InventoryApiService);
     private readonly fb = inject(FormBuilder);
-    private readonly catalog = inject(CatalogService);
+    readonly catalog = inject(CatalogService);
 
     readonly warehouseSource = warehouseSelectSource(this.api);
 
@@ -54,7 +56,30 @@ export class InventoryCountComponent {
     totalElements = signal(0);
     totalPages = signal(0);
 
+    // Filtros (TODOS server-side — la vista nunca filtra la página cargada)
     filterStatus = signal('');
+    filterWarehouseId = signal('');
+    filterCountDateDesde = signal<string | null>(null);
+    filterCountDateHasta = signal<string | null>(null);
+    filterAdjustedDateDesde = signal<string | null>(null);
+    filterAdjustedDateHasta = signal<string | null>(null);
+    searchQuery = signal('');
+
+    /** Almacenes para el select de filtro del toolbar. */
+    warehousesFiltro = signal<Warehouse[]>([]);
+
+    // Filtros select del toolbar. Las opciones de estado salen de erp_parameters (fuente única).
+    filters: FilterConfig[] = [
+        catalogFilter(this.catalog, 'ESTADO_CONTEO_INVENTARIO', 'status', 'Todos los estados'),
+        signalFilter('warehouseId', 'Todos los almacenes', this.warehousesFiltro,
+            w => ({ value: w.id, label: w.name }))
+    ];
+
+    /** Rangos de fecha para el toolbar del data-table. */
+    dateRangeFilters: DateRangeFilterConfig[] = [
+        { field: 'countDate', label: 'Fecha de conteo' },
+        { field: 'adjustedDate', label: 'Fecha de ajuste' }
+    ];
 
     showDrawer = signal(false);
     submitting = signal(false);
@@ -121,7 +146,15 @@ export class InventoryCountComponent {
     readonly exportConfig: BackendExportConfig = {
         url: `${environment.apiUrls.inventory}/api/inventory/counts/export`,
         filename: 'inventarios-fisicos',
-        params: () => ({ status: this.filterStatus() })
+        params: () => ({
+            q: this.searchQuery() || undefined,
+            status: this.filterStatus() || undefined,
+            warehouseId: this.filterWarehouseId() || undefined,
+            countDateDesde: this.filterCountDateDesde() ?? undefined,
+            countDateHasta: this.filterCountDateHasta() ?? undefined,
+            adjustedDateDesde: this.filterAdjustedDateDesde() ?? undefined,
+            adjustedDateHasta: this.filterAdjustedDateHasta() ?? undefined
+        })
     };
 
     actions: TableAction<InventoryCount>[] = [
@@ -169,7 +202,16 @@ export class InventoryCountComponent {
     }
 
     constructor() {
+        this.loadWarehousesFiltro();
         this.loadCounts();
+    }
+
+    /** Almacenes para el select de filtro del toolbar. */
+    private loadWarehousesFiltro(): void {
+        this.api.getWarehouses().subscribe({
+            next: (whs) => this.warehousesFiltro.set(whs),
+            error: () => this.warehousesFiltro.set([])
+        });
     }
 
     loadCounts(): void {
@@ -177,7 +219,13 @@ export class InventoryCountComponent {
         this.api.getInventoryCounts({
             page: this.currentPage(),
             size: this.pageSize(),
-            status: this.filterStatus() || undefined
+            q: this.searchQuery() || undefined,
+            status: this.filterStatus() || undefined,
+            warehouseId: this.filterWarehouseId() ? Number(this.filterWarehouseId()) : undefined,
+            countDateDesde: this.filterCountDateDesde() || undefined,
+            countDateHasta: this.filterCountDateHasta() || undefined,
+            adjustedDateDesde: this.filterAdjustedDateDesde() || undefined,
+            adjustedDateHasta: this.filterAdjustedDateHasta() || undefined
         }).subscribe({
             next: (res) => {
                 this.counts.set(res.content);
@@ -224,15 +272,49 @@ export class InventoryCountComponent {
         });
     }
 
-    readonly estadoFilters: FilterConfig[] = [
-        { field: 'estado', label: 'Todos', options: toObservable(this.catalog.options('ESTADO_CONTEO_INVENTARIO')).pipe(
-            map(o => o.map(x => ({ value: x.codigo, label: x.valor })))
-        ) }
-    ];
+    /** La búsqueda por texto también va al backend (`q`), no filtra la página cargada. */
+    onSearchTerm(term: string): void {
+        this.searchQuery.set(term);
+        this.currentPage.set(0);
+        this.loadCounts();
+    }
 
     onFilterChangeEvent(event: FilterChangeEvent): void {
-        if (event.field !== 'estado') return;
-        this.filterStatus.set(event.value != null ? String(event.value) : '');
+        const valor = event.value != null ? String(event.value) : '';
+        switch (event.field) {
+            case 'status':      this.filterStatus.set(valor); break;
+            case 'warehouseId': this.filterWarehouseId.set(valor); break;
+            default: return;
+        }
+        this.currentPage.set(0);
+        this.loadCounts();
+    }
+
+    onDateRangeChange(event: DateRangeChangeEvent): void {
+        switch (event.field) {
+            case 'countDate':
+                this.filterCountDateDesde.set(event.from);
+                this.filterCountDateHasta.set(event.to);
+                break;
+            case 'adjustedDate':
+                this.filterAdjustedDateDesde.set(event.from);
+                this.filterAdjustedDateHasta.set(event.to);
+                break;
+            default: return;
+        }
+        this.currentPage.set(0);
+        this.loadCounts();
+    }
+
+    /** "Limpiar filtros": resetea todo y recarga UNA sola vez. */
+    onFiltersClear(): void {
+        this.searchQuery.set('');
+        this.filterStatus.set('');
+        this.filterWarehouseId.set('');
+        this.filterCountDateDesde.set(null);
+        this.filterCountDateHasta.set(null);
+        this.filterAdjustedDateDesde.set(null);
+        this.filterAdjustedDateHasta.set(null);
         this.currentPage.set(0);
         this.loadCounts();
     }

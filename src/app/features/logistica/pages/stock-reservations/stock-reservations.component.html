@@ -1,94 +1,112 @@
-<div class="p-6 max-w-3xl mx-auto">
-    <h2 class="text-xl font-semibold mb-4">Reservas de Stock</h2>
-
-    <form [formGroup]="searchForm" (ngSubmit)="buscar()" class="flex gap-2 mb-4">
-        <input
-            type="text"
-            formControlName="orderId"
-            placeholder="ID de orden"
-            class="border rounded px-3 py-2 flex-1"
-        />
-        <app-button
-            type="submit"
-            variant="primary"
-            [label]="loading() ? 'Buscando...' : 'Buscar'"
-            [loading]="loading()"
-            [disabled]="loading()" />
-    </form>
+<div class="page-container">
+    <app-page-header
+        title="Reservas de Stock"
+        subtitle="Reservas de inventario por pedido (POS/e-commerce), liberación y consumo al despacho"
+        [breadcrumbs]="breadcrumbs">
+    </app-page-header>
 
     @if (error()) {
-        <div class="bg-error/10 text-error p-3 rounded mb-4">{{ error() }}</div>
+        <app-alert type="error" [message]="error()!" [dismissible]="true" (dismiss)="error.set(null)" />
     }
-
     @if (successMsg()) {
-        <div class="bg-success/10 text-success p-3 rounded mb-4">{{ successMsg() }}</div>
+        <app-alert type="success" [message]="successMsg()!" />
     }
 
-    @if (reservations().length) {
-        <div class="border rounded-lg p-4">
-            <div class="flex items-center justify-between mb-3">
-                <h3 class="font-medium">Orden: {{ orderId() }}</h3>
-                @if (estadoGlobal(); as estado) {
-                    <span class="px-2 py-1 rounded text-sm font-medium" [class]="statusClass(estado)">
-                        {{ statusLabel(estado) }}
-                    </span>
-                }
-            </div>
-
-            <div class="grid grid-cols-2 gap-3 text-sm text-gray-600 mb-4">
-                <div><span class="font-medium">Líneas reservadas:</span> {{ reservations().length }}</div>
-                <div><span class="font-medium">Unidades totales:</span> {{ totalUnidades() }}</div>
-                <div><span class="font-medium">Reservado:</span> {{ reservations()[0].fechaCreacion | date:'short' }}</div>
-                @if (reservations()[0].expiresAt) {
-                    <div><span class="font-medium">Expira:</span> {{ reservations()[0].expiresAt | date:'short' }}</div>
-                }
-            </div>
-
-            <table class="w-full text-sm mb-4">
-                <thead>
-                    <tr class="border-b text-left text-gray-500">
-                        <th class="py-1">SKU</th>
-                        <th class="py-1">Producto</th>
-                        <th class="py-1 text-right">Cantidad</th>
-                        <th class="py-1">Estado</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @for (item of reservations(); track item.id) {
-                        <tr class="border-b">
-                            <td class="py-1">{{ item.sku }}</td>
-                            <td class="py-1">{{ item.productoId }}</td>
-                            <td class="py-1 text-right">{{ item.cantidad }}</td>
-                            <td class="py-1">
-                                <span class="px-2 py-0.5 rounded text-xs font-medium" [class]="statusClass(item.status)">
-                                    {{ statusLabel(item.status) }}
-                                </span>
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-
-            <div class="flex gap-2">
-                @if (canRelease()) {
-                    <button
-                        (click)="release()"
-                        [disabled]="actionId() !== null"
-                        class="bg-warning text-white px-3 py-1.5 rounded text-sm hover:brightness-90 disabled:opacity-50"
-                    >
-                        {{ actionId() === 'release' ? 'Liberando...' : 'Liberar' }}
-                    </button>
-                }
-                @if (canConsume()) {
-                    <button
-                        (click)="consume()"
-                        [disabled]="actionId() !== null"
-                        class="bg-success text-white px-3 py-1.5 rounded text-sm hover:brightness-90 disabled:opacity-50"
-                    >
-                        {{ actionId() === 'consume' ? 'Consumiendo...' : 'Consumir' }}
-                    </button>
-                }
-            </div>
-        </div>
-    }
+    <app-data-table
+        [data]="reservations()"
+        [columns]="columns"
+        [actions]="actions"
+        [loading]="loading()"
+        [searchable]="true"
+        searchPlaceholder="Buscar por SKU o motivo..."
+        [filters]="filters"
+        [dateRangeFilters]="dateRangeFilters"
+        [exportable]="false"
+        [currentPage]="currentPage()"
+        [pageSize]="pageSize()"
+        [totalElements]="totalElements()"
+        [totalPages]="totalPages()"
+        (searchChange)="onSearchTerm($event)"
+        (filterChange)="onFilterChangeEvent($event)"
+        (dateRangeChange)="onDateRangeChange($event)"
+        (filtersClear)="onFiltersClear()"
+        (pageChange)="onPageChange($event)">
+    </app-data-table>
 </div>
+
+<!-- Drawer: detalle de todas las líneas del pedido elegido -->
+<app-drawer
+    [isOpen]="showDetail()"
+    title="Detalle de reserva"
+    size="md"
+    side="right"
+    [hasFooter]="true"
+    (closed)="closeDetail()">
+
+    @if (detailLoading()) {
+        <p class="text-muted text-sm">Cargando…</p>
+    } @else if (detailRows().length) {
+        <div class="flex items-center justify-between mb-3">
+            <h3 class="font-medium">Pedido: {{ detailOrderId() }}</h3>
+            @if (detailEstadoGlobal(); as estado) {
+                <span class="px-2 py-1 rounded text-sm font-medium" [class]="statusClass(estado)">
+                    {{ catalog.label('ESTADO_RESERVA_STOCK', estado) }}
+                </span>
+            }
+        </div>
+
+        <div class="grid grid-cols-2 gap-3 text-sm text-gray-600 mb-4">
+            <div><span class="font-medium">Líneas reservadas:</span> {{ detailRows().length }}</div>
+            <div><span class="font-medium">Unidades totales:</span> {{ detailTotalUnidades() }}</div>
+            <div><span class="font-medium">Reservado:</span> {{ detailRows()[0].fechaCreacion | date:'short' }}</div>
+            @if (detailRows()[0].expiresAt) {
+                <div><span class="font-medium">Expira:</span> {{ detailRows()[0].expiresAt | date:'short' }}</div>
+            }
+        </div>
+
+        <table class="w-full text-sm mb-4">
+            <thead>
+                <tr class="border-b text-left text-gray-500">
+                    <th class="py-1">SKU</th>
+                    <th class="py-1">Producto</th>
+                    <th class="py-1 text-right">Cantidad</th>
+                    <th class="py-1">Estado</th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (item of detailRows(); track item.id) {
+                    <tr class="border-b">
+                        <td class="py-1">{{ item.sku }}</td>
+                        <td class="py-1">{{ item.productoId }}</td>
+                        <td class="py-1 text-right">{{ item.cantidad }}</td>
+                        <td class="py-1">
+                            <span class="px-2 py-0.5 rounded text-xs font-medium" [class]="statusClass(item.status)">
+                                {{ catalog.label('ESTADO_RESERVA_STOCK', item.status) }}
+                            </span>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    } @else {
+        <p class="text-muted text-sm">Sin líneas de reserva para este pedido.</p>
+    }
+
+    <div slot="footer">
+        <app-button variant="secondary" icon="x" label="Cerrar" (click)="closeDetail()" />
+        @if (canReleaseDetail()) {
+            <app-button variant="secondary" icon="x"
+                [label]="detailActionId() === 'release' ? 'Liberando...' : 'Liberar'"
+                [loading]="detailActionId() === 'release'"
+                [disabled]="detailActionId() !== null"
+                (click)="releaseDetail()" />
+        }
+        @if (canConsumeDetail()) {
+            <app-button variant="primary" icon="check"
+                [label]="detailActionId() === 'consume' ? 'Consumiendo...' : 'Consumir'"
+                [loading]="detailActionId() === 'consume'"
+                [disabled]="detailActionId() !== null"
+                (click)="consumeDetail()" />
+        }
+    </div>
+</app-drawer>

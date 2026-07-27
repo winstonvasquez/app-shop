@@ -14,20 +14,25 @@
     }
 
     <app-data-table
-        [data]="reglasPaginadas()"
+        [data]="reglas()"
         [columns]="columns"
         [actions]="actions"
         [loading]="cargando()"
         [searchable]="true"
         searchPlaceholder="Buscar por nombre, descripción o tipo..."
+        [filters]="filters"
+        [dateRangeFilters]="dateRangeFilters"
         [exportable]="true"
         exportFileName="reglas-asiento"
         [exportConfig]="exportConfig"
         [currentPage]="currentPage()"
         [pageSize]="pageSize()"
-        [totalElements]="reglasFiltradas().length"
-        [totalPages]="totalPagesLocal()"
+        [totalElements]="totalElements()"
+        [totalPages]="totalPages()"
         (searchChange)="onSearchTerm($event)"
+        (filterChange)="onFilterChangeEvent($event)"
+        (dateRangeChange)="onDateRangeChange($event)"
+        (filtersClear)="onFiltersClear()"
         (pageChange)="onPageChange($event)">
     </app-data-table>
 </div>

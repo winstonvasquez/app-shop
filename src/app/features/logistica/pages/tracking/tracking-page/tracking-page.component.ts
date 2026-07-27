@@ -1,9 +1,14 @@
-import { Component, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, signal, computed, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { DatePipe } from '@angular/common';
 import { ShipmentService, TrackingInfoResponse, ShipmentResponse } from '../../../services/shipment.service';
+import { TransportistaService } from '../../../services/transportista.service';
+import { Transportista } from '../../../models/transportista.model';
+import { AuthService } from '@core/auth/auth.service';
+import { CatalogService } from '@core/services/catalog.service';
 import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
-import { DataTableComponent, TableColumn, TableAction, PaginationEvent } from '@shared/ui/tables/data-table/data-table.component';
+import { DataTableComponent, TableColumn, TableAction, PaginationEvent, FilterConfig, FilterChangeEvent, DateRangeFilterConfig, DateRangeChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
+import { catalogFilter, signalFilter } from '@shared/ui/tables/data-table/filter-helpers';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { ButtonComponent } from '@shared/components';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
@@ -17,8 +22,11 @@ import { environment } from '@env/environment';
     styleUrls: ['./tracking-page.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class TrackingPageComponent {
+export class TrackingPageComponent implements OnInit {
     private readonly shipmentService = inject(ShipmentService);
+    private readonly transportistaService = inject(TransportistaService);
+    private readonly authService = inject(AuthService);
+    private readonly catalog = inject(CatalogService);
     private readonly fb = inject(FormBuilder);
 
     breadcrumbs: Breadcrumb[] = [
@@ -27,14 +35,49 @@ export class TrackingPageComponent {
         { label: 'Tracking' }
     ];
 
+    // Data auxiliar para el filtro de transportista
+    transportistas = signal<Transportista[]>([]);
+
+    // Filtros (TODOS server-side — la vista nunca filtra la página cargada)
+    searchQuery           = signal('');
+    filterStatus          = signal('');
+    filterCarrierId       = signal('');
+    filterFulfillmentType = signal('');
+    filterDispatchedAtDesde = signal<string | undefined>(undefined);
+    filterDispatchedAtHasta = signal<string | undefined>(undefined);
+    filterRegistradoDesde   = signal<string | undefined>(undefined);
+    filterRegistradoHasta   = signal<string | undefined>(undefined);
+
+    // Filtros select del toolbar (catálogo + lista de transportistas ya cargada)
+    readonly filters: FilterConfig[] = [
+        catalogFilter(this.catalog, 'ESTADO_ENVIO', 'status', 'Todos los estados'),
+        signalFilter('carrierId', 'Todos los transportistas', this.transportistas,
+            t => ({ value: t.id, label: t.name })),
+        catalogFilter(this.catalog, 'TIPO_FULFILLMENT', 'fulfillmentType', 'Tipo de fulfillment'),
+    ];
+
+    readonly dateRangeFilters: DateRangeFilterConfig[] = [
+        { field: 'dispatchedAt', label: 'Fecha de despacho' },
+        { field: 'fechaCreacion', label: 'Fecha de creación' },
+    ];
+
     /**
-     * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios
-     * (misma lista, sin filtros adicionales). Ver /logistics/api/shipments/export.
+     * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios,
+     * respetando los mismos filtros que la tabla. Ver /logistics/api/shipments/export.
      */
     readonly exportConfig: BackendExportConfig = {
         url: `${environment.apiUrls.logistics}/api/shipments/export`,
         filename: 'envios-tracking',
-        params: () => ({})
+        params: () => ({
+            q: this.searchQuery() || undefined,
+            status: this.filterStatus() || undefined,
+            carrierId: this.filterCarrierId() || undefined,
+            fulfillmentType: this.filterFulfillmentType() || undefined,
+            dispatchedAtDesde: this.filterDispatchedAtDesde(),
+            dispatchedAtHasta: this.filterDispatchedAtHasta(),
+            registradoDesde: this.filterRegistradoDesde(),
+            registradoHasta: this.filterRegistradoHasta(),
+        })
     };
 
     columns: TableColumn<ShipmentResponse>[] = [
@@ -74,13 +117,36 @@ export class TrackingPageComponent {
     readonly totalPages    = signal(1);
     readonly enviosPagina  = computed(() => this.envios());
 
-    constructor() {
+    private get companyId(): string {
+        return String(this.authService.currentUser()?.activeCompanyId ?? 1);
+    }
+
+    ngOnInit() {
+        this.loadTransportistas();
         this.cargarEnvios();
+    }
+
+    loadTransportistas() {
+        this.transportistaService.getTransportistas(this.companyId, 0, 100).subscribe({
+            next: (res) => this.transportistas.set(res.content),
+            error: () => this.transportistas.set([])
+        });
     }
 
     cargarEnvios() {
         this.loadingEnvios.set(true);
-        this.shipmentService.getShipments(this.currentPage(), this.pageSize()).subscribe({
+        this.shipmentService.getShipments({
+            page: this.currentPage(),
+            size: this.pageSize(),
+            q: this.searchQuery() || undefined,
+            status: this.filterStatus() || undefined,
+            carrierId: this.filterCarrierId() || undefined,
+            fulfillmentType: this.filterFulfillmentType() || undefined,
+            dispatchedAtDesde: this.filterDispatchedAtDesde(),
+            dispatchedAtHasta: this.filterDispatchedAtHasta(),
+            registradoDesde: this.filterRegistradoDesde(),
+            registradoHasta: this.filterRegistradoHasta()
+        }).subscribe({
             next: (page) => {
                 this.envios.set(page.content);
                 this.totalElements.set(pageTotalElements(page));
@@ -94,6 +160,55 @@ export class TrackingPageComponent {
                 this.loadingEnvios.set(false);
             }
         });
+    }
+
+    /** La búsqueda por texto también va al backend (`q`), no filtra la página cargada. */
+    onSearch(term: string) {
+        this.searchQuery.set(term);
+        this.currentPage.set(0);
+        this.cargarEnvios();
+    }
+
+    onFilterChangeEvent(event: FilterChangeEvent) {
+        const valor = event.value != null ? String(event.value) : '';
+        switch (event.field) {
+            case 'status':          this.filterStatus.set(valor); break;
+            case 'carrierId':       this.filterCarrierId.set(valor); break;
+            case 'fulfillmentType': this.filterFulfillmentType.set(valor); break;
+            default: return;
+        }
+        this.currentPage.set(0);
+        this.cargarEnvios();
+    }
+
+    onDateRangeChange(event: DateRangeChangeEvent) {
+        switch (event.field) {
+            case 'dispatchedAt':
+                this.filterDispatchedAtDesde.set(event.from ?? undefined);
+                this.filterDispatchedAtHasta.set(event.to ?? undefined);
+                break;
+            case 'fechaCreacion':
+                this.filterRegistradoDesde.set(event.from ?? undefined);
+                this.filterRegistradoHasta.set(event.to ?? undefined);
+                break;
+            default: return;
+        }
+        this.currentPage.set(0);
+        this.cargarEnvios();
+    }
+
+    /** "Limpiar filtros": resetea todo y recarga UNA sola vez. */
+    onFiltersClear() {
+        this.searchQuery.set('');
+        this.filterStatus.set('');
+        this.filterCarrierId.set('');
+        this.filterFulfillmentType.set('');
+        this.filterDispatchedAtDesde.set(undefined);
+        this.filterDispatchedAtHasta.set(undefined);
+        this.filterRegistradoDesde.set(undefined);
+        this.filterRegistradoHasta.set(undefined);
+        this.currentPage.set(0);
+        this.cargarEnvios();
     }
 
     buscarTracking() {

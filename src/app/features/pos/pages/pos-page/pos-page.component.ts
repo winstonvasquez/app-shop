@@ -4,8 +4,8 @@ import {
 } from '@angular/core';
 import { PosCarritoService } from '../../services/pos-carrito.service';
 import { PosTurnoService } from '../../services/pos-turno.service';
-import { PosCatalogoService } from '../../services/pos-catalogo.service';
-import { PosVentaService } from '../../services/pos-venta.service';
+import { PosCatalogoService, PosCatalogoFiltros } from '../../services/pos-catalogo.service';
+import { PosVentaService, PosHistorialFiltros } from '../../services/pos-venta.service';
 import { PosKeyboardService } from '../../services/pos-keyboard.service';
 import { PosFavoritosService, PosFavorito } from '../../services/pos-favoritos.service';
 import { PosOrdenesRetenidasService, OrdenRetenida } from '../../services/pos-ordenes-retenidas.service';
@@ -21,11 +21,11 @@ import { TurnoCaja } from '../../models/turno-caja.model';
 
 // Sub-components
 import { PosTopbarComponent, PosScreen } from '../../components/pos-topbar/pos-topbar.component';
-import { PosCatalogComponent } from '../../components/pos-catalog/pos-catalog.component';
+import { PosCatalogComponent, PosCatalogFiltro } from '../../components/pos-catalog/pos-catalog.component';
 import { PosOrderPanelComponent } from '../../components/pos-order-panel/pos-order-panel.component';
 import { PosNumpadComponent } from '../../components/pos-numpad/pos-numpad.component';
 import { PosReceiptComponent } from '../../components/pos-receipt/pos-receipt.component';
-import { PosHistorialComponent } from '../../components/pos-historial/pos-historial.component';
+import { PosHistorialComponent, PosHistorialFiltro } from '../../components/pos-historial/pos-historial.component';
 import { PosTurnoComponent } from '../../components/pos-turno/pos-turno.component';
 import { PosDevolucionesComponent } from '../pos-devoluciones/pos-devoluciones.component';
 import { PosShortcutsHelpComponent } from '../../components/pos-shortcuts-help/pos-shortcuts-help.component';
@@ -106,6 +106,13 @@ export class PosPageComponent implements OnInit, OnDestroy {
     readonly currentReporte = signal<ReporteXZ | null>(null);
     readonly showCameraScanner = signal(false);
 
+    /** Filtros avanzados del catálogo POS (marca/unidad/disponibilidad) — server-side, emitidos por pos-catalog. */
+    private catalogoFiltros: PosCatalogoFiltros = {};
+    /** Último término de búsqueda, para no perderlo al cambiar un filtro avanzado. */
+    private currentQuery = '';
+    /** Filtros avanzados del historial de ventas del turno (server-side). */
+    private historialFiltros: PosHistorialFiltros = {};
+
     // Cross-stock dialog
     readonly showCrossStock = signal(false);
     readonly crossStockVarianteId = signal<number>(0);
@@ -177,10 +184,12 @@ export class PosPageComponent implements OnInit, OnDestroy {
     }
 
     private loadCatalogo(query?: string): void {
-        if (!query) this.isLoading.set(true);
+        if (query !== undefined) this.currentQuery = query;
+        const q = this.currentQuery;
+        if (!q) this.isLoading.set(true);
         else this.isSearching.set(true);
 
-        this.catalogoService.getCatalogo(this.companyId, query || undefined).subscribe({
+        this.catalogoService.getCatalogo(this.companyId, { ...this.catalogoFiltros, q: q || undefined }).subscribe({
             next: page => {
                 this.catalogoItems.set(page.content);
                 this.backendError.set(false);
@@ -209,10 +218,16 @@ export class PosPageComponent implements OnInit, OnDestroy {
     private loadHistorial(): void {
         const turno = this.turnoActivo();
         if (!turno) return;
-        this.ventaService.getHistorial(turno.id).subscribe({
+        this.ventaService.getHistorial(turno.id, this.historialFiltros).subscribe({
             next: page => this.historialItems.set(page.content),
             error: () => this.showToast('Error al cargar el historial'),
         });
+    }
+
+    /** Filtros del historial emitidos por pos-historial: recarga server-side. */
+    onHistorialFiltersChanged(filtros: PosHistorialFiltro): void {
+        this.historialFiltros = { ...filtros };
+        this.loadHistorial();
     }
 
     // ── Favoritos ──────────────────────────────────────────────────
@@ -545,6 +560,17 @@ export class PosPageComponent implements OnInit, OnDestroy {
     // ── Búsqueda reactiva desde catálogo ─────────────────────────
     onSearchChanged(query: string): void {
         this.loadCatalogo(query);
+    }
+
+    /** Filtros avanzados (categoría/marca/unidad/disponibilidad) emitidos por pos-catalog: recarga server-side. */
+    onCatalogoFiltersChanged(filtros: PosCatalogFiltro): void {
+        this.catalogoFiltros = {
+            categoriaId: filtros.categoriaId,
+            marca: filtros.marca,
+            unidadMedida: filtros.unidadMedida,
+            disponibilidad: filtros.disponibilidad,
+        };
+        this.loadCatalogo();
     }
 
     // ── Navegación ────────────────────────────────────────────────

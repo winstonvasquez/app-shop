@@ -1,7 +1,5 @@
 import { Component, inject, signal, ChangeDetectionStrategy, OnInit } from '@angular/core';
 import { FormBuilder, FormControl, FormArray, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { toObservable } from '@angular/core/rxjs-interop';
-import { map } from 'rxjs';
 import { ButtonComponent, CatalogSelectComponent, ServerSearchSelectComponent } from '@shared/components';
 import { employeeSelectSource } from '../../components/select-sources';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
@@ -11,6 +9,7 @@ import {
     DateRangeFilterConfig, DateRangeChangeEvent,
     PaginationEvent,
 } from '@shared/ui/tables/data-table/data-table.component';
+import { catalogFilter, signalFilter } from '@shared/ui/tables/data-table/filter-helpers';
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
@@ -19,6 +18,8 @@ import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
 import { EvaluationService } from '../../services/evaluation.service';
 import { EmployeeService } from '../../services/employee.service';
+import { DepartmentService } from '../../services/department.service';
+import { Department } from '../../models/department.model';
 import { CatalogService } from '@core/services/catalog.service';
 import {
     Evaluation,
@@ -48,7 +49,8 @@ export class EvaluationListComponent implements OnInit {
     private readonly fb = inject(FormBuilder);
     private readonly evaluationService = inject(EvaluationService);
     private readonly employeeService = inject(EmployeeService);
-    private readonly catalog = inject(CatalogService);
+    private readonly departmentService = inject(DepartmentService);
+    readonly catalog = inject(CatalogService);
 
     readonly evaluations = this.evaluationService.evaluations;
     readonly loading = this.evaluationService.loading;
@@ -56,6 +58,10 @@ export class EvaluationListComponent implements OnInit {
     readonly activeCriteria = this.evaluationService.activeCriteria;
     /** Fuente server-side de los search-select de empleado y evaluador. */
     readonly employeeSource = employeeSelectSource(this.employeeService);
+    /** Se mantiene para poblar los selects employeeId/evaluadorId del toolbar. */
+    readonly employees = this.employeeService.activeEmployees;
+    /** Departamentos para el select de filtro del toolbar (lista acotada, no requiere server-search). */
+    readonly departamentosFiltro = signal<Department[]>([]);
 
     showDrawer = signal(false);
     editMode = signal(false);
@@ -63,11 +69,17 @@ export class EvaluationListComponent implements OnInit {
     submitting = signal(false);
     submitError = signal<string | null>(null);
 
-    // Filtros server-side: estado + tipo + rango de fecha de evaluación
+    // Filtros server-side: search + estado + tipo + empleado + evaluador + departamento + rangos de fecha
+    searchQuery = signal('');
     filtroEstado = signal('');
     filtroTipo = signal('');
+    filtroEmployeeId = signal('');
+    filtroEvaluadorId = signal('');
+    filtroDepartmentId = signal('');
     filtroFechaEvaluacionDesde = signal<string | undefined>(undefined);
     filtroFechaEvaluacionHasta = signal<string | undefined>(undefined);
+    filtroProximaRevisionDesde = signal<string | undefined>(undefined);
+    filtroProximaRevisionHasta = signal<string | undefined>(undefined);
 
     currentPage = signal(0);
     pageSize = signal<number>(PAGINATION.defaultPageSize);
@@ -78,16 +90,22 @@ export class EvaluationListComponent implements OnInit {
 
     /**
      * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios
-     * (respeta los filtros actuales estado + tipo + rango de fecha). Ver /hr/api/evaluations/export.
+     * (respeta TODOS los filtros actuales). Ver /hr/api/evaluations/export.
      */
     readonly exportConfig: BackendExportConfig = {
         url: `${environment.apiUrls.hr}/api/evaluations/export`,
         filename: 'evaluaciones',
         params: () => ({
+            search: this.searchQuery(),
             estado: this.filtroEstado(),
             tipo: this.filtroTipo(),
+            employeeId: this.filtroEmployeeId(),
+            evaluadorId: this.filtroEvaluadorId(),
+            departmentId: this.filtroDepartmentId(),
             fechaEvaluacionDesde: this.filtroFechaEvaluacionDesde(),
             fechaEvaluacionHasta: this.filtroFechaEvaluacionHasta(),
+            proximaRevisionDesde: this.filtroProximaRevisionDesde(),
+            proximaRevisionHasta: this.filtroProximaRevisionHasta(),
         }),
     };
 
@@ -171,10 +189,19 @@ export class EvaluationListComponent implements OnInit {
     }
 
     ngOnInit(): void {
+        this.employeeService.loadEmployees().catch(() => { /* selects del toolbar */ });
+        this.loadDepartamentosFiltro();
         this.cargarEvaluaciones();
         this.evaluationService.loadCriteria();
         this.evaluationService.loadStatsSnapshot();
-        // Los selects de empleado/evaluador cargan sus opciones bajo demanda (server-side).
+        // El select de empleado/evaluador del formulario carga sus opciones bajo demanda (server-side).
+    }
+
+    /** Departamentos para el select de filtro (no muta el estado compartido de DepartmentService). */
+    private loadDepartamentosFiltro(): void {
+        this.departmentService.fetchAll()
+            .then(list => this.departamentosFiltro.set(list ?? []))
+            .catch(() => this.departamentosFiltro.set([]));
     }
 
     private createDetailGroup(criteriaId: number | null = null, puntaje = 0, comentarios = ''): FormGroup {
@@ -197,49 +224,89 @@ export class EvaluationListComponent implements OnInit {
         return (this.detailsArray.at(index) as FormGroup).get(name) as FormControl;
     }
 
+    // Filtros select del toolbar. Las opciones salen de erp_parameters / listas dinámicas.
     readonly toolbarFilters: FilterConfig[] = [
-        {
-            field: 'estado', label: 'Todos los estados',
-            options: toObservable(this.catalog.options('ESTADO_EVALUACION')).pipe(
-                map(o => o.map(x => ({ value: x.codigo, label: x.valor })))
-            )
-        },
-        {
-            field: 'tipo', label: 'Todos los tipos',
-            options: toObservable(this.catalog.options('TIPO_EVALUACION')).pipe(
-                map(o => o.map(x => ({ value: x.codigo, label: x.valor })))
-            )
-        }
+        catalogFilter(this.catalog, 'ESTADO_EVALUACION', 'estado', 'Todos los estados'),
+        catalogFilter(this.catalog, 'TIPO_EVALUACION', 'tipo', 'Todos los tipos'),
+        signalFilter('employeeId', 'Empleado evaluado', this.employees,
+            e => ({ value: e.id, label: `${e.nombres} ${e.apellidos}` })),
+        signalFilter('evaluadorId', 'Evaluador', this.employees,
+            e => ({ value: e.id, label: `${e.nombres} ${e.apellidos}` })),
+        signalFilter('departmentId', 'Todos los departamentos', this.departamentosFiltro,
+            d => ({ value: d.id, label: d.nombre })),
     ];
 
     readonly dateRangeFilters: DateRangeFilterConfig[] = [
-        { field: 'fechaEvaluacion', label: 'Fecha de evaluación' }
+        { field: 'fechaEvaluacion', label: 'Fecha de evaluación' },
+        { field: 'proximaRevision', label: 'Próxima revisión' },
     ];
 
     private cargarEvaluaciones(): void {
         this.evaluationService.loadEvaluations({
             page: this.currentPage(),
             size: this.pageSize(),
+            search: this.searchQuery() || undefined,
             estado: this.filtroEstado() || undefined,
             tipo: this.filtroTipo() || undefined,
+            employeeId: this.filtroEmployeeId() ? Number(this.filtroEmployeeId()) : undefined,
+            evaluadorId: this.filtroEvaluadorId() ? Number(this.filtroEvaluadorId()) : undefined,
+            departmentId: this.filtroDepartmentId() ? Number(this.filtroDepartmentId()) : undefined,
             fechaEvaluacionDesde: this.filtroFechaEvaluacionDesde(),
             fechaEvaluacionHasta: this.filtroFechaEvaluacionHasta(),
+            proximaRevisionDesde: this.filtroProximaRevisionDesde(),
+            proximaRevisionHasta: this.filtroProximaRevisionHasta(),
         });
+    }
+
+    /** La búsqueda por texto también va al backend, no filtra la página cargada. */
+    onSearchTerm(term: string): void {
+        this.searchQuery.set(term);
+        this.currentPage.set(0);
+        this.cargarEvaluaciones();
     }
 
     onFilterChangeEvent(event: FilterChangeEvent): void {
         const v = event.value != null ? String(event.value) : '';
-        if (event.field === 'estado') this.filtroEstado.set(v);
-        else if (event.field === 'tipo') this.filtroTipo.set(v);
-        else return;
+        switch (event.field) {
+            case 'estado':       this.filtroEstado.set(v); break;
+            case 'tipo':         this.filtroTipo.set(v); break;
+            case 'employeeId':   this.filtroEmployeeId.set(v); break;
+            case 'evaluadorId':  this.filtroEvaluadorId.set(v); break;
+            case 'departmentId': this.filtroDepartmentId.set(v); break;
+            default: return;
+        }
         this.currentPage.set(0);
         this.cargarEvaluaciones();
     }
 
     onDateRangeChange(event: DateRangeChangeEvent): void {
-        if (event.field !== 'fechaEvaluacion') return;
-        this.filtroFechaEvaluacionDesde.set(event.from ?? undefined);
-        this.filtroFechaEvaluacionHasta.set(event.to ?? undefined);
+        switch (event.field) {
+            case 'fechaEvaluacion':
+                this.filtroFechaEvaluacionDesde.set(event.from ?? undefined);
+                this.filtroFechaEvaluacionHasta.set(event.to ?? undefined);
+                break;
+            case 'proximaRevision':
+                this.filtroProximaRevisionDesde.set(event.from ?? undefined);
+                this.filtroProximaRevisionHasta.set(event.to ?? undefined);
+                break;
+            default: return;
+        }
+        this.currentPage.set(0);
+        this.cargarEvaluaciones();
+    }
+
+    /** "Limpiar filtros": resetea todo y recarga UNA sola vez. */
+    onFiltersClear(): void {
+        this.searchQuery.set('');
+        this.filtroEstado.set('');
+        this.filtroTipo.set('');
+        this.filtroEmployeeId.set('');
+        this.filtroEvaluadorId.set('');
+        this.filtroDepartmentId.set('');
+        this.filtroFechaEvaluacionDesde.set(undefined);
+        this.filtroFechaEvaluacionHasta.set(undefined);
+        this.filtroProximaRevisionDesde.set(undefined);
+        this.filtroProximaRevisionHasta.set(undefined);
         this.currentPage.set(0);
         this.cargarEvaluaciones();
     }

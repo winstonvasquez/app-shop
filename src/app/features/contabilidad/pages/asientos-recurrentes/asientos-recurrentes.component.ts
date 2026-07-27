@@ -21,7 +21,12 @@ import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
 import { AdminFormSectionComponent } from '@shared/ui/forms/admin-form-section/admin-form-section.component';
 import { AdminFormLayoutComponent } from '@shared/ui/forms/admin-form-layout/admin-form-layout.component';
-import { DataTableComponent, TableColumn, TableAction, PaginationEvent } from '@shared/ui/tables/data-table/data-table.component';
+import {
+    DataTableComponent, TableColumn, TableAction, PaginationEvent,
+    FilterConfig, FilterChangeEvent, DateRangeFilterConfig, DateRangeChangeEvent,
+} from '@shared/ui/tables/data-table/data-table.component';
+import { catalogFilter, staticFilter, ACTIVO_OPTIONS } from '@shared/ui/tables/data-table/filter-helpers';
+import { CatalogService } from '@core/services/catalog.service';
 import {
     AsientoRecurrenteService,
     AsientoRecurrente,
@@ -29,14 +34,8 @@ import {
     RecurringLineItem,
 } from '../../services/asiento-recurrente.service';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
+import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 import { environment } from '@env/environment';
-
-const FRECUENCIA_LABELS: Record<string, string> = {
-    MENSUAL: 'Mensual',
-    TRIMESTRAL: 'Trimestral',
-    SEMESTRAL: 'Semestral',
-    ANUAL: 'Anual',
-};
 
 @Component({
     selector: 'app-asientos-recurrentes',
@@ -57,6 +56,7 @@ const FRECUENCIA_LABELS: Record<string, string> = {
 export class AsientosRecurrentesComponent implements OnInit {
     private service = inject(AsientoRecurrenteService);
     private fb = inject(FormBuilder);
+    readonly catalog = inject(CatalogService);
 
     recurrentes = signal<AsientoRecurrente[]>([]);
     cargando = signal(false);
@@ -66,29 +66,40 @@ export class AsientosRecurrentesComponent implements OnInit {
 
     mostrarForm = signal(false);
 
-    readonly frecuenciaLabel = (f: string) => FRECUENCIA_LABELS[f] ?? f;
+    readonly frecuenciaLabel = (f: string) => this.catalog.label('FRECUENCIA_RECURRENCIA', f);
 
-    // ── Tabla ─────────────────────────────────────────────────────────────────
+    // ── Tabla — TODOS los filtros son server-side, la vista nunca filtra la página cargada ────
     readonly searchQuery = signal('');
     readonly currentPage = signal(0);
     readonly pageSize = signal(20);
+    readonly totalElements = signal(0);
+    readonly totalPages = signal(0);
 
-    readonly recurrentesFiltrados = computed(() => {
-        const q = this.searchQuery().trim().toLowerCase();
-        const lista = this.recurrentes();
-        if (!q) return lista;
-        return lista.filter(r =>
-            r.name?.toLowerCase().includes(q) ||
-            r.description?.toLowerCase().includes(q) ||
-            this.frecuenciaLabel(r.frequency).toLowerCase().includes(q)
-        );
-    });
+    readonly filterFrecuencia = signal('');
+    /** '' = todos, 'true' = activos, 'false' = inactivos (ver ACTIVO_OPTIONS). */
+    readonly filterActivo = signal('');
+    readonly filterNextExecutionDesde = signal<string | null>(null);
+    readonly filterNextExecutionHasta = signal<string | null>(null);
+    readonly filterLastExecutionDesde = signal<string | null>(null);
+    readonly filterLastExecutionHasta = signal<string | null>(null);
+    readonly filterVigenciaDesde = signal<string | null>(null);
+    readonly filterVigenciaHasta = signal<string | null>(null);
 
-    readonly recurrentesPaginados = computed(() => {
-        const inicio = this.currentPage() * this.pageSize();
-        return this.recurrentesFiltrados().slice(inicio, inicio + this.pageSize());
-    });
-    readonly totalPagesLocal = computed(() => Math.ceil(this.recurrentesFiltrados().length / this.pageSize()) || 1);
+    /**
+     * Filtros select del toolbar. `activo` usa `staticFilter` (no `ESTADO_ACTIVO_INACTIVO`,
+     * cuyos códigos ACTIVO/INACTIVO son para columnas String): la columna `active` es boolean
+     * y el backend espera `true`/`false` literal — ver AsientoRecurrenteController.list.
+     */
+    filters: FilterConfig[] = [
+        catalogFilter(this.catalog, 'FRECUENCIA_RECURRENCIA', 'frecuencia', 'Frecuencia'),
+        staticFilter('activo', 'Estado', ACTIVO_OPTIONS),
+    ];
+
+    dateRangeFilters: DateRangeFilterConfig[] = [
+        { field: 'nextExecution', label: 'Próxima ejecución' },
+        { field: 'lastExecution', label: 'Última ejecución' },
+        { field: 'vigencia', label: 'Vigencia (inicio/fin)' },
+    ];
 
     readonly columns: TableColumn<AsientoRecurrente>[] = [
         {
@@ -114,13 +125,24 @@ export class AsientosRecurrentesComponent implements OnInit {
     ];
 
     /**
-     * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios.
-     * Este listado no tiene filtros de servidor (trae todo); sin params.
+     * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios,
+     * respetando los mismos filtros vigentes en la búsqueda.
      * Ver /finance/api/v1/contabilidad/asientos-recurrentes/export.
      */
     readonly exportConfig: BackendExportConfig = {
         url: `${environment.apiUrls.accounting}/api/v1/contabilidad/asientos-recurrentes/export`,
         filename: 'asientos-recurrentes',
+        params: () => ({
+            q: this.searchQuery(),
+            frecuencia: this.filterFrecuencia(),
+            activo: this.filterActivo(),
+            nextExecutionDesde: this.filterNextExecutionDesde() ?? undefined,
+            nextExecutionHasta: this.filterNextExecutionHasta() ?? undefined,
+            lastExecutionDesde: this.filterLastExecutionDesde() ?? undefined,
+            lastExecutionHasta: this.filterLastExecutionHasta() ?? undefined,
+            vigenciaDesde: this.filterVigenciaDesde() ?? undefined,
+            vigenciaHasta: this.filterVigenciaHasta() ?? undefined,
+        }),
     };
 
     readonly actions: TableAction<AsientoRecurrente>[] = [
@@ -171,9 +193,23 @@ export class AsientosRecurrentesComponent implements OnInit {
     cargar(): void {
         this.cargando.set(true);
         this.error.set('');
-        this.service.listar().subscribe({
-            next: data => {
-                this.recurrentes.set(data);
+        this.service.buscarPaginado({
+            page: this.currentPage(),
+            size: this.pageSize(),
+            q: this.searchQuery() || undefined,
+            frecuencia: this.filterFrecuencia() || undefined,
+            activo: this.filterActivo() ? this.filterActivo() === 'true' : undefined,
+            nextExecutionDesde: this.filterNextExecutionDesde() || undefined,
+            nextExecutionHasta: this.filterNextExecutionHasta() || undefined,
+            lastExecutionDesde: this.filterLastExecutionDesde() || undefined,
+            lastExecutionHasta: this.filterLastExecutionHasta() || undefined,
+            vigenciaDesde: this.filterVigenciaDesde() || undefined,
+            vigenciaHasta: this.filterVigenciaHasta() || undefined,
+        }).subscribe({
+            next: res => {
+                this.recurrentes.set(res.content ?? []);
+                this.totalElements.set(pageTotalElements(res));
+                this.totalPages.set(pageTotalPages(res));
                 this.cargando.set(false);
             },
             error: () => {
@@ -183,14 +219,63 @@ export class AsientosRecurrentesComponent implements OnInit {
         });
     }
 
+    /** La búsqueda por texto también va al backend (`q`), no filtra la página cargada. */
     onSearchTerm(term: string): void {
         this.searchQuery.set(term);
         this.currentPage.set(0);
+        this.cargar();
+    }
+
+    onFilterChangeEvent(event: FilterChangeEvent): void {
+        const valor = event.value != null ? String(event.value) : '';
+        switch (event.field) {
+            case 'frecuencia': this.filterFrecuencia.set(valor); break;
+            case 'activo':     this.filterActivo.set(valor); break;
+            default: return;
+        }
+        this.currentPage.set(0);
+        this.cargar();
+    }
+
+    onDateRangeChange(event: DateRangeChangeEvent): void {
+        switch (event.field) {
+            case 'nextExecution':
+                this.filterNextExecutionDesde.set(event.from);
+                this.filterNextExecutionHasta.set(event.to);
+                break;
+            case 'lastExecution':
+                this.filterLastExecutionDesde.set(event.from);
+                this.filterLastExecutionHasta.set(event.to);
+                break;
+            case 'vigencia':
+                this.filterVigenciaDesde.set(event.from);
+                this.filterVigenciaHasta.set(event.to);
+                break;
+            default: return;
+        }
+        this.currentPage.set(0);
+        this.cargar();
+    }
+
+    /** "Limpiar filtros": resetea todo y recarga UNA sola vez. */
+    onFiltersClear(): void {
+        this.searchQuery.set('');
+        this.filterFrecuencia.set('');
+        this.filterActivo.set('');
+        this.filterNextExecutionDesde.set(null);
+        this.filterNextExecutionHasta.set(null);
+        this.filterLastExecutionDesde.set(null);
+        this.filterLastExecutionHasta.set(null);
+        this.filterVigenciaDesde.set(null);
+        this.filterVigenciaHasta.set(null);
+        this.currentPage.set(0);
+        this.cargar();
     }
 
     onPageChange(event: PaginationEvent): void {
         this.currentPage.set(event.page);
         this.pageSize.set(event.size);
+        this.cargar();
     }
 
     abrirForm(): void {
@@ -247,10 +332,10 @@ export class AsientosRecurrentesComponent implements OnInit {
         this.guardando.set(true);
         this.submitError.set('');
         this.service.crear(request).subscribe({
-            next: creado => {
-                this.recurrentes.update(ls => [...ls, creado]);
+            next: () => {
                 this.guardando.set(false);
                 this.mostrarForm.set(false);
+                this.cargar();
             },
             error: () => {
                 this.submitError.set('No se pudo guardar el asiento recurrente.');
@@ -269,11 +354,7 @@ export class AsientosRecurrentesComponent implements OnInit {
 
     desactivar(id: string): void {
         this.service.desactivar(id).subscribe({
-            next: () => {
-                this.recurrentes.update(ls =>
-                    ls.map(r => r.id === id ? { ...r, active: false } : r),
-                );
-            },
+            next: () => this.cargar(),
         });
     }
 

@@ -9,6 +9,8 @@ import {
 } from '@core/models/category.model';
 import { PaginationConfig, PageResponse, pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 import { DataTableComponent, TableColumn, TableAction, PaginationEvent, SortEvent, FilterConfig, FilterChangeEvent, DateRangeFilterConfig, DateRangeChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
+import { catalogFilter, signalFilter } from '@shared/ui/tables/data-table/filter-helpers';
+import { CatalogService } from '@core/services/catalog.service';
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
@@ -36,6 +38,7 @@ import { environment } from '@env/environment';
 export class CategoriesComponent implements OnInit {
   private readonly categoryService = inject(CategoryService);
   private readonly fb = inject(FormBuilder);
+  readonly catalog = inject(CatalogService);
 
   // Signals for reactive state
   categories = signal<CategoryResponse[]>([]);
@@ -52,10 +55,15 @@ export class CategoriesComponent implements OnInit {
   searchQuery = signal('');
   filterLevel = signal<number | null>(null);
   filterActivo = signal<boolean | null>(null);
+  filterPadreId = signal<number | null>(null);
+  filterConImagen = signal<boolean | null>(null);
   filterFechaCreacionDesde = signal<string | undefined>(undefined);
   filterFechaCreacionHasta = signal<string | undefined>(undefined);
   sortField = signal('nombre');
   sortDirection = signal<'asc' | 'desc'>('asc');
+
+  /** Categorías (lista plana) para el select de "Categoría padre" del filtro. */
+  categoriasPadre = signal<CategoryResponse[]>([]);
 
   // Modal state
   showModal = signal(false);
@@ -116,23 +124,21 @@ export class CategoriesComponent implements OnInit {
     }
   ];
 
-  // Level options for filter and form
-  levelOptions = [
-    { value: 0, label: 'Nivel 0 - Raíz' },
-    { value: 1, label: 'Nivel 1' },
-    { value: 2, label: 'Nivel 2' },
-    { value: 3, label: 'Nivel 3' }
-  ];
-
-  // Filtro de nivel para el toolbar del data-table
-  nivelFilters: FilterConfig[] = [
-    { field: 'nivel', label: 'Todos los niveles', options: of(this.levelOptions) }
-  ];
-
-  // Filtro de activo (Sí/No) para el toolbar del data-table
-  activoFilters: FilterConfig[] = [
+  // Filtros combinados que consume <app-data-table [filters]>. El nivel sale del catálogo
+  // NIVEL_JERARQUICO_CATEGORIA (fuente única, ya no se hardcodean los <option>).
+  readonly tableFilters: FilterConfig[] = [
+    catalogFilter(this.catalog, 'NIVEL_JERARQUICO_CATEGORIA', 'nivel', 'Todos los niveles'),
     {
       field: 'activo', label: 'Activo (Sí/No)',
+      options: of([
+        { value: 'true', label: 'Sí' },
+        { value: 'false', label: 'No' }
+      ])
+    },
+    signalFilter('padreId', 'Categoría padre', this.categoriasPadre,
+      c => ({ value: c.id, label: c.nombre })),
+    {
+      field: 'conImagen', label: 'Con imagen',
       options: of([
         { value: 'true', label: 'Sí' },
         { value: 'false', label: 'No' }
@@ -140,21 +146,26 @@ export class CategoriesComponent implements OnInit {
     }
   ];
 
-  // Filtros combinados que consume <app-data-table [filters]>
-  readonly tableFilters: FilterConfig[] = [...this.nivelFilters, ...this.activoFilters];
-
   readonly dateRangeFilters: DateRangeFilterConfig[] = [
     { field: 'fechaCreacion', label: 'Fecha de creación' }
   ];
 
   /**
    * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios
-   * (respeta los filtros actuales search + nivel). Ver /sales/api/v1/categorias/export.
+   * (respeta TODOS los filtros actuales, no solo search + nivel). Ver /sales/api/v1/categorias/export.
    */
   readonly exportConfig: BackendExportConfig = {
     url: `${environment.apiUrls.sales}/api/v1/categorias/export`,
     filename: 'categorias',
-    params: () => ({ search: this.searchQuery(), nivel: this.filterLevel() }),
+    params: () => ({
+      search: this.searchQuery(),
+      nivel: this.filterLevel() ?? undefined,
+      activo: this.filterActivo() ?? undefined,
+      padreId: this.filterPadreId() ?? undefined,
+      conImagen: this.filterConImagen() ?? undefined,
+      fechaCreacionDesde: this.filterFechaCreacionDesde(),
+      fechaCreacionHasta: this.filterFechaCreacionHasta(),
+    }),
   };
 
   constructor() {
@@ -182,6 +193,10 @@ export class CategoriesComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadCategories();
+    this.categoryService.getAllSimple().subscribe({
+      next: (cats) => this.categoriasPadre.set(cats),
+      error: () => this.categoriasPadre.set([])
+    });
   }
 
   /**
@@ -204,6 +219,8 @@ export class CategoriesComponent implements OnInit {
       search: this.searchQuery() || undefined,
       nivel: this.filterLevel() ?? undefined,
       activo: this.filterActivo() ?? undefined,
+      padreId: this.filterPadreId() ?? undefined,
+      conImagen: this.filterConImagen() ?? undefined,
       fechaCreacionDesde: this.filterFechaCreacionDesde(),
       fechaCreacionHasta: this.filterFechaCreacionHasta()
     };
@@ -235,15 +252,37 @@ export class CategoriesComponent implements OnInit {
    * Handle filter change emitted by the data-table toolbar
    */
   onFilterChangeEvent(event: FilterChangeEvent): void {
-    if (event.field === 'nivel') {
-      this.filterLevel.set(event.value != null ? parseInt(String(event.value), 10) : null);
-      this.currentPage.set(0);
-      this.loadCategories();
-    } else if (event.field === 'activo') {
-      this.filterActivo.set(event.value == null ? null : String(event.value) === 'true');
-      this.currentPage.set(0);
-      this.loadCategories();
+    switch (event.field) {
+      case 'nivel':
+        this.filterLevel.set(event.value != null ? parseInt(String(event.value), 10) : null);
+        break;
+      case 'activo':
+        this.filterActivo.set(event.value == null ? null : String(event.value) === 'true');
+        break;
+      case 'padreId':
+        this.filterPadreId.set(event.value != null ? Number(event.value) : null);
+        break;
+      case 'conImagen':
+        this.filterConImagen.set(event.value == null ? null : String(event.value) === 'true');
+        break;
+      default:
+        return;
     }
+    this.currentPage.set(0);
+    this.loadCategories();
+  }
+
+  /** "Limpiar filtros": resetea TODOS los signals de filtro y recarga UNA sola vez. */
+  onFiltersClear(): void {
+    this.searchQuery.set('');
+    this.filterLevel.set(null);
+    this.filterActivo.set(null);
+    this.filterPadreId.set(null);
+    this.filterConImagen.set(null);
+    this.filterFechaCreacionDesde.set(undefined);
+    this.filterFechaCreacionHasta.set(undefined);
+    this.currentPage.set(0);
+    this.loadCategories();
   }
 
   /**

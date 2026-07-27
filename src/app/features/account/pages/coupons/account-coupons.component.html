@@ -8,9 +8,38 @@
         }
     </div>
 
+    <!-- Filtros server-side: búsqueda + tipo + rangos de fecha (TODO va al backend) -->
+    <div class="filters">
+        <ds-input class="filters-search" icon="search" placeholder="Buscar por código o nombre..."
+            [ngModel]="searchQuery()" (ngModelChange)="onSearch($event)" [full]="true"/>
+
+        <select class="filter-select" [value]="filterTipo()" (change)="onTipoChange($any($event.target).value)">
+            <option value="">Tipo de descuento</option>
+            @for (o of tiposDescuento(); track o.codigo) {
+                <option [value]="o.codigo">{{ o.valor }}</option>
+            }
+        </select>
+
+        <label class="filter-label">Vence</label>
+        <input class="filter-date" type="date" [value]="filterFechaFinDesde()"
+            (change)="onFechaFinDesdeChange($any($event.target).value)" title="Vence desde" />
+        <input class="filter-date" type="date" [value]="filterFechaFinHasta()"
+            (change)="onFechaFinHastaChange($any($event.target).value)" title="Vence hasta" />
+
+        <label class="filter-label">Asignado</label>
+        <input class="filter-date" type="date" [value]="filterAssignedDesde()"
+            (change)="onAssignedDesdeChange($any($event.target).value)" title="Asignado desde" />
+        <input class="filter-date" type="date" [value]="filterAssignedHasta()"
+            (change)="onAssignedHastaChange($any($event.target).value)" title="Asignado hasta" />
+
+        @if (hasActiveFilters()) {
+            <ds-button variant="secondary" size="sm" (click)="onFiltersClear()">Limpiar</ds-button>
+        }
+    </div>
+
     @if (loading()) {
         <div class="state"><span class="spinner"></span> Cargando…</div>
-    } @else if (filtered().length === 0) {
+    } @else if (cupones().length === 0) {
         <div class="empty">
             <lucide-icon name="ticket" [size]="48"/>
             <h3>Sin cupones {{ activeTab() === 'ACTIVE' ? 'disponibles' : (activeTab() === 'USED' ? 'usados' : 'vencidos') }}</h3>
@@ -18,7 +47,7 @@
         </div>
     } @else {
         <div class="grid">
-            @for (c of filtered(); track c.id) {
+            @for (c of cupones(); track c.id) {
                 <article class="cupon" [class.is-disabled]="activeTab() !== 'ACTIVE'">
                     <div class="cupon-disc">
                         <strong>{{ formatDiscount(c) }}</strong>
@@ -51,11 +80,56 @@
                 </article>
             }
         </div>
+
+        @if (totalPages() > 1) {
+            <nav class="pager">
+                <ds-button variant="secondary" size="sm"
+                    icon="chevron-left" [disabled]="currentPage() === 0" (click)="prevPage()">
+                    Anterior
+                </ds-button>
+                <span class="page-info">{{ currentPage() + 1 }} / {{ totalPages() }}</span>
+                <ds-button variant="secondary" size="sm"
+                    iconRight="chevron-right" [disabled]="currentPage() >= totalPages() - 1" (click)="nextPage()">
+                    Siguiente
+                </ds-button>
+            </nav>
+        }
     }
 
 </ds-account-shell>
 
 <style>
+    .filters {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin: 12px 0 16px;
+    }
+    .filters-search { flex: 1 1 220px; min-width: 180px; }
+    .filter-label { font-size: 11px; color: var(--c-muted); text-transform: uppercase; letter-spacing: .04em; }
+    .filter-select,
+    .filter-date {
+        height: 40px;
+        padding: 0 10px;
+        border: 1px solid var(--c-border);
+        border-radius: var(--r-md);
+        background: var(--c-surface);
+        color: var(--c-text);
+        font-size: 13px;
+        font-family: var(--f-sans);
+    }
+    .filter-select:focus,
+    .filter-date:focus {
+        border-color: var(--c-brand);
+        outline: none;
+    }
+    .pager {
+        display: flex; justify-content: center; align-items: center;
+        gap: 16px; margin-top: 16px;
+    }
+    .page-info { font-size: 13px; color: var(--c-muted); }
+
     .tabs {
         display: flex; gap: 24px;
         border-bottom: 1px solid var(--c-border);

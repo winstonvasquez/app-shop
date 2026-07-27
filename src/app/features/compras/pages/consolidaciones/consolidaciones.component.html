@@ -11,6 +11,45 @@
         <div class="badge badge-error" style="margin-bottom:1rem">{{ error() }}</div>
     }
 
+    <!-- Filtros server-side: búsqueda, estado, proveedor asignado y rango de fecha de creación -->
+    <div class="filters-bar mb-4" style="display:flex; flex-wrap:wrap; gap:.75rem; align-items:flex-end">
+        <div style="min-width:220px">
+            <label class="input-label">Buscar</label>
+            <input class="form-input" type="text" placeholder="Código o descripción..."
+                   [value]="searchQuery()"
+                   (keydown.enter)="onSearchTerm($any($event.target).value)"
+                   (blur)="onSearchTerm($any($event.target).value)" />
+        </div>
+        <div style="min-width:180px">
+            <label class="input-label">Estado</label>
+            <select class="form-input" [value]="filterEstado()" (change)="onFilterEstado($event)">
+                <option value="">Todos los estados</option>
+                @for (opt of catalog.options('ESTADO_CONSOLIDACION')(); track opt.codigo) {
+                    <option [value]="opt.codigo">{{ opt.valor }}</option>
+                }
+            </select>
+        </div>
+        <div style="min-width:220px">
+            <label class="input-label">Proveedor asignado</label>
+            <app-server-search-select [dataSource]="proveedorSource"
+                [ngModel]="filterProveedorId() || null" (ngModelChange)="onFilterProveedor($event)"
+                placeholder="Buscar proveedor por nombre o RUC…" />
+        </div>
+        <div>
+            <label class="input-label">Creado desde</label>
+            <input class="form-input" type="date" [value]="filterCreatedAtDesde()"
+                   (change)="onCreatedAtDesde($any($event.target).value)" />
+        </div>
+        <div>
+            <label class="input-label">Creado hasta</label>
+            <input class="form-input" type="date" [value]="filterCreatedAtHasta()"
+                   (change)="onCreatedAtHasta($any($event.target).value)" />
+        </div>
+        @if (hayFiltrosActivos()) {
+            <app-button label="Limpiar filtros" variant="secondary" icon="x" size="sm" (click)="limpiarFiltros()" />
+        }
+    </div>
+
     @if (cargando()) {
         <div class="loading-container"><div class="spinner"></div></div>
     } @else {
@@ -86,6 +125,13 @@
                     </div>
                 }
             </div>
+            <app-pagination
+                [currentPage]="currentPage()"
+                [totalPages]="totalPages()"
+                [totalElements]="totalElements()"
+                [pageSize]="pageSize()"
+                (pageChange)="onPageChange($event)">
+            </app-pagination>
         }
     }
 </div>

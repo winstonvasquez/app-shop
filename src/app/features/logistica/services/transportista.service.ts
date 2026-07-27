@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
-import { Transportista, TransportistaPage, CreateTransportistaDto } from '../models/transportista.model';
+import { Transportista, TransportistaPage, CreateTransportistaDto, TransportistaFiltros } from '../models/transportista.model';
 import { PAGINATION } from '@shared/constants/app.constants';
 
 @Injectable({ providedIn: 'root' })
@@ -44,6 +44,26 @@ export class TransportistaService {
             size,
             number: page
         };
+    }
+
+    /**
+     * Listado paginado y filtrado SERVER-SIDE real (`GET /carriers/paged`, ronda de filtros
+     * avanzados 2026-07-27). El companyId/tenantId se resuelve del JWT (TenantContext) — no se
+     * envía. Reemplaza el hack `normalizarPagina` para el listado principal de Transportistas;
+     * `getTransportistas` se mantiene intacto porque otras páginas (Envíos, SLA de transportistas)
+     * lo siguen usando para poblar selects.
+     */
+    getCarriersPaged(filtros: TransportistaFiltros = {}): Observable<TransportistaPage> {
+        let params = new HttpParams()
+            .set('page', String(filtros.page ?? 0))
+            .set('size', String(filtros.size ?? PAGINATION.defaultPageSize));
+        if (filtros.serviceType) params = params.set('serviceType', filtros.serviceType);
+        if (filtros.active !== undefined && filtros.active !== null) params = params.set('active', String(filtros.active));
+        if (filtros.apiEnabled !== undefined && filtros.apiEnabled !== null) params = params.set('apiEnabled', String(filtros.apiEnabled));
+        if (filtros.fechaCreacionDesde) params = params.set('fechaCreacionDesde', filtros.fechaCreacionDesde);
+        if (filtros.fechaCreacionHasta) params = params.set('fechaCreacionHasta', filtros.fechaCreacionHasta);
+        if (filtros.q) params = params.set('q', filtros.q);
+        return this.http.get<TransportistaPage>(`${this.baseUrl}/paged`, { params });
     }
 
     getById(id: string, companyId: string): Observable<Transportista> {

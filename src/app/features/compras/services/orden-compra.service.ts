@@ -5,27 +5,51 @@ import { map } from 'rxjs/operators';
 import { environment } from '@env/environment';
 import { OrdenCompra, OrdenCompraPage } from '../models/orden-compra.model';
 
+/** Filtros server-side del listado de órdenes de compra. Todos opcionales. */
+export interface OrdenCompraFiltros {
+    page?: number;
+    size?: number;
+    /** Búsqueda por texto sobre código de OC y razón social del proveedor. */
+    q?: string;
+    estado?: string;
+    condicionPago?: string;
+    proveedorId?: string;
+    moneda?: string;
+    /** yyyy-MM-dd */
+    fechaEmisionDesde?: string;
+    /** yyyy-MM-dd */
+    fechaEmisionHasta?: string;
+    sortField?: string;
+    sortDirection?: 'asc' | 'desc';
+}
+
 @Injectable({ providedIn: 'root' })
 export class OrdenCompraService {
     private http = inject(HttpClient);
     private baseUrl = `${environment.apiUrls.purchases}/api/ordenes-compra`;
 
-    getOrdenes(
-        page = 0,
-        size = 10,
-        estado?: string,
-        condicionPago?: string,
-        fechaEmisionDesde?: string,
-        fechaEmisionHasta?: string
-    ): Observable<OrdenCompraPage> {
+    /**
+     * Filtros del listado de OC. TODO el filtrado ocurre en el backend
+     * (`GET /purchases/api/ordenes-compra`); la vista nunca filtra la página cargada.
+     */
+    getOrdenes(filtros: OrdenCompraFiltros = {}): Observable<OrdenCompraPage> {
+        const page = filtros.page ?? 0;
+        const size = filtros.size ?? 10;
+
         let params = new HttpParams()
             .set('page', page.toString())
             .set('size', size.toString());
 
-        if (estado) params = params.set('estado', estado);
-        if (condicionPago) params = params.set('condicionPago', condicionPago);
-        if (fechaEmisionDesde) params = params.set('fechaEmisionDesde', fechaEmisionDesde);
-        if (fechaEmisionHasta) params = params.set('fechaEmisionHasta', fechaEmisionHasta);
+        if (filtros.q) params = params.set('q', filtros.q);
+        if (filtros.estado) params = params.set('estado', filtros.estado);
+        if (filtros.condicionPago) params = params.set('condicionPago', filtros.condicionPago);
+        if (filtros.proveedorId) params = params.set('proveedorId', filtros.proveedorId);
+        if (filtros.moneda) params = params.set('moneda', filtros.moneda);
+        if (filtros.fechaEmisionDesde) params = params.set('fechaEmisionDesde', filtros.fechaEmisionDesde);
+        if (filtros.fechaEmisionHasta) params = params.set('fechaEmisionHasta', filtros.fechaEmisionHasta);
+        if (filtros.sortField) {
+            params = params.set('sort', `${filtros.sortField},${filtros.sortDirection ?? 'desc'}`);
+        }
 
         return this.http.get<unknown>(this.baseUrl, { params }).pipe(
             map((raw: unknown) => {

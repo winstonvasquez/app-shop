@@ -2,18 +2,19 @@ import {
     Component, OnInit, inject, signal, computed,
     ChangeDetectionStrategy
 } from '@angular/core';
-import { toObservable } from '@angular/core/rxjs-interop';
-import { map } from 'rxjs';
 import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ContractService } from '../../services/contract.service';
 import { EmployeeService } from '../../services/employee.service';
+import { DepartmentService } from '../../services/department.service';
 import {
     Contract, ContractType, ContractStatus, WorkingDay,
 } from '../../models/contract.model';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
-import { DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
+import { DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent, DateRangeFilterConfig, DateRangeChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
+import { catalogFilter, signalFilter } from '@shared/ui/tables/data-table/filter-helpers';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
+import { PAGINATION } from '@shared/constants/app.constants';
 import { PaginationComponent, PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
 import { AdminFormSectionComponent } from '@shared/ui/forms/admin-form-section/admin-form-section.component';
@@ -46,6 +47,7 @@ import { CatalogService } from '@core/services/catalog.service';
 export class ContractListComponent implements OnInit {
     private readonly contractService = inject(ContractService);
     private readonly employeeService = inject(EmployeeService);
+    private readonly departmentService = inject(DepartmentService);
     private readonly fb = inject(FormBuilder);
     private readonly catalog = inject(CatalogService);
 
@@ -54,6 +56,11 @@ export class ContractListComponent implements OnInit {
     readonly contracts = this.contractService.contracts;
     /** Fuente server-side del search-select de empleado (últimos registrados + búsqueda paginada). */
     readonly employeeSource = employeeSelectSource(this.employeeService);
+    /** Departamentos activos para el select de filtro del toolbar. */
+    readonly departments = this.departmentService.activeDepartments;
+
+    /** Empleados para el select de filtro "Empleado" del toolbar (lista acotada, no requiere server-search). */
+    empleadosFiltro = signal<{ id: number; nombres: string; apellidos: string }[]>([]);
 
     // ── UI state ──────────────────────────────────────────────────────────────
     error              = signal<string | null>(null);
@@ -64,35 +71,58 @@ export class ContractListComponent implements OnInit {
     submitError        = signal<string | null>(null);
     selectedContract   = signal<Contract | null>(null);
 
-    // ── Filters ───────────────────────────────────────────────────────────────
+    // ── Filters (TODOS server-side — la vista nunca filtra la página cargada) ──
     searchQuery  = signal('');
     filterStatus = signal('');
     filterType   = signal('');
+    filterJornadaLaboral = signal('');
+    filterMoneda = signal('');
+    filterEmployeeId = signal<number | null>(null);
+    filterDepartmentId = signal<number | null>(null);
+    filterFechaInicioDesde = signal<string | undefined>(undefined);
+    filterFechaInicioHasta = signal<string | undefined>(undefined);
+    filterFechaFinDesde = signal<string | undefined>(undefined);
+    filterFechaFinHasta = signal<string | undefined>(undefined);
 
-    // Filtros (estado + tipo) para el toolbar del data-table
+    // Filtros select del toolbar. Las opciones salen de erp_parameters (fuente única)
+    // o de listas dinámicas ya cargadas (empleados, departamentos).
     contratoFilters: FilterConfig[] = [
-        {
-            field: 'status', label: 'Todos los estados',
-            options: toObservable(this.catalog.options('ESTADO_CONTRATO_LABORAL')).pipe(
-                map(o => o.map(x => ({ value: x.codigo, label: x.valor })))
-            ),
-        },
-        {
-            field: 'type', label: 'Todos los tipos',
-            options: toObservable(this.catalog.options('TIPO_CONTRATO')).pipe(
-                map(o => o.map(x => ({ value: x.codigo, label: x.valor })))
-            ),
-        },
+        catalogFilter(this.catalog, 'ESTADO_CONTRATO_LABORAL', 'status', 'Todos los estados'),
+        catalogFilter(this.catalog, 'TIPO_CONTRATO', 'type', 'Todos los tipos'),
+        catalogFilter(this.catalog, 'JORNADA_LABORAL', 'jornadaLaboral', 'Jornada laboral'),
+        catalogFilter(this.catalog, 'MONEDA', 'moneda', 'Moneda'),
+        signalFilter('employeeId', 'Todos los empleados', this.empleadosFiltro,
+            e => ({ value: e.id, label: `${e.nombres} ${e.apellidos}` })),
+        signalFilter('departmentId', 'Todos los departamentos', this.departments,
+            d => ({ value: d.id, label: d.nombre })),
+    ];
+
+    /** Rango sobre fecha fin es el filtro de mayor valor (identifica contratos por vencer). */
+    readonly dateRangeFilters: DateRangeFilterConfig[] = [
+        { field: 'fechaInicio', label: 'Fecha de inicio' },
+        { field: 'fechaFin', label: 'Fecha de vencimiento' },
     ];
 
     /**
      * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios
-     * (respeta los filtros actuales search + estado + tipo). Ver /hr/api/contracts/export.
+     * (respeta TODOS los filtros actuales). Ver /hr/api/contracts/export.
      */
     readonly exportConfig: BackendExportConfig = {
         url: `${environment.apiUrls.hr}/api/contracts/export`,
         filename: 'contratos',
-        params: () => ({ search: this.searchQuery(), status: this.filterStatus(), type: this.filterType() }),
+        params: () => ({
+            search: this.searchQuery(),
+            status: this.filterStatus(),
+            type: this.filterType(),
+            jornadaLaboral: this.filterJornadaLaboral(),
+            moneda: this.filterMoneda(),
+            employeeId: this.filterEmployeeId() ?? undefined,
+            departmentId: this.filterDepartmentId() ?? undefined,
+            fechaInicioDesde: this.filterFechaInicioDesde(),
+            fechaInicioHasta: this.filterFechaInicioHasta(),
+            fechaFinDesde: this.filterFechaFinDesde(),
+            fechaFinHasta: this.filterFechaFinHasta(),
+        }),
     };
 
     // ── Pagination ────────────────────────────────────────────────────────────
@@ -181,19 +211,36 @@ export class ContractListComponent implements OnInit {
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
     ngOnInit(): void {
-        // El select de empleado carga sus opciones bajo demanda (server-side).
+        // El select de empleado del FORM carga sus opciones bajo demanda (server-side).
+        this.departmentService.loadDepartments().catch(() => { /* dropdown depto opcional */ });
+        this.loadEmpleadosFiltro();
         this.loadPage();
     }
 
-    /** Carga la página actual server-side (search + estado + tipo + 20/pág). */
+    /** Empleados para el select de filtro del toolbar (lista acotada, no requiere server-search). */
+    private loadEmpleadosFiltro(): void {
+        this.employeeService.searchPage(0, PAGINATION.maxPageSize)
+            .then(res => this.empleadosFiltro.set(res.content ?? []))
+            .catch(() => this.empleadosFiltro.set([]));
+    }
+
+    /** Carga la página actual server-side (search + TODOS los filtros avanzados + 20/pág). */
     private loadPage(): void {
-        this.contractService.loadContractsPaged(
-            this.currentPage(),
-            this.pageSize(),
-            this.searchQuery() || undefined,
-            this.filterStatus() || undefined,
-            this.filterType() || undefined
-        ).then(res => {
+        this.contractService.loadContractsPaged({
+            page: this.currentPage(),
+            size: this.pageSize(),
+            search: this.searchQuery() || undefined,
+            status: this.filterStatus() || undefined,
+            type: this.filterType() || undefined,
+            jornadaLaboral: this.filterJornadaLaboral() || undefined,
+            moneda: this.filterMoneda() || undefined,
+            employeeId: this.filterEmployeeId(),
+            departmentId: this.filterDepartmentId(),
+            fechaInicioDesde: this.filterFechaInicioDesde(),
+            fechaInicioHasta: this.filterFechaInicioHasta(),
+            fechaFinDesde: this.filterFechaFinDesde(),
+            fechaFinHasta: this.filterFechaFinHasta(),
+        }).then(res => {
             this.totalElements.set(res.totalElements);
             this.totalPages.set(res.totalPages);
         }).catch(err => {
@@ -202,6 +249,7 @@ export class ContractListComponent implements OnInit {
     }
 
     // ── Filter handlers ───────────────────────────────────────────────────────
+    /** La búsqueda por texto también va al backend, no filtra la página cargada. */
     onSearchTerm(term: string): void {
         this.searchQuery.set(term);
         this.currentPage.set(0);
@@ -210,8 +258,48 @@ export class ContractListComponent implements OnInit {
 
     onFilterChangeEvent(event: FilterChangeEvent): void {
         const value = event.value != null ? String(event.value) : '';
-        if (event.field === 'status') this.filterStatus.set(value);
-        else if (event.field === 'type') this.filterType.set(value);
+        switch (event.field) {
+            case 'status':         this.filterStatus.set(value); break;
+            case 'type':           this.filterType.set(value); break;
+            case 'jornadaLaboral': this.filterJornadaLaboral.set(value); break;
+            case 'moneda':         this.filterMoneda.set(value); break;
+            case 'employeeId':     this.filterEmployeeId.set(event.value != null ? Number(event.value) : null); break;
+            case 'departmentId':   this.filterDepartmentId.set(event.value != null ? Number(event.value) : null); break;
+            default: return;
+        }
+        this.currentPage.set(0);
+        this.loadPage();
+    }
+
+    onDateRangeChange(event: DateRangeChangeEvent): void {
+        switch (event.field) {
+            case 'fechaInicio':
+                this.filterFechaInicioDesde.set(event.from ?? undefined);
+                this.filterFechaInicioHasta.set(event.to ?? undefined);
+                break;
+            case 'fechaFin':
+                this.filterFechaFinDesde.set(event.from ?? undefined);
+                this.filterFechaFinHasta.set(event.to ?? undefined);
+                break;
+            default: return;
+        }
+        this.currentPage.set(0);
+        this.loadPage();
+    }
+
+    /** "Limpiar filtros": resetea todo y recarga UNA sola vez. */
+    onFiltersClear(): void {
+        this.searchQuery.set('');
+        this.filterStatus.set('');
+        this.filterType.set('');
+        this.filterJornadaLaboral.set('');
+        this.filterMoneda.set('');
+        this.filterEmployeeId.set(null);
+        this.filterDepartmentId.set(null);
+        this.filterFechaInicioDesde.set(undefined);
+        this.filterFechaInicioHasta.set(undefined);
+        this.filterFechaFinDesde.set(undefined);
+        this.filterFechaFinHasta.set(undefined);
         this.currentPage.set(0);
         this.loadPage();
     }

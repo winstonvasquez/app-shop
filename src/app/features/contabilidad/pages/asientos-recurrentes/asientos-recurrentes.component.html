@@ -23,20 +23,25 @@
 
     <!-- Tabla -->
     <app-data-table
-        [data]="recurrentesPaginados()"
+        [data]="recurrentes()"
         [columns]="columns"
         [actions]="actions"
         [loading]="cargando()"
         [searchable]="true"
-        searchPlaceholder="Buscar por nombre, descripción o frecuencia..."
+        searchPlaceholder="Buscar por nombre, descripción o glosa..."
+        [filters]="filters"
+        [dateRangeFilters]="dateRangeFilters"
         [exportable]="true"
         exportFileName="asientos-recurrentes"
         [exportConfig]="exportConfig"
         [currentPage]="currentPage()"
         [pageSize]="pageSize()"
-        [totalElements]="recurrentesFiltrados().length"
-        [totalPages]="totalPagesLocal()"
+        [totalElements]="totalElements()"
+        [totalPages]="totalPages()"
         (searchChange)="onSearchTerm($event)"
+        (filterChange)="onFilterChangeEvent($event)"
+        (dateRangeChange)="onDateRangeChange($event)"
+        (filtersClear)="onFiltersClear()"
         (pageChange)="onPageChange($event)">
     </app-data-table>
 </div>

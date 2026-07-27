@@ -7,90 +7,34 @@
     <app-button label="Nuevo Presupuesto" icon="plus" variant="primary" (click)="showForm.set(true)" />
   </div>
 
-  <!-- Filtros -->
-  <div class="filters-bar mb-4">
-    <select class="form-input w-48"
-            [value]="filtroPeriodo()"
-            (change)="filtroPeriodo.set($any($event.target).value); cargar()">
-      <option value="">Todos los periodos</option>
-      @for (p of periodos(); track p) {
-        <option [value]="p">{{ p }}</option>
-      }
-    </select>
-  </div>
-
-
-  <!-- Tabla -->
-  <div class="card">
-    <div class="card-body p-0">
-      @if (loading()) {
-        <div class="loading-container"><div class="spinner"></div></div>
-      } @else if (presupuestos().length === 0) {
-        <div class="p-8 text-center text-muted">No hay presupuestos registrados</div>
-      } @else {
-        <table class="table">
-          <thead>
-            <tr>
-              <th class="table-header-cell">Periodo</th>
-              <th class="table-header-cell">Categoría</th>
-              <th class="table-header-cell text-right">Asignado</th>
-              <th class="table-header-cell text-right">Ejecutado</th>
-              <th class="table-header-cell text-right">Comprometido</th>
-              <th class="table-header-cell text-right">Disponible</th>
-              <th class="table-header-cell text-center">Ejecución</th>
-              <th class="table-header-cell text-center">Estado</th>
-              <th class="table-header-cell text-center">Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (p of presupuestos(); track p.id) {
-              <tr class="table-row">
-                <td class="table-cell font-semibold">{{ p.periodo }}</td>
-                <td class="table-cell">{{ p.categoria }}</td>
-                <td class="table-cell text-right">S/ {{ p.montoAsignado | number:'1.2-2' }}</td>
-                <td class="table-cell text-right">S/ {{ p.montoEjecutado | number:'1.2-2' }}</td>
-                <td class="table-cell text-right">S/ {{ p.montoComprometido | number:'1.2-2' }}</td>
-                <td class="table-cell text-right font-semibold"
-                    [class.text-error]="p.disponible < 0"
-                    [class.text-success]="p.disponible >= 0">
-                  S/ {{ p.disponible | number:'1.2-2' }}
-                </td>
-                <td class="table-cell text-center">
-                  <div class="flex items-center gap-2">
-                    <div class="flex-1 bg-[var(--color-border)] rounded-full h-2">
-                      <div class="h-2 rounded-full transition-all"
-                           [style.width.%]="p.porcentajeEjecucion > 100 ? 100 : p.porcentajeEjecucion"
-                           [class.bg-success]="p.porcentajeEjecucion < 75"
-                           [class.bg-warning]="p.porcentajeEjecucion >= 75 && p.porcentajeEjecucion < 95"
-                           [class.bg-error]="p.porcentajeEjecucion >= 95"></div>
-                    </div>
-                    <span class="text-sm text-muted w-10">{{ p.porcentajeEjecucion | number:'1.0-1' }}%</span>
-                  </div>
-                </td>
-                <td class="table-cell text-center">
-                  <span [class]="estadoClass(p.estado)">{{ p.estado }}</span>
-                </td>
-                <td class="table-cell text-center">
-                  @if (editingMonto() === p.id) {
-                    <div class="flex items-center gap-1 justify-center">
-                      <input type="number" class="form-input w-24 text-center py-1" min="0" step="0.01"
-                             [value]="nuevoMonto()"
-                             (input)="nuevoMonto.set(+$any($event.target).value)" />
-                      <button class="btn btn-primary py-1 px-2 text-xs" (click)="guardarMonto(p.id)">✓</button>
-                      <button class="btn btn-secondary py-1 px-2 text-xs" (click)="editingMonto.set(null)">✕</button>
-                    </div>
-                  } @else {
-                    <button class="btn-icon btn-icon-edit" title="Editar monto asignado"
-                            (click)="iniciarEditMonto(p)">✏</button>
-                  }
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      }
+  <!-- Rango de periodos: controles propios (YYYY-MM), no son fechas reales -->
+  <div class="filters-bar mb-4 flex gap-3 items-end">
+    <div>
+      <label class="input-label">Periodo desde</label>
+      <input type="month" class="form-input w-40"
+             [value]="filterPeriodoDesde()"
+             (change)="onPeriodoDesdeChange($any($event.target).value)" />
+    </div>
+    <div>
+      <label class="input-label">Periodo hasta</label>
+      <input type="month" class="form-input w-40"
+             [value]="filterPeriodoHasta()"
+             (change)="onPeriodoHastaChange($any($event.target).value)" />
     </div>
   </div>
+
+  <app-data-table
+      [data]="presupuestos()"
+      [columns]="columns"
+      [actions]="actions"
+      [loading]="loading()"
+      [searchable]="false"
+      [filters]="filters"
+      [exportable]="false"
+      [hidePagination]="true"
+      (filterChange)="onFilterChangeEvent($event)"
+      (filtersClear)="onFiltersClear()">
+  </app-data-table>
 </div>
 
 <!-- Drawer nuevo presupuesto -->
@@ -117,6 +61,27 @@
       <div class="flex gap-3 mt-6">
         <app-button type="submit" label="Crear Presupuesto" icon="wallet" variant="primary" [loading]="saving()" [disabled]="form.invalid" class="flex-1" />
         <app-button type="button" label="Cancelar" icon="x" variant="secondary" (click)="showForm.set(false)" />
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Drawer editar monto asignado -->
+<div class="drawer-overlay" [class.open]="showMontoDrawer()" (click)="showMontoDrawer.set(false)"></div>
+<div class="drawer drawer-right" [class.open]="showMontoDrawer()">
+  <div class="drawer-header">
+    <h2 class="drawer-title">Editar Monto Asignado — {{ selectedPresupuesto()?.periodo }} / {{ selectedPresupuesto()?.categoria }}</h2>
+    <button class="modal-close-btn" (click)="showMontoDrawer.set(false)">✕</button>
+  </div>
+  <div class="drawer-body">
+    <form [formGroup]="montoForm" (ngSubmit)="guardarMonto()">
+      <div class="mb-4">
+        <label class="input-label">Nuevo Monto Asignado (S/) *</label>
+        <input type="number" class="form-input" formControlName="nuevoMonto" min="0" step="0.01" />
+      </div>
+      <div class="flex gap-3 mt-6">
+        <app-button label="Guardar" icon="save" variant="primary" type="submit" [disabled]="montoForm.invalid" class="flex-1" />
+        <app-button label="Cancelar" icon="x" variant="secondary" type="button" (click)="showMontoDrawer.set(false)" />
       </div>
     </form>
   </div>

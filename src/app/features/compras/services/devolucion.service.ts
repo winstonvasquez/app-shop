@@ -7,6 +7,22 @@ import { AuthService } from '@core/auth/auth.service';
 import { CrearDevolucionRequest, Devolucion } from '../models/devolucion.model';
 import { Page } from '@core/models/pagination.model';
 
+/** Filtros server-side del listado de devoluciones a proveedor. Todos opcionales. */
+export interface DevolucionFiltros {
+    page?: number;
+    size?: number;
+    /** Búsqueda por texto: código, código de OC y razón social del proveedor. */
+    q?: string;
+    estado?: string;
+    tipo?: string;
+    motivo?: string;
+    proveedorId?: string;
+    /** yyyy-MM-dd */
+    createdAtDesde?: string;
+    /** yyyy-MM-dd */
+    createdAtHasta?: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class DevolucionService {
     private http = inject(HttpClient);
@@ -18,12 +34,24 @@ export class DevolucionService {
         return new HttpHeaders({ 'X-Company-Id': companyId });
     }
 
-    listar(page = 0, size = 10, estado?: string, tipo?: string): Observable<Page<Devolucion>> {
+    /**
+     * Filtros del listado de devoluciones. TODO el filtrado ocurre en el backend
+     * (`GET /purchases/api/devoluciones`); la vista nunca filtra la página cargada.
+     */
+    listar(filtros: DevolucionFiltros = {}): Observable<Page<Devolucion>> {
+        const page = filtros.page ?? 0;
+        const size = filtros.size ?? 10;
+
         let params = new HttpParams()
             .set('page', page.toString())
             .set('size', size.toString());
-        if (estado) params = params.set('estado', estado);
-        if (tipo) params = params.set('tipo', tipo);
+        if (filtros.q) params = params.set('q', filtros.q);
+        if (filtros.estado) params = params.set('estado', filtros.estado);
+        if (filtros.tipo) params = params.set('tipo', filtros.tipo);
+        if (filtros.motivo) params = params.set('motivo', filtros.motivo);
+        if (filtros.proveedorId) params = params.set('proveedorId', filtros.proveedorId);
+        if (filtros.createdAtDesde) params = params.set('createdAtDesde', filtros.createdAtDesde);
+        if (filtros.createdAtHasta) params = params.set('createdAtHasta', filtros.createdAtHasta);
 
         return this.http.get<unknown>(this.baseUrl, { params, headers: this.getHeaders() }).pipe(
             map((raw: unknown) => {

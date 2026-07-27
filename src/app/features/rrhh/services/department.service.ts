@@ -5,6 +5,19 @@ import { firstValueFrom } from 'rxjs';
 import { PageResponse, pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 import { Department, DepartmentRequest } from '../models/department.model';
 
+/** Filtros server-side del listado paginado de departamentos. Todos opcionales. */
+export interface DepartmentFiltros {
+    page?: number;
+    size?: number;
+    search?: string;
+    activo?: string;
+    managerId?: number | null;
+    parentId?: number | null;
+    /** yyyy-MM-dd */
+    createdAtDesde?: string;
+    createdAtHasta?: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class DepartmentService {
     private readonly http = inject(HttpClient);
@@ -29,14 +42,25 @@ export class DepartmentService {
         return firstValueFrom(this.http.get<Department[]>(this.baseUrl));
     }
 
-    async loadDepartmentsPaged(page: number, size: number, search?: string, activo?: string):
+    /**
+     * Carga server-side paginada con filtros avanzados (search, activo, jefe, departamento
+     * padre y rango de fecha de creación). Todos opcionales.
+     */
+    async loadDepartmentsPaged(filtros: DepartmentFiltros = {}):
         Promise<{ totalElements: number; totalPages: number }> {
         this._loading.set(true);
         this._error.set(null);
         try {
-            const params: Record<string, string> = { page: String(page), size: String(size) };
-            if (search) params['search'] = search;
-            if (activo) params['activo'] = activo;
+            const params: Record<string, string> = {
+                page: String(filtros.page ?? 0),
+                size: String(filtros.size ?? 20),
+            };
+            if (filtros.search) params['search'] = filtros.search;
+            if (filtros.activo) params['activo'] = filtros.activo;
+            if (filtros.managerId != null) params['managerId'] = String(filtros.managerId);
+            if (filtros.parentId != null) params['parentId'] = String(filtros.parentId);
+            if (filtros.createdAtDesde) params['createdAtDesde'] = filtros.createdAtDesde;
+            if (filtros.createdAtHasta) params['createdAtHasta'] = filtros.createdAtHasta;
             const res = await firstValueFrom(
                 this.http.get<PageResponse<Department>>(`${this.baseUrl}/paged`, { params })
             );

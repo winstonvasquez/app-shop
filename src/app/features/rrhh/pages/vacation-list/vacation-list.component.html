@@ -11,7 +11,7 @@
     <app-alert type="error" [message]="error()!" />
 }
 
-<!-- Tabla (server-side: search + estado + paginación 20/pág) -->
+<!-- Tabla (server-side: search + selects + rangos de fecha + paginación 20/pág) -->
 <app-data-table
     [data]="vacations()"
     [columns]="columns"
@@ -19,7 +19,8 @@
     [loading]="loading()"
     [searchable]="true"
     searchPlaceholder="Buscar por nombre de empleado..."
-    [filters]="estadoFilters"
+    [filters]="filters"
+    [dateRangeFilters]="dateRangeFilters"
     [exportable]="true"
     exportFileName="vacaciones"
     [exportConfig]="exportConfig"
@@ -29,6 +30,8 @@
     [totalPages]="totalPages()"
     (searchChange)="onSearchTerm($event)"
     (filterChange)="onFilterChangeEvent($event)"
+    (dateRangeChange)="onDateRangeChange($event)"
+    (filtersClear)="onFiltersClear()"
     (pageChange)="onPaginationChange($event)" />
 
 <!-- ── Balance de Vacaciones ──────────────────────────────────────────────── -->

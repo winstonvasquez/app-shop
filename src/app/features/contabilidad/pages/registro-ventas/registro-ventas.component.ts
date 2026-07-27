@@ -5,9 +5,15 @@ import { PeriodoService, PeriodoContable } from '../../services/periodo.service'
 import { ExportService } from '@shared/services/export.service';
 import { BackendExportService, BackendExportConfig } from '@shared/services/backend-export.service';
 import { PleService } from '../../services/ple.service';
+import { CatalogService } from '@core/services/catalog.service';
 import { environment } from '@env/environment';
 import { ButtonComponent } from '@shared/components';
-import { DataTableComponent, TableColumn, PaginationEvent } from '@shared/ui/tables/data-table/data-table.component';
+import {
+    DataTableComponent, TableColumn, PaginationEvent,
+    FilterConfig, FilterChangeEvent, DateRangeFilterConfig, DateRangeChangeEvent
+} from '@shared/ui/tables/data-table/data-table.component';
+import { catalogFilter, signalFilter } from '@shared/ui/tables/data-table/filter-helpers';
+import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 import { CPE_TIPO } from '@shared/constants/sunat.constants';
 
 interface VentaPLE {
@@ -37,40 +43,42 @@ export class RegistroVentasComponent implements OnInit {
     private exportService = inject(ExportService);
     private backendExportService = inject(BackendExportService);
     private pleService = inject(PleService);
+    readonly catalog = inject(CatalogService);
 
     periodos = signal<PeriodoContable[]>([]);
     periodoSeleccionado = signal<string>('');
     ventas = signal<VentaPLE[]>([]);
     cargando = signal(false);
     error = signal<string | null>(null);
-    readonly fechaDesde = signal('');
-    readonly fechaHasta = signal('');
+    readonly fechaDesde = signal<string | null>(null);
+    readonly fechaHasta = signal<string | null>(null);
     readonly rucEmpresa = signal('');
     readonly descargandoPLE = signal(false);
 
+    // Filtros (TODOS server-side — la vista nunca filtra la página cargada)
     readonly searchQuery = signal('');
+    readonly filterTipoComprobante = signal('');
+    readonly filterEstadoSunat = signal('');
+    readonly filterClienteTipoDoc = signal('');
 
     readonly currentPage = signal(0);
     readonly pageSize = signal(20);
+    readonly totalElements = signal(0);
+    readonly totalPages = signal(0);
 
-    readonly ventasFiltradas = computed(() => {
-        const q = this.searchQuery().trim().toLowerCase();
-        const lista = this.ventas();
-        if (!q) return lista;
-        return lista.filter(v =>
-            v.serie?.toLowerCase().includes(q) ||
-            v.numero?.toLowerCase().includes(q) ||
-            v.rucCliente?.toLowerCase().includes(q) ||
-            v.razonSocial?.toLowerCase().includes(q) ||
-            v.tipoComprobante?.toLowerCase().includes(q)
-        );
-    });
+    /** Selects del toolbar. El periodo es obligatorio para el backend (no filtro opcional). */
+    filters: FilterConfig[] = [
+        signalFilter('periodoId', 'Seleccionar periodo', this.periodos,
+            p => ({ value: p.id, label: `${p.nombre} (${p.estado})` })),
+        catalogFilter(this.catalog, 'TIPO_COMPROBANTE', 'tipoComprobante', 'Tipo de comprobante'),
+        catalogFilter(this.catalog, 'ESTADO_CPE_SUNAT', 'estadoSunat', 'Estado SUNAT'),
+        catalogFilter(this.catalog, 'TIPO_DOCUMENTO_IDENTIDAD', 'clienteTipoDoc', 'Doc. del cliente'),
+    ];
 
-    readonly ventasPaginadas = computed(() => {
-        const inicio = this.currentPage() * this.pageSize();
-        return this.ventasFiltradas().slice(inicio, inicio + this.pageSize());
-    });
-    readonly totalPagesLocal = computed(() => Math.ceil(this.ventasFiltradas().length / this.pageSize()) || 1);
+    /** Rango de fecha de emisión del comprobante para el toolbar del data-table. */
+    dateRangeFilters: DateRangeFilterConfig[] = [
+        { field: 'voucherFechaEmision', label: 'Fecha de emisión' }
+    ];
 
     readonly totalBase = computed(() =>
         this.ventas().filter(v => v.estado !== 'ANULADO').reduce((s, v) => s + v.baseImponible, 0)
@@ -92,6 +100,12 @@ export class RegistroVentasComponent implements OnInit {
         filename: 'registro-ventas',
         params: () => ({
             periodoId: this.periodoSeleccionado(),
+            voucherTipo: this.filterTipoComprobante(),
+            estadoSunat: this.filterEstadoSunat(),
+            clienteTipoDoc: this.filterClienteTipoDoc(),
+            fechaDesde: this.fechaDesde() ?? undefined,
+            fechaHasta: this.fechaHasta() ?? undefined,
+            q: this.searchQuery(),
         }),
     };
 
@@ -138,11 +152,6 @@ export class RegistroVentasComponent implements OnInit {
             },
             error: () => {}
         });
-    }
-
-    cambiarPeriodo(id: string) {
-        this.periodoSeleccionado.set(id);
-        this.ventas.set([]);
     }
 
     descargarPLE14() {
@@ -192,34 +201,81 @@ export class RegistroVentasComponent implements OnInit {
         this.backendExportService.download(this.exportConfig, 'csv');
     }
 
+    /** La búsqueda por texto también va al backend (`q`), no filtra la página cargada. */
     onSearchTerm(term: string) {
         this.searchQuery.set(term);
         this.currentPage.set(0);
+        this.cargar();
+    }
+
+    onFilterChangeEvent(event: FilterChangeEvent) {
+        const valor = event.value != null ? String(event.value) : '';
+        switch (event.field) {
+            case 'periodoId':
+                this.periodoSeleccionado.set(valor);
+                this.ventas.set([]);
+                break;
+            case 'tipoComprobante':  this.filterTipoComprobante.set(valor); break;
+            case 'estadoSunat':      this.filterEstadoSunat.set(valor); break;
+            case 'clienteTipoDoc':   this.filterClienteTipoDoc.set(valor); break;
+            default: return;
+        }
+        this.currentPage.set(0);
+        if (this.periodoSeleccionado()) this.cargar();
+    }
+
+    onDateRangeChange(event: DateRangeChangeEvent) {
+        if (event.field === 'voucherFechaEmision') {
+            this.fechaDesde.set(event.from);
+            this.fechaHasta.set(event.to);
+            this.currentPage.set(0);
+            if (this.periodoSeleccionado()) this.cargar();
+        }
+    }
+
+    /** "Limpiar filtros": resetea todo (excepto el periodo) y recarga UNA sola vez. */
+    onFiltersClear() {
+        this.searchQuery.set('');
+        this.filterTipoComprobante.set('');
+        this.filterEstadoSunat.set('');
+        this.filterClienteTipoDoc.set('');
+        this.fechaDesde.set(null);
+        this.fechaHasta.set(null);
+        this.currentPage.set(0);
+        if (this.periodoSeleccionado()) this.cargar();
     }
 
     onPageChange(event: PaginationEvent) {
         this.currentPage.set(event.page);
         this.pageSize.set(event.size);
+        this.cargar();
     }
 
     cargar() {
         if (!this.periodoSeleccionado()) return;
-        this.currentPage.set(0);
-        this.searchQuery.set('');
         this.cargando.set(true);
         this.error.set(null);
-        let params = new HttpParams().set('periodoId', this.periodoSeleccionado()).set('size', '200');
-        if (this.fechaDesde()) params = params.set('fechaDesde', this.fechaDesde());
-        if (this.fechaHasta()) params = params.set('fechaHasta', this.fechaHasta());
-        this.http.get<unknown>(`${environment.apiUrls.sales}/api/ventas/registro-ple`, { params }).subscribe({
-            next: (data) => {
-                const lista = Array.isArray(data) ? data as VentaPLE[]
-                    : (data as { content?: VentaPLE[] })?.content ?? [];
-                this.ventas.set(lista);
+        let params = new HttpParams()
+            .set('periodoId', this.periodoSeleccionado())
+            .set('page', this.currentPage().toString())
+            .set('size', this.pageSize().toString());
+        if (this.filterTipoComprobante()) params = params.set('voucherTipo', this.filterTipoComprobante());
+        if (this.filterEstadoSunat()) params = params.set('estadoSunat', this.filterEstadoSunat());
+        if (this.filterClienteTipoDoc()) params = params.set('clienteTipoDoc', this.filterClienteTipoDoc());
+        if (this.fechaDesde()) params = params.set('fechaDesde', this.fechaDesde()!);
+        if (this.fechaHasta()) params = params.set('fechaHasta', this.fechaHasta()!);
+        if (this.searchQuery()) params = params.set('q', this.searchQuery());
+        this.http.get<unknown>(`${environment.apiUrls.accounting}/api/v1/contabilidad/registro-ventas`, { params }).subscribe({
+            next: (res) => {
+                const r = res as { content?: VentaPLE[] };
+                this.ventas.set(r.content ?? []);
+                this.totalElements.set(pageTotalElements(res));
+                this.totalPages.set(pageTotalPages(res));
                 this.cargando.set(false);
             },
             error: () => {
-                this.error.set('Registro de ventas PLE no disponible en este periodo');
+                this.error.set('No se pudo cargar el registro de ventas de este periodo');
+                this.ventas.set([]);
                 this.cargando.set(false);
             }
         });

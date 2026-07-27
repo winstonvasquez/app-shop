@@ -41,20 +41,6 @@
         </div>
     </div>
 
-    <div class="filters-bar">
-        <select class="form-input"
-                [value]="periodoSeleccionado()"
-                (change)="cambiarPeriodo($any($event.target).value)">
-            <option value="">— Seleccionar periodo —</option>
-            @for (p of periodos(); track p.id) {
-                <option [value]="p.id">{{ p.nombre }} ({{ p.estado }})</option>
-            }
-        </select>
-        <input type="date" class="form-input" style="width:160px" [value]="fechaDesde()" (input)="fechaDesde.set($any($event.target).value)" />
-        <input type="date" class="form-input" style="width:160px" [value]="fechaHasta()" (input)="fechaHasta.set($any($event.target).value)" />
-        <app-button label="Buscar" variant="primary" icon="search" (click)="cargar()"></app-button>
-    </div>
-
     @if (error()) {
         <div class="card mb-lg">
             <div class="card-body" style="color:var(--color-error);text-align:center">{{ error() }}</div>
@@ -62,19 +48,24 @@
     }
 
     <app-data-table
-        [data]="ventasPaginadas()"
+        [data]="ventas()"
         [columns]="columns"
         [loading]="cargando()"
         [searchable]="true"
         searchPlaceholder="Buscar por serie, número, cliente o RUC..."
+        [filters]="filters"
+        [dateRangeFilters]="dateRangeFilters"
         [exportable]="true"
         exportFileName="registro-ventas"
         [exportConfig]="exportConfig"
         [currentPage]="currentPage()"
         [pageSize]="pageSize()"
-        [totalElements]="ventasFiltradas().length"
-        [totalPages]="totalPagesLocal()"
+        [totalElements]="totalElements()"
+        [totalPages]="totalPages()"
         (searchChange)="onSearchTerm($event)"
+        (filterChange)="onFilterChangeEvent($event)"
+        (dateRangeChange)="onDateRangeChange($event)"
+        (filtersClear)="onFiltersClear()"
         (pageChange)="onPageChange($event)">
     </app-data-table>
 </div>

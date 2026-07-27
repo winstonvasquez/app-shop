@@ -5,6 +5,7 @@ import { catchError } from 'rxjs/operators';
 import { environment } from '@env/environment';
 import { AuthService } from '@core/auth/auth.service';
 import { HTTP_STATUS } from '@shared/constants/app.constants';
+import { PageResponse } from '@core/models/pagination.model';
 
 export interface Promocion {
     id?: number;
@@ -21,15 +22,59 @@ export interface Promocion {
     activo: boolean;
 }
 
+/** Filtros opcionales para GET /sales/api/v1/promociones (todos server-side). */
+export interface PromocionFiltros {
+    page?: number;
+    size?: number;
+    sortField?: string;
+    sortDirection?: 'asc' | 'desc';
+    search?: string;
+    tipo?: string;
+    alcance?: string;
+    subtipo?: string;
+    activo?: boolean;
+    /** Derivado en el backend: ACTIVA | INACTIVA | VENCIDA (ver PromocionQueryService). */
+    estado?: string;
+    fechaInicioDesde?: string;
+    fechaInicioHasta?: string;
+    fechaFinDesde?: string;
+    fechaFinHasta?: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class PromotionsService {
     private readonly http = inject(HttpClient);
     private readonly auth = inject(AuthService);
     private readonly baseUrl = `${environment.apiUrls.sales}/api/v1/promociones`;
 
-    getAll(): Observable<Promocion[]> {
-        return this.http.get<Promocion[]>(this.baseUrl).pipe(
-            catchError(() => of([]))
+    /**
+     * Listado paginado con búsqueda y filtros avanzados — reemplaza el antiguo
+     * getAll() sin paginar (el backend ya devuelve Page<PromocionResponseDto>).
+     */
+    getAll(filtros: PromocionFiltros = {}): Observable<PageResponse<Promocion>> {
+        let params = new HttpParams()
+            .set('page', String(filtros.page ?? 0))
+            .set('size', String(filtros.size ?? 20));
+
+        if (filtros.sortField) {
+            params = params.set('sort', `${filtros.sortField},${filtros.sortDirection ?? 'desc'}`);
+        }
+        if (filtros.search) params = params.set('search', filtros.search);
+        if (filtros.tipo) params = params.set('tipo', filtros.tipo);
+        if (filtros.alcance) params = params.set('alcance', filtros.alcance);
+        if (filtros.subtipo) params = params.set('subtipo', filtros.subtipo);
+        if (filtros.activo !== undefined) params = params.set('activo', String(filtros.activo));
+        if (filtros.estado) params = params.set('estado', filtros.estado);
+        if (filtros.fechaInicioDesde) params = params.set('fechaInicioDesde', filtros.fechaInicioDesde);
+        if (filtros.fechaInicioHasta) params = params.set('fechaInicioHasta', filtros.fechaInicioHasta);
+        if (filtros.fechaFinDesde) params = params.set('fechaFinDesde', filtros.fechaFinDesde);
+        if (filtros.fechaFinHasta) params = params.set('fechaFinHasta', filtros.fechaFinHasta);
+
+        return this.http.get<PageResponse<Promocion>>(this.baseUrl, { params }).pipe(
+            catchError(() => of({
+                content: [], totalElements: 0, totalPages: 0, size: filtros.size ?? 20,
+                number: filtros.page ?? 0, first: true, last: true, empty: true
+            } as PageResponse<Promocion>))
         );
     }
 

@@ -11,7 +11,7 @@
     <app-alert type="error" [message]="error()!" />
 }
 
-<!-- Tabla (server-side: search + departamento + paginación 20/pág) -->
+<!-- Tabla (server-side: search + departamento + estado + paginación 20/pág) -->
 <app-data-table
     [data]="positions()"
     [columns]="columns"
@@ -29,6 +29,7 @@
     [totalPages]="totalPages()"
     (searchChange)="onSearchTerm($event)"
     (filterChange)="onFilterChangeEvent($event)"
+    (filtersClear)="onFiltersClear()"
     (pageChange)="onPaginationChange($event)" />
 
 <!-- Drawer: Crear / Editar Puesto -->

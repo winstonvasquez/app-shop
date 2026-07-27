@@ -17,8 +17,12 @@ import { ButtonComponent, CatalogSelectComponent } from '@shared/components';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
-import { LoadingSpinnerComponent } from '@shared/ui/feedback/loading-spinner/loading-spinner.component';
-import { PaginationComponent, PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
+import {
+    DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent,
+    PaginationEvent, DateRangeFilterConfig, DateRangeChangeEvent, SortEvent
+} from '@shared/ui/tables/data-table/data-table.component';
+import { catalogFilter } from '@shared/ui/tables/data-table/filter-helpers';
+import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 import { PAGINATION } from '@shared/constants/app.constants';
 
 @Component({
@@ -33,8 +37,7 @@ import { PAGINATION } from '@shared/constants/app.constants';
         DrawerComponent,
         PageHeaderComponent,
         AlertComponent,
-        LoadingSpinnerComponent,
-        PaginationComponent,
+        DataTableComponent,
     ],
     templateUrl: './solicitudes-compra.component.html',
 })
@@ -60,12 +63,55 @@ export class SolicitudesCompraComponent implements OnInit {
     showRechazarModal = signal(false);
     showConvertirModal = signal(false);
 
-    // Filters & pagination
+    // Filtros (TODOS server-side — la vista nunca filtra la página cargada)
+    searchQuery = signal('');
     filterEstado = signal('');
+    filterPrioridad = signal('');
+    filterFechaRequeridaDesde = signal<string | null>(null);
+    filterFechaRequeridaHasta = signal<string | null>(null);
+    filterCreatedAtDesde = signal<string | null>(null);
+    filterCreatedAtHasta = signal<string | null>(null);
+
+    // Pagination
     currentPage = signal(0);
     pageSize = signal<number>(PAGINATION.defaultPageSize);
     totalElements = signal(0);
     totalPages = signal(0);
+
+    // Sort
+    sortField = signal('createdAt');
+    sortDirection = signal<'asc' | 'desc'>('desc');
+
+    // Filtros select del toolbar. Las opciones salen de erp_parameters (fuente única).
+    filters: FilterConfig[] = [
+        catalogFilter(this.catalog, 'ESTADO_SOLICITUD_COMPRA', 'estado', 'Todos los estados'),
+        catalogFilter(this.catalog, 'PRIORIDAD_SOLICITUD', 'prioridad', 'Prioridad'),
+    ];
+
+    /** Rangos de fecha para el toolbar del data-table. */
+    dateRangeFilters: DateRangeFilterConfig[] = [
+        { field: 'fechaRequerida', label: 'Fecha requerida' },
+        { field: 'createdAt', label: 'Fecha de solicitud' },
+    ];
+
+    columns: TableColumn<SolicitudCompra>[] = [
+        { key: 'codigo', label: 'Código', sortable: true, width: '130px' },
+        { key: 'solicitanteNombre', label: 'Solicitante' },
+        { key: 'departamento', label: 'Departamento', render: (r) => r.departamento || '—' },
+        { key: 'prioridad', label: 'Prioridad', render: (r) => r.prioridad ?? '—' },
+        { key: 'fechaRequerida', label: 'Fecha Req.', sortable: true, render: (r) => r.fechaRequerida || '—' },
+        {
+            key: 'estado', label: 'Estado', html: true,
+            render: (r) => `<span class="${this.getBadgeClass(r.estado)}">${this.getEstadoLabel(r.estado)}</span>`
+        },
+    ];
+
+    actions: TableAction<SolicitudCompra>[] = [
+        {
+            label: 'Ver', icon: '👁️', class: 'btn-view',
+            onClick: (row) => this.openDetail(row)
+        },
+    ];
 
     // Computed
     hasSolicitudes = computed(() => this.solicitudes().length > 0);
@@ -107,12 +153,24 @@ export class SolicitudesCompraComponent implements OnInit {
         this.loading.set(true);
         this.error.set(null);
         this.solicitudService
-            .getSolicitudes(this.currentPage(), this.pageSize(), this.filterEstado() || undefined)
+            .getSolicitudes({
+                page: this.currentPage(),
+                size: this.pageSize(),
+                q: this.searchQuery() || undefined,
+                estado: this.filterEstado() || undefined,
+                prioridad: this.filterPrioridad() || undefined,
+                fechaRequeridaDesde: this.filterFechaRequeridaDesde() || undefined,
+                fechaRequeridaHasta: this.filterFechaRequeridaHasta() || undefined,
+                createdAtDesde: this.filterCreatedAtDesde() || undefined,
+                createdAtHasta: this.filterCreatedAtHasta() || undefined,
+                sortField: this.sortField() || undefined,
+                sortDirection: this.sortDirection(),
+            })
             .subscribe({
                 next: (page) => {
                     this.solicitudes.set(page.content);
-                    this.totalElements.set(page.totalElements);
-                    this.totalPages.set(page.totalPages);
+                    this.totalElements.set(pageTotalElements(page));
+                    this.totalPages.set(pageTotalPages(page));
                     this.loading.set(false);
                     this.cdr.markForCheck();
                 },
@@ -125,15 +183,63 @@ export class SolicitudesCompraComponent implements OnInit {
             });
     }
 
-    onFilterEstado(event: Event): void {
-        const value = (event.target as HTMLSelectElement).value;
-        this.filterEstado.set(value);
+    /** La búsqueda por texto también va al backend (`q`), no filtra la página cargada. */
+    onSearchTerm(term: string): void {
+        this.searchQuery.set(term);
         this.currentPage.set(0);
         this.loadSolicitudes();
     }
 
-    onPageChange(event: PaginationChangeEvent): void {
+    onFilterChangeEvent(event: FilterChangeEvent): void {
+        const valor = event.value != null ? String(event.value) : '';
+        switch (event.field) {
+            case 'estado':    this.filterEstado.set(valor); break;
+            case 'prioridad': this.filterPrioridad.set(valor); break;
+            default: return;
+        }
+        this.currentPage.set(0);
+        this.loadSolicitudes();
+    }
+
+    onDateRangeChange(event: DateRangeChangeEvent): void {
+        switch (event.field) {
+            case 'fechaRequerida':
+                this.filterFechaRequeridaDesde.set(event.from);
+                this.filterFechaRequeridaHasta.set(event.to);
+                break;
+            case 'createdAt':
+                this.filterCreatedAtDesde.set(event.from);
+                this.filterCreatedAtHasta.set(event.to);
+                break;
+            default: return;
+        }
+        this.currentPage.set(0);
+        this.loadSolicitudes();
+    }
+
+    /** "Limpiar filtros": resetea todo y recarga UNA sola vez. */
+    onFiltersClear(): void {
+        this.searchQuery.set('');
+        this.filterEstado.set('');
+        this.filterPrioridad.set('');
+        this.filterFechaRequeridaDesde.set(null);
+        this.filterFechaRequeridaHasta.set(null);
+        this.filterCreatedAtDesde.set(null);
+        this.filterCreatedAtHasta.set(null);
+        this.currentPage.set(0);
+        this.loadSolicitudes();
+    }
+
+    onSort(event: SortEvent): void {
+        this.sortField.set(event.field);
+        this.sortDirection.set(event.direction);
+        this.currentPage.set(0);
+        this.loadSolicitudes();
+    }
+
+    onPaginationChange(event: PaginationEvent): void {
         this.currentPage.set(event.page);
+        this.pageSize.set(event.size);
         this.loadSolicitudes();
     }
 

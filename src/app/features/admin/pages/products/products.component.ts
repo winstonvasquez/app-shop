@@ -5,6 +5,7 @@ import { ProductService, ProductRequest, ProductFilter } from '@core/services/pr
 import { ProductResponse } from '@core/models/product.model';
 import { PaginationConfig, PageResponse, pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 import { DataTableComponent, TableColumn, TableAction, PaginationEvent, SortEvent, FilterConfig, FilterChangeEvent, DateRangeFilterConfig, DateRangeChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
+import { signalFilter, staticFilter, ACTIVO_OPTIONS } from '@shared/ui/tables/data-table/filter-helpers';
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
@@ -15,6 +16,21 @@ import { environment } from '@env/environment';
 import { AuthService } from '@core/auth/auth.service';
 import { CategoryService } from '@core/services/category.service';
 import { CategoryResponse } from '@core/models/category.model';
+
+/** Bucket de precio para el select del toolbar -> se traduce a precioMin/precioMax al filtrar. */
+const PRECIO_RANGO_OPTIONS = [
+  { value: '0-50',   label: 'Hasta S/ 50' },
+  { value: '50-100',  label: 'S/ 50 - 100' },
+  { value: '100-300', label: 'S/ 100 - 300' },
+  { value: '300-',    label: 'Más de S/ 300' },
+] as const;
+
+const MIN_RATING_OPTIONS = [
+  { value: '4', label: '4+ estrellas' },
+  { value: '3', label: '3+ estrellas' },
+  { value: '2', label: '2+ estrellas' },
+  { value: '1', label: '1+ estrellas' },
+] as const;
 
 @Component({
   selector: 'app-products',
@@ -58,15 +74,29 @@ export class ProductsComponent implements OnInit {
   filterCategoriaId = signal<number | null>(null);
   filterFechaCreacionDesde = signal<string | undefined>(undefined);
   filterFechaCreacionHasta = signal<string | undefined>(undefined);
+  // Filtros nuevos: el backend ya los soporta (search/precioMin/Max/marca/minRating/activo) pero
+  // la UI no los exponía todavía (ver ficha frontend-admin-ventas.md).
+  filterMarca = signal('');
+  filterActivo = signal('');
+  filterPrecioMin = signal<number | undefined>(undefined);
+  filterPrecioMax = signal<number | undefined>(undefined);
+  filterMinRating = signal<number | undefined>(undefined);
 
-  // Filtro de categoría en el toolbar del data-table
-  readonly categoriaFilters: FilterConfig[] = [
+  /** Marcas disponibles (GET /sales/api/v1/productos/filtros-disponibles) para el select de marca. */
+  marcasFiltro = signal<string[]>([]);
+
+  // Filtros del toolbar del data-table (categoría, marca, estado, precio y calificación).
+  readonly filters: FilterConfig[] = [
     {
       field: 'categoriaId', label: 'Todas las categorías',
       options: this.categoryService.getAllSimple().pipe(
         map(cats => cats.map(c => ({ value: c.id, label: c.nombre })))
       )
-    }
+    },
+    signalFilter('marca', 'Todas las marcas', this.marcasFiltro, m => ({ value: m, label: m })),
+    staticFilter('activo', 'Estado', ACTIVO_OPTIONS),
+    staticFilter('precioRango', 'Rango de precio', PRECIO_RANGO_OPTIONS),
+    staticFilter('minRating', 'Calificación mínima', MIN_RATING_OPTIONS),
   ];
 
   readonly dateRangeFilters: DateRangeFilterConfig[] = [
@@ -75,7 +105,7 @@ export class ProductsComponent implements OnInit {
 
   /**
    * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios
-   * (respeta el filtro de búsqueda actual). Ver /sales/api/v1/productos/export.
+   * (respeta TODOS los filtros actuales, no solo lo que se ve en pantalla). Ver /sales/api/v1/productos/export.
    */
   readonly exportConfig: BackendExportConfig = {
     url: `${environment.apiUrls.sales}/api/v1/productos/export`,
@@ -85,6 +115,11 @@ export class ProductsComponent implements OnInit {
       categoriaId: this.filterCategoriaId() ?? undefined,
       fechaCreacionDesde: this.filterFechaCreacionDesde(),
       fechaCreacionHasta: this.filterFechaCreacionHasta(),
+      marca: this.filterMarca() || undefined,
+      activo: this.filterActivo() || undefined,
+      precioMin: this.filterPrecioMin(),
+      precioMax: this.filterPrecioMax(),
+      minRating: this.filterMinRating(),
     }),
   };
 
@@ -183,6 +218,10 @@ export class ProductsComponent implements OnInit {
   ngOnInit(): void {
     this.loadProducts();
     this.categoryService.getAllSimple().subscribe(categorias => this.categorias.set(categorias));
+    this.productService.getFiltrosDisponibles().subscribe({
+      next: (f) => this.marcasFiltro.set(f.marcas ?? []),
+      error: () => this.marcasFiltro.set([])
+    });
   }
 
   toggleCategoria(id: number): void {
@@ -218,7 +257,12 @@ export class ProductsComponent implements OnInit {
       search: this.searchQuery() || undefined,
       categoriaId: this.filterCategoriaId() ?? undefined,
       fechaCreacionDesde: this.filterFechaCreacionDesde(),
-      fechaCreacionHasta: this.filterFechaCreacionHasta()
+      fechaCreacionHasta: this.filterFechaCreacionHasta(),
+      marcas: this.filterMarca() ? [this.filterMarca()] : undefined,
+      activo: this.filterActivo() === '' ? undefined : this.filterActivo() === 'true',
+      precioMin: this.filterPrecioMin(),
+      precioMax: this.filterPrecioMax(),
+      minRating: this.filterMinRating()
     };
 
     this.productService.getAllProductsFiltered(pagination, filter).subscribe({
@@ -253,11 +297,45 @@ export class ProductsComponent implements OnInit {
   }
 
   /**
-   * Handle filter change emitted by the data-table toolbar (categoría)
+   * Handle filter change emitted by the data-table toolbar (categoría, marca, estado, precio, rating)
    */
   onFilterChangeEvent(event: FilterChangeEvent): void {
-    if (event.field !== 'categoriaId') return;
-    this.filterCategoriaId.set(event.value != null ? Number(event.value) : null);
+    const valor = event.value != null ? String(event.value) : '';
+    switch (event.field) {
+      case 'categoriaId': this.filterCategoriaId.set(event.value != null ? Number(event.value) : null); break;
+      case 'marca':       this.filterMarca.set(valor); break;
+      case 'activo':      this.filterActivo.set(valor); break;
+      case 'precioRango': this.setPrecioRango(valor); break;
+      case 'minRating':   this.filterMinRating.set(valor ? Number(valor) : undefined); break;
+      default: return;
+    }
+    this.currentPage.set(0);
+    this.loadProducts();
+  }
+
+  /** Traduce el bucket elegido ("50-100", "300-", ...) a precioMin/precioMax para el backend. */
+  private setPrecioRango(bucket: string): void {
+    if (!bucket) {
+      this.filterPrecioMin.set(undefined);
+      this.filterPrecioMax.set(undefined);
+      return;
+    }
+    const [min, max] = bucket.split('-');
+    this.filterPrecioMin.set(min ? Number(min) : undefined);
+    this.filterPrecioMax.set(max ? Number(max) : undefined);
+  }
+
+  /** "Limpiar filtros": resetea TODOS los signals de filtro y recarga UNA sola vez. */
+  onFiltersClear(): void {
+    this.searchQuery.set('');
+    this.filterCategoriaId.set(null);
+    this.filterFechaCreacionDesde.set(undefined);
+    this.filterFechaCreacionHasta.set(undefined);
+    this.filterMarca.set('');
+    this.filterActivo.set('');
+    this.filterPrecioMin.set(undefined);
+    this.filterPrecioMax.set(undefined);
+    this.filterMinRating.set(undefined);
     this.currentPage.set(0);
     this.loadProducts();
   }

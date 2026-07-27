@@ -1,5 +1,55 @@
 <div class="historial-screen">
 
+    <!-- Filtros server-side: búsqueda + selects + rango de fecha (TODO va al backend) -->
+    <div class="historial-filters-row">
+        <input class="historial-filter-input" type="text" placeholder="Buscar por ticket, CPE o cliente..."
+            [value]="searchQuery()" (input)="onSearch($any($event.target).value)" />
+
+        <select class="historial-filter-select" [value]="filterEstado()" (change)="onEstadoChange($any($event.target).value)">
+            <option value="">Todos los estados</option>
+            @for (o of estadosVenta(); track o.codigo) {
+            <option [value]="o.codigo">{{ o.valor }}</option>
+            }
+        </select>
+
+        <select class="historial-filter-select" [value]="filterMetodoPago()" (change)="onMetodoPagoChange($any($event.target).value)">
+            <option value="">Método de pago</option>
+            @for (o of metodosPago(); track o.codigo) {
+            <option [value]="o.codigo">{{ o.valor }}</option>
+            }
+        </select>
+
+        <select class="historial-filter-select" [value]="filterTipoCpe()" (change)="onTipoCpeChange($any($event.target).value)">
+            <option value="">Tipo de comprobante</option>
+            @for (o of tiposCpe(); track o.codigo) {
+            <option [value]="o.codigo">{{ o.valor }}</option>
+            }
+        </select>
+
+        <select class="historial-filter-select" [value]="filterMoneda()" (change)="onMonedaChange($any($event.target).value)">
+            <option value="">Moneda</option>
+            @for (o of monedas(); track o.codigo) {
+            <option [value]="o.codigo">{{ o.valor }}</option>
+            }
+        </select>
+
+        <select class="historial-filter-select" [value]="filterSucursalId()" (change)="onSucursalChange($any($event.target).value)">
+            <option value="">Sucursal</option>
+            @for (s of sucursales(); track s.id) {
+            <option [value]="s.id">{{ s.nombre }}</option>
+            }
+        </select>
+
+        <input class="historial-filter-date" type="date" [value]="filterFechaDesde()"
+            (change)="onFechaDesdeChange($any($event.target).value)" title="Desde" />
+        <input class="historial-filter-date" type="date" [value]="filterFechaHasta()"
+            (change)="onFechaHastaChange($any($event.target).value)" title="Hasta" />
+
+        @if (hasActiveFilters()) {
+        <button class="historial-filter-clear" type="button" (click)="onFiltersClear()">Limpiar</button>
+        }
+    </div>
+
     <!-- Resumen del turno (línea compacta; los KPI cards viven solo en dashboards) -->
     @if (turno(); as t) {
     <div class="flex flex-wrap gap-x-6 gap-y-1 text-sm mb-3 px-1">

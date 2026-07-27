@@ -11,7 +11,7 @@
     <app-alert type="error" [message]="error()!" />
 }
 
-<!-- Tabla (server-side: search + activo + paginación 20/pág) -->
+<!-- Tabla (server-side: search + activo + jefe + departamento padre + rango fecha creación + paginación 20/pág) -->
 <app-data-table
     [data]="departments()"
     [columns]="columns"
@@ -20,6 +20,7 @@
     [searchable]="true"
     searchPlaceholder="Buscar por código o nombre..."
     [filters]="estadoFilters"
+    [dateRangeFilters]="dateRangeFilters"
     [exportable]="true"
     exportFileName="departamentos"
     [exportConfig]="exportConfig"
@@ -29,6 +30,8 @@
     [totalPages]="totalPages()"
     (searchChange)="onSearchTerm($event)"
     (filterChange)="onFilterChangeEvent($event)"
+    (dateRangeChange)="onDateRangeChange($event)"
+    (filtersClear)="onFiltersClear()"
     (pageChange)="onPaginationChange($event)" />
 
 <!-- Drawer: Crear / Editar Departamento -->

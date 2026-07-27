@@ -7,71 +7,38 @@
     <app-button label="Nueva Evaluación" variant="primary" icon="plus" (click)="showForm.set(true)" />
   </div>
 
-  <!-- Filtro por proveedor -->
-  <div class="card mb-4">
-    <div class="card-body">
-      <div class="flex gap-3 items-end">
-        <div class="flex-1">
-          <label class="input-label">Proveedor</label>
-          <app-server-search-select [dataSource]="proveedorSource"
-                                    [formControl]="filtroProveedorId"
-                                    placeholder="Buscar proveedor por nombre o RUC…" />
-        </div>
-        <app-button label="Ver Historial" variant="secondary" icon="search"
-                    [disabled]="!filtroProveedorId.value" (click)="buscarEvaluaciones()" />
-      </div>
+  <!-- Filtro de periodo: control propio porque no existe endpoint que liste periodos existentes -->
+  <div class="filters-bar mb-4">
+    <div>
+      <label class="input-label">Periodo (YYYY-MM)</label>
+      <input type="month" class="form-input w-48"
+             [value]="filterPeriodo()"
+             (change)="onPeriodoChange($any($event.target).value)" />
     </div>
   </div>
 
-  <!-- Tabla de evaluaciones -->
-  <div class="card">
-    <div class="card-header">
-      <h2 class="card-title">Historial de Evaluaciones</h2>
-    </div>
-    <div class="card-body p-0">
-      @if (loading()) {
-        <div class="loading-container"><div class="spinner"></div></div>
-      } @else if (evaluaciones().length === 0) {
-        <div class="p-8 text-center text-muted">Selecciona un proveedor para ver su historial</div>
-      } @else {
-        <table class="table">
-          <thead>
-            <tr>
-              <th class="table-header-cell">Fecha</th>
-              <th class="table-header-cell">OC</th>
-              <th class="table-header-cell text-center">Entrega</th>
-              <th class="table-header-cell text-center">Calidad</th>
-              <th class="table-header-cell text-center">Precio</th>
-              <th class="table-header-cell text-center">Servicio</th>
-              <th class="table-header-cell text-center">Total</th>
-              <th class="table-header-cell text-center">Nivel</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (ev of evaluaciones(); track ev.id) {
-              <tr class="table-row">
-                <td class="table-cell">{{ ev.fechaEvaluacion | date:'dd/MM/yyyy' }}</td>
-                <td class="table-cell text-muted">{{ ev.ordenCompraCodigo ?? '—' }}</td>
-                <td class="table-cell text-center font-semibold" [class]="puntajeColor(ev.puntajeEntrega)">{{ ev.puntajeEntrega }}</td>
-                <td class="table-cell text-center font-semibold" [class]="puntajeColor(ev.puntajeCalidad)">{{ ev.puntajeCalidad }}</td>
-                <td class="table-cell text-center font-semibold" [class]="puntajeColor(ev.puntajePrecio)">{{ ev.puntajePrecio }}</td>
-                <td class="table-cell text-center font-semibold" [class]="puntajeColor(ev.puntajeServicio)">{{ ev.puntajeServicio }}</td>
-                <td class="table-cell text-center font-bold text-lg" [class]="puntajeColor(ev.puntajeTotal)">{{ ev.puntajeTotal | number:'1.0-1' }}</td>
-                <td class="table-cell text-center">
-                  <span [class]="nivelClass(ev.nivel)">{{ ev.nivel }}</span>
-                </td>
-              </tr>
-              @if (ev.comentarios) {
-                <tr class="table-row bg-[var(--color-surface-raised)]">
-                  <td class="table-cell text-muted text-sm italic" colspan="8">💬 {{ ev.comentarios }}</td>
-                </tr>
-              }
-            }
-          </tbody>
-        </table>
-      }
-    </div>
-  </div>
+  <app-data-table
+      [data]="evaluaciones()"
+      [columns]="columns"
+      [loading]="loading()"
+      [searchable]="true"
+      searchPlaceholder="Buscar por observaciones o proveedor..."
+      [filters]="filters"
+      [dateRangeFilters]="dateRangeFilters"
+      [exportable]="false"
+      [currentPage]="currentPage()"
+      [pageSize]="pageSize()"
+      [totalElements]="totalElements()"
+      [totalPages]="totalPages()"
+      [sortField]="sortField()"
+      [sortDirection]="sortDirection()"
+      (searchChange)="onSearchTerm($event)"
+      (filterChange)="onFilterChangeEvent($event)"
+      (dateRangeChange)="onDateRangeChange($event)"
+      (filtersClear)="onFiltersClear()"
+      (pageChange)="onPaginationChange($event)"
+      (sortChange)="onSort($event)">
+  </app-data-table>
 </div>
 
 <!-- Drawer nueva evaluación -->
@@ -102,8 +69,8 @@
       }
 
       <div class="mb-4">
-        <label class="input-label">Comentarios</label>
-        <textarea class="form-input" formControlName="comentarios" rows="3"
+        <label class="input-label">Observaciones</label>
+        <textarea class="form-input" formControlName="observaciones" rows="3"
                   placeholder="Observaciones adicionales..."></textarea>
       </div>
 

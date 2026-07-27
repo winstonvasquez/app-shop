@@ -8,81 +8,33 @@
         </div>
     </app-page-header>
 
-    <!-- Filtro por estado -->
-    <div class="mb-lg">
-        <select class="form-input" style="width:220px" [value]="filterEstado()" (change)="onFilterEstado($event)">
-            <option value="">Todos los estados</option>
-            @for (opt of catalog.options('ESTADO_SOLICITUD_COMPRA')(); track opt.codigo) {
-                <option [value]="opt.codigo">{{ opt.valor }}</option>
-            }
-        </select>
-    </div>
-
     @if (error()) {
         <app-alert type="error" [message]="error()!" [dismissible]="true" (dismiss)="error.set(null)"></app-alert>
     }
 
-    @if (loading() && !hasSolicitudes()) {
-        <app-loading-spinner message="Cargando solicitudes..."></app-loading-spinner>
-    }
-
-    @if (isEmpty()) {
-        <div class="text-center py-2xl text-subtle">
-            <h3 class="text-lg font-bold text-on mb-xs">No hay solicitudes de compra</h3>
-            <p>Crea tu primera solicitud haciendo clic en el botón superior.</p>
-        </div>
-    }
-
-    @if (hasSolicitudes()) {
-        <div class="card">
-            <div class="card-body" style="padding:0">
-                <table class="table">
-                    <thead class="table-header">
-                        <tr>
-                            <th class="table-header-cell">Código</th>
-                            <th class="table-header-cell">Solicitante</th>
-                            <th class="table-header-cell">Departamento</th>
-                            <th class="table-header-cell">Prioridad</th>
-                            <th class="table-header-cell">Fecha Requerida</th>
-                            <th class="table-header-cell">Estado</th>
-                            <th class="table-header-cell">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @for (sol of solicitudes(); track sol.id) {
-                            <tr class="table-row">
-                                <td class="table-cell font-mono text-sm">{{ sol.codigo }}</td>
-                                <td class="table-cell">{{ sol.solicitanteNombre }}</td>
-                                <td class="table-cell">{{ sol.departamento || '—' }}</td>
-                                <td class="table-cell">{{ sol.prioridad }}</td>
-                                <td class="table-cell">{{ sol.fechaRequerida || '—' }}</td>
-                                <td class="table-cell">
-                                    <span [class]="getBadgeClass(sol.estado)">{{ getEstadoLabel(sol.estado) }}</span>
-                                </td>
-                                <td class="table-cell">
-                                    <button class="btn-icon" title="Ver detalle" (click)="openDetail(sol)">
-                                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0zm6 0c0 6-9 9-9 9s-9-3-9-9 9-9 9-9 9 3 9 9z"/>
-                                        </svg>
-                                    </button>
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        @if (totalPages() > 0) {
-            <app-pagination
-                [currentPage]="currentPage()"
-                [totalPages]="totalPages()"
-                [totalElements]="totalElements()"
-                [pageSize]="pageSize()"
-                (pageChange)="onPageChange($event)">
-            </app-pagination>
-        }
-    }
+    <app-data-table
+        [data]="solicitudes()"
+        [columns]="columns"
+        [actions]="actions"
+        [loading]="loading()"
+        [searchable]="true"
+        searchPlaceholder="Buscar por código, justificación o solicitante..."
+        [filters]="filters"
+        [dateRangeFilters]="dateRangeFilters"
+        [exportable]="false"
+        [currentPage]="currentPage()"
+        [pageSize]="pageSize()"
+        [totalElements]="totalElements()"
+        [totalPages]="totalPages()"
+        [sortField]="sortField()"
+        [sortDirection]="sortDirection()"
+        (searchChange)="onSearchTerm($event)"
+        (filterChange)="onFilterChangeEvent($event)"
+        (dateRangeChange)="onDateRangeChange($event)"
+        (filtersClear)="onFiltersClear()"
+        (pageChange)="onPaginationChange($event)"
+        (sortChange)="onSort($event)">
+    </app-data-table>
 </div>
 
 <!-- Drawer: Crear solicitud -->

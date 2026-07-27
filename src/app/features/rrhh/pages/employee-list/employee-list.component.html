@@ -11,7 +11,7 @@
     <app-alert type="error" [message]="error()!" />
 }
 
-<!-- Tabla (server-side: search + estado + paginación 20/pág) -->
+<!-- Tabla (server-side: search + estado + departamento + puesto + supervisor + tipo doc + sistema previsional + AFP + género + estado civil + 3 rangos de fecha + paginación 20/pág) -->
 <app-data-table
     [data]="employees()"
     [columns]="columns"
@@ -19,7 +19,7 @@
     [loading]="loading()"
     [searchable]="true"
     searchPlaceholder="Buscar por código, nombre o documento..."
-    [filters]="tableFilters"
+    [filters]="filters"
     [dateRangeFilters]="dateRangeFilters"
     [exportable]="true"
     exportFileName="empleados"
@@ -31,6 +31,7 @@
     (searchChange)="onSearchTerm($event)"
     (filterChange)="onFilterChangeEvent($event)"
     (dateRangeChange)="onDateRangeChange($event)"
+    (filtersClear)="onFiltersClear()"
     (pageChange)="onPaginationChange($event)" />
 
 <!-- ── Drawer: Crear / Editar Empleado ────────────────────────────────── -->

@@ -19,16 +19,16 @@ import {
 } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
-import { toObservable } from '@angular/core/rxjs-interop';
-import { map } from 'rxjs';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { CotizacionService } from '../../services/cotizacion.service';
-import { ProveedorService } from '../../services/proveedor.service';
+import { ProveedorService, ProveedorFiltroOption, toProveedorOptions } from '../../services/proveedor.service';
 import { proveedorSelectSource } from '../../components/select-sources';
 import { AuthService } from '@core/auth/auth.service';
 import { CatalogService } from '@core/services/catalog.service';
 import { PAGINATION } from '@shared/constants/app.constants';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
+import { catalogFilter, signalFilter, staticFilter } from '@shared/ui/tables/data-table/filter-helpers';
 import {
     CotizacionResumen,
     ComparativaDto,
@@ -83,6 +83,7 @@ export class CotizacionesComponent implements OnInit {
     private readonly authService = inject(AuthService);
     private readonly fb = inject(FormBuilder);
     private readonly cdr = inject(ChangeDetectorRef);
+    private readonly http = inject(HttpClient);
     private readonly catalog = inject(CatalogService);
 
     readonly proveedorSource = proveedorSelectSource(this.proveedorService);
@@ -114,9 +115,14 @@ export class CotizacionesComponent implements OnInit {
     loadingDetalle = signal(false);
     detalleCotizacion = signal<CotizacionDetalleDto | null>(null);
 
+    // Filtros (TODOS server-side — la vista nunca filtra la página cargada)
     filterEstado = signal('');
+    filterProveedorAdjudicadoId = signal('');
+    filterVigencia = signal('');
     filterFechaEmisionDesde = signal<string | null>(null);
     filterFechaEmisionHasta = signal<string | null>(null);
+    filterFechaVencimientoDesde = signal<string | null>(null);
+    filterFechaVencimientoHasta = signal<string | null>(null);
     currentPage = signal(0);
     pageSize = signal<number>(PAGINATION.defaultPageSize);
     totalElements = signal(0);
@@ -126,13 +132,8 @@ export class CotizacionesComponent implements OnInit {
     hasCotizaciones = computed(() => this.cotizaciones().length > 0);
     isEmpty = computed(() => !this.loading() && !this.hasCotizaciones());
 
-    filteredCotizaciones = computed(() => {
-        const q = this.searchQuery().trim().toLowerCase();
-        if (!q) return this.cotizaciones();
-        return this.cotizaciones().filter(
-            (c) => c.codigo.toLowerCase().includes(q) || c.titulo.toLowerCase().includes(q)
-        );
-    });
+    /** Proveedores activos para el select de filtro "Proveedor adjudicado" (lista acotada, no requiere server-search). */
+    proveedoresFiltro = signal<ProveedorFiltroOption[]>([]);
 
     breadcrumbs: Breadcrumb[] = [
         { label: 'Compras', url: '/compras' },
@@ -206,32 +207,40 @@ export class CotizacionesComponent implements OnInit {
         },
     ];
 
+    // Filtros select del toolbar. Las opciones salen de erp_parameters (fuente única).
     estadoFilters: FilterConfig[] = [
-        {
-            field: 'estado',
-            label: 'Todos los estados',
-            options: toObservable(this.catalog.options('ESTADO_COTIZACION')).pipe(
-                map((o) => o.map((x) => ({ value: x.codigo, label: x.valor })))
-            ),
-        },
+        catalogFilter(this.catalog, 'ESTADO_COTIZACION', 'estado', 'Todos los estados'),
+        signalFilter('proveedorAdjudicadoId', 'Proveedor adjudicado', this.proveedoresFiltro,
+            p => ({ value: p.id, label: p.razonSocial })),
+        // Derivado del backend a partir de fechaVencimiento — códigos exactos del contrato de la API.
+        staticFilter('vigencia', 'Vigencia', [
+            { value: 'VIGENTE', label: 'Vigente' },
+            { value: 'VENCIDA', label: 'Vencida' },
+        ]),
     ];
 
-    /** Rango de fecha de emisión para el toolbar del data-table. */
+    /** Rangos de fecha de emisión y vencimiento para el toolbar del data-table. */
     dateRangeFilters: DateRangeFilterConfig[] = [
         { field: 'fechaEmision', label: 'Fecha de emisión' },
+        { field: 'fechaVencimiento', label: 'Fecha de vencimiento' },
     ];
 
     /**
      * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios
-     * (respeta el filtro de estado y rango de fecha de emisión actuales). Ver /purchases/api/cotizaciones/export.
+     * (respeta TODOS los filtros actuales). Ver /purchases/api/cotizaciones/export.
      */
     readonly exportConfig: BackendExportConfig = {
         url: `${environment.apiUrls.purchases}/api/cotizaciones/export`,
         filename: 'cotizaciones',
         params: () => ({
+            q: this.searchQuery(),
             estado: this.filterEstado(),
+            proveedorAdjudicadoId: this.filterProveedorAdjudicadoId(),
+            vigencia: this.filterVigencia(),
             fechaEmisionDesde: this.filterFechaEmisionDesde() ?? undefined,
             fechaEmisionHasta: this.filterFechaEmisionHasta() ?? undefined,
+            fechaVencimientoDesde: this.filterFechaVencimientoDesde() ?? undefined,
+            fechaVencimientoHasta: this.filterFechaVencimientoHasta() ?? undefined,
         }),
     };
 
@@ -253,19 +262,39 @@ export class CotizacionesComponent implements OnInit {
 
     ngOnInit(): void {
         this.loadCotizaciones();
+        this.loadProveedoresFiltro();
+    }
+
+    /** Proveedores activos para el select de filtro "Proveedor adjudicado" del toolbar. */
+    private loadProveedoresFiltro(): void {
+        const params = new HttpParams()
+            .set('estado', 'ACTIVO')
+            .set('page', '0')
+            .set('size', String(PAGINATION.maxPageSize));
+        this.http.get<{ content?: { id: string; razonSocial: string }[] }>(
+            `${environment.apiUrls.purchases}/api/proveedores`, { params }
+        ).subscribe({
+            next: (res) => this.proveedoresFiltro.set(toProveedorOptions(res.content)),
+            error: () => this.proveedoresFiltro.set([])
+        });
     }
 
     loadCotizaciones(): void {
         this.loading.set(true);
         this.error.set(null);
         this.cotizacionService
-            .listar(
-                this.currentPage(),
-                this.pageSize(),
-                this.filterEstado() || undefined,
-                this.filterFechaEmisionDesde() || undefined,
-                this.filterFechaEmisionHasta() || undefined
-            )
+            .listar({
+                page: this.currentPage(),
+                size: this.pageSize(),
+                q: this.searchQuery() || undefined,
+                estado: this.filterEstado() || undefined,
+                proveedorAdjudicadoId: this.filterProveedorAdjudicadoId() || undefined,
+                vigencia: this.filterVigencia() || undefined,
+                fechaEmisionDesde: this.filterFechaEmisionDesde() || undefined,
+                fechaEmisionHasta: this.filterFechaEmisionHasta() || undefined,
+                fechaVencimientoDesde: this.filterFechaVencimientoDesde() || undefined,
+                fechaVencimientoHasta: this.filterFechaVencimientoHasta() || undefined,
+            })
             .subscribe({
                 next: (page) => {
                     this.cotizaciones.set(page.content);
@@ -283,25 +312,51 @@ export class CotizacionesComponent implements OnInit {
             });
     }
 
+    /** La búsqueda por texto también va al backend (`q`), no filtra la página cargada. */
     onSearchTerm(term: string): void {
         this.searchQuery.set(term);
+        this.currentPage.set(0);
+        this.loadCotizaciones();
     }
 
     onFilterChangeEvent(event: FilterChangeEvent): void {
-        if (event.field === 'estado') {
-            this.filterEstado.set((event.value as string) ?? '');
-            this.currentPage.set(0);
-            this.loadCotizaciones();
+        const valor = event.value != null ? String(event.value) : '';
+        switch (event.field) {
+            case 'estado':                 this.filterEstado.set(valor); break;
+            case 'proveedorAdjudicadoId':  this.filterProveedorAdjudicadoId.set(valor); break;
+            case 'vigencia':               this.filterVigencia.set(valor); break;
+            default: return;
         }
+        this.currentPage.set(0);
+        this.loadCotizaciones();
     }
 
     onDateRangeChange(event: DateRangeChangeEvent): void {
         if (event.field === 'fechaEmision') {
             this.filterFechaEmisionDesde.set(event.from);
             this.filterFechaEmisionHasta.set(event.to);
-            this.currentPage.set(0);
-            this.loadCotizaciones();
+        } else if (event.field === 'fechaVencimiento') {
+            this.filterFechaVencimientoDesde.set(event.from);
+            this.filterFechaVencimientoHasta.set(event.to);
+        } else {
+            return;
         }
+        this.currentPage.set(0);
+        this.loadCotizaciones();
+    }
+
+    /** "Limpiar filtros": resetea todo y recarga UNA sola vez. */
+    onFiltersClear(): void {
+        this.searchQuery.set('');
+        this.filterEstado.set('');
+        this.filterProveedorAdjudicadoId.set('');
+        this.filterVigencia.set('');
+        this.filterFechaEmisionDesde.set(null);
+        this.filterFechaEmisionHasta.set(null);
+        this.filterFechaVencimientoDesde.set(null);
+        this.filterFechaVencimientoHasta.set(null);
+        this.currentPage.set(0);
+        this.loadCotizaciones();
     }
 
     onPageChange(event: PaginationEvent): void {

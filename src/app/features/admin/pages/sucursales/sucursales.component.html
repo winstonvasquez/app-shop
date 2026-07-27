@@ -2,7 +2,7 @@
     <header class="page-header">
         <div>
             <h1>Sucursales</h1>
-            <p class="subtitle">Gestión de sucursales de la empresa — {{ total() }} totales · {{ activas().length }} activas</p>
+            <p class="subtitle">Gestión de sucursales de la empresa — {{ totalElements() }} en total</p>
         </div>
         @if (!showForm()) {
             <button class="btn btn-primary" (click)="openCreate()">+ Nueva sucursal</button>
@@ -59,14 +59,16 @@
             </div>
         </form>
     } @else {
-        <!-- Tabla estándar (búsqueda con X + Buscar + export, paginación empalmada) -->
+        <!-- Tabla server-side (búsqueda con X + Buscar + filtros + export, paginación real) -->
         <app-data-table
-            [data]="pagedData()"
+            [data]="sucursales()"
             [columns]="columns"
             [actions]="actions"
             [loading]="loading()"
             [searchable]="true"
-            searchPlaceholder="Buscar por nombre o dirección..."
+            searchPlaceholder="Buscar por nombre, dirección, teléfono o serie..."
+            [filters]="filters"
+            [dateRangeFilters]="dateRangeFilters"
             [exportable]="true"
             exportFileName="sucursales"
             [exportConfig]="exportConfig"
@@ -75,6 +77,9 @@
             [totalElements]="totalElements()"
             [totalPages]="totalPages()"
             (searchChange)="onSearchTerm($event)"
+            (filterChange)="onFilterChangeEvent($event)"
+            (dateRangeChange)="onDateRangeChange($event)"
+            (filtersClear)="onFiltersClear()"
             (pageChange)="onPageChange($event)">
         </app-data-table>
     }

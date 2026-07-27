@@ -18,7 +18,7 @@ export function zoneSelectSource(svc: WmsApiService, almacenId: () => string | n
         async fetchPage(search, page, size) {
             const almacen = almacenId();
             if (!almacen) return { items: [], last: true };
-            const res = await firstValueFrom(svc.getZones(almacen, page, size));
+            const res = await firstValueFrom(svc.getZones({ almacenId: almacen, page, size }));
             const items = (res.content ?? [])
                 .filter(z => !search || z.nombre.toLowerCase().includes(search.toLowerCase()) || z.codigo.toLowerCase().includes(search.toLowerCase()))
                 .map(toOption);

@@ -6,12 +6,17 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, FormControl } from '@angular/forms';
 import { DecimalPipe } from '@angular/common';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
-import { DataTableComponent, TableColumn, TableAction } from '@shared/ui/tables/data-table/data-table.component';
+import {
+    DataTableComponent, TableColumn, TableAction,
+    FilterConfig, FilterChangeEvent, DateRangeFilterConfig, DateRangeChangeEvent, PaginationEvent
+} from '@shared/ui/tables/data-table/data-table.component';
+import { catalogFilter, staticFilter } from '@shared/ui/tables/data-table/filter-helpers';
 import { PageHeaderComponent } from '@shared/ui/layout/page-header/page-header.component';
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
 import { ButtonComponent, CatalogSelectComponent } from '@shared/components';
 import { CuentasBancariasService } from '../../services/cuentas-bancarias.service';
 import { AuthService } from '@core/auth/auth.service';
+import { CatalogService } from '@core/services/catalog.service';
 import { BankAccount, BankAccountRequest, Page } from '../../models/tesoreria.model';
 import { MONEDA, CURRENCY_DISPLAY } from '@shared/constants/sunat.constants';
 import { PAGINATION } from '@shared/constants/app.constants';
@@ -34,6 +39,7 @@ export class CuentasBancariasComponent implements OnInit {
     private auth           = inject(AuthService);
     private fb             = inject(FormBuilder);
     private destroyRef     = inject(DestroyRef);
+    readonly catalog        = inject(CatalogService);
 
     cuentas          = signal<BankAccount[]>([]);
     cargando         = signal(false);
@@ -47,6 +53,32 @@ export class CuentasBancariasComponent implements OnInit {
     pageSize      = signal<number>(PAGINATION.defaultPageSize);
     totalElements = signal(0);
     totalPages    = signal(0);
+
+    // Filtros (TODOS server-side — la vista nunca filtra la página cargada)
+    searchQuery            = signal('');
+    filterEstado           = signal('');
+    filterTipoCuenta       = signal('');
+    filterMoneda           = signal('');
+    filterBanco            = signal('');
+    filterCreatedAtDesde   = signal<string | null>(null);
+    filterCreatedAtHasta   = signal<string | null>(null);
+
+    /** Estado de cuenta: enum de dominio (AccountStatus), sin catálogo dedicado en erp_parameters. */
+    filters: FilterConfig[] = [
+        staticFilter('estado', 'Estado', [
+            { value: 'ACTIVA', label: 'Activa' },
+            { value: 'INACTIVA', label: 'Inactiva' },
+            { value: 'BLOQUEADA', label: 'Bloqueada' },
+        ]),
+        catalogFilter(this.catalog, 'TIPO_CUENTA_BANCARIA', 'tipoCuenta', 'Tipo de cuenta'),
+        catalogFilter(this.catalog, 'MONEDA', 'moneda', 'Moneda'),
+        catalogFilter(this.catalog, 'BANCO', 'banco', 'Banco'),
+    ];
+
+    /** Rango de fecha de registro para el toolbar del data-table. */
+    dateRangeFilters: DateRangeFilterConfig[] = [
+        { field: 'createdAt', label: 'Fecha de registro' }
+    ];
 
     saldoTotalPEN = computed(() =>
         this.cuentas()
@@ -113,7 +145,14 @@ export class CuentasBancariasComponent implements OnInit {
         url: `${environment.apiUrls.treasury}/api/tesoreria/cuentas-bancarias/export`,
         filename: 'cuentas-bancarias',
         params: () => ({
-            tenantId: this.auth.currentUser()?.activeCompanyId ?? 1
+            tenantId: this.auth.currentUser()?.activeCompanyId ?? 1,
+            estado: this.filterEstado(),
+            tipoCuenta: this.filterTipoCuenta(),
+            moneda: this.filterMoneda(),
+            banco: this.filterBanco(),
+            createdAtDesde: this.filterCreatedAtDesde() ?? undefined,
+            createdAtHasta: this.filterCreatedAtHasta() ?? undefined,
+            search: this.searchQuery(),
         })
     };
 
@@ -133,7 +172,17 @@ export class CuentasBancariasComponent implements OnInit {
 
     load(): void {
         this.cargando.set(true);
-        this.cuentasService.getAll(this.currentPage(), this.pageSize())
+        this.cuentasService.getAll({
+            page: this.currentPage(),
+            size: this.pageSize(),
+            estado: this.filterEstado() || undefined,
+            tipoCuenta: this.filterTipoCuenta() || undefined,
+            moneda: this.filterMoneda() || undefined,
+            banco: this.filterBanco() || undefined,
+            createdAtDesde: this.filterCreatedAtDesde() || undefined,
+            createdAtHasta: this.filterCreatedAtHasta() || undefined,
+            search: this.searchQuery() || undefined,
+        })
             .pipe(takeUntilDestroyed(this.destroyRef))
             .subscribe({
                 next: (res: Page<BankAccount> | BankAccount[]) => {
@@ -147,7 +196,49 @@ export class CuentasBancariasComponent implements OnInit {
             });
     }
 
-    onPageChange(event: { page: number; size: number }): void {
+    /** La búsqueda por texto también va al backend (`search`), no filtra la página cargada. */
+    onSearchTerm(term: string): void {
+        this.searchQuery.set(term);
+        this.currentPage.set(0);
+        this.load();
+    }
+
+    onFilterChangeEvent(event: FilterChangeEvent): void {
+        const valor = event.value != null ? String(event.value) : '';
+        switch (event.field) {
+            case 'estado':     this.filterEstado.set(valor); break;
+            case 'tipoCuenta': this.filterTipoCuenta.set(valor); break;
+            case 'moneda':     this.filterMoneda.set(valor); break;
+            case 'banco':      this.filterBanco.set(valor); break;
+            default: return;
+        }
+        this.currentPage.set(0);
+        this.load();
+    }
+
+    onDateRangeChange(event: DateRangeChangeEvent): void {
+        if (event.field === 'createdAt') {
+            this.filterCreatedAtDesde.set(event.from);
+            this.filterCreatedAtHasta.set(event.to);
+            this.currentPage.set(0);
+            this.load();
+        }
+    }
+
+    /** "Limpiar filtros": resetea todo y recarga UNA sola vez. */
+    onFiltersClear(): void {
+        this.searchQuery.set('');
+        this.filterEstado.set('');
+        this.filterTipoCuenta.set('');
+        this.filterMoneda.set('');
+        this.filterBanco.set('');
+        this.filterCreatedAtDesde.set(null);
+        this.filterCreatedAtHasta.set(null);
+        this.currentPage.set(0);
+        this.load();
+    }
+
+    onPageChange(event: PaginationEvent): void {
         this.currentPage.set(event.page);
         this.pageSize.set(event.size);
         this.load();

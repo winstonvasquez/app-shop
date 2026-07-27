@@ -7,11 +7,17 @@ import { ProductLookupComponent } from '../../components/product-lookup/product-
 import { ProductResponse } from '@core/models/product.model';
 import { AlmacenService } from '@features/logistica/services/almacen.service';
 import { almacenSelectSource } from '@features/logistica/components/select-sources';
+import { Almacen } from '@features/logistica/models/almacen.model';
 import { ForecastService } from '@features/logistica/services/forecast.service';
 import { ReorderSuggestion } from '@features/logistica/models/forecast.model';
 import { AuthService } from '@core/auth/auth.service';
+import { CatalogService } from '@core/services/catalog.service';
 import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
-import { DataTableComponent, TableColumn, TableAction, PaginationEvent } from '@shared/ui/tables/data-table/data-table.component';
+import {
+    DataTableComponent, TableColumn, TableAction, PaginationEvent, FilterConfig, FilterChangeEvent,
+    DateRangeFilterConfig, DateRangeChangeEvent
+} from '@shared/ui/tables/data-table/data-table.component';
+import { catalogFilter, signalFilter, staticFilter } from '@shared/ui/tables/data-table/filter-helpers';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
@@ -38,6 +44,7 @@ export class ReplenishmentRulesComponent {
     private readonly forecastApi = inject(ForecastService);
     private readonly authService = inject(AuthService);
     private readonly fb = inject(FormBuilder);
+    readonly catalog = inject(CatalogService);
 
     readonly almacenSource = almacenSelectSource(this.almacenApi, () => this.authService.currentUser()?.activeCompanyId);
 
@@ -55,6 +62,36 @@ export class ReplenishmentRulesComponent {
     pageSize = signal(20);
     totalElements = signal(0);
     totalPages = signal(0);
+
+    // Filtros (TODOS server-side — la vista nunca filtra la página cargada)
+    filterStatus = signal('');
+    filterAlmacenId = signal('');
+    filterAutoCreatePo = signal('');
+    filterLastTriggeredAtDesde = signal<string | null>(null);
+    filterLastTriggeredAtHasta = signal<string | null>(null);
+    filterLastPoCreatedAtDesde = signal<string | null>(null);
+    filterLastPoCreatedAtHasta = signal<string | null>(null);
+    searchQuery = signal('');
+
+    /** Almacenes para el select de filtro del toolbar (lista acotada, no requiere server-search). */
+    almacenesFiltro = signal<Almacen[]>([]);
+
+    // Filtros select del toolbar. El estado sale de erp_parameters (fuente única).
+    filters: FilterConfig[] = [
+        catalogFilter(this.catalog, 'ESTADO_REGLA_REPOSICION', 'status', 'Todos los estados'),
+        signalFilter('almacenId', 'Todos los almacenes', this.almacenesFiltro,
+            a => ({ value: a.id, label: a.nombre })),
+        staticFilter('autoCreatePo', 'Modo de reposición', [
+            { value: 'true', label: 'Automática' },
+            { value: 'false', label: 'Manual' }
+        ])
+    ];
+
+    /** Rangos de fecha para el toolbar del data-table. */
+    dateRangeFilters: DateRangeFilterConfig[] = [
+        { field: 'lastTriggeredAt', label: 'Última ejecución' },
+        { field: 'lastPoCreatedAt', label: 'Última OC generada' }
+    ];
 
     showDrawer = signal(false);
     editMode = signal(false);
@@ -89,7 +126,7 @@ export class ReplenishmentRulesComponent {
             key: 'status', label: 'Estado', html: true,
             render: (r) => {
                 const cls = r.status === 'ACTIVE' ? 'badge-success' : r.status === 'PAUSED' ? 'badge-warning' : 'badge-neutral';
-                return `<span class="badge ${cls}">${r.status}</span>`;
+                return `<span class="badge ${cls}">${this.catalog.label('ESTADO_REGLA_REPOSICION', r.status)}</span>`;
             }
         },
         { key: 'lastTriggeredAt', label: 'Última ejecución',
@@ -133,7 +170,18 @@ export class ReplenishmentRulesComponent {
 
     loadRules(): void {
         this.loading.set(true);
-        this.api.getReplenishmentRules(this.currentPage(), this.pageSize()).subscribe({
+        this.api.getReplenishmentRules({
+            page: this.currentPage(),
+            size: this.pageSize(),
+            q: this.searchQuery() || undefined,
+            status: this.filterStatus() || undefined,
+            almacenId: this.filterAlmacenId() || undefined,
+            autoCreatePo: this.filterAutoCreatePo() === '' ? undefined : this.filterAutoCreatePo() === 'true',
+            lastTriggeredAtDesde: this.filterLastTriggeredAtDesde() || undefined,
+            lastTriggeredAtHasta: this.filterLastTriggeredAtHasta() || undefined,
+            lastPoCreatedAtDesde: this.filterLastPoCreatedAtDesde() || undefined,
+            lastPoCreatedAtHasta: this.filterLastPoCreatedAtHasta() || undefined
+        }).subscribe({
             next: (res) => {
                 this.rules.set(res.content);
                 this.totalElements.set(pageTotalElements(res));
@@ -144,7 +192,67 @@ export class ReplenishmentRulesComponent {
         });
     }
 
+    /** La búsqueda por texto también va al backend (`q`), no filtra la página cargada. */
+    onSearchTerm(term: string): void {
+        this.searchQuery.set(term);
+        this.currentPage.set(0);
+        this.loadRules();
+    }
+
+    onFilterChangeEvent(event: FilterChangeEvent): void {
+        const valor = event.value != null ? String(event.value) : '';
+        switch (event.field) {
+            case 'status':        this.filterStatus.set(valor); break;
+            case 'almacenId':     this.filterAlmacenId.set(valor); break;
+            case 'autoCreatePo':  this.filterAutoCreatePo.set(valor); break;
+            default: return;
+        }
+        this.currentPage.set(0);
+        this.loadRules();
+    }
+
+    onDateRangeChange(event: DateRangeChangeEvent): void {
+        switch (event.field) {
+            case 'lastTriggeredAt':
+                this.filterLastTriggeredAtDesde.set(event.from);
+                this.filterLastTriggeredAtHasta.set(event.to);
+                break;
+            case 'lastPoCreatedAt':
+                this.filterLastPoCreatedAtDesde.set(event.from);
+                this.filterLastPoCreatedAtHasta.set(event.to);
+                break;
+            default: return;
+        }
+        this.currentPage.set(0);
+        this.loadRules();
+    }
+
+    /** "Limpiar filtros": resetea todo y recarga UNA sola vez. */
+    onFiltersClear(): void {
+        this.searchQuery.set('');
+        this.filterStatus.set('');
+        this.filterAlmacenId.set('');
+        this.filterAutoCreatePo.set('');
+        this.filterLastTriggeredAtDesde.set(null);
+        this.filterLastTriggeredAtHasta.set(null);
+        this.filterLastPoCreatedAtDesde.set(null);
+        this.filterLastPoCreatedAtHasta.set(null);
+        this.currentPage.set(0);
+        this.loadRules();
+    }
+
+    /** Almacenes para el select de filtro del toolbar (lista acotada, no requiere server-search). */
+    private loadAlmacenesFiltro(): void {
+        const companyId = this.authService.currentUser()?.activeCompanyId;
+        if (companyId === undefined || companyId === null) { this.almacenesFiltro.set([]); return; }
+        this.almacenApi.getAlmacenes(String(companyId), { size: 100 }).subscribe({
+            next: (res) => this.almacenesFiltro.set(res.content ?? []),
+            error: () => this.almacenesFiltro.set([])
+        });
+    }
+
     constructor() {
+        this.loadAlmacenesFiltro();
         this.loadRules();
         this.loadSuggestions();
     }

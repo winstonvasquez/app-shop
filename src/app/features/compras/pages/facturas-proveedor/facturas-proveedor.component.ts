@@ -13,6 +13,8 @@ import { TranslatePipe } from '@ngx-translate/core';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { map } from 'rxjs';
 import { FacturaProveedorService } from '../../services/factura-proveedor.service';
+import { ProveedorService, ProveedorFiltroOption, toProveedorOptions } from '../../services/proveedor.service';
+import { catalogFilter, signalFilter, staticFilter } from '@shared/ui/tables/data-table/filter-helpers';
 import { FacturaProveedor, RegistrarFacturaRequest, CpeParsedInvoice } from '../../models/factura-proveedor.model';
 import { ButtonComponent, CatalogSelectComponent } from '@shared/components';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
@@ -52,6 +54,7 @@ import { CatalogService } from '@core/services/catalog.service';
 })
 export class FacturasProveedorComponent implements OnInit {
     private readonly facturaService = inject(FacturaProveedorService);
+    private readonly proveedorService = inject(ProveedorService);
     private readonly fb = inject(FormBuilder);
     private readonly cdr = inject(ChangeDetectorRef);
     readonly catalog = inject(CatalogService);
@@ -80,16 +83,17 @@ export class FacturasProveedorComponent implements OnInit {
     hasFacturas = computed(() => this.facturas().length > 0);
     isEmpty = computed(() => !this.loading() && !this.hasFacturas());
 
-    filteredFacturas = computed(() => {
-        const q = this.searchQuery().trim().toLowerCase();
-        if (!q) return this.facturas();
-        return this.facturas().filter(
-            (f) =>
-                (f.proveedorNombre ?? '').toLowerCase().includes(q) ||
-                `${f.serie}-${f.numero}`.toLowerCase().includes(q) ||
-                (f.ordenCompraCodigo ?? '').toLowerCase().includes(q)
-        );
-    });
+    // Filtros adicionales (todos server-side)
+    filterResultadoMatch = signal('');
+    filterEstadoSunat = signal('');
+    filterMoneda = signal('');
+    filterProveedorId = signal('');
+    filterConDetraccion = signal('');
+    filterFechaVencimientoDesde = signal<string | null>(null);
+    filterFechaVencimientoHasta = signal<string | null>(null);
+
+    /** Proveedores activos para el select de filtro del toolbar. */
+    proveedoresFiltro = signal<ProveedorFiltroOption[]>([]);
 
     breadcrumbs: Breadcrumb[] = [
         { label: 'Compras', url: '/compras' },
@@ -121,26 +125,25 @@ export class FacturasProveedorComponent implements OnInit {
         { label: 'Ver', icon: 'view', onClick: (row) => this.openDetail(row) },
     ];
 
+    // Filtros select del toolbar. Las opciones salen de erp_parameters (fuente unica).
     estadoFilters: FilterConfig[] = [
-        {
-            field: 'estado',
-            label: 'Todos los estados',
-            options: toObservable(this.catalog.options('ESTADO_FACTURA_PROVEEDOR')).pipe(
-                map((o) => o.map((x) => ({ value: x.codigo, label: x.valor })))
-            ),
-        },
-        {
-            field: 'tipoDocumento',
-            label: 'Todos los tipos',
-            options: toObservable(this.catalog.options('TIPO_COMPROBANTE')).pipe(
-                map((o) => o.map((x) => ({ value: x.codigo, label: x.valor })))
-            ),
-        },
+        catalogFilter(this.catalog, 'ESTADO_FACTURA_PROVEEDOR', 'estado', 'Todos los estados'),
+        catalogFilter(this.catalog, 'TIPO_COMPROBANTE', 'tipoDocumento', 'Todos los tipos'),
+        catalogFilter(this.catalog, 'RESULTADO_MATCH_3VIA', 'resultadoMatch', 'Match 3 vias'),
+        catalogFilter(this.catalog, 'ESTADO_VALIDACION_SUNAT', 'estadoSunat', 'Estado SUNAT'),
+        catalogFilter(this.catalog, 'MONEDA', 'moneda', 'Moneda'),
+        signalFilter('proveedorId', 'Todos los proveedores', this.proveedoresFiltro,
+            p => ({ value: p.id, label: p.razonSocial })),
+        staticFilter('conDetraccion', 'Detraccion', [
+            { value: 'true', label: 'Con detraccion' },
+            { value: 'false', label: 'Sin detraccion' },
+        ]),
     ];
 
     /** Rango de fecha de emisión para el toolbar del data-table. */
     dateRangeFilters: DateRangeFilterConfig[] = [
-        { field: 'fechaEmision', label: 'Fecha de emisión' }
+        { field: 'fechaEmision', label: 'Fecha de emisión' },
+        { field: 'fechaVencimiento', label: 'Vencimiento' }
     ];
 
     /**
@@ -151,10 +154,18 @@ export class FacturasProveedorComponent implements OnInit {
         url: `${environment.apiUrls.purchases}/api/facturas-proveedor/export`,
         filename: 'facturas-proveedor',
         params: () => ({
-            estado: this.filterEstado(),
+            q: this.searchQuery() || undefined,
+            estado: this.filterEstado() || undefined,
             tipoDocumento: this.filterTipoDocumento() || undefined,
+            resultadoMatch: this.filterResultadoMatch() || undefined,
+            estadoSunat: this.filterEstadoSunat() || undefined,
+            moneda: this.filterMoneda() || undefined,
+            proveedorId: this.filterProveedorId() || undefined,
+            conDetraccion: this.filterConDetraccion() || undefined,
             fechaEmisionDesde: this.filterFechaEmisionDesde() ?? undefined,
-            fechaEmisionHasta: this.filterFechaEmisionHasta() ?? undefined
+            fechaEmisionHasta: this.filterFechaEmisionHasta() ?? undefined,
+            fechaVencimientoDesde: this.filterFechaVencimientoDesde() ?? undefined,
+            fechaVencimientoHasta: this.filterFechaVencimientoHasta() ?? undefined
         }),
     };
 
@@ -185,19 +196,36 @@ export class FacturasProveedorComponent implements OnInit {
 
     ngOnInit(): void {
         this.loadFacturas();
+        this.loadProveedoresFiltro();
+    }
+
+    /** Proveedores activos para el select de filtro del toolbar. */
+    private loadProveedoresFiltro(): void {
+        this.proveedorService.getProveedores({ size: PAGINATION.maxPageSize, estado: 'ACTIVO' }).subscribe({
+            next: (res) => this.proveedoresFiltro.set(toProveedorOptions(res.content)),
+            error: () => this.proveedoresFiltro.set([])
+        });
     }
 
     loadFacturas(): void {
         this.loading.set(true);
         this.error.set(null);
-        this.facturaService.listar(
-            this.currentPage(),
-            this.pageSize(),
-            this.filterEstado() || undefined,
-            this.filterTipoDocumento() || undefined,
-            this.filterFechaEmisionDesde() || undefined,
-            this.filterFechaEmisionHasta() || undefined
-        ).subscribe({
+        this.facturaService.listar({
+            page: this.currentPage(),
+            size: this.pageSize(),
+            q: this.searchQuery() || undefined,
+            estado: this.filterEstado() || undefined,
+            tipoDocumento: this.filterTipoDocumento() || undefined,
+            resultadoMatch: this.filterResultadoMatch() || undefined,
+            estadoSunat: this.filterEstadoSunat() || undefined,
+            moneda: this.filterMoneda() || undefined,
+            proveedorId: this.filterProveedorId() || undefined,
+            conDetraccion: this.filterConDetraccion() || undefined,
+            fechaEmisionDesde: this.filterFechaEmisionDesde() || undefined,
+            fechaEmisionHasta: this.filterFechaEmisionHasta() || undefined,
+            fechaVencimientoDesde: this.filterFechaVencimientoDesde() || undefined,
+            fechaVencimientoHasta: this.filterFechaVencimientoHasta() || undefined
+        }).subscribe({
             next: (page) => {
                 this.facturas.set(page.content);
                 this.totalElements.set(page.totalElements);
@@ -214,29 +242,59 @@ export class FacturasProveedorComponent implements OnInit {
         });
     }
 
+    /** La búsqueda por texto va al backend (`q`), no filtra la página cargada. */
     onSearchTerm(term: string): void {
         this.searchQuery.set(term);
+        this.currentPage.set(0);
+        this.loadFacturas();
     }
 
     onFilterChangeEvent(event: FilterChangeEvent): void {
-        if (event.field === 'estado') {
-            this.filterEstado.set((event.value as string) ?? '');
-            this.currentPage.set(0);
-            this.loadFacturas();
-        } else if (event.field === 'tipoDocumento') {
-            this.filterTipoDocumento.set((event.value as string) ?? '');
-            this.currentPage.set(0);
-            this.loadFacturas();
+        const valor = event.value != null ? String(event.value) : '';
+        switch (event.field) {
+            case 'estado':         this.filterEstado.set(valor); break;
+            case 'tipoDocumento':  this.filterTipoDocumento.set(valor); break;
+            case 'resultadoMatch': this.filterResultadoMatch.set(valor); break;
+            case 'estadoSunat':    this.filterEstadoSunat.set(valor); break;
+            case 'moneda':         this.filterMoneda.set(valor); break;
+            case 'proveedorId':    this.filterProveedorId.set(valor); break;
+            case 'conDetraccion':  this.filterConDetraccion.set(valor); break;
+            default: return;
         }
+        this.currentPage.set(0);
+        this.loadFacturas();
     }
 
     onDateRangeChange(event: DateRangeChangeEvent): void {
         if (event.field === 'fechaEmision') {
             this.filterFechaEmisionDesde.set(event.from);
             this.filterFechaEmisionHasta.set(event.to);
-            this.currentPage.set(0);
-            this.loadFacturas();
+        } else if (event.field === 'fechaVencimiento') {
+            this.filterFechaVencimientoDesde.set(event.from);
+            this.filterFechaVencimientoHasta.set(event.to);
+        } else {
+            return;
         }
+        this.currentPage.set(0);
+        this.loadFacturas();
+    }
+
+    /** "Limpiar filtros": resetea todo y recarga UNA sola vez. */
+    onFiltersClear(): void {
+        this.searchQuery.set('');
+        this.filterEstado.set('');
+        this.filterTipoDocumento.set('');
+        this.filterResultadoMatch.set('');
+        this.filterEstadoSunat.set('');
+        this.filterMoneda.set('');
+        this.filterProveedorId.set('');
+        this.filterConDetraccion.set('');
+        this.filterFechaEmisionDesde.set(null);
+        this.filterFechaEmisionHasta.set(null);
+        this.filterFechaVencimientoDesde.set(null);
+        this.filterFechaVencimientoHasta.set(null);
+        this.currentPage.set(0);
+        this.loadFacturas();
     }
 
     onPageChange(event: PaginationEvent): void {

@@ -1,0 +1,16 @@
+import { chromium } from 'playwright';
+const BASE='http://localhost:4200';
+const b=await chromium.launch(); const p=await (await b.newContext({viewport:{width:1500,height:900}})).newPage();
+const errs=[]; p.on('console',m=>{if(m.type()==='error'&&!/SystemParameter/.test(m.text()))errs.push(m.text())}); p.on('pageerror',e=>errs.push('PE:'+e.message));
+await p.goto(`${BASE}/auth/login`,{waitUntil:'domcontentloaded'}); await p.waitForTimeout(1500);
+await p.fill('input[formControlName="username"]','admin'); await p.fill('input[formControlName="password"]','12345678');
+await p.click('#btn-login-submit'); await p.waitForURL('**/admin/**',{timeout:20000}).catch(()=>{}); await p.waitForTimeout(2000);
+await p.goto(`${BASE}/admin/companies`,{waitUntil:'domcontentloaded'}); await p.waitForTimeout(2800);
+const rc=()=>p.evaluate(()=>document.querySelectorAll('.data-table tbody tr:not(.skeleton-row)').length);
+const before=await rc();
+await p.fill('.table-search input','micro'); await p.click('.table-search app-button button'); await p.waitForTimeout(1800);
+const afterSearch=await rc();
+const info=await p.evaluate(()=>({toolbar:!!document.querySelector('.table-toolbar'),paginationInside:!!document.querySelector('.data-table-container app-pagination')}));
+console.log('companies', JSON.stringify({...info, before, afterSearch}), 'errs:', JSON.stringify(errs.slice(0,4)));
+await p.screenshot({path:'.claude/workspace/screenshots/diag-comp.png'});
+await b.close();

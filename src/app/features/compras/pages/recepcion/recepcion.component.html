@@ -9,14 +9,24 @@
         <app-alert type="error" [message]="error()!" [dismissible]="true" (dismiss)="error.set(null)"></app-alert>
     }
 
+    <!-- Filtros de texto libre (exact-match en backend, sin catálogo/lista de valores): transportista y responsable -->
+    <div class="filters-bar mb-3" style="gap:.75rem">
+        <input class="form-input" style="max-width:220px" placeholder="Transportista (exacto)…"
+               [value]="filterTransportista()"
+               (input)="onFilterTransportista($any($event.target).value)" />
+        <input class="form-input" style="max-width:220px" placeholder="Responsable (exacto)…"
+               [value]="filterResponsable()"
+               (input)="onFilterResponsable($any($event.target).value)" />
+    </div>
+
     <app-data-table
-        [data]="filteredRecepciones()"
+        [data]="recepciones()"
         [columns]="columns"
         [actions]="actions"
         [loading]="cargando()"
         [searchable]="true"
-        searchPlaceholder="Buscar por OC referencia o guía..."
-        [filters]="estadoFilters"
+        searchPlaceholder="Buscar por N° recepción, guía u OC..."
+        [filters]="filters"
         [dateRangeFilters]="dateRangeFilters"
         [exportable]="true"
         exportFileName="recepciones"
@@ -28,6 +38,7 @@
         (searchChange)="onSearchTerm($event)"
         (filterChange)="onFilterChangeEvent($event)"
         (dateRangeChange)="onDateRangeChange($event)"
+        (filtersClear)="onFiltersClear()"
         (pageChange)="onPaginationChange($event)">
     </app-data-table>
 

@@ -31,6 +31,11 @@ export class CustomerService {
         search?: string,
         filters?: {
             tipoCliente?: string;
+            condicionPago?: string;
+            tipoDocumento?: string;
+            segmentoId?: string;
+            activo?: string;
+            conCredito?: string;
             fechaCreacionDesde?: string;
             fechaCreacionHasta?: string;
         }
@@ -46,6 +51,21 @@ export class CustomerService {
         }
         if (filters?.tipoCliente) {
             params = params.set('tipoCliente', filters.tipoCliente);
+        }
+        if (filters?.condicionPago) {
+            params = params.set('condicionPago', filters.condicionPago);
+        }
+        if (filters?.tipoDocumento) {
+            params = params.set('tipoDocumento', filters.tipoDocumento);
+        }
+        if (filters?.segmentoId) {
+            params = params.set('segmentoId', filters.segmentoId);
+        }
+        if (filters?.activo) {
+            params = params.set('activo', filters.activo);
+        }
+        if (filters?.conCredito) {
+            params = params.set('conCredito', filters.conCredito);
         }
         if (filters?.fechaCreacionDesde) {
             params = params.set('fechaCreacionDesde', filters.fechaCreacionDesde);

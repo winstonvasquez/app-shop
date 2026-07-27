@@ -1,23 +1,29 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, FormsModule, Validators, FormGroup, FormControl } from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule, Validators, FormGroup, FormControl } from '@angular/forms';
 import {
     InventoryApiService, Asn, CreateAsnLineRequest, ReceiveAsnLine
 } from '../../services/inventory-api.service';
 import { Warehouse } from '../../models/inventory.models';
-import { DataTableComponent, TableColumn, TableAction, PaginationEvent } from '@shared/ui/tables/data-table/data-table.component';
+import {
+    DataTableComponent, TableColumn, TableAction, PaginationEvent, FilterConfig, FilterChangeEvent,
+    DateRangeFilterConfig, DateRangeChangeEvent
+} from '@shared/ui/tables/data-table/data-table.component';
+import { catalogFilter, signalFilter } from '@shared/ui/tables/data-table/filter-helpers';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
 import { DateInputComponent } from '@shared/ui/forms/date-input/date-input.component';
-import { ButtonComponent, CatalogSelectComponent, ServerSearchSelectComponent } from '@shared/components';
+import { ButtonComponent, ServerSearchSelectComponent } from '@shared/components';
 import { ProductLookupComponent } from '../../components/product-lookup/product-lookup.component';
 import { ProductResponse } from '@core/models/product.model';
 import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 import { ROUTES } from '@shared/constants/app.constants';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
+import { CatalogService } from '@core/services/catalog.service';
 import { warehouseSelectSource } from '../../components/select-sources';
+import { ProveedorService, toProveedorOptions } from '@features/compras/services/proveedor.service';
 
 /** Línea en construcción dentro del drawer de creación. */
 interface AsnLineDraft {
@@ -35,9 +41,9 @@ type AsnRow = Asn & { warehouseName: string };
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
-        ReactiveFormsModule, FormsModule, DataTableComponent, DrawerComponent,
+        ReactiveFormsModule, DataTableComponent, DrawerComponent,
         PageHeaderComponent, AlertComponent, FormFieldComponent, DateInputComponent,
-        ButtonComponent, ProductLookupComponent, CatalogSelectComponent, ServerSearchSelectComponent
+        ButtonComponent, ProductLookupComponent, ServerSearchSelectComponent
     ],
     template: `
         <div class="page-container">
@@ -49,17 +55,6 @@ type AsnRow = Asn & { warehouseName: string };
                     <app-button icon="plus" label="Nuevo ASN" variant="primary" (click)="openCreate()" />
                 </div>
             </app-page-header>
-
-            <div class="filters-bar">
-                <div class="filter-field">
-                    <label class="input-label">Estado</label>
-                    <app-catalog-select tabla="ESTADO_ASN" style="min-width:200px"
-                        [ngModel]="filterStatus()"
-                        (ngModelChange)="onFilterStatus($event)"
-                        placeholder="Todos">
-                    </app-catalog-select>
-                </div>
-            </div>
 
             @if (error()) {
                 <app-alert type="error" [message]="error()!" [dismissible]="true" (dismiss)="error.set(null)" />
@@ -77,7 +72,15 @@ type AsnRow = Asn & { warehouseName: string };
                 [pageSize]="pageSize()"
                 [totalElements]="totalElements()"
                 [totalPages]="totalPages()"
+                [searchable]="true"
+                searchPlaceholder="Buscar por N° de ASN, documento o proveedor…"
+                [filters]="filters"
+                [dateRangeFilters]="dateRangeFilters"
                 [exportConfig]="exportConfig"
+                (searchChange)="onSearchTerm($event)"
+                (filterChange)="onFilterChangeEvent($event)"
+                (dateRangeChange)="onDateRangeChange($event)"
+                (filtersClear)="onFiltersClear()"
                 (pageChange)="onPageChange($event)">
             </app-data-table>
         </div>
@@ -195,6 +198,8 @@ type AsnRow = Asn & { warehouseName: string };
 export class AsnComponent {
     private readonly api = inject(InventoryApiService);
     private readonly fb = inject(FormBuilder);
+    private readonly proveedorApi = inject(ProveedorService);
+    readonly catalog = inject(CatalogService);
 
     readonly warehouseSource = warehouseSelectSource(this.api);
 
@@ -208,12 +213,53 @@ export class AsnComponent {
     pageSize = signal(20);
     totalElements = signal(0);
     totalPages = signal(0);
+
+    // Filtros (TODOS server-side — la vista nunca filtra la página cargada)
     filterStatus = signal('');
+    filterWarehouseId = signal('');
+    filterSupplierName = signal('');
+    filterExpectedDesde = signal<string | null>(null);
+    filterExpectedHasta = signal<string | null>(null);
+    filterReceivedDesde = signal<string | null>(null);
+    filterReceivedHasta = signal<string | null>(null);
+    filterCreatedDesde = signal<string | null>(null);
+    filterCreatedHasta = signal<string | null>(null);
+    searchQuery = signal('');
+
+    /** Proveedores para el select de filtro (lista acotada, no requiere server-search). */
+    proveedoresFiltro = signal<{ id: string; razonSocial: string }[]>([]);
+
+    // Filtros select del toolbar. El estado sale de erp_parameters (fuente única).
+    filters: FilterConfig[] = [
+        catalogFilter(this.catalog, 'ESTADO_ASN', 'status', 'Todos los estados'),
+        signalFilter('warehouseId', 'Todos los almacenes', this.warehouses,
+            w => ({ value: w.id, label: w.name })),
+        signalFilter('supplierName', 'Todos los proveedores', this.proveedoresFiltro,
+            p => ({ value: p.razonSocial, label: p.razonSocial }))
+    ];
+
+    /** Rangos de fecha para el toolbar del data-table. */
+    dateRangeFilters: DateRangeFilterConfig[] = [
+        { field: 'expectedDate', label: 'Fecha esperada' },
+        { field: 'receivedDate', label: 'Fecha de recepción' },
+        { field: 'createdAt', label: 'Fecha de creación' }
+    ];
 
     readonly exportConfig: BackendExportConfig = {
         url: `${environment.apiUrls.inventory}/api/inventory/asn/export`,
         filename: 'asn',
-        params: () => ({ status: this.filterStatus() || undefined })
+        params: () => ({
+            q: this.searchQuery() || undefined,
+            status: this.filterStatus() || undefined,
+            warehouseId: this.filterWarehouseId() || undefined,
+            supplierName: this.filterSupplierName() || undefined,
+            expectedDesde: this.filterExpectedDesde() ?? undefined,
+            expectedHasta: this.filterExpectedHasta() ?? undefined,
+            receivedDesde: this.filterReceivedDesde() ?? undefined,
+            receivedHasta: this.filterReceivedHasta() ?? undefined,
+            createdDesde: this.filterCreatedDesde() ?? undefined,
+            createdHasta: this.filterCreatedHasta() ?? undefined
+        })
     };
 
     // create
@@ -240,12 +286,6 @@ export class AsnComponent {
         { label: 'Recepción (ASN)' }
     ];
 
-    readonly statusLabels: Record<string, string> = {
-        PENDIENTE: 'Pendiente',
-        CONFORME: 'Conforme',
-        CON_DIFERENCIAS: 'Con diferencias'
-    };
-
     /** Filas enriquecidas con el nombre del almacén (reactivo a warehouses). */
     readonly rows = computed<AsnRow[]>(() => {
         const whs = this.warehouses();
@@ -266,7 +306,7 @@ export class AsnComponent {
             render: (r) => {
                 const cls = r.status === 'CONFORME' ? 'badge-success'
                     : r.status === 'CON_DIFERENCIAS' ? 'badge-error' : 'badge-warning';
-                return `<span class="badge ${cls}">${this.statusLabels[r.status] ?? r.status}</span>`;
+                return `<span class="badge ${cls}">${this.catalog.label('ESTADO_ASN', r.status)}</span>`;
             }
         }
     ];
@@ -289,6 +329,7 @@ export class AsnComponent {
 
     constructor() {
         this.loadWarehouses();
+        this.loadProveedoresFiltro();
         this.load();
     }
 
@@ -296,12 +337,29 @@ export class AsnComponent {
         this.api.getWarehouses().subscribe({ next: (d) => this.warehouses.set(d) });
     }
 
+    /** Proveedores para el select de filtro del toolbar. */
+    private loadProveedoresFiltro(): void {
+        this.proveedorApi.getProveedores({ page: 0, size: 100 }).subscribe({
+            next: (res) => this.proveedoresFiltro.set(toProveedorOptions(res.content)),
+            error: () => this.proveedoresFiltro.set([])
+        });
+    }
+
     load(): void {
         this.loading.set(true);
         this.api.getAsnList({
-            status: this.filterStatus() || undefined,
             page: this.currentPage(),
-            size: this.pageSize()
+            size: this.pageSize(),
+            q: this.searchQuery() || undefined,
+            status: this.filterStatus() || undefined,
+            warehouseId: this.filterWarehouseId() ? Number(this.filterWarehouseId()) : undefined,
+            supplierName: this.filterSupplierName() || undefined,
+            expectedDesde: this.filterExpectedDesde() || undefined,
+            expectedHasta: this.filterExpectedHasta() || undefined,
+            receivedDesde: this.filterReceivedDesde() || undefined,
+            receivedHasta: this.filterReceivedHasta() || undefined,
+            createdDesde: this.filterCreatedDesde() || undefined,
+            createdHasta: this.filterCreatedHasta() || undefined
         }).subscribe({
             next: (res) => {
                 this.asns.set(res.content);
@@ -313,8 +371,57 @@ export class AsnComponent {
         });
     }
 
-    onFilterStatus(value: string): void {
-        this.filterStatus.set(value);
+    /** La búsqueda por texto también va al backend (`q`), no filtra la página cargada. */
+    onSearchTerm(term: string): void {
+        this.searchQuery.set(term);
+        this.currentPage.set(0);
+        this.load();
+    }
+
+    onFilterChangeEvent(event: FilterChangeEvent): void {
+        const valor = event.value != null ? String(event.value) : '';
+        switch (event.field) {
+            case 'status':        this.filterStatus.set(valor); break;
+            case 'warehouseId':   this.filterWarehouseId.set(valor); break;
+            case 'supplierName':  this.filterSupplierName.set(valor); break;
+            default: return;
+        }
+        this.currentPage.set(0);
+        this.load();
+    }
+
+    onDateRangeChange(event: DateRangeChangeEvent): void {
+        switch (event.field) {
+            case 'expectedDate':
+                this.filterExpectedDesde.set(event.from);
+                this.filterExpectedHasta.set(event.to);
+                break;
+            case 'receivedDate':
+                this.filterReceivedDesde.set(event.from);
+                this.filterReceivedHasta.set(event.to);
+                break;
+            case 'createdAt':
+                this.filterCreatedDesde.set(event.from);
+                this.filterCreatedHasta.set(event.to);
+                break;
+            default: return;
+        }
+        this.currentPage.set(0);
+        this.load();
+    }
+
+    /** "Limpiar filtros": resetea todo y recarga UNA sola vez. */
+    onFiltersClear(): void {
+        this.searchQuery.set('');
+        this.filterStatus.set('');
+        this.filterWarehouseId.set('');
+        this.filterSupplierName.set('');
+        this.filterExpectedDesde.set(null);
+        this.filterExpectedHasta.set(null);
+        this.filterReceivedDesde.set(null);
+        this.filterReceivedHasta.set(null);
+        this.filterCreatedDesde.set(null);
+        this.filterCreatedHasta.set(null);
         this.currentPage.set(0);
         this.load();
     }
@@ -412,7 +519,7 @@ export class AsnComponent {
             next: (updated) => {
                 this.submittingReceive.set(false);
                 this.closeReceive();
-                this.info.set(`ASN ${updated.asnNumber} recibido: ${this.statusLabels[updated.status] ?? updated.status}.`);
+                this.info.set(`ASN ${updated.asnNumber} recibido: ${this.catalog.label('ESTADO_ASN', updated.status)}.`);
                 this.load();
             },
             error: (err: Error) => { this.submittingReceive.set(false); this.receiveError.set(err.message); }

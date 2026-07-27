@@ -34,9 +34,24 @@ export class WmsApiService {
     }
 
     // ── Zonas ──────────────────────────────────────────────────────────
-    getZones(almacenId?: string, page = 0, size = 20): Observable<PageResponse<WarehouseZone>> {
+    /**
+     * Listado paginado de zonas con filtros avanzados server-side (almacén, tipo,
+     * temperatura, búsqueda de texto y rango de fecha de creación). TODOS opcionales
+     * salvo `almacenId` que en la práctica siempre se manda desde el toolbar de
+     * `ZoneManagementComponent` (ver `WarehouseZoneController.listar`).
+     */
+    getZones(params: {
+        almacenId?: string;
+        tipo?: string;
+        temperatura?: string;
+        q?: string;
+        fechaCreacionDesde?: string;
+        fechaCreacionHasta?: string;
+        page?: number;
+        size?: number;
+    } = {}): Observable<PageResponse<WarehouseZone>> {
         return this.http.get<PageResponse<WarehouseZone>>(`${this.baseUrl}/zonas`, {
-            params: this.buildParams({ almacenId, page, size })
+            params: this.buildParams({ page: 0, size: 20, ...params })
         });
     }
 
@@ -82,6 +97,31 @@ export class WmsApiService {
         });
     }
 
+    /**
+     * Listado GLOBAL paginado de lotes con filtros avanzados server-side (producto,
+     * activo, proveedor, estado de vencimiento DERIVADO —códigos exactos VIGENTE |
+     * POR_VENCER | VENCIDO—, rangos de fecha de vencimiento/fabricación y búsqueda de
+     * texto). Reemplaza el flujo previo que exigía elegir un producto antes de listar.
+     * Ver GET /logistics/api/lotes/paged.
+     */
+    getLotsPaged(params: {
+        productoId?: string;
+        activo?: boolean;
+        proveedorNombre?: string;
+        estadoVencimiento?: string;
+        vencimientoDesde?: string;
+        vencimientoHasta?: string;
+        fabricacionDesde?: string;
+        fabricacionHasta?: string;
+        q?: string;
+        page?: number;
+        size?: number;
+    } = {}): Observable<PageResponse<Lot>> {
+        return this.http.get<PageResponse<Lot>>(`${this.baseUrl}/lotes/paged`, {
+            params: this.buildParams({ ...params })
+        });
+    }
+
     createLot(payload: CreateLotRequest): Observable<Lot> {
         return this.http.post<Lot>(`${this.baseUrl}/lotes`, payload);
     }
@@ -121,16 +161,59 @@ export class WmsApiService {
         });
     }
 
-    listarSeriales(productoId?: string, status?: SerialStatusWms): Observable<SerialNumberWms[]> {
-        return this.http.get<SerialNumberWms[]>(`${this.baseUrl}/numeros-serie`, {
-            params: this.buildParams({ productoId, status })
+    /**
+     * Listado paginado de números de serie con filtros avanzados server-side (producto,
+     * estado, lote, ubicación actual, búsqueda de texto y rango de fecha de alta).
+     * IMPORTANTE: el backend cambió de `List<SerialNumberResponse>` a `Page<SerialNumberResponse>`
+     * (ver `SerialNumberController.listar`) — no volver a tratar la respuesta como array.
+     */
+    listarSeriales(params: {
+        productoId?: string;
+        status?: SerialStatusWms;
+        lotId?: string;
+        currentLocation?: string;
+        q?: string;
+        fechaCreacionDesde?: string;
+        fechaCreacionHasta?: string;
+        page?: number;
+        size?: number;
+    } = {}): Observable<PageResponse<SerialNumberWms>> {
+        return this.http.get<PageResponse<SerialNumberWms>>(`${this.baseUrl}/numeros-serie`, {
+            params: this.buildParams({ ...params })
         });
     }
 
     // ── Reglas de reposición automática ─────────────────────────────
-    getReplenishmentRules(page = 0, size = 20): Observable<PageResponse<ReplenishmentRule>> {
+    /**
+     * Filtros server-side de reglas de reposición — TODOS opcionales, TODO el
+     * filtrado ocurre en el backend (ver `ReplenishmentRuleController.listar`).
+     * `q` busca sobre SKU / nombre de producto / proveedor preferido.
+     */
+    getReplenishmentRules(params?: {
+        page?: number;
+        size?: number;
+        q?: string;
+        status?: string;
+        almacenId?: string;
+        autoCreatePo?: boolean;
+        lastTriggeredAtDesde?: string;
+        lastTriggeredAtHasta?: string;
+        lastPoCreatedAtDesde?: string;
+        lastPoCreatedAtHasta?: string;
+    }): Observable<PageResponse<ReplenishmentRule>> {
         return this.http.get<PageResponse<ReplenishmentRule>>(`${this.baseUrl}/reglas-reposicion`, {
-            params: this.buildParams({ page, size })
+            params: this.buildParams({
+                page: params?.page ?? 0,
+                size: params?.size ?? 20,
+                q: params?.q,
+                status: params?.status,
+                almacenId: params?.almacenId,
+                autoCreatePo: params?.autoCreatePo,
+                lastTriggeredAtDesde: params?.lastTriggeredAtDesde,
+                lastTriggeredAtHasta: params?.lastTriggeredAtHasta,
+                lastPoCreatedAtDesde: params?.lastPoCreatedAtDesde,
+                lastPoCreatedAtHasta: params?.lastPoCreatedAtHasta
+            })
         });
     }
 
@@ -158,9 +241,31 @@ export class WmsApiService {
     }
 
     // ── Kardex por almacén ───────────────────────────────────────────
-    getKardexPorAlmacen(almacenId: string, from: string, to: string, page = 0, size = 20): Observable<PageResponse<KardexLogisticoEntry>> {
+    /**
+     * Kardex paginado de un almacén, con filtros avanzados server-side. `from`/`to` son
+     * OPCIONALES (antes exigidos): sin ellos trae todo el histórico. `tipoMovimiento` y
+     * `productoId` filtran, `q` busca sobre sku/nombre de producto/descripción.
+     * Ver GET /logistics/api/kardex/almacen/{almacenId}.
+     */
+    getKardexPorAlmacen(almacenId: string, filtros: {
+        from?: string;
+        to?: string;
+        tipoMovimiento?: string;
+        productoId?: string;
+        q?: string;
+        page?: number;
+        size?: number;
+    } = {}): Observable<PageResponse<KardexLogisticoEntry>> {
         return this.http.get<PageResponse<KardexLogisticoEntry>>(`${this.baseUrl}/kardex/almacen/${almacenId}`, {
-            params: this.buildParams({ from, to, page, size })
+            params: this.buildParams({
+                from: filtros.from,
+                to: filtros.to,
+                tipoMovimiento: filtros.tipoMovimiento,
+                productoId: filtros.productoId,
+                q: filtros.q,
+                page: filtros.page ?? 0,
+                size: filtros.size ?? 20
+            })
         });
     }
 }

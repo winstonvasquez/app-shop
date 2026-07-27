@@ -8,9 +8,8 @@ import { Envio, EnvioStatus, TrackingEvent } from '../../models/envio.model';
 import { Transportista } from '../../models/transportista.model';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { ButtonComponent } from '@shared/components';
-import { map } from 'rxjs';
-import { toObservable } from '@angular/core/rxjs-interop';
 import { DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent, DateRangeFilterConfig, DateRangeChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
+import { catalogFilter, signalFilter } from '@shared/ui/tables/data-table/filter-helpers';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { DateInputComponent } from '@shared/ui/forms/date-input/date-input.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
@@ -75,10 +74,19 @@ export class EnviosPageComponent implements OnInit {
     gpsLng            = signal<number | null>(null);
     gpsAccuracy       = signal<number | null>(null);
 
-    // Filters
-    filterStatus = '';
-    filterDispatchedAtDesde = signal<string | undefined>(undefined);
-    filterDispatchedAtHasta = signal<string | undefined>(undefined);
+    // Filtros (TODOS server-side — la vista nunca filtra la página cargada)
+    filterStatus          = signal('');
+    filterCarrierId       = signal('');
+    filterFulfillmentType = signal('');
+    searchQuery           = signal('');
+    filterDispatchedAtDesde        = signal<string | undefined>(undefined);
+    filterDispatchedAtHasta        = signal<string | undefined>(undefined);
+    filterEstimatedDeliveryDesde   = signal<string | undefined>(undefined);
+    filterEstimatedDeliveryHasta   = signal<string | undefined>(undefined);
+    filterActualDeliveryDesde      = signal<string | undefined>(undefined);
+    filterActualDeliveryHasta      = signal<string | undefined>(undefined);
+    filterRegistradoDesde          = signal<string | undefined>(undefined);
+    filterRegistradoHasta          = signal<string | undefined>(undefined);
 
     // Pagination
     currentPage   = signal(0);
@@ -86,16 +94,20 @@ export class EnviosPageComponent implements OnInit {
     totalElements = signal(0);
     totalPages    = signal(0);
 
-    // Filtro de estado en el toolbar del data-table
-    readonly estadoFilters: FilterConfig[] = [
-        { field: 'status', label: 'Todos los estados',
-          options: toObservable(this.catalog.options('ESTADO_ENVIO')).pipe(
-            map(o => o.map(x => ({ value: x.codigo, label: x.valor }))))
-        }
+    // Filtros select del toolbar. Las opciones salen de erp_parameters (fuente única)
+    // y de `transportistas` (lista dinámica ya cargada en loadTransportistas()).
+    readonly filters: FilterConfig[] = [
+        catalogFilter(this.catalog, 'ESTADO_ENVIO', 'status', 'Todos los estados'),
+        signalFilter('carrierId', 'Todos los transportistas', this.transportistas,
+            t => ({ value: t.id, label: t.name })),
+        catalogFilter(this.catalog, 'TIPO_FULFILLMENT', 'fulfillmentType', 'Tipo de fulfillment'),
     ];
 
     readonly dateRangeFilters: DateRangeFilterConfig[] = [
-        { field: 'dispatchedAt', label: 'Fecha de despacho' }
+        { field: 'dispatchedAt', label: 'Fecha de despacho' },
+        { field: 'estimatedDeliveryDate', label: 'Entrega estimada' },
+        { field: 'actualDeliveryDate', label: 'Entrega real' },
+        { field: 'fechaCreacion', label: 'Registrado' },
     ];
 
     breadcrumbs: Breadcrumb[] = [
@@ -126,7 +138,20 @@ export class EnviosPageComponent implements OnInit {
     readonly exportConfig: BackendExportConfig = {
         url: `${environment.apiUrls.logistics}/api/shipments/export`,
         filename: 'envios',
-        params: () => ({ status: this.filterStatus || undefined }),
+        params: () => ({
+            q: this.searchQuery() || undefined,
+            status: this.filterStatus() || undefined,
+            carrierId: this.filterCarrierId() || undefined,
+            fulfillmentType: this.filterFulfillmentType() || undefined,
+            dispatchedAtDesde: this.filterDispatchedAtDesde(),
+            dispatchedAtHasta: this.filterDispatchedAtHasta(),
+            estimatedDeliveryDesde: this.filterEstimatedDeliveryDesde(),
+            estimatedDeliveryHasta: this.filterEstimatedDeliveryHasta(),
+            actualDeliveryDesde: this.filterActualDeliveryDesde(),
+            actualDeliveryHasta: this.filterActualDeliveryHasta(),
+            registradoDesde: this.filterRegistradoDesde(),
+            registradoHasta: this.filterRegistradoHasta(),
+        }),
     };
 
     actions: TableAction<Envio>[] = [
@@ -181,11 +206,22 @@ export class EnviosPageComponent implements OnInit {
     loadEnvios() {
         this.loading.set(true);
         this.error.set(null);
-        this.envioService.getEnvios(
-            this.companyId, this.currentPage(), this.pageSize(),
-            this.filterStatus || undefined,
-            this.filterDispatchedAtDesde(), this.filterDispatchedAtHasta()
-        ).subscribe({
+        this.envioService.getEnvios(this.companyId, {
+            page: this.currentPage(),
+            size: this.pageSize(),
+            q: this.searchQuery() || undefined,
+            status: this.filterStatus() || undefined,
+            carrierId: this.filterCarrierId() || undefined,
+            fulfillmentType: this.filterFulfillmentType() || undefined,
+            dispatchedAtDesde: this.filterDispatchedAtDesde(),
+            dispatchedAtHasta: this.filterDispatchedAtHasta(),
+            estimatedDeliveryDesde: this.filterEstimatedDeliveryDesde(),
+            estimatedDeliveryHasta: this.filterEstimatedDeliveryHasta(),
+            actualDeliveryDesde: this.filterActualDeliveryDesde(),
+            actualDeliveryHasta: this.filterActualDeliveryHasta(),
+            registradoDesde: this.filterRegistradoDesde(),
+            registradoHasta: this.filterRegistradoHasta()
+        }).subscribe({
             next: (res) => {
                 this.envios.set(res.content);
                 this.totalElements.set(pageTotalElements(res));
@@ -199,9 +235,39 @@ export class EnviosPageComponent implements OnInit {
         });
     }
 
+    /** La búsqueda por texto también va al backend (`q`), no filtra la página cargada. */
+    onSearch(term: string) {
+        this.searchQuery.set(term);
+        this.currentPage.set(0);
+        this.loadEnvios();
+    }
+
     onFilterChangeEvent(event: FilterChangeEvent) {
-        if (event.field !== 'status') return;
-        this.filterStatus = event.value != null ? String(event.value) : '';
+        const valor = event.value != null ? String(event.value) : '';
+        switch (event.field) {
+            case 'status':          this.filterStatus.set(valor); break;
+            case 'carrierId':       this.filterCarrierId.set(valor); break;
+            case 'fulfillmentType': this.filterFulfillmentType.set(valor); break;
+            default: return;
+        }
+        this.currentPage.set(0);
+        this.loadEnvios();
+    }
+
+    /** "Limpiar filtros": resetea todo y recarga UNA sola vez. */
+    onFiltersClear() {
+        this.searchQuery.set('');
+        this.filterStatus.set('');
+        this.filterCarrierId.set('');
+        this.filterFulfillmentType.set('');
+        this.filterDispatchedAtDesde.set(undefined);
+        this.filterDispatchedAtHasta.set(undefined);
+        this.filterEstimatedDeliveryDesde.set(undefined);
+        this.filterEstimatedDeliveryHasta.set(undefined);
+        this.filterActualDeliveryDesde.set(undefined);
+        this.filterActualDeliveryHasta.set(undefined);
+        this.filterRegistradoDesde.set(undefined);
+        this.filterRegistradoHasta.set(undefined);
         this.currentPage.set(0);
         this.loadEnvios();
     }
@@ -213,9 +279,25 @@ export class EnviosPageComponent implements OnInit {
     }
 
     onDateRangeChange(event: DateRangeChangeEvent) {
-        if (event.field !== 'dispatchedAt') return;
-        this.filterDispatchedAtDesde.set(event.from ?? undefined);
-        this.filterDispatchedAtHasta.set(event.to ?? undefined);
+        switch (event.field) {
+            case 'dispatchedAt':
+                this.filterDispatchedAtDesde.set(event.from ?? undefined);
+                this.filterDispatchedAtHasta.set(event.to ?? undefined);
+                break;
+            case 'estimatedDeliveryDate':
+                this.filterEstimatedDeliveryDesde.set(event.from ?? undefined);
+                this.filterEstimatedDeliveryHasta.set(event.to ?? undefined);
+                break;
+            case 'actualDeliveryDate':
+                this.filterActualDeliveryDesde.set(event.from ?? undefined);
+                this.filterActualDeliveryHasta.set(event.to ?? undefined);
+                break;
+            case 'fechaCreacion':
+                this.filterRegistradoDesde.set(event.from ?? undefined);
+                this.filterRegistradoHasta.set(event.to ?? undefined);
+                break;
+            default: return;
+        }
         this.currentPage.set(0);
         this.loadEnvios();
     }

@@ -37,8 +37,17 @@ export class UserService {
             );
         }
 
+        if (filter?.search) {
+            params = params.set('search', filter.search);
+        }
         if (filter?.rolId != null) {
             params = params.set('rolId', filter.rolId.toString());
+        }
+        if (filter?.activo != null) {
+            params = params.set('activo', filter.activo.toString());
+        }
+        if (filter?.tipoDocumento) {
+            params = params.set('tipoDocumento', filter.tipoDocumento);
         }
         if (filter?.fechaCreacionDesde) {
             params = params.set('fechaCreacionDesde', filter.fechaCreacionDesde);

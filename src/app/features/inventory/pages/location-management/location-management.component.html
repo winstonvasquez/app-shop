@@ -5,8 +5,7 @@
     subtitle="Gestiona la ubicación física de productos dentro de cada almacén"
     [breadcrumbs]="breadcrumbs">
     <div actions>
-      <app-button icon="plus" label="Nueva Ubicación" variant="primary"
-        [disabled]="!selectedWarehouseId()" (click)="openCreate()" />
+      <app-button icon="plus" label="Nueva Ubicación" variant="primary" (click)="openCreate()" />
     </div>
   </app-page-header>
 
@@ -14,22 +13,24 @@
     <app-alert type="error" [message]="error()!" [dismissible]="true" (dismiss)="error.set(null)" />
   }
 
-  @if (!selectedWarehouseId()) {
-    <p class="text-sm text-subtle mb-sm">Selecciona un almacén en el filtro para ver sus ubicaciones.</p>
-  }
-
   <app-data-table
-    [data]="pagedLocations()"
+    [data]="locations()"
     [columns]="columns"
     [actions]="actions"
     [loading]="loading()"
+    [searchable]="true"
+    searchPlaceholder="Buscar por código, nombre o pasillo..."
+    [filters]="filters"
+    [dateRangeFilters]="dateRangeFilters"
     [currentPage]="currentPage()"
     [pageSize]="pageSize()"
     [totalElements]="totalElements()"
     [totalPages]="totalPages()"
-    [filters]="almacenFilters"
     [exportConfig]="exportConfig"
+    (searchChange)="onSearchTerm($event)"
     (filterChange)="onFilterChangeEvent($event)"
+    (dateRangeChange)="onDateRangeChange($event)"
+    (filtersClear)="onFiltersClear()"
     (pageChange)="onPageChange($event)">
   </app-data-table>
 

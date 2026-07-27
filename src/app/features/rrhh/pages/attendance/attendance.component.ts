@@ -1,18 +1,21 @@
 import {
-    Component, OnInit, inject, signal, computed,
+    Component, OnInit, inject, signal,
     ChangeDetectionStrategy
 } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators, FormControl } from '@angular/forms';
 import { AttendanceService } from '../../services/attendance.service';
 import { EmployeeService } from '../../services/employee.service';
+import { DepartmentService } from '../../services/department.service';
+import { Department } from '../../models/department.model';
 import { Attendance } from '../../models/attendance.model';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
-import { toObservable } from '@angular/core/rxjs-interop';
-import { map } from 'rxjs';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
-import { DataTableComponent, TableColumn, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
-import { PaginationComponent, PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
+import {
+    DataTableComponent, TableColumn, FilterConfig, FilterChangeEvent,
+    DateRangeFilterConfig, DateRangeChangeEvent, PaginationEvent,
+} from '@shared/ui/tables/data-table/data-table.component';
+import { catalogFilter, signalFilter } from '@shared/ui/tables/data-table/filter-helpers';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { DateInputComponent } from '@shared/ui/forms/date-input/date-input.component';
@@ -20,6 +23,7 @@ import { AdminFormSectionComponent } from '@shared/ui/forms/admin-form-section/a
 import { ButtonComponent, CatalogSelectComponent, ServerSearchSelectComponent } from '@shared/components';
 import { employeeSelectSource } from '../../components/select-sources';
 import { CatalogService } from '@core/services/catalog.service';
+import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 
 type TipoRegistro = 'NORMAL' | 'TARDANZA' | 'FALTA' | 'PERMISO' | 'LICENCIA' | 'VACACIONES';
 
@@ -31,7 +35,6 @@ type TipoRegistro = 'NORMAL' | 'TARDANZA' | 'FALTA' | 'PERMISO' | 'LICENCIA' | '
         ReactiveFormsModule,
         DrawerComponent,
         DataTableComponent,
-        PaginationComponent,
         PageHeaderComponent,
         AlertComponent,
         DateInputComponent,
@@ -46,12 +49,15 @@ export class AttendanceComponent implements OnInit {
     private readonly fb = inject(FormBuilder);
     private readonly attendanceService = inject(AttendanceService);
     private readonly employeeService = inject(EmployeeService);
-    private readonly catalog = inject(CatalogService);
+    private readonly departmentService = inject(DepartmentService);
+    readonly catalog = inject(CatalogService);
 
     // ── Data ─────────────────────────────────────────────────────────────────
     readonly loading   = this.attendanceService.loading;
-    // Se mantiene para resolver el nombre del empleado en la tabla (getEmployeeName).
+    // Se mantiene para resolver el nombre del empleado en el form y como fallback en la tabla.
     readonly employees = this.employeeService.activeEmployees;
+    /** Departamentos para el select de filtro del toolbar (lista acotada, no requiere server-search). */
+    readonly departamentosFiltro = signal<Department[]>([]);
     /** Fuente server-side del search-select de empleado del formulario. */
     readonly employeeSource = employeeSelectSource(this.employeeService);
     readonly attendances = signal<Attendance[]>([]);
@@ -62,32 +68,20 @@ export class AttendanceComponent implements OnInit {
     submitting  = signal(false);
     submitError = signal<string | null>(null);
 
-    // ── Filters ───────────────────────────────────────────────────────────────
-    filterFecha = signal(new Date().toISOString().split('T')[0]);
-    filterTipo  = signal('');
+    // ── Filtros (TODOS server-side — la vista nunca filtra la página cargada) ──
+    searchQuery         = signal('');
+    filterTipoRegistro  = signal('');
+    filterEmployeeId    = signal('');
+    filterDepartmentId  = signal('');
+    filterAprobadoPorId = signal('');
+    filterFechaDesde    = signal<string | null>(null);
+    filterFechaHasta    = signal<string | null>(null);
 
-    // ── Pagination ────────────────────────────────────────────────────────────
-    currentPage = signal(0);
-    pageSize    = signal(15);
-
-    // ── Computed ──────────────────────────────────────────────────────────────
-    readonly filtered = computed(() => {
-        const fecha = this.filterFecha();
-        const tipo  = this.filterTipo();
-        return this.attendances().filter(a => {
-            const matchFecha = !fecha || a.fecha === fecha;
-            const matchTipo  = !tipo  || a.tipoRegistro === tipo;
-            return matchFecha && matchTipo;
-        });
-    });
-
-    readonly totalElements = computed(() => this.filtered().length);
-    readonly totalPages    = computed(() => Math.ceil(this.totalElements() / this.pageSize()) || 1);
-
-    readonly pagedData = computed(() => {
-        const start = this.currentPage() * this.pageSize();
-        return this.filtered().slice(start, start + this.pageSize());
-    });
+    // ── Pagination (server-side) ────────────────────────────────────────────
+    currentPage   = signal(0);
+    pageSize      = signal<number>(15);
+    totalElements = signal(0);
+    totalPages    = signal(0);
 
     // ── Breadcrumbs ───────────────────────────────────────────────────────────
     breadcrumbs: Breadcrumb[] = [
@@ -96,9 +90,25 @@ export class AttendanceComponent implements OnInit {
         { label: 'Asistencia' },
     ];
 
+    // Filtros select del toolbar. Las opciones salen de erp_parameters / listas dinámicas.
+    filters: FilterConfig[] = [
+        catalogFilter(this.catalog, 'TIPO_REGISTRO_ASISTENCIA', 'tipoRegistro', 'Todos los tipos'),
+        signalFilter('employeeId', 'Todos los empleados', this.employees,
+            e => ({ value: e.id, label: `${e.nombres} ${e.apellidos}` })),
+        signalFilter('departmentId', 'Todos los departamentos', this.departamentosFiltro,
+            d => ({ value: d.id, label: d.nombre })),
+        signalFilter('aprobadoPorId', 'Aprobado por', this.employees,
+            e => ({ value: e.id, label: `${e.nombres} ${e.apellidos}` })),
+    ];
+
+    /** Rango de fechas de la marcación para el toolbar del data-table. */
+    dateRangeFilters: DateRangeFilterConfig[] = [
+        { field: 'fecha', label: 'Rango de fechas' }
+    ];
+
     // ── Columns ───────────────────────────────────────────────────────────────
     columns: TableColumn<Attendance>[] = [
-        { key: 'employeeId', label: 'Empleado', render: row => this.getEmployeeName(row.employeeId) },
+        { key: 'employeeId', label: 'Empleado', render: row => row.employeeName ?? this.getEmployeeName(row.employeeId) },
         { key: 'fecha',      label: 'Fecha',
           render: row => new Date(row.fecha + 'T00:00').toLocaleDateString('es-PE') },
         { key: 'horaEntrada', label: 'Entrada', render: row => row.horaEntrada ?? '—' },
@@ -112,12 +122,20 @@ export class AttendanceComponent implements OnInit {
 
     /**
      * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios
-     * (respeta los mismos filtros actuales fecha + tipo). Ver /hr/api/attendance/export.
+     * (respeta todos los filtros actuales). Ver /hr/api/attendance/export.
      */
     readonly exportConfig: BackendExportConfig = {
         url: `${environment.apiUrls.hr}/api/attendance/export`,
         filename: 'asistencia',
-        params: () => ({ fecha: this.filterFecha(), tipo: this.filterTipo() }),
+        params: () => ({
+            search: this.searchQuery(),
+            employeeId: this.filterEmployeeId(),
+            departmentId: this.filterDepartmentId(),
+            tipo: this.filterTipoRegistro(),
+            aprobadoPorId: this.filterAprobadoPorId(),
+            fechaDesde: this.filterFechaDesde() ?? undefined,
+            fechaHasta: this.filterFechaHasta() ?? undefined,
+        }),
     };
 
     // ── Form ──────────────────────────────────────────────────────────────────
@@ -135,41 +153,87 @@ export class AttendanceComponent implements OnInit {
         try {
             await this.employeeService.loadEmployees();
         } catch { /* servicio puede no estar disponible */ }
-        await this.loadByDate();
+        this.loadDepartamentosFiltro();
+        await this.loadAttendances();
     }
 
-    /** Carga desde el backend los registros de asistencia de la fecha filtrada. */
-    private async loadByDate(): Promise<void> {
+    /** Departamentos para el select de filtro (no muta el estado compartido de DepartmentService). */
+    private loadDepartamentosFiltro(): void {
+        this.departmentService.fetchAll()
+            .then(list => this.departamentosFiltro.set(list ?? []))
+            .catch(() => this.departamentosFiltro.set([]));
+    }
+
+    /** Carga desde el backend los registros de asistencia según página + filtros actuales. */
+    private async loadAttendances(): Promise<void> {
         try {
-            const data = await this.attendanceService.getByDate(this.filterFecha());
-            this.attendances.set(data ?? []);
+            const res = await this.attendanceService.getAttendancePaged({
+                page: this.currentPage(),
+                size: this.pageSize(),
+                search: this.searchQuery() || undefined,
+                employeeId: this.filterEmployeeId() ? Number(this.filterEmployeeId()) : undefined,
+                departmentId: this.filterDepartmentId() ? Number(this.filterDepartmentId()) : undefined,
+                tipoRegistro: this.filterTipoRegistro() || undefined,
+                aprobadoPorId: this.filterAprobadoPorId() ? Number(this.filterAprobadoPorId()) : undefined,
+                fechaDesde: this.filterFechaDesde() || undefined,
+                fechaHasta: this.filterFechaHasta() || undefined,
+            });
+            this.attendances.set(res.content ?? []);
+            this.totalElements.set(pageTotalElements(res));
+            this.totalPages.set(pageTotalPages(res));
         } catch {
             this.attendances.set([]);
+            this.totalElements.set(0);
+            this.totalPages.set(0);
         }
     }
 
     // ── Handlers ─────────────────────────────────────────────────────────────
-    onFilterFecha(event: Event): void {
-        this.filterFecha.set((event.target as HTMLInputElement).value);
+    /** La búsqueda por texto también va al backend, no filtra la página cargada. */
+    onSearchTerm(term: string): void {
+        this.searchQuery.set(term);
         this.currentPage.set(0);
-        void this.loadByDate();
+        void this.loadAttendances();
     }
-
-    readonly tipoFilters: FilterConfig[] = [
-        { field: 'tipo', label: 'Todos los tipos',
-          options: toObservable(this.catalog.options('TIPO_REGISTRO_ASISTENCIA'))
-              .pipe(map(o => o.map(x => ({ value: x.codigo, label: x.valor })))) }
-    ];
 
     onFilterChangeEvent(event: FilterChangeEvent): void {
-        if (event.field !== 'tipo') return;
-        this.filterTipo.set(event.value != null ? String(event.value) : '');
+        const valor = event.value != null ? String(event.value) : '';
+        switch (event.field) {
+            case 'tipoRegistro':  this.filterTipoRegistro.set(valor); break;
+            case 'employeeId':    this.filterEmployeeId.set(valor); break;
+            case 'departmentId':  this.filterDepartmentId.set(valor); break;
+            case 'aprobadoPorId': this.filterAprobadoPorId.set(valor); break;
+            default: return;
+        }
         this.currentPage.set(0);
+        void this.loadAttendances();
     }
 
-    onPaginationChange(event: PaginationChangeEvent): void {
+    onDateRangeChange(event: DateRangeChangeEvent): void {
+        if (event.field !== 'fecha') return;
+        this.filterFechaDesde.set(event.from);
+        this.filterFechaHasta.set(event.to);
+        this.currentPage.set(0);
+        void this.loadAttendances();
+    }
+
+    /** "Limpiar filtros": resetea todo y recarga UNA sola vez. */
+    onFiltersClear(): void {
+        this.searchQuery.set('');
+        this.filterTipoRegistro.set('');
+        this.filterEmployeeId.set('');
+        this.filterDepartmentId.set('');
+        this.filterAprobadoPorId.set('');
+        this.filterFechaDesde.set(null);
+        this.filterFechaHasta.set(null);
+        this.currentPage.set(0);
+        void this.loadAttendances();
+    }
+
+    onPaginationChange(event: PaginationEvent): void {
         this.currentPage.set(event.page);
         this.pageSize.set(event.size);
+        void this.loadAttendances();
     }
 
     openCreateModal(): void {
@@ -205,9 +269,9 @@ export class AttendanceComponent implements OnInit {
             };
             await this.attendanceService.registerAttendance(request as never);
             this.closeModal();
-            // Refresca desde el backend para reflejar el registro real (y su fecha).
-            this.filterFecha.set(request.fecha);
-            await this.loadByDate();
+            // Refresca desde el backend para reflejar el registro real.
+            this.currentPage.set(0);
+            await this.loadAttendances();
         } catch {
             this.submitError.set('Error al registrar asistencia. Verifique los datos.');
         } finally {

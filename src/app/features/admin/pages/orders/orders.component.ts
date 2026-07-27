@@ -9,6 +9,8 @@ import { OrderStatus, OrderDetail } from '@features/admin/models/order.model';
 import { VentasParametrosService } from '../../services/ventas-parametros.service';
 import { PaginationConfig } from '@core/models/pagination.model';
 import { DataTableComponent, TableColumn, TableAction, PaginationEvent, SortEvent, FilterConfig, FilterChangeEvent, DateRangeFilterConfig, DateRangeChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
+import { catalogFilter, staticFilter } from '@shared/ui/tables/data-table/filter-helpers';
+import { CatalogService } from '@core/services/catalog.service';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
@@ -39,6 +41,7 @@ export class OrdersComponent implements OnInit {
   private readonly orderService = inject(OrderService);
   private readonly translate = inject(TranslateService);
   private readonly parametros = inject(VentasParametrosService);
+  readonly catalog = inject(CatalogService);
 
   // Data Signals
   orders = signal<OrderResponse[]>([]);
@@ -73,27 +76,53 @@ export class OrdersComponent implements OnInit {
   sortField = signal('fechaPedido');
   sortDirection = signal<'asc' | 'desc'>('desc');
 
-  // Filtros server-side: estado + rango de fecha de pedido
+  // Filtros server-side (TODOS van al backend — la vista nunca filtra la página cargada)
   filterEstado = signal('');
+  filterCpeTipo = signal('');
+  filterCpeEstado = signal('');
+  filterMetodoPago = signal('');
+  filterEstadoPago = signal('');
   filterFechaPedidoDesde = signal<string | undefined>(undefined);
   filterFechaPedidoHasta = signal<string | undefined>(undefined);
+  filterCpeFechaEmisionDesde = signal<string | undefined>(undefined);
+  filterCpeFechaEmisionHasta = signal<string | undefined>(undefined);
 
-  // Filtro de estado en el toolbar del data-table (usa el helper de labels de EstadoPedido ya existente)
-  readonly estadoFilters: FilterConfig[] = [
+  // Filtros select del toolbar. `estado` usa el endpoint de parámetros ya existente;
+  // el resto sale de erp_parameters (fuente única) vía CatalogService.
+  readonly filters: FilterConfig[] = [
     {
       field: 'estado',
       label: 'Todos los estados',
       options: this.parametros.getEstadosPedido()
-    }
+    },
+    catalogFilter(this.catalog, 'TIPO_CPE', 'cpeTipo', 'Tipo de comprobante'),
+    catalogFilter(this.catalog, 'ESTADO_CPE_SUNAT', 'cpeEstado', 'Estado CPE (SUNAT)'),
+    // OJO (riesgo documentado): el catálogo METODO_PAGO en erp_parameters (TRANSFERENCIA/
+    // CHEQUE/EFECTIVO) no es 1:1 con PagoEntity.MetodoPago (TARJETA_CREDITO/TARJETA_DEBITO/
+    // PAYPAL/TRANSFERENCIA_BANCARIA/EFECTIVO/YAPE/PLIN/BILLETERA_DIGITAL) contra el que compara
+    // el backend (PedidoRepository: CAST(pg.metodoPago AS String) = :metodoPago). Solo
+    // "Efectivo" calzará; el resto de opciones del catálogo devolverá 0 filas hasta que se
+    // reconcilien los códigos (fuera de alcance de este cableado, que es 100% frontend).
+    catalogFilter(this.catalog, 'METODO_PAGO', 'metodoPago', 'Método de pago'),
+    // ESTADO_PAGO no existe como catálogo en erp_parameters (no confundir con
+    // ESTADO_INTENTO_PAGO, que es otro dominio) -> staticFilter con los valores EXACTOS
+    // de PagoEntity.EstadoPago.
+    staticFilter('estadoPago', 'Estado del pago', [
+      { value: 'PENDIENTE', label: 'Pendiente' },
+      { value: 'COMPLETADO', label: 'Completado' },
+      { value: 'FALLIDO', label: 'Fallido' },
+      { value: 'REEMBOLSADO', label: 'Reembolsado' }
+    ])
   ];
 
   readonly dateRangeFilters: DateRangeFilterConfig[] = [
-    { field: 'fechaPedido', label: 'Fecha de pedido' }
+    { field: 'fechaPedido', label: 'Fecha de pedido' },
+    { field: 'cpeFechaEmision', label: 'Fecha de emisión CPE' }
   ];
 
   /**
    * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios
-   * (respeta el filtro de búsqueda actual). Ver GET /api/pedidos/export.
+   * (respeta TODOS los filtros actuales). Ver GET /api/pedidos/export.
    */
   readonly exportConfig: BackendExportConfig = {
     url: `${environment.apiUrls.sales}/api/pedidos/export`,
@@ -101,8 +130,14 @@ export class OrdersComponent implements OnInit {
     params: () => ({
       search: this.searchQuery() || undefined,
       estado: this.filterEstado() || undefined,
+      cpeTipo: this.filterCpeTipo() || undefined,
+      cpeEstado: this.filterCpeEstado() || undefined,
+      metodoPago: this.filterMetodoPago() || undefined,
+      estadoPago: this.filterEstadoPago() || undefined,
       fechaPedidoDesde: this.filterFechaPedidoDesde(),
-      fechaPedidoHasta: this.filterFechaPedidoHasta()
+      fechaPedidoHasta: this.filterFechaPedidoHasta(),
+      cpeFechaEmisionDesde: this.filterCpeFechaEmisionDesde(),
+      cpeFechaEmisionHasta: this.filterCpeFechaEmisionHasta()
     }),
   };
 
@@ -173,13 +208,19 @@ export class OrdersComponent implements OnInit {
     const pagination: PaginationConfig = {
       page: this.currentPage(),
       size: this.pageSize(),
-      sort: { field: 'fechaPedido', direction: 'desc' }
+      sort: { field: this.sortField() || 'fechaPedido', direction: this.sortDirection() }
     };
 
     this.orderService.getAll(pagination, this.searchQuery() || undefined, {
       estado: this.filterEstado() || undefined,
+      cpeTipo: this.filterCpeTipo() || undefined,
+      cpeEstado: this.filterCpeEstado() || undefined,
+      metodoPago: this.filterMetodoPago() || undefined,
+      estadoPago: this.filterEstadoPago() || undefined,
       fechaPedidoDesde: this.filterFechaPedidoDesde(),
-      fechaPedidoHasta: this.filterFechaPedidoHasta()
+      fechaPedidoHasta: this.filterFechaPedidoHasta(),
+      cpeFechaEmisionDesde: this.filterCpeFechaEmisionDesde(),
+      cpeFechaEmisionHasta: this.filterCpeFechaEmisionHasta()
     }).subscribe({
       next: (response) => {
         this.orders.set(response.content);
@@ -209,6 +250,54 @@ export class OrdersComponent implements OnInit {
   onSort(event: SortEvent): void {
     this.sortField.set(event.field);
     this.sortDirection.set(event.direction);
+    this.currentPage.set(0);
+    this.loadOrders();
+  }
+
+  /** Selects del toolbar: estado, tipo/estado de CPE, método/estado de pago. Todos van al backend. */
+  onFilterChangeEvent(event: FilterChangeEvent): void {
+    const valor = event.value != null ? String(event.value) : '';
+    switch (event.field) {
+      case 'estado':      this.filterEstado.set(valor); break;
+      case 'cpeTipo':     this.filterCpeTipo.set(valor); break;
+      case 'cpeEstado':   this.filterCpeEstado.set(valor); break;
+      case 'metodoPago':  this.filterMetodoPago.set(valor); break;
+      case 'estadoPago':  this.filterEstadoPago.set(valor); break;
+      default: return;
+    }
+    this.currentPage.set(0);
+    this.loadOrders();
+  }
+
+  /** Rangos de fecha del toolbar: fecha de pedido y fecha de emisión del CPE. */
+  onDateRangeChange(event: DateRangeChangeEvent): void {
+    switch (event.field) {
+      case 'fechaPedido':
+        this.filterFechaPedidoDesde.set(event.from ?? undefined);
+        this.filterFechaPedidoHasta.set(event.to ?? undefined);
+        break;
+      case 'cpeFechaEmision':
+        this.filterCpeFechaEmisionDesde.set(event.from ?? undefined);
+        this.filterCpeFechaEmisionHasta.set(event.to ?? undefined);
+        break;
+      default: return;
+    }
+    this.currentPage.set(0);
+    this.loadOrders();
+  }
+
+  /** "Limpiar filtros": resetea TODOS los signals y recarga UNA sola vez. */
+  onFiltersClear(): void {
+    this.searchQuery.set('');
+    this.filterEstado.set('');
+    this.filterCpeTipo.set('');
+    this.filterCpeEstado.set('');
+    this.filterMetodoPago.set('');
+    this.filterEstadoPago.set('');
+    this.filterFechaPedidoDesde.set(undefined);
+    this.filterFechaPedidoHasta.set(undefined);
+    this.filterCpeFechaEmisionDesde.set(undefined);
+    this.filterCpeFechaEmisionHasta.set(undefined);
     this.currentPage.set(0);
     this.loadOrders();
   }

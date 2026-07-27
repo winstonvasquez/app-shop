@@ -5,16 +5,28 @@ import { ProductoCatalogoPOS } from '../models/catalogo-pos.model';
 import { PageResponse } from '@core/models/pagination.model';
 import { environment } from '@env/environment';
 
+/** Filtros server-side del catálogo POS. Todos opcionales — ver GET /api/pos/catalogo. */
+export interface PosCatalogoFiltros {
+    q?: string;
+    categoriaId?: number;
+    marca?: string;
+    unidadMedida?: string;
+    /** 'CON_STOCK' | 'BAJO_MINIMO' | 'SIN_STOCK' */
+    disponibilidad?: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class PosCatalogoService {
     private readonly http = inject(HttpClient);
     private readonly baseUrl = environment.apiUrls.pos + '/catalogo';
 
-    /** Carga el catálogo completo (primera carga o scroll) */
+    /**
+     * Carga el catálogo (primera carga o scroll). TODO el filtrado ocurre en el backend
+     * (`GET /api/pos/catalogo`) — la vista nunca filtra la página cargada.
+     */
     getCatalogo(
         companyId: number,
-        q?: string,
-        categoriaId?: number,
+        filtros: PosCatalogoFiltros = {},
         page = 0,
         size = 200
     ): Observable<PageResponse<ProductoCatalogoPOS>> {
@@ -23,8 +35,11 @@ export class PosCatalogoService {
             .set('page', page.toString())
             .set('size', size.toString());
 
-        if (q) params = params.set('q', q);
-        if (categoriaId) params = params.set('categoriaId', categoriaId.toString());
+        if (filtros.q) params = params.set('q', filtros.q);
+        if (filtros.categoriaId != null) params = params.set('categoriaId', filtros.categoriaId.toString());
+        if (filtros.marca) params = params.set('marca', filtros.marca);
+        if (filtros.unidadMedida) params = params.set('unidadMedida', filtros.unidadMedida);
+        if (filtros.disponibilidad) params = params.set('disponibilidad', filtros.disponibilidad);
 
         return this.http.get<PageResponse<ProductoCatalogoPOS>>(this.baseUrl, { params });
     }
@@ -42,7 +57,7 @@ export class PosCatalogoService {
             debounceTime(300),
             distinctUntilChanged(),
             switchMap(q =>
-                this.getCatalogo(companyId, q || undefined, undefined, 0, size)
+                this.getCatalogo(companyId, { q: q || undefined }, 0, size)
             )
         );
     }

@@ -1,12 +1,13 @@
 import { Component, ChangeDetectionStrategy, inject, signal, OnInit, computed } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
-import { of } from 'rxjs';
 import { environment } from '@env/environment';
 import { AuthService } from '@core/auth/auth.service';
-import { BackendExportService } from '@shared/services/backend-export.service';
+import { CatalogService } from '@core/services/catalog.service';
+import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { ButtonComponent } from '@shared/components';
 import { DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent, DateRangeFilterConfig, DateRangeChangeEvent, PaginationEvent } from '@shared/ui/tables/data-table/data-table.component';
+import { catalogFilter } from '@shared/ui/tables/data-table/filter-helpers';
 import { CURRENCY_DISPLAY } from '@shared/constants/sunat.constants';
 
 interface VentaPos {
@@ -43,7 +44,7 @@ interface PageResponse<T> {
 export class ReportesVentasComponent implements OnInit {
     private readonly http = inject(HttpClient);
     private readonly auth = inject(AuthService);
-    private readonly backendExportService = inject(BackendExportService);
+    readonly catalog = inject(CatalogService);
 
     ventas = signal<VentaPos[]>([]);
     cargando = signal(false);
@@ -67,24 +68,11 @@ export class ReportesVentasComponent implements OnInit {
     igvTotal = computed(() => this.ventas().reduce((sum, v) => sum + (v.igv ?? 0), 0));
     pages = computed(() => Array.from({ length: Math.min(this.totalPages(), 5) }, (_, i) => i));
 
-    readonly estadoOptions = [
-        { value: 'COMPLETADA', label: 'Completada' },
-        { value: 'ANULADA',    label: 'Anulada' },
-    ];
-
-    readonly metodoPagoOptions = [
-        { value: 'EFECTIVO',   label: 'Efectivo' },
-        { value: 'TARJETA',    label: 'Tarjeta' },
-        { value: 'YAPE',       label: 'Yape' },
-        { value: 'PLIN',       label: 'Plin' },
-        { value: 'MIXTO',      label: 'Mixto' },
-        { value: 'GIFT_CARD',  label: 'Gift Card' },
-    ];
-
-    // Filtros de estado + método de pago para el toolbar del data-table
+    // Filtros de estado + método de pago para el toolbar del data-table.
+    // Las opciones salen de erp_parameters (fuente única) — nada de <option> hardcodeados.
     estadoFilters: FilterConfig[] = [
-        { field: 'estado', label: 'Todos los estados', options: of(this.estadoOptions) },
-        { field: 'metodoPago', label: 'Todos los métodos', options: of(this.metodoPagoOptions) },
+        catalogFilter(this.catalog, 'ESTADO_VENTA_POS', 'estado', 'Todos los estados'),
+        catalogFilter(this.catalog, 'METODO_PAGO_POS', 'metodoPago', 'Todos los métodos'),
     ];
 
     // Filtro de rango de fecha de creación
@@ -172,6 +160,17 @@ export class ReportesVentasComponent implements OnInit {
         this.cargar();
     }
 
+    /** "Limpiar filtros": resetea todo y recarga UNA sola vez. */
+    onFiltersClear(): void {
+        this.searchQuery.set('');
+        this.filtroEstado.set('');
+        this.filtroMetodoPago.set('');
+        this.filtroFechaCreacionDesde.set(undefined);
+        this.filtroFechaCreacionHasta.set(undefined);
+        this.pagina.set(0);
+        this.cargar();
+    }
+
     onPageChange(event: PaginationEvent): void {
         this.pagina.set(event.page);
         this.pageSize.set(event.size);
@@ -184,34 +183,19 @@ export class ReportesVentasComponent implements OnInit {
 
     /**
      * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios
-     * (mismos filtros companyId + search + estado que el listado actual).
-     * Ver GET /api/pos/ventas/export en microshopventas.
+     * (mismos filtros companyId + search + estado + metodoPago + rango de fecha
+     * que el listado actual). Ver GET /api/pos/ventas/export en microshopventas.
      */
-    private exportParams(): Record<string, string | number | boolean | null | undefined> {
-        const companyId = this.auth.currentUser()?.activeCompanyId ?? 1;
-        return {
-            companyId,
+    readonly exportConfig: BackendExportConfig = {
+        url: `${environment.apiUrls.sales}/api/pos/ventas/export`,
+        filename: 'reporte-ventas-pos',
+        params: () => ({
+            companyId: this.auth.currentUser()?.activeCompanyId ?? 1,
             search: this.searchQuery(),
             estado: this.filtroEstado(),
             metodoPago: this.filtroMetodoPago(),
             fechaCreacionDesde: this.filtroFechaCreacionDesde(),
             fechaCreacionHasta: this.filtroFechaCreacionHasta(),
-        };
-    }
-
-    onExportarCsv(): void {
-        this.backendExportService.download({
-            url: `${environment.apiUrls.sales}/api/pos/ventas/export`,
-            filename: 'reporte-ventas-pos',
-            params: () => this.exportParams(),
-        }, 'csv');
-    }
-
-    exportarExcel(): void {
-        this.backendExportService.download({
-            url: `${environment.apiUrls.sales}/api/pos/ventas/export`,
-            filename: 'reporte-ventas-pos',
-            params: () => this.exportParams(),
-        }, 'xlsx');
-    }
+        }),
+    };
 }

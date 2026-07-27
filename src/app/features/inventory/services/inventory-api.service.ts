@@ -1,7 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
 import { environment } from '@env/environment';
 import {
     Warehouse,
@@ -52,13 +51,17 @@ export interface AbcItem {
     clase: string;
 }
 
-/** Respuesta del análisis ABC de inventario. */
+/**
+ * Respuesta del análisis ABC de inventario. `items` viaja paginado desde el backend
+ * (la clasificación de Pareto se calcula sobre el período completo, pero el listado
+ * de productos se pagina): NO cargar todo y paginar en cliente.
+ */
 export interface AbcAnalysis {
     periodoDias: number;
     totalProductos: number;
     valorTotal: number;
     resumen: AbcClaseResumen[];
-    items: AbcItem[];
+    items: PageResponse<AbcItem>;
 }
 
 /** Una ubicación candidata de putaway. */
@@ -139,6 +142,42 @@ export interface ReceiveAsnRequest {
     lines: ReceiveAsnLine[];
 }
 
+/**
+ * Filtros server-side del listado paginado de stock (GET /inventory/api/inventory/stock/paged).
+ * TODOS opcionales. `estadoStock` es DERIVADO en el backend — valores exactos:
+ * BAJO_MINIMO | REORDEN | NORMAL.
+ */
+export interface StockFiltros {
+    page?: number;
+    size?: number;
+    warehouseId?: number;
+    locationId?: number;
+    productId?: number;
+    estadoStock?: string;
+    /** yyyy-MM-dd */
+    updatedAtDesde?: string;
+    /** yyyy-MM-dd */
+    updatedAtHasta?: string;
+}
+
+/**
+ * Filtros server-side del kardex de un producto (GET /inventory/api/kardex/product/{id}).
+ * TODOS opcionales.
+ */
+export interface KardexFiltros {
+    page?: number;
+    size?: number;
+    warehouseId?: number;
+    movementType?: string;
+    referenceType?: string;
+    /** yyyy-MM-dd */
+    movementDateDesde?: string;
+    /** yyyy-MM-dd */
+    movementDateHasta?: string;
+    /** Busca sobre N° movimiento / N° referencia / realizado por. */
+    q?: string;
+}
+
 @Injectable({
     providedIn: 'root'
 })
@@ -161,14 +200,18 @@ export class InventoryApiService {
     }
 
     /**
-     * Página de warehouses con `search` + `active` server-side. Pensado para el adapter
-     * `ServerSelectDataSource` (ver `warehouseSelectSource`) y para el listado de
-     * `WarehouseManagementComponent` — no muta ningún estado compartido, solo envuelve
-     * la llamada HTTP.
+     * Página de warehouses con `search` + filtros avanzados server-side (activo, almacén
+     * principal, ciudad, rango de fecha de alta). Pensado para el adapter
+     * `ServerSelectDataSource` (ver `warehouseSelectSource`, que solo usa page/size/search)
+     * y para el listado de `WarehouseManagementComponent` — no muta ningún estado
+     * compartido, solo envuelve la llamada HTTP.
      */
-    searchWarehousesPaged(page = 0, size = 10, search?: string, active?: boolean): Observable<PageResponse<Warehouse>> {
+    searchWarehousesPaged(
+        page = 0, size = 10, search?: string, active?: boolean,
+        isPrincipal?: boolean, city?: string, createdAtDesde?: string, createdAtHasta?: string
+    ): Observable<PageResponse<Warehouse>> {
         return this.http.get<PageResponse<Warehouse>>(`${this.baseUrl}/warehouses/paged`, {
-            params: this.buildParams({ page, size, search, active })
+            params: this.buildParams({ page, size, search, active, isPrincipal, city, createdAtDesde, createdAtHasta })
         });
     }
 
@@ -188,6 +231,27 @@ export class InventoryApiService {
         return this.http.get<Location[]>(`${this.baseUrl}/locations/by-warehouse/${warehouseId}`);
     }
 
+    /**
+     * Listado paginado de ubicaciones con filtros avanzados server-side (almacén, tipo,
+     * estado, búsqueda de texto y rango de fecha de alta). Reemplaza el filtrado/paginación
+     * client-side de `LocationManagementComponent` — todos los filtros son opcionales.
+     */
+    searchLocationsPaged(params: {
+        page?: number;
+        size?: number;
+        warehouseId?: number;
+        locationType?: string;
+        active?: boolean;
+        aisle?: string;
+        q?: string;
+        createdAtDesde?: string;
+        createdAtHasta?: string;
+    } = {}): Observable<PageResponse<Location>> {
+        return this.http.get<PageResponse<Location>>(`${this.baseUrl}/locations/paged`, {
+            params: this.buildParams({ ...params })
+        });
+    }
+
     createLocation(payload: Partial<Location>): Observable<Location> {
         return this.http.post<Location>(`${this.baseUrl}/locations`, payload);
     }
@@ -202,6 +266,27 @@ export class InventoryApiService {
 
     getStockByWarehouse(warehouseId: number): Observable<InventoryStock[]> {
         return this.http.get<InventoryStock[]>(`${this.baseUrl}/inventory/stock/warehouse/${warehouseId}`);
+    }
+
+    /**
+     * Listado paginado de stock con filtros avanzados server-side (reemplaza el filtrado
+     * client-side de `StockViewComponent`). `estadoStock` es un filtro DERIVADO (comparación
+     * quantity vs minimumStock/reorderPoint en el backend) — valores exactos: BAJO_MINIMO,
+     * REORDEN, NORMAL. Ver GET /inventory/api/inventory/stock/paged.
+     */
+    getStockPaged(filtros: StockFiltros = {}): Observable<PageResponse<InventoryStock>> {
+        return this.http.get<PageResponse<InventoryStock>>(`${this.baseUrl}/inventory/stock/paged`, {
+            params: this.buildParams({
+                page: filtros.page ?? 0,
+                size: filtros.size ?? 20,
+                warehouseId: filtros.warehouseId,
+                locationId: filtros.locationId,
+                productId: filtros.productId,
+                estadoStock: filtros.estadoStock,
+                updatedAtDesde: filtros.updatedAtDesde,
+                updatedAtHasta: filtros.updatedAtHasta
+            })
+        });
     }
 
     getStockByProduct(productId: number): Observable<InventoryStock[]> {
@@ -222,20 +307,32 @@ export class InventoryApiService {
         return this.http.post<InventoryMovement>(`${this.baseUrl}/inventory/movements`, payload);
     }
 
+    /**
+     * Filtros server-side del listado de movimientos — TODOS opcionales. `q` busca sobre
+     * N° movimiento / N° referencia / motivo / realizado por (ver `InventoryMovementController.findAll`).
+     */
     getMovements(params?: {
         warehouseId?: number;
         page?: number;
         size?: number;
         movementType?: string;
+        referenceType?: string;
+        locationId?: number;
+        productId?: number;
         movementDateDesde?: string;
         movementDateHasta?: string;
+        q?: string;
     }): Observable<PageResponse<InventoryMovement>> {
         const httpParams = this.buildParams({
             page: params?.page,
             size: params?.size,
             movementType: params?.movementType,
+            referenceType: params?.referenceType,
+            locationId: params?.locationId,
+            productId: params?.productId,
             movementDateDesde: params?.movementDateDesde,
-            movementDateHasta: params?.movementDateHasta
+            movementDateHasta: params?.movementDateHasta,
+            q: params?.q
         });
 
         if (params?.warehouseId !== undefined) {
@@ -263,21 +360,38 @@ export class InventoryApiService {
         return this.http.post<InventoryTransfer>(`${this.baseUrl}/transfers/${id}/cancel`, { motivo: motivo || undefined });
     }
 
+    /**
+     * Filtros server-side de transferencias — TODOS opcionales, TODO el filtrado
+     * ocurre en el backend (ver `TransferController.findAll`). La vista nunca
+     * filtra la página cargada.
+     */
     getTransfers(params?: {
         page?: number;
         size?: number;
+        q?: string;
         status?: string;
-        dateFrom?: string;
-        dateTo?: string;
-        warehouseId?: number;
+        sourceWarehouseId?: number;
+        destinationWarehouseId?: number;
+        requestDateDesde?: string;
+        requestDateHasta?: string;
+        sentDateDesde?: string;
+        sentDateHasta?: string;
+        receivedDateDesde?: string;
+        receivedDateHasta?: string;
     }): Observable<PageResponse<InventoryTransfer>> {
         const httpParams = this.buildParams({
             page: params?.page,
             size: params?.size,
+            q: params?.q,
             status: params?.status,
-            dateFrom: params?.dateFrom,
-            dateTo: params?.dateTo,
-            warehouseId: params?.warehouseId
+            sourceWarehouseId: params?.sourceWarehouseId,
+            destinationWarehouseId: params?.destinationWarehouseId,
+            requestDateDesde: params?.requestDateDesde,
+            requestDateHasta: params?.requestDateHasta,
+            sentDateDesde: params?.sentDateDesde,
+            sentDateHasta: params?.sentDateHasta,
+            receivedDateDesde: params?.receivedDateDesde,
+            receivedDateHasta: params?.receivedDateHasta
         });
         return this.http.get<PageResponse<InventoryTransfer>>(`${this.baseUrl}/transfers`, { params: httpParams });
     }
@@ -290,21 +404,31 @@ export class InventoryApiService {
         return this.http.post<InventoryCount>(`${this.baseUrl}/inventory/counts`, payload);
     }
 
+    /**
+     * Filtros server-side de conteos físicos — TODOS opcionales, TODO el filtrado
+     * ocurre en el backend (ver `InventoryCountController.list`).
+     */
     getInventoryCounts(params?: {
         page?: number;
         size?: number;
+        q?: string;
         status?: string;
-        dateFrom?: string;
-        dateTo?: string;
         warehouseId?: number;
+        countDateDesde?: string;
+        countDateHasta?: string;
+        adjustedDateDesde?: string;
+        adjustedDateHasta?: string;
     }): Observable<PageResponse<InventoryCount>> {
         const httpParams = this.buildParams({
             page: params?.page,
             size: params?.size,
+            q: params?.q,
             status: params?.status,
-            dateFrom: params?.dateFrom,
-            dateTo: params?.dateTo,
-            warehouseId: params?.warehouseId
+            warehouseId: params?.warehouseId,
+            countDateDesde: params?.countDateDesde,
+            countDateHasta: params?.countDateHasta,
+            adjustedDateDesde: params?.adjustedDateDesde,
+            adjustedDateHasta: params?.adjustedDateHasta
         });
         return this.http.get<PageResponse<InventoryCount>>(`${this.baseUrl}/inventory/counts`, { params: httpParams });
     }
@@ -323,26 +447,54 @@ export class InventoryApiService {
         return this.http.post<InventoryCount>(`${this.baseUrl}/inventory/counts/${id}/apply-adjustments`, {});
     }
 
-    getKardexByProduct(productId: number, size = 2000): Observable<KardexEntry[]> {
-        // El backend ahora pagina el kardex (Pageable) para no escanear la tabla completa
-        // sin límite. La vista mantiene su paginación/export en cliente: pedimos una página
-        // amplia y devolvemos content[] como array. `size` acota defensivamente (un kardex
-        // por producto rara vez supera 2000 movimientos; antes el fetch era ILIMITADO).
-        return this.http
-            .get<PageResponse<KardexEntry>>(`${this.baseUrl}/kardex/product/${productId}`, {
-                params: this.buildParams({ page: 0, size })
+    /**
+     * Kardex paginado de un producto con filtros avanzados server-side (reemplaza el
+     * fetch-todo-y-slice-en-cliente de `KardexViewComponent`). TODOS los filtros opcionales.
+     * `q` busca sobre N° movimiento / N° referencia / realizado por. Ver GET /inventory/api/kardex/product/{id}.
+     */
+    getKardexByProduct(productId: number, filtros: KardexFiltros = {}): Observable<PageResponse<KardexEntry>> {
+        return this.http.get<PageResponse<KardexEntry>>(`${this.baseUrl}/kardex/product/${productId}`, {
+            params: this.buildParams({
+                page: filtros.page ?? 0,
+                size: filtros.size ?? 20,
+                warehouseId: filtros.warehouseId,
+                movementType: filtros.movementType,
+                referenceType: filtros.referenceType,
+                movementDateDesde: filtros.movementDateDesde,
+                movementDateHasta: filtros.movementDateHasta,
+                q: filtros.q
             })
-            .pipe(map(res => res.content ?? []));
+        });
     }
 
     getDashboardSummary(): Observable<DashboardSummary> {
         return this.http.get<DashboardSummary>(`${this.baseUrl}/dashboard/inventory`);
     }
 
-    /** Análisis ABC del inventario (Pareto por valor de consumo en los últimos `dias`). */
-    getAbcAnalysis(dias = 365): Observable<AbcAnalysis> {
+    /**
+     * Análisis ABC del inventario (Pareto por valor de consumo en los últimos `dias`,
+     * o en el rango explícito `movementDateDesde/Hasta` si se manda). `items` viaja
+     * paginado — pasar `page`/`size` en vez de paginar en cliente.
+     */
+    getAbcAnalysis(params?: {
+        dias?: number;
+        warehouseId?: number;
+        clase?: string;
+        movementDateDesde?: string;
+        movementDateHasta?: string;
+        page?: number;
+        size?: number;
+    }): Observable<AbcAnalysis> {
         return this.http.get<AbcAnalysis>(`${this.baseUrl}/inventory/abc-analysis`, {
-            params: this.buildParams({ dias })
+            params: this.buildParams({
+                dias: params?.dias ?? 365,
+                warehouseId: params?.warehouseId,
+                clase: params?.clase,
+                movementDateDesde: params?.movementDateDesde,
+                movementDateHasta: params?.movementDateHasta,
+                page: params?.page ?? 0,
+                size: params?.size ?? 15
+            })
         });
     }
 
@@ -354,9 +506,39 @@ export class InventoryApiService {
     }
 
     // ── ASN (recepción controlada) ────────────────────────────────────
-    getAsnList(params?: { status?: string; page?: number; size?: number }): Observable<PageResponse<Asn>> {
+    /**
+     * Filtros server-side de ASN — TODOS opcionales, TODO el filtrado ocurre en el
+     * backend (ver `AsnController.list`). La vista nunca filtra la página cargada.
+     */
+    getAsnList(params?: {
+        status?: string;
+        warehouseId?: number;
+        supplierName?: string;
+        expectedDesde?: string;
+        expectedHasta?: string;
+        receivedDesde?: string;
+        receivedHasta?: string;
+        createdDesde?: string;
+        createdHasta?: string;
+        q?: string;
+        page?: number;
+        size?: number;
+    }): Observable<PageResponse<Asn>> {
         return this.http.get<PageResponse<Asn>>(`${this.baseUrl}/inventory/asn`, {
-            params: this.buildParams({ status: params?.status, page: params?.page, size: params?.size })
+            params: this.buildParams({
+                status: params?.status,
+                warehouseId: params?.warehouseId,
+                supplierName: params?.supplierName,
+                expectedDesde: params?.expectedDesde,
+                expectedHasta: params?.expectedHasta,
+                receivedDesde: params?.receivedDesde,
+                receivedHasta: params?.receivedHasta,
+                createdDesde: params?.createdDesde,
+                createdHasta: params?.createdHasta,
+                q: params?.q,
+                page: params?.page,
+                size: params?.size
+            })
         });
     }
 

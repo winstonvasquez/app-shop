@@ -2,13 +2,13 @@ import {
     Component, OnInit, inject, signal,
     ChangeDetectionStrategy
 } from '@angular/core';
-import { of } from 'rxjs';
 import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DepartmentService } from '../../services/department.service';
 import { EmployeeService } from '../../services/employee.service';
 import { Department } from '../../models/department.model';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
-import { DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
+import { DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent, DateRangeFilterConfig, DateRangeChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
+import { signalFilter, staticFilter, ACTIVO_OPTIONS } from '@shared/ui/tables/data-table/filter-helpers';
 import { PaginationComponent, PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
@@ -17,6 +17,7 @@ import { ButtonComponent, ServerSearchSelectComponent } from '@shared/components
 import { employeeSelectSource, departmentSelectSource } from '../../components/select-sources';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
+import { PAGINATION } from '@shared/constants/app.constants';
 
 @Component({
     selector: 'app-department-list',
@@ -50,6 +51,10 @@ export class DepartmentListComponent implements OnInit {
         excludeId: () => this.selectedDept()?.id,
     });
 
+    /** Listas para los selects de filtro "Jefe" y "Departamento padre" del toolbar (carga eager). */
+    empleadosFiltro = signal<{ id: number; nombres: string; apellidos: string }[]>([]);
+    departamentosFiltro = signal<{ id: number; nombre: string }[]>([]);
+
     // ── UI state ──────────────────────────────────────────────────────────────
     error            = signal<string | null>(null);
     showModal        = signal(false);
@@ -58,9 +63,13 @@ export class DepartmentListComponent implements OnInit {
     submitError      = signal<string | null>(null);
     selectedDept     = signal<Department | null>(null);
 
-    // ── Filters ───────────────────────────────────────────────────────────────
+    // ── Filters (TODOS server-side — la vista nunca filtra la página cargada) ──
     searchQuery  = signal('');
     filterActivo = signal('');
+    filterManagerId = signal<number | null>(null);
+    filterParentId = signal<number | null>(null);
+    filterCreatedAtDesde = signal<string | undefined>(undefined);
+    filterCreatedAtHasta = signal<string | undefined>(undefined);
 
     // ── Exportación server-side (XLSX/CSV) ──────────────────────────────────────
     readonly exportConfig: BackendExportConfig = {
@@ -69,15 +78,25 @@ export class DepartmentListComponent implements OnInit {
         params: () => ({
             search: this.searchQuery(),
             activo: this.filterActivo(),
+            managerId: this.filterManagerId() ?? undefined,
+            parentId: this.filterParentId() ?? undefined,
+            createdAtDesde: this.filterCreatedAtDesde(),
+            createdAtHasta: this.filterCreatedAtHasta(),
         }),
     };
 
-    // Filtro de estado para el toolbar del data-table
+    // Filtros select del toolbar. "activo" es booleano (staticFilter); jefe/padre son listas dinámicas.
     estadoFilters: FilterConfig[] = [
-        { field: 'activo', label: 'Todos', options: of([
-            { value: 'true', label: 'Activos' },
-            { value: 'false', label: 'Inactivos' }
-        ]) }
+        staticFilter('activo', 'Todos', ACTIVO_OPTIONS),
+        signalFilter('managerId', 'Todos los jefes', this.empleadosFiltro,
+            e => ({ value: e.id, label: `${e.nombres} ${e.apellidos}` })),
+        signalFilter('parentId', 'Todos los departamentos padre', this.departamentosFiltro,
+            d => ({ value: d.id, label: d.nombre })),
+    ];
+
+    /** Rango de fecha de creación (baja prioridad: entidad maestra, volumen bajo). */
+    readonly dateRangeFilters: DateRangeFilterConfig[] = [
+        { field: 'createdAt', label: 'Fecha de creación' },
     ];
 
     // ── Pagination (server-side) ──────────────────────────────────────────────
@@ -139,18 +158,38 @@ export class DepartmentListComponent implements OnInit {
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
     ngOnInit(): void {
-        // Los selects de jefe y departamento padre cargan sus opciones bajo demanda (server-side).
+        // Los selects de jefe y departamento padre del FORM cargan sus opciones bajo demanda (server-side).
+        this.loadEmpleadosFiltro();
+        this.loadDepartamentosFiltro();
         this.loadPage();
     }
 
-    /** Carga la página actual server-side (search + activo + 20/pág). */
+    /** Empleados para el select de filtro "Jefe" del toolbar (lista acotada, no requiere server-search). */
+    private loadEmpleadosFiltro(): void {
+        this.employeeService.searchPage(0, PAGINATION.maxPageSize)
+            .then(res => this.empleadosFiltro.set(res.content ?? []))
+            .catch(() => this.empleadosFiltro.set([]));
+    }
+
+    /** Todos los departamentos para el select de filtro "Departamento padre" del toolbar. */
+    private loadDepartamentosFiltro(): void {
+        this.departmentService.fetchAll()
+            .then(list => this.departamentosFiltro.set(list ?? []))
+            .catch(() => this.departamentosFiltro.set([]));
+    }
+
+    /** Carga la página actual server-side (search + TODOS los filtros avanzados + 20/pág). */
     private loadPage(): void {
-        this.departmentService.loadDepartmentsPaged(
-            this.currentPage(),
-            this.pageSize(),
-            this.searchQuery() || undefined,
-            this.filterActivo() || undefined
-        ).then(res => {
+        this.departmentService.loadDepartmentsPaged({
+            page: this.currentPage(),
+            size: this.pageSize(),
+            search: this.searchQuery() || undefined,
+            activo: this.filterActivo() || undefined,
+            managerId: this.filterManagerId(),
+            parentId: this.filterParentId(),
+            createdAtDesde: this.filterCreatedAtDesde(),
+            createdAtHasta: this.filterCreatedAtHasta(),
+        }).then(res => {
             this.totalElements.set(res.totalElements);
             this.totalPages.set(res.totalPages);
         }).catch(err => {
@@ -159,6 +198,7 @@ export class DepartmentListComponent implements OnInit {
     }
 
     // ── Handlers ─────────────────────────────────────────────────────────────
+    /** La búsqueda por texto también va al backend, no filtra la página cargada. */
     onSearchTerm(term: string): void {
         this.searchQuery.set(term);
         this.currentPage.set(0);
@@ -166,11 +206,34 @@ export class DepartmentListComponent implements OnInit {
     }
 
     onFilterChangeEvent(event: FilterChangeEvent): void {
-        if (event.field === 'activo') {
-            this.filterActivo.set(event.value != null ? String(event.value) : '');
-            this.currentPage.set(0);
-            this.loadPage();
+        switch (event.field) {
+            case 'activo':    this.filterActivo.set(event.value != null ? String(event.value) : ''); break;
+            case 'managerId': this.filterManagerId.set(event.value != null ? Number(event.value) : null); break;
+            case 'parentId':  this.filterParentId.set(event.value != null ? Number(event.value) : null); break;
+            default: return;
         }
+        this.currentPage.set(0);
+        this.loadPage();
+    }
+
+    onDateRangeChange(event: DateRangeChangeEvent): void {
+        if (event.field !== 'createdAt') return;
+        this.filterCreatedAtDesde.set(event.from ?? undefined);
+        this.filterCreatedAtHasta.set(event.to ?? undefined);
+        this.currentPage.set(0);
+        this.loadPage();
+    }
+
+    /** "Limpiar filtros": resetea todo y recarga UNA sola vez. */
+    onFiltersClear(): void {
+        this.searchQuery.set('');
+        this.filterActivo.set('');
+        this.filterManagerId.set(null);
+        this.filterParentId.set(null);
+        this.filterCreatedAtDesde.set(undefined);
+        this.filterCreatedAtHasta.set(undefined);
+        this.currentPage.set(0);
+        this.loadPage();
     }
 
     onPaginationChange(event: PaginationChangeEvent): void {

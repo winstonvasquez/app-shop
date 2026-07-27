@@ -13,6 +13,20 @@ import {
 import { PageResponse, PaginationConfig } from '@core/models/pagination.model';
 import { HTTP_STATUS } from '@shared/constants/app.constants';
 
+/** Filtros server-side del listado "Mis pedidos" del storefront. Todos opcionales. */
+export interface MisPedidosFiltros {
+    /** Busca por id del pedido o serie-número de CPE. */
+    search?: string;
+    estado?: string;
+    cpeTipo?: string;
+    cpeEstado?: string;
+    metodoPago?: string;
+    /** yyyy-MM-dd */
+    fechaPedidoDesde?: string;
+    /** yyyy-MM-dd */
+    fechaPedidoHasta?: string;
+}
+
 @Injectable({
     providedIn: 'root'
 })
@@ -20,10 +34,47 @@ export class OrderService {
     private readonly http = inject(HttpClient);
     private readonly baseUrl = `${environment.apiUrls.sales}/api/pedidos`;
 
+    /**
+     * Pedidos del cliente autenticado (`GET /api/pedidos/mis-pedidos`). TODO el filtrado
+     * ocurre en el backend (filtra por userId del JWT) — nunca filtra la página cargada.
+     */
+    getMisPedidos(
+        page: number,
+        size: number,
+        filtros: MisPedidosFiltros = {}
+    ): Observable<PageResponse<OrderResponse>> {
+        let params = new HttpParams()
+            .set('page', page.toString())
+            .set('size', size.toString())
+            .set('sort', 'fechaPedido,desc');
+
+        if (filtros.search) params = params.set('search', filtros.search);
+        if (filtros.estado) params = params.set('estado', filtros.estado);
+        if (filtros.cpeTipo) params = params.set('cpeTipo', filtros.cpeTipo);
+        if (filtros.cpeEstado) params = params.set('cpeEstado', filtros.cpeEstado);
+        if (filtros.metodoPago) params = params.set('metodoPago', filtros.metodoPago);
+        if (filtros.fechaPedidoDesde) params = params.set('fechaPedidoDesde', filtros.fechaPedidoDesde);
+        if (filtros.fechaPedidoHasta) params = params.set('fechaPedidoHasta', filtros.fechaPedidoHasta);
+
+        return this.http
+            .get<PageResponse<OrderResponse>>(`${this.baseUrl}/mis-pedidos`, { params })
+            .pipe(catchError(this.handleError));
+    }
+
     getAll(
         pagination: PaginationConfig,
         search?: string,
-        filters?: { estado?: string; fechaPedidoDesde?: string; fechaPedidoHasta?: string }
+        filters?: {
+            estado?: string;
+            cpeTipo?: string;
+            cpeEstado?: string;
+            metodoPago?: string;
+            estadoPago?: string;
+            fechaPedidoDesde?: string;
+            fechaPedidoHasta?: string;
+            cpeFechaEmisionDesde?: string;
+            cpeFechaEmisionHasta?: string;
+        }
     ): Observable<PageResponse<OrderResponse>> {
         let params = new HttpParams()
             .set('page', pagination.page.toString())
@@ -44,12 +95,36 @@ export class OrderService {
             params = params.set('estado', filters.estado);
         }
 
+        if (filters?.cpeTipo) {
+            params = params.set('cpeTipo', filters.cpeTipo);
+        }
+
+        if (filters?.cpeEstado) {
+            params = params.set('cpeEstado', filters.cpeEstado);
+        }
+
+        if (filters?.metodoPago) {
+            params = params.set('metodoPago', filters.metodoPago);
+        }
+
+        if (filters?.estadoPago) {
+            params = params.set('estadoPago', filters.estadoPago);
+        }
+
         if (filters?.fechaPedidoDesde) {
             params = params.set('fechaPedidoDesde', filters.fechaPedidoDesde);
         }
 
         if (filters?.fechaPedidoHasta) {
             params = params.set('fechaPedidoHasta', filters.fechaPedidoHasta);
+        }
+
+        if (filters?.cpeFechaEmisionDesde) {
+            params = params.set('cpeFechaEmisionDesde', filters.cpeFechaEmisionDesde);
+        }
+
+        if (filters?.cpeFechaEmisionHasta) {
+            params = params.set('cpeFechaEmisionHasta', filters.cpeFechaEmisionHasta);
         }
 
         return this.http

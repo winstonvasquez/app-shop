@@ -1,12 +1,11 @@
 import { Component, inject, signal, computed, OnInit, ChangeDetectionStrategy } from '@angular/core';
-import { toObservable } from '@angular/core/rxjs-interop';
 import { DecimalPipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
-import { map, of } from 'rxjs';
 import { AuthService } from '@core/auth/auth.service';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
-import { DataTableComponent, TableColumn, TableAction, PaginationEvent, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
+import { DataTableComponent, TableColumn, TableAction, PaginationEvent, FilterConfig, FilterChangeEvent, DateRangeFilterConfig, DateRangeChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
+import { catalogFilter, signalFilter } from '@shared/ui/tables/data-table/filter-helpers';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
 import { AsientoService } from '../../services/asiento.service';
@@ -17,26 +16,6 @@ import { PAGINATION } from '@shared/constants/app.constants';
 import { CatalogSelectComponent } from '@shared/components';
 import { CatalogService } from '@core/services/catalog.service';
 import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
-
-/** Opciones estáticas de estado/origen (enums del backend `AsientoContableEntity`, sin catálogo dinámico). */
-const ESTADO_ASIENTO_OPTIONS = [
-    { value: 'BORRADOR', label: 'Borrador' },
-    { value: 'CONAFECTAR', label: 'Por afectar' },
-    { value: 'DEFINITIVO', label: 'Definitivo' },
-    { value: 'CERRADO', label: 'Cerrado' },
-    { value: 'ANULADO', label: 'Anulado' },
-];
-
-const ORIGEN_ASIENTO_OPTIONS = [
-    { value: 'VENTA', label: 'Venta' },
-    { value: 'COMPRA', label: 'Compra' },
-    { value: 'COSTO_VENTA', label: 'Costo de venta' },
-    { value: 'TESORERIA', label: 'Tesorería' },
-    { value: 'LOGISTICA', label: 'Logística' },
-    { value: 'NOMINA', label: 'Nómina' },
-    { value: 'CIERRE', label: 'Cierre' },
-    { value: 'MANUAL', label: 'Manual' },
-];
 
 interface LineaForm {
     cuentaId: string;
@@ -223,6 +202,7 @@ interface LineaForm {
             [searchable]="true"
             searchPlaceholder="Buscar por código o descripción..."
             [filters]="filters"
+            [dateRangeFilters]="dateRangeFilters"
             [currentPage]="currentPage()"
             [pageSize]="pageSize()"
             [totalElements]="totalElementsServer()"
@@ -230,6 +210,8 @@ interface LineaForm {
             [exportConfig]="exportConfig"
             (searchChange)="onSearchTerm($event)"
             (filterChange)="onFilterChange($event)"
+            (dateRangeChange)="onDateRangeChange($event)"
+            (filtersClear)="onFiltersClear()"
             (pageChange)="onPaginationChange($event)">
         </app-data-table>
 
@@ -298,45 +280,48 @@ export class AsientosComponent implements OnInit {
     tipoFiltro = '';
     readonly filterEstado = signal<string | null>(null);
     readonly filterOrigen = signal<string | null>(null);
+    readonly filterCuentaId = signal<string | null>(null);
+    readonly filterFechaDesde = signal<string | null>(null);
+    readonly filterFechaHasta = signal<string | null>(null);
     readonly totalElementsServer = signal(0);
     readonly totalPagesServer = signal(1);
 
     // ── Búsqueda server-side (código/glosa, via @RequestParam "search") ─────
     readonly searchQuery = signal('');
 
-    // ── Filtros del data-table (periodo dinámico + tipo fijo) ───────────────
+    /** Cuentas PCGE para el autocompletado de líneas Y para el select de filtro "Cuenta afectada". */
+    readonly todasCuentas = signal<CuentaContable[]>([]);
+
+    // ── Filtros del data-table (periodo dinámico + catálogos + cuenta afectada) ─────
     readonly filters: FilterConfig[] = [
-        {
-            field: 'periodo',
-            label: '— Seleccionar periodo —',
-            options: toObservable(this.periodos).pipe(
-                map(list => list.map(p => ({ value: p.id, label: `${p.nombre} (${p.estado})` })))
-            )
-        },
-        {
-            field: 'tipo',
-            label: 'Tipo ▼',
-            options: toObservable(this.catalog.options('TIPO_ASIENTO_CONTABLE')).pipe(
-                map(o => o.map(x => ({ value: x.codigo, label: x.valor })))
-            )
-        },
-        {
-            field: 'estado',
-            label: 'Estado ▼',
-            options: of(ESTADO_ASIENTO_OPTIONS)
-        },
-        {
-            field: 'origen',
-            label: 'Origen ▼',
-            options: of(ORIGEN_ASIENTO_OPTIONS)
-        }
+        signalFilter('periodo', '— Seleccionar periodo —', this.periodos,
+            p => ({ value: p.id, label: `${p.nombre} (${p.estado})` })),
+        catalogFilter(this.catalog, 'TIPO_ASIENTO_CONTABLE', 'tipo', 'Tipo ▼'),
+        catalogFilter(this.catalog, 'ESTADO_ASIENTO_CONTABLE', 'estado', 'Estado ▼'),
+        catalogFilter(this.catalog, 'ORIGEN_ASIENTO_CONTABLE', 'origen', 'Origen ▼'),
+        signalFilter('cuentaId', 'Todas las cuentas', this.todasCuentas,
+            c => ({ value: c.id, label: `${c.codigo} — ${c.nombre}` })),
+    ];
+
+    /** Rango de fecha del asiento para el toolbar del data-table. */
+    readonly dateRangeFilters: DateRangeFilterConfig[] = [
+        { field: 'fecha', label: 'Fecha del asiento' }
     ];
 
     // ── Exportación server-side (mismos filtros que la lista) ──────────────
     readonly exportConfig: BackendExportConfig = {
         url: `${environment.apiUrls.accounting}/api/v1/contabilidad/asientos/export`,
         filename: 'asientos',
-        params: () => ({ periodo: this.periodoSeleccionado() }),
+        params: () => ({
+            periodo: this.periodoSeleccionado(),
+            fechaDesde: this.filterFechaDesde() ?? undefined,
+            fechaHasta: this.filterFechaHasta() ?? undefined,
+            estado: this.filterEstado() ?? undefined,
+            tipo: this.tipoFiltro || undefined,
+            origen: this.filterOrigen() ?? undefined,
+            cuentaId: this.filterCuentaId() ?? undefined,
+            search: this.searchQuery() || undefined,
+        }),
     };
 
     // ── Paginación local ───────────────────────────────────────────────────
@@ -349,7 +334,6 @@ export class AsientosComponent implements OnInit {
     readonly errorForm = signal<string | null>(null);
     readonly lineas = signal<LineaForm[]>([]);
     readonly sugerencias = signal<CuentaContable[][]>([]);
-    readonly todasCuentas = signal<CuentaContable[]>([]);
 
     form = {
         fecha: new Date().toISOString().substring(0, 10),
@@ -498,11 +482,43 @@ export class AsientosComponent implements OnInit {
             this.filterEstado.set(event.value ? String(event.value) : null);
         } else if (event.field === 'origen') {
             this.filterOrigen.set(event.value ? String(event.value) : null);
+        } else if (event.field === 'cuentaId') {
+            this.filterCuentaId.set(event.value ? String(event.value) : null);
         } else {
             return;
         }
         this.currentPage.set(0);
         this.cargarAsientos();
+    }
+
+    /** Rango de fecha del asiento (toolbar del data-table): también server-side. */
+    onDateRangeChange(event: DateRangeChangeEvent): void {
+        if (event.field !== 'fecha') return;
+        this.filterFechaDesde.set(event.from);
+        this.filterFechaHasta.set(event.to);
+        this.currentPage.set(0);
+        this.cargarAsientos();
+    }
+
+    /**
+     * "Limpiar filtros": resetea TODOS los signals de filtro, incluido el periodo
+     * (es uno de los `filters` del toolbar, así que el data-table también lo limpia
+     * visualmente). Sin periodo el endpoint no puede resolverse, así que vaciamos
+     * la lista en vez de recargar.
+     */
+    onFiltersClear(): void {
+        this.searchQuery.set('');
+        this.tipoFiltro = '';
+        this.filterEstado.set(null);
+        this.filterOrigen.set(null);
+        this.filterCuentaId.set(null);
+        this.filterFechaDesde.set(null);
+        this.filterFechaHasta.set(null);
+        this.currentPage.set(0);
+        this.periodoSeleccionado.set('');
+        this.asientos.set([]);
+        this.totalElementsServer.set(0);
+        this.totalPagesServer.set(1);
     }
 
     cargarAsientos() {
@@ -513,9 +529,12 @@ export class AsientosComponent implements OnInit {
         this.asientoService.obtenerAsientos(periodoId, {
             page: this.currentPage(),
             size: this.pageSize(),
+            fechaDesde: this.filterFechaDesde() ?? undefined,
+            fechaHasta: this.filterFechaHasta() ?? undefined,
             estado: this.filterEstado() ?? undefined,
             tipo: this.tipoFiltro || undefined,
             origen: this.filterOrigen() ?? undefined,
+            cuentaId: this.filterCuentaId() ?? undefined,
             search: this.searchQuery() || undefined,
         }).subscribe({
             next: (page) => {

@@ -5,6 +5,17 @@ import { firstValueFrom } from 'rxjs';
 import { PageResponse, pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 import { Position, PositionRequest } from '../models/position.model';
 
+/** Filtros server-side del listado paginado de puestos. Todos opcionales. */
+export interface PositionFiltros {
+    page?: number;
+    size?: number;
+    search?: string;
+    departmentId?: string;
+    activo?: string;
+    /** Texto libre (sin catálogo seedeado: la entidad no tiene un enum fijo de niveles). */
+    nivel?: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class PositionService {
     private readonly http = inject(HttpClient);
@@ -24,14 +35,20 @@ export class PositionService {
 
     readonly totalPositions = computed(() => this._positions().length);
 
-    async loadPositionsPaged(page: number, size: number, search?: string, departmentId?: string):
+    /** Carga server-side paginada con filtros avanzados (search, departamento, estado y nivel). Todos opcionales. */
+    async loadPositionsPaged(filtros: PositionFiltros = {}):
         Promise<{ totalElements: number; totalPages: number }> {
         this._loading.set(true);
         this._error.set(null);
         try {
-            const params: Record<string, string> = { page: String(page), size: String(size) };
-            if (search) params['search'] = search;
-            if (departmentId) params['departmentId'] = departmentId;
+            const params: Record<string, string> = {
+                page: String(filtros.page ?? 0),
+                size: String(filtros.size ?? 20),
+            };
+            if (filtros.search) params['search'] = filtros.search;
+            if (filtros.departmentId) params['departmentId'] = filtros.departmentId;
+            if (filtros.activo) params['activo'] = filtros.activo;
+            if (filtros.nivel) params['nivel'] = filtros.nivel;
             const res = await firstValueFrom(
                 this.http.get<PageResponse<Position>>(`${this.baseUrl}/paged`, { params })
             );

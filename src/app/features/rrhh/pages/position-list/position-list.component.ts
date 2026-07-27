@@ -12,6 +12,7 @@ import { ButtonComponent, ServerSearchSelectComponent } from '@shared/components
 import { departmentSelectSource } from '../../components/select-sources';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
+import { staticFilter, ACTIVO_OPTIONS } from '@shared/ui/tables/data-table/filter-helpers';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
 import { PaginationComponent, PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
@@ -58,11 +59,17 @@ export class PositionListComponent implements OnInit {
     submitError  = signal<string | null>(null);
     selectedPos  = signal<Position | null>(null);
 
-    // ── Filters ───────────────────────────────────────────────────────────────
+    // ── Filters (TODOS server-side — la vista nunca filtra la página cargada) ──
     searchQuery      = signal('');
     filterDepartment = signal('');
+    filterActivo     = signal('');
+    // NOTA: 'nivel' es texto libre en la entidad (Position.nivel) y NO existe catálogo
+    // NIVEL_PUESTO en erp_parameters (verificado: la ola de catálogos no lo seedeó porque
+    // no hay una columna enum fija que respaldarlo) -> se omite el select para no ofrecer
+    // opciones que no reflejen los valores reales guardados. El backend ya acepta ?nivel=
+    // si en el futuro se decide poblarlo desde un endpoint de valores distintos.
 
-    // Filtro de departamento (dinámico) para el toolbar del data-table
+    // Filtros select del toolbar: departamento (dinámico) + estado (booleano).
     departamentoFilters: FilterConfig[] = [
         {
             field: 'department',
@@ -70,17 +77,22 @@ export class PositionListComponent implements OnInit {
             options: toObservable(this.departments).pipe(
                 map(list => list.map(d => ({ value: d.id, label: d.nombre })))
             )
-        }
+        },
+        staticFilter('activo', 'Estado', ACTIVO_OPTIONS),
     ];
 
     /**
      * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios
-     * (respeta los filtros actuales search + departamento). Ver /hr/api/positions/export.
+     * (respeta TODOS los filtros actuales). Ver /hr/api/positions/export.
      */
     readonly exportConfig: BackendExportConfig = {
         url: `${environment.apiUrls.hr}/api/positions/export`,
         filename: 'puestos',
-        params: () => ({ search: this.searchQuery(), departmentId: this.filterDepartment() }),
+        params: () => ({
+            search: this.searchQuery(),
+            departmentId: this.filterDepartment(),
+            activo: this.filterActivo(),
+        }),
     };
 
     // ── Pagination (server-side) ──────────────────────────────────────────────
@@ -154,14 +166,15 @@ export class PositionListComponent implements OnInit {
         this.loadPage();
     }
 
-    /** Carga la página actual server-side (search + departamento + 20/pág). */
+    /** Carga la página actual server-side (search + departamento + estado + 20/pág). */
     private loadPage(): void {
-        this.positionService.loadPositionsPaged(
-            this.currentPage(),
-            this.pageSize(),
-            this.searchQuery() || undefined,
-            this.filterDepartment() || undefined
-        ).then(res => {
+        this.positionService.loadPositionsPaged({
+            page: this.currentPage(),
+            size: this.pageSize(),
+            search: this.searchQuery() || undefined,
+            departmentId: this.filterDepartment() || undefined,
+            activo: this.filterActivo() || undefined,
+        }).then(res => {
             this.totalElements.set(res.totalElements);
             this.totalPages.set(res.totalPages);
         }).catch(err => {
@@ -170,6 +183,7 @@ export class PositionListComponent implements OnInit {
     }
 
     // ── Handlers ─────────────────────────────────────────────────────────────
+    /** La búsqueda por texto también va al backend, no filtra la página cargada. */
     onSearchTerm(term: string): void {
         this.searchQuery.set(term);
         this.currentPage.set(0);
@@ -177,11 +191,22 @@ export class PositionListComponent implements OnInit {
     }
 
     onFilterChangeEvent(event: FilterChangeEvent): void {
-        if (event.field === 'department') {
-            this.filterDepartment.set(event.value != null ? String(event.value) : '');
-            this.currentPage.set(0);
-            this.loadPage();
+        switch (event.field) {
+            case 'department': this.filterDepartment.set(event.value != null ? String(event.value) : ''); break;
+            case 'activo':     this.filterActivo.set(event.value != null ? String(event.value) : ''); break;
+            default: return;
         }
+        this.currentPage.set(0);
+        this.loadPage();
+    }
+
+    /** "Limpiar filtros": resetea todo y recarga UNA sola vez. */
+    onFiltersClear(): void {
+        this.searchQuery.set('');
+        this.filterDepartment.set('');
+        this.filterActivo.set('');
+        this.currentPage.set(0);
+        this.loadPage();
     }
 
     onPaginationChange(event: PaginationChangeEvent): void {

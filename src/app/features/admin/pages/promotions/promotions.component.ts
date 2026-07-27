@@ -1,9 +1,12 @@
 import { Component, inject, signal, computed, OnInit, ChangeDetectionStrategy } from '@angular/core';
-import { toSignal, toObservable } from '@angular/core/rxjs-interop';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
-import { map } from 'rxjs';
-import { DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
+import {
+    DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent,
+    DateRangeFilterConfig, DateRangeChangeEvent, PaginationEvent, SortEvent
+} from '@shared/ui/tables/data-table/data-table.component';
+import { observableFilter, staticFilter, ACTIVO_OPTIONS } from '@shared/ui/tables/data-table/filter-helpers';
 import { DateInputComponent } from '@shared/ui/forms/date-input/date-input.component';
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
 import { AdminFormSectionComponent } from '@shared/ui/forms/admin-form-section/admin-form-section.component';
@@ -15,13 +18,30 @@ import { VentasParametrosService, SelectOption } from '../../services/ventas-par
 import { CURRENCY_DISPLAY } from '@shared/constants/sunat.constants';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
-import { CatalogService } from '@core/services/catalog.service';
+import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 
 type EstadoPromocion = 'ACTIVA' | 'INACTIVA' | 'VENCIDA';
 
 interface PromocionVM extends Promocion {
     estado: EstadoPromocion;
 }
+
+/** 'estado' es un valor DERIVADO en el backend (no una columna) -> staticFilter con los códigos
+ *  exactos que acepta PromocionQueryService.findAllPaged, NO catalogFilter (el catálogo
+ *  ESTADO_PROMOCION de erp_parameters tiene otros códigos: PROGRAMADA/AGOTADA, sin INACTIVA). */
+const ESTADO_PROMOCION_OPTIONS = [
+    { value: 'ACTIVA', label: 'Activa' },
+    { value: 'INACTIVA', label: 'Inactiva' },
+    { value: 'VENCIDA', label: 'Vencida' },
+] as const;
+
+/** PromocionEntity.SubtipoPromocion — enum Java sin catálogo seedeado en erp_parameters. */
+const SUBTIPO_PROMOCION_OPTIONS = [
+    { value: 'FLASH_SALE', label: 'Flash Sale' },
+    { value: 'BUNDLE', label: 'Bundle' },
+    { value: 'TIERED', label: 'Por niveles' },
+    { value: 'BUY_X_GET_Y', label: 'Compra X lleva Y' },
+] as const;
 
 @Component({
     selector: 'app-promotions',
@@ -44,7 +64,6 @@ export class PromotionsComponent implements OnInit {
     private readonly service    = inject(PromotionsService);
     private readonly parametros = inject(VentasParametrosService);
     private readonly fb         = inject(FormBuilder);
-    private readonly catalog    = inject(CatalogService);
 
     promociones  = signal<PromocionVM[]>([]);
     cargando     = signal(false);
@@ -54,32 +73,132 @@ export class PromotionsComponent implements OnInit {
     editId       = signal<number | null>(null);
     submitError  = signal('');
     listError    = signal<string | null>(null);
-    filtroEstado = '';
+
+    // Filtros (TODOS server-side — la vista nunca filtra la página cargada)
+    searchQuery            = signal('');
+    filterEstado           = signal('');
+    filterTipo             = signal('');
+    filterAlcance          = signal('');
+    filterSubtipo          = signal('');
+    filterActivo           = signal('');
+    filterFechaInicioDesde = signal<string | undefined>(undefined);
+    filterFechaInicioHasta = signal<string | undefined>(undefined);
+    filterFechaFinDesde    = signal<string | undefined>(undefined);
+    filterFechaFinHasta    = signal<string | undefined>(undefined);
+
+    // Paginación
+    currentPage   = signal(0);
+    pageSize      = signal(20);
+    totalElements = signal(0);
+    totalPages    = signal(0);
+
+    // Sort
+    sortField     = signal('fechaInicio');
+    sortDirection = signal<'asc' | 'desc'>('desc');
 
     tipoOptions    = signal<SelectOption[]>([]);
     alcanceOptions = signal<SelectOption[]>([]);
 
-    // Filtro de estado en el toolbar del data-table (catálogo ESTADO_PROMOCION)
-    readonly estadoFilters: FilterConfig[] = [
-        { field: 'estado', label: 'Todos los estados',
-          options: toObservable(this.catalog.options('ESTADO_PROMOCION')).pipe(
-              map(o => o.map(x => ({ value: x.codigo, label: x.valor })))
-          ) }
+    // Filtros del toolbar del data-table. 'estado' es DERIVADO -> staticFilter con códigos exactos
+    // (ver comentario de ESTADO_PROMOCION_OPTIONS). 'tipo'/'alcance' reutilizan las mismas opciones
+    // que el formulario (parámetros de ventas, con fallback local si el backend no responde).
+    readonly filters: FilterConfig[] = [
+        staticFilter('estado', 'Todos los estados', ESTADO_PROMOCION_OPTIONS),
+        observableFilter('tipo', 'Tipo de descuento', this.parametros.getTiposPromocion()),
+        observableFilter('alcance', 'Alcance', this.parametros.getAlcancesPromocion()),
+        staticFilter('subtipo', 'Subtipo', SUBTIPO_PROMOCION_OPTIONS),
+        staticFilter('activo', 'Activa/Inactiva', ACTIVO_OPTIONS),
+    ];
+
+    readonly dateRangeFilters: DateRangeFilterConfig[] = [
+        { field: 'fechaInicio', label: 'Fecha de inicio' },
+        { field: 'fechaFin', label: 'Fecha de fin (vencimiento)' },
     ];
 
     onFilterChangeEvent(event: FilterChangeEvent): void {
-        if (event.field !== 'estado') return;
-        this.filtroEstado = event.value != null ? String(event.value) : '';
+        const valor = event.value != null ? String(event.value) : '';
+        switch (event.field) {
+            case 'estado':  this.filterEstado.set(valor); break;
+            case 'tipo':    this.filterTipo.set(valor); break;
+            case 'alcance': this.filterAlcance.set(valor); break;
+            case 'subtipo': this.filterSubtipo.set(valor); break;
+            case 'activo':  this.filterActivo.set(valor); break;
+            default: return;
+        }
+        this.currentPage.set(0);
+        this.cargar();
+    }
+
+    onDateRangeChange(event: DateRangeChangeEvent): void {
+        switch (event.field) {
+            case 'fechaInicio':
+                this.filterFechaInicioDesde.set(event.from ?? undefined);
+                this.filterFechaInicioHasta.set(event.to ?? undefined);
+                break;
+            case 'fechaFin':
+                this.filterFechaFinDesde.set(event.from ?? undefined);
+                this.filterFechaFinHasta.set(event.to ?? undefined);
+                break;
+            default: return;
+        }
+        this.currentPage.set(0);
+        this.cargar();
+    }
+
+    /** "Limpiar filtros": resetea todo y recarga UNA sola vez. */
+    onFiltersClear(): void {
+        this.searchQuery.set('');
+        this.filterEstado.set('');
+        this.filterTipo.set('');
+        this.filterAlcance.set('');
+        this.filterSubtipo.set('');
+        this.filterActivo.set('');
+        this.filterFechaInicioDesde.set(undefined);
+        this.filterFechaInicioHasta.set(undefined);
+        this.filterFechaFinDesde.set(undefined);
+        this.filterFechaFinHasta.set(undefined);
+        this.currentPage.set(0);
+        this.cargar();
+    }
+
+    onSearchTerm(term: string): void {
+        this.searchQuery.set(term);
+        this.currentPage.set(0);
+        this.cargar();
+    }
+
+    onPageChange(event: PaginationEvent): void {
+        this.currentPage.set(event.page);
+        this.pageSize.set(event.size);
+        this.cargar();
+    }
+
+    onSort(event: SortEvent): void {
+        this.sortField.set(event.field);
+        this.sortDirection.set(event.direction);
+        this.currentPage.set(0);
+        this.cargar();
     }
 
     /**
      * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios
-     * (respeta el filtro de estado actual). Ver /sales/api/v1/promociones/export.
+     * (respeta TODOS los filtros actuales). Ver /sales/api/v1/promociones/export.
      */
     readonly exportConfig: BackendExportConfig = {
         url: `${environment.apiUrls.sales}/api/v1/promociones/export`,
         filename: 'promociones',
-        params: () => ({ estado: this.filtroEstado }),
+        params: () => ({
+            search: this.searchQuery() || undefined,
+            estado: this.filterEstado() || undefined,
+            tipo: this.filterTipo() || undefined,
+            alcance: this.filterAlcance() || undefined,
+            subtipo: this.filterSubtipo() || undefined,
+            activo: this.filterActivo() || undefined,
+            fechaInicioDesde: this.filterFechaInicioDesde(),
+            fechaInicioHasta: this.filterFechaInicioHasta(),
+            fechaFinDesde: this.filterFechaFinDesde(),
+            fechaFinHasta: this.filterFechaFinHasta(),
+        }),
     };
 
     form = this.fb.group({
@@ -121,21 +240,24 @@ export class PromotionsComponent implements OnInit {
           onClick: (row) => this.toggleActivo(row) },
     ];
 
-    promocionesVm = computed(() => {
-        if (!this.filtroEstado) return this.promociones();
-        return this.promociones().filter(p => p.estado === this.filtroEstado);
-    });
+    /**
+     * KPIs de cabecera: se calculan sobre una muestra amplia SIN paginar (independiente de la
+     * página actual de la tabla) porque el backend todavía no expone un endpoint /stats agregado
+     * (ver ficha frontend-admin-ventas.md, notas de promotions). No es el mismo anti-patrón de
+     * "filtrar en la vista": aquí no se filtra nada, solo se resume para las 3 tarjetas de cabecera.
+     */
+    private readonly statsPromociones = signal<PromocionVM[]>([]);
 
-    totalActivas    = computed(() => this.promociones().filter(p => p.estado === 'ACTIVA').length);
+    totalActivas    = computed(() => this.statsPromociones().filter(p => p.estado === 'ACTIVA').length);
     proximasAVencer = computed(() => {
         const en7dias = new Date();
         en7dias.setDate(en7dias.getDate() + 7);
-        return this.promociones().filter(p => {
+        return this.statsPromociones().filter(p => {
             const fin = new Date(p.fechaFin);
             return p.estado === 'ACTIVA' && fin <= en7dias;
         }).length;
     });
-    totalVencidas   = computed(() => this.promociones().filter(p => p.estado === 'VENCIDA').length);
+    totalVencidas   = computed(() => this.statsPromociones().filter(p => p.estado === 'VENCIDA').length);
 
     tipoDescuento = toSignal(this.form.controls.tipo.valueChanges, { initialValue: this.form.controls.tipo.value });
 
@@ -147,21 +269,47 @@ export class PromotionsComponent implements OnInit {
 
     ngOnInit(): void {
         this.cargar();
+        this.cargarStats();
         this.parametros.getTiposPromocion().subscribe(opts => this.tipoOptions.set(opts));
         this.parametros.getAlcancesPromocion().subscribe(opts => this.alcanceOptions.set(opts));
     }
 
     cargar(): void {
         this.cargando.set(true);
-        this.service.getAll().subscribe({
-            next: (list) => {
-                this.promociones.set(list.map(p => ({ ...p, estado: this.calcularEstado(p) })));
+        this.service.getAll({
+            page: this.currentPage(),
+            size: this.pageSize(),
+            sortField: this.sortField() || undefined,
+            sortDirection: this.sortDirection(),
+            search: this.searchQuery() || undefined,
+            tipo: this.filterTipo() || undefined,
+            alcance: this.filterAlcance() || undefined,
+            subtipo: this.filterSubtipo() || undefined,
+            activo: this.filterActivo() === '' ? undefined : this.filterActivo() === 'true',
+            estado: this.filterEstado() || undefined,
+            fechaInicioDesde: this.filterFechaInicioDesde(),
+            fechaInicioHasta: this.filterFechaInicioHasta(),
+            fechaFinDesde: this.filterFechaFinDesde(),
+            fechaFinHasta: this.filterFechaFinHasta(),
+        }).subscribe({
+            next: (res) => {
+                this.promociones.set(res.content.map(p => ({ ...p, estado: this.calcularEstado(p) })));
+                this.totalElements.set(pageTotalElements(res));
+                this.totalPages.set(pageTotalPages(res));
                 this.cargando.set(false);
             },
             error: () => {
                 this.promociones.set([]);
                 this.cargando.set(false);
             }
+        });
+    }
+
+    /** Trae una muestra amplia SIN filtros para las tarjetas KPI de cabecera (ver statsPromociones). */
+    private cargarStats(): void {
+        this.service.getAll({ page: 0, size: 1000 }).subscribe({
+            next: (res) => this.statsPromociones.set(res.content.map(p => ({ ...p, estado: this.calcularEstado(p) }))),
+            error: () => this.statsPromociones.set([])
         });
     }
 
@@ -227,15 +375,11 @@ export class PromotionsComponent implements OnInit {
 
         if (this.editMode() && this.editId() !== null) {
             this.service.update(this.editId()!, dto).subscribe({
-                next: (updated) => {
-                    this.promociones.update(list =>
-                        list.map(p => p.id === updated.id
-                            ? { ...updated, estado: this.calcularEstado(updated) }
-                            : p
-                        )
-                    );
+                next: () => {
                     this.guardando.set(false);
                     this.cerrarModal();
+                    this.cargar();
+                    this.cargarStats();
                 },
                 error: (err: Error) => {
                     this.submitError.set(err.message);
@@ -244,13 +388,12 @@ export class PromotionsComponent implements OnInit {
             });
         } else {
             this.service.create(dto).subscribe({
-                next: (created) => {
-                    this.promociones.update(list => [
-                        { ...created, estado: this.calcularEstado(created) },
-                        ...list
-                    ]);
+                next: () => {
                     this.guardando.set(false);
                     this.cerrarModal();
+                    this.currentPage.set(0);
+                    this.cargar();
+                    this.cargarStats();
                 },
                 error: (err: Error) => {
                     this.submitError.set(err.message);
@@ -263,7 +406,10 @@ export class PromotionsComponent implements OnInit {
     toggleActivo(row: PromocionVM): void {
         this.listError.set(null);
         this.service.update(row.id!, { activo: !row.activo }).subscribe({
-            next: () => this.cargar(),
+            next: () => {
+                this.cargar();
+                this.cargarStats();
+            },
             error: (err: Error) => this.listError.set(err.message)
         });
     }

@@ -1,9 +1,14 @@
 import { Component, inject, signal, computed, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { AuditLogService, AuditLog } from '../../services/audit-log.service';
+import { AuditLogService, AuditLog, UsuarioFiltroOption, longToSyntheticUuid } from '../../services/audit-log.service';
 import { ButtonComponent } from '@shared/components';
 import { pageTotalElements } from '@core/models/pagination.model';
-import { DataTableComponent, TableColumn, TableAction, PaginationEvent } from '@shared/ui/tables/data-table/data-table.component';
+import {
+    DataTableComponent, TableColumn, TableAction, PaginationEvent,
+    FilterConfig, FilterChangeEvent, DateRangeFilterConfig, DateRangeChangeEvent,
+} from '@shared/ui/tables/data-table/data-table.component';
+import { catalogFilter, signalFilter } from '@shared/ui/tables/data-table/filter-helpers';
+import { CatalogService } from '@core/services/catalog.service';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
 
@@ -16,6 +21,7 @@ import { environment } from '@env/environment';
 })
 export class AuditoriaComponent implements OnInit {
     private service = inject(AuditLogService);
+    readonly catalog = inject(CatalogService);
 
     readonly cargando = signal(false);
     readonly logs = signal<AuditLog[]>([]);
@@ -23,28 +29,29 @@ export class AuditoriaComponent implements OnInit {
     readonly page = signal(0);
     readonly pageSize = 50;
 
-    // Filtros (gobiernan la consulta al backend)
-    readonly filtroTipo = signal('');
-    readonly filtroDesde = signal('');
-    readonly filtroHasta = signal('');
-
-    // Búsqueda rápida client-side sobre la página cargada (el backend no soporta texto libre)
+    // Filtros — TODOS server-side, la vista nunca filtra la página cargada.
+    readonly filterEntidadTipo = signal('');
+    readonly filterAccion = signal('');
+    readonly filterUsuarioId = signal('');
+    readonly filterDesde = signal<string | null>(null);
+    readonly filterHasta = signal<string | null>(null);
     readonly searchQuery = signal('');
 
     readonly seleccionado = signal<AuditLog | null>(null);
     readonly totalPages = computed(() => Math.ceil(this.totalElements() / this.pageSize));
 
-    readonly logsFiltrados = computed(() => {
-        const q = this.searchQuery().trim().toLowerCase();
-        const lista = this.logs();
-        if (!q) return lista;
-        return lista.filter(l =>
-            l.usuarioNombre?.toLowerCase().includes(q) ||
-            l.entidadTipo?.toLowerCase().includes(q) ||
-            l.accion?.toLowerCase().includes(q) ||
-            l.entidadId?.toLowerCase().includes(q)
-        );
-    });
+    /** Usuarios de la empresa para el select de filtro (id envuelto como UUID sintético). */
+    readonly usuariosFiltro = signal<UsuarioFiltroOption[]>([]);
+
+    filters: FilterConfig[] = [
+        catalogFilter(this.catalog, 'ENTIDAD_AUDITORIA_CONTABLE', 'entidadTipo', 'Todas las entidades'),
+        catalogFilter(this.catalog, 'ACCION_AUDITORIA', 'accion', 'Todas las acciones'),
+        signalFilter('usuarioId', 'Todos los usuarios', this.usuariosFiltro, u => ({ value: u.id, label: u.nombre })),
+    ];
+
+    dateRangeFilters: DateRangeFilterConfig[] = [
+        { field: 'timestamp', label: 'Fecha del evento' },
+    ];
 
     columns: TableColumn<AuditLog>[] = [
         { key: 'timestamp', label: 'Fecha/Hora', render: l => this.formatFechaHora(l.timestamp) },
@@ -72,24 +79,56 @@ export class AuditoriaComponent implements OnInit {
         url: `${environment.apiUrls.accounting}/api/v1/contabilidad/audit-log/export`,
         filename: 'auditoria',
         params: () => ({
-            entidadTipo: this.filtroTipo() || undefined,
-            desde: this.filtroDesde() ? new Date(this.filtroDesde()).toISOString() : undefined,
-            hasta: this.filtroHasta() ? new Date(this.filtroHasta()).toISOString() : undefined,
+            entidadTipo: this.filterEntidadTipo() || undefined,
+            accion: this.filterAccion() || undefined,
+            usuarioId: this.filterUsuarioId() || undefined,
+            search: this.searchQuery() || undefined,
+            desde: this.desdeIso(),
+            hasta: this.hastaIso(),
         }),
     };
 
+    /** `yyyy-MM-dd` del date-input → ISO-8601, que es lo que espera el backend. */
+    private desdeIso(): string | undefined {
+        const v = this.filterDesde();
+        return v ? new Date(v).toISOString() : undefined;
+    }
+
+    private hastaIso(): string | undefined {
+        const v = this.filterHasta();
+        return v ? new Date(v).toISOString() : undefined;
+    }
+
     ngOnInit() {
         this.buscar();
+        this.loadUsuariosFiltro();
+    }
+
+    /** Usuarios de la empresa para el select de filtro del toolbar. */
+    private loadUsuariosFiltro(): void {
+        this.service.listarUsuariosFiltro().subscribe({
+            // El backend guarda usuarioId como UUID sintético (new UUID(0, id)),
+            // no como el Long de microshopusers → hay que envolverlo.
+            next: (us) => this.usuariosFiltro.set(
+                (us ?? []).map(u => ({
+                    id: longToSyntheticUuid(u.id),
+                    nombre: u.persona?.nombreCompleto?.trim() || u.username
+                }))
+            ),
+            error: () => this.usuariosFiltro.set([])
+        });
     }
 
     buscar(nuevaPagina = 0) {
         this.page.set(nuevaPagina);
-        this.searchQuery.set('');
         this.cargando.set(true);
         this.service.buscar({
-            entidadTipo: this.filtroTipo() || undefined,
-            desde: this.filtroDesde() ? new Date(this.filtroDesde()).toISOString() : undefined,
-            hasta: this.filtroHasta() ? new Date(this.filtroHasta()).toISOString() : undefined,
+            entidadTipo: this.filterEntidadTipo() || undefined,
+            accion: this.filterAccion() || undefined,
+            usuarioId: this.filterUsuarioId() || undefined,
+            search: this.searchQuery() || undefined,
+            desde: this.desdeIso(),
+            hasta: this.hastaIso(),
             page: nuevaPagina,
             size: this.pageSize,
         }).subscribe({
@@ -102,8 +141,39 @@ export class AuditoriaComponent implements OnInit {
         });
     }
 
+    /** La búsqueda por texto va al backend (`search`), no filtra la página cargada. */
     onSearchTerm(term: string) {
         this.searchQuery.set(term);
+        this.buscar(0);
+    }
+
+    onFilterChangeEvent(event: FilterChangeEvent) {
+        const valor = event.value != null ? String(event.value) : '';
+        switch (event.field) {
+            case 'entidadTipo': this.filterEntidadTipo.set(valor); break;
+            case 'accion':      this.filterAccion.set(valor); break;
+            case 'usuarioId':   this.filterUsuarioId.set(valor); break;
+            default: return;
+        }
+        this.buscar(0);
+    }
+
+    onDateRangeChange(event: DateRangeChangeEvent) {
+        if (event.field !== 'timestamp') return;
+        this.filterDesde.set(event.from);
+        this.filterHasta.set(event.to);
+        this.buscar(0);
+    }
+
+    /** "Limpiar filtros": resetea todo y recarga UNA sola vez. */
+    onFiltersClear() {
+        this.searchQuery.set('');
+        this.filterEntidadTipo.set('');
+        this.filterAccion.set('');
+        this.filterUsuarioId.set('');
+        this.filterDesde.set(null);
+        this.filterHasta.set(null);
+        this.buscar(0);
     }
 
     onPageChange(event: PaginationEvent) {

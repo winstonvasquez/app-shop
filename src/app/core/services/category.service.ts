@@ -42,11 +42,14 @@ export class CategoryService {
         if (filter?.nivel !== undefined) {
             params = params.set('nivel', filter.nivel.toString());
         }
-        if (filter?.hasImage !== undefined) {
-            params = params.set('hasImage', filter.hasImage.toString());
+        if (filter?.conImagen !== undefined) {
+            params = params.set('conImagen', filter.conImagen.toString());
         }
         if (filter?.activo !== undefined) {
             params = params.set('activo', filter.activo.toString());
+        }
+        if (filter?.padreId !== undefined) {
+            params = params.set('padreId', filter.padreId.toString());
         }
         if (filter?.fechaCreacionDesde) {
             params = params.set('fechaCreacionDesde', filter.fechaCreacionDesde);

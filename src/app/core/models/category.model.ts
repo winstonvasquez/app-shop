@@ -24,8 +24,10 @@ export interface CategoryRequest {
 export interface CategoryFilter {
     search?: string;
     nivel?: number;
-    hasImage?: boolean;
+    /** OJO: el backend espera el param `conImagen` (CategoriaController.getAll), no `hasImage`. */
+    conImagen?: boolean;
     activo?: boolean;
+    padreId?: number;
     fechaCreacionDesde?: string;
     fechaCreacionHasta?: string;
 }

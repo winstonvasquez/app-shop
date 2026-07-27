@@ -28,7 +28,11 @@
             }
             @for (filter of filters(); track filter.field) {
                 <div class="table-filter">
-                    <select class="input-field" (change)="onFilterChange(filter.field, $event)">
+                    <select class="input-field"
+                        [value]="getFilterValue(filter)"
+                        [attr.aria-label]="filter.label"
+                        [class.is-active]="getFilterValue(filter) !== ''"
+                        (change)="onFilterChange(filter.field, $event)">
                         <option value="">{{ filter.label }}</option>
                         @for (opt of filter.options | async; track opt.value) {
                             <option [value]="opt.value">{{ opt.label }}</option>
@@ -58,6 +62,16 @@
             <!-- El botón Buscar SIEMPRE al final de los filtros -->
             @if (searchable()) {
                 <app-button label="Buscar" icon="search" variant="primary" size="sm" (click)="onSearchSubmit()" />
+            }
+            <!-- Limpiar: solo visible con filtros activos; emite UN evento (no N requests) -->
+            @if (activeFilterCount() > 0) {
+                <button type="button" class="table-filters-clear" (click)="onClearFilters()">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                    Limpiar
+                    <span class="table-filters-count">{{ activeFilterCount() }}</span>
+                </button>
             }
             @if (exportable()) {
                 <div class="table-export-buttons">

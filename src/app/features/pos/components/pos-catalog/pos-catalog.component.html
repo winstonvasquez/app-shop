@@ -54,6 +54,31 @@
         (selected)="onFavoritoSelected($event)" (remove)="onFavoritoRemoved($event)" />
     } @else {
 
+    <!-- Filtros avanzados: marca / unidad de medida / disponibilidad de stock (server-side) -->
+    <div class="catalog-filters-row">
+        <select class="catalog-filter-select" [value]="selectedMarca() ?? ''"
+            (change)="onMarcaChange($any($event.target).value)">
+            <option value="">Todas las marcas</option>
+            @for (m of marcasDisponibles(); track m) {
+            <option [value]="m">{{ m }}</option>
+            }
+        </select>
+        <select class="catalog-filter-select" [value]="selectedUnidadMedida() ?? ''"
+            (change)="onUnidadMedidaChange($any($event.target).value)">
+            <option value="">Unidad de medida</option>
+            @for (u of unidadesMedida(); track u.codigo) {
+            <option [value]="u.codigo">{{ u.valor }}</option>
+            }
+        </select>
+        <select class="catalog-filter-select" [value]="selectedDisponibilidad() ?? ''"
+            (change)="onDisponibilidadChange($any($event.target).value)">
+            <option value="">Disponibilidad</option>
+            @for (d of disponibilidadOptions; track d.value) {
+            <option [value]="d.value">{{ d.label }}</option>
+            }
+        </select>
+    </div>
+
     <!-- Filtros de categoría — barra plegable -->
     <div class="catalog-cats-bar" [class.catalog-cats-bar--plegada]="categoriasPlegadas()">
 
@@ -61,17 +86,17 @@
         <div class="catalog-categories" [class.catalog-categories--expanded]="categoriasExpandidas()">
 
             <button class="btn-secondary !rounded-full !py-1 !px-4 !h-8 !text-xs !font-semibold !whitespace-nowrap !shrink-0 transition-colors"
-                [class.!bg-primary]="selectedCategoria() === null" [class.!text-white]="selectedCategoria() === null"
-                [class.!border-primary]="selectedCategoria() === null"
+                [class.!bg-primary]="selectedCategoriaId() === null" [class.!text-white]="selectedCategoriaId() === null"
+                [class.!border-primary]="selectedCategoriaId() === null"
                 (click)="selectCategoria(null, $any($event.currentTarget))">
                 Todos
             </button>
-            @for (cat of categorias(); track cat) {
+            @for (cat of categorias(); track cat.id) {
             <button class="btn-secondary !rounded-full !py-1 !px-4 !h-8 !text-xs !font-semibold !whitespace-nowrap !shrink-0 transition-colors"
-                [class.!bg-primary]="selectedCategoria() === cat" [class.!text-white]="selectedCategoria() === cat"
-                [class.!border-primary]="selectedCategoria() === cat"
-                (click)="selectCategoria(cat, $any($event.currentTarget))">
-                {{ cat }}
+                [class.!bg-primary]="selectedCategoriaId() === cat.id" [class.!text-white]="selectedCategoriaId() === cat.id"
+                [class.!border-primary]="selectedCategoriaId() === cat.id"
+                (click)="selectCategoria(cat.id, $any($event.currentTarget))">
+                {{ cat.nombre }}
             </button>
             }
 
@@ -139,7 +164,7 @@
         </div>
         } @else {
         <div class="catalog-grid">
-            @for (p of filteredItems(); track p.varianteId) {
+            @for (p of items(); track p.varianteId) {
             <div class="card-product relative cursor-pointer group" [class.opacity-50]="p.stockActual <= 0"
                 [class.grayscale]="p.stockActual <= 0" [class.ring-2]="isJustAdded(p.varianteId)"
                 [class.ring-primary]="isJustAdded(p.varianteId)" (click)="addToCart(p)"

@@ -11,19 +11,24 @@
     <app-alert type="error" [message]="error()!" />
 }
 
-<!-- Tabla (client-side: activo + paginación) -->
+<!-- Tabla (server-side: búsqueda + activo + paginación) -->
 <app-data-table
-    [data]="pagedData()"
+    [data]="criteria()"
     [columns]="columns"
     [actions]="actions"
-    [filters]="estadoFilters"
+    [loading]="loading()"
+    [searchable]="true"
+    searchPlaceholder="Buscar por nombre o descripción..."
+    [filters]="filters"
     [exportable]="true"
     exportFileName="criterios-evaluacion"
     [currentPage]="currentPage()"
     [pageSize]="pageSize()"
     [totalElements]="totalElements()"
     [totalPages]="totalPages()"
+    (searchChange)="onSearchTerm($event)"
     (filterChange)="onFilterChangeEvent($event)"
+    (filtersClear)="onFiltersClear()"
     (pageChange)="onPaginationChange($event)" />
 
 <!-- Drawer: Crear / Editar Criterio -->

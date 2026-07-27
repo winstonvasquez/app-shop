@@ -4,7 +4,11 @@ import { TransportistaService } from '../../services/transportista.service';
 import { Transportista } from '../../models/transportista.model';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { ButtonComponent, CatalogSelectComponent } from '@shared/components';
-import { DataTableComponent, TableColumn, TableAction } from '@shared/ui/tables/data-table/data-table.component';
+import {
+    DataTableComponent, TableColumn, TableAction,
+    FilterConfig, FilterChangeEvent, DateRangeFilterConfig, DateRangeChangeEvent
+} from '@shared/ui/tables/data-table/data-table.component';
+import { catalogFilter, staticFilter, ACTIVO_OPTIONS } from '@shared/ui/tables/data-table/filter-helpers';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
@@ -34,7 +38,7 @@ export class TransportistasPageComponent implements OnInit {
     private readonly service   = inject(TransportistaService);
     private readonly authService = inject(AuthService);
     private readonly fb        = inject(FormBuilder);
-    private readonly catalog = inject(CatalogService);
+    readonly catalog = inject(CatalogService);
 
     // Data
     items    = signal<Transportista[]>([]);
@@ -48,6 +52,14 @@ export class TransportistasPageComponent implements OnInit {
     submitting  = signal(false);
     submitError = signal<string | null>(null);
 
+    // Filtros (TODOS server-side — GET /carriers/paged, la vista nunca filtra la página cargada)
+    searchQuery = signal('');
+    filterServiceType = signal('');
+    filterActive = signal('');
+    filterApiEnabled = signal('');
+    filterFechaCreacionDesde = signal<string | null>(null);
+    filterFechaCreacionHasta = signal<string | null>(null);
+
     // Pagination
     currentPage   = signal(0);
     pageSize      = signal<number>(PAGINATION.defaultPageSize);
@@ -60,14 +72,33 @@ export class TransportistasPageComponent implements OnInit {
         { label: 'Transportistas' }
     ];
 
+    // Filtros select del toolbar. serviceType sale de erp_parameters; active/apiEnabled son
+    // columnas boolean (sin catálogo en erp_parameters, mismo patrón que ordenes-compra).
+    filters: FilterConfig[] = [
+        catalogFilter(this.catalog, 'TIPO_SERVICIO_TRANSPORTISTA', 'serviceType', 'Tipo de servicio'),
+        staticFilter('active', 'Estado', ACTIVO_OPTIONS),
+        staticFilter('apiEnabled', 'Integración API', ACTIVO_OPTIONS)
+    ];
+
+    dateRangeFilters: DateRangeFilterConfig[] = [
+        { field: 'fechaCreacion', label: 'Fecha de alta' }
+    ];
+
     /**
-     * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios
-     * (misma lista, sin filtros adicionales). Ver /logistics/api/carriers/export.
+     * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios,
+     * respetando los mismos filtros que /carriers/paged. Ver /logistics/api/carriers/export.
      */
     readonly exportConfig: BackendExportConfig = {
         url: `${environment.apiUrls.logistics}/api/carriers/export`,
         filename: 'transportistas',
-        params: () => ({})
+        params: () => ({
+            q: this.searchQuery(),
+            serviceType: this.filterServiceType(),
+            active: this.filterActive(),
+            apiEnabled: this.filterApiEnabled(),
+            fechaCreacionDesde: this.filterFechaCreacionDesde() ?? undefined,
+            fechaCreacionHasta: this.filterFechaCreacionHasta() ?? undefined
+        })
     };
 
     columns: TableColumn<Transportista>[] = [
@@ -125,7 +156,16 @@ export class TransportistasPageComponent implements OnInit {
     loadItems() {
         this.loading.set(true);
         this.error.set(null);
-        this.service.getTransportistas(this.companyId, this.currentPage(), this.pageSize()).subscribe({
+        this.service.getCarriersPaged({
+            page: this.currentPage(),
+            size: this.pageSize(),
+            q: this.searchQuery() || undefined,
+            serviceType: this.filterServiceType() || undefined,
+            active: this.filterActive() === '' ? undefined : this.filterActive() === 'true',
+            apiEnabled: this.filterApiEnabled() === '' ? undefined : this.filterApiEnabled() === 'true',
+            fechaCreacionDesde: this.filterFechaCreacionDesde() || undefined,
+            fechaCreacionHasta: this.filterFechaCreacionHasta() || undefined
+        }).subscribe({
             next: (res) => {
                 this.items.set(res.content);
                 this.totalElements.set(pageTotalElements(res));
@@ -137,6 +177,46 @@ export class TransportistasPageComponent implements OnInit {
                 this.loading.set(false);
             }
         });
+    }
+
+    /** La búsqueda por texto va al backend (`q`), no filtra la página cargada. */
+    onSearchTerm(term: string): void {
+        this.searchQuery.set(term);
+        this.currentPage.set(0);
+        this.loadItems();
+    }
+
+    onFilterChangeEvent(event: FilterChangeEvent): void {
+        const valor = event.value != null ? String(event.value) : '';
+        switch (event.field) {
+            case 'serviceType': this.filterServiceType.set(valor); break;
+            case 'active':      this.filterActive.set(valor); break;
+            case 'apiEnabled':  this.filterApiEnabled.set(valor); break;
+            default: return;
+        }
+        this.currentPage.set(0);
+        this.loadItems();
+    }
+
+    onDateRangeChange(event: DateRangeChangeEvent): void {
+        if (event.field === 'fechaCreacion') {
+            this.filterFechaCreacionDesde.set(event.from);
+            this.filterFechaCreacionHasta.set(event.to);
+            this.currentPage.set(0);
+            this.loadItems();
+        }
+    }
+
+    /** "Limpiar filtros": resetea todo y recarga UNA sola vez. */
+    onFiltersClear(): void {
+        this.searchQuery.set('');
+        this.filterServiceType.set('');
+        this.filterActive.set('');
+        this.filterApiEnabled.set('');
+        this.filterFechaCreacionDesde.set(null);
+        this.filterFechaCreacionHasta.set(null);
+        this.currentPage.set(0);
+        this.loadItems();
     }
 
     onPaginationChange(event: PaginationChangeEvent) {

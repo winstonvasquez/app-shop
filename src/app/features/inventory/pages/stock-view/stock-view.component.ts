@@ -1,18 +1,18 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { toObservable } from '@angular/core/rxjs-interop';
-import { map } from 'rxjs';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
-import { InventoryApiService } from '../../services/inventory-api.service';
+import { InventoryApiService, StockFiltros } from '../../services/inventory-api.service';
 import { ProductsApiService } from '@features/products/services/products-api.service';
-import { InventoryStock, Warehouse } from '../../models/inventory.models';
-import { DataTableComponent, TableColumn, TableAction, PaginationEvent, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
+import { InventoryStock, Location, Warehouse } from '../../models/inventory.models';
+import { DataTableComponent, TableColumn, TableAction, PaginationEvent, FilterConfig, FilterChangeEvent, DateRangeFilterConfig, DateRangeChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
+import { signalFilter, staticFilter } from '@shared/ui/tables/data-table/filter-helpers';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { ButtonComponent } from '@shared/components';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
 import { ROUTES } from '@shared/constants/app.constants';
-import { BackendExportService, BackendExportConfig } from '@shared/services/backend-export.service';
+import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
+import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
 
 @Component({
@@ -29,41 +29,47 @@ import { environment } from '@env/environment';
 export class StockViewComponent {
     private readonly api = inject(InventoryApiService);
     private readonly productsApi = inject(ProductsApiService);
-    private readonly backendExportService = inject(BackendExportService);
     private readonly fb = inject(FormBuilder);
 
     /** Mapa productId → nombre (el maestro de productos vive en ventas, cross-service). */
     private readonly productNames = signal<Map<number, string>>(new Map());
 
     warehouses = signal<Warehouse[]>([]);
-    allStock = signal<InventoryStock[]>([]);
+    /** Ubicaciones del almacén elegido en el filtro (se recargan al cambiar `filterWarehouseId`). */
+    locationsFiltro = signal<Location[]>([]);
+
     stock = signal<InventoryStock[]>([]);
     loading = signal(false);
     error = signal<string | null>(null);
-    showLowStockOnly = signal(false);
-    selectedWarehouseId = signal<number | null>(null);
-    searchQuery = signal('');
+
+    // Filtros (TODOS server-side — la vista nunca filtra la página cargada)
+    filterWarehouseId = signal<number | undefined>(undefined);
+    filterLocationId = signal<number | undefined>(undefined);
+    filterEstadoStock = signal<string>('');
+    filterUpdatedAtDesde = signal<string | null>(null);
+    filterUpdatedAtHasta = signal<string | null>(null);
 
     currentPage = signal(0);
     pageSize = signal(20);
     totalElements = signal(0);
     totalPages = signal(0);
 
-    /** Página visible (slicing local: el stock llega completo por almacén). */
-    readonly pagedStock = computed(() => {
-        const start = this.currentPage() * this.pageSize();
-        return this.stock().slice(start, start + this.pageSize());
-    });
+    // Filtros select del toolbar.
+    filters: FilterConfig[] = [
+        signalFilter('warehouseId', 'Todos los almacenes', this.warehouses,
+            w => ({ value: w.id, label: `${w.code} — ${w.name}` })),
+        staticFilter('estadoStock', 'Estado de stock', [
+            { value: 'BAJO_MINIMO', label: 'Bajo mínimo' },
+            { value: 'REORDEN', label: 'Requiere reorden' },
+            { value: 'NORMAL', label: 'Normal' }
+        ]),
+        signalFilter('locationId', 'Todas las ubicaciones', this.locationsFiltro,
+            l => ({ value: l.id, label: l.name ? `${l.code} — ${l.name}` : l.code }))
+    ];
 
-    // Selector de almacén en el toolbar — opciones dinámicas desde la BD
-    almacenFilters: FilterConfig[] = [
-        {
-            field: 'warehouse',
-            label: 'Seleccionar almacén...',
-            options: toObservable(this.warehouses).pipe(
-                map(list => list.map(w => ({ value: w.id, label: `${w.code} — ${w.name}` })))
-            )
-        }
+    /** Rango de fecha de última actualización de stock para el toolbar del data-table. */
+    dateRangeFilters: DateRangeFilterConfig[] = [
+        { field: 'updatedAt', label: 'Última actualización' }
     ];
 
     breadcrumbs: Breadcrumb[] = [
@@ -74,13 +80,19 @@ export class StockViewComponent {
 
     /**
      * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios
-     * (respeta el mismo filtro de almacén que la lista). Ver
+     * (respeta TODOS los filtros actuales, no solo el almacén). Ver
      * GET /inventory/api/inventory/stock/export.
      */
     readonly exportConfig: BackendExportConfig = {
         url: `${environment.apiUrls.inventory}/api/inventory/stock/export`,
         filename: 'stock',
-        params: () => ({ warehouseId: this.selectedWarehouseId() }),
+        params: () => ({
+            warehouseId: this.filterWarehouseId(),
+            locationId: this.filterLocationId(),
+            estadoStock: this.filterEstadoStock() || undefined,
+            updatedAtDesde: this.filterUpdatedAtDesde() ?? undefined,
+            updatedAtHasta: this.filterUpdatedAtHasta() ?? undefined
+        }),
     };
 
     columns: TableColumn<InventoryStock>[] = [
@@ -88,6 +100,8 @@ export class StockViewComponent {
           render: (r) => this.productNames().get(r.productId) ?? `Producto #${r.productId}` },
         { key: 'warehouseName',     label: 'Almacén',
           render: (r) => r.warehouseName ?? String(r.warehouseId) },
+        { key: 'locationName',      label: 'Ubicación',
+          render: (r) => r.locationName ?? '—' },
         { key: 'quantity',          label: 'Stock',        sortable: true, align: 'right',
           render: (r) => r.quantity.toLocaleString('es-PE') },
         { key: 'reservedQuantity',  label: 'Reservado',    align: 'right',
@@ -130,6 +144,7 @@ export class StockViewComponent {
     constructor() {
         this.loadWarehouses();
         this.loadProductNames();
+        this.loadStock();
     }
 
     loadWarehouses(): void {
@@ -153,62 +168,85 @@ export class StockViewComponent {
         });
     }
 
-    onFilterChangeEvent(event: FilterChangeEvent): void {
-        if (event.field !== 'warehouse') return;
-        const id = event.value != null ? Number(event.value) : 0;
-        this.selectedWarehouseId.set(id || null);
-        this.currentPage.set(0);
-        if (!id) { this.allStock.set([]); this.applyFilter(); return; }
-        this.loadStock(id);
+    /** Ubicaciones del almacén elegido, para el select de ubicación del toolbar. */
+    private loadLocationsForWarehouse(warehouseId: number | undefined): void {
+        if (!warehouseId) { this.locationsFiltro.set([]); return; }
+        this.api.getLocationsByWarehouse(warehouseId).subscribe({
+            next: (data) => this.locationsFiltro.set(data),
+            error: () => this.locationsFiltro.set([])
+        });
     }
 
-    onSearchTerm(term: string): void {
-        this.searchQuery.set(term);
-        this.currentPage.set(0);
-        this.applyFilter();
-    }
-
-    loadStock(warehouseId: number): void {
+    /** Carga el stock del backend respetando TODOS los filtros actuales (búsqueda incluida). */
+    loadStock(): void {
         this.loading.set(true);
-        this.api.getStockByWarehouse(warehouseId).subscribe({
-            next: (data) => {
-                this.allStock.set(data);
-                this.applyFilter();
+        this.error.set(null);
+        const filtros: StockFiltros = {
+            page: this.currentPage(),
+            size: this.pageSize(),
+            warehouseId: this.filterWarehouseId(),
+            locationId: this.filterLocationId(),
+            estadoStock: this.filterEstadoStock() || undefined,
+            updatedAtDesde: this.filterUpdatedAtDesde() ?? undefined,
+            updatedAtHasta: this.filterUpdatedAtHasta() ?? undefined
+        };
+        this.api.getStockPaged(filtros).subscribe({
+            next: (res) => {
+                this.stock.set(res.content ?? []);
+                this.totalElements.set(pageTotalElements(res));
+                this.totalPages.set(pageTotalPages(res));
                 this.loading.set(false);
             },
             error: (err: Error) => { this.error.set(err.message); this.loading.set(false); }
         });
     }
 
-    toggleLowStock(): void {
-        this.showLowStockOnly.set(!this.showLowStockOnly());
-        this.applyFilter();
-    }
-
-    private applyFilter(): void {
-        let filtered = this.showLowStockOnly()
-            ? this.allStock().filter(s => s.belowMinimum)
-            : this.allStock();
-        const q = this.searchQuery().toLowerCase();
-        if (q) {
-            filtered = filtered.filter(s => {
-                const nombre = this.productNames().get(s.productId)?.toLowerCase() ?? '';
-                return nombre.includes(q) || String(s.productId).includes(q);
-            });
+    onFilterChangeEvent(event: FilterChangeEvent): void {
+        switch (event.field) {
+            case 'warehouseId': {
+                const id = event.value != null ? Number(event.value) : undefined;
+                this.filterWarehouseId.set(id);
+                this.filterLocationId.set(undefined);
+                this.loadLocationsForWarehouse(id);
+                break;
+            }
+            case 'locationId':
+                this.filterLocationId.set(event.value != null ? Number(event.value) : undefined);
+                break;
+            case 'estadoStock':
+                this.filterEstadoStock.set(event.value != null ? String(event.value) : '');
+                break;
+            default:
+                return;
         }
-        this.stock.set(filtered);
-        this.totalElements.set(filtered.length);
-        this.totalPages.set(Math.ceil(filtered.length / this.pageSize()) || 1);
+        this.currentPage.set(0);
+        this.loadStock();
     }
 
-    exportCsv(): void {
-        // Exportacion SERVER-SIDE (mismo endpoint /export que exportConfig, formato csv).
-        this.backendExportService.download(this.exportConfig, 'csv');
+    onDateRangeChange(event: DateRangeChangeEvent): void {
+        if (event.field !== 'updatedAt') return;
+        this.filterUpdatedAtDesde.set(event.from);
+        this.filterUpdatedAtHasta.set(event.to);
+        this.currentPage.set(0);
+        this.loadStock();
+    }
+
+    /** "Limpiar filtros": resetea todo y recarga UNA sola vez. */
+    onFiltersClear(): void {
+        this.filterWarehouseId.set(undefined);
+        this.filterLocationId.set(undefined);
+        this.filterEstadoStock.set('');
+        this.filterUpdatedAtDesde.set(null);
+        this.filterUpdatedAtHasta.set(null);
+        this.locationsFiltro.set([]);
+        this.currentPage.set(0);
+        this.loadStock();
     }
 
     onPageChange(e: PaginationEvent): void {
         this.currentPage.set(e.page);
         this.pageSize.set(e.size);
+        this.loadStock();
     }
 
     openThresholds(row: InventoryStock): void {
@@ -239,7 +277,7 @@ export class StockViewComponent {
             next: () => {
                 this.submittingThresholds.set(false);
                 this.closeThresholdsDrawer();
-                if (this.selectedWarehouseId() != null) { this.loadStock(this.selectedWarehouseId()!); }
+                this.loadStock();
             },
             error: (err: Error) => {
                 this.submittingThresholds.set(false);

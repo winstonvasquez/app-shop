@@ -1,13 +1,13 @@
 import {
-    Component, OnInit, inject, signal, computed,
+    Component, OnInit, inject, signal,
     ChangeDetectionStrategy
 } from '@angular/core';
-import { of } from 'rxjs';
 import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { EvaluationService } from '../../services/evaluation.service';
 import { EvaluationCriteria } from '../../models/evaluation.model';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
+import { staticFilter, ACTIVO_OPTIONS } from '@shared/ui/tables/data-table/filter-helpers';
 import { PaginationComponent, PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
@@ -17,8 +17,8 @@ import { PAGINATION } from '@shared/constants/app.constants';
 
 /**
  * CRUD simple de criterios de evaluación 360 (nombre, descripción, peso %,
- * puntaje mín/máx, activo). Lista completa vía EvaluationService.criteria
- * (carga única con loadCriteria()) + paginado/filtrado client-side.
+ * puntaje mín/máx, activo). Listado paginado server-side vía
+ * `GET /hr/api/evaluations/criteria/paged` (búsqueda + filtro de activo).
  */
 @Component({
     selector: 'app-criteria-list',
@@ -42,6 +42,7 @@ export class CriteriaListComponent implements OnInit {
 
     // ── Data ─────────────────────────────────────────────────────────────────
     readonly criteria = this.criteriaService.criteria;
+    readonly loading = this.criteriaService.loading;
 
     // ── UI state ──────────────────────────────────────────────────────────────
     error       = signal<string | null>(null);
@@ -51,19 +52,19 @@ export class CriteriaListComponent implements OnInit {
     submitError = signal<string | null>(null);
     selected    = signal<EvaluationCriteria | null>(null);
 
-    // ── Filters (client-side) ───────────────────────────────────────────────
+    // ── Filters (server-side) ───────────────────────────────────────────────
+    searchQuery  = signal('');
     filtroActivo = signal('');
 
-    estadoFilters: FilterConfig[] = [
-        { field: 'activo', label: 'Todos', options: of([
-            { value: 'true', label: 'Activos' },
-            { value: 'false', label: 'Inactivos' }
-        ]) }
+    filters: FilterConfig[] = [
+        staticFilter('activo', 'Todos', ACTIVO_OPTIONS),
     ];
 
-    // ── Pagination (client-side) ────────────────────────────────────────────
-    currentPage = signal(0);
-    pageSize    = signal<number>(PAGINATION.defaultPageSize);
+    // ── Pagination (server-side) ────────────────────────────────────────────
+    currentPage   = signal(0);
+    pageSize      = signal<number>(PAGINATION.defaultPageSize);
+    readonly totalElements = this.criteriaService.criteriaTotalElements;
+    readonly totalPages    = this.criteriaService.criteriaTotalPages;
 
     breadcrumbs: Breadcrumb[] = [
         { label: 'Admin', url: '/admin' },
@@ -99,20 +100,6 @@ export class CriteriaListComponent implements OnInit {
         },
     ];
 
-    readonly filtered = computed(() => {
-        let list = this.criteria();
-        const activo = this.filtroActivo();
-        if (activo) list = list.filter(c => String(c.activo) === activo);
-        return list;
-    });
-
-    readonly totalElements = computed(() => this.filtered().length);
-    readonly totalPages = computed(() => Math.ceil(this.totalElements() / this.pageSize()) || 1);
-    readonly pagedData = computed(() => {
-        const start = this.currentPage() * this.pageSize();
-        return this.filtered().slice(start, start + this.pageSize());
-    });
-
     readonly criteriaForm = this.fb.group({
         nombre: ['', [Validators.required, Validators.maxLength(100)]],
         descripcion: [''],
@@ -122,19 +109,45 @@ export class CriteriaListComponent implements OnInit {
     });
 
     ngOnInit(): void {
-        this.criteriaService.loadCriteria();
+        this.loadPage();
+    }
+
+    /** Carga la página actual server-side (search + activo). */
+    private loadPage(): void {
+        this.criteriaService.loadCriteriaPaged({
+            page: this.currentPage(),
+            size: this.pageSize(),
+            search: this.searchQuery() || undefined,
+            activo: this.filtroActivo() || undefined,
+        }).catch(() => { /* el servicio ya setea error() interno */ });
+    }
+
+    onSearchTerm(term: string): void {
+        this.searchQuery.set(term);
+        this.currentPage.set(0);
+        this.loadPage();
     }
 
     onFilterChangeEvent(event: FilterChangeEvent): void {
         if (event.field === 'activo') {
             this.filtroActivo.set(event.value != null ? String(event.value) : '');
             this.currentPage.set(0);
+            this.loadPage();
         }
+    }
+
+    /** "Limpiar filtros": resetea todo y recarga UNA sola vez. */
+    onFiltersClear(): void {
+        this.searchQuery.set('');
+        this.filtroActivo.set('');
+        this.currentPage.set(0);
+        this.loadPage();
     }
 
     onPaginationChange(event: PaginationChangeEvent): void {
         this.currentPage.set(event.page);
         this.pageSize.set(event.size);
+        this.loadPage();
     }
 
     openCreate(): void {
@@ -186,6 +199,7 @@ export class CriteriaListComponent implements OnInit {
                 await this.criteriaService.createCriteria(request);
             }
             this.closeDrawer();
+            this.loadPage();
         } catch (err: unknown) {
             this.submitError.set(err instanceof Error ? err.message : 'Error al guardar criterio');
         } finally {
@@ -197,6 +211,7 @@ export class CriteriaListComponent implements OnInit {
         if (!confirm(`¿Desactivar el criterio "${c.nombre}"?`)) return;
         try {
             await this.criteriaService.deactivateCriteria(c.id);
+            this.loadPage();
         } catch (err: unknown) {
             this.error.set(err instanceof Error ? err.message : 'Error al desactivar criterio');
         }

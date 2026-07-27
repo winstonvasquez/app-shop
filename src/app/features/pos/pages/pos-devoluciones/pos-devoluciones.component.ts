@@ -1,18 +1,19 @@
-import { Component, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
 import { DecimalPipe, DatePipe } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { CatalogSelectComponent } from '@shared/components';
-import { PosVentaService } from '../../services/pos-venta.service';
+import { PosVentaService, PosDevolucionFiltros } from '../../services/pos-venta.service';
 import { VentaPosResponse, DetalleVentaPosResponse, DevolucionPosResponse } from '../../models/venta-pos.model';
+import { CatalogService } from '@core/services/catalog.service';
+import { AuthService } from '@core/auth/auth.service';
+import { UserService } from '@features/admin/services/user.service';
+import { UserResponse } from '@features/admin/models/user.model';
+import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 
-type MotivoDevolucion = 'PRODUCTO_DEFECTUOSO' | 'PRODUCTO_INCORRECTO' | 'CAMBIO_OPINION' | 'ERROR_COBRO' | 'OTRO';
-
-const MOTIVOS: { valor: MotivoDevolucion; etiqueta: string }[] = [
-    { valor: 'PRODUCTO_DEFECTUOSO',  etiqueta: 'Producto defectuoso' },
-    { valor: 'PRODUCTO_INCORRECTO',  etiqueta: 'Producto incorrecto / no solicitado' },
-    { valor: 'CAMBIO_OPINION',       etiqueta: 'Cambio de opinion del cliente' },
-    { valor: 'ERROR_COBRO',          etiqueta: 'Error en el cobro' },
-    { valor: 'OTRO',                 etiqueta: 'Otro motivo' }
+/** Estado propio de la devolución (no de la venta) — enum fijo del backend, sin catálogo. */
+const ESTADOS_DEVOLUCION: { value: string; label: string }[] = [
+    { value: 'PROCESADA', label: 'Procesada' },
+    { value: 'ANULADA', label: 'Anulada' },
 ];
 
 interface LineaDevolucion {
@@ -180,12 +181,8 @@ interface LineaDevolucion {
 
             <div>
               <label class="text-xs font-semibold text-subtle uppercase tracking-wide mb-1 block">Motivo *</label>
-              <select class="input-field !h-10" formControlName="motivo">
-                <option value="">Seleccionar motivo...</option>
-                @for (m of motivos; track m.valor) {
-                  <option [value]="m.valor">{{ m.etiqueta }}</option>
-                }
-              </select>
+              <app-catalog-select class="input-field !h-10" tabla="MOTIVO_DEVOLUCION_POS" formControlName="motivo"
+                  placeholder="Seleccionar motivo..."></app-catalog-select>
             </div>
             <div>
               <label class="text-xs font-semibold text-subtle uppercase tracking-wide mb-1 block">Observaciones</label>
@@ -230,44 +227,121 @@ interface LineaDevolucion {
       </div>
     }
 
-    <!-- Historial de sesion -->
-    @if (devolucionesProcesadas().length > 0) {
-      <div class="rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] overflow-hidden mt-4">
-        <div class="flex items-center justify-between px-4 py-3 border-b border-[var(--color-border)]">
-          <h3 class="font-bold text-on text-sm">Devoluciones esta sesion</h3>
-          <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--color-border)] text-on">
-            {{ devolucionesProcesadas().length }}
-          </span>
+    <!-- Listado de devoluciones registradas — 100% server-side (GET /api/pos/devoluciones) -->
+    <div class="rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] overflow-hidden mt-4">
+      <div class="flex items-center justify-between px-4 py-3 border-b border-[var(--color-border)]">
+        <h3 class="font-bold text-on text-sm">Devoluciones registradas</h3>
+        <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--color-border)] text-on">
+          {{ devolucionesTotal() }}
+        </span>
+      </div>
+
+      <!-- Filtros server-side -->
+      <div class="flex flex-wrap items-center gap-2 px-4 py-3 border-b border-[var(--color-border)]">
+        <input class="input-field !h-9 !w-48" type="text" placeholder="Buscar por N° ticket..."
+            [value]="dFilterSearch()" (input)="onDevSearch($any($event.target).value)" />
+
+        <select class="input-field !h-9 !w-44" [value]="dFilterMotivo()" (change)="onDevMotivoChange($any($event.target).value)">
+          <option value="">Todos los motivos</option>
+          @for (m of motivosCatalogo(); track m.codigo) {
+            <option [value]="m.codigo">{{ m.valor }}</option>
+          }
+        </select>
+
+        <select class="input-field !h-9 !w-36" [value]="dFilterEstado()" (change)="onDevEstadoChange($any($event.target).value)">
+          <option value="">Todos los estados</option>
+          @for (e of estadosDevolucion; track e.value) {
+            <option [value]="e.value">{{ e.label }}</option>
+          }
+        </select>
+
+        <select class="input-field !h-9 !w-44" [value]="dFilterCajeroId()" (change)="onDevCajeroChange($any($event.target).value)">
+          <option value="">Todos los cajeros</option>
+          @for (c of cajeros(); track c.id) {
+            <option [value]="c.id">{{ c.persona.nombreCompleto }}</option>
+          }
+        </select>
+
+        <label class="text-[10px] text-muted uppercase tracking-wide">Devolución</label>
+        <input class="input-field !h-9" type="date" [value]="dFilterFechaDevDesde()"
+            (change)="onDevFechaDevDesdeChange($any($event.target).value)" title="Devolución desde" />
+        <input class="input-field !h-9" type="date" [value]="dFilterFechaDevHasta()"
+            (change)="onDevFechaDevHastaChange($any($event.target).value)" title="Devolución hasta" />
+
+        <label class="text-[10px] text-muted uppercase tracking-wide">Venta</label>
+        <input class="input-field !h-9" type="date" [value]="dFilterFechaVentaDesde()"
+            (change)="onDevFechaVentaDesdeChange($any($event.target).value)" title="Venta desde" />
+        <input class="input-field !h-9" type="date" [value]="dFilterFechaVentaHasta()"
+            (change)="onDevFechaVentaHastaChange($any($event.target).value)" title="Venta hasta" />
+
+        @if (hasDevFiltrosActivos()) {
+          <button type="button" class="btn-secondary !h-9 !px-3 text-xs" (click)="onDevFiltersClear()">Limpiar</button>
+        }
+      </div>
+
+      @if (devolucionesLoading()) {
+        <div class="flex justify-center py-6">
+          <svg class="animate-spin text-[var(--color-primary)]" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+            <path d="M10 3a7 7 0 017 7" stroke-linecap="round" />
+          </svg>
         </div>
+      } @else {
         <table class="w-full text-sm">
           <thead>
             <tr class="bg-[var(--color-background)]">
-              <th class="px-4 py-2 text-left text-[10px] font-semibold text-muted uppercase">Ticket</th>
+              <th class="px-4 py-2 text-left text-[10px] font-semibold text-muted uppercase">Venta</th>
               <th class="px-4 py-2 text-left text-[10px] font-semibold text-muted uppercase">N° NC</th>
               <th class="px-4 py-2 text-right text-[10px] font-semibold text-muted uppercase">Total devuelto</th>
               <th class="px-4 py-2 text-left text-[10px] font-semibold text-muted uppercase">Motivo</th>
+              <th class="px-4 py-2 text-left text-[10px] font-semibold text-muted uppercase">Estado</th>
+              <th class="px-4 py-2 text-left text-[10px] font-semibold text-muted uppercase">Fecha</th>
             </tr>
           </thead>
           <tbody>
-            @for (d of devolucionesProcesadas(); track d.numeroNc) {
+            @for (d of devolucionesListado(); track d.id) {
               <tr class="border-t border-[var(--color-border)]/50">
-                <td class="px-4 py-2 font-mono text-on">{{ d.ticket }}</td>
+                <td class="px-4 py-2 font-mono text-on">Venta #{{ d.ventaPosId }}</td>
                 <td class="px-4 py-2 font-mono text-xs text-muted">{{ d.numeroNc }}</td>
                 <td class="px-4 py-2 text-right font-mono font-bold text-[var(--color-warning)]">
                   S/ {{ d.totalDevuelto | number:'1.2-2' }}
                 </td>
-                <td class="px-4 py-2 text-xs text-muted">{{ d.motivo }}</td>
+                <td class="px-4 py-2 text-xs text-muted">{{ catalog.label('MOTIVO_DEVOLUCION_POS', d.motivo) }}</td>
+                <td class="px-4 py-2 text-xs">
+                  <span class="text-xs font-bold px-2 py-0.5 rounded-full"
+                      [class]="d.estado === 'PROCESADA' ? 'bg-[var(--color-success)]/15 text-[var(--color-success)]' : 'bg-[var(--color-error)]/15 text-[var(--color-error)]'">
+                    {{ d.estado }}
+                  </span>
+                </td>
+                <td class="px-4 py-2 text-xs text-muted">{{ d.fechaCreacion | date:'dd/MM/yyyy HH:mm' }}</td>
+              </tr>
+            }
+            @empty {
+              <tr>
+                <td colspan="6" class="px-4 py-6 text-center text-muted text-sm">No hay devoluciones registradas</td>
               </tr>
             }
           </tbody>
         </table>
-      </div>
-    }
+
+        <div class="flex items-center justify-between px-4 py-3 border-t border-[var(--color-border)] text-xs text-muted">
+          <span>Página {{ devolucionesPage() + 1 }} de {{ devolucionesTotalPages() || 1 }}</span>
+          <div class="flex gap-2">
+            <button type="button" class="btn-secondary !h-8 !px-3 text-xs" [disabled]="devolucionesPage() === 0"
+                (click)="onDevPageChange(devolucionesPage() - 1)">Anterior</button>
+            <button type="button" class="btn-secondary !h-8 !px-3 text-xs" [disabled]="devolucionesPage() + 1 >= devolucionesTotalPages()"
+                (click)="onDevPageChange(devolucionesPage() + 1)">Siguiente</button>
+          </div>
+        </div>
+      }
+    </div>
   `
 })
-export class PosDevolucionesComponent {
+export class PosDevolucionesComponent implements OnInit {
     private readonly ventaService = inject(PosVentaService);
     private readonly fb = inject(FormBuilder);
+    private readonly auth = inject(AuthService);
+    private readonly userService = inject(UserService);
+    readonly catalog = inject(CatalogService);
 
     readonly formBusqueda: FormGroup = this.fb.group({
         busqueda: [''],
@@ -279,7 +353,6 @@ export class PosDevolucionesComponent {
         observaciones: [''],
     });
 
-    readonly motivos = MOTIVOS;
     buscando = signal(false);
     procesando = signal(false);
     procesado = signal(false);
@@ -287,7 +360,138 @@ export class PosDevolucionesComponent {
     ventaSeleccionada = signal<VentaPosResponse | null>(null);
     lineasDevolucion = signal<LineaDevolucion[]>([]);
     ultimaNc = signal('');
-    devolucionesProcesadas = signal<{ ticket: string; numeroNc: string; totalDevuelto: number; motivo: string }[]>([]);
+
+    // ── Listado de devoluciones registradas (server-side) ──────────────
+    readonly motivosCatalogo = this.catalog.options('MOTIVO_DEVOLUCION_POS');
+    readonly estadosDevolucion = ESTADOS_DEVOLUCION;
+    readonly cajeros = signal<UserResponse[]>([]);
+
+    readonly devolucionesListado = signal<DevolucionPosResponse[]>([]);
+    readonly devolucionesLoading = signal(false);
+    readonly devolucionesPage = signal(0);
+    readonly devolucionesTotalPages = signal(0);
+    readonly devolucionesTotal = signal(0);
+
+    readonly dFilterSearch = signal('');
+    readonly dFilterMotivo = signal('');
+    readonly dFilterEstado = signal('');
+    readonly dFilterCajeroId = signal('');
+    readonly dFilterFechaDevDesde = signal('');
+    readonly dFilterFechaDevHasta = signal('');
+    readonly dFilterFechaVentaDesde = signal('');
+    readonly dFilterFechaVentaHasta = signal('');
+
+    readonly hasDevFiltrosActivos = computed(() =>
+        !!(this.dFilterSearch() || this.dFilterMotivo() || this.dFilterEstado() || this.dFilterCajeroId()
+            || this.dFilterFechaDevDesde() || this.dFilterFechaDevHasta()
+            || this.dFilterFechaVentaDesde() || this.dFilterFechaVentaHasta())
+    );
+
+    ngOnInit(): void {
+        this.userService.getAllSimple().subscribe({
+            next: users => this.cajeros.set(users ?? []),
+            error: () => this.cajeros.set([]),
+        });
+        this.loadDevoluciones();
+    }
+
+    private get companyId(): number {
+        return this.auth.currentUser()?.activeCompanyId ?? 1;
+    }
+
+    loadDevoluciones(): void {
+        this.devolucionesLoading.set(true);
+        const filtros: PosDevolucionFiltros = {
+            search: this.dFilterSearch() || undefined,
+            motivo: this.dFilterMotivo() || undefined,
+            estado: this.dFilterEstado() || undefined,
+            cajeroId: this.dFilterCajeroId() ? Number(this.dFilterCajeroId()) : undefined,
+            fechaDevolucionDesde: this.dFilterFechaDevDesde() || undefined,
+            fechaDevolucionHasta: this.dFilterFechaDevHasta() || undefined,
+            fechaCreacionDesde: this.dFilterFechaVentaDesde() || undefined,
+            fechaCreacionHasta: this.dFilterFechaVentaHasta() || undefined,
+        };
+        this.ventaService.getDevoluciones(this.companyId, filtros, this.devolucionesPage()).subscribe({
+            next: page => {
+                this.devolucionesListado.set(page.content ?? []);
+                this.devolucionesTotal.set(pageTotalElements(page));
+                this.devolucionesTotalPages.set(pageTotalPages(page));
+                this.devolucionesLoading.set(false);
+            },
+            error: () => {
+                this.devolucionesListado.set([]);
+                this.devolucionesLoading.set(false);
+            },
+        });
+    }
+
+    onDevSearch(value: string): void {
+        this.dFilterSearch.set(value);
+        this.devolucionesPage.set(0);
+        this.loadDevoluciones();
+    }
+
+    onDevMotivoChange(value: string): void {
+        this.dFilterMotivo.set(value);
+        this.devolucionesPage.set(0);
+        this.loadDevoluciones();
+    }
+
+    onDevEstadoChange(value: string): void {
+        this.dFilterEstado.set(value);
+        this.devolucionesPage.set(0);
+        this.loadDevoluciones();
+    }
+
+    onDevCajeroChange(value: string): void {
+        this.dFilterCajeroId.set(value);
+        this.devolucionesPage.set(0);
+        this.loadDevoluciones();
+    }
+
+    onDevFechaDevDesdeChange(value: string): void {
+        this.dFilterFechaDevDesde.set(value);
+        this.devolucionesPage.set(0);
+        this.loadDevoluciones();
+    }
+
+    onDevFechaDevHastaChange(value: string): void {
+        this.dFilterFechaDevHasta.set(value);
+        this.devolucionesPage.set(0);
+        this.loadDevoluciones();
+    }
+
+    onDevFechaVentaDesdeChange(value: string): void {
+        this.dFilterFechaVentaDesde.set(value);
+        this.devolucionesPage.set(0);
+        this.loadDevoluciones();
+    }
+
+    onDevFechaVentaHastaChange(value: string): void {
+        this.dFilterFechaVentaHasta.set(value);
+        this.devolucionesPage.set(0);
+        this.loadDevoluciones();
+    }
+
+    /** "Limpiar filtros": resetea todo y recarga UNA sola vez. */
+    onDevFiltersClear(): void {
+        this.dFilterSearch.set('');
+        this.dFilterMotivo.set('');
+        this.dFilterEstado.set('');
+        this.dFilterCajeroId.set('');
+        this.dFilterFechaDevDesde.set('');
+        this.dFilterFechaDevHasta.set('');
+        this.dFilterFechaVentaDesde.set('');
+        this.dFilterFechaVentaHasta.set('');
+        this.devolucionesPage.set(0);
+        this.loadDevoluciones();
+    }
+
+    onDevPageChange(page: number): void {
+        if (page < 0 || page >= this.devolucionesTotalPages()) return;
+        this.devolucionesPage.set(page);
+        this.loadDevoluciones();
+    }
 
     readonly totalDevolucion = computed(() =>
         this.lineasDevolucion()
@@ -420,15 +624,9 @@ export class PosDevolucionesComponent {
         }).subscribe({
             next: (resp) => {
                 this.ultimaNc.set(resp.numeroNc);
-                this.devolucionesProcesadas.update(list => [
-                    ...list,
-                    {
-                        ticket: venta.numeroTicket,
-                        numeroNc: resp.numeroNc,
-                        totalDevuelto: resp.totalDevuelto,
-                        motivo: this.motivoEtiqueta(),
-                    }
-                ]);
+                // El listado real (server-side) reemplaza al viejo signal de sesión: recargar para reflejar la NC recién emitida.
+                this.devolucionesPage.set(0);
+                this.loadDevoluciones();
                 this.procesado.set(true);
                 this.procesando.set(false);
             },
@@ -447,10 +645,5 @@ export class PosDevolucionesComponent {
         this.errorBusqueda.set(null);
         this.procesado.set(false);
         this.lineasDevolucion.set([]);
-    }
-
-    private motivoEtiqueta(): string {
-        const motivo = String(this.formDevolucion.value.motivo ?? '');
-        return MOTIVOS.find(m => m.valor === motivo)?.etiqueta ?? motivo;
     }
 }

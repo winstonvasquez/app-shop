@@ -20,78 +20,28 @@
     <div class="alert alert-error mb-4" role="alert">{{ error() }}</div>
     }
 
-    <!-- Barra de filtros (búsqueda por botón Buscar / Enter) -->
-    <div class="filters-bar">
-        <div class="search-box">
-            <svg class="search-box-icon" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            <input #searchInput type="text" placeholder="Buscar por nombre, email o documento..."
-                [value]="searchQuery()"
-                (keyup.enter)="onSearch(searchInput.value)" />
-        <button type="button" class="search-clear search-clear--auto" aria-label="Limpiar búsqueda"
-            (click)="searchInput.value=''; onSearch('')">
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-        </button>
-        </div>
-        <app-button label="Buscar" icon="search" variant="primary" size="sm"
-            (click)="onSearch(searchInput.value)"></app-button>
-
-        <div class="filter-field">
-            <label class="input-label">Rol</label>
-            <select class="form-input"
-                [value]="filterRolId() ?? ''"
-                (change)="onFilterRolChange($any($event.target).value)">
-                <option value="">Todos</option>
-                @for (rol of roles(); track rol.id) {
-                    <option [value]="rol.id">{{ rol.nombre }}</option>
-                }
-            </select>
-        </div>
-
-        <div class="filter-field">
-            <label class="input-label">Fecha de creación (desde)</label>
-            <input type="date" class="form-input"
-                [value]="filterFechaCreacionDesde() ?? ''"
-                (change)="onFechaCreacionDesdeChange($any($event.target).value)" />
-        </div>
-
-        <div class="filter-field">
-            <label class="input-label">Fecha de creación (hasta)</label>
-            <input type="date" class="form-input"
-                [value]="filterFechaCreacionHasta() ?? ''"
-                (change)="onFechaCreacionHastaChange($any($event.target).value)" />
-        </div>
-    </div>
-
-    <!-- Loading -->
-    @if (loading()) {
-    <div class="loading-container">
-        <div class="spinner"></div>
-        <p>Cargando clientes…</p>
-    </div>
-    }
-
-    <!-- Tabla de usuarios -->
-    @if (!loading()) {
-    <app-user-list
-        [users]="users()"
-        (edit)="openEditModal($event)"
-        (delete)="onDelete($event)">
-    </app-user-list>
-
-    <!-- Paginación estándar -->
-    <app-pagination
+    <app-data-table
+        [data]="users()"
+        [columns]="columns"
+        [actions]="actions"
+        [loading]="loading()"
+        [searchable]="true"
+        searchPlaceholder="Buscar por nombre, email o documento..."
+        [filters]="filters"
+        [dateRangeFilters]="dateRangeFilters"
         [currentPage]="currentPage()"
-        [totalPages]="totalPages()"
-        [totalElements]="totalElements()"
         [pageSize]="pageSize()"
-        (pageChange)="onPaginationChange($event)">
-    </app-pagination>
-    }
+        [totalElements]="totalElements()"
+        [totalPages]="totalPages()"
+        [sortField]="sortField()"
+        [sortDirection]="sortDirection()"
+        (searchChange)="onSearchTerm($event)"
+        (filterChange)="onFilterChangeEvent($event)"
+        (dateRangeChange)="onDateRangeChange($event)"
+        (filtersClear)="onFiltersClear()"
+        (pageChange)="onPaginationChange($event)"
+        (sortChange)="onSort($event)">
+    </app-data-table>
 
     <!-- Formulario en Drawer -->
     <app-user-form

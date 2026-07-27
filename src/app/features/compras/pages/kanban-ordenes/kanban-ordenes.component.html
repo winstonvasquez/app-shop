@@ -11,6 +11,59 @@
         <div class="badge badge-error" style="margin-bottom:1rem">{{ error() }}</div>
     }
 
+    <!-- Toolbar de filtros server-side (el estado es la dimensión de las columnas, no un filtro) -->
+    <div class="filters-bar mb-3" style="flex-wrap:wrap;gap:.75rem;align-items:flex-end">
+        <div class="search-box">
+            <span class="search-box-icon">🔍</span>
+            <input class="form-input pl-8" placeholder="Buscar por OC # o proveedor..."
+                   [value]="searchQuery()"
+                   (input)="onSearchTerm($any($event.target).value)" />
+            @if (searchQuery()) {
+                <button type="button" class="search-clear search-clear--auto" aria-label="Limpiar búsqueda"
+                    (click)="onSearchTerm('')">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            }
+        </div>
+
+        <div style="min-width:220px">
+            <app-server-search-select [dataSource]="proveedorSource"
+                placeholder="Buscar proveedor…"
+                [ngModel]="filterProveedorId() || null"
+                (ngModelChange)="onFilterProveedorChange($event)" />
+        </div>
+
+        <div style="min-width:160px">
+            <app-catalog-select tabla="CONDICION_PAGO" placeholder="Cond. de pago"
+                [ngModel]="filterCondicionPago()"
+                (ngModelChange)="onFilterCondicionPagoChange($event)" />
+        </div>
+
+        <div style="min-width:140px">
+            <app-catalog-select tabla="MONEDA" placeholder="Moneda"
+                [ngModel]="filterMoneda()"
+                (ngModelChange)="onFilterMonedaChange($event)" />
+        </div>
+
+        <div style="min-width:150px">
+            <app-date-input label="Emisión desde"
+                [ngModel]="filterFechaEmisionDesde() ?? ''"
+                (ngModelChange)="onFechaDesdeChange($event)" />
+        </div>
+
+        <div style="min-width:150px">
+            <app-date-input label="Emisión hasta"
+                [ngModel]="filterFechaEmisionHasta() ?? ''"
+                (ngModelChange)="onFechaHastaChange($event)" />
+        </div>
+
+        @if (hasFiltrosActivos()) {
+            <app-button label="Limpiar" variant="secondary" icon="x" size="sm" (click)="onFiltersClear()" />
+        }
+    </div>
+
     @if (cargando()) {
         <div class="loading-container"><div class="spinner"></div></div>
     } @else {

@@ -40,12 +40,18 @@
     [columns]="columns"
     [loading]="cargando()"
     [filters]="filters"
+    [dateRangeFilters]="dateRangeFilters"
+    [searchable]="true"
+    searchPlaceholder="Buscar por descripción o referencia..."
     [currentPage]="currentPage()"
     [pageSize]="pageSize()"
     [totalElements]="totalElements()"
     [totalPages]="totalPages()"
     [exportConfig]="exportConfig"
+    (searchChange)="onSearchTerm($event)"
     (filterChange)="onFilterChangeEvent($event)"
+    (dateRangeChange)="onDateRangeChange($event)"
+    (filtersClear)="onFiltersClear()"
     (pageChange)="onPageChange($event)">
   </app-data-table>
 

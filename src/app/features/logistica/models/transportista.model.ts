@@ -24,6 +24,18 @@ export interface TransportistaPage {
     number: number;
 }
 
+/** Filtros opcionales para `GET /carriers/paged` (listado server-side real, con paginación y filtros avanzados). */
+export interface TransportistaFiltros {
+    page?: number;
+    size?: number;
+    serviceType?: string;
+    active?: boolean;
+    apiEnabled?: boolean;
+    fechaCreacionDesde?: string;
+    fechaCreacionHasta?: string;
+    q?: string;
+}
+
 export interface CreateTransportistaDto {
     code: string;
     name: string;

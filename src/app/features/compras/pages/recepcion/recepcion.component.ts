@@ -1,11 +1,13 @@
 import { Component, OnInit, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
 import { DatePipe } from '@angular/common';
-import { toObservable } from '@angular/core/rxjs-interop';
-import { map } from 'rxjs';
 import { CatalogService } from '@core/services/catalog.service';
+import { AuthService } from '@core/auth/auth.service';
 import { RecepcionService, RecepcionPage } from '../../services/recepcion.service';
+import { ProveedorService, ProveedorFiltroOption, toProveedorOptions } from '../../services/proveedor.service';
+import { AlmacenService } from '../../../logistica/services/almacen.service';
 import { Recepcion, RecepcionItem } from '../../models/orden-compra.model';
 import { DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent, PaginationEvent, DateRangeFilterConfig, DateRangeChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
+import { catalogFilter, signalFilter } from '@shared/ui/tables/data-table/filter-helpers';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
@@ -33,6 +35,9 @@ import { environment } from '@env/environment';
 })
 export class RecepcionComponent implements OnInit {
     private readonly recepcionService = inject(RecepcionService);
+    private readonly proveedorService = inject(ProveedorService);
+    private readonly almacenService = inject(AlmacenService);
+    private readonly authService = inject(AuthService);
     readonly catalog = inject(CatalogService);
 
     recepciones = signal<Recepcion[]>([]);
@@ -43,7 +48,12 @@ export class RecepcionComponent implements OnInit {
     error = signal<string | null>(null);
     detailError = signal<string | null>(null);
 
+    // Filtros (TODOS server-side — la vista nunca filtra la página cargada)
     estadoFiltro = signal('');
+    filterAlmacenDestino = signal('');
+    filterProveedorId = signal('');
+    filterTransportista = signal('');
+    filterResponsable = signal('');
     filterFechaRecepcionDesde = signal<string | null>(null);
     filterFechaRecepcionHasta = signal<string | null>(null);
     searchQuery = signal('');
@@ -58,25 +68,18 @@ export class RecepcionComponent implements OnInit {
     hasRecepciones = computed(() => this.recepciones().length > 0);
     isEmpty = computed(() => !this.cargando() && !this.hasRecepciones());
 
-    /** Filtrado client-side (el backend no soporta búsqueda por texto) sobre la página cargada. */
-    filteredRecepciones = computed(() => {
-        const term = this.searchQuery().trim().toLowerCase();
-        if (!term) return this.recepciones();
-        return this.recepciones().filter(r =>
-            r.ordenCompraCodigo?.toLowerCase().includes(term) ||
-            r.numeroGuia?.toLowerCase().includes(term)
-        );
-    });
+    /** Almacenes para el select de filtro (lista acotada, no requiere server-search). */
+    almacenesFiltro = signal<{ id: string; nombre: string }[]>([]);
+    /** Proveedores activos para el select de filtro (lista acotada, no requiere server-search). */
+    proveedoresFiltro = signal<ProveedorFiltroOption[]>([]);
 
-    // Filtro de estado para el toolbar del data-table
-    estadoFilters: FilterConfig[] = [
-        {
-            field: 'estado',
-            label: 'Todos los estados',
-            options: toObservable(this.catalog.options('ESTADO_RECEPCION')).pipe(
-                map(o => o.map(x => ({ value: x.codigo, label: x.valor })))
-            )
-        }
+    // Filtros select del toolbar. Las opciones salen de erp_parameters o de listas propias (fuente única).
+    filters: FilterConfig[] = [
+        catalogFilter(this.catalog, 'ESTADO_RECEPCION', 'estado', 'Todos los estados'),
+        signalFilter('almacenDestino', 'Todos los almacenes', this.almacenesFiltro,
+            a => ({ value: a.id, label: a.nombre })),
+        signalFilter('proveedorId', 'Todos los proveedores', this.proveedoresFiltro,
+            p => ({ value: p.id, label: p.razonSocial }))
     ];
 
     /** Rango de fecha de recepción para el toolbar del data-table. */
@@ -98,7 +101,12 @@ export class RecepcionComponent implements OnInit {
         url: `${environment.apiUrls.purchases}/api/recepciones/export`,
         filename: 'recepciones',
         params: () => ({
+            q: this.searchQuery() || undefined,
             estado: this.estadoFiltro() || undefined,
+            almacenDestino: this.filterAlmacenDestino() || undefined,
+            proveedorId: this.filterProveedorId() || undefined,
+            transportista: this.filterTransportista() || undefined,
+            responsable: this.filterResponsable() || undefined,
             fechaRecepcionDesde: this.filterFechaRecepcionDesde() ?? undefined,
             fechaRecepcionHasta: this.filterFechaRecepcionHasta() ?? undefined
         }),
@@ -137,18 +145,43 @@ export class RecepcionComponent implements OnInit {
 
     ngOnInit(): void {
         this.loadRecepciones();
+        this.loadAlmacenesFiltro();
+        this.loadProveedoresFiltro();
+    }
+
+    /** Almacenes para el select de filtro del toolbar. */
+    private loadAlmacenesFiltro(): void {
+        const companyId = this.authService.currentUser()?.activeCompanyId;
+        if (!companyId) { this.almacenesFiltro.set([]); return; }
+        this.almacenService.getAlmacenes(String(companyId), { size: PAGINATION.maxPageSize }).subscribe({
+            next: (res) => this.almacenesFiltro.set(res.content ?? []),
+            error: () => this.almacenesFiltro.set([])
+        });
+    }
+
+    /** Proveedores activos para el select de filtro del toolbar. */
+    private loadProveedoresFiltro(): void {
+        this.proveedorService.getProveedores({ size: PAGINATION.maxPageSize, estado: 'ACTIVO' }).subscribe({
+            next: (res) => this.proveedoresFiltro.set(toProveedorOptions(res.content)),
+            error: () => this.proveedoresFiltro.set([])
+        });
     }
 
     loadRecepciones(): void {
         this.cargando.set(true);
         this.error.set(null);
-        this.recepcionService.getRecepciones(
-            this.currentPage(),
-            this.pageSize(),
-            this.estadoFiltro() || undefined,
-            this.filterFechaRecepcionDesde() || undefined,
-            this.filterFechaRecepcionHasta() || undefined
-        ).subscribe({
+        this.recepcionService.getRecepciones({
+            page: this.currentPage(),
+            size: this.pageSize(),
+            q: this.searchQuery() || undefined,
+            estado: this.estadoFiltro() || undefined,
+            almacenDestino: this.filterAlmacenDestino() || undefined,
+            proveedorId: this.filterProveedorId() || undefined,
+            transportista: this.filterTransportista() || undefined,
+            responsable: this.filterResponsable() || undefined,
+            fechaRecepcionDesde: this.filterFechaRecepcionDesde() || undefined,
+            fechaRecepcionHasta: this.filterFechaRecepcionHasta() || undefined
+        }).subscribe({
             next: (res: RecepcionPage) => {
                 this.recepciones.set(res.content);
                 this.totalElements.set(pageTotalElements(res));
@@ -162,16 +195,36 @@ export class RecepcionComponent implements OnInit {
         });
     }
 
+    /** La búsqueda por texto también va al backend (`q`), no filtra la página cargada. */
     onSearchTerm(term: string): void {
         this.searchQuery.set(term);
+        this.currentPage.set(0);
+        this.loadRecepciones();
     }
 
     onFilterChangeEvent(event: FilterChangeEvent): void {
-        if (event.field === 'estado') {
-            this.estadoFiltro.set(event.value != null ? String(event.value) : '');
-            this.currentPage.set(0);
-            this.loadRecepciones();
+        const valor = event.value != null ? String(event.value) : '';
+        switch (event.field) {
+            case 'estado':          this.estadoFiltro.set(valor); break;
+            case 'almacenDestino':  this.filterAlmacenDestino.set(valor); break;
+            case 'proveedorId':     this.filterProveedorId.set(valor); break;
+            default: return;
         }
+        this.currentPage.set(0);
+        this.loadRecepciones();
+    }
+
+    /** Filtros de texto libre (exact-match en backend): transportista y responsable. */
+    onFilterTransportista(valor: string): void {
+        this.filterTransportista.set(valor);
+        this.currentPage.set(0);
+        this.loadRecepciones();
+    }
+
+    onFilterResponsable(valor: string): void {
+        this.filterResponsable.set(valor);
+        this.currentPage.set(0);
+        this.loadRecepciones();
     }
 
     onDateRangeChange(event: DateRangeChangeEvent): void {
@@ -181,6 +234,20 @@ export class RecepcionComponent implements OnInit {
             this.currentPage.set(0);
             this.loadRecepciones();
         }
+    }
+
+    /** "Limpiar filtros": resetea todo (incluidos los inputs de texto libre) y recarga UNA sola vez. */
+    onFiltersClear(): void {
+        this.searchQuery.set('');
+        this.estadoFiltro.set('');
+        this.filterAlmacenDestino.set('');
+        this.filterProveedorId.set('');
+        this.filterTransportista.set('');
+        this.filterResponsable.set('');
+        this.filterFechaRecepcionDesde.set(null);
+        this.filterFechaRecepcionHasta.set(null);
+        this.currentPage.set(0);
+        this.loadRecepciones();
     }
 
     onPaginationChange(event: PaginationEvent): void {

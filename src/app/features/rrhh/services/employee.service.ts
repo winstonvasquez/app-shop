@@ -11,6 +11,31 @@ import {
     SalaryRecord, SalaryRequest,
 } from '../models/employee.model';
 
+/** Filtros server-side del listado paginado de empleados. Todos opcionales. */
+export interface EmployeeFiltros {
+    page?: number;
+    size?: number;
+    search?: string;
+    status?: string;
+    departmentId?: number | null;
+    positionId?: number | null;
+    supervisorId?: number | null;
+    tipoDocumento?: string;
+    sistemaPrevisional?: string;
+    afpNombre?: string;
+    genero?: string;
+    estadoCivil?: string;
+    /** Tipo de contrato VIGENTE del empleado (join a Contract en el backend). */
+    tipoContrato?: string;
+    /** yyyy-MM-dd */
+    fechaIngresoDesde?: string;
+    fechaIngresoHasta?: string;
+    fechaSalidaDesde?: string;
+    fechaSalidaHasta?: string;
+    fechaNacimientoDesde?: string;
+    fechaNacimientoHasta?: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class EmployeeService {
     private readonly http = inject(HttpClient);
@@ -48,20 +73,36 @@ export class EmployeeService {
         }
     }
 
-    /** Carga server-side paginada (search + estado + departamento + rango de fecha de ingreso, todos opcionales). Devuelve totales de página. */
-    async loadEmployeesPaged(
-        page: number, size: number, search?: string, status?: string,
-        departmentId?: number | null, fechaIngresoDesde?: string, fechaIngresoHasta?: string
-    ): Promise<{ totalElements: number; totalPages: number }> {
+    /**
+     * Carga server-side paginada con TODOS los filtros avanzados (search, estado, departamento,
+     * puesto, supervisor, tipo de documento, sistema previsional, AFP, género, estado civil y
+     * rangos de fecha de ingreso/salida/nacimiento). Todos opcionales. Devuelve totales de página.
+     */
+    async loadEmployeesPaged(filtros: EmployeeFiltros = {}): Promise<{ totalElements: number; totalPages: number }> {
         this._loading.set(true);
         this._error.set(null);
         try {
-            const params: Record<string, string> = { page: String(page), size: String(size) };
-            if (search) params['search'] = search;
-            if (status) params['status'] = status;
-            if (departmentId != null) params['departmentId'] = String(departmentId);
-            if (fechaIngresoDesde) params['fechaIngresoDesde'] = fechaIngresoDesde;
-            if (fechaIngresoHasta) params['fechaIngresoHasta'] = fechaIngresoHasta;
+            const params: Record<string, string> = {
+                page: String(filtros.page ?? 0),
+                size: String(filtros.size ?? 20),
+            };
+            if (filtros.search) params['search'] = filtros.search;
+            if (filtros.status) params['status'] = filtros.status;
+            if (filtros.departmentId != null) params['departmentId'] = String(filtros.departmentId);
+            if (filtros.positionId != null) params['positionId'] = String(filtros.positionId);
+            if (filtros.supervisorId != null) params['supervisorId'] = String(filtros.supervisorId);
+            if (filtros.tipoDocumento) params['tipoDocumento'] = filtros.tipoDocumento;
+            if (filtros.sistemaPrevisional) params['sistemaPrevisional'] = filtros.sistemaPrevisional;
+            if (filtros.afpNombre) params['afpNombre'] = filtros.afpNombre;
+            if (filtros.genero) params['genero'] = filtros.genero;
+            if (filtros.estadoCivil) params['estadoCivil'] = filtros.estadoCivil;
+            if (filtros.tipoContrato) params['tipoContrato'] = filtros.tipoContrato;
+            if (filtros.fechaIngresoDesde) params['fechaIngresoDesde'] = filtros.fechaIngresoDesde;
+            if (filtros.fechaIngresoHasta) params['fechaIngresoHasta'] = filtros.fechaIngresoHasta;
+            if (filtros.fechaSalidaDesde) params['fechaSalidaDesde'] = filtros.fechaSalidaDesde;
+            if (filtros.fechaSalidaHasta) params['fechaSalidaHasta'] = filtros.fechaSalidaHasta;
+            if (filtros.fechaNacimientoDesde) params['fechaNacimientoDesde'] = filtros.fechaNacimientoDesde;
+            if (filtros.fechaNacimientoHasta) params['fechaNacimientoHasta'] = filtros.fechaNacimientoHasta;
             const res = await firstValueFrom(
                 this.http.get<PageResponse<Employee>>(`${this.baseUrl}/paged`, { params })
             );

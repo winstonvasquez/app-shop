@@ -2,15 +2,19 @@ import {
     Component, OnInit, inject, signal, effect,
     ChangeDetectionStrategy
 } from '@angular/core';
-import { toObservable } from '@angular/core/rxjs-interop';
-import { map } from 'rxjs';
 import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { VacationService, VacationRequest } from '../../services/vacation.service';
 import { EmployeeService } from '../../services/employee.service';
+import { DepartmentService } from '../../services/department.service';
+import { Department } from '../../models/department.model';
 import { LeaveBalance } from '../../models/leave-balance.model';
 import { CatalogService } from '@core/services/catalog.service';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
-import { DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
+import {
+    DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent,
+    DateRangeFilterConfig, DateRangeChangeEvent,
+} from '@shared/ui/tables/data-table/data-table.component';
+import { catalogFilter, signalFilter } from '@shared/ui/tables/data-table/filter-helpers';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
 import { PaginationComponent, PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
@@ -42,7 +46,8 @@ import { employeeSelectSource } from '../../components/select-sources';
 export class VacationListComponent implements OnInit {
     private readonly vacationService = inject(VacationService);
     private readonly employeeService = inject(EmployeeService);
-    private readonly catalog = inject(CatalogService);
+    private readonly departmentService = inject(DepartmentService);
+    readonly catalog = inject(CatalogService);
     private readonly fb = inject(FormBuilder);
 
     // ── Data ─────────────────────────────────────────────────────────────────
@@ -55,6 +60,8 @@ export class VacationListComponent implements OnInit {
     generatingBalance         = signal(false);
     // Se mantiene para resolver el nombre del empleado en la tabla (getEmployeeName).
     readonly employees = this.employeeService.activeEmployees;
+    /** Departamentos para el select de filtro del toolbar (lista acotada, no requiere server-search). */
+    readonly departamentosFiltro = signal<Department[]>([]);
     /** Fuente server-side del search-select de empleado del formulario. */
     readonly employeeSource = employeeSelectSource(this.employeeService);
 
@@ -66,25 +73,60 @@ export class VacationListComponent implements OnInit {
     submitError     = signal<string | null>(null);
     selectedId      = signal<number | null>(null);
 
-    // ── Filters ───────────────────────────────────────────────────────────────
-    filterEstado = signal('');
+    // ── Filters (TODOS server-side) ────────────────────────────────────────────
+    filterEstado             = signal('');
+    filterTipoVacacion       = signal('');
+    filterEmployeeId         = signal('');
+    filterDepartmentId       = signal('');
+    filterAprobadoPorId      = signal('');
+    filterFechaInicioDesde   = signal<string | null>(null);
+    filterFechaInicioHasta   = signal<string | null>(null);
+    filterFechaFinDesde      = signal<string | null>(null);
+    filterFechaFinHasta      = signal<string | null>(null);
+    filterFechaAprobDesde    = signal<string | null>(null);
+    filterFechaAprobHasta    = signal<string | null>(null);
     searchQuery  = signal('');
 
-    // Filtro de estado para el toolbar del data-table
-    estadoFilters: FilterConfig[] = [
-        { field: 'estado', label: 'Todos los estados', options: toObservable(this.catalog.options('ESTADO_VACACION')).pipe(
-            map(o => o.map(x => ({ value: x.codigo, label: x.valor })))
-        ) }
+    // Filtros select del toolbar. Las opciones salen de erp_parameters / listas dinámicas.
+    filters: FilterConfig[] = [
+        catalogFilter(this.catalog, 'ESTADO_VACACION', 'estado', 'Todos los estados'),
+        catalogFilter(this.catalog, 'TIPO_VACACION', 'tipoVacacion', 'Tipo de vacación'),
+        signalFilter('employeeId', 'Todos los empleados', this.employees,
+            e => ({ value: e.id, label: `${e.nombres} ${e.apellidos}` })),
+        signalFilter('departmentId', 'Todos los departamentos', this.departamentosFiltro,
+            d => ({ value: d.id, label: d.nombre })),
+        signalFilter('aprobadoPorId', 'Aprobado por', this.employees,
+            e => ({ value: e.id, label: `${e.nombres} ${e.apellidos}` })),
+    ];
+
+    /** Rangos de fecha para el toolbar del data-table. */
+    dateRangeFilters: DateRangeFilterConfig[] = [
+        { field: 'fechaInicio', label: 'Inicio de vacaciones' },
+        { field: 'fechaFin', label: 'Fin de vacaciones' },
+        { field: 'fechaAprobacion', label: 'Fecha de aprobación' },
     ];
 
     /**
      * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios
-     * (respeta los filtros actuales search + estado). Ver /hr/api/vacations/export.
+     * (respeta todos los filtros actuales). Ver /hr/api/vacations/export.
      */
     readonly exportConfig: BackendExportConfig = {
         url: `${environment.apiUrls.hr}/api/vacations/export`,
         filename: 'vacaciones',
-        params: () => ({ search: this.searchQuery(), estado: this.filterEstado() }),
+        params: () => ({
+            search: this.searchQuery(),
+            estado: this.filterEstado(),
+            tipoVacacion: this.filterTipoVacacion(),
+            employeeId: this.filterEmployeeId(),
+            departmentId: this.filterDepartmentId(),
+            aprobadoPorId: this.filterAprobadoPorId(),
+            fechaInicioDesde: this.filterFechaInicioDesde() ?? undefined,
+            fechaInicioHasta: this.filterFechaInicioHasta() ?? undefined,
+            fechaFinDesde: this.filterFechaFinDesde() ?? undefined,
+            fechaFinHasta: this.filterFechaFinHasta() ?? undefined,
+            fechaAprobacionDesde: this.filterFechaAprobDesde() ?? undefined,
+            fechaAprobacionHasta: this.filterFechaAprobHasta() ?? undefined,
+        }),
     };
 
     // ── Pagination (server-side) ──────────────────────────────────────────────
@@ -180,8 +222,16 @@ export class VacationListComponent implements OnInit {
     // ── Lifecycle ─────────────────────────────────────────────────────────────
     ngOnInit(): void {
         this.employeeService.loadEmployees().catch(() => { /* nombres/empleado dropdown */ });
+        this.loadDepartamentosFiltro();
         this.loadPage();
         this.loadBalances();
+    }
+
+    /** Departamentos para el select de filtro (no muta el estado compartido de DepartmentService). */
+    private loadDepartamentosFiltro(): void {
+        this.departmentService.fetchAll()
+            .then(list => this.departamentosFiltro.set(list ?? []))
+            .catch(() => this.departamentosFiltro.set([]));
     }
 
     /** Carga los balances de vacaciones del año seleccionado. */
@@ -191,14 +241,24 @@ export class VacationListComponent implements OnInit {
         });
     }
 
-    /** Carga la página actual server-side (search + estado + 20/pág). */
+    /** Carga la página actual server-side con TODOS los filtros del toolbar. */
     private loadPage(): void {
-        this.vacationService.loadVacationsPaged(
-            this.currentPage(),
-            this.pageSize(),
-            this.searchQuery() || undefined,
-            this.filterEstado() || undefined
-        ).then(res => {
+        this.vacationService.loadVacationsPaged({
+            page: this.currentPage(),
+            size: this.pageSize(),
+            search: this.searchQuery() || undefined,
+            estado: this.filterEstado() || undefined,
+            tipoVacacion: this.filterTipoVacacion() || undefined,
+            employeeId: this.filterEmployeeId() ? Number(this.filterEmployeeId()) : undefined,
+            departmentId: this.filterDepartmentId() ? Number(this.filterDepartmentId()) : undefined,
+            aprobadoPorId: this.filterAprobadoPorId() ? Number(this.filterAprobadoPorId()) : undefined,
+            fechaInicioDesde: this.filterFechaInicioDesde() || undefined,
+            fechaInicioHasta: this.filterFechaInicioHasta() || undefined,
+            fechaFinDesde: this.filterFechaFinDesde() || undefined,
+            fechaFinHasta: this.filterFechaFinHasta() || undefined,
+            fechaAprobacionDesde: this.filterFechaAprobDesde() || undefined,
+            fechaAprobacionHasta: this.filterFechaAprobHasta() || undefined,
+        }).then(res => {
             this.totalElements.set(res.totalElements);
             this.totalPages.set(res.totalPages);
         }).catch(err => {
@@ -214,11 +274,55 @@ export class VacationListComponent implements OnInit {
     }
 
     onFilterChangeEvent(event: FilterChangeEvent): void {
-        if (event.field === 'estado') {
-            this.filterEstado.set(event.value != null ? String(event.value) : '');
-            this.currentPage.set(0);
-            this.loadPage();
+        const valor = event.value != null ? String(event.value) : '';
+        switch (event.field) {
+            case 'estado':        this.filterEstado.set(valor); break;
+            case 'tipoVacacion':  this.filterTipoVacacion.set(valor); break;
+            case 'employeeId':    this.filterEmployeeId.set(valor); break;
+            case 'departmentId':  this.filterDepartmentId.set(valor); break;
+            case 'aprobadoPorId': this.filterAprobadoPorId.set(valor); break;
+            default: return;
         }
+        this.currentPage.set(0);
+        this.loadPage();
+    }
+
+    onDateRangeChange(event: DateRangeChangeEvent): void {
+        switch (event.field) {
+            case 'fechaInicio':
+                this.filterFechaInicioDesde.set(event.from);
+                this.filterFechaInicioHasta.set(event.to);
+                break;
+            case 'fechaFin':
+                this.filterFechaFinDesde.set(event.from);
+                this.filterFechaFinHasta.set(event.to);
+                break;
+            case 'fechaAprobacion':
+                this.filterFechaAprobDesde.set(event.from);
+                this.filterFechaAprobHasta.set(event.to);
+                break;
+            default: return;
+        }
+        this.currentPage.set(0);
+        this.loadPage();
+    }
+
+    /** "Limpiar filtros": resetea todo y recarga UNA sola vez. */
+    onFiltersClear(): void {
+        this.searchQuery.set('');
+        this.filterEstado.set('');
+        this.filterTipoVacacion.set('');
+        this.filterEmployeeId.set('');
+        this.filterDepartmentId.set('');
+        this.filterAprobadoPorId.set('');
+        this.filterFechaInicioDesde.set(null);
+        this.filterFechaInicioHasta.set(null);
+        this.filterFechaFinDesde.set(null);
+        this.filterFechaFinHasta.set(null);
+        this.filterFechaAprobDesde.set(null);
+        this.filterFechaAprobHasta.set(null);
+        this.currentPage.set(0);
+        this.loadPage();
     }
 
     onPaginationChange(event: PaginationChangeEvent): void {

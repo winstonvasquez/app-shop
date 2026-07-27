@@ -5,7 +5,11 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, FormControl } from '@angular/forms';
 import { DecimalPipe } from '@angular/common';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
-import { DataTableComponent, TableColumn, TableAction } from '@shared/ui/tables/data-table/data-table.component';
+import {
+    DataTableComponent, TableColumn, TableAction,
+    FilterConfig, FilterChangeEvent, DateRangeFilterConfig, DateRangeChangeEvent, PaginationEvent
+} from '@shared/ui/tables/data-table/data-table.component';
+import { catalogFilter, staticFilter } from '@shared/ui/tables/data-table/filter-helpers';
 import { PageHeaderComponent } from '@shared/ui/layout/page-header/page-header.component';
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
 import { ButtonComponent } from '@shared/components';
@@ -15,6 +19,7 @@ import { PAGINATION } from '@shared/constants/app.constants';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
 import { AuthService } from '@core/auth/auth.service';
+import { CatalogService } from '@core/services/catalog.service';
 
 @Component({
     selector: 'app-cajas',
@@ -32,6 +37,7 @@ export class CajasComponent implements OnInit {
     private fb           = inject(FormBuilder);
     private destroyRef   = inject(DestroyRef);
     private auth         = inject(AuthService);
+    readonly catalog      = inject(CatalogService);
 
     cajas         = signal<CashRegister[]>([]);
     cargando      = signal(false);
@@ -43,6 +49,30 @@ export class CajasComponent implements OnInit {
     pageSize      = signal<number>(PAGINATION.defaultPageSize);
     totalElements = signal(0);
     totalPages    = signal(0);
+
+    // Filtros (TODOS server-side — la vista nunca filtra la página cargada)
+    searchQuery              = signal('');
+    filterEstado             = signal('');
+    filterMoneda              = signal('');
+    filterFechaAperturaDesde = signal<string | null>(null);
+    filterFechaAperturaHasta = signal<string | null>(null);
+    filterFechaCierreDesde   = signal<string | null>(null);
+    filterFechaCierreHasta   = signal<string | null>(null);
+
+    /** Estado de caja: enum de dominio (CashRegisterStatus), sin catálogo dedicado en erp_parameters. */
+    filters: FilterConfig[] = [
+        staticFilter('estado', 'Estado', [
+            { value: 'ABIERTA', label: 'Abierta' },
+            { value: 'CERRADA', label: 'Cerrada' },
+        ]),
+        catalogFilter(this.catalog, 'MONEDA', 'moneda', 'Moneda'),
+    ];
+
+    /** Rangos de fecha de apertura y cierre para el toolbar del data-table. */
+    dateRangeFilters: DateRangeFilterConfig[] = [
+        { field: 'fechaApertura', label: 'Fecha de apertura' },
+        { field: 'fechaCierre', label: 'Fecha de cierre' },
+    ];
 
     showCreateDrawer = signal(false);
     showActionDrawer = signal(false);
@@ -78,13 +108,21 @@ export class CajasComponent implements OnInit {
 
     /**
      * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios
-     * (mismo listado completo de cajas, sin filtros adicionales en esta vista).
-     * Ver GET /api/tesoreria/cajas/export.
+     * (respeta los filtros actuales). Ver GET /api/tesoreria/cajas/export.
      */
     readonly exportConfig: BackendExportConfig = {
         url: `${environment.apiUrls.treasury}/api/tesoreria/cajas/export`,
         filename: 'cajas',
-        params: () => ({ tenantId: this.auth.currentUser()?.activeCompanyId ?? 1 }),
+        params: () => ({
+            tenantId: this.auth.currentUser()?.activeCompanyId ?? 1,
+            estado: this.filterEstado(),
+            moneda: this.filterMoneda(),
+            fechaAperturaDesde: this.filterFechaAperturaDesde() ?? undefined,
+            fechaAperturaHasta: this.filterFechaAperturaHasta() ?? undefined,
+            fechaCierreDesde: this.filterFechaCierreDesde() ?? undefined,
+            fechaCierreHasta: this.filterFechaCierreHasta() ?? undefined,
+            q: this.searchQuery(),
+        }),
     };
 
     actions: TableAction<CashRegister>[] = [
@@ -100,7 +138,17 @@ export class CajasComponent implements OnInit {
 
     load(): void {
         this.cargando.set(true);
-        this.cajasService.getAll(this.currentPage(), this.pageSize())
+        this.cajasService.getAll({
+            page: this.currentPage(),
+            size: this.pageSize(),
+            estado: this.filterEstado() || undefined,
+            moneda: this.filterMoneda() || undefined,
+            fechaAperturaDesde: this.filterFechaAperturaDesde() || undefined,
+            fechaAperturaHasta: this.filterFechaAperturaHasta() || undefined,
+            fechaCierreDesde: this.filterFechaCierreDesde() || undefined,
+            fechaCierreHasta: this.filterFechaCierreHasta() || undefined,
+            q: this.searchQuery() || undefined,
+        })
             .pipe(takeUntilDestroyed(this.destroyRef))
             .subscribe({
                 next: (res: Page<CashRegister> | CashRegister[]) => {
@@ -114,7 +162,54 @@ export class CajasComponent implements OnInit {
             });
     }
 
-    onPageChange(event: { page: number; size: number }): void {
+    /** La búsqueda por texto también va al backend (`q`), no filtra la página cargada. */
+    onSearchTerm(term: string): void {
+        this.searchQuery.set(term);
+        this.currentPage.set(0);
+        this.load();
+    }
+
+    onFilterChangeEvent(event: FilterChangeEvent): void {
+        const valor = event.value != null ? String(event.value) : '';
+        switch (event.field) {
+            case 'estado': this.filterEstado.set(valor); break;
+            case 'moneda': this.filterMoneda.set(valor); break;
+            default: return;
+        }
+        this.currentPage.set(0);
+        this.load();
+    }
+
+    onDateRangeChange(event: DateRangeChangeEvent): void {
+        switch (event.field) {
+            case 'fechaApertura':
+                this.filterFechaAperturaDesde.set(event.from);
+                this.filterFechaAperturaHasta.set(event.to);
+                break;
+            case 'fechaCierre':
+                this.filterFechaCierreDesde.set(event.from);
+                this.filterFechaCierreHasta.set(event.to);
+                break;
+            default: return;
+        }
+        this.currentPage.set(0);
+        this.load();
+    }
+
+    /** "Limpiar filtros": resetea todo y recarga UNA sola vez. */
+    onFiltersClear(): void {
+        this.searchQuery.set('');
+        this.filterEstado.set('');
+        this.filterMoneda.set('');
+        this.filterFechaAperturaDesde.set(null);
+        this.filterFechaAperturaHasta.set(null);
+        this.filterFechaCierreDesde.set(null);
+        this.filterFechaCierreHasta.set(null);
+        this.currentPage.set(0);
+        this.load();
+    }
+
+    onPageChange(event: PaginationEvent): void {
         this.currentPage.set(event.page);
         this.pageSize.set(event.size);
         this.load();

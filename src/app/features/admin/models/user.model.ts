@@ -4,6 +4,7 @@ export interface UserResponse {
     id: number;
     username: string;
     email: string;
+    activo: boolean;
     rol: RolDto;
     persona: PersonaDto;
     createdAt: string;
@@ -53,6 +54,8 @@ export interface UserFormModel extends UserRequest {
 export interface UserFilter {
     search?: string;
     rolId?: number;
+    /** Estado del usuario (boolean AuditEntity.activo) — no confundir con un catálogo. */
+    activo?: boolean;
     tipoDocumento?: string;
     /** yyyy-MM-dd */
     fechaCreacionDesde?: string;

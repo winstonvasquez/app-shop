@@ -205,6 +205,17 @@ export class PagosComponent implements OnInit {
         this.load();
     }
 
+    /** "Limpiar filtros": resetea todo y recarga UNA sola vez. */
+    onFiltersClear(): void {
+        this.filterEstado.set('');
+        this.filterTipoPago.set('');
+        this.filterMetodoPago.set('');
+        this.filterFechaSolicitudDesde.set(null);
+        this.filterFechaSolicitudHasta.set(null);
+        this.currentPage.set(0);
+        this.load();
+    }
+
     openCreateDrawer(): void {
         const today = new Date().toISOString().split('T')[0];
         this.pagoForm.reset({ tipoPago: 'PROVEEDOR', metodoPago: 'TRANSFERENCIA', fechaSolicitud: today, monto: null });

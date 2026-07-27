@@ -23,7 +23,8 @@
         [loading]="loading()"
         [searchable]="true"
         searchPlaceholder="Buscar por pedido o cliente..."
-        [filters]="estadoFilters"
+        [filters]="filters"
+        [dateRangeFilters]="dateRangeFilters"
         [exportable]="true"
         exportFileName="devoluciones"
         [exportConfig]="exportConfig"
@@ -33,6 +34,8 @@
         [totalPages]="totalPages()"
         (searchChange)="onSearchTerm($event)"
         (filterChange)="onFilterChangeEvent($event)"
+        (dateRangeChange)="onDateRangeChange($event)"
+        (filtersClear)="onFiltersClear()"
         (pageChange)="onPageChange($event)">
     </app-data-table>
 

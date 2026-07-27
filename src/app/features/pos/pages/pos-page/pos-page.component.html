@@ -173,6 +173,7 @@
                 <app-pos-catalog [items]="catalogoItems()" [isLoading]="isLoading()" [isSearching]="isSearching()"
                     [favoritos]="favoritoItems()" [favoritosLoading]="favoritosLoading()"
                     (productSelected)="carrito.agregarProducto($event)" (searchChanged)="onSearchChanged($event)"
+                    (filtersChanged)="onCatalogoFiltersChanged($event)"
                     (favoritoSelected)="onFavoritoSelected($event)" (favoritoRemoved)="removeFavorito($event)"
                     (addToFavorites)="addFavorito($event)" (scanTriggered)="showCameraScanner.set(true)" />
                 <div class="flex flex-col h-full" style="min-width: 0;">
@@ -205,7 +206,8 @@
             <app-pos-historial [items]="historialItems()" [turno]="turnoActivo()"
                 (verRecibo)="lastVenta.set($event); showScreen('recibo')"
                 (reimprimir)="reimprimirVenta($event)"
-                (anular)="requestAnularVenta($event.id)" />
+                (anular)="requestAnularVenta($event.id)"
+                (filtersChanged)="onHistorialFiltersChanged($event)" />
             }
 
             <!-- PANTALLA 5: Mi Turno -->

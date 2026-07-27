@@ -1,83 +1,118 @@
-import { Component, ChangeDetectionStrategy, inject, signal, OnInit, computed, DestroyRef } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { DatePipe } from '@angular/common';
+import { Component, ChangeDetectionStrategy, inject, signal, OnInit } from '@angular/core';
 
-import { HttpClient } from '@angular/common/http';
 import { environment } from '@env/environment';
 import { BackendExportService } from '@shared/services/backend-export.service';
 import { ButtonComponent } from '@shared/components';
-
-interface Usuario {
-    id: number;
-    username: string;
-    email: string;
-    nombre?: string;
-    apellido?: string;
-    activo: boolean;
-    fechaCreacion?: string;
-    rol?: string;
-}
-
-interface PageResponse<T> {
-    content: T[];
-    totalElements: number;
-    totalPages: number;
-    size: number;
-    number: number;
-}
+import { CatalogService } from '@core/services/catalog.service';
+import { UserService } from '@features/admin/services/user.service';
+import { RolService } from '@features/admin/services/rol.service';
+import { UserResponse, UserFilter, RolDto } from '@features/admin/models/user.model';
+import { PaginationConfig, pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
+import {
+    DataTableComponent,
+    TableColumn,
+    FilterConfig,
+    FilterChangeEvent,
+    PaginationEvent,
+    DateRangeFilterConfig,
+    DateRangeChangeEvent
+} from '@shared/ui/tables/data-table/data-table.component';
+import { catalogFilter, signalFilter, staticFilter, ACTIVO_OPTIONS } from '@shared/ui/tables/data-table/filter-helpers';
 
 @Component({
     selector: 'app-reportes-clientes',
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [DatePipe, ButtonComponent],
+    imports: [ButtonComponent, DataTableComponent],
     templateUrl: './reportes-clientes.component.html',
     styleUrls: ['./reportes-clientes.component.scss'],
 })
 export class ReportesClientesComponent implements OnInit {
-    private readonly http = inject(HttpClient);
+    private readonly userService = inject(UserService);
+    private readonly rolService = inject(RolService);
     private readonly backendExportService = inject(BackendExportService);
-    private readonly destroyRef = inject(DestroyRef);
+    readonly catalog = inject(CatalogService);
 
-    usuarios = signal<Usuario[]>([]);
+    usuarios = signal<UserResponse[]>([]);
+    roles = signal<RolDto[]>([]);
     cargando = signal(false);
     error = signal<string | null>(null);
-    pagina = signal(0);
+
+    // Paginación server-side
+    currentPage = signal(0);
+    pageSize = signal(20);
     totalElements = signal(0);
     totalPages = signal(0);
 
-    private busquedaSignal = signal('');
+    // Filtros server-side — TODO el filtrado ocurre en el backend, la vista nunca filtra la página cargada
+    searchQuery = signal('');
+    filterActivo = signal('');
+    filterRolId = signal('');
+    filterTipoDocumento = signal('');
+    filterFechaCreacionDesde = signal<string | null>(null);
+    filterFechaCreacionHasta = signal<string | null>(null);
 
-    onSearchTerm(term: string): void {
-        this.busquedaSignal.set(term);
-    }
+    // KPI aproximado sobre la página actual (el backend no expone un agregado global de activos/inactivos)
+    activosPagina = signal(0);
 
-    activos = computed(() => this.usuarios().filter(u => u.activo).length);
-    pages = computed(() => Array.from({ length: Math.min(this.totalPages(), 5) }, (_, i) => i));
+    // Filtros select del toolbar
+    filters: FilterConfig[] = [
+        staticFilter('activo', 'Estado', ACTIVO_OPTIONS),
+        signalFilter('rolId', 'Todos los roles', this.roles, r => ({ value: r.id, label: r.nombre })),
+        catalogFilter(this.catalog, 'TIPO_DOCUMENTO_IDENTIDAD', 'tipoDocumento', 'Tipo de documento')
+    ];
 
-    usuariosFiltrados = computed(() => {
-        const q = this.busquedaSignal().toLowerCase();
-        if (!q) return this.usuarios();
-        return this.usuarios().filter(u =>
-            u.username?.toLowerCase().includes(q) ||
-            u.email?.toLowerCase().includes(q) ||
-            (u.nombre + ' ' + u.apellido)?.toLowerCase().includes(q)
-        );
-    });
+    dateRangeFilters: DateRangeFilterConfig[] = [
+        { field: 'fechaCreacion', label: 'Fecha de registro' }
+    ];
+
+    columns: TableColumn<UserResponse>[] = [
+        { key: 'id', label: 'ID', width: '60px' },
+        { key: 'username', label: 'Usuario' },
+        { key: 'email', label: 'Email' },
+        { key: 'nombreCompleto', label: 'Nombre', render: (r) => r.persona?.nombreCompleto ?? '—' },
+        {
+            key: 'activo', label: 'Estado', html: true,
+            render: (r) => `<span class="badge badge-${r.activo ? 'success' : 'error'}">${r.activo ? 'ACTIVO' : 'INACTIVO'}</span>`
+        },
+        {
+            key: 'createdAt', label: 'Registro',
+            render: (r) => r.createdAt ? new Date(r.createdAt).toLocaleDateString('es-PE') : '—'
+        }
+    ];
 
     ngOnInit() {
+        this.rolService.getAll().subscribe({
+            next: (roles) => this.roles.set(roles),
+            error: () => this.roles.set([])
+        });
         this.cargar();
     }
 
     cargar() {
         this.cargando.set(true);
         this.error.set(null);
-        const url = `${environment.apiUrls.users}/api/users?page=${this.pagina()}&size=20&sort=id,desc`;
-        this.http.get<PageResponse<Usuario>>(url).subscribe({
+
+        const pagination: PaginationConfig = {
+            page: this.currentPage(),
+            size: this.pageSize(),
+            sort: { field: 'id', direction: 'desc' }
+        };
+        const filter: UserFilter = {
+            search: this.searchQuery() || undefined,
+            rolId: this.filterRolId() ? Number(this.filterRolId()) : undefined,
+            activo: this.filterActivo() ? this.filterActivo() === 'true' : undefined,
+            tipoDocumento: this.filterTipoDocumento() || undefined,
+            fechaCreacionDesde: this.filterFechaCreacionDesde() ?? undefined,
+            fechaCreacionHasta: this.filterFechaCreacionHasta() ?? undefined
+        };
+
+        this.userService.getAll(pagination, filter).subscribe({
             next: (page) => {
-                this.usuarios.set(page.content);
-                this.totalElements.set(page.totalElements);
-                this.totalPages.set(page.totalPages);
+                this.usuarios.set(page.content ?? []);
+                this.totalElements.set(pageTotalElements(page));
+                this.totalPages.set(pageTotalPages(page));
+                this.activosPagina.set((page.content ?? []).filter(u => u.activo).length);
                 this.cargando.set(false);
             },
             error: () => {
@@ -87,8 +122,49 @@ export class ReportesClientesComponent implements OnInit {
         });
     }
 
-    irPagina(p: number) {
-        this.pagina.set(p);
+    /** La búsqueda por texto va al backend (`search`), no filtra la página cargada. */
+    onSearchTerm(term: string): void {
+        this.searchQuery.set(term);
+        this.currentPage.set(0);
+        this.cargar();
+    }
+
+    onFilterChangeEvent(event: FilterChangeEvent): void {
+        const valor = event.value != null ? String(event.value) : '';
+        switch (event.field) {
+            case 'activo':        this.filterActivo.set(valor); break;
+            case 'rolId':         this.filterRolId.set(valor); break;
+            case 'tipoDocumento': this.filterTipoDocumento.set(valor); break;
+            default: return;
+        }
+        this.currentPage.set(0);
+        this.cargar();
+    }
+
+    onDateRangeChange(event: DateRangeChangeEvent): void {
+        if (event.field === 'fechaCreacion') {
+            this.filterFechaCreacionDesde.set(event.from);
+            this.filterFechaCreacionHasta.set(event.to);
+            this.currentPage.set(0);
+            this.cargar();
+        }
+    }
+
+    /** "Limpiar filtros": resetea todo y recarga UNA sola vez. */
+    onFiltersClear(): void {
+        this.searchQuery.set('');
+        this.filterActivo.set('');
+        this.filterRolId.set('');
+        this.filterTipoDocumento.set('');
+        this.filterFechaCreacionDesde.set(null);
+        this.filterFechaCreacionHasta.set(null);
+        this.currentPage.set(0);
+        this.cargar();
+    }
+
+    onPaginationChange(event: PaginationEvent): void {
+        this.currentPage.set(event.page);
+        this.pageSize.set(event.size);
         this.cargar();
     }
 

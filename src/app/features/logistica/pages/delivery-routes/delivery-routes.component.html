@@ -21,6 +21,10 @@
     [columns]="columns"
     [actions]="actions"
     [loading]="loading()"
+    [searchable]="true"
+    searchPlaceholder="Buscar por conductor o placa..."
+    [filters]="filters"
+    [dateRangeFilters]="dateRangeFilters"
     [exportable]="true"
     exportFileName="rutas-entrega"
     [exportConfig]="exportConfig"
@@ -28,6 +32,10 @@
     [pageSize]="pageSize()"
     [totalElements]="totalElements()"
     [totalPages]="totalPages()"
+    (searchChange)="onSearchTerm($event)"
+    (filterChange)="onFilterChangeEvent($event)"
+    (dateRangeChange)="onDateRangeChange($event)"
+    (filtersClear)="onFiltersClear()"
     (pageChange)="onPageChange($event)">
   </app-data-table>
 </div>

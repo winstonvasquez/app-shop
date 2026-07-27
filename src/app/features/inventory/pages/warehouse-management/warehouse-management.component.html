@@ -18,13 +18,19 @@
     [columns]="columns"
     [actions]="actions"
     [loading]="loading()"
+    [searchable]="true"
+    searchPlaceholder="Buscar por código o nombre..."
     [filters]="filters"
+    [dateRangeFilters]="dateRangeFilters"
     [currentPage]="currentPage()"
     [pageSize]="pageSize()"
     [totalElements]="totalElements()"
     [totalPages]="totalPages()"
     [exportConfig]="exportConfig"
+    (searchChange)="onSearchTerm($event)"
     (filterChange)="onFilterChangeEvent($event)"
+    (dateRangeChange)="onDateRangeChange($event)"
+    (filtersClear)="onFiltersClear()"
     (pageChange)="onPageChange($event)">
   </app-data-table>
 

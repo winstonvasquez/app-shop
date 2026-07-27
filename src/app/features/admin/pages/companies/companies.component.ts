@@ -6,9 +6,9 @@ import {
   CompanyResponse,
   CompanyRequest,
 } from '@features/admin/models/company.model';
-import { of } from 'rxjs';
 import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 import { DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent, DateRangeFilterConfig, DateRangeChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
+import { staticFilter, ACTIVO_OPTIONS } from '@shared/ui/tables/data-table/filter-helpers';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
 import {
@@ -91,12 +91,9 @@ export class CompaniesComponent implements OnInit {
     }),
   };
 
-  // Filtro de estado para el toolbar del data-table
+  // Filtro de estado para el toolbar del data-table (isActive es boolean, no catálogo -> staticFilter)
   estadoFilters: FilterConfig[] = [
-    { field: 'active', label: 'Todos', options: of([
-      { value: 'true', label: 'Activos' },
-      { value: 'false', label: 'Inactivos' }
-    ]) }
+    staticFilter('active', 'Todos', ACTIVO_OPTIONS)
   ];
 
   // Filtro de rango de fecha de creación para el toolbar del data-table
@@ -231,6 +228,18 @@ export class CompaniesComponent implements OnInit {
       this.currentPage.set(0);
       this.loadCompanies();
     }
+  }
+
+  /**
+   * "Limpiar filtros": resetea todo y recarga UNA sola vez.
+   */
+  onFiltersClear(): void {
+    this.searchQuery.set('');
+    this.filterActive.set(null);
+    this.fechaCreacionDesde.set(null);
+    this.fechaCreacionHasta.set(null);
+    this.currentPage.set(0);
+    this.loadCompanies();
   }
 
   /**

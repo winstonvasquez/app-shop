@@ -3,12 +3,14 @@ import {
     FormBuilder, ReactiveFormsModule, Validators, FormGroup, FormArray, FormControl
 } from '@angular/forms';
 import { InventoryApiService } from '../../services/inventory-api.service';
-import { InventoryTransfer, InventoryTransferRequest, InventoryTransferStatus } from '../../models/inventory.models';
+import { InventoryTransfer, InventoryTransferRequest, InventoryTransferStatus, Warehouse } from '../../models/inventory.models';
 import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 import { ROUTES } from '@shared/constants/app.constants';
-import { map } from 'rxjs';
-import { toObservable } from '@angular/core/rxjs-interop';
-import { DataTableComponent, TableColumn, TableAction, PaginationEvent, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
+import {
+    DataTableComponent, TableColumn, TableAction, PaginationEvent, FilterConfig, FilterChangeEvent,
+    DateRangeFilterConfig, DateRangeChangeEvent
+} from '@shared/ui/tables/data-table/data-table.component';
+import { catalogFilter, signalFilter } from '@shared/ui/tables/data-table/filter-helpers';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
@@ -39,7 +41,7 @@ import { ProductResponse } from '@core/models/product.model';
 export class TransferManagementComponent {
     private readonly api = inject(InventoryApiService);
     private readonly fb = inject(FormBuilder);
-    private readonly catalog = inject(CatalogService);
+    readonly catalog = inject(CatalogService);
 
     transfers = signal<InventoryTransfer[]>([]);
     loading = signal(false);
@@ -50,10 +52,39 @@ export class TransferManagementComponent {
     totalElements = signal(0);
     totalPages = signal(0);
 
+    // Filtros (TODOS server-side — la vista nunca filtra la página cargada)
     filterStatus = signal('');
+    filterSourceWarehouseId = signal('');
+    filterDestinationWarehouseId = signal('');
+    filterRequestDateDesde = signal<string | null>(null);
+    filterRequestDateHasta = signal<string | null>(null);
+    filterSentDateDesde = signal<string | null>(null);
+    filterSentDateHasta = signal<string | null>(null);
+    filterReceivedDateDesde = signal<string | null>(null);
+    filterReceivedDateHasta = signal<string | null>(null);
+    searchQuery = signal('');
+
+    /** Almacenes para los selects de filtro (origen/destino) del toolbar. */
+    warehousesFiltro = signal<Warehouse[]>([]);
 
     /** Fuente server-side del search-select de almacén (origen y destino comparten el mismo dataSource). */
     readonly warehouseSource = warehouseSelectSource(this.api);
+
+    // Filtros select del toolbar. Las opciones de estado salen de erp_parameters (fuente única).
+    filters: FilterConfig[] = [
+        catalogFilter(this.catalog, 'ESTADO_TRANSFERENCIA_INVENTARIO', 'status', 'Todos los estados'),
+        signalFilter('sourceWarehouseId', 'Almacén origen', this.warehousesFiltro,
+            w => ({ value: w.id, label: w.name })),
+        signalFilter('destinationWarehouseId', 'Almacén destino', this.warehousesFiltro,
+            w => ({ value: w.id, label: w.name }))
+    ];
+
+    /** Rangos de fecha para el toolbar del data-table. */
+    dateRangeFilters: DateRangeFilterConfig[] = [
+        { field: 'requestDate', label: 'Fecha de solicitud' },
+        { field: 'sentDate', label: 'Fecha de envío' },
+        { field: 'receivedDate', label: 'Fecha de recepción' }
+    ];
 
     showDrawer = signal(false);
     submitting = signal(false);
@@ -91,7 +122,18 @@ export class TransferManagementComponent {
     readonly exportConfig: BackendExportConfig = {
         url: `${environment.apiUrls.inventory}/api/transfers/export`,
         filename: 'transferencias',
-        params: () => ({ status: this.filterStatus() || undefined })
+        params: () => ({
+            q: this.searchQuery() || undefined,
+            status: this.filterStatus() || undefined,
+            sourceWarehouseId: this.filterSourceWarehouseId() || undefined,
+            destinationWarehouseId: this.filterDestinationWarehouseId() || undefined,
+            requestDateDesde: this.filterRequestDateDesde() ?? undefined,
+            requestDateHasta: this.filterRequestDateHasta() ?? undefined,
+            sentDateDesde: this.filterSentDateDesde() ?? undefined,
+            sentDateHasta: this.filterSentDateHasta() ?? undefined,
+            receivedDateDesde: this.filterReceivedDateDesde() ?? undefined,
+            receivedDateHasta: this.filterReceivedDateHasta() ?? undefined
+        })
     };
 
     actions: TableAction<InventoryTransfer>[] = [
@@ -141,7 +183,16 @@ export class TransferManagementComponent {
     }
 
     constructor() {
+        this.loadWarehousesFiltro();
         this.loadTransfers();
+    }
+
+    /** Almacenes para los selects de filtro origen/destino del toolbar. */
+    private loadWarehousesFiltro(): void {
+        this.api.getWarehouses().subscribe({
+            next: (whs) => this.warehousesFiltro.set(whs),
+            error: () => this.warehousesFiltro.set([])
+        });
     }
 
     loadTransfers(): void {
@@ -149,7 +200,16 @@ export class TransferManagementComponent {
         this.api.getTransfers({
             page: this.currentPage(),
             size: this.pageSize(),
-            status: this.filterStatus() || undefined
+            q: this.searchQuery() || undefined,
+            status: this.filterStatus() || undefined,
+            sourceWarehouseId: this.filterSourceWarehouseId() ? Number(this.filterSourceWarehouseId()) : undefined,
+            destinationWarehouseId: this.filterDestinationWarehouseId() ? Number(this.filterDestinationWarehouseId()) : undefined,
+            requestDateDesde: this.filterRequestDateDesde() || undefined,
+            requestDateHasta: this.filterRequestDateHasta() || undefined,
+            sentDateDesde: this.filterSentDateDesde() || undefined,
+            sentDateHasta: this.filterSentDateHasta() || undefined,
+            receivedDateDesde: this.filterReceivedDateDesde() || undefined,
+            receivedDateHasta: this.filterReceivedDateHasta() || undefined
         }).subscribe({
             next: (res) => {
                 this.transfers.set(res.content);
@@ -161,14 +221,57 @@ export class TransferManagementComponent {
         });
     }
 
-    readonly estadoFilters: FilterConfig[] = [
-        { field: 'estado', label: 'Todos', options: toObservable(this.catalog.options('ESTADO_TRANSFERENCIA_INVENTARIO'))
-            .pipe(map(o => o.map(x => ({ value: x.codigo, label: x.valor })))) }
-    ];
+    /** La búsqueda por texto también va al backend (`q`), no filtra la página cargada. */
+    onSearchTerm(term: string): void {
+        this.searchQuery.set(term);
+        this.currentPage.set(0);
+        this.loadTransfers();
+    }
 
     onFilterChangeEvent(event: FilterChangeEvent): void {
-        if (event.field !== 'estado') return;
-        this.filterStatus.set(event.value != null ? String(event.value) : '');
+        const valor = event.value != null ? String(event.value) : '';
+        switch (event.field) {
+            case 'status':                  this.filterStatus.set(valor); break;
+            case 'sourceWarehouseId':       this.filterSourceWarehouseId.set(valor); break;
+            case 'destinationWarehouseId':  this.filterDestinationWarehouseId.set(valor); break;
+            default: return;
+        }
+        this.currentPage.set(0);
+        this.loadTransfers();
+    }
+
+    onDateRangeChange(event: DateRangeChangeEvent): void {
+        switch (event.field) {
+            case 'requestDate':
+                this.filterRequestDateDesde.set(event.from);
+                this.filterRequestDateHasta.set(event.to);
+                break;
+            case 'sentDate':
+                this.filterSentDateDesde.set(event.from);
+                this.filterSentDateHasta.set(event.to);
+                break;
+            case 'receivedDate':
+                this.filterReceivedDateDesde.set(event.from);
+                this.filterReceivedDateHasta.set(event.to);
+                break;
+            default: return;
+        }
+        this.currentPage.set(0);
+        this.loadTransfers();
+    }
+
+    /** "Limpiar filtros": resetea todo y recarga UNA sola vez. */
+    onFiltersClear(): void {
+        this.searchQuery.set('');
+        this.filterStatus.set('');
+        this.filterSourceWarehouseId.set('');
+        this.filterDestinationWarehouseId.set('');
+        this.filterRequestDateDesde.set(null);
+        this.filterRequestDateHasta.set(null);
+        this.filterSentDateDesde.set(null);
+        this.filterSentDateHasta.set(null);
+        this.filterReceivedDateDesde.set(null);
+        this.filterReceivedDateHasta.set(null);
         this.currentPage.set(0);
         this.loadTransfers();
     }

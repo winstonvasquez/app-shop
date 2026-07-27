@@ -1,10 +1,14 @@
 import { Component, OnInit, ChangeDetectionStrategy, signal, inject } from '@angular/core';
-import { ReactiveFormsModule, FormBuilder, FormArray, FormGroup, Validators } from '@angular/forms';
+import { ReactiveFormsModule, FormsModule, FormBuilder, FormArray, FormGroup, Validators } from '@angular/forms';
 import { DecimalPipe } from '@angular/common';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { environment } from '@env/environment';
 import { AuthService } from '@core/auth/auth.service';
+import { CatalogService } from '@core/services/catalog.service';
 import { ButtonComponent, ServerSearchSelectComponent } from '@shared/components';
+import { PaginationComponent, PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
+import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
+import { PAGINATION } from '@shared/constants/app.constants';
 import { ProveedorService } from '../../services/proveedor.service';
 import { proveedorSelectSource } from '../../components/select-sources';
 
@@ -34,7 +38,7 @@ interface ConsolidacionDto {
 @Component({
     selector: 'app-consolidaciones',
     standalone: true,
-    imports: [ReactiveFormsModule, DecimalPipe, ButtonComponent, ServerSearchSelectComponent],
+    imports: [ReactiveFormsModule, DecimalPipe, ButtonComponent, ServerSearchSelectComponent, PaginationComponent],
     templateUrl: './consolidaciones.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -43,6 +47,7 @@ export class ConsolidacionesComponent implements OnInit {
     private fb = inject(FormBuilder);
     private authService = inject(AuthService);
     private proveedorService = inject(ProveedorService);
+    protected readonly catalog = inject(CatalogService);
     private baseUrl = `${environment.apiUrls.purchases}/api/consolidaciones`;
 
     readonly proveedorSource = proveedorSelectSource(this.proveedorService);
@@ -52,6 +57,19 @@ export class ConsolidacionesComponent implements OnInit {
     error = signal('');
     mostrarForm = signal(false);
     guardando = signal(false);
+
+    // Filtros (TODOS server-side — la vista nunca filtra la lista cargada)
+    searchQuery = signal('');
+    filterEstado = signal('');
+    filterProveedorId = signal('');
+    filterCreatedAtDesde = signal('');
+    filterCreatedAtHasta = signal('');
+
+    // Paginación (el endpoint pasó de List<> a Page<> — ver CONTRATOS-CAMBIADOS.md)
+    currentPage = signal(0);
+    pageSize = signal<number>(PAGINATION.defaultPageSize);
+    totalElements = signal(0);
+    totalPages = signal(0);
 
     // Asignación de proveedor a una línea puntual (mini-modal)
     asignandoConsolidacionId = signal<string | null>(null);
@@ -81,10 +99,79 @@ export class ConsolidacionesComponent implements OnInit {
 
     cargar(): void {
         this.cargando.set(true);
-        this.http.get<ConsolidacionDto[]>(this.baseUrl, { headers: this.getHeaders() }).subscribe({
-            next: (data) => { this.consolidaciones.set(data); this.cargando.set(false); },
+        let params = new HttpParams()
+            .set('page', this.currentPage().toString())
+            .set('size', this.pageSize().toString());
+        if (this.searchQuery()) params = params.set('q', this.searchQuery());
+        if (this.filterEstado()) params = params.set('estado', this.filterEstado());
+        if (this.filterProveedorId()) params = params.set('proveedorId', this.filterProveedorId());
+        if (this.filterCreatedAtDesde()) params = params.set('createdAtDesde', this.filterCreatedAtDesde());
+        if (this.filterCreatedAtHasta()) params = params.set('createdAtHasta', this.filterCreatedAtHasta());
+
+        this.http.get<unknown>(this.baseUrl, { headers: this.getHeaders(), params }).subscribe({
+            next: (raw) => {
+                const r = raw as Record<string, unknown>;
+                this.consolidaciones.set((r['content'] as ConsolidacionDto[]) ?? []);
+                this.totalElements.set(pageTotalElements(r));
+                this.totalPages.set(pageTotalPages(r));
+                this.cargando.set(false);
+            },
             error: () => { this.error.set('Error al cargar consolidaciones'); this.cargando.set(false); }
         });
+    }
+
+    /** La búsqueda por texto también va al backend (`q`), no filtra la lista cargada. */
+    onSearchTerm(term: string): void {
+        this.searchQuery.set(term);
+        this.currentPage.set(0);
+        this.cargar();
+    }
+
+    onFilterEstado(event: Event): void {
+        this.filterEstado.set((event.target as HTMLSelectElement).value);
+        this.currentPage.set(0);
+        this.cargar();
+    }
+
+    onFilterProveedor(proveedorId: string | number | null): void {
+        this.filterProveedorId.set(proveedorId != null ? String(proveedorId) : '');
+        this.currentPage.set(0);
+        this.cargar();
+    }
+
+    onCreatedAtDesde(value: string): void {
+        this.filterCreatedAtDesde.set(value);
+        this.currentPage.set(0);
+        this.cargar();
+    }
+
+    onCreatedAtHasta(value: string): void {
+        this.filterCreatedAtHasta.set(value);
+        this.currentPage.set(0);
+        this.cargar();
+    }
+
+    /** "Limpiar filtros": resetea todo y recarga UNA sola vez. */
+    limpiarFiltros(): void {
+        this.searchQuery.set('');
+        this.filterEstado.set('');
+        this.filterProveedorId.set('');
+        this.filterCreatedAtDesde.set('');
+        this.filterCreatedAtHasta.set('');
+        this.currentPage.set(0);
+        this.cargar();
+    }
+
+    onPageChange(event: PaginationChangeEvent): void {
+        this.currentPage.set(event.page);
+        this.pageSize.set(event.size);
+        this.cargar();
+    }
+
+    /** true si hay al menos un filtro activo — controla la visibilidad del botón "Limpiar". */
+    hayFiltrosActivos(): boolean {
+        return !!(this.searchQuery() || this.filterEstado() || this.filterProveedorId()
+            || this.filterCreatedAtDesde() || this.filterCreatedAtHasta());
     }
 
     abrirForm(): void {

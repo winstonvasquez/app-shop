@@ -1,10 +1,9 @@
 import { Component, inject, signal, OnInit, ChangeDetectionStrategy } from '@angular/core';
-import { toObservable } from '@angular/core/rxjs-interop';
-import { map, of } from 'rxjs';
 import { CuentaService } from '../../services/cuenta.service';
 import { CatalogService } from '@core/services/catalog.service';
 import { PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
 import { DataTableComponent, TableColumn, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
+import { catalogFilter, staticFilter } from '@shared/ui/tables/data-table/filter-helpers';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
 import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
@@ -103,6 +102,7 @@ const PCGE_DEMO: CuentaPCGE[] = [
             [totalPages]="totalPagesServer()"
             (searchChange)="onBusquedaChange($event)"
             (filterChange)="onFilterChangeEvent($event)"
+            (filtersClear)="onFiltersClear()"
             (pageChange)="onPageChange($event)">
         </app-data-table>
     `,
@@ -117,42 +117,43 @@ export class PlanCuentasComponent implements OnInit {
     readonly busqueda = signal('');
     readonly tipoFiltro = signal<TipoFiltro>('TODOS');
     readonly filterEstado = signal('');
+    readonly filterNivel = signal('');
+    readonly filterAceptaMovimiento = signal('');
+    readonly filterEsAnalitica = signal('');
     readonly totalElementsServer = signal(0);
     readonly totalPagesServer = signal(1);
 
-    // Filtros del toolbar del data-table (tipo + estado, ambos filtrados en el backend)
-    readonly tipoFilters: FilterConfig[] = [
-        {
-            field: 'tipo',
-            label: 'Todos los tipos',
-            options: toObservable(this.catalog.options('TIPO_CUENTA_PCGE')).pipe(
-                map(o => o.map(x => ({ value: x.codigo, label: x.valor })))
-            )
-        }
+    // Filtros del toolbar del data-table, TODOS server-side (backend: GET /cuentas, ronda 2026-07-27).
+    readonly filters: FilterConfig[] = [
+        catalogFilter(this.catalog, 'TIPO_CUENTA_PCGE', 'tipo', 'Todos los tipos'),
+        catalogFilter(this.catalog, 'ESTADO_ACTIVO_INACTIVO', 'estado', 'Estado'),
+        catalogFilter(this.catalog, 'NIVEL_CUENTA_PCGE', 'nivel', 'Nivel PCGE'),
+        staticFilter('aceptaMovimiento', 'Acepta movimiento', [
+            { value: 'true', label: 'Sí' },
+            { value: 'false', label: 'No' },
+        ]),
+        staticFilter('esAnalitica', 'Es analítica', [
+            { value: 'true', label: 'Sí' },
+            { value: 'false', label: 'No' },
+        ]),
     ];
-
-    readonly estadoFilters: FilterConfig[] = [
-        {
-            field: 'estado',
-            label: 'Estado',
-            options: of([
-                { value: 'ACTIVO', label: 'Activo' },
-                { value: 'INACTIVO', label: 'Inactivo' },
-            ])
-        }
-    ];
-
-    readonly filters: FilterConfig[] = [...this.tipoFilters, ...this.estadoFilters];
 
     /**
      * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios
-     * (respeta los mismos filtros actuales de búsqueda + tipo). Ver
+     * (respeta los mismos filtros actuales). Ver
      * /finance/api/v1/contabilidad/cuentas/export.
      */
     readonly exportConfig: BackendExportConfig = {
         url: `${environment.apiUrls.accounting}/api/v1/contabilidad/cuentas/export`,
         filename: 'plan-cuentas',
-        params: () => ({ busqueda: this.busqueda(), tipo: this.tipoFiltro() }),
+        params: () => ({
+            busqueda: this.busqueda(),
+            tipo: this.tipoFiltro() !== 'TODOS' ? this.tipoFiltro() : undefined,
+            estado: this.filterEstado() || undefined,
+            nivel: this.filterNivel() || undefined,
+            aceptaMovimiento: this.filterAceptaMovimiento() || undefined,
+            esAnalitica: this.filterEsAnalitica() || undefined,
+        }),
     };
 
     // Paginación (server-side)
@@ -199,6 +200,9 @@ export class PlanCuentasComponent implements OnInit {
             busqueda: this.busqueda() || undefined,
             tipo: this.tipoFiltro() !== 'TODOS' ? this.tipoFiltro() : undefined,
             estado: this.filterEstado() || undefined,
+            nivel: this.filterNivel() ? Number(this.filterNivel()) : undefined,
+            aceptaMovimiento: this.filterAceptaMovimiento() ? this.filterAceptaMovimiento() === 'true' : undefined,
+            esAnalitica: this.filterEsAnalitica() ? this.filterEsAnalitica() === 'true' : undefined,
         }).subscribe({
             next: (page) => {
                 this.cuentas.set(page.content);
@@ -225,13 +229,27 @@ export class PlanCuentasComponent implements OnInit {
     }
 
     onFilterChangeEvent(event: FilterChangeEvent): void {
-        if (event.field === 'tipo') {
-            this.tipoFiltro.set((event.value as TipoFiltro) ?? 'TODOS');
-        } else if (event.field === 'estado') {
-            this.filterEstado.set(event.value ? String(event.value) : '');
-        } else {
-            return;
+        const valor = event.value != null ? String(event.value) : '';
+        switch (event.field) {
+            case 'tipo':              this.tipoFiltro.set((valor || 'TODOS') as TipoFiltro); break;
+            case 'estado':            this.filterEstado.set(valor); break;
+            case 'nivel':             this.filterNivel.set(valor); break;
+            case 'aceptaMovimiento':  this.filterAceptaMovimiento.set(valor); break;
+            case 'esAnalitica':       this.filterEsAnalitica.set(valor); break;
+            default: return;
         }
+        this.currentPage.set(0);
+        this.cargarCuentas();
+    }
+
+    /** "Limpiar filtros": resetea todo y recarga UNA sola vez. */
+    onFiltersClear(): void {
+        this.busqueda.set('');
+        this.tipoFiltro.set('TODOS');
+        this.filterEstado.set('');
+        this.filterNivel.set('');
+        this.filterAceptaMovimiento.set('');
+        this.filterEsAnalitica.set('');
         this.currentPage.set(0);
         this.cargarCuentas();
     }

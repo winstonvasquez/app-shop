@@ -9,7 +9,7 @@
     <app-alert type="error" [message]="error()!" (dismiss)="error.set(null)" [dismissible]="true" />
   }
 
-  <!-- Tabla (filtro de estado en el toolbar) -->
+  <!-- Tabla (búsqueda + filtros de estado/motivo/almacén + rangos de fecha, todo server-side) -->
   <app-data-table
     [data]="devoluciones()"
     [columns]="columns"
@@ -19,9 +19,15 @@
     [pageSize]="pageSize()"
     [totalElements]="totalElements()"
     [totalPages]="totalPages()"
+    [searchable]="true"
+    searchPlaceholder="Buscar por tracking, descripción o notas..."
     [filters]="estadoFilters"
+    [dateRangeFilters]="dateRangeFilters"
     [exportConfig]="exportConfig"
+    (searchChange)="onSearch($event)"
     (filterChange)="onFilterChangeEvent($event)"
+    (dateRangeChange)="onDateRangeChange($event)"
+    (filtersClear)="onFiltersClear()"
     (pageChange)="onPaginationChange($event)">
   </app-data-table>
 </div>

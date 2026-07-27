@@ -33,22 +33,31 @@
     <div class="card">
         <div class="card-body">
             <div class="text-muted" style="font-size: 0.875rem">Total</div>
-            <div style="font-size: 2.5rem; font-weight: 700; color: var(--color-primary)">{{ goals().length }}</div>
+            <div style="font-size: 2.5rem; font-weight: 700; color: var(--color-primary)">{{ totalMetas() }}</div>
         </div>
     </div>
 </div>
 
-<!-- Tabla -->
+<!-- Tabla (server-side: búsqueda + selects + rangos de fecha + paginación) -->
 <app-data-table
-    [data]="pagedData()"
+    [data]="goals()"
     [columns]="columns"
     [actions]="actions"
-    [filters]="toolbarFilters"
+    [loading]="loading()"
+    [searchable]="true"
+    searchPlaceholder="Buscar por título o empleado..."
+    [filters]="filters"
+    [dateRangeFilters]="dateRangeFilters"
+    [exportable]="true"
+    exportFileName="metas"
     [currentPage]="currentPage()"
     [pageSize]="pageSize()"
     [totalElements]="totalElements()"
     [totalPages]="totalPages()"
+    (searchChange)="onSearchTerm($event)"
     (filterChange)="onFilterChangeEvent($event)"
+    (dateRangeChange)="onDateRangeChange($event)"
+    (filtersClear)="onFiltersClear()"
     (pageChange)="onPaginationChange($event)" />
 
 <!-- ── Drawer: Crear/Editar Meta ────────────────────────────────────────── -->

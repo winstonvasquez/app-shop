@@ -10,6 +10,20 @@ import {
     TrainingParticipationRequest,
 } from '../models/training.model';
 
+/** Filtros server-side del listado paginado de capacitaciones. Todos opcionales. */
+export interface TrainingFiltros {
+    page?: number;
+    size?: number;
+    search?: string;
+    estado?: string;
+    instructor?: string;
+    /** yyyy-MM-dd */
+    fechaInicioDesde?: string;
+    fechaInicioHasta?: string;
+    fechaFinDesde?: string;
+    fechaFinHasta?: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class TrainingService {
     private readonly http = inject(HttpClient);
@@ -33,18 +47,34 @@ export class TrainingService {
         this._allTrainings().filter(t => t.estado === 'COMPLETADO').reduce((s, t) => s + (t.duracionHoras || 0), 0)
     );
 
-    /** Carga server-side paginada (estado + rango fecha inicio opcionales). Devuelve totales de página. */
-    async loadTrainingsPaged(
-        page: number, size: number,
-        estado?: string, fechaInicioDesde?: string, fechaInicioHasta?: string
-    ): Promise<{ totalElements: number; totalPages: number }> {
+    /**
+     * Instructores distintos vistos en el snapshot completo (sin filtros), para poblar el
+     * select del toolbar. No existe `GET /trainings/instructors` en el backend todavía.
+     */
+    readonly instructorOptions = computed(() => {
+        const nombres = new Set<string>();
+        for (const t of this._allTrainings()) {
+            if (t.instructor) nombres.add(t.instructor);
+        }
+        return [...nombres].sort().map(n => ({ value: n, label: n }));
+    });
+
+    /** Carga server-side paginada con búsqueda, estado, instructor y rangos de fecha inicio/fin. */
+    async loadTrainingsPaged(filtros: TrainingFiltros = {}): Promise<{ totalElements: number; totalPages: number }> {
         this._loading.set(true);
         this._error.set(null);
         try {
-            const params: Record<string, string> = { page: String(page), size: String(size) };
-            if (estado) params['estado'] = estado;
-            if (fechaInicioDesde) params['fechaInicioDesde'] = fechaInicioDesde;
-            if (fechaInicioHasta) params['fechaInicioHasta'] = fechaInicioHasta;
+            const params: Record<string, string> = {
+                page: String(filtros.page ?? 0),
+                size: String(filtros.size ?? 20),
+            };
+            if (filtros.search) params['search'] = filtros.search;
+            if (filtros.estado) params['estado'] = filtros.estado;
+            if (filtros.instructor) params['instructor'] = filtros.instructor;
+            if (filtros.fechaInicioDesde) params['fechaInicioDesde'] = filtros.fechaInicioDesde;
+            if (filtros.fechaInicioHasta) params['fechaInicioHasta'] = filtros.fechaInicioHasta;
+            if (filtros.fechaFinDesde) params['fechaFinDesde'] = filtros.fechaFinDesde;
+            if (filtros.fechaFinHasta) params['fechaFinHasta'] = filtros.fechaFinHasta;
             const res = await firstValueFrom(
                 this.http.get<PageResponse<Training>>(this.baseUrl, { params })
             );

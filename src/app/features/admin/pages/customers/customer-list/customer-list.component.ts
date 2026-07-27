@@ -1,11 +1,11 @@
 import {
     Component, OnInit, ChangeDetectionStrategy, inject, signal, computed
 } from '@angular/core';
-import { of } from 'rxjs';
 
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CustomerService } from '@features/admin/services/customer.service';
+import { SegmentService } from '@features/admin/services/segment.service';
 import {
     CustomerResponse,
     TIPO_CLIENTE_OPTIONS,
@@ -18,6 +18,8 @@ import {
     DataTableComponent, TableColumn, TableAction,
     FilterConfig, FilterChangeEvent, DateRangeFilterConfig, DateRangeChangeEvent,
 } from '@shared/ui/tables/data-table/data-table.component';
+import { catalogFilter, signalFilter, staticFilter, ACTIVO_OPTIONS } from '@shared/ui/tables/data-table/filter-helpers';
+import { CatalogService } from '@core/services/catalog.service';
 import { AuthService } from '@core/auth/auth.service';
 import { CustomerFormComponent } from '../customer-form/customer-form.component';
 import { CURRENCY_DISPLAY } from '@shared/constants/sunat.constants';
@@ -34,8 +36,10 @@ import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model
 })
 export class CustomerListComponent implements OnInit {
     private readonly customerService = inject(CustomerService);
+    private readonly segmentService = inject(SegmentService);
     private readonly authService = inject(AuthService);
     private readonly router = inject(Router);
+    readonly catalog = inject(CatalogService);
 
     customers = signal<CustomerResponse[]>([]);
     loading = signal(false);
@@ -50,13 +54,30 @@ export class CustomerListComponent implements OnInit {
     sortField = signal('id');
     sortDirection = signal<'asc' | 'desc'>('desc');
 
-    // Filtros server-side: tipo de cliente + rango de fecha de registro
+    // Filtros server-side (TODOS van al backend — la vista nunca filtra la página cargada)
     filterTipoCliente = signal('');
+    filterCondicionPago = signal('');
+    filterTipoDocumento = signal('');
+    filterSegmentoId = signal('');
+    filterActivo = signal('');
+    filterConCredito = signal('');
     filterFechaCreacionDesde = signal<string | undefined>(undefined);
     filterFechaCreacionHasta = signal<string | undefined>(undefined);
 
-    readonly tipoClienteFilters: FilterConfig[] = [
-        { field: 'tipoCliente', label: 'Todos los tipos', options: of(TIPO_CLIENTE_OPTIONS.map(o => ({ value: o.value, label: o.label }))) }
+    /** Segmentos para el select de filtro del toolbar (lista chica, no requiere server-search). */
+    segmentosFiltro = signal<{ id: number; nombre: string }[]>([]);
+
+    readonly filters: FilterConfig[] = [
+        staticFilter('tipoCliente', 'Todos los tipos', TIPO_CLIENTE_OPTIONS.map(o => ({ value: o.value, label: o.label }))),
+        catalogFilter(this.catalog, 'CONDICION_PAGO', 'condicionPago', 'Cond. de pago'),
+        catalogFilter(this.catalog, 'TIPO_DOCUMENTO_IDENTIDAD', 'tipoDocumento', 'Tipo de documento'),
+        signalFilter('segmentoId', 'Todos los segmentos', this.segmentosFiltro,
+            s => ({ value: s.id, label: s.nombre })),
+        staticFilter('activo', 'Estado', ACTIVO_OPTIONS),
+        staticFilter('conCredito', 'Con línea de crédito', [
+            { value: 'true', label: 'Con crédito' },
+            { value: 'false', label: 'Sin crédito' }
+        ])
     ];
 
     readonly dateRangeFilters: DateRangeFilterConfig[] = [
@@ -94,6 +115,11 @@ export class CustomerListComponent implements OnInit {
             companyId: this.authService.currentUser()?.activeCompanyId ?? undefined,
             search: this.searchQuery() || undefined,
             tipoCliente: this.filterTipoCliente() || undefined,
+            condicionPago: this.filterCondicionPago() || undefined,
+            tipoDocumento: this.filterTipoDocumento() || undefined,
+            segmentoId: this.filterSegmentoId() || undefined,
+            activo: this.filterActivo() || undefined,
+            conCredito: this.filterConCredito() || undefined,
             fechaCreacionDesde: this.filterFechaCreacionDesde(),
             fechaCreacionHasta: this.filterFechaCreacionHasta(),
         }),
@@ -124,6 +150,15 @@ export class CustomerListComponent implements OnInit {
 
     ngOnInit(): void {
         this.loadCustomers();
+        this.loadSegmentosFiltro();
+    }
+
+    /** Segmentos activos para el select de filtro del toolbar. */
+    private loadSegmentosFiltro(): void {
+        this.segmentService.getAll({ page: 0, size: 100 }).subscribe({
+            next: (res) => this.segmentosFiltro.set((res.content ?? []).map(s => ({ id: s.id, nombre: s.nombre }))),
+            error: () => this.segmentosFiltro.set([])
+        });
     }
 
     loadCustomers(): void {
@@ -140,6 +175,11 @@ export class CustomerListComponent implements OnInit {
         this.customerService
             .getAll(companyId, this.currentPage(), this.pageSize(), sort, this.searchQuery() || undefined, {
                 tipoCliente: this.filterTipoCliente() || undefined,
+                condicionPago: this.filterCondicionPago() || undefined,
+                tipoDocumento: this.filterTipoDocumento() || undefined,
+                segmentoId: this.filterSegmentoId() || undefined,
+                activo: this.filterActivo() || undefined,
+                conCredito: this.filterConCredito() || undefined,
                 fechaCreacionDesde: this.filterFechaCreacionDesde(),
                 fechaCreacionHasta: this.filterFechaCreacionHasta(),
             })
@@ -170,8 +210,16 @@ export class CustomerListComponent implements OnInit {
     }
 
     onFilterChangeEvent(event: FilterChangeEvent): void {
-        if (event.field !== 'tipoCliente') return;
-        this.filterTipoCliente.set(event.value != null ? String(event.value) : '');
+        const valor = event.value != null ? String(event.value) : '';
+        switch (event.field) {
+            case 'tipoCliente':   this.filterTipoCliente.set(valor); break;
+            case 'condicionPago': this.filterCondicionPago.set(valor); break;
+            case 'tipoDocumento': this.filterTipoDocumento.set(valor); break;
+            case 'segmentoId':    this.filterSegmentoId.set(valor); break;
+            case 'activo':        this.filterActivo.set(valor); break;
+            case 'conCredito':    this.filterConCredito.set(valor); break;
+            default: return;
+        }
         this.currentPage.set(0);
         this.loadCustomers();
     }
@@ -180,6 +228,21 @@ export class CustomerListComponent implements OnInit {
         if (event.field !== 'fechaCreacion') return;
         this.filterFechaCreacionDesde.set(event.from ?? undefined);
         this.filterFechaCreacionHasta.set(event.to ?? undefined);
+        this.currentPage.set(0);
+        this.loadCustomers();
+    }
+
+    /** "Limpiar filtros": resetea TODOS los signals y recarga UNA sola vez. */
+    onFiltersClear(): void {
+        this.searchQuery.set('');
+        this.filterTipoCliente.set('');
+        this.filterCondicionPago.set('');
+        this.filterTipoDocumento.set('');
+        this.filterSegmentoId.set('');
+        this.filterActivo.set('');
+        this.filterConCredito.set('');
+        this.filterFechaCreacionDesde.set(undefined);
+        this.filterFechaCreacionHasta.set(undefined);
         this.currentPage.set(0);
         this.loadCustomers();
     }

@@ -4,13 +4,16 @@ export interface EvaluacionProveedor {
     proveedorNombre: string;
     ordenCompraId?: string;
     ordenCompraCodigo?: string;
+    /** YYYY-MM. Ausente en evaluaciones históricas creadas antes del filtro de periodo. */
+    periodo?: string;
     puntajeEntrega: number;
     puntajeCalidad: number;
     puntajePrecio: number;
     puntajeServicio: number;
     puntajeTotal: number;
     nivel: string;
-    comentarios?: string;
+    /** OJO: el backend (EvaluacionDto/EvaluarProveedorRequest) usa `observaciones`, no `comentarios`. */
+    observaciones?: string;
     evaluadoPor?: string;
     fechaEvaluacion: string;
 }
@@ -22,7 +25,7 @@ export interface CrearEvaluacionRequest {
     puntajeCalidad: number;
     puntajePrecio: number;
     puntajeServicio: number;
-    comentarios?: string;
+    observaciones?: string;
 }
 
 export interface PresupuestoCompras {

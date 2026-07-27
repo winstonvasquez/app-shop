@@ -5,98 +5,36 @@
       <p class="page-subtitle">Alertas de stock mínimo y compras sugeridas</p>
     </div>
     <div class="flex gap-2">
-      <app-button [label]="soloAlerta() ? 'Solo alertas' : 'Todos'" icon="filter" [variant]="soloAlerta() ? 'danger' : 'secondary'" (click)="toggleFiltro()" />
+      <app-button [label]="filterSoloAlerta() ? 'Solo alertas' : 'Todos'" icon="filter"
+          [variant]="filterSoloAlerta() ? 'danger' : 'secondary'"
+          (click)="filterSoloAlerta.set(!filterSoloAlerta()); currentPage.set(0); cargar()" />
       <app-button label="Nuevo" icon="plus" variant="primary" (click)="showForm.set(true)" />
     </div>
   </div>
 
-  <div class="card">
-    <div class="card-body p-0">
-      @if (loading()) {
-        <div class="loading-container"><div class="spinner"></div></div>
-      } @else if (items().length === 0) {
-        <div class="p-8 text-center text-muted">
-          {{ soloAlerta() ? 'No hay productos que requieran reorden' : 'No hay puntos de reorden configurados' }}
-        </div>
-      } @else {
-        <table class="table">
-          <thead>
-            <tr>
-              <th class="table-header-cell">SKU</th>
-              <th class="table-header-cell">Producto</th>
-              <th class="table-header-cell">Proveedor</th>
-              <th class="table-header-cell text-center">Stock Mín.</th>
-              <th class="table-header-cell text-center">Punto Reorden</th>
-              <th class="table-header-cell text-center">Stock Actual</th>
-              <th class="table-header-cell text-center">Sugerido</th>
-              <th class="table-header-cell text-center">Estado</th>
-              <th class="table-header-cell text-center">Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (item of items(); track item.id) {
-              <tr class="table-row" [class.bg-error/20]="item.requiereReorden">
-                <td class="table-cell font-mono text-sm">{{ item.sku }}</td>
-                <td class="table-cell font-semibold">{{ item.productoNombre }}</td>
-                <td class="table-cell text-muted">{{ item.proveedorNombre ?? '—' }}</td>
-                <td class="table-cell text-center">{{ item.stockMinimo }}</td>
-                <td class="table-cell text-center">{{ item.puntoReorden }}</td>
-                <td class="table-cell text-center">
-                  @if (editingStock() === item.id) {
-                    <div class="flex items-center gap-1">
-                      <input type="number" class="form-input w-16 text-center py-1"
-                             [value]="nuevoStock()"
-                             (input)="nuevoStock.set(+$any($event.target).value)" />
-                      <button class="btn btn-primary py-1 px-2 text-xs" (click)="guardarStock(item.id)">✓</button>
-                      <button class="btn btn-secondary py-1 px-2 text-xs" (click)="editingStock.set(null)">✕</button>
-                    </div>
-                  } @else {
-                    <span class="font-bold"
-                          [class.text-error]="item.requiereReorden"
-                          [class.text-success]="!item.requiereReorden">
-                      {{ item.stockActual }}
-                    </span>
-                  }
-                </td>
-                <td class="table-cell text-center text-info font-semibold">{{ item.cantidadSugerida }}</td>
-                <td class="table-cell text-center">
-                  @if (item.requiereReorden) {
-                    <span class="badge badge-error">⚠ Reordenar</span>
-                  } @else {
-                    <span class="badge badge-success">OK</span>
-                  }
-                </td>
-                <td class="table-cell text-center">
-                  @if (editingConfig() === item.id) {
-                    <form [formGroup]="configForm" (ngSubmit)="guardarConfig(item.id)" class="flex flex-col items-center gap-1">
-                      <div class="flex items-center gap-1">
-                        <input type="number" class="form-input w-16 text-center py-1" formControlName="stockMinimo" title="Stock Mín." min="0" />
-                        <input type="number" class="form-input w-16 text-center py-1" formControlName="puntoReorden" title="Punto Reorden" min="0" />
-                        <input type="number" class="form-input w-16 text-center py-1" formControlName="cantidadSugerida" title="Cant. Sugerida" min="1" />
-                      </div>
-                      <div class="flex items-center gap-1">
-                        <button type="submit" class="btn btn-primary py-1 px-2 text-xs" [disabled]="configForm.invalid">✓</button>
-                        <button type="button" class="btn btn-secondary py-1 px-2 text-xs" (click)="editingConfig.set(null)">✕</button>
-                      </div>
-                    </form>
-                  } @else {
-                    <div class="flex items-center justify-center gap-1">
-                      <button class="btn-icon btn-icon-edit" title="Actualizar stock"
-                              (click)="iniciarEditStock(item)">✏</button>
-                      <button class="btn-icon btn-icon-edit" title="Editar configuración"
-                              (click)="iniciarEditConfig(item)">⚙</button>
-                      <button class="btn-icon btn-icon-delete" title="Desactivar"
-                              (click)="desactivar(item.id)">🗑</button>
-                    </div>
-                  }
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      }
-    </div>
-  </div>
+  <app-data-table
+      [data]="items()"
+      [columns]="columns"
+      [actions]="actions"
+      [loading]="loading()"
+      [searchable]="true"
+      searchPlaceholder="Buscar por SKU o producto..."
+      [filters]="filters"
+      [dateRangeFilters]="dateRangeFilters"
+      [exportable]="false"
+      [currentPage]="currentPage()"
+      [pageSize]="pageSize()"
+      [totalElements]="totalElements()"
+      [totalPages]="totalPages()"
+      [sortField]="sortField()"
+      [sortDirection]="sortDirection()"
+      (searchChange)="onSearchTerm($event)"
+      (filterChange)="onFilterChangeEvent($event)"
+      (dateRangeChange)="onDateRangeChange($event)"
+      (filtersClear)="onFiltersClear()"
+      (pageChange)="onPaginationChange($event)"
+      (sortChange)="onSort($event)">
+  </app-data-table>
 </div>
 
 <!-- Drawer nuevo punto de reorden -->
@@ -141,6 +79,56 @@
       <div class="flex gap-3 mt-6">
         <app-button [label]="saving() ? 'Guardando...' : 'Crear'" icon="save" variant="primary" type="submit" [disabled]="form.invalid" [loading]="saving()" class="flex-1" />
         <app-button label="Cancelar" icon="x" variant="secondary" type="button" (click)="showForm.set(false)" />
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Drawer actualizar stock -->
+<div class="drawer-overlay" [class.open]="showStockDrawer()" (click)="showStockDrawer.set(false)"></div>
+<div class="drawer drawer-right" [class.open]="showStockDrawer()">
+  <div class="drawer-header">
+    <h2 class="drawer-title">Actualizar Stock — {{ selectedItem()?.productoNombre }}</h2>
+    <button class="modal-close-btn" (click)="showStockDrawer.set(false)">✕</button>
+  </div>
+  <div class="drawer-body">
+    <form [formGroup]="stockForm" (ngSubmit)="guardarStock()">
+      <div class="mb-4">
+        <label class="input-label">Nuevo Stock Actual *</label>
+        <input type="number" class="form-input" formControlName="nuevoStock" min="0" />
+      </div>
+      <div class="flex gap-3 mt-6">
+        <app-button label="Guardar" icon="save" variant="primary" type="submit" [disabled]="stockForm.invalid" class="flex-1" />
+        <app-button label="Cancelar" icon="x" variant="secondary" type="button" (click)="showStockDrawer.set(false)" />
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Drawer editar configuración -->
+<div class="drawer-overlay" [class.open]="showConfigDrawer()" (click)="showConfigDrawer.set(false)"></div>
+<div class="drawer drawer-right" [class.open]="showConfigDrawer()">
+  <div class="drawer-header">
+    <h2 class="drawer-title">Editar Configuración — {{ selectedItem()?.productoNombre }}</h2>
+    <button class="modal-close-btn" (click)="showConfigDrawer.set(false)">✕</button>
+  </div>
+  <div class="drawer-body">
+    <form [formGroup]="configForm" (ngSubmit)="guardarConfig()">
+      <div class="mb-4">
+        <label class="input-label">Stock Mínimo *</label>
+        <input type="number" class="form-input" formControlName="stockMinimo" min="0" />
+      </div>
+      <div class="mb-4">
+        <label class="input-label">Punto de Reorden *</label>
+        <input type="number" class="form-input" formControlName="puntoReorden" min="0" />
+      </div>
+      <div class="mb-4">
+        <label class="input-label">Cantidad Sugerida *</label>
+        <input type="number" class="form-input" formControlName="cantidadSugerida" min="1" />
+      </div>
+      <div class="flex gap-3 mt-6">
+        <app-button label="Guardar" icon="save" variant="primary" type="submit" [disabled]="configForm.invalid" class="flex-1" />
+        <app-button label="Cancelar" icon="x" variant="secondary" type="button" (click)="showConfigDrawer.set(false)" />
       </div>
     </form>
   </div>

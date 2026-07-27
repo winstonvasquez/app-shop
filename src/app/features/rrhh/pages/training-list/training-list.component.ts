@@ -1,10 +1,8 @@
 import { Component, inject, signal, ChangeDetectionStrategy, OnInit } from '@angular/core';
 import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
-import { toObservable } from '@angular/core/rxjs-interop';
-import { map } from 'rxjs';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
-import { DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent, DateRangeFilterConfig, DateRangeChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
-import { PaginationComponent, PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
+import { DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent, DateRangeFilterConfig, DateRangeChangeEvent, PaginationEvent } from '@shared/ui/tables/data-table/data-table.component';
+import { catalogFilter, signalFilter } from '@shared/ui/tables/data-table/filter-helpers';
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
@@ -34,7 +32,6 @@ interface ParticipantEdit {
         ReactiveFormsModule,
         DrawerComponent,
         DataTableComponent,
-        PaginationComponent,
         FormFieldComponent,
         PageHeaderComponent,
         AlertComponent,
@@ -47,7 +44,7 @@ interface ParticipantEdit {
 export class TrainingListComponent implements OnInit {
     private readonly fb = inject(FormBuilder);
     private readonly trainingService = inject(TrainingService);
-    private readonly catalog = inject(CatalogService);
+    readonly catalog = inject(CatalogService);
     private readonly employeeService = inject(EmployeeService);
 
     /** Fuente server-side del search-select de empleado del formulario de inscripción. */
@@ -66,10 +63,14 @@ export class TrainingListComponent implements OnInit {
     submitting = signal(false);
     submitError = signal<string | null>(null);
 
-    // ── Filtros server-side: estado + rango de fecha de inicio ────────────────
+    // ── Filtros server-side ────────────────────────────────────────────────────
+    searchQuery = signal('');
     filtroEstado = signal('');
+    filtroInstructor = signal('');
     filtroFechaInicioDesde = signal<string | undefined>(undefined);
     filtroFechaInicioHasta = signal<string | undefined>(undefined);
+    filtroFechaFinDesde = signal<string | undefined>(undefined);
+    filtroFechaFinHasta = signal<string | undefined>(undefined);
 
     // ── Paginación (server-side) ───────────────────────────────────────────────
     currentPage = signal(0);
@@ -79,12 +80,20 @@ export class TrainingListComponent implements OnInit {
 
     /**
      * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios
-     * (respeta el filtro de estado actual). Ver /hr/api/trainings/export.
+     * (respeta TODOS los filtros actuales). Ver /hr/api/trainings/export.
      */
     readonly exportConfig: BackendExportConfig = {
         url: `${environment.apiUrls.hr}/api/trainings/export`,
         filename: 'capacitaciones',
-        params: () => ({ estado: this.filtroEstado() }),
+        params: () => ({
+            search: this.searchQuery(),
+            estado: this.filtroEstado(),
+            instructor: this.filtroInstructor(),
+            fechaInicioDesde: this.filtroFechaInicioDesde(),
+            fechaInicioHasta: this.filtroFechaInicioHasta(),
+            fechaFinDesde: this.filtroFechaFinDesde(),
+            fechaFinHasta: this.filtroFechaFinHasta(),
+        }),
     };
 
     breadcrumbs: Breadcrumb[] = [
@@ -172,49 +181,83 @@ export class TrainingListComponent implements OnInit {
         this.trainingService.loadStatsSnapshot();
     }
 
+    // Filtros select del toolbar. Instructor se deriva del snapshot (no hay endpoint dedicado).
     readonly toolbarFilters: FilterConfig[] = [
-        {
-            field: 'estado', label: 'Todos los estados',
-            options: toObservable(this.catalog.options('ESTADO_CAPACITACION')).pipe(
-                map(o => o.map(x => ({ value: x.codigo, label: x.valor })))
-            )
-        }
+        catalogFilter(this.catalog, 'ESTADO_CAPACITACION', 'estado', 'Todos los estados'),
+        signalFilter('instructor', 'Todos los instructores', this.trainingService.instructorOptions, o => o),
     ];
 
     readonly dateRangeFilters: DateRangeFilterConfig[] = [
-        { field: 'fechaInicio', label: 'Fecha de inicio' }
+        { field: 'fechaInicio', label: 'Fecha de inicio' },
+        { field: 'fechaFin', label: 'Fecha de fin' },
     ];
 
-    /** Carga la página actual server-side (estado + rango fecha inicio + paginación). */
+    /** Carga la página actual server-side con TODOS los filtros del toolbar. */
     private cargarCapacitaciones(): void {
-        this.trainingService.loadTrainingsPaged(
-            this.currentPage(),
-            this.pageSize(),
-            this.filtroEstado() || undefined,
-            this.filtroFechaInicioDesde(),
-            this.filtroFechaInicioHasta()
-        ).then(res => {
+        this.trainingService.loadTrainingsPaged({
+            page: this.currentPage(),
+            size: this.pageSize(),
+            search: this.searchQuery() || undefined,
+            estado: this.filtroEstado() || undefined,
+            instructor: this.filtroInstructor() || undefined,
+            fechaInicioDesde: this.filtroFechaInicioDesde(),
+            fechaInicioHasta: this.filtroFechaInicioHasta(),
+            fechaFinDesde: this.filtroFechaFinDesde(),
+            fechaFinHasta: this.filtroFechaFinHasta(),
+        }).then(res => {
             this.totalElements.set(res.totalElements);
             this.totalPages.set(res.totalPages);
         });
     }
 
+    /** La búsqueda por texto también va al backend, no filtra la página cargada. */
+    onSearchTerm(term: string): void {
+        this.searchQuery.set(term);
+        this.currentPage.set(0);
+        this.cargarCapacitaciones();
+    }
+
     onFilterChangeEvent(event: FilterChangeEvent): void {
-        if (event.field !== 'estado') return;
-        this.filtroEstado.set(event.value != null ? String(event.value) : '');
+        const v = event.value != null ? String(event.value) : '';
+        switch (event.field) {
+            case 'estado':     this.filtroEstado.set(v); break;
+            case 'instructor': this.filtroInstructor.set(v); break;
+            default: return;
+        }
         this.currentPage.set(0);
         this.cargarCapacitaciones();
     }
 
     onDateRangeChange(event: DateRangeChangeEvent): void {
-        if (event.field !== 'fechaInicio') return;
-        this.filtroFechaInicioDesde.set(event.from ?? undefined);
-        this.filtroFechaInicioHasta.set(event.to ?? undefined);
+        switch (event.field) {
+            case 'fechaInicio':
+                this.filtroFechaInicioDesde.set(event.from ?? undefined);
+                this.filtroFechaInicioHasta.set(event.to ?? undefined);
+                break;
+            case 'fechaFin':
+                this.filtroFechaFinDesde.set(event.from ?? undefined);
+                this.filtroFechaFinHasta.set(event.to ?? undefined);
+                break;
+            default: return;
+        }
         this.currentPage.set(0);
         this.cargarCapacitaciones();
     }
 
-    onPaginationChange(event: PaginationChangeEvent): void {
+    /** "Limpiar filtros": resetea todo y recarga UNA sola vez. */
+    onFiltersClear(): void {
+        this.searchQuery.set('');
+        this.filtroEstado.set('');
+        this.filtroInstructor.set('');
+        this.filtroFechaInicioDesde.set(undefined);
+        this.filtroFechaInicioHasta.set(undefined);
+        this.filtroFechaFinDesde.set(undefined);
+        this.filtroFechaFinHasta.set(undefined);
+        this.currentPage.set(0);
+        this.cargarCapacitaciones();
+    }
+
+    onPaginationChange(event: PaginationEvent): void {
         this.currentPage.set(event.page);
         this.pageSize.set(event.size);
         this.cargarCapacitaciones();

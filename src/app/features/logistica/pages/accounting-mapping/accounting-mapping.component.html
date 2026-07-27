@@ -22,18 +22,23 @@
     }
 
     <app-data-table
-        [data]="mapeosPaginados()"
+        [data]="mapeos()"
         [columns]="columns"
         [actions]="actions"
         [loading]="cargando()"
         [searchable]="true"
         searchPlaceholder="Buscar por tipo de evento o cuenta..."
+        [filters]="filters"
+        [dateRangeFilters]="dateRangeFilters"
         [exportable]="false"
         [currentPage]="currentPage()"
         [pageSize]="pageSize()"
-        [totalElements]="mapeosFiltrados().length"
-        [totalPages]="totalPagesLocal()"
+        [totalElements]="totalElements()"
+        [totalPages]="totalPages()"
         (searchChange)="onSearchTerm($event)"
+        (filterChange)="onFilterChangeEvent($event)"
+        (dateRangeChange)="onDateRangeChange($event)"
+        (filtersClear)="onFiltersClear()"
         (pageChange)="onPageChange($event)">
     </app-data-table>
 </div>

@@ -4,7 +4,7 @@ import { HttpClient } from '@angular/common/http';
 import { environment } from '@env/environment';
 import { PageResponse, pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
-import { DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent, PaginationEvent } from '@shared/ui/tables/data-table/data-table.component';
+import { DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent, DateRangeFilterConfig, DateRangeChangeEvent, PaginationEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { DateInputComponent } from '@shared/ui/forms/date-input/date-input.component';
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
@@ -87,9 +87,13 @@ export class ReturnsComponent implements OnInit {
     motivoOptions     = signal<SelectOption[]>([]);
     resolucionOptions = signal<SelectOption[]>([]);
 
-    // Filtros / búsqueda (server-side por botón Buscar)
+    // Filtros / búsqueda (TODOS server-side — la vista nunca filtra la página cargada)
     searchQuery  = signal('');
     filtroEstado = signal('');
+    filtroMotivo = signal('');
+    filtroTipoResolucion = signal('');
+    filtroFechaSolicitudDesde = signal<string | undefined>(undefined);
+    filtroFechaSolicitudHasta = signal<string | undefined>(undefined);
 
     // Paginación server-side
     currentPage   = signal(0);
@@ -97,9 +101,16 @@ export class ReturnsComponent implements OnInit {
     totalElements = signal(0);
     totalPages    = signal(0);
 
-    // Filtro de estado del toolbar — opciones dinámicas desde parámetros (BD)
-    estadoFilters: FilterConfig[] = [
-        { field: 'estado', label: 'Todos los estados', options: this.parametros.getEstadosDevolucion() }
+    // Filtros select del toolbar — opciones dinámicas desde parámetros (BD, grupos de ventas
+    // MOTIVO_DEVOLUCION / TIPO_RESOLUCION; no viven en erp_parameters, ver catalogos-disponibles.md).
+    filters: FilterConfig[] = [
+        { field: 'estado', label: 'Todos los estados', options: this.parametros.getEstadosDevolucion() },
+        { field: 'motivo', label: 'Todos los motivos', options: this.parametros.getMotivosDevolucion() },
+        { field: 'tipoResolucion', label: 'Todas las resoluciones', options: this.parametros.getTiposResolucion() }
+    ];
+
+    dateRangeFilters: DateRangeFilterConfig[] = [
+        { field: 'fechaSolicitud', label: 'Fecha de solicitud' }
     ];
 
     // Formulario de devolución
@@ -136,7 +147,15 @@ export class ReturnsComponent implements OnInit {
     readonly exportConfig: BackendExportConfig = {
         url: `${this.baseUrl}/export`,
         filename: 'devoluciones',
-        params: () => ({ companyId: this.companyId(), search: this.searchQuery(), estado: this.filtroEstado() }),
+        params: () => ({
+            companyId: this.companyId(),
+            search: this.searchQuery(),
+            estado: this.filtroEstado(),
+            motivo: this.filtroMotivo(),
+            tipoResolucion: this.filtroTipoResolucion(),
+            fechaSolicitudDesde: this.filtroFechaSolicitudDesde(),
+            fechaSolicitudHasta: this.filtroFechaSolicitudHasta(),
+        }),
     };
 
     actions: TableAction<Devolucion>[] = [
@@ -176,6 +195,10 @@ export class ReturnsComponent implements OnInit {
         };
         if (this.searchQuery()) params['search'] = this.searchQuery();
         if (this.filtroEstado()) params['estado'] = this.filtroEstado();
+        if (this.filtroMotivo()) params['motivo'] = this.filtroMotivo();
+        if (this.filtroTipoResolucion()) params['tipoResolucion'] = this.filtroTipoResolucion();
+        if (this.filtroFechaSolicitudDesde()) params['fechaSolicitudDesde'] = this.filtroFechaSolicitudDesde()!;
+        if (this.filtroFechaSolicitudHasta()) params['fechaSolicitudHasta'] = this.filtroFechaSolicitudHasta()!;
 
         this.http.get<PageResponse<Devolucion>>(`${this.baseUrl}/paged`, { params }).subscribe({
             next: (res) => {
@@ -206,11 +229,35 @@ export class ReturnsComponent implements OnInit {
     }
 
     onFilterChangeEvent(event: FilterChangeEvent): void {
-        if (event.field === 'estado') {
-            this.filtroEstado.set(event.value != null ? String(event.value) : '');
-            this.currentPage.set(0);
-            this.loadPage();
+        const valor = event.value != null ? String(event.value) : '';
+        switch (event.field) {
+            case 'estado':         this.filtroEstado.set(valor); break;
+            case 'motivo':         this.filtroMotivo.set(valor); break;
+            case 'tipoResolucion': this.filtroTipoResolucion.set(valor); break;
+            default: return;
         }
+        this.currentPage.set(0);
+        this.loadPage();
+    }
+
+    onDateRangeChange(event: DateRangeChangeEvent): void {
+        if (event.field !== 'fechaSolicitud') return;
+        this.filtroFechaSolicitudDesde.set(event.from ?? undefined);
+        this.filtroFechaSolicitudHasta.set(event.to ?? undefined);
+        this.currentPage.set(0);
+        this.loadPage();
+    }
+
+    /** "Limpiar filtros": resetea TODOS los signals y recarga UNA sola vez. */
+    onFiltersClear(): void {
+        this.searchQuery.set('');
+        this.filtroEstado.set('');
+        this.filtroMotivo.set('');
+        this.filtroTipoResolucion.set('');
+        this.filtroFechaSolicitudDesde.set(undefined);
+        this.filtroFechaSolicitudHasta.set(undefined);
+        this.currentPage.set(0);
+        this.loadPage();
     }
 
     onPageChange(event: PaginationEvent): void {

@@ -43,6 +43,8 @@ export interface FilterConfig {
     field: string;
     label: string;
     options: Observable<{ value: string | number; label: string }[]>;
+    /** Valor preseleccionado al montar la tabla (ej. estado por defecto de la vista). */
+    value?: string | number | null;
 }
 
 export interface FilterChangeEvent {
@@ -54,6 +56,9 @@ export interface FilterChangeEvent {
 export interface DateRangeFilterConfig {
     field: string;
     label: string;
+    /** Valores iniciales yyyy-MM-dd (ej. precargar "mes en curso"). */
+    from?: string | null;
+    to?: string | null;
 }
 
 /** `from`/`to` en formato yyyy-MM-dd (nativo de `<input type="date">`) o null si se limpió. */
@@ -110,6 +115,12 @@ export class DataTableComponent<T = any> {
     searchChange = output<string>();
     filterChange = output<FilterChangeEvent>();
     dateRangeChange = output<DateRangeChangeEvent>();
+    /**
+     * "Limpiar filtros": el padre debe resetear TODOS sus signals de filtro
+     * (selects, rangos de fecha y búsqueda) y recargar UNA sola vez desde el backend.
+     * Se emite en lugar de N `filterChange` para no disparar N requests.
+     */
+    filtersClear = output<void>();
 
     private readonly exportService = inject(ExportService);
     private readonly backendExport = inject(BackendExportService);
@@ -254,8 +265,23 @@ export class DataTableComponent<T = any> {
         this.searchChange.emit('');
     }
 
+    /**
+     * Valor actual de cada filtro select, mantenido internamente para que el
+     * `<select>` refleje el estado (antes era no-controlado y se desincronizaba
+     * al limpiar filtros o al preseleccionar un valor por defecto).
+     */
+    private readonly filterValues = signal<Record<string, string>>({});
+
+    /** Valor a pintar en el `<select>`: el elegido por el usuario, o el `value` inicial del config. */
+    getFilterValue(filter: FilterConfig): string {
+        const override = this.filterValues()[filter.field];
+        if (override !== undefined) return override;
+        return filter.value === null || filter.value === undefined ? '' : String(filter.value);
+    }
+
     onFilterChange(field: string, event: Event): void {
         const val = (event.target as HTMLSelectElement).value;
+        this.filterValues.update(v => ({ ...v, [field]: val }));
         this.filterChange.emit({ field, value: val === '' ? null : val });
     }
 
@@ -263,23 +289,54 @@ export class DataTableComponent<T = any> {
     private readonly dateRangeValues = signal<Record<string, { from: string; to: string }>>({});
 
     getDateRangeFrom(field: string): string {
-        return this.dateRangeValues()[field]?.from ?? '';
+        const override = this.dateRangeValues()[field];
+        if (override) return override.from;
+        return this.dateRangeFilters().find(d => d.field === field)?.from ?? '';
     }
 
     getDateRangeTo(field: string): string {
-        return this.dateRangeValues()[field]?.to ?? '';
+        const override = this.dateRangeValues()[field];
+        if (override) return override.to;
+        return this.dateRangeFilters().find(d => d.field === field)?.to ?? '';
+    }
+
+    /** Cantidad de filtros activos (selects + rangos + búsqueda) — alimenta el badge y el botón "Limpiar". */
+    readonly activeFilterCount = computed(() => {
+        let n = 0;
+        for (const f of this.filters()) {
+            if (this.getFilterValue(f) !== '') n++;
+        }
+        for (const d of this.dateRangeFilters()) {
+            if (this.getDateRangeFrom(d.field) || this.getDateRangeTo(d.field)) n++;
+        }
+        if (this.searchTerm().trim() !== '') n++;
+        return n;
+    });
+
+    /**
+     * Resetea el estado visual de todos los filtros y avisa al padre con un único
+     * evento para que limpie sus signals y recargue una sola vez.
+     */
+    onClearFilters(): void {
+        const cleared: Record<string, string> = {};
+        for (const f of this.filters()) cleared[f.field] = '';
+        this.filterValues.set(cleared);
+        const clearedRanges: Record<string, { from: string; to: string }> = {};
+        for (const d of this.dateRangeFilters()) clearedRanges[d.field] = { from: '', to: '' };
+        this.dateRangeValues.set(clearedRanges);
+        this.searchTerm.set('');
+        this.filtersClear.emit();
     }
 
     onDateRangeFromChange(field: string, value: string): void {
-        const current = this.dateRangeValues()[field] ?? { from: '', to: '' };
-        const updated = { ...current, from: value };
+        // Parte del valor RESUELTO (incluye el inicial del config) para no perder el `to` preexistente.
+        const updated = { from: value, to: this.getDateRangeTo(field) };
         this.dateRangeValues.update(v => ({ ...v, [field]: updated }));
         this.dateRangeChange.emit({ field, from: value || null, to: updated.to || null });
     }
 
     onDateRangeToChange(field: string, value: string): void {
-        const current = this.dateRangeValues()[field] ?? { from: '', to: '' };
-        const updated = { ...current, to: value };
+        const updated = { from: this.getDateRangeFrom(field), to: value };
         this.dateRangeValues.update(v => ({ ...v, [field]: updated }));
         this.dateRangeChange.emit({ field, from: updated.from || null, to: value || null });
     }

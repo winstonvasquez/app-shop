@@ -34,11 +34,20 @@ export class MovimientosFinancierosService {
      * FinancialMovementController#getAll (backend): tenantId, tipoMovimiento,
      * origen, fechaDesde, fechaHasta, page, size.
      */
+    /**
+     * Filtros del listado de movimientos. TODO el filtrado ocurre en el backend
+     * (`GET /treasury/api/tesoreria/movimientos`); la vista nunca filtra la página cargada.
+     */
     getAll(params?: {
         fechaDesde?: string;
         fechaHasta?: string;
         tipoMovimiento?: string;
         origen?: string;
+        moneda?: string;
+        origenId?: string;
+        usuarioId?: string;
+        /** Búsqueda por texto sobre descripción/referencia. */
+        q?: string;
         page?: number;
         size?: number;
     }): Observable<PageResponse<FinancialMovement>> {
@@ -52,6 +61,10 @@ export class MovimientosFinancierosService {
         if (params?.fechaHasta) httpParams = httpParams.set('fechaHasta', params.fechaHasta);
         if (params?.tipoMovimiento) httpParams = httpParams.set('tipoMovimiento', params.tipoMovimiento);
         if (params?.origen) httpParams = httpParams.set('origen', params.origen);
+        if (params?.moneda) httpParams = httpParams.set('moneda', params.moneda);
+        if (params?.origenId) httpParams = httpParams.set('origenId', params.origenId);
+        if (params?.usuarioId) httpParams = httpParams.set('usuarioId', params.usuarioId);
+        if (params?.q) httpParams = httpParams.set('q', params.q);
 
         return this.http.get<PageResponse<FinancialMovement>>(this.apiUrl, { params: httpParams });
     }

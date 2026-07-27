@@ -23,18 +23,31 @@
         </app-alert>
     }
 
-    <!-- Filtros -->
-    <!-- Tabla (filtro de estado en el toolbar; sin card contenedor) -->
+    <!-- Tabla: búsqueda + filtros + paginación 100% server-side (sin card contenedor) -->
     <app-data-table
-        [data]="promocionesVm()"
+        [data]="promociones()"
         [columns]="columns"
         [actions]="actions"
         [loading]="cargando()"
-        [filters]="estadoFilters"
-        [totalElements]="promocionesVm().length"
-        [pageSize]="20"
+        [currentPage]="currentPage()"
+        [pageSize]="pageSize()"
+        [totalElements]="totalElements()"
+        [totalPages]="totalPages()"
+        [sortField]="sortField()"
+        [sortDirection]="sortDirection()"
+        [searchable]="true"
+        searchPlaceholder="Buscar por nombre, descripción o cupón..."
+        [filters]="filters"
+        [dateRangeFilters]="dateRangeFilters"
+        [exportable]="true"
+        exportFileName="promociones"
         [exportConfig]="exportConfig"
-        (filterChange)="onFilterChangeEvent($event)">
+        (searchChange)="onSearchTerm($event)"
+        (filterChange)="onFilterChangeEvent($event)"
+        (dateRangeChange)="onDateRangeChange($event)"
+        (filtersClear)="onFiltersClear()"
+        (pageChange)="onPageChange($event)"
+        (sortChange)="onSort($event)">
     </app-data-table>
 
 </div>

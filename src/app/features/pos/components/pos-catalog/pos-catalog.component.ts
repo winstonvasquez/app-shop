@@ -1,6 +1,6 @@
 import {
     Component, ChangeDetectionStrategy, input, output,
-    signal, computed, inject, OnInit, OnDestroy, AfterViewInit,
+    signal, inject, OnInit, OnDestroy, AfterViewInit,
     ElementRef, ViewChild,
 } from '@angular/core';
 import { Subject, Subscription } from 'rxjs';
@@ -9,8 +9,21 @@ import { ProductoCatalogoPOS } from '../../models/catalogo-pos.model';
 import { PosCarritoService } from '../../services/pos-carrito.service';
 import { PosFavoritesGridComponent } from '../pos-favorites-grid/pos-favorites-grid.component';
 import { PosFavorito } from '../../services/pos-favoritos.service';
+import { CategoryService } from '@core/services/category.service';
+import { CategoryResponse } from '@core/models/category.model';
+import { ProductService } from '@core/services/product.service';
+import { CatalogService } from '@core/services/catalog.service';
 
 export type CatalogView = 'catalogo' | 'favoritos';
+
+/** Filtros avanzados del catálogo POS — TODOS se resuelven en el backend (GET /api/pos/catalogo). */
+export interface PosCatalogFiltro {
+    categoriaId?: number;
+    marca?: string;
+    unidadMedida?: string;
+    /** 'CON_STOCK' | 'BAJO_MINIMO' | 'SIN_STOCK' — códigos exactos que espera el backend. */
+    disponibilidad?: string;
+}
 
 @Component({
     selector: 'app-pos-catalog',
@@ -22,6 +35,9 @@ export type CatalogView = 'catalogo' | 'favoritos';
 export class PosCatalogComponent implements OnInit, AfterViewInit, OnDestroy {
 
     readonly carrito = inject(PosCarritoService);
+    private readonly categoryService = inject(CategoryService);
+    private readonly productService = inject(ProductService);
+    readonly catalog = inject(CatalogService);
 
     @ViewChild('searchInput') searchInputRef?: ElementRef<HTMLInputElement>;
 
@@ -35,9 +51,26 @@ export class PosCatalogComponent implements OnInit, AfterViewInit, OnDestroy {
     // ── Internal UI State ─────────────────────────────────────────
     readonly activeView = signal<CatalogView>('catalogo');
     readonly searchQuery = signal('');
-    readonly selectedCategoria = signal<string | null>(null);
+    /** Categoría seleccionada por id real (la lista de categorías viene del backend, no de los items cargados). */
+    readonly selectedCategoriaId = signal<number | null>(null);
+    readonly selectedMarca = signal<string | null>(null);
+    readonly selectedUnidadMedida = signal<string | null>(null);
+    readonly selectedDisponibilidad = signal<string | null>(null);
     readonly categoriasExpandidas = signal(false);   // chips en múltiples líneas
     readonly categoriasPlegadas = signal(false);     // barra completamente oculta
+
+    /** Categorías reales (id + nombre) para el filtro — GET /sales/api/v1/categorias/all. */
+    readonly categorias = signal<CategoryResponse[]>([]);
+    /** Marcas disponibles para el select — GET /sales/api/v1/productos/filtros-disponibles. */
+    readonly marcasDisponibles = signal<string[]>([]);
+    /** Unidades de medida — catálogo `UNIDAD_MEDIDA` de erp_parameters. */
+    readonly unidadesMedida = this.catalog.options('UNIDAD_MEDIDA');
+    /** Disponibilidad de stock: derivada en runtime por el backend (sin catálogo, códigos fijos del contrato). */
+    readonly disponibilidadOptions: { value: string; label: string }[] = [
+        { value: 'CON_STOCK', label: 'Con stock' },
+        { value: 'BAJO_MINIMO', label: 'Bajo mínimo' },
+        { value: 'SIN_STOCK', label: 'Sin stock' },
+    ];
 
     // ── Subject para búsqueda reactiva con debounce ───────────────
     readonly searchSubject = new Subject<string>();
@@ -47,24 +80,12 @@ export class PosCatalogComponent implements OnInit, AfterViewInit, OnDestroy {
     readonly productSelected = output<ProductoCatalogoPOS>();
     /** Emite el término de búsqueda (debounceado) para que pos-page llame al backend */
     readonly searchChanged = output<string>();
+    /** Emite cualquier cambio de filtro avanzado (categoría/marca/unidad/disponibilidad) — SIEMPRE server-side. */
+    readonly filtersChanged = output<PosCatalogFiltro>();
     readonly favoritoSelected = output<PosFavorito>();
     readonly favoritoRemoved = output<PosFavorito>();
     readonly addToFavorites = output<ProductoCatalogoPOS>();
     readonly scanTriggered = output<void>();
-
-    // ── Computed ──────────────────────────────────────────────────
-    readonly categorias = computed(() =>
-        [...new Set(this.items().map(p => p.categoria))].sort()
-    );
-
-    /**
-     * Filtra en memoria por categoría.
-     * La búsqueda por texto ya fue delegada al backend via searchChanged output.
-     */
-    readonly filteredItems = computed(() => {
-        const cat = this.selectedCategoria();
-        return !cat ? this.items() : this.items().filter(p => p.categoria === cat);
-    });
 
     // ── Lifecycle ─────────────────────────────────────────────────
     ngOnInit(): void {
@@ -72,6 +93,16 @@ export class PosCatalogComponent implements OnInit, AfterViewInit, OnDestroy {
         this.sub = this.searchSubject.pipe(debounceTime(350)).subscribe(q => {
             this.searchQuery.set(q);
             this.searchChanged.emit(q);
+        });
+
+        // Categorías reales y marcas disponibles: se cargan una vez, independientes de la página actual.
+        this.categoryService.getAllSimple().subscribe({
+            next: cats => this.categorias.set(cats),
+            error: () => this.categorias.set([]),
+        });
+        this.productService.getFiltrosDisponibles().subscribe({
+            next: f => this.marcasDisponibles.set(f.marcas ?? []),
+            error: () => this.marcasDisponibles.set([]),
         });
     }
 
@@ -98,9 +129,35 @@ export class PosCatalogComponent implements OnInit, AfterViewInit, OnDestroy {
         this.searchChanged.emit(value);
     }
 
-    selectCategoria(cat: string | null, el?: HTMLElement): void {
-        this.selectedCategoria.set(cat);
+    selectCategoria(categoriaId: number | null, el?: HTMLElement): void {
+        this.selectedCategoriaId.set(categoriaId);
+        this.emitFilters();
         el?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+    }
+
+    onMarcaChange(value: string): void {
+        this.selectedMarca.set(value || null);
+        this.emitFilters();
+    }
+
+    onUnidadMedidaChange(value: string): void {
+        this.selectedUnidadMedida.set(value || null);
+        this.emitFilters();
+    }
+
+    onDisponibilidadChange(value: string): void {
+        this.selectedDisponibilidad.set(value || null);
+        this.emitFilters();
+    }
+
+    /** Emite el estado completo de filtros para que pos-page recargue el catálogo desde el backend. */
+    private emitFilters(): void {
+        this.filtersChanged.emit({
+            categoriaId: this.selectedCategoriaId() ?? undefined,
+            marca: this.selectedMarca() ?? undefined,
+            unidadMedida: this.selectedUnidadMedida() ?? undefined,
+            disponibilidad: this.selectedDisponibilidad() ?? undefined,
+        });
     }
 
     toggleExpandir(): void {

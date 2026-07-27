@@ -21,6 +21,26 @@ export interface StockReservation {
     fechaCreacion?: string;
 }
 
+/**
+ * Filtros opcionales para `GET /logistics/api/stock-reservations` (listado paginado
+ * server-side, ronda de filtros 2026-07-27 — antes NO existía ningún listado, solo
+ * el lookup exacto por `orderId`).
+ */
+export interface StockReservationFiltros {
+    page?: number;
+    size?: number;
+    status?: ReservationStatus;
+    productoId?: string;
+    inventarioId?: string;
+    q?: string;
+    expiresAtDesde?: string;
+    expiresAtHasta?: string;
+    releasedAtDesde?: string;
+    releasedAtHasta?: string;
+    consumedAtDesde?: string;
+    consumedAtHasta?: string;
+}
+
 /** Item de la solicitud de reserva — espeja `ReserveStockItemRequest` del backend. */
 export interface ReserveStockItem {
     productoId: string;

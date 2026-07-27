@@ -25,6 +25,7 @@
         [searchable]="true"
         searchPlaceholder="Buscar por RUC o razón social..."
         [filters]="estadoFilters"
+        [dateRangeFilters]="dateRangeFilters"
         [exportable]="true"
         exportFileName="proveedores"
         [exportConfig]="exportConfig"
@@ -36,6 +37,8 @@
         [sortDirection]="sortDirection()"
         (searchChange)="onSearchTerm($event)"
         (filterChange)="onFilterChangeEvent($event)"
+        (dateRangeChange)="onDateRangeChange($event)"
+        (filtersClear)="onFiltersClear()"
         (pageChange)="onPaginationChange($event)"
         (sortChange)="onSort($event)">
     </app-data-table>

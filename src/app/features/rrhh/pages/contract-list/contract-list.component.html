@@ -16,7 +16,7 @@
         [message]="expiringCount() + ' contrato(s) por vencer en los próximos 30 días'" />
 }
 
-<!-- Tabla (server-side: search + estado + tipo + paginación 20/pág) -->
+<!-- Tabla (server-side: search + estado + tipo + jornada + moneda + empleado + departamento + rango fecha inicio/fin + paginación 20/pág) -->
 <app-data-table
     [data]="contracts()"
     [columns]="columns"
@@ -25,6 +25,7 @@
     [searchable]="true"
     searchPlaceholder="Buscar por empleado..."
     [filters]="contratoFilters"
+    [dateRangeFilters]="dateRangeFilters"
     [exportable]="true"
     exportFileName="contratos"
     [exportConfig]="exportConfig"
@@ -34,6 +35,8 @@
     [totalPages]="totalPages()"
     (searchChange)="onSearchTerm($event)"
     (filterChange)="onFilterChangeEvent($event)"
+    (dateRangeChange)="onDateRangeChange($event)"
+    (filtersClear)="onFiltersClear()"
     (pageChange)="onPaginationChange($event)" />
 
 <!-- Drawer: Crear / Editar Contrato -->

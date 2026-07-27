@@ -27,6 +27,7 @@
         [searchable]="true"
         searchPlaceholder="Buscar por código o proveedor..."
         [filters]="estadoFilters"
+        [dateRangeFilters]="dateRangeFilters"
         [exportable]="true"
         exportFileName="contratos"
         [exportConfig]="exportConfig"
@@ -36,6 +37,8 @@
         [totalPages]="totalPages()"
         (searchChange)="onSearchTerm($event)"
         (filterChange)="onFilterChangeEvent($event)"
+        (dateRangeChange)="onDateRangeChange($event)"
+        (filtersClear)="onFiltersClear()"
         (pageChange)="onPageChange($event)">
     </app-data-table>
 </div>

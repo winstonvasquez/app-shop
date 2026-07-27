@@ -29,6 +29,7 @@
     [exportConfig]="exportConfig"
     (filterChange)="onFilterChangeEvent($event)"
     (dateRangeChange)="onDateRangeChange($event)"
+        (filtersClear)="onFiltersClear()"
     (pageChange)="onPageChange($event)">
   </app-data-table>
 

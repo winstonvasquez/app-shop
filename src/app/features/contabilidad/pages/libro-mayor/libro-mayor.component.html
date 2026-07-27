@@ -26,32 +26,6 @@
         </div>
     </div>
 
-    <div class="filters-bar" style="flex-wrap:wrap">
-        <select class="form-input" style="min-width:260px"
-                [value]="cuentaSeleccionada()"
-                (change)="cambiarCuenta($any($event.target).value)">
-            <option value="">— Seleccionar cuenta PCGE —</option>
-            @for (c of cuentas(); track c.id) {
-                <option [value]="c.id">{{ c.codigo }} — {{ c.nombre }}</option>
-            }
-        </select>
-        <select class="form-input"
-                [value]="periodoSeleccionado()"
-                (change)="cambiarPeriodo($any($event.target).value)">
-            <option value="">— Periodo —</option>
-            @for (p of periodos(); track p.id) {
-                <option [value]="p.id">{{ p.nombre }}</option>
-            }
-        </select>
-        <app-button
-            label="Ver Mayor"
-            variant="primary"
-            icon="book-open"
-            [disabled]="!cuentaSeleccionada() || !periodoSeleccionado()"
-            (click)="cargarMayor()">
-        </app-button>
-    </div>
-
     @if (error()) {
         <div class="card mb-lg">
             <div class="card-body" style="color:var(--color-error);text-align:center">
@@ -61,19 +35,24 @@
     }
 
     <app-data-table
-        [data]="movimientosPaginados()"
+        [data]="movimientos()"
         [columns]="columns"
         [loading]="cargando()"
         [searchable]="true"
         searchPlaceholder="Buscar por N° asiento o descripción..."
+        [filters]="filters"
+        [dateRangeFilters]="dateRangeFilters"
         [exportable]="true"
         exportFileName="libro-mayor"
         [exportConfig]="exportConfig"
         [currentPage]="currentPage()"
         [pageSize]="pageSize()"
-        [totalElements]="movimientosFiltrados().length"
-        [totalPages]="totalPagesLocal()"
+        [totalElements]="totalElements()"
+        [totalPages]="totalPages()"
         (searchChange)="onSearchTerm($event)"
+        (filterChange)="onFilterChangeEvent($event)"
+        (dateRangeChange)="onDateRangeChange($event)"
+        (filtersClear)="onFiltersClear()"
         (pageChange)="onPageChange($event)">
     </app-data-table>
 </div>

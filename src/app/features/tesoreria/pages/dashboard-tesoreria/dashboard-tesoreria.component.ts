@@ -89,7 +89,7 @@ export class DashboardTesoreriaComponent implements OnInit {
         this.cargando.set(true);
         this.error.set(null);
         forkJoin({
-            cajas: this.cajasService.getAll(0, 50),
+            cajas: this.cajasService.getAll({ page: 0, size: 50 }),
             pagos: this.pagosService.getAll(0, 10),
             movimientos: this.movimientosService.getAll({ page: 0, size: 20 })
         }).subscribe({

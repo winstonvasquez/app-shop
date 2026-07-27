@@ -6,8 +6,13 @@ import { AlmacenService } from '@features/logistica/services/almacen.service';
 import { almacenSelectSource } from '@features/logistica/components/select-sources';
 import type { ServerSelectId } from '@shared/components';
 import { AuthService } from '@core/auth/auth.service';
+import { CatalogService } from '@core/services/catalog.service';
 import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
-import { DataTableComponent, TableColumn, TableAction, PaginationEvent } from '@shared/ui/tables/data-table/data-table.component';
+import {
+    DataTableComponent, TableColumn, TableAction, PaginationEvent,
+    FilterConfig, FilterChangeEvent, DateRangeFilterConfig, DateRangeChangeEvent
+} from '@shared/ui/tables/data-table/data-table.component';
+import { catalogFilter } from '@shared/ui/tables/data-table/filter-helpers';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { ModalComponent } from '@shared/components/modal/modal.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
@@ -34,6 +39,7 @@ export class ZoneManagementComponent {
     private readonly almacenApi = inject(AlmacenService);
     private readonly authService = inject(AuthService);
     private readonly fb = inject(FormBuilder);
+    readonly catalog = inject(CatalogService);
 
     readonly almacenSource = almacenSelectSource(this.almacenApi, () => this.authService.currentUser()?.activeCompanyId);
 
@@ -42,10 +48,26 @@ export class ZoneManagementComponent {
     loading = signal(false);
     error = signal<string | null>(null);
 
+    // Filtros (TODOS server-side — la vista nunca filtra la página cargada)
+    searchQuery = signal('');
+    filterTipo = signal('');
+    filterTemperatura = signal('');
+    filterFechaCreacionDesde = signal<string | null>(null);
+    filterFechaCreacionHasta = signal<string | null>(null);
+
     currentPage = signal(0);
     pageSize = signal(20);
     totalElements = signal(0);
     totalPages = signal(0);
+
+    filters: FilterConfig[] = [
+        catalogFilter(this.catalog, 'TIPO_ZONA_ALMACEN', 'tipo', 'Tipo de zona'),
+        catalogFilter(this.catalog, 'TEMPERATURA_ZONA', 'temperatura', 'Temperatura')
+    ];
+
+    dateRangeFilters: DateRangeFilterConfig[] = [
+        { field: 'fechaCreacion', label: 'Fecha de creación' }
+    ];
 
     showDrawer = signal(false);
     editMode = signal(false);
@@ -65,8 +87,8 @@ export class ZoneManagementComponent {
     columns: TableColumn<WarehouseZone>[] = [
         { key: 'codigo', label: 'Código', sortable: true, width: '110px' },
         { key: 'nombre', label: 'Nombre', sortable: true },
-        { key: 'tipo', label: 'Tipo', render: (r) => r.tipo },
-        { key: 'temperatura', label: 'Temperatura', render: (r) => r.temperatura },
+        { key: 'tipo', label: 'Tipo', render: (r) => this.catalog.label('TIPO_ZONA_ALMACEN', r.tipo) },
+        { key: 'temperatura', label: 'Temperatura', render: (r) => this.catalog.label('TEMPERATURA_ZONA', r.temperatura) },
         { key: 'capacidadMaxima', label: 'Capacidad', align: 'right',
           render: (r) => `${r.ocupacionActual}/${r.capacidadMaxima}` },
         { key: 'ordenPicking', label: 'Orden Picking', align: 'right' }
@@ -177,7 +199,16 @@ export class ZoneManagementComponent {
         const almacenId = this.selectedAlmacenId();
         if (!almacenId) { this.zones.set([]); this.totalElements.set(0); this.totalPages.set(0); return; }
         this.loading.set(true);
-        this.api.getZones(almacenId, this.currentPage(), this.pageSize()).subscribe({
+        this.api.getZones({
+            almacenId,
+            tipo: this.filterTipo() || undefined,
+            temperatura: this.filterTemperatura() || undefined,
+            q: this.searchQuery() || undefined,
+            fechaCreacionDesde: this.filterFechaCreacionDesde() ?? undefined,
+            fechaCreacionHasta: this.filterFechaCreacionHasta() ?? undefined,
+            page: this.currentPage(),
+            size: this.pageSize()
+        }).subscribe({
             next: (res) => {
                 this.zones.set(res.content);
                 this.totalElements.set(pageTotalElements(res));
@@ -186,6 +217,42 @@ export class ZoneManagementComponent {
             },
             error: (err: Error) => { this.error.set(err.message); this.loading.set(false); }
         });
+    }
+
+    onSearchTerm(term: string): void {
+        this.searchQuery.set(term);
+        this.currentPage.set(0);
+        this.loadZones();
+    }
+
+    onFilterChangeEvent(event: FilterChangeEvent): void {
+        const valor = event.value != null ? String(event.value) : '';
+        switch (event.field) {
+            case 'tipo':        this.filterTipo.set(valor); break;
+            case 'temperatura': this.filterTemperatura.set(valor); break;
+            default: return;
+        }
+        this.currentPage.set(0);
+        this.loadZones();
+    }
+
+    onDateRangeChange(event: DateRangeChangeEvent): void {
+        if (event.field !== 'fechaCreacion') return;
+        this.filterFechaCreacionDesde.set(event.from);
+        this.filterFechaCreacionHasta.set(event.to);
+        this.currentPage.set(0);
+        this.loadZones();
+    }
+
+    /** "Limpiar filtros": resetea todo (menos el almacén elegido) y recarga UNA sola vez. */
+    onFiltersClear(): void {
+        this.searchQuery.set('');
+        this.filterTipo.set('');
+        this.filterTemperatura.set('');
+        this.filterFechaCreacionDesde.set(null);
+        this.filterFechaCreacionHasta.set(null);
+        this.currentPage.set(0);
+        this.loadZones();
     }
 
     openCreate(): void {

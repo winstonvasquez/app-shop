@@ -2,7 +2,7 @@
 
   <app-page-header
     title="Lotes"
-    subtitle="Trazabilidad de lotes por producto — vencimiento, cantidad disponible, FIFO/FEFO"
+    subtitle="Trazabilidad de lotes — vencimiento, cantidad disponible, FIFO/FEFO"
     [breadcrumbs]="breadcrumbs">
     <div actions>
       <app-button icon="plus" label="Nuevo Lote" variant="primary"
@@ -11,14 +11,15 @@
   </app-page-header>
 
   <div style="max-width:560px;margin-bottom:1rem">
-    <app-product-lookup placeholder="Buscar producto por nombre o SKU"
+    <app-product-lookup placeholder="Filtrar por producto (nombre o SKU)"
       (selected)="onProductSelected($event)" />
   </div>
 
   @if (currentProductName()) {
     <div class="text-subtle" style="font-size:0.9rem;margin-bottom:0.5rem">
-      Lotes de <strong>{{ currentProductName() }}</strong>
+      Filtrando lotes de <strong>{{ currentProductName() }}</strong>
       <span style="font-size:0.75rem">#{{ currentProductId() }}</span>
+      <button type="button" style="margin-left:0.5rem;background:none;border:none;padding:0;color:var(--color-primary);text-decoration:underline;cursor:pointer;font-size:inherit" (click)="clearProductFilter()">Quitar filtro</button>
     </div>
   }
 
@@ -32,18 +33,25 @@
       [dismissible]="true" />
   }
 
-  @if (!currentProductId() && !loading()) {
-    <div class="empty-state">
-      <p class="empty-state-desc">Buscá un producto por nombre para ver y administrar sus lotes.</p>
-    </div>
-  } @else {
-    <app-data-table
-      [data]="lots()"
-      [columns]="columns"
-      [actions]="actions"
-      [loading]="loading()">
-    </app-data-table>
-  }
+  <app-data-table
+    [data]="lots()"
+    [columns]="columns"
+    [actions]="actions"
+    [loading]="loading()"
+    [searchable]="true"
+    searchPlaceholder="Buscar por N° de lote, SKU o proveedor..."
+    [filters]="filters"
+    [dateRangeFilters]="dateRangeFilters"
+    [currentPage]="currentPage()"
+    [pageSize]="pageSize()"
+    [totalElements]="totalElements()"
+    [totalPages]="totalPages()"
+    (searchChange)="onSearchTerm($event)"
+    (filterChange)="onFilterChangeEvent($event)"
+    (dateRangeChange)="onDateRangeChange($event)"
+    (filtersClear)="onFiltersClear()"
+    (pageChange)="onPageChange($event)">
+  </app-data-table>
 
 </div>
 

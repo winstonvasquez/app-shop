@@ -1,18 +1,22 @@
 import {
-    ChangeDetectionStrategy, Component, computed, inject, signal, OnInit
+    ChangeDetectionStrategy, Component, inject, signal, OnInit
 } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators, FormGroup, FormControl } from '@angular/forms';
 import { InventoryApiService } from '../../services/inventory-api.service';
 import { Location, Warehouse } from '../../models/inventory.models';
-import { of, map } from 'rxjs';
-import { toObservable } from '@angular/core/rxjs-interop';
-import { DataTableComponent, TableColumn, TableAction, PaginationEvent, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
+import { CatalogService } from '@core/services/catalog.service';
+import {
+    DataTableComponent, TableColumn, TableAction, PaginationEvent,
+    FilterConfig, FilterChangeEvent, DateRangeFilterConfig, DateRangeChangeEvent
+} from '@shared/ui/tables/data-table/data-table.component';
+import { catalogFilter, signalFilter, staticFilter, ACTIVO_OPTIONS } from '@shared/ui/tables/data-table/filter-helpers';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { ModalComponent } from '@shared/components/modal/modal.component';
 import { ButtonComponent, CatalogSelectComponent, ServerSearchSelectComponent } from '@shared/components';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
+import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 import { PAGINATION, ROUTES } from '@shared/constants/app.constants';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
@@ -34,31 +38,40 @@ import { warehouseSelectSource } from '../../components/select-sources';
 export class LocationManagementComponent implements OnInit {
     private readonly api = inject(InventoryApiService);
     private readonly fb = inject(FormBuilder);
+    readonly catalog = inject(CatalogService);
 
     readonly warehouseSource = warehouseSelectSource(this.api);
 
     warehouses = signal<Warehouse[]>([]);
-
-    // Selector de almacén en el toolbar (opciones dinámicas desde BD)
-    readonly almacenFilters: FilterConfig[] = [
-        { field: 'warehouse', label: 'Seleccionar almacén...', options: toObservable(this.warehouses).pipe(
-            map(list => list.map(w => ({ value: w.id, label: `${w.code} — ${w.name}` }))) ) }
-    ];
     locations = signal<Location[]>([]);
     loading = signal(false);
     error = signal<string | null>(null);
-    selectedWarehouseId = signal<number | null>(null);
+
+    // Filtros (TODOS server-side — la vista nunca filtra la página cargada)
+    searchQuery = signal('');
+    filterWarehouseId = signal<number | null>(null);
+    filterLocationType = signal('');
+    filterActive = signal<boolean | null>(null);
+    filterCreatedAtDesde = signal<string | null>(null);
+    filterCreatedAtHasta = signal<string | null>(null);
 
     currentPage = signal(0);
     pageSize = signal<number>(PAGINATION.defaultPageSize);
     totalElements = signal(0);
     totalPages = signal(0);
 
-    /** Página visible (slicing local: las ubicaciones del almacén llegan completas). */
-    readonly pagedLocations = computed(() => {
-        const start = this.currentPage() * this.pageSize();
-        return this.locations().slice(start, start + this.pageSize());
-    });
+    // Filtros select del toolbar. Almacén = lista dinámica cargada en ngOnInit;
+    // tipo = catálogo de erp_parameters; estado = booleano (sin catálogo).
+    filters: FilterConfig[] = [
+        signalFilter('warehouseId', 'Todos los almacenes', this.warehouses,
+            w => ({ value: w.id, label: `${w.code} — ${w.name}` })),
+        catalogFilter(this.catalog, 'TIPO_UBICACION', 'locationType', 'Tipo de ubicación'),
+        staticFilter('active', 'Estado', ACTIVO_OPTIONS)
+    ];
+
+    dateRangeFilters: DateRangeFilterConfig[] = [
+        { field: 'createdAt', label: 'Fecha de alta' }
+    ];
 
     showDrawer = signal(false);
     editMode = signal(false);
@@ -98,7 +111,14 @@ export class LocationManagementComponent implements OnInit {
     readonly exportConfig: BackendExportConfig = {
         url: `${environment.apiUrls.inventory}/api/locations/export`,
         filename: 'ubicaciones',
-        params: () => ({ warehouseId: this.selectedWarehouseId() })
+        params: () => ({
+            warehouseId: this.filterWarehouseId() ?? undefined,
+            locationType: this.filterLocationType() || undefined,
+            active: this.filterActive() ?? undefined,
+            q: this.searchQuery() || undefined,
+            createdAtDesde: this.filterCreatedAtDesde() ?? undefined,
+            createdAtHasta: this.filterCreatedAtHasta() ?? undefined
+        })
     };
 
     form: FormGroup = this.fb.nonNullable.group({
@@ -117,6 +137,7 @@ export class LocationManagementComponent implements OnInit {
 
     ngOnInit(): void {
         this.loadWarehouses();
+        this.loadLocations();
     }
 
     loadWarehouses(): void {
@@ -126,31 +147,77 @@ export class LocationManagementComponent implements OnInit {
         });
     }
 
-    onFilterChangeEvent(event: FilterChangeEvent): void {
-        if (event.field !== 'warehouse') return;
-        const id = event.value != null ? Number(event.value) : 0;
-        this.selectedWarehouseId.set(id || null);
-        if (id) this.loadLocations(id);
-        else { this.locations.set([]); this.totalElements.set(0); this.totalPages.set(0); }
-    }
-
-    loadLocations(warehouseId: number): void {
+    /** Listado GLOBAL paginado — el almacén es un filtro opcional, no un requisito para listar. */
+    loadLocations(): void {
         this.loading.set(true);
-        this.api.getLocationsByWarehouse(warehouseId).subscribe({
-            next: (data) => {
-                this.locations.set(data);
-                this.totalElements.set(data.length);
-                this.totalPages.set(Math.ceil(data.length / this.pageSize()) || 1);
+        this.error.set(null);
+        this.api.searchLocationsPaged({
+            page: this.currentPage(),
+            size: this.pageSize(),
+            warehouseId: this.filterWarehouseId() ?? undefined,
+            locationType: this.filterLocationType() || undefined,
+            active: this.filterActive() ?? undefined,
+            q: this.searchQuery() || undefined,
+            createdAtDesde: this.filterCreatedAtDesde() ?? undefined,
+            createdAtHasta: this.filterCreatedAtHasta() ?? undefined
+        }).subscribe({
+            next: (res) => {
+                this.locations.set(res.content ?? []);
+                this.totalElements.set(pageTotalElements(res));
+                this.totalPages.set(pageTotalPages(res));
                 this.loading.set(false);
             },
             error: (err: Error) => { this.error.set(err.message); this.loading.set(false); }
         });
     }
 
+    onSearchTerm(term: string): void {
+        this.searchQuery.set(term);
+        this.currentPage.set(0);
+        this.loadLocations();
+    }
+
+    onFilterChangeEvent(event: FilterChangeEvent): void {
+        switch (event.field) {
+            case 'warehouseId':
+                this.filterWarehouseId.set(event.value != null && event.value !== '' ? Number(event.value) : null);
+                break;
+            case 'locationType':
+                this.filterLocationType.set(event.value != null ? String(event.value) : '');
+                break;
+            case 'active':
+                this.filterActive.set(event.value != null && event.value !== '' ? String(event.value) === 'true' : null);
+                break;
+            default: return;
+        }
+        this.currentPage.set(0);
+        this.loadLocations();
+    }
+
+    onDateRangeChange(event: DateRangeChangeEvent): void {
+        if (event.field !== 'createdAt') return;
+        this.filterCreatedAtDesde.set(event.from);
+        this.filterCreatedAtHasta.set(event.to);
+        this.currentPage.set(0);
+        this.loadLocations();
+    }
+
+    /** "Limpiar filtros": resetea todo y recarga UNA sola vez. */
+    onFiltersClear(): void {
+        this.searchQuery.set('');
+        this.filterWarehouseId.set(null);
+        this.filterLocationType.set('');
+        this.filterActive.set(null);
+        this.filterCreatedAtDesde.set(null);
+        this.filterCreatedAtHasta.set(null);
+        this.currentPage.set(0);
+        this.loadLocations();
+    }
+
     openCreate(): void {
         this.editMode.set(false);
         this.selectedId.set(null);
-        this.form.reset({ active: true, warehouseId: this.selectedWarehouseId() });
+        this.form.reset({ active: true, warehouseId: this.filterWarehouseId() });
         this.submitError.set(null);
         this.showDrawer.set(true);
     }
@@ -177,7 +244,7 @@ export class LocationManagementComponent implements OnInit {
             next: () => {
                 this.submitting.set(false);
                 this.closeDrawer();
-                if (this.selectedWarehouseId()) this.loadLocations(this.selectedWarehouseId()!);
+                this.loadLocations();
             },
             error: (err: Error) => { this.submitting.set(false); this.submitError.set(err.message); }
         });
@@ -198,7 +265,7 @@ export class LocationManagementComponent implements OnInit {
         if (id === null) return;
         this.showConfirmDelete.set(false);
         this.api.deleteLocation(id).subscribe({
-            next: () => { this.pendingDeleteId.set(null); if (this.selectedWarehouseId()) this.loadLocations(this.selectedWarehouseId()!); },
+            next: () => { this.pendingDeleteId.set(null); this.loadLocations(); },
             error: (err: Error) => { this.pendingDeleteId.set(null); this.error.set(err.message); }
         });
     }
@@ -206,6 +273,7 @@ export class LocationManagementComponent implements OnInit {
     onPageChange(e: PaginationEvent): void {
         this.currentPage.set(e.page);
         this.pageSize.set(e.size);
+        this.loadLocations();
     }
 
     getCtrl(name: string): FormControl { return this.form.get(name) as FormControl; }

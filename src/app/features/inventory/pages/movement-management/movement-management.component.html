@@ -14,10 +14,30 @@
     <app-alert type="error" [message]="error()!" [dismissible]="true" (dismiss)="error.set(null)" />
   }
 
+  <!-- Filtro por producto (fuera del toolbar: requiere buscador, no es un <select>) -->
+  <div class="mb-sm" style="max-width:420px">
+    @if (filterProductName()) {
+      <div class="flex items-center justify-between gap-2 rounded-lg border border-border-subtle px-3 py-2">
+        <span class="text-sm">Producto: {{ filterProductName() }}
+          <span class="text-subtle" style="font-size:0.75rem">#{{ filterProductId() }}</span>
+        </span>
+        <app-button variant="secondary" size="sm" label="Quitar" (click)="clearFilterProduct()" />
+      </div>
+    } @else if (filterProductLookupOpen()) {
+      <app-product-lookup placeholder="Buscar producto por nombre o SKU"
+        (selected)="onFilterProductSelected($event)" />
+    } @else {
+      <app-button variant="secondary" size="sm" icon="search" label="Filtrar por producto"
+        (click)="toggleFilterProductLookup()" />
+    }
+  </div>
+
   <app-data-table
     [data]="movements()"
     [columns]="columns"
     [loading]="loading()"
+    [searchable]="true"
+    searchPlaceholder="Buscar por N°, referencia o motivo..."
     [currentPage]="currentPage()"
     [pageSize]="pageSize()"
     [totalElements]="totalElements()"
@@ -25,8 +45,10 @@
     [filters]="toolbarFilters"
     [dateRangeFilters]="dateRangeFilters"
     [exportConfig]="exportConfig"
+    (searchChange)="onSearchTerm($event)"
     (filterChange)="onFilterChangeEvent($event)"
     (dateRangeChange)="onDateRangeChange($event)"
+    (filtersClear)="onFiltersClear()"
     (pageChange)="onPageChange($event)">
   </app-data-table>
 

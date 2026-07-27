@@ -31,6 +31,23 @@ export interface DeliveryRoutePage {
     number: number;
 }
 
+/** Filtros opcionales para `GET /logistics/api/routes` (listado paginado server-side). */
+export interface DeliveryRouteFiltros {
+    page?: number;
+    size?: number;
+    status?: string;
+    driverId?: string;
+    warehouseId?: string;
+    vehiclePlate?: string;
+    q?: string;
+    routeDateDesde?: string;
+    routeDateHasta?: string;
+    startedAtDesde?: string;
+    startedAtHasta?: string;
+    completedAtDesde?: string;
+    completedAtHasta?: string;
+}
+
 export interface GenerateRouteBody {
     orderIds: string[];
     companyId: string;

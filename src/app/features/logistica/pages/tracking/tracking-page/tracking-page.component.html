@@ -83,12 +83,20 @@
   [actions]="envioActions"
   [loading]="loadingEnvios()"
   [totalPages]="totalPages()"
-  [totalElements]="envios().length"
+  [totalElements]="totalElements()"
   [currentPage]="currentPage()"
   [pageSize]="pageSize()"
+  [searchable]="true"
+  searchPlaceholder="Buscar por N° tracking, destinatario o dirección..."
+  [filters]="filters"
+  [dateRangeFilters]="dateRangeFilters"
   [exportable]="true"
   exportFileName="envios-tracking"
   [exportConfig]="exportConfig"
+  (searchChange)="onSearch($event)"
+  (filterChange)="onFilterChangeEvent($event)"
+  (dateRangeChange)="onDateRangeChange($event)"
+  (filtersClear)="onFiltersClear()"
   (pageChange)="onPageChange($event)">
 </app-data-table>
 </div>

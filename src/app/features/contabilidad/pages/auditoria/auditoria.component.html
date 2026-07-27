@@ -35,12 +35,14 @@
         <!-- Tabla -->
         <div>
             <app-data-table
-                [data]="logsFiltrados()"
+                [data]="logs()"
                 [columns]="columns"
                 [actions]="actions"
                 [loading]="cargando()"
                 [searchable]="true"
                 searchPlaceholder="Buscar por usuario, entidad o acción..."
+                [filters]="filters"
+                [dateRangeFilters]="dateRangeFilters"
                 [exportable]="true"
                 exportFileName="auditoria"
                 [exportConfig]="exportConfig"
@@ -49,6 +51,9 @@
                 [totalElements]="totalElements()"
                 [totalPages]="totalPages()"
                 (searchChange)="onSearchTerm($event)"
+                (filterChange)="onFilterChangeEvent($event)"
+                (dateRangeChange)="onDateRangeChange($event)"
+                (filtersClear)="onFiltersClear()"
                 (pageChange)="onPageChange($event)">
             </app-data-table>
         </div>

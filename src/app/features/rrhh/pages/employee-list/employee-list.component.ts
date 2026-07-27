@@ -2,8 +2,6 @@ import {
     Component, OnInit, inject, signal,
     ChangeDetectionStrategy
 } from '@angular/core';
-import { toObservable } from '@angular/core/rxjs-interop';
-import { map } from 'rxjs';
 import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { EmployeeService } from '../../services/employee.service';
 import { DepartmentService } from '../../services/department.service';
@@ -13,8 +11,10 @@ import { ButtonComponent, CatalogSelectComponent, ServerSearchSelectComponent } 
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { employeeSelectSource, departmentSelectSource, positionSelectSource } from '../../components/select-sources';
 import { DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent, DateRangeFilterConfig, DateRangeChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
+import { catalogFilter, signalFilter } from '@shared/ui/tables/data-table/filter-helpers';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
+import { PAGINATION } from '@shared/constants/app.constants';
 import { PaginationComponent, PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
 import { AdminFormSectionComponent } from '@shared/ui/forms/admin-form-section/admin-form-section.component';
@@ -60,6 +60,10 @@ export class EmployeeListComponent implements OnInit {
     // Se mantiene para el filtro de departamento del toolbar del data-table.
     readonly departments = this.departmentService.activeDepartments;
 
+    // Listas para los selects de filtro "Puesto" y "Supervisor" del toolbar (carga eager, no search-select).
+    positionsFiltro = signal<{ id: number; nombre: string }[]>([]);
+    supervisoresFiltro = signal<{ id: number; nombres: string; apellidos: string }[]>([]);
+
     // ── Data ─────────────────────────────────────────────────────────────────
     readonly loading   = this.employeeService.loading;
     readonly employees = this.employeeService.employees;
@@ -72,48 +76,72 @@ export class EmployeeListComponent implements OnInit {
     submitError      = signal<string | null>(null);
     selectedEmployee = signal<Employee | null>(null);
 
-    // ── Filters ───────────────────────────────────────────────────────────────
+    // ── Filters (TODOS server-side — la vista nunca filtra la página cargada) ──
     searchQuery  = signal('');
     filterEstado = signal('');
     filterDepartmentId = signal<number | null>(null);
+    filterPositionId = signal<number | null>(null);
+    filterSupervisorId = signal<number | null>(null);
+    filterTipoDocumento = signal('');
+    filterSistemaPrevisional = signal('');
+    filterAfpNombre = signal('');
+    filterGenero = signal('');
+    filterEstadoCivil = signal('');
     filterFechaIngresoDesde = signal<string | undefined>(undefined);
     filterFechaIngresoHasta = signal<string | undefined>(undefined);
+    filterFechaSalidaDesde = signal<string | undefined>(undefined);
+    filterFechaSalidaHasta = signal<string | undefined>(undefined);
+    filterFechaNacimientoDesde = signal<string | undefined>(undefined);
+    filterFechaNacimientoHasta = signal<string | undefined>(undefined);
 
-    // Filtro de estado para el toolbar del data-table (catálogo ESTADO_EMPLEADO)
-    estadoFilters: FilterConfig[] = [
-        {
-            field: 'estado', label: 'Todos los estados',
-            options: toObservable(this.catalog.options('ESTADO_EMPLEADO')).pipe(
-                map(o => o.map(x => ({ value: x.codigo, label: x.valor })))
-            ),
-        }
+    // Filtros select del toolbar. Las opciones salen de erp_parameters (fuente única)
+    // o de listas dinámicas ya cargadas (departamentos, puestos, supervisores).
+    filters: FilterConfig[] = [
+        catalogFilter(this.catalog, 'ESTADO_EMPLEADO', 'estado', 'Todos los estados'),
+        signalFilter('departmentId', 'Todos los departamentos', this.departments,
+            d => ({ value: d.id, label: d.nombre })),
+        signalFilter('positionId', 'Todos los puestos', this.positionsFiltro,
+            p => ({ value: p.id, label: p.nombre })),
+        signalFilter('supervisorId', 'Todos los supervisores', this.supervisoresFiltro,
+            e => ({ value: e.id, label: `${e.nombres} ${e.apellidos}` })),
+        catalogFilter(this.catalog, 'TIPO_DOCUMENTO_IDENTIDAD', 'tipoDocumento', 'Tipo de documento'),
+        catalogFilter(this.catalog, 'SISTEMA_PREVISIONAL', 'sistemaPrevisional', 'Sistema previsional'),
+        catalogFilter(this.catalog, 'AFP', 'afpNombre', 'AFP'),
+        catalogFilter(this.catalog, 'GENERO', 'genero', 'Género'),
+        catalogFilter(this.catalog, 'ESTADO_CIVIL', 'estadoCivil', 'Estado civil'),
     ];
-
-    // Filtro de departamento (dinámico) para el toolbar del data-table
-    departamentoFilters: FilterConfig[] = [
-        {
-            field: 'departmentId',
-            label: 'Todos los departamentos',
-            options: toObservable(this.departments).pipe(
-                map(list => list.map(d => ({ value: d.id, label: d.nombre })))
-            )
-        }
-    ];
-
-    readonly tableFilters: FilterConfig[] = [...this.estadoFilters, ...this.departamentoFilters];
 
     readonly dateRangeFilters: DateRangeFilterConfig[] = [
-        { field: 'fechaIngreso', label: 'Fecha de ingreso' }
+        { field: 'fechaIngreso', label: 'Fecha de ingreso' },
+        { field: 'fechaSalida', label: 'Fecha de cese' },
+        { field: 'fechaNacimiento', label: 'Fecha de nacimiento' },
     ];
 
     /**
      * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios
-     * (respeta los filtros actuales search + estado). Ver /hr/api/employees/export.
+     * (respeta TODOS los filtros actuales). Ver /hr/api/employees/export.
      */
     readonly exportConfig: BackendExportConfig = {
         url: `${environment.apiUrls.hr}/api/employees/export`,
         filename: 'empleados',
-        params: () => ({ search: this.searchQuery(), status: this.filterEstado() }),
+        params: () => ({
+            search: this.searchQuery(),
+            status: this.filterEstado(),
+            departmentId: this.filterDepartmentId() ?? undefined,
+            positionId: this.filterPositionId() ?? undefined,
+            supervisorId: this.filterSupervisorId() ?? undefined,
+            tipoDocumento: this.filterTipoDocumento(),
+            sistemaPrevisional: this.filterSistemaPrevisional(),
+            afpNombre: this.filterAfpNombre(),
+            genero: this.filterGenero(),
+            estadoCivil: this.filterEstadoCivil(),
+            fechaIngresoDesde: this.filterFechaIngresoDesde(),
+            fechaIngresoHasta: this.filterFechaIngresoHasta(),
+            fechaSalidaDesde: this.filterFechaSalidaDesde(),
+            fechaSalidaHasta: this.filterFechaSalidaHasta(),
+            fechaNacimientoDesde: this.filterFechaNacimientoDesde(),
+            fechaNacimientoHasta: this.filterFechaNacimientoHasta(),
+        }),
     };
 
     // ── Pagination (server-side) ──────────────────────────────────────────────
@@ -184,20 +212,47 @@ export class EmployeeListComponent implements OnInit {
     // ── Lifecycle ─────────────────────────────────────────────────────────────
     ngOnInit(): void {
         this.departmentService.loadDepartments().catch(() => { /* dropdown depto opcional */ });
+        this.loadPositionsFiltro();
+        this.loadSupervisoresFiltro();
         this.loadPage();
     }
 
-    /** Carga la página actual server-side (search + estado + departamento + rango fecha ingreso + 20/pág). */
+    /** Puestos para el select de filtro del toolbar (lista acotada, no requiere server-search). */
+    private loadPositionsFiltro(): void {
+        this.positionService.searchPage(0, PAGINATION.maxPageSize)
+            .then(res => this.positionsFiltro.set(res.content ?? []))
+            .catch(() => this.positionsFiltro.set([]));
+    }
+
+    /** Supervisores (empleados) para el select de filtro del toolbar. */
+    private loadSupervisoresFiltro(): void {
+        this.employeeService.searchPage(0, PAGINATION.maxPageSize)
+            .then(res => this.supervisoresFiltro.set(res.content ?? []))
+            .catch(() => this.supervisoresFiltro.set([]));
+    }
+
+    /** Carga la página actual server-side (search + TODOS los filtros avanzados + 20/pág). */
     private loadPage(): void {
-        this.employeeService.loadEmployeesPaged(
-            this.currentPage(),
-            this.pageSize(),
-            this.searchQuery() || undefined,
-            this.filterEstado() || undefined,
-            this.filterDepartmentId(),
-            this.filterFechaIngresoDesde(),
-            this.filterFechaIngresoHasta()
-        ).then(res => {
+        this.employeeService.loadEmployeesPaged({
+            page: this.currentPage(),
+            size: this.pageSize(),
+            search: this.searchQuery() || undefined,
+            status: this.filterEstado() || undefined,
+            departmentId: this.filterDepartmentId(),
+            positionId: this.filterPositionId(),
+            supervisorId: this.filterSupervisorId(),
+            tipoDocumento: this.filterTipoDocumento() || undefined,
+            sistemaPrevisional: this.filterSistemaPrevisional() || undefined,
+            afpNombre: this.filterAfpNombre() || undefined,
+            genero: this.filterGenero() || undefined,
+            estadoCivil: this.filterEstadoCivil() || undefined,
+            fechaIngresoDesde: this.filterFechaIngresoDesde(),
+            fechaIngresoHasta: this.filterFechaIngresoHasta(),
+            fechaSalidaDesde: this.filterFechaSalidaDesde(),
+            fechaSalidaHasta: this.filterFechaSalidaHasta(),
+            fechaNacimientoDesde: this.filterFechaNacimientoDesde(),
+            fechaNacimientoHasta: this.filterFechaNacimientoHasta(),
+        }).then(res => {
             this.totalElements.set(res.totalElements);
             this.totalPages.set(res.totalPages);
         }).catch(err => {
@@ -206,6 +261,7 @@ export class EmployeeListComponent implements OnInit {
     }
 
     // ── Handlers ─────────────────────────────────────────────────────────────
+    /** La búsqueda por texto también va al backend, no filtra la página cargada. */
     onSearchTerm(term: string): void {
         this.searchQuery.set(term);
         this.currentPage.set(0);
@@ -213,21 +269,61 @@ export class EmployeeListComponent implements OnInit {
     }
 
     onFilterChangeEvent(event: FilterChangeEvent): void {
-        if (event.field === 'estado') {
-            this.filterEstado.set(event.value != null ? String(event.value) : '');
-            this.currentPage.set(0);
-            this.loadPage();
-        } else if (event.field === 'departmentId') {
-            this.filterDepartmentId.set(event.value != null ? Number(event.value) : null);
-            this.currentPage.set(0);
-            this.loadPage();
+        const valor = event.value != null ? String(event.value) : '';
+        switch (event.field) {
+            case 'estado':             this.filterEstado.set(valor); break;
+            case 'departmentId':       this.filterDepartmentId.set(event.value != null ? Number(event.value) : null); break;
+            case 'positionId':         this.filterPositionId.set(event.value != null ? Number(event.value) : null); break;
+            case 'supervisorId':       this.filterSupervisorId.set(event.value != null ? Number(event.value) : null); break;
+            case 'tipoDocumento':      this.filterTipoDocumento.set(valor); break;
+            case 'sistemaPrevisional': this.filterSistemaPrevisional.set(valor); break;
+            case 'afpNombre':          this.filterAfpNombre.set(valor); break;
+            case 'genero':             this.filterGenero.set(valor); break;
+            case 'estadoCivil':        this.filterEstadoCivil.set(valor); break;
+            default: return;
         }
+        this.currentPage.set(0);
+        this.loadPage();
     }
 
     onDateRangeChange(event: DateRangeChangeEvent): void {
-        if (event.field !== 'fechaIngreso') return;
-        this.filterFechaIngresoDesde.set(event.from ?? undefined);
-        this.filterFechaIngresoHasta.set(event.to ?? undefined);
+        switch (event.field) {
+            case 'fechaIngreso':
+                this.filterFechaIngresoDesde.set(event.from ?? undefined);
+                this.filterFechaIngresoHasta.set(event.to ?? undefined);
+                break;
+            case 'fechaSalida':
+                this.filterFechaSalidaDesde.set(event.from ?? undefined);
+                this.filterFechaSalidaHasta.set(event.to ?? undefined);
+                break;
+            case 'fechaNacimiento':
+                this.filterFechaNacimientoDesde.set(event.from ?? undefined);
+                this.filterFechaNacimientoHasta.set(event.to ?? undefined);
+                break;
+            default: return;
+        }
+        this.currentPage.set(0);
+        this.loadPage();
+    }
+
+    /** "Limpiar filtros": resetea todo y recarga UNA sola vez. */
+    onFiltersClear(): void {
+        this.searchQuery.set('');
+        this.filterEstado.set('');
+        this.filterDepartmentId.set(null);
+        this.filterPositionId.set(null);
+        this.filterSupervisorId.set(null);
+        this.filterTipoDocumento.set('');
+        this.filterSistemaPrevisional.set('');
+        this.filterAfpNombre.set('');
+        this.filterGenero.set('');
+        this.filterEstadoCivil.set('');
+        this.filterFechaIngresoDesde.set(undefined);
+        this.filterFechaIngresoHasta.set(undefined);
+        this.filterFechaSalidaDesde.set(undefined);
+        this.filterFechaSalidaHasta.set(undefined);
+        this.filterFechaNacimientoDesde.set(undefined);
+        this.filterFechaNacimientoHasta.set(undefined);
         this.currentPage.set(0);
         this.loadPage();
     }

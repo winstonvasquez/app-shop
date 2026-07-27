@@ -33,6 +33,19 @@ export const EVENT_TYPES_CONOCIDOS = [
     { value: 'INVENTORY_ADJUSTMENT', label: 'Ajuste de inventario (INVENTORY_ADJUSTMENT)' },
 ] as const;
 
+/** Filtros opcionales para `GET /logistics/api/accounting-mappings` (listado paginado server-side). */
+export interface AccountingMappingFiltros {
+    page?: number;
+    size?: number;
+    eventType?: string;
+    activo?: boolean;
+    debitAccount?: string;
+    creditAccount?: string;
+    fechaCreacionDesde?: string;
+    fechaCreacionHasta?: string;
+    q?: string;
+}
+
 export interface TestAsientoResultado {
     ok: boolean;
     mensaje: string;

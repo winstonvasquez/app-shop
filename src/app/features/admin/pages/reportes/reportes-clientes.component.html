@@ -28,7 +28,7 @@
         </div>
     }
 
-    <!-- KPIs -->
+    <!-- KPIs (referidos a la página actual) -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <div class="card">
             <div class="card-body">
@@ -39,34 +39,18 @@
         </div>
         <div class="card">
             <div class="card-body">
-                <p class="text-[0.75rem] text-[var(--color-text-muted)]">ACTIVOS</p>
-                <p class="text-[2rem] font-bold text-[var(--color-success)]">{{ activos() }}</p>
+                <p class="text-[0.75rem] text-[var(--color-text-muted)]">ACTIVOS (página)</p>
+                <p class="text-[2rem] font-bold text-[var(--color-success)]">{{ activosPagina() }}</p>
                 <p class="text-[0.75rem] text-[var(--color-text-muted)]">con acceso</p>
             </div>
         </div>
         <div class="card">
             <div class="card-body">
-                <p class="text-[0.75rem] text-[var(--color-text-muted)]">INACTIVOS</p>
-                <p class="text-[2rem] font-bold">{{ totalElements() - activos() }}</p>
+                <p class="text-[0.75rem] text-[var(--color-text-muted)]">INACTIVOS (página)</p>
+                <p class="text-[2rem] font-bold">{{ usuarios().length - activosPagina() }}</p>
                 <p class="text-[0.75rem] text-[var(--color-text-muted)]">suspendidos</p>
             </div>
         </div>
-    </div>
-
-    <div class="filters-bar no-print">
-            <div class="search-box">
-                <span class="search-box-icon">&#128269;</span>
-                <input #searchInput type="text" class="form-input pl-8" placeholder="Buscar por nombre o email..."
-                       (keyup.enter)="onSearchTerm(searchInput.value)">
-        <button type="button" class="search-clear search-clear--auto" aria-label="Limpiar búsqueda"
-            (click)="searchInput.value=''; onSearchTerm('')">
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-        </button>
-            </div>
-            <app-button label="Buscar" icon="search" variant="primary" size="sm"
-                (click)="onSearchTerm(searchInput.value)"></app-button>
     </div>
 
     <div class="card">
@@ -74,54 +58,24 @@
             <h3 class="card-title">Usuarios registrados</h3>
         </div>
 
-        @if (cargando()) {
-            <div class="loading-container"><div class="spinner"></div></div>
-        } @else {
-            <table class="table">
-                <thead class="table-header">
-                    <tr>
-                        <th class="table-header-cell">ID</th>
-                        <th class="table-header-cell">Usuario</th>
-                        <th class="table-header-cell">Email</th>
-                        <th class="table-header-cell">Nombre</th>
-                        <th class="table-header-cell">Estado</th>
-                        <th class="table-header-cell">Registro</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @for (u of usuariosFiltrados(); track u.id) {
-                        <tr class="table-row">
-                            <td class="table-cell font-mono text-sm">{{ u.id }}</td>
-                            <td class="table-cell font-bold">{{ u.username }}</td>
-                            <td class="table-cell text-[var(--color-text-muted)]">{{ u.email }}</td>
-                            <td class="table-cell">{{ (u.nombre ?? '') + ' ' + (u.apellido ?? '') || '—' }}</td>
-                            <td class="table-cell">
-                                <span [class]="u.activo ? 'badge badge-success' : 'badge badge-error'">
-                                    {{ u.activo ? 'ACTIVO' : 'INACTIVO' }}
-                                </span>
-                            </td>
-                            <td class="table-cell text-sm text-[var(--color-text-muted)]">
-                                {{ u.fechaCreacion ? (u.fechaCreacion | date:'dd/MM/yyyy') : '—' }}
-                            </td>
-                        </tr>
-                    } @empty {
-                        <tr><td colspan="6" class="table-cell text-center p-6 text-[var(--color-text-muted)]">Sin resultados</td></tr>
-                    }
-                </tbody>
-            </table>
-
-            @if (totalPages() > 1) {
-                <div class="pagination no-print">
-                    <span class="pagination-info">Mostrando {{ usuarios().length }} de {{ totalElements() }}</span>
-                    <div class="pagination-controls">
-                        <button class="btn-page" [disabled]="pagina() === 0" (click)="irPagina(pagina() - 1)">&#8249;</button>
-                        @for (p of pages(); track p) {
-                            <button class="btn-page" [class.active]="p === pagina()" (click)="irPagina(p)">{{ p + 1 }}</button>
-                        }
-                        <button class="btn-page" [disabled]="pagina() === totalPages() - 1" (click)="irPagina(pagina() + 1)">&#8250;</button>
-                    </div>
-                </div>
-            }
-        }
+        <app-data-table
+            [data]="usuarios()"
+            [columns]="columns"
+            [loading]="cargando()"
+            [searchable]="true"
+            searchPlaceholder="Buscar por nombre, usuario o email..."
+            [filters]="filters"
+            [dateRangeFilters]="dateRangeFilters"
+            [exportable]="false"
+            [currentPage]="currentPage()"
+            [pageSize]="pageSize()"
+            [totalElements]="totalElements()"
+            [totalPages]="totalPages()"
+            (searchChange)="onSearchTerm($event)"
+            (filterChange)="onFilterChangeEvent($event)"
+            (dateRangeChange)="onDateRangeChange($event)"
+            (filtersClear)="onFiltersClear()"
+            (pageChange)="onPaginationChange($event)">
+        </app-data-table>
     </div>
 </div>

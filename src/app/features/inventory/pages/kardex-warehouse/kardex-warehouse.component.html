@@ -10,33 +10,44 @@
     <app-alert type="error" [message]="error()!" [dismissible]="true" (dismiss)="error.set(null)" />
   }
 
-  <form [formGroup]="form" class="filters-bar" style="display:flex;gap:1rem;align-items:flex-end;flex-wrap:wrap;margin-bottom:1rem">
-    <div style="min-width:280px">
-      <label class="input-label">Almacén <span class="text-error">*</span></label>
-      <app-server-search-select [dataSource]="almacenSource" formControlName="almacenId"
-        placeholder="Buscar almacén…" />
-    </div>
-    <app-date-input label="Desde" formControlName="from" [required]="true" />
-    <app-date-input label="Hasta" formControlName="to" [required]="true" />
-    <app-button label="Buscar" icon="search" variant="primary"
-      [disabled]="form.invalid" [loading]="loading()" (click)="buscar()" />
-  </form>
+  <!-- Filtro por producto (fuera del toolbar: requiere buscador, no es un <select>) -->
+  <div class="mb-sm" style="max-width:420px">
+    @if (filterProductoNombre()) {
+      <div class="flex items-center justify-between gap-2 rounded-lg border border-border-subtle px-3 py-2">
+        <span class="text-sm">Producto: {{ filterProductoNombre() }}</span>
+        <app-button variant="secondary" size="sm" label="Quitar" (click)="clearFilterProducto()" />
+      </div>
+    } @else if (filterProductLookupOpen()) {
+      <app-product-lookup placeholder="Buscar producto por nombre o SKU"
+        (selected)="onFilterProductSelected($event)" />
+    } @else {
+      <app-button variant="secondary" size="sm" icon="search" label="Filtrar por producto"
+        (click)="toggleFilterProductLookup()" />
+    }
+  </div>
 
-  @if (!entries().length && !loading()) {
-    <div class="empty-state">
-      <p class="empty-state-desc">Elegí un almacén y un rango de fechas para ver el kardex.</p>
-    </div>
-  } @else {
-    <app-data-table
-      [data]="entries()"
-      [columns]="columns"
-      [loading]="loading()"
-      [currentPage]="currentPage()"
-      [pageSize]="pageSize()"
-      [totalElements]="totalElements()"
-      [totalPages]="totalPages()"
-      (pageChange)="onPageChange($event)">
-    </app-data-table>
+  @if (!selectedAlmacenId() && !loading()) {
+    <p class="text-sm text-subtle mb-sm">Elegí un almacén en el filtro de abajo para ver el kardex.</p>
   }
+
+  <!-- El almacén vive DENTRO de [filters]: la tabla se muestra siempre para poder elegirlo -->
+  <app-data-table
+    [data]="entries()"
+    [columns]="columns"
+    [loading]="loading()"
+    [searchable]="true"
+    searchPlaceholder="Buscar por SKU, producto o descripción..."
+    [filters]="filters"
+    [dateRangeFilters]="dateRangeFilters"
+    [currentPage]="currentPage()"
+    [pageSize]="pageSize()"
+    [totalElements]="totalElements()"
+    [totalPages]="totalPages()"
+    (searchChange)="onSearchTerm($event)"
+    (filterChange)="onFilterChangeEvent($event)"
+    (dateRangeChange)="onDateRangeChange($event)"
+    (filtersClear)="onFiltersClear()"
+    (pageChange)="onPageChange($event)">
+  </app-data-table>
 
 </div>

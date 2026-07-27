@@ -24,6 +24,8 @@
         [loading]="loading()"
         [searchable]="true"
         searchPlaceholder="Buscar segmento..."
+        [filters]="filters"
+        [dateRangeFilters]="dateRangeFilters"
         [exportable]="true"
         exportFileName="segmentos"
         [exportConfig]="exportConfig"
@@ -32,6 +34,9 @@
         [totalElements]="totalElements()"
         [totalPages]="totalPages()"
         (searchChange)="onSearch($event)"
+        (filterChange)="onFilterChangeEvent($event)"
+        (dateRangeChange)="onDateRangeChange($event)"
+        (filtersClear)="onFiltersClear()"
         (pageChange)="onPaginationChange($event)">
     </app-data-table>
 

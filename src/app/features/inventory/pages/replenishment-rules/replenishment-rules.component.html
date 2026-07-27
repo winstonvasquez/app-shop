@@ -25,6 +25,14 @@
     [pageSize]="pageSize()"
     [totalElements]="totalElements()"
     [totalPages]="totalPages()"
+    [searchable]="true"
+    searchPlaceholder="Buscar por SKU, producto o proveedor…"
+    [filters]="filters"
+    [dateRangeFilters]="dateRangeFilters"
+    (searchChange)="onSearchTerm($event)"
+    (filterChange)="onFilterChangeEvent($event)"
+    (dateRangeChange)="onDateRangeChange($event)"
+    (filtersClear)="onFiltersClear()"
     (pageChange)="onPageChange($event)">
   </app-data-table>
 

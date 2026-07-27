@@ -35,13 +35,14 @@
     </div>
 </div>
 
-<!-- Filtros -->
-<!-- Tabla -->
+<!-- Tabla (server-side: búsqueda + selects + rangos de fecha + paginación) -->
 <app-data-table
     [data]="trainings()"
     [columns]="columns"
     [actions]="actions"
     [loading]="loading()"
+    [searchable]="true"
+    searchPlaceholder="Buscar por curso, instructor o descripción..."
     [filters]="toolbarFilters"
     [dateRangeFilters]="dateRangeFilters"
     [exportable]="true"
@@ -51,8 +52,10 @@
     [pageSize]="pageSize()"
     [totalElements]="totalElements()"
     [totalPages]="totalPages()"
+    (searchChange)="onSearchTerm($event)"
     (filterChange)="onFilterChangeEvent($event)"
     (dateRangeChange)="onDateRangeChange($event)"
+    (filtersClear)="onFiltersClear()"
     (pageChange)="onPaginationChange($event)" />
 
 <!-- ── Drawer: Crear/Editar Capacitación ────────────────────────────────── -->

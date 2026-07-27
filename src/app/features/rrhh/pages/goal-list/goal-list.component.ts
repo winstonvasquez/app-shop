@@ -1,22 +1,28 @@
-import { Component, inject, signal, computed, ChangeDetectionStrategy, OnInit } from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy, OnInit } from '@angular/core';
 import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
-import { of } from 'rxjs';
 import { ButtonComponent, ServerSearchSelectComponent } from '@shared/components';
 import { employeeSelectSource } from '../../components/select-sources';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
-import { DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
-import { PaginationComponent, PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
+import {
+    DataTableComponent, TableColumn, TableAction,
+    FilterConfig, FilterChangeEvent,
+    DateRangeFilterConfig, DateRangeChangeEvent,
+    PaginationEvent,
+} from '@shared/ui/tables/data-table/data-table.component';
+import { catalogFilter, signalFilter } from '@shared/ui/tables/data-table/filter-helpers';
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { DateInputComponent } from '@shared/ui/forms/date-input/date-input.component';
 import { EvaluationService } from '../../services/evaluation.service';
 import { EmployeeService } from '../../services/employee.service';
+import { DepartmentService } from '../../services/department.service';
+import { Department } from '../../models/department.model';
+import { CatalogService } from '@core/services/catalog.service';
 import {
     Goal,
     GoalStatus,
     GoalPriority,
-    GOAL_STATUS_LABELS,
     GOAL_PRIORITY_LABELS,
 } from '../../models/evaluation.model';
 import { PAGINATION } from '@shared/constants/app.constants';
@@ -30,7 +36,6 @@ import { PAGINATION } from '@shared/constants/app.constants';
         ButtonComponent,
         DrawerComponent,
         DataTableComponent,
-        PaginationComponent,
         FormFieldComponent,
         PageHeaderComponent,
         AlertComponent,
@@ -43,11 +48,17 @@ export class GoalListComponent implements OnInit {
     private readonly fb = inject(FormBuilder);
     private readonly evaluationService = inject(EvaluationService);
     private readonly employeeService = inject(EmployeeService);
+    private readonly departmentService = inject(DepartmentService);
+    readonly catalog = inject(CatalogService);
 
     readonly goals = this.evaluationService.goals;
     readonly loading = this.evaluationService.loading;
     /** Fuente server-side del search-select de empleado. */
     readonly employeeSource = employeeSelectSource(this.employeeService);
+    /** Se mantiene para poblar los selects employeeId/asignadoPorId del toolbar. */
+    readonly employees = this.employeeService.activeEmployees;
+    /** Departamentos para el select de filtro del toolbar (lista acotada, no requiere server-search). */
+    readonly departamentosFiltro = signal<Department[]>([]);
 
     showDrawer = signal(false);
     editMode = signal(false);
@@ -60,33 +71,32 @@ export class GoalListComponent implements OnInit {
     progressSubmitting = signal(false);
     progressError = signal<string | null>(null);
 
-    filtroEstado = signal('');
-    filtroPrioridad = signal('');
+    // ── Filtros (TODOS server-side) ─────────────────────────────────────────
+    searchQuery           = signal('');
+    filtroEstado           = signal('');
+    filtroPrioridad        = signal('');
+    filtroEmployeeId       = signal('');
+    filtroAsignadoPorId    = signal('');
+    filtroDepartmentId     = signal('');
+    filtroFechaInicioDesde = signal<string | null>(null);
+    filtroFechaInicioHasta = signal<string | null>(null);
+    filtroFechaFinDesde    = signal<string | null>(null);
+    filtroFechaFinHasta    = signal<string | null>(null);
+
     currentPage = signal(0);
     pageSize = signal<number>(PAGINATION.defaultPageSize);
 
-    readonly statusOptions = Object.entries(GOAL_STATUS_LABELS).map(([value, label]) => ({ value, label }));
+    /** Paginación server-side: totalElements/totalPages vienen del backend. */
+    readonly totalElements = this.evaluationService.goalsTotalElements;
+    readonly totalPages = this.evaluationService.goalsTotalPages;
+
+    /** KPIs sobre el dataset completo (snapshot server-side), no la página visible. */
+    readonly enProgreso = this.evaluationService.metasEnProgreso;
+    readonly completadas = this.evaluationService.metasCompletadas;
+    readonly retrasadas = this.evaluationService.metasRetrasadas;
+    readonly totalMetas = this.evaluationService.metasTotal;
+
     readonly priorityOptions = Object.entries(GOAL_PRIORITY_LABELS).map(([value, label]) => ({ value, label }));
-
-    readonly filtered = computed(() => {
-        let list = this.goals();
-        const estado = this.filtroEstado();
-        const prioridad = this.filtroPrioridad();
-        if (estado) list = list.filter(g => g.estado === estado);
-        if (prioridad) list = list.filter(g => g.prioridad === prioridad);
-        return list;
-    });
-
-    readonly totalElements = computed(() => this.filtered().length);
-    readonly totalPages = computed(() => Math.ceil(this.totalElements() / this.pageSize()) || 1);
-    readonly pagedData = computed(() => {
-        const start = this.currentPage() * this.pageSize();
-        return this.filtered().slice(start, start + this.pageSize());
-    });
-
-    readonly enProgreso = computed(() => this.goals().filter(g => g.estado === 'EN_PROGRESO').length);
-    readonly completadas = computed(() => this.goals().filter(g => g.estado === 'COMPLETADO').length);
-    readonly retrasadas = computed(() => this.goals().filter(g => g.estado === 'RETRASADO').length);
 
     breadcrumbs: Breadcrumb[] = [
         { label: 'Admin', url: '/admin' },
@@ -110,7 +120,7 @@ export class GoalListComponent implements OnInit {
         },
         {
             key: 'prioridad', label: 'Prioridad', html: true,
-            render: row => `<span class="badge badge-${this.badgePrioridad(row.prioridad)}">${GOAL_PRIORITY_LABELS[row.prioridad] ?? row.prioridad}</span>`
+            render: row => `<span class="badge badge-${this.badgePrioridad(row.prioridad)}">${this.catalog.label('PRIORIDAD_META', row.prioridad)}</span>`
         },
         {
             key: 'porcentajeAvance', label: 'Progreso', html: true,
@@ -125,7 +135,7 @@ export class GoalListComponent implements OnInit {
         },
         {
             key: 'estado', label: 'Estado', html: true,
-            render: row => `<span class="badge badge-${this.badgeEstado(row.estado)}">${GOAL_STATUS_LABELS[row.estado] ?? row.estado}</span>`
+            render: row => `<span class="badge badge-${this.badgeEstado(row.estado)}">${this.catalog.label('ESTADO_META', row.estado)}</span>`
         },
     ];
 
@@ -164,27 +174,113 @@ export class GoalListComponent implements OnInit {
 
     readonly progressControl = new FormControl<number>(0, { nonNullable: true, validators: [Validators.min(0), Validators.max(100)] });
 
+    // Filtros select del toolbar. Las opciones salen de erp_parameters / listas dinámicas.
+    filters: FilterConfig[] = [
+        catalogFilter(this.catalog, 'ESTADO_META', 'estado', 'Todos los estados'),
+        catalogFilter(this.catalog, 'PRIORIDAD_META', 'prioridad', 'Todas las prioridades'),
+        signalFilter('employeeId', 'Todos los empleados', this.employees,
+            e => ({ value: e.id, label: `${e.nombres} ${e.apellidos}` })),
+        signalFilter('asignadoPorId', 'Asignado por', this.employees,
+            e => ({ value: e.id, label: `${e.nombres} ${e.apellidos}` })),
+        signalFilter('departmentId', 'Todos los departamentos', this.departamentosFiltro,
+            d => ({ value: d.id, label: d.nombre })),
+    ];
+
+    /** Rangos de fecha para el toolbar del data-table. */
+    dateRangeFilters: DateRangeFilterConfig[] = [
+        { field: 'fechaInicio', label: 'Fecha de inicio' },
+        { field: 'fechaFin', label: 'Fecha límite' },
+    ];
+
     ngOnInit(): void {
-        this.evaluationService.loadGoals();
-        // El select de empleado carga sus opciones bajo demanda (server-side).
+        this.employeeService.loadEmployees().catch(() => { /* selects del toolbar */ });
+        this.loadDepartamentosFiltro();
+        this.loadPage();
+        this.evaluationService.loadGoalsStatsSnapshot();
+        // El select de empleado del formulario carga sus opciones bajo demanda (server-side).
     }
 
-    readonly toolbarFilters: FilterConfig[] = [
-        { field: 'estado', label: 'Todos los estados', options: of(this.statusOptions) },
-        { field: 'prioridad', label: 'Todas las prioridades', options: of(this.priorityOptions) },
-    ];
+    /** Departamentos para el select de filtro (no muta el estado compartido de DepartmentService). */
+    private loadDepartamentosFiltro(): void {
+        this.departmentService.fetchAll()
+            .then(list => this.departamentosFiltro.set(list ?? []))
+            .catch(() => this.departamentosFiltro.set([]));
+    }
+
+    /** Carga la página actual server-side con TODOS los filtros del toolbar. */
+    private loadPage(): void {
+        this.evaluationService.loadGoalsPaged({
+            page: this.currentPage(),
+            size: this.pageSize(),
+            search: this.searchQuery() || undefined,
+            estado: this.filtroEstado() || undefined,
+            prioridad: this.filtroPrioridad() || undefined,
+            employeeId: this.filtroEmployeeId() ? Number(this.filtroEmployeeId()) : undefined,
+            asignadoPorId: this.filtroAsignadoPorId() ? Number(this.filtroAsignadoPorId()) : undefined,
+            departmentId: this.filtroDepartmentId() ? Number(this.filtroDepartmentId()) : undefined,
+            fechaInicioDesde: this.filtroFechaInicioDesde() || undefined,
+            fechaInicioHasta: this.filtroFechaInicioHasta() || undefined,
+            fechaFinDesde: this.filtroFechaFinDesde() || undefined,
+            fechaFinHasta: this.filtroFechaFinHasta() || undefined,
+        });
+    }
+
+    onSearchTerm(term: string): void {
+        this.searchQuery.set(term);
+        this.currentPage.set(0);
+        this.loadPage();
+    }
 
     onFilterChangeEvent(event: FilterChangeEvent): void {
         const v = event.value != null ? String(event.value) : '';
-        if (event.field === 'estado') this.filtroEstado.set(v);
-        else if (event.field === 'prioridad') this.filtroPrioridad.set(v);
-        else return;
+        switch (event.field) {
+            case 'estado':        this.filtroEstado.set(v); break;
+            case 'prioridad':     this.filtroPrioridad.set(v); break;
+            case 'employeeId':    this.filtroEmployeeId.set(v); break;
+            case 'asignadoPorId': this.filtroAsignadoPorId.set(v); break;
+            case 'departmentId':  this.filtroDepartmentId.set(v); break;
+            default: return;
+        }
         this.currentPage.set(0);
+        this.loadPage();
     }
 
-    onPaginationChange(event: PaginationChangeEvent): void {
+    onDateRangeChange(event: DateRangeChangeEvent): void {
+        switch (event.field) {
+            case 'fechaInicio':
+                this.filtroFechaInicioDesde.set(event.from);
+                this.filtroFechaInicioHasta.set(event.to);
+                break;
+            case 'fechaFin':
+                this.filtroFechaFinDesde.set(event.from);
+                this.filtroFechaFinHasta.set(event.to);
+                break;
+            default: return;
+        }
+        this.currentPage.set(0);
+        this.loadPage();
+    }
+
+    /** "Limpiar filtros": resetea todo y recarga UNA sola vez. */
+    onFiltersClear(): void {
+        this.searchQuery.set('');
+        this.filtroEstado.set('');
+        this.filtroPrioridad.set('');
+        this.filtroEmployeeId.set('');
+        this.filtroAsignadoPorId.set('');
+        this.filtroDepartmentId.set('');
+        this.filtroFechaInicioDesde.set(null);
+        this.filtroFechaInicioHasta.set(null);
+        this.filtroFechaFinDesde.set(null);
+        this.filtroFechaFinHasta.set(null);
+        this.currentPage.set(0);
+        this.loadPage();
+    }
+
+    onPaginationChange(event: PaginationEvent): void {
         this.currentPage.set(event.page);
         this.pageSize.set(event.size);
+        this.loadPage();
     }
 
     openCreate(): void {
@@ -240,6 +336,8 @@ export class GoalListComponent implements OnInit {
                 await this.evaluationService.createGoal(request);
             }
             this.closeDrawer();
+            this.loadPage();
+            this.evaluationService.loadGoalsStatsSnapshot();
         } catch (err: unknown) {
             const message = err instanceof Error ? err.message : 'Error al guardar meta';
             this.submitError.set(message);
@@ -271,6 +369,8 @@ export class GoalListComponent implements OnInit {
         try {
             await this.evaluationService.updateGoalProgress(goal.id, this.progressControl.value);
             this.closeProgressDrawer();
+            this.loadPage();
+            this.evaluationService.loadGoalsStatsSnapshot();
         } catch (err: unknown) {
             const message = err instanceof Error ? err.message : 'Error al actualizar progreso';
             this.progressError.set(message);
@@ -281,10 +381,14 @@ export class GoalListComponent implements OnInit {
 
     async complete(goal: Goal): Promise<void> {
         await this.evaluationService.completeGoal(goal.id);
+        this.loadPage();
+        this.evaluationService.loadGoalsStatsSnapshot();
     }
 
     async cancel(goal: Goal): Promise<void> {
         await this.evaluationService.cancelGoal(goal.id);
+        this.loadPage();
+        this.evaluationService.loadGoalsStatsSnapshot();
     }
 
     getControl(name: string): FormControl {

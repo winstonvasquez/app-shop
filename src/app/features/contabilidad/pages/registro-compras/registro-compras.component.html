@@ -49,7 +49,7 @@
     }
 
     <app-data-table
-        [data]="ordenesFiltradas()"
+        [data]="ordenes()"
         [columns]="columns"
         [loading]="cargando()"
         [searchable]="true"
@@ -57,10 +57,14 @@
         (searchChange)="onSearchTerm($event)"
         [filters]="filtros"
         (filterChange)="onFilterChange($event)"
+        [dateRangeFilters]="dateRangeFilters"
+        (dateRangeChange)="onDateRangeChange($event)"
+        (filtersClear)="onFiltersClear()"
         [exportConfig]="exportConfig"
-        [totalPages]="1"
-        [totalElements]="ordenesFiltradas().length"
-        [currentPage]="0"
-        [pageSize]="200">
+        [totalPages]="totalPages()"
+        [totalElements]="totalElements()"
+        [currentPage]="currentPage()"
+        [pageSize]="pageSize()"
+        (pageChange)="onPaginationChange($event)">
     </app-data-table>
 </div>

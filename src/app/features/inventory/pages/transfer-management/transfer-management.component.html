@@ -22,9 +22,15 @@
     [pageSize]="pageSize()"
     [totalElements]="totalElements()"
     [totalPages]="totalPages()"
-    [filters]="estadoFilters"
+    [searchable]="true"
+    searchPlaceholder="Buscar por N°, notas o solicitante…"
+    [filters]="filters"
+    [dateRangeFilters]="dateRangeFilters"
     [exportConfig]="exportConfig"
+    (searchChange)="onSearchTerm($event)"
     (filterChange)="onFilterChangeEvent($event)"
+    (dateRangeChange)="onDateRangeChange($event)"
+    (filtersClear)="onFiltersClear()"
     (pageChange)="onPageChange($event)">
   </app-data-table>
 

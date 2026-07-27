@@ -27,13 +27,15 @@
     [totalPages]="totalPages()"
     [searchable]="true"
     searchPlaceholder="Buscar por N° tracking o destinatario..."
-    [filters]="estadoFilters"
+    [filters]="filters"
     [dateRangeFilters]="dateRangeFilters"
     [exportable]="true"
     exportFileName="envios-export"
     [exportConfig]="exportConfig"
+    (searchChange)="onSearch($event)"
     (filterChange)="onFilterChangeEvent($event)"
     (dateRangeChange)="onDateRangeChange($event)"
+    (filtersClear)="onFiltersClear()"
     (pageChange)="onPaginationChange($event)">
   </app-data-table>
 </div>

@@ -25,6 +25,23 @@ export interface CreateRecepcionRequest {
     items?: ItemRecepcionRequest[];
 }
 
+/** Filtros server-side del listado de recepciones. Todos opcionales. */
+export interface RecepcionFiltros {
+    page?: number;
+    size?: number;
+    /** Búsqueda por texto sobre N° recepción, guía de remisión o código de OC. */
+    q?: string;
+    estado?: string;
+    almacenDestino?: string;
+    proveedorId?: string;
+    transportista?: string;
+    responsable?: string;
+    /** yyyy-MM-dd */
+    fechaRecepcionDesde?: string;
+    /** yyyy-MM-dd */
+    fechaRecepcionHasta?: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class RecepcionService {
     private http = inject(HttpClient);
@@ -36,19 +53,25 @@ export class RecepcionService {
         return new HttpHeaders({ 'X-Company-Id': companyId });
     }
 
-    getRecepciones(
-        page = 0,
-        size = 10,
-        estado?: string,
-        fechaRecepcionDesde?: string,
-        fechaRecepcionHasta?: string
-    ): Observable<RecepcionPage> {
+    /**
+     * Filtros del listado de recepciones. TODO el filtrado ocurre en el backend
+     * (`GET /purchases/api/recepciones`); la vista nunca filtra la página cargada.
+     */
+    getRecepciones(filtros: RecepcionFiltros = {}): Observable<RecepcionPage> {
+        const page = filtros.page ?? 0;
+        const size = filtros.size ?? 10;
+
         let params = new HttpParams()
             .set('page', page.toString())
             .set('size', size.toString());
-        if (estado) params = params.set('estado', estado);
-        if (fechaRecepcionDesde) params = params.set('fechaRecepcionDesde', fechaRecepcionDesde);
-        if (fechaRecepcionHasta) params = params.set('fechaRecepcionHasta', fechaRecepcionHasta);
+        if (filtros.q) params = params.set('q', filtros.q);
+        if (filtros.estado) params = params.set('estado', filtros.estado);
+        if (filtros.almacenDestino) params = params.set('almacenDestino', filtros.almacenDestino);
+        if (filtros.proveedorId) params = params.set('proveedorId', filtros.proveedorId);
+        if (filtros.transportista) params = params.set('transportista', filtros.transportista);
+        if (filtros.responsable) params = params.set('responsable', filtros.responsable);
+        if (filtros.fechaRecepcionDesde) params = params.set('fechaRecepcionDesde', filtros.fechaRecepcionDesde);
+        if (filtros.fechaRecepcionHasta) params = params.set('fechaRecepcionHasta', filtros.fechaRecepcionHasta);
 
         return this.http.get<unknown>(this.baseUrl, { params, headers: this.getHeaders() }).pipe(
             map((raw: unknown) => {

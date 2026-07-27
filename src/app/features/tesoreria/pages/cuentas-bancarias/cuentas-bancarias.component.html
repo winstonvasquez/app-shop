@@ -19,11 +19,21 @@
     [columns]="columns"
     [actions]="actions"
     [loading]="cargando()"
+    [searchable]="true"
+    searchPlaceholder="Buscar por banco, N° cuenta, CCI o descripción..."
+    [filters]="filters"
+    [dateRangeFilters]="dateRangeFilters"
     [currentPage]="currentPage()"
     [pageSize]="pageSize()"
     [totalElements]="totalElements()"
     [totalPages]="totalPages()"
+    [exportable]="true"
+    exportFileName="cuentas-bancarias"
     [exportConfig]="exportConfig"
+    (searchChange)="onSearchTerm($event)"
+    (filterChange)="onFilterChangeEvent($event)"
+    (dateRangeChange)="onDateRangeChange($event)"
+    (filtersClear)="onFiltersClear()"
     (pageChange)="onPageChange($event)">
   </app-data-table>
 

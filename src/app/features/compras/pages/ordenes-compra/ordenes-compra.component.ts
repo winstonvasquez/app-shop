@@ -1,15 +1,14 @@
 import { Component, OnInit, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
 import { DatePipe } from '@angular/common';
-import { toObservable } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators, FormGroup, FormControl } from '@angular/forms';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { map } from 'rxjs';
 import { CatalogService } from '@core/services/catalog.service';
 import { AuthService } from '@core/auth/auth.service';
 import { OrdenCompraService } from '../../services/orden-compra.service';
-import { ProveedorService } from '../../services/proveedor.service';
+import { ProveedorService, ProveedorFiltroOption, toProveedorOptions } from '../../services/proveedor.service';
 import { OrdenCompra, OrdenCompraItem } from '../../models/orden-compra.model';
 import { DataTableComponent, TableColumn, TableAction, SortEvent, FilterConfig, FilterChangeEvent, PaginationEvent, DateRangeFilterConfig, DateRangeChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
+import { catalogFilter, signalFilter } from '@shared/ui/tables/data-table/filter-helpers';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
@@ -99,9 +98,11 @@ export class OrdenesCompraComponent implements OnInit {
     // Items para el formulario
     formItems = signal<OcItemForm[]>([]);
 
-    // Filters
+    // Filtros (TODOS server-side — la vista nunca filtra la página cargada)
     filterEstado = signal('');
     filterCondicionPago = signal('');
+    filterProveedorId = signal('');
+    filterMoneda = signal('');
     filterFechaEmisionDesde = signal<string | null>(null);
     filterFechaEmisionHasta = signal<string | null>(null);
     searchQuery = signal('');
@@ -120,16 +121,6 @@ export class OrdenesCompraComponent implements OnInit {
     hasOrdenes = computed(() => this.ordenes().length > 0);
     isEmpty = computed(() => !this.loading() && !this.hasOrdenes());
 
-    /** Filtrado client-side (el backend no soporta búsqueda por texto) sobre la página cargada. */
-    filteredOrdenes = computed(() => {
-        const term = this.searchQuery().trim().toLowerCase();
-        if (!term) return this.ordenes();
-        return this.ordenes().filter(o =>
-            o.codigo?.toLowerCase().includes(term) ||
-            o.proveedorNombre?.toLowerCase().includes(term)
-        );
-    });
-
     totales = computed(() => {
         const items = this.formItems();
         const subtotal = items.reduce((acc, i) => acc + (i.cantidad * i.precioUnitario), 0);
@@ -143,22 +134,16 @@ export class OrdenesCompraComponent implements OnInit {
         { label: 'Órdenes de Compra' }
     ];
 
-    // Filtros de select para el toolbar del data-table (estado + condición de pago)
+    /** Proveedores activos para el select de filtro (lista acotada, no requiere server-search). */
+    proveedoresFiltro = signal<ProveedorFiltroOption[]>([]);
+
+    // Filtros select del toolbar. Las opciones salen de erp_parameters (fuente única).
     filters: FilterConfig[] = [
-        {
-            field: 'estado',
-            label: 'Todos los estados',
-            options: toObservable(this.catalog.options('ESTADO_ORDEN_COMPRA')).pipe(
-                map(o => o.map(x => ({ value: x.codigo, label: x.valor })))
-            )
-        },
-        {
-            field: 'condicionPago',
-            label: 'Cond. de pago',
-            options: toObservable(this.catalog.options('CONDICION_PAGO')).pipe(
-                map(o => o.map(x => ({ value: x.codigo, label: x.valor })))
-            )
-        }
+        catalogFilter(this.catalog, 'ESTADO_ORDEN_COMPRA', 'estado', 'Todos los estados'),
+        catalogFilter(this.catalog, 'CONDICION_PAGO', 'condicionPago', 'Cond. de pago'),
+        catalogFilter(this.catalog, 'MONEDA', 'moneda', 'Moneda'),
+        signalFilter('proveedorId', 'Todos los proveedores', this.proveedoresFiltro,
+            p => ({ value: p.id, label: p.razonSocial }))
     ];
 
     /** Rango de fecha de emisión para el toolbar del data-table. */
@@ -174,8 +159,11 @@ export class OrdenesCompraComponent implements OnInit {
         url: `${environment.apiUrls.purchases}/api/ordenes-compra/export`,
         filename: 'ordenes-compra',
         params: () => ({
+            q: this.searchQuery(),
             estado: this.filterEstado(),
             condicionPago: this.filterCondicionPago(),
+            proveedorId: this.filterProveedorId(),
+            moneda: this.filterMoneda(),
             fechaEmisionDesde: this.filterFechaEmisionDesde() ?? undefined,
             fechaEmisionHasta: this.filterFechaEmisionHasta() ?? undefined
         }),
@@ -233,6 +221,21 @@ export class OrdenesCompraComponent implements OnInit {
     ngOnInit(): void {
         this.loadOrdenes();
         this.loadContratosActivos();
+        this.loadProveedoresFiltro();
+    }
+
+    /** Proveedores activos para el select de filtro del toolbar. */
+    private loadProveedoresFiltro(): void {
+        const params = new HttpParams()
+            .set('estado', 'ACTIVO')
+            .set('page', '0')
+            .set('size', String(PAGINATION.maxPageSize));
+        this.http.get<{ content?: { id: string; razonSocial: string }[] }>(
+            `${environment.apiUrls.purchases}/api/proveedores`, { params }
+        ).subscribe({
+            next: (res) => this.proveedoresFiltro.set(toProveedorOptions(res.content)),
+            error: () => this.proveedoresFiltro.set([])
+        });
     }
 
     /** Contratos Marco ACTIVOS para el select opcional del form (lista chica, no requiere server-search). */
@@ -257,14 +260,19 @@ export class OrdenesCompraComponent implements OnInit {
     loadOrdenes(): void {
         this.loading.set(true);
         this.error.set(null);
-        this.ordenService.getOrdenes(
-            this.currentPage(),
-            this.pageSize(),
-            this.filterEstado() || undefined,
-            this.filterCondicionPago() || undefined,
-            this.filterFechaEmisionDesde() || undefined,
-            this.filterFechaEmisionHasta() || undefined
-        ).subscribe({
+        this.ordenService.getOrdenes({
+            page: this.currentPage(),
+            size: this.pageSize(),
+            q: this.searchQuery() || undefined,
+            estado: this.filterEstado() || undefined,
+            condicionPago: this.filterCondicionPago() || undefined,
+            proveedorId: this.filterProveedorId() || undefined,
+            moneda: this.filterMoneda() || undefined,
+            fechaEmisionDesde: this.filterFechaEmisionDesde() || undefined,
+            fechaEmisionHasta: this.filterFechaEmisionHasta() || undefined,
+            sortField: this.sortField() || undefined,
+            sortDirection: this.sortDirection()
+        }).subscribe({
             next: (res) => {
                 this.ordenes.set(res.content);
                 this.totalElements.set(pageTotalElements(res));
@@ -278,20 +286,37 @@ export class OrdenesCompraComponent implements OnInit {
         });
     }
 
+    /** La búsqueda por texto también va al backend (`q`), no filtra la página cargada. */
     onSearchTerm(term: string): void {
         this.searchQuery.set(term);
+        this.currentPage.set(0);
+        this.loadOrdenes();
     }
 
     onFilterChangeEvent(event: FilterChangeEvent): void {
-        if (event.field === 'estado') {
-            this.filterEstado.set(event.value != null ? String(event.value) : '');
-            this.currentPage.set(0);
-            this.loadOrdenes();
-        } else if (event.field === 'condicionPago') {
-            this.filterCondicionPago.set(event.value != null ? String(event.value) : '');
-            this.currentPage.set(0);
-            this.loadOrdenes();
+        const valor = event.value != null ? String(event.value) : '';
+        switch (event.field) {
+            case 'estado':        this.filterEstado.set(valor); break;
+            case 'condicionPago': this.filterCondicionPago.set(valor); break;
+            case 'proveedorId':   this.filterProveedorId.set(valor); break;
+            case 'moneda':        this.filterMoneda.set(valor); break;
+            default: return;
         }
+        this.currentPage.set(0);
+        this.loadOrdenes();
+    }
+
+    /** "Limpiar filtros": resetea todo y recarga UNA sola vez. */
+    onFiltersClear(): void {
+        this.searchQuery.set('');
+        this.filterEstado.set('');
+        this.filterCondicionPago.set('');
+        this.filterProveedorId.set('');
+        this.filterMoneda.set('');
+        this.filterFechaEmisionDesde.set(null);
+        this.filterFechaEmisionHasta.set(null);
+        this.currentPage.set(0);
+        this.loadOrdenes();
     }
 
     onDateRangeChange(event: DateRangeChangeEvent): void {

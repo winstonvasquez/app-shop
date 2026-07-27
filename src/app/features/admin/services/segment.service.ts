@@ -7,6 +7,17 @@ import { SegmentResponse, SegmentRequest } from '@features/admin/models/segment.
 import { PageResponse } from '@core/models/pagination.model';
 import { HTTP_STATUS } from '@shared/constants/app.constants';
 
+/** Filtros opcionales para GET /users/api/segments (search + estado + tipo de cliente + rango de fecha). */
+export interface SegmentoFiltros {
+    page: number;
+    size: number;
+    search?: string;
+    activo?: boolean;
+    tipoCliente?: string;
+    fechaDesde?: string;
+    fechaHasta?: string;
+}
+
 @Injectable({
     providedIn: 'root'
 })
@@ -14,14 +25,16 @@ export class SegmentService {
     private readonly http = inject(HttpClient);
     private readonly baseUrl = `${environment.apiUrls.users}/api/segments`;
 
-    getAll(page: number, size: number, search?: string): Observable<PageResponse<SegmentResponse>> {
+    getAll(filtros: SegmentoFiltros): Observable<PageResponse<SegmentResponse>> {
         let params = new HttpParams()
-            .set('page', page.toString())
-            .set('size', size.toString());
+            .set('page', filtros.page.toString())
+            .set('size', filtros.size.toString());
 
-        if (search) {
-            params = params.set('search', search);
-        }
+        if (filtros.search) params = params.set('search', filtros.search);
+        if (filtros.activo !== undefined) params = params.set('activo', String(filtros.activo));
+        if (filtros.tipoCliente) params = params.set('tipoCliente', filtros.tipoCliente);
+        if (filtros.fechaDesde) params = params.set('fechaDesde', filtros.fechaDesde);
+        if (filtros.fechaHasta) params = params.set('fechaHasta', filtros.fechaHasta);
 
         return this.http
             .get<PageResponse<SegmentResponse>>(this.baseUrl, { params })

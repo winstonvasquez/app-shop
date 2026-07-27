@@ -5,14 +5,6 @@
             <p class="page-subtitle">Transacciones registradas en el punto de venta</p>
         </div>
         <div class="page-actions no-print flex gap-2">
-            <app-button label="Exportar CSV" icon="download" variant="secondary"
-                [disabled]="cargando() || ventas().length === 0"
-                (click)="onExportarCsv()">
-            </app-button>
-            <app-button label="Exportar Excel" icon="download" variant="secondary"
-                [disabled]="cargando() || ventas().length === 0"
-                (click)="exportarExcel()">
-            </app-button>
             <app-button label="Imprimir / PDF" icon="printer" variant="secondary"
                 [disabled]="cargando()"
                 (click)="imprimir()">
@@ -86,6 +78,7 @@
         [dateRangeFilters]="dateRangeFilters"
         [exportable]="true"
         exportFileName="reporte-ventas-pos"
+        [exportConfig]="exportConfig"
         [currentPage]="pagina()"
         [pageSize]="pageSize()"
         [totalElements]="totalElements()"
@@ -93,6 +86,7 @@
         (searchChange)="onSearchTerm($event)"
         (filterChange)="onFilterChangeEvent($event)"
         (dateRangeChange)="onDateRangeChange($event)"
+        (filtersClear)="onFiltersClear()"
         (pageChange)="onPageChange($event)">
     </app-data-table>
 </div>

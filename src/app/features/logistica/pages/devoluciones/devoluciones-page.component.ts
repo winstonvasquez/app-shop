@@ -1,17 +1,19 @@
 import { Component, inject, signal, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
-import { toObservable } from '@angular/core/rxjs-interop';
-import { map } from 'rxjs';
 import { DevolucionService } from '../../services/devolucion.service';
 import { Devolucion, DevolucionStatus } from '../../models/devolucion.model';
+import { AlmacenService } from '../../services/almacen.service';
+import { Almacen } from '../../models/almacen.model';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { ButtonComponent } from '@shared/components';
-import { DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
+import { DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent, DateRangeFilterConfig, DateRangeChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
+import { catalogFilter, signalFilter } from '@shared/ui/tables/data-table/filter-helpers';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
+import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 import { PAGINATION } from '@shared/constants/app.constants';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
@@ -33,18 +35,20 @@ import { CatalogService } from '@core/services/catalog.service';
     templateUrl: './devoluciones-page.component.html'
 })
 export class DevolucionesPageComponent implements OnInit {
-    private readonly service     = inject(DevolucionService);
-    private readonly authService = inject(AuthService);
-    private readonly fb          = inject(FormBuilder);
-    protected readonly catalog   = inject(CatalogService);
+    private readonly service       = inject(DevolucionService);
+    private readonly almacenService = inject(AlmacenService);
+    private readonly authService   = inject(AuthService);
+    private readonly fb            = inject(FormBuilder);
+    protected readonly catalog     = inject(CatalogService);
 
     // Data
-    // Backend (GET /logistics/api/returns) devuelve una lista plana sin paginar
-    // (ver nota en devolucion.model.ts) — `allDevoluciones` guarda el resultado completo
-    // y `devoluciones` el slice de la página actual (paginación client-side).
-    allDevoluciones = signal<Devolucion[]>([]);
-    devoluciones    = signal<Devolucion[]>([]);
-    selected        = signal<Devolucion | null>(null);
+    // Backend (GET /logistics/api/returns) devuelve Page<ReturnRequestResponse> — la
+    // paginación y TODOS los filtros se resuelven en el backend, la vista nunca filtra.
+    devoluciones = signal<Devolucion[]>([]);
+    selected     = signal<Devolucion | null>(null);
+
+    /** Almacenes de la empresa, para el select de filtro "Almacén de recepción" del toolbar. */
+    almacenesFiltro = signal<Almacen[]>([]);
 
     // UI state
     loading         = signal(false);
@@ -54,10 +58,17 @@ export class DevolucionesPageComponent implements OnInit {
     actionLoading   = signal(false);
     actionError     = signal<string | null>(null);
 
-    // Filters — reactive
-    filterForm = this.fb.group({
-        status: ['']
-    });
+    // Filtros (TODOS server-side — la vista nunca filtra la página cargada)
+    searchQuery = signal('');
+    filterStatus = signal('');
+    filterReason = signal('');
+    filterWarehouseId = signal('');
+    filterRequestedAtDesde = signal<string | undefined>(undefined);
+    filterRequestedAtHasta = signal<string | undefined>(undefined);
+    filterRefundedAtDesde  = signal<string | undefined>(undefined);
+    filterRefundedAtHasta  = signal<string | undefined>(undefined);
+    filterReceivedAtDesde  = signal<string | undefined>(undefined);
+    filterReceivedAtHasta  = signal<string | undefined>(undefined);
 
     // Acción drawer — reactive
     actionForm = this.fb.group({
@@ -73,12 +84,19 @@ export class DevolucionesPageComponent implements OnInit {
     totalElements = signal(0);
     totalPages    = signal(0);
 
-    // Filtro de estado en el toolbar del data-table
+    // Filtros select del toolbar. Las opciones salen de erp_parameters (fuente única)
+    // y de `almacenesFiltro` (lista dinámica cargada en ngOnInit).
     readonly estadoFilters: FilterConfig[] = [
-        { field: 'status', label: 'Todos los estados',
-          options: toObservable(this.catalog.options('ESTADO_DEVOLUCION_LOGISTICA')).pipe(
-              map(o => o.map(x => ({ value: x.codigo, label: x.valor })))
-          ) }
+        catalogFilter(this.catalog, 'ESTADO_DEVOLUCION_LOGISTICA', 'status', 'Todos los estados'),
+        catalogFilter(this.catalog, 'MOTIVO_DEVOLUCION_LOGISTICA', 'reason', 'Motivo de devolución'),
+        signalFilter('warehouseId', 'Todos los almacenes', this.almacenesFiltro,
+            a => ({ value: a.id, label: a.nombre })),
+    ];
+
+    readonly dateRangeFilters: DateRangeFilterConfig[] = [
+        { field: 'requestedAt', label: 'Fecha de solicitud' },
+        { field: 'refundedAt', label: 'Fecha de reembolso' },
+        { field: 'receivedAt', label: 'Fecha de recepción' },
     ];
 
     breadcrumbs: Breadcrumb[] = [
@@ -89,12 +107,23 @@ export class DevolucionesPageComponent implements OnInit {
 
     /**
      * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios
-     * (mismo filtro de estado que la lista). Ver /logistics/api/returns/export.
+     * (respeta los filtros actuales). Ver /logistics/api/returns/export.
      */
     readonly exportConfig: BackendExportConfig = {
         url: `${environment.apiUrls.logistics}/api/returns/export`,
         filename: 'devoluciones',
-        params: () => ({ status: this.filterForm.value.status || undefined })
+        params: () => ({
+            q: this.searchQuery() || undefined,
+            status: this.filterStatus() || undefined,
+            reason: this.filterReason() || undefined,
+            warehouseId: this.filterWarehouseId() || undefined,
+            requestedAtDesde: this.filterRequestedAtDesde(),
+            requestedAtHasta: this.filterRequestedAtHasta(),
+            refundedAtDesde: this.filterRefundedAtDesde(),
+            refundedAtHasta: this.filterRefundedAtHasta(),
+            receivedAtDesde: this.filterReceivedAtDesde(),
+            receivedAtHasta: this.filterReceivedAtHasta(),
+        })
     };
 
     columns: TableColumn<Devolucion>[] = [
@@ -122,18 +151,38 @@ export class DevolucionesPageComponent implements OnInit {
 
     ngOnInit() {
         this.loadDevoluciones();
+        this.loadAlmacenesFiltro();
+    }
+
+    /** Almacenes activos para el select de filtro "Almacén de recepción" del toolbar. */
+    private loadAlmacenesFiltro(): void {
+        this.almacenService.getAlmacenes(this.companyId, { page: 0, size: PAGINATION.maxPageSize }).subscribe({
+            next: (res) => this.almacenesFiltro.set(res.content ?? []),
+            error: () => this.almacenesFiltro.set([])
+        });
     }
 
     loadDevoluciones() {
         this.loading.set(true);
         this.error.set(null);
-        const filterStatus = this.filterForm.value.status ?? '';
-        this.service.getDevoluciones(this.companyId, filterStatus || undefined).subscribe({
+        this.service.getDevoluciones(this.companyId, {
+            page: this.currentPage(),
+            size: this.pageSize(),
+            q: this.searchQuery() || undefined,
+            status: this.filterStatus() || undefined,
+            reason: this.filterReason() || undefined,
+            warehouseId: this.filterWarehouseId() || undefined,
+            requestedAtDesde: this.filterRequestedAtDesde(),
+            requestedAtHasta: this.filterRequestedAtHasta(),
+            refundedAtDesde: this.filterRefundedAtDesde(),
+            refundedAtHasta: this.filterRefundedAtHasta(),
+            receivedAtDesde: this.filterReceivedAtDesde(),
+            receivedAtHasta: this.filterReceivedAtHasta()
+        }).subscribe({
             next: (res) => {
-                this.allDevoluciones.set(res);
-                this.totalElements.set(res.length);
-                this.totalPages.set(Math.max(1, Math.ceil(res.length / this.pageSize())));
-                this.applyPage();
+                this.devoluciones.set(res.content);
+                this.totalElements.set(pageTotalElements(res));
+                this.totalPages.set(pageTotalPages(res));
                 this.loading.set(false);
             },
             error: (err: Error) => {
@@ -143,15 +192,57 @@ export class DevolucionesPageComponent implements OnInit {
         });
     }
 
-    /** Aplica el slice de la página actual sobre el arreglo completo ya cargado (paginación client-side). */
-    private applyPage() {
-        const start = this.currentPage() * this.pageSize();
-        this.devoluciones.set(this.allDevoluciones().slice(start, start + this.pageSize()));
+    /** La búsqueda por texto también va al backend (`q`), no filtra la página cargada. */
+    onSearch(term: string) {
+        this.searchQuery.set(term);
+        this.currentPage.set(0);
+        this.loadDevoluciones();
     }
 
     onFilterChangeEvent(event: FilterChangeEvent) {
-        if (event.field !== 'status') return;
-        this.filterForm.patchValue({ status: event.value != null ? String(event.value) : '' });
+        const valor = event.value != null ? String(event.value) : '';
+        switch (event.field) {
+            case 'status':      this.filterStatus.set(valor); break;
+            case 'reason':      this.filterReason.set(valor); break;
+            case 'warehouseId': this.filterWarehouseId.set(valor); break;
+            default: return;
+        }
+        this.currentPage.set(0);
+        this.loadDevoluciones();
+    }
+
+    onDateRangeChange(event: DateRangeChangeEvent) {
+        switch (event.field) {
+            case 'requestedAt':
+                this.filterRequestedAtDesde.set(event.from ?? undefined);
+                this.filterRequestedAtHasta.set(event.to ?? undefined);
+                break;
+            case 'refundedAt':
+                this.filterRefundedAtDesde.set(event.from ?? undefined);
+                this.filterRefundedAtHasta.set(event.to ?? undefined);
+                break;
+            case 'receivedAt':
+                this.filterReceivedAtDesde.set(event.from ?? undefined);
+                this.filterReceivedAtHasta.set(event.to ?? undefined);
+                break;
+            default: return;
+        }
+        this.currentPage.set(0);
+        this.loadDevoluciones();
+    }
+
+    /** "Limpiar filtros": resetea todo y recarga UNA sola vez. */
+    onFiltersClear() {
+        this.searchQuery.set('');
+        this.filterStatus.set('');
+        this.filterReason.set('');
+        this.filterWarehouseId.set('');
+        this.filterRequestedAtDesde.set(undefined);
+        this.filterRequestedAtHasta.set(undefined);
+        this.filterRefundedAtDesde.set(undefined);
+        this.filterRefundedAtHasta.set(undefined);
+        this.filterReceivedAtDesde.set(undefined);
+        this.filterReceivedAtHasta.set(undefined);
         this.currentPage.set(0);
         this.loadDevoluciones();
     }
@@ -159,8 +250,7 @@ export class DevolucionesPageComponent implements OnInit {
     onPaginationChange(event: PaginationChangeEvent) {
         this.currentPage.set(event.page);
         this.pageSize.set(event.size);
-        this.totalPages.set(Math.max(1, Math.ceil(this.allDevoluciones().length / this.pageSize())));
-        this.applyPage();
+        this.loadDevoluciones();
     }
 
     // ── Detalle y workflow ───────────────────────────────

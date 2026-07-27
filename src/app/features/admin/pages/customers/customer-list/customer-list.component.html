@@ -49,7 +49,7 @@
         [selectable]="true"
         [searchable]="true"
         searchPlaceholder="Buscar por nombre, documento o email..."
-        [filters]="tipoClienteFilters"
+        [filters]="filters"
         [dateRangeFilters]="dateRangeFilters"
         [exportable]="true"
         exportFileName="clientes"
@@ -62,6 +62,7 @@
         (selectionChange)="onSelectionChange($event)"
         (filterChange)="onFilterChangeEvent($event)"
         (dateRangeChange)="onDateRangeChange($event)"
+        (filtersClear)="onFiltersClear()"
         (pageChange)="onPageChange($event)">
     </app-data-table>
 </div>

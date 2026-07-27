@@ -6,7 +6,9 @@ import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, FormControl } 
 import { DecimalPipe } from '@angular/common';
 import { of } from 'rxjs';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
-import { DataTableComponent, TableColumn, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
+import { DataTableComponent, TableColumn, FilterConfig, FilterChangeEvent, DateRangeFilterConfig, DateRangeChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
+import { catalogFilter } from '@shared/ui/tables/data-table/filter-helpers';
+import { CatalogService } from '@core/services/catalog.service';
 import { PageHeaderComponent } from '@shared/ui/layout/page-header/page-header.component';
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
 import { DatePickerComponent } from '@shared/ui/forms/date-picker/date-picker.component';
@@ -33,6 +35,7 @@ import { environment } from '@env/environment';
 })
 export class FlujoCajaComponent implements OnInit {
     private movService  = inject(MovimientosFinancierosService);
+    private readonly catalog = inject(CatalogService);
     private auth        = inject(AuthService);
     private fb          = inject(FormBuilder);
     private destroyRef  = inject(DestroyRef);
@@ -53,8 +56,11 @@ export class FlujoCajaComponent implements OnInit {
     fechaFin    = signal<string>('');
     filterTipoMovimiento = signal('');
     filterOrigen         = signal('');
+    filterMoneda         = signal('');
+    searchQuery          = signal('');
 
     readonly filters: FilterConfig[] = [
+        catalogFilter(this.catalog, 'MONEDA', 'moneda', 'Moneda'),
         {
             field: 'tipoMovimiento',
             label: 'Tipo',
@@ -117,17 +123,21 @@ export class FlujoCajaComponent implements OnInit {
 
     /**
      * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios
-     * (mismos filtros actuales fechaInicio/fechaFin). Ver GET /treasury/api/tesoreria/movimientos/export.
+     * respetando TODOS los filtros vigentes. Ver GET /treasury/api/tesoreria/movimientos/export.
+     * OJO: el endpoint renombró `fechaInicio`/`fechaFin` a `fechaDesde`/`fechaHasta`
+     * para unificarse con el GET del listado.
      */
     readonly exportConfig: BackendExportConfig = {
         url: `${environment.apiUrls.treasury}/api/tesoreria/movimientos/export`,
         filename: 'flujo-caja',
         params: () => ({
             tenantId: this.auth.currentUser()?.activeCompanyId ?? 1,
-            fechaInicio: this.fechaInicio(),
-            fechaFin: this.fechaFin(),
+            fechaDesde: this.fechaInicio(),
+            fechaHasta: this.fechaFin(),
             tipoMovimiento: this.filterTipoMovimiento() || undefined,
             origen: this.filterOrigen() || undefined,
+            moneda: this.filterMoneda() || undefined,
+            q: this.searchQuery() || undefined,
         }),
     };
 
@@ -138,6 +148,11 @@ export class FlujoCajaComponent implements OnInit {
         this.fechaInicio.set(firstDay.toISOString().split('T')[0]);
         this.loadData();
     }
+
+    /** Rango de fecha del movimiento en el toolbar del data-table. */
+    readonly dateRangeFilters: DateRangeFilterConfig[] = [
+        { field: 'fecha', label: 'Fecha del movimiento' }
+    ];
 
     loadData(): void {
         this.cargando.set(true);
@@ -154,6 +169,8 @@ export class FlujoCajaComponent implements OnInit {
             fechaHasta: this.fechaFin() || undefined,
             tipoMovimiento: this.filterTipoMovimiento() || undefined,
             origen: this.filterOrigen() || undefined,
+            moneda: this.filterMoneda() || undefined,
+            q: this.searchQuery() || undefined,
             page: this.currentPage(),
             size: this.pageSize(),
         })
@@ -176,13 +193,38 @@ export class FlujoCajaComponent implements OnInit {
     }
 
     onFilterChangeEvent(event: FilterChangeEvent): void {
-        if (event.field === 'tipoMovimiento') {
-            this.filterTipoMovimiento.set(event.value ? String(event.value) : '');
-        } else if (event.field === 'origen') {
-            this.filterOrigen.set(event.value ? String(event.value) : '');
-        } else {
-            return;
+        const valor = event.value != null ? String(event.value) : '';
+        switch (event.field) {
+            case 'tipoMovimiento': this.filterTipoMovimiento.set(valor); break;
+            case 'origen':         this.filterOrigen.set(valor); break;
+            case 'moneda':         this.filterMoneda.set(valor); break;
+            default: return;
         }
+        this.currentPage.set(0);
+        this.loadData();
+    }
+
+    /** La búsqueda por texto va al backend (`q`), no filtra la página cargada. */
+    onSearchTerm(term: string): void {
+        this.searchQuery.set(term);
+        this.currentPage.set(0);
+        this.loadData();
+    }
+
+    onDateRangeChange(event: DateRangeChangeEvent): void {
+        if (event.field !== 'fecha') return;
+        this.fechaInicio.set(event.from ?? '');
+        this.fechaFin.set(event.to ?? '');
+        this.currentPage.set(0);
+        this.loadData();
+    }
+
+    /** "Limpiar filtros": resetea todo y recarga UNA sola vez. */
+    onFiltersClear(): void {
+        this.searchQuery.set('');
+        this.filterTipoMovimiento.set('');
+        this.filterOrigen.set('');
+        this.filterMoneda.set('');
         this.currentPage.set(0);
         this.loadData();
     }

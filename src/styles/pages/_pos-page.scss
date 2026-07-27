@@ -549,6 +549,36 @@
         border-color: var(--brand);
     }
 
+    /* ── Filtros avanzados del catálogo (marca / unidad / disponibilidad) — server-side ── */
+    .catalog-filters-row {
+        display: flex;
+        align-items: center;
+        gap: var(--sp2);
+        padding: var(--sp2) var(--sp4);
+        background: var(--card);
+        border-bottom: 1px solid var(--border);
+        flex-shrink: 0;
+        flex-wrap: wrap;
+    }
+
+    .catalog-filter-select {
+        height: 32px;
+        border-radius: 6px;
+        border: 1px solid var(--border);
+        background: var(--surface);
+        color: var(--text);
+        font-size: 12px;
+        font-weight: 600;
+        padding: 0 var(--sp2);
+        outline: none;
+        cursor: pointer;
+        transition: border-color 0.15s ease;
+    }
+
+    .catalog-filter-select:focus {
+        border-color: var(--brand);
+    }
+
     /* ── Catalog Categories Bar (plegable) ── */
     .catalog-cats-bar {
         flex-shrink: 0;
@@ -1824,6 +1854,64 @@
         gap: var(--sp4);
         padding: var(--sp4);
         overflow-y: auto;
+    }
+
+    /* ── Filtros server-side del historial (búsqueda + selects + rango de fecha) ── */
+    .historial-filters-row {
+        display: flex;
+        align-items: center;
+        gap: var(--sp2);
+        flex-wrap: wrap;
+    }
+
+    .historial-filter-input {
+        height: 34px;
+        min-width: 220px;
+        flex: 1 1 220px;
+        border-radius: 6px;
+        border: 1px solid var(--border);
+        background: var(--surface);
+        color: var(--text);
+        font-size: 13px;
+        padding: 0 var(--sp3);
+        outline: none;
+    }
+
+    .historial-filter-select,
+    .historial-filter-date {
+        height: 34px;
+        border-radius: 6px;
+        border: 1px solid var(--border);
+        background: var(--surface);
+        color: var(--text);
+        font-size: 12px;
+        font-weight: 600;
+        padding: 0 var(--sp2);
+        outline: none;
+        cursor: pointer;
+    }
+
+    .historial-filter-input:focus,
+    .historial-filter-select:focus,
+    .historial-filter-date:focus {
+        border-color: var(--brand);
+    }
+
+    .historial-filter-clear {
+        height: 34px;
+        padding: 0 var(--sp3);
+        border-radius: 6px;
+        border: 1.5px dashed var(--border);
+        background: var(--card);
+        color: var(--text2);
+        font-size: 12px;
+        font-weight: 700;
+        cursor: pointer;
+    }
+
+    .historial-filter-clear:hover {
+        border-color: var(--color-error, #e5484d);
+        color: var(--color-error, #e5484d);
     }
 
     .kpi-grid {

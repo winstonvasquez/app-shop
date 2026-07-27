@@ -21,12 +21,15 @@ export interface ProductFilter {
     search?: string;
     companyId?: number;
     categoriaId?: number;
-    minPrice?: number;
-    maxPrice?: number;
+    /** OJO: el backend espera `precioMin`/`precioMax` (ProductoController.getAll), NO `minPrice`/`maxPrice`. */
+    precioMin?: number;
+    precioMax?: number;
     marcas?: string[];
     minRating?: number;
     fechaCreacionDesde?: string;
     fechaCreacionHasta?: string;
+    /** Por defecto el backend solo devuelve productos activos; mandar `false` para ver inactivos. */
+    activo?: boolean;
 }
 
 export interface FiltrosDisponibles {
@@ -67,11 +70,11 @@ export class ProductService extends BaseApiService<ProductRequest, ProductRespon
         if (filter?.categoriaId) {
             params = params.set('categoriaId', filter.categoriaId.toString());
         }
-        if (filter?.minPrice !== undefined) {
-            params = params.set('minPrice', filter.minPrice.toString());
+        if (filter?.precioMin !== undefined) {
+            params = params.set('precioMin', filter.precioMin.toString());
         }
-        if (filter?.maxPrice !== undefined) {
-            params = params.set('maxPrice', filter.maxPrice.toString());
+        if (filter?.precioMax !== undefined) {
+            params = params.set('precioMax', filter.precioMax.toString());
         }
         if (filter?.marcas?.length) {
             filter.marcas.forEach(m => { params = params.append('marca', m); });
@@ -84,6 +87,9 @@ export class ProductService extends BaseApiService<ProductRequest, ProductRespon
         }
         if (filter?.fechaCreacionHasta) {
             params = params.set('fechaCreacionHasta', filter.fechaCreacionHasta);
+        }
+        if (filter?.activo !== undefined) {
+            params = params.set('activo', filter.activo.toString());
         }
 
         return this.getPaginated<PageResponse<ProductResponse>>(params);

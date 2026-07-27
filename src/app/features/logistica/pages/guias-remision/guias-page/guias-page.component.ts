@@ -1,16 +1,16 @@
 import { Component, inject, signal, OnInit, ChangeDetectionStrategy, computed } from '@angular/core';
-import { toObservable } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { ButtonComponent, CatalogSelectComponent, ServerSearchSelectComponent } from '@shared/components';
 import { DrawerComponent } from '../../../../../shared/components/drawer/drawer.component';
 import { GuiaRemisionService } from '../../../services/guia-remision.service';
 import { AlmacenService } from '../../../services/almacen.service';
+import { Almacen } from '../../../models/almacen.model';
 import { almacenSelectSource } from '../../../components/select-sources';
 import { GuiaRemision, EstadoGuia, CreateGuiaRemisionDto, GuiaRemisionItemDto } from '../../../models/guia-remision.model';
 import { AuthService } from '../../../../../core/auth/auth.service';
 import { CatalogService } from '@core/services/catalog.service';
-import { map } from 'rxjs';
 import { DataTableComponent, TableColumn, TableAction, PaginationEvent, FilterConfig, FilterChangeEvent, DateRangeFilterConfig, DateRangeChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
+import { catalogFilter, signalFilter } from '@shared/ui/tables/data-table/filter-helpers';
 import { DateInputComponent } from '@shared/ui/forms/date-input/date-input.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
@@ -55,6 +55,9 @@ export class GuiasPageComponent implements OnInit {
     readonly errorMsg        = signal<string | null>(null);
     readonly itemForms       = signal<ItemForm[]>([]);
 
+    /** Almacenes de la empresa, para el select de filtro "Almacén de origen" del toolbar. */
+    readonly almacenesFiltro = signal<Almacen[]>([]);
+
     // Pagination
     currentPage = signal(0);
     pageSize    = signal<number>(PAGINATION.defaultPageSize);
@@ -66,33 +69,51 @@ export class GuiasPageComponent implements OnInit {
         { label: 'Guías de Remisión' }
     ];
 
-    // Filtros server-side: estado + rango de fecha de emisión
+    // Filtros (TODOS server-side — la vista nunca filtra la página cargada)
+    searchQuery = signal('');
     filterEstado = signal('');
+    filterMotivoTraslado = signal('');
+    filterModalidadTraslado = signal('');
+    filterAlmacenOrigenId = signal('');
     filterFechaEmisionDesde = signal<string | undefined>(undefined);
     filterFechaEmisionHasta = signal<string | undefined>(undefined);
+    filterFechaInicioTrasladoDesde = signal<string | undefined>(undefined);
+    filterFechaInicioTrasladoHasta = signal<string | undefined>(undefined);
 
-    // Filtro de estado en el toolbar del data-table (opciones desde catálogo ESTADO_GUIA_REMISION)
-    readonly estadoFilters: FilterConfig[] = [
-        {
-            field: 'estado', label: 'Todos los estados',
-            options: toObservable(this.catalog.options('ESTADO_GUIA_REMISION')).pipe(
-                map(opts => opts.map(o => ({ value: o.codigo, label: o.valor })))
-            )
-        }
+    // Filtros select del toolbar. Las opciones salen de erp_parameters (fuente única)
+    // y de `almacenesFiltro` (lista dinámica cargada en ngOnInit).
+    readonly filters: FilterConfig[] = [
+        catalogFilter(this.catalog, 'ESTADO_GUIA_REMISION', 'estado', 'Todos los estados'),
+        catalogFilter(this.catalog, 'MOTIVO_TRASLADO_SUNAT', 'motivoTraslado', 'Motivo de traslado'),
+        catalogFilter(this.catalog, 'MODALIDAD_TRASLADO_SUNAT', 'modalidadTraslado', 'Modalidad de traslado'),
+        signalFilter('almacenOrigenId', 'Todos los almacenes', this.almacenesFiltro,
+            a => ({ value: a.id, label: a.nombre })),
     ];
 
     readonly dateRangeFilters: DateRangeFilterConfig[] = [
-        { field: 'fechaEmision', label: 'Fecha de emisión' }
+        { field: 'fechaEmision', label: 'Fecha de emisión' },
+        { field: 'fechaInicioTraslado', label: 'Fecha inicio de traslado' },
     ];
 
     /**
-     * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios.
-     * Ver /logistics/api/guias-remision/export.
+     * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios
+     * (respeta los filtros actuales). Ver /logistics/api/guias-remision/export.
      */
     readonly exportConfig: BackendExportConfig = {
         url: `${environment.apiUrls.logistics}/api/guias-remision/export`,
         filename: 'guias-remision',
-        params: () => ({ companyId: this.companyId }),
+        params: () => ({
+            companyId: this.companyId,
+            q: this.searchQuery() || undefined,
+            estado: this.filterEstado() || undefined,
+            motivoTraslado: this.filterMotivoTraslado() || undefined,
+            modalidadTraslado: this.filterModalidadTraslado() || undefined,
+            almacenOrigenId: this.filterAlmacenOrigenId() || undefined,
+            fechaEmisionDesde: this.filterFechaEmisionDesde(),
+            fechaEmisionHasta: this.filterFechaEmisionHasta(),
+            fechaInicioTrasladoDesde: this.filterFechaInicioTrasladoDesde(),
+            fechaInicioTrasladoHasta: this.filterFechaInicioTrasladoHasta(),
+        }),
     };
 
     // Form GRE — reactive
@@ -188,16 +209,33 @@ export class GuiasPageComponent implements OnInit {
         return String(this.authService.currentUser()?.activeCompanyId ?? 1);
     }
 
-    ngOnInit() { this.cargarGuias(); }
+    ngOnInit() {
+        this.cargarGuias();
+        this.loadAlmacenesFiltro();
+    }
+
+    /** Almacenes activos para el select de filtro "Almacén de origen" del toolbar. */
+    private loadAlmacenesFiltro(): void {
+        this.almacenService.getAlmacenes(this.companyId, { page: 0, size: PAGINATION.maxPageSize }).subscribe({
+            next: (res) => this.almacenesFiltro.set(res.content ?? []),
+            error: () => this.almacenesFiltro.set([])
+        });
+    }
 
     cargarGuias() {
         this.loading.set(true);
         this.guiaService.getGuias(this.companyId, {
             page: this.currentPage(),
             size: this.pageSize(),
+            q: this.searchQuery() || undefined,
             estado: this.filterEstado() || undefined,
+            motivoTraslado: this.filterMotivoTraslado() || undefined,
+            modalidadTraslado: this.filterModalidadTraslado() || undefined,
+            almacenOrigenId: this.filterAlmacenOrigenId() || undefined,
             fechaEmisionDesde: this.filterFechaEmisionDesde(),
-            fechaEmisionHasta: this.filterFechaEmisionHasta()
+            fechaEmisionHasta: this.filterFechaEmisionHasta(),
+            fechaInicioTrasladoDesde: this.filterFechaInicioTrasladoDesde(),
+            fechaInicioTrasladoHasta: this.filterFechaInicioTrasladoHasta()
         }).subscribe({
             next: (res) => {
                 this.guias.set(res.content);
@@ -212,6 +250,13 @@ export class GuiasPageComponent implements OnInit {
         });
     }
 
+    /** La búsqueda por texto también va al backend (`q`), no filtra la página cargada. */
+    onSearch(term: string) {
+        this.searchQuery.set(term);
+        this.currentPage.set(0);
+        this.cargarGuias();
+    }
+
     onPageChange(event: PaginationEvent) {
         this.currentPage.set(event.page);
         this.pageSize.set(event.size);
@@ -219,16 +264,45 @@ export class GuiasPageComponent implements OnInit {
     }
 
     onFilterChangeEvent(event: FilterChangeEvent) {
-        if (event.field !== 'estado') return;
-        this.filterEstado.set(event.value != null ? String(event.value) : '');
+        const valor = event.value != null ? String(event.value) : '';
+        switch (event.field) {
+            case 'estado':            this.filterEstado.set(valor); break;
+            case 'motivoTraslado':    this.filterMotivoTraslado.set(valor); break;
+            case 'modalidadTraslado': this.filterModalidadTraslado.set(valor); break;
+            case 'almacenOrigenId':   this.filterAlmacenOrigenId.set(valor); break;
+            default: return;
+        }
         this.currentPage.set(0);
         this.cargarGuias();
     }
 
     onDateRangeChange(event: DateRangeChangeEvent) {
-        if (event.field !== 'fechaEmision') return;
-        this.filterFechaEmisionDesde.set(event.from ?? undefined);
-        this.filterFechaEmisionHasta.set(event.to ?? undefined);
+        switch (event.field) {
+            case 'fechaEmision':
+                this.filterFechaEmisionDesde.set(event.from ?? undefined);
+                this.filterFechaEmisionHasta.set(event.to ?? undefined);
+                break;
+            case 'fechaInicioTraslado':
+                this.filterFechaInicioTrasladoDesde.set(event.from ?? undefined);
+                this.filterFechaInicioTrasladoHasta.set(event.to ?? undefined);
+                break;
+            default: return;
+        }
+        this.currentPage.set(0);
+        this.cargarGuias();
+    }
+
+    /** "Limpiar filtros": resetea todo y recarga UNA sola vez. */
+    onFiltersClear() {
+        this.searchQuery.set('');
+        this.filterEstado.set('');
+        this.filterMotivoTraslado.set('');
+        this.filterModalidadTraslado.set('');
+        this.filterAlmacenOrigenId.set('');
+        this.filterFechaEmisionDesde.set(undefined);
+        this.filterFechaEmisionHasta.set(undefined);
+        this.filterFechaInicioTrasladoDesde.set(undefined);
+        this.filterFechaInicioTrasladoHasta.set(undefined);
         this.currentPage.set(0);
         this.cargarGuias();
     }
