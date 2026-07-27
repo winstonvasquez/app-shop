@@ -1,7 +1,20 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '@core/auth/auth.service';
 import { ToastService } from '@shared/services/toast.service';
+
+/** Etiqueta legible por rol real de backend (tabla `rol`, ver microshopusers). */
+const ROLE_LABELS: Record<string, string> = {
+  SUPERADMIN: 'Superadministrador',
+  ADMIN: 'Administrador',
+  VENDEDOR: 'Vendedor',
+  COMPRADOR: 'Comprador',
+  CONTADOR: 'Contador',
+  TESORERO: 'Tesorero',
+  RRHH: 'RRHH',
+  ALMACENERO: 'Almacenero',
+  GERENTE: 'Gerente',
+};
 
 @Component({
   selector: 'app-admin-header',
@@ -16,8 +29,13 @@ export class AdminHeaderComponent {
 
   searchQuery = signal('');
   hasNotifications = signal(true);
-  userName = signal('Admin');
-  userRole = signal('Administrador');
+  userName = computed(() => this.authService.currentUser()?.username ?? 'Usuario');
+  userRole = computed(() => {
+    const role = this.authService.currentUser()?.role;
+    if (!role) return 'Usuario';
+    const code = role.replace(/^ROLE_/, '').toUpperCase();
+    return ROLE_LABELS[code] ?? code;
+  });
   isUserMenuOpen = signal(false);
 
   onSearch(event: Event): void {
