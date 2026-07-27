@@ -30,6 +30,39 @@ interface DomainGroupView {
     modules: ModuleCardView[];
 }
 
+/** Dolores reales de una pyme sin sistema conectado (framework PAS: problema→agitar→transición a la solución). */
+const PROBLEM_POINTS: string[] = [
+    'Vendes con cuaderno o Excel, y al cierre de mes nadie sabe si el stock real coincide con lo que dice el papel.',
+    'Facturas manualmente o pagas a un tercero aparte solo para cumplir con SUNAT, sin que se conecte con tus ventas.',
+    'Ventas, compras y contabilidad viven en archivos distintos, y armar un solo reporte implica copiar y pegar durante horas.',
+    'Cuando creces y necesitas más de un almacén o una planilla de RRHH, tu sistema de hojas sueltas simplemente no aguanta.',
+];
+
+/** Pasos reales del onboarding SaaS (SaasOnboardingCommandService: registro → suscripción → módulos habilitados). */
+const HOW_IT_WORKS_STEPS: { title: string; description: string }[] = [
+    { title: 'Registra tu RUC', description: 'Crea tu empresa con tu RUC y elige el plan según lo que necesitas hoy. 30 días de prueba, sin tarjeta.' },
+    { title: 'Tus módulos se activan solos', description: 'POS, ventas, inventario, compras... se habilitan automáticamente según tu plan, sin instalaciones ni configuraciones complejas.' },
+    { title: 'Vende y factura desde el día uno', description: 'Emite comprobantes electrónicos SUNAT con todo ya conectado a tu inventario y tu contabilidad.' },
+];
+
+/** Confianza real y verificable (NO testimonios inventados — no hay clientes reales que citar todavía). */
+const TRUST_POINTS: string[] = [
+    'Aislamiento de datos por empresa: nadie fuera de tu RUC ve tu información',
+    'Contraseñas cifradas con BCrypt, nunca en texto plano',
+    'Cada registro guarda qué usuario lo creó o modificó y cuándo',
+    'La misma seguridad para los 3 planes: no se cobra distinto por estar protegido',
+];
+
+/** FAQ con respuestas honestas — ninguna promete algo que el sistema real todavía no hace (ver auditoría 2026-07-26). */
+const FAQ_ITEMS: { question: string; answer: string }[] = [
+    { question: '¿Necesito tarjeta de crédito para probarlo?', answer: 'No. Regístrate con tu RUC y tienes 30 días de prueba, sin tarjeta ni compromiso de permanencia.' },
+    { question: '¿Los comprobantes que emito son válidos ante SUNAT?', answer: 'El sistema genera comprobantes electrónicos en formato UBL 2.1, el estándar que exige SUNAT. Emitir en producción requiere el certificado digital de tu empresa; nuestro equipo te guía en esa configuración.' },
+    { question: '¿Qué pasa si mi empresa ya usa Excel o un sistema antiguo?', answer: 'Puedes empezar a operar de inmediato. Si necesitas migrar tu historial de datos, escríbenos y te ayudamos según el volumen.' },
+    { question: '¿Puedo cambiar de plan más adelante?', answer: 'Sí, tu plan puede crecer junto con tu negocio; escríbenos cuando necesites más módulos o usuarios.' },
+    { question: '¿Qué pasa si necesito más usuarios de los que incluye mi plan?', answer: 'Tu equipo actual sigue operando sin problema; para sumar usuarios por encima del límite de tu plan, actualízalo cuando lo necesites.' },
+    { question: '¿Mis datos están seguros?', answer: 'Sí: aislamos los datos de cada empresa, ciframos las contraseñas y cada acción queda registrada. Puedes ver el detalle completo en Planes.' },
+];
+
 @Component({
     selector: 'app-landing-page',
     standalone: true,
@@ -67,10 +100,10 @@ interface DomainGroupView {
             </div>
           </div>
 
-          <div class="hero-art" aria-hidden="true">
+          <div class="hero-art animate-float" aria-hidden="true">
             <svg viewBox="0 0 360 380" class="art-svg">
-              <rect x="14" y="222" width="96" height="76" rx="10" fill="#EFEDE7" stroke="#DCD8CE" stroke-width="1.5" transform="rotate(-7 62 260)"/>
-              <rect x="248" y="46" width="86" height="68" rx="10" fill="#EFEDE7" stroke="#DCD8CE" stroke-width="1.5" transform="rotate(9 291 80)"/>
+              <rect x="14" y="222" width="96" height="76" rx="10" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.28)" stroke-width="1.5" transform="rotate(-7 62 260)"/>
+              <rect x="248" y="46" width="86" height="68" rx="10" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.28)" stroke-width="1.5" transform="rotate(9 291 80)"/>
 
               <g transform="rotate(-3 180 190)">
                 <rect x="88" y="46" width="184" height="284" rx="16" fill="#FFFFFF" stroke="#DCD8CE" stroke-width="1.5"/>
@@ -107,6 +140,30 @@ interface DomainGroupView {
               </g>
             </svg>
           </div>
+        </div>
+      </section>
+
+      <!-- ============ PROBLEMA ============ -->
+      <section class="problem-section">
+        <div class="wrap problem-grid">
+          <div class="problem-head">
+            <span class="section-kicker">El caos que ya conoces</span>
+            <h2 class="section-title">Tu negocio ya no cabe en una hoja de cálculo</h2>
+            <p class="section-subtitle">Así se ve manejar una empresa sin un sistema conectado:</p>
+          </div>
+
+          <ul class="problem-list">
+            @for (point of problemPoints; track point) {
+              <li class="problem-item">
+                <span class="problem-mark" aria-hidden="true">✕</span>
+                <span>{{ point }}</span>
+              </li>
+            }
+          </ul>
+
+          <p class="problem-bridge">
+            AppShop conecta las {{ modules().length || 8 }} áreas de tu negocio en un solo sistema, con comprobantes SUNAT desde el primer día.
+          </p>
         </div>
       </section>
 
@@ -187,6 +244,66 @@ interface DomainGroupView {
         </div>
       </section>
 
+      <!-- ============ CÓMO FUNCIONA ============ -->
+      <section class="how-section">
+        <div class="wrap">
+          <div class="section-head">
+            <span class="section-kicker">Así de simple</span>
+            <h2 class="section-title">De cero a operando en minutos</h2>
+          </div>
+
+          <div class="how-row">
+            @for (step of howItWorksSteps; track step.title; let si = $index) {
+              <div class="how-step">
+                <span class="how-index">{{ si + 1 < 10 ? '0' + (si + 1) : si + 1 }}</span>
+                <h3>{{ step.title }}</h3>
+                <p>{{ step.description }}</p>
+              </div>
+            }
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ CONFIANZA / SEGURIDAD ============ -->
+      <section class="trust-section">
+        <div class="wrap trust-panel">
+          <div class="trust-head">
+            <span class="section-kicker">Por qué confiar tus datos</span>
+            <h2 class="section-title">Seguridad de nivel empresarial, en todos los planes</h2>
+          </div>
+
+          <ul class="trust-list">
+            @for (point of trustPoints; track point) {
+              <li>
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--color-success, #0E8A5F)" stroke-width="3" class="trust-check"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>{{ point }}</span>
+              </li>
+            }
+          </ul>
+
+          <a routerLink="/portal/pricing" class="trust-link">Ver todos los controles de seguridad →</a>
+        </div>
+      </section>
+
+      <!-- ============ FAQ ============ -->
+      <section class="faq-section">
+        <div class="wrap">
+          <div class="section-head">
+            <span class="section-kicker">Preguntas frecuentes</span>
+            <h2 class="section-title">Lo que suelen preguntarnos</h2>
+          </div>
+
+          <div class="faq-list">
+            @for (item of faqItems; track item.question) {
+              <div class="faq-item">
+                <h3>{{ item.question }}</h3>
+                <p>{{ item.answer }}</p>
+              </div>
+            }
+          </div>
+        </div>
+      </section>
+
       <!-- ============ CTA FINAL ============ -->
       <section class="cta-band">
         <div class="wrap cta-inner">
@@ -217,18 +334,49 @@ interface DomainGroupView {
       /* ---------- Hero ---------- */
       /* section/article traen margin-bottom global (_layout.scss "harmonic structural spacing") — se anula aquí para controlar el espaciado exacto de esta página. */
       .hero-section,
+      .problem-section,
       .modules-section,
+      .how-section,
+      .trust-section,
+      .faq-section,
       .cta-band {
         margin-bottom: 0;
       }
 
       .hero-section {
-        padding: 72px 0 88px;
+        position: relative;
+        overflow: hidden;
+        background: var(--color-primary, #0B3D91);
+        padding: 100px 0 118px;
+        color: #ffffff;
+
+        /* Textura sutil: trama de puntos, no glassmorphism — profundidad sin blur decorativo */
+        &::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background-image: radial-gradient(rgba(255, 255, 255, 0.07) 1.5px, transparent 1.5px);
+          background-size: 28px 28px;
+          pointer-events: none;
+        }
+
+        &::after {
+          content: '';
+          position: absolute;
+          top: -35%;
+          right: -12%;
+          width: 55%;
+          height: 140%;
+          background: radial-gradient(circle, rgba(240, 140, 0, 0.16) 0%, transparent 68%);
+          pointer-events: none;
+        }
       }
 
       .hero-grid {
+        position: relative;
+        z-index: 1;
         display: grid;
-        grid-template-columns: 1.15fr 0.85fr;
+        grid-template-columns: 1.1fr 0.9fr;
         gap: 56px;
         align-items: center;
       }
@@ -239,9 +387,9 @@ interface DomainGroupView {
         font-size: 0.8rem;
         font-weight: 600;
         letter-spacing: 0.2px;
-        color: var(--color-primary, #0B3D91);
-        background: #ffffff;
-        border: 1px solid var(--color-border, #DCD8CE);
+        color: #ffffff;
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.32);
         border-radius: var(--r-full, 999px);
         padding: 6px 16px;
         margin-bottom: 28px;
@@ -249,11 +397,12 @@ interface DomainGroupView {
 
       .hero-title {
         font-family: var(--f-display, 'Source Serif 4', serif);
-        font-size: clamp(2.4rem, 4.6vw, 3.75rem);
+        font-size: clamp(2.75rem, 5.2vw, 4.4rem);
         font-weight: 700;
-        line-height: 1.08;
-        letter-spacing: -0.5px;
+        line-height: 1.05;
+        letter-spacing: -1px;
         margin: 0 0 24px;
+        color: #ffffff;
       }
 
       .hero-title-accent {
@@ -261,9 +410,9 @@ interface DomainGroupView {
       }
 
       .hero-subtitle {
-        font-size: 1.1rem;
+        font-size: 1.15rem;
         line-height: 1.65;
-        color: var(--color-text-secondary, #5A6473);
+        color: rgba(255, 255, 255, 0.82);
         max-width: 520px;
         margin: 0 0 36px;
       }
@@ -303,9 +452,9 @@ interface DomainGroupView {
       .btn-secondary {
         display: inline-flex;
         align-items: center;
-        color: var(--color-primary, #0B3D91);
+        color: #ffffff;
         background: transparent;
-        border: 1.5px solid var(--color-border, #DCD8CE);
+        border: 1.5px solid rgba(255, 255, 255, 0.4);
         padding: 13px 26px;
         border-radius: var(--r-md, 10px);
         text-decoration: none;
@@ -314,8 +463,8 @@ interface DomainGroupView {
         transition: all 0.2s ease;
 
         &:hover {
-          border-color: var(--color-primary, #0B3D91);
-          background: var(--color-surface-raised, #EFEDE7);
+          border-color: #ffffff;
+          background: rgba(255, 255, 255, 0.1);
         }
       }
 
@@ -325,24 +474,26 @@ interface DomainGroupView {
         align-items: center;
         gap: 10px;
         padding-top: 24px;
-        border-top: 1px dashed var(--color-border, #DCD8CE);
+        border-top: 1px dashed rgba(255, 255, 255, 0.25);
         font-size: 0.85rem;
-        color: var(--color-text-muted, #8C95A3);
+        color: rgba(255, 255, 255, 0.68);
         max-width: 560px;
 
-        .dot { color: var(--color-border, #DCD8CE); }
+        .dot { color: rgba(255, 255, 255, 0.3); }
       }
 
       .hero-art {
+        position: relative;
+        z-index: 1;
         display: flex;
         justify-content: center;
       }
 
       .art-svg {
         width: 100%;
-        max-width: 360px;
+        max-width: 400px;
         height: auto;
-        filter: drop-shadow(0 18px 30px rgba(14, 27, 44, 0.12));
+        filter: drop-shadow(0 30px 50px rgba(0, 0, 0, 0.32));
       }
 
       /* ---------- Módulos ---------- */
@@ -542,6 +693,189 @@ interface DomainGroupView {
         &:hover { border-color: var(--accent); }
       }
 
+      /* ---------- Problema ---------- */
+      .problem-section {
+        padding: 24px 0 88px;
+      }
+
+      .problem-grid {
+        display: grid;
+        grid-template-columns: 0.9fr 1.1fr;
+        gap: 56px;
+        align-items: start;
+      }
+
+      .problem-head {
+        position: sticky;
+        top: 96px;
+      }
+
+      .problem-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+
+      .problem-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 14px;
+        font-size: 1rem;
+        line-height: 1.55;
+        color: var(--color-text-secondary, #5A6473);
+        padding-bottom: 20px;
+        border-bottom: 1px dashed var(--color-border, #DCD8CE);
+
+        &:last-child { border-bottom: none; padding-bottom: 0; }
+      }
+
+      .problem-mark {
+        flex-shrink: 0;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        border: 1.5px solid var(--color-warning, #B45309);
+        color: var(--color-warning, #B45309);
+        font-size: 0.7rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .problem-bridge {
+        grid-column: 1 / -1;
+        margin: 8px 0 0;
+        padding-top: 32px;
+        border-top: 2px solid var(--color-primary, #0B3D91);
+        font-family: var(--f-display, 'Source Serif 4', serif);
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: var(--color-primary, #0B3D91);
+        line-height: 1.4;
+      }
+
+      /* ---------- Cómo funciona ---------- */
+      .how-section {
+        background: var(--color-surface-raised, #EFEDE7);
+        padding: 72px 0;
+      }
+
+      .how-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 40px;
+      }
+
+      .how-step {
+        h3 {
+          font-size: 1.15rem;
+          font-weight: 700;
+          margin: 10px 0 8px;
+          color: var(--color-text-primary, #0E1B2C);
+        }
+
+        p {
+          margin: 0;
+          color: var(--color-text-secondary, #5A6473);
+          font-size: 0.925rem;
+          line-height: 1.55;
+        }
+      }
+
+      .how-index {
+        display: inline-block;
+        font-family: var(--f-display, 'Source Serif 4', serif);
+        font-size: 2.25rem;
+        font-weight: 700;
+        color: var(--color-accent, #F08C00);
+        line-height: 1;
+      }
+
+      /* ---------- Confianza / Seguridad ---------- */
+      .trust-section {
+        padding: 0 0 96px;
+      }
+
+      .trust-panel {
+        background: color-mix(in srgb, var(--color-success, #0E8A5F) 5%, var(--color-surface, #FFFFFF));
+        border: 1px solid color-mix(in srgb, var(--color-success, #0E8A5F) 22%, var(--color-border, #DCD8CE));
+        border-radius: var(--r-lg, 14px);
+        padding: 44px 40px;
+      }
+
+      .trust-head {
+        max-width: 640px;
+        margin: 0 0 28px;
+      }
+
+      .trust-list {
+        list-style: none;
+        margin: 0 0 24px;
+        padding: 0;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 14px 32px;
+
+        li {
+          display: flex;
+          align-items: flex-start;
+          gap: 10px;
+          font-size: 0.925rem;
+          color: var(--color-text-secondary, #5A6473);
+          line-height: 1.5;
+        }
+      }
+
+      .trust-check {
+        flex-shrink: 0;
+        margin-top: 3px;
+      }
+
+      .trust-link {
+        font-size: 0.875rem;
+        font-weight: 700;
+        color: var(--color-primary, #0B3D91);
+        text-decoration: none;
+        border-bottom: 1.5px solid color-mix(in srgb, var(--color-primary, #0B3D91) 35%, transparent);
+        padding-bottom: 1px;
+
+        &:hover { border-color: var(--color-primary, #0B3D91); }
+      }
+
+      /* ---------- FAQ ---------- */
+      .faq-section {
+        padding: 0 0 96px;
+      }
+
+      .faq-list {
+        max-width: 760px;
+      }
+
+      .faq-item {
+        padding: 22px 0;
+        border-bottom: 1px solid var(--color-border, #DCD8CE);
+
+        &:last-child { border-bottom: none; }
+
+        h3 {
+          font-size: 1.02rem;
+          font-weight: 700;
+          margin: 0 0 8px;
+          color: var(--color-text-primary, #0E1B2C);
+        }
+
+        p {
+          margin: 0;
+          color: var(--color-text-secondary, #5A6473);
+          font-size: 0.925rem;
+          line-height: 1.6;
+        }
+      }
+
       /* ---------- CTA final: momento "drenched" en Ink Blue ---------- */
       .cta-band {
         background: var(--color-primary, #0B3D91);
@@ -603,6 +937,15 @@ interface DomainGroupView {
         .art-svg {
           max-width: 260px;
         }
+
+        .problem-grid {
+          grid-template-columns: 1fr;
+          gap: 32px;
+        }
+
+        .problem-head {
+          position: static;
+        }
       }
 
       @media (max-width: 560px) {
@@ -618,6 +961,11 @@ export class LandingPageComponent implements OnInit {
 
     readonly plans = signal<SaasPlanInfo[]>([]);
     readonly modules = signal<SaasModuleInfo[]>([]);
+
+    readonly problemPoints = PROBLEM_POINTS;
+    readonly howItWorksSteps = HOW_IT_WORKS_STEPS;
+    readonly trustPoints = TRUST_POINTS;
+    readonly faqItems = FAQ_ITEMS;
 
     readonly domainGroups = computed<DomainGroupView[]>(() => {
         const modules = this.modules();

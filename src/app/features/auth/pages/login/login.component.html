@@ -13,6 +13,20 @@
 
     <!-- ── Left: brand + dashboard preview ─── -->
     <section class="brand-side">
+        <svg class="brand-watermark" viewBox="0 0 400 420" aria-hidden="true">
+            <g transform="rotate(8 220 210)">
+                <rect x="140" y="40" width="220" height="340" rx="18" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.15)" stroke-width="2"/>
+                <rect x="168" y="76" width="120" height="14" rx="4" fill="rgba(255,255,255,0.1)"/>
+                <rect x="168" y="102" width="80" height="9" rx="4" fill="rgba(255,255,255,0.07)"/>
+                <line x1="168" y1="132" x2="308" y2="132" stroke="rgba(255,255,255,0.14)" stroke-width="2" stroke-dasharray="4 6"/>
+                <rect x="168" y="156" width="140" height="9" rx="4" fill="rgba(255,255,255,0.07)"/>
+                <rect x="168" y="180" width="110" height="9" rx="4" fill="rgba(255,255,255,0.07)"/>
+                <rect x="168" y="204" width="126" height="9" rx="4" fill="rgba(255,255,255,0.07)"/>
+                <rect x="168" y="228" width="90" height="9" rx="4" fill="rgba(255,255,255,0.07)"/>
+            </g>
+            <circle cx="308" cy="300" r="58" fill="none" stroke="rgba(240,140,0,0.28)" stroke-width="3" transform="rotate(-10 308 300)"/>
+            <circle cx="308" cy="300" r="46" fill="none" stroke="rgba(240,140,0,0.16)" stroke-width="1.5" stroke-dasharray="2 4" transform="rotate(-10 308 300)"/>
+        </svg>
         <div class="brand-row">
             <ds-wordmark [size]="28" class="wordmark-logo"/>
             <span class="erp-pill">{{ 'auth.erpBadge' | translate }}</span>
@@ -32,7 +46,7 @@
         <div class="preview glass-card">
             <div class="preview-bar">
                 <span class="preview-tag">
-                    <span class="dot animate-pulse-glow"></span> MONITOR DE SISTEMA ERP
+                    <span class="dot"></span> MONITOR DE SISTEMA ERP
                 </span>
                 <span class="preview-dots">
                     <span></span><span></span><span></span>
@@ -166,7 +180,7 @@
             </form>
 
             <div class="status-bar">
-                <span class="dot ok animate-pulse-glow"></span>
+                <span class="dot ok"></span>
                 <span>SISTEMA EN LÍNEA</span>
                 <span class="ver">v22.4.1</span>
             </div>
@@ -186,12 +200,12 @@
         overflow: hidden;
     }
 
-    /* Fix logo colors on dark background */
+    /* Fix logo colors on Ink Blue background */
     .wordmark-logo ::ng-deep span:nth-child(1) {
         color: #ffffff !important;
     }
     .wordmark-logo ::ng-deep span:nth-child(2) {
-        color: var(--neon-teal, #06b6d4) !important;
+        color: var(--color-accent, #F08C00) !important;
     }
 
     /* Override browser autofill default styling to keep theme clean and light */
@@ -207,34 +221,70 @@
     /* ── LEFT side ─────────────────────────────────────── */
     .brand-side {
         padding: 40px 48px;
-        display: flex; 
+        display: flex;
         flex-direction: column;
-        justify-content: center; 
+        justify-content: center;
         gap: 32px;
         position: relative;
         z-index: 15;
-        background-image: linear-gradient(to right, rgba(5, 8, 20, 0.94) 20%, rgba(5, 8, 20, 0.5) 100%), url('/assets/images/login_brand_bg.png');
-        background-size: cover;
-        background-position: center;
+        background: var(--color-primary, #0B3D91);
+        overflow: hidden;
     }
-    
-    .brand-row { 
-        display: flex; 
-        align-items: center; 
-        gap: 16px; 
+
+    /* Textura sutil de puntos, misma firma visual del hero de /portal/landing */
+    .brand-side::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background-image: radial-gradient(rgba(255, 255, 255, 0.06) 1.5px, transparent 1.5px);
+        background-size: 26px 26px;
+        pointer-events: none;
+    }
+
+    .brand-side::after {
+        content: '';
+        position: absolute;
+        top: -25%;
+        left: -8%;
+        width: 55%;
+        height: 65%;
+        background: radial-gradient(circle, rgba(240, 140, 0, 0.14) 0%, transparent 70%);
+        pointer-events: none;
+    }
+
+    /* Ilustración de fondo: la misma "boleta + sello SUNAT" del hero de landing, aqui como marca de agua grande que sangra fuera del panel */
+    .brand-watermark {
+        position: absolute;
+        bottom: -80px;
+        right: -60px;
+        width: 460px;
+        height: auto;
+        pointer-events: none;
+    }
+
+    .brand-row,
+    .hero-block,
+    .preview {
+        position: relative;
+        z-index: 1;
+    }
+
+    .brand-row {
+        display: flex;
+        align-items: center;
+        gap: 16px;
     }
     
     .erp-pill {
         padding: 4px 12px;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        background: rgba(255, 255, 255, 0.1);
         border-radius: 20px;
-        font-size: 11px; 
-        color: #d8b4fe;
-        font-weight: 600; 
+        font-size: 11px;
+        color: #ffffff;
+        font-weight: 600;
         letter-spacing: .04em;
         text-transform: uppercase;
-        box-shadow: 0 0 10px rgba(168, 85, 247, 0.1);
     }
 
     .hero-block { 
@@ -251,16 +301,14 @@
     }
     
     .gradient-neon-text-span {
-        background: linear-gradient(135deg, var(--neon-purple), var(--neon-teal));
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
+        color: var(--color-accent, #F08C00);
         font-weight: 900;
     }
 
     .hero-p {
-        font-size: 1.05rem; 
-        color: var(--portal-muted);
-        margin: 20px 0 0; 
+        font-size: 1.05rem;
+        color: rgba(255, 255, 255, 0.78);
+        margin: 20px 0 0;
         line-height: 1.6;
     }
 
@@ -268,44 +316,47 @@
     .preview {
         padding: 24px;
         max-width: 480px;
+        background: #ffffff;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: var(--r-lg, 14px);
+        box-shadow: 0 20px 40px rgba(6, 20, 50, 0.25);
     }
-    
+
     .preview-bar {
-        display: flex; 
-        align-items: center; 
+        display: flex;
+        align-items: center;
         justify-content: space-between;
-        margin-bottom: 16px; 
-        font-size: 11px; 
-        color: var(--portal-muted);
+        margin-bottom: 16px;
+        font-size: 11px;
+        color: var(--color-text-muted, #8C95A3);
         font-weight: 600;
     }
-    
-    .preview-tag { 
-        display: inline-flex; 
-        align-items: center; 
-        gap: 8px; 
-        font-weight: 700; 
+
+    .preview-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 700;
         letter-spacing: 0.5px;
     }
-    
-    .preview-tag .dot { 
-        width: 8px; 
-        height: 8px; 
-        border-radius: 50%; 
-        background: var(--neon-teal); 
-        box-shadow: 0 0 8px var(--neon-teal);
+
+    .preview-tag .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--color-success, #0E8A5F);
     }
-    
-    .preview-dots { 
-        display: inline-flex; 
-        gap: 4px; 
+
+    .preview-dots {
+        display: inline-flex;
+        gap: 4px;
     }
-    
-    .preview-dots span { 
-        width: 6px; 
-        height: 6px; 
-        border-radius: 50%; 
-        background: rgba(255, 255, 255, 0.1); 
+
+    .preview-dots span {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--color-border, #DCD8CE);
     }
  
     .kpis { 
@@ -316,108 +367,100 @@
     }
     
     .kpi {
-        background: rgba(255, 255, 255, 0.02);
-        border: 1px solid rgba(255, 255, 255, 0.05);
+        background: var(--color-surface-raised, #EFEDE7);
+        border: 1px solid var(--color-border, #DCD8CE);
         border-radius: 12px;
         padding: 14px 12px;
         transition: all 0.3s ease;
 
         &:hover {
             transform: translateY(-2px);
-            background: rgba(255, 255, 255, 0.04);
-            border-color: rgba(255, 255, 255, 0.1);
+            border-color: var(--color-primary, #0B3D91);
         }
     }
-    
-    .kpi-num { 
-        font-size: 1.15rem; 
-        font-weight: 800; 
+
+    .kpi-num {
+        font-family: var(--f-display, 'Source Serif 4', serif);
+        font-size: 1.15rem;
+        font-weight: 700;
         line-height: 1.2;
     }
 
     .text-gradient-pink {
-        background: linear-gradient(135deg, var(--neon-pink), var(--neon-purple));
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
+        color: var(--color-primary, #0B3D91);
     }
 
     .text-gradient-teal {
-        background: linear-gradient(135deg, var(--neon-teal), var(--neon-blue));
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
+        color: var(--color-success, #0E8A5F);
     }
 
     .text-gradient-blue {
-        background: linear-gradient(135deg, var(--neon-blue), #818cf8);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
+        color: var(--color-accent-dark, #C97300);
     }
-    
-    .kpi-lbl { 
-        font-size: 9px; 
-        color: var(--portal-muted); 
-        text-transform: uppercase; 
-        font-weight: 600; 
+
+    .kpi-lbl {
+        font-size: 9px;
+        color: var(--color-text-muted, #8C95A3);
+        text-transform: uppercase;
+        font-weight: 600;
         margin-top: 4px;
         letter-spacing: 0.25px;
     }
-    
-    .kpi-delta { 
-        font-size: 10px; 
-        font-weight: 700; 
-        margin-top: 4px; 
-        color: var(--portal-muted); 
+
+    .kpi-delta {
+        font-size: 10px;
+        font-weight: 700;
+        margin-top: 4px;
+        color: var(--color-text-muted, #8C95A3);
     }
-    
-    .kpi-delta.ok { 
-        color: var(--neon-teal); 
-        text-shadow: 0 0 6px rgba(6, 182, 212, 0.3);
+
+    .kpi-delta.ok {
+        color: var(--color-success, #0E8A5F);
     }
-    
-    .kpi-delta.warn { 
-        color: #f59e0b; 
+
+    .kpi-delta.warn {
+        color: var(--color-warning, #B45309);
     }
  
     .chart {
-        background: rgba(255, 255, 255, 0.01);
-        border: 1px solid rgba(255, 255, 255, 0.04);
+        background: var(--color-background, #F7F6F3);
+        border: 1px solid var(--color-border, #DCD8CE);
         border-radius: 12px;
         padding: 16px;
     }
-    
+
     .chart-lbl {
-        font-size: 10px; 
-        color: var(--portal-muted);
-        font-weight: 700; 
+        font-size: 10px;
+        color: var(--color-text-muted, #8C95A3);
+        font-weight: 700;
         text-transform: uppercase;
         margin-bottom: 12px;
         letter-spacing: 0.5px;
     }
-    
-    .bars { 
-        display: flex; 
-        align-items: flex-end; 
-        gap: 8px; 
-        height: 60px; 
+
+    .bars {
+        display: flex;
+        align-items: flex-end;
+        gap: 8px;
+        height: 60px;
     }
-    
-    .bar { 
-        flex: 1; 
-        background: rgba(255, 255, 255, 0.06); 
-        border-radius: 3px; 
+
+    .bar {
+        flex: 1;
+        background: var(--color-border, #DCD8CE);
+        border-radius: 3px;
         transition: all 0.3s ease;
     }
-    
-    .bar.is-on { 
-        background: linear-gradient(180deg, var(--neon-purple), var(--neon-blue)); 
-        box-shadow: 0 0 10px rgba(168, 85, 247, 0.4);
+
+    .bar.is-on {
+        background: var(--color-accent, #F08C00);
     }
-    
+
     .bar-labels {
-        display: flex; 
+        display: flex;
         justify-content: space-between;
-        font-size: 10px; 
-        color: var(--portal-muted);
+        font-size: 10px;
+        color: var(--color-text-muted, #8C95A3);
         margin-top: 8px;
         font-weight: 500;
     }
@@ -501,15 +544,15 @@
     }
     
     .link {
-        font-size: 0.8rem; 
-        color: #2563eb;
-        font-weight: 600; 
+        font-size: 0.8rem;
+        color: var(--color-primary, #0B3D91);
+        font-weight: 600;
         text-decoration: none;
         cursor: pointer;
         transition: all 0.2s ease;
 
         &:hover {
-            color: #1d4ed8;
+            color: var(--color-primary-dark, #062A6B);
             text-decoration: underline;
         }
     }
@@ -531,13 +574,13 @@
     }
     
     .input-wrap:focus-within {
-        border-color: #8b5cf6;
+        border-color: var(--color-primary, #0B3D91);
         background: #ffffff;
-        box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15), inset 0 1px 2px rgba(0, 0, 0, 0.05);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary, #0B3D91) 15%, transparent), inset 0 1px 2px rgba(0, 0, 0, 0.05);
     }
-    
-    .input-wrap.is-active { 
-        border-color: #8b5cf6; 
+
+    .input-wrap.is-active {
+        border-color: var(--color-success, #0E8A5F);
     }
     
     .input-wrap.is-error { 
@@ -615,28 +658,27 @@
         transition: all 0.2s ease;
     }
     
-    .check.is-on { 
-        border-color: #0d9488; 
-        background: #0d9488; 
-        box-shadow: 0 0 8px rgba(13, 148, 136, 0.3);
+    .check.is-on {
+        border-color: var(--color-success, #0E8A5F);
+        background: var(--color-success, #0E8A5F);
     }
- 
-    /* Elegant Gradient Button Override */
+
+    /* Boton principal — Signal Orange, solido (sin gradiente) */
     .submit-button-neon ::ng-deep button {
-        background: linear-gradient(135deg, #7c3aed 0%, #2563eb 100%) !important;
+        background: var(--color-accent, #F08C00) !important;
         border: none !important;
         color: #ffffff !important;
         font-weight: 700 !important;
         font-size: 0.95rem !important;
         letter-spacing: 0.5px !important;
-        box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35) !important;
+        box-shadow: var(--s-sm, 0 1px 2px rgba(15,23,42,.08)) !important;
         transition: all 0.3s ease !important;
-        border-radius: 10px !important;
+        border-radius: var(--r-md, 10px) !important;
     }
 
     .submit-button-neon ::ng-deep button:hover:not(:disabled) {
-        box-shadow: 0 6px 20px rgba(37, 99, 235, 0.5) !important;
-        filter: brightness(1.08) !important;
+        background: var(--color-accent-dark, #C97300) !important;
+        box-shadow: var(--s-md, 0 4px 12px rgba(15,23,42,.12)) !important;
         transform: translateY(-1px) !important;
     }
 
@@ -731,9 +773,8 @@
         background: #cbd5e1;
     }
     
-    .status-bar .dot.ok { 
-        background: #10b981; 
-        box-shadow: 0 0 8px #10b981;
+    .status-bar .dot.ok {
+        background: var(--color-success, #0E8A5F);
     }
     
     .status-bar .ver { 

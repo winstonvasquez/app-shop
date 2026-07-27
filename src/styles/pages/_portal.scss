@@ -2,9 +2,12 @@
    *  Portal Public Styles — Dark Aurora & Glassmorphism Theme
    * ============================================================ */
 
-/* Prevent double scrollbars specifically on portal pages */
-html:has(.portal-shell),
-body:has(.portal-shell) {
+/* Prevent double scrollbars specifically on portal pages.
+   SOLO en html, no en body: si ambos ancestros (html Y body) reciben overflow-y:auto,
+   el navegador puede establecer DOS contenedores de scroll independientes cuando hay
+   contenido que desborda (ver el ::before/::after de .portal-shell mas abajo, que se
+   extendian por debajo del footer). Con overflow solo en html, unicamente hay un scrollbar. */
+html:has(.portal-shell) {
   overflow-y: auto !important;
   overflow-x: hidden !important;
   height: auto !important;
@@ -41,7 +44,16 @@ body:has(.ds-auth) {
   background-color: var(--portal-bg);
   color: var(--portal-text);
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  overflow-x: hidden;
+  /* overflow:hidden en AMBOS ejes (no uno hidden y otro visible: esa combinacion fuerza al
+     navegador a recomputar el eje "visible" como "auto" segun la spec de overflow, creando
+     un segundo contenedor de scroll independiente del de html — la causa original del doble
+     scroll). Con ambos ejes en "hidden", y como .portal-shell nunca fija su propia altura
+     (crece con el contenido real via flex + min-height), este overflow NUNCA recorta contenido
+     real: solo recorta los pseudo-elementos decorativos ::before/::after de mas abajo, que se
+     posicionan con bottom/top negativos y por diseño sobresalen del box — sin el clip, ese
+     sobresaliente (varios cientos de px) se sumaba al scrollHeight de la pagina como un hueco
+     vacio debajo del footer. */
+  overflow: hidden;
   position: relative;
 
   /* Premium Aurora Glow Effects */
