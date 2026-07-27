@@ -10,6 +10,10 @@ export interface Transportista {
     tenantId?: string;
     companyId?: string;
     createdAt?: string;
+    /** Tarifa base fija por envío (ronda 3 consistenciación). Null si no está configurada. */
+    baseCost?: number | null;
+    /** Costo adicional por kilo (ronda 3 consistenciación). Null si no está configurada. */
+    costPerKg?: number | null;
 }
 
 export interface TransportistaPage {
@@ -31,4 +35,6 @@ export interface CreateTransportistaDto {
     active?: boolean;
     tenantId: string;
     companyId: string;
+    baseCost?: number | null;
+    costPerKg?: number | null;
 }

@@ -128,6 +128,18 @@ export class CarrierSlaManagementComponent implements OnInit {
     recommendError = signal<string | null>(null);
     recommendResults = signal<CarrierRecommendation[]>([]);
 
+    // ── Tarifas del transportista (ronda 3 consistenciación) ─────────────
+    // Alimenta ShipmentCommandService.registrarCostoEnvio(): sin baseCost/costPerKg
+    // configurados aquí, el costo real de envío se registra en CERO (o el shippingCost
+    // manual del shipment, si lo hubiera).
+    tarifaForm: FormGroup = this.fb.group({
+        baseCost: [null as number | null, [Validators.min(0)]],
+        costPerKg: [null as number | null, [Validators.min(0)]]
+    });
+    tarifaSubmitting = signal(false);
+    tarifaError = signal<string | null>(null);
+    tarifaSaved = signal(false);
+
     private get companyId(): string {
         return String(this.authService.currentUser()?.activeCompanyId ?? 1);
     }
@@ -156,13 +168,71 @@ export class CarrierSlaManagementComponent implements OnInit {
     onCarrierSelected(id: string): void {
         this.selectedCarrierId.set(id || null);
         this.recommendResults.set([]);
+        this.tarifaError.set(null);
+        this.tarifaSaved.set(false);
         if (this.selectedCarrierId()) {
             this.loadAll();
+            this.patchTarifaForm();
         } else {
             this.dashboard.set(null);
             this.slas.set([]);
             this.performance.set([]);
         }
+    }
+
+    /**
+     * `app-form-field` renderiza `<input [type]="type()">` con el type BINDEADO, así que Angular
+     * usa `DefaultValueAccessor` (no `NumberValueAccessor`, cuyo selector exige `type=number`
+     * estático) → el FormControl guarda un STRING, no un number: campo vacío = `''`, no `null`.
+     * Se normaliza acá para mandar `null` real (tarifa sin configurar) o un number, y no depender
+     * de la coerción `"" → null` de Jackson sobre el BigDecimal del backend.
+     */
+    private aNumeroONull(raw: unknown): number | null {
+        if (raw === null || raw === undefined || raw === '') return null;
+        const n = Number(raw);
+        return Number.isFinite(n) ? n : null;
+    }
+
+    private patchTarifaForm(): void {
+        const carrier = this.selectedCarrier();
+        this.tarifaForm.reset({
+            baseCost: carrier?.baseCost ?? null,
+            costPerKg: carrier?.costPerKg ?? null
+        });
+    }
+
+    // ── Tarifas del transportista ────────────────────────────────────────
+    submitTarifa(): void {
+        const carrier = this.selectedCarrier();
+        if (!carrier || this.tarifaForm.invalid) { this.tarifaForm.markAllAsTouched(); return; }
+
+        this.tarifaSubmitting.set(true);
+        this.tarifaError.set(null);
+        this.tarifaSaved.set(false);
+        const v = this.tarifaForm.getRawValue();
+
+        // El PUT de carrier (CreateCarrierRequest) exige code/name/serviceType (@NotBlank/@NotNull);
+        // se reenvían los datos ya cargados del transportista para no pisarlos al actualizar la tarifa.
+        this.transportistaService.update(carrier.id, {
+            code: carrier.code,
+            name: carrier.name,
+            serviceType: carrier.serviceType,
+            contactPhone: carrier.contactPhone,
+            contactEmail: carrier.contactEmail,
+            apiUrl: carrier.apiUrl,
+            baseCost: this.aNumeroONull(v.baseCost),
+            costPerKg: this.aNumeroONull(v.costPerKg)
+        }).subscribe({
+            next: (updated) => {
+                this.carriers.update(list => list.map(c => c.id === updated.id ? updated : c));
+                this.tarifaSubmitting.set(false);
+                this.tarifaSaved.set(true);
+            },
+            error: (err: Error) => {
+                this.tarifaError.set(err.message ?? 'Error al guardar la tarifa del transportista.');
+                this.tarifaSubmitting.set(false);
+            }
+        });
     }
 
     loadAll(): void {

@@ -5,6 +5,8 @@ import { ButtonComponent } from '@shared/components';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { DataTableComponent, TableColumn, TableAction, PaginationEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { NOTIFICATION_DURATION } from '@shared/constants/ui.constants';
+import { USER_ROLE } from '@shared/constants/feature-flags.constants';
+import { AuthService } from '@core/auth/auth.service';
 import {
     AccountingMappingService,
 } from '../../services/accounting-mapping.service';
@@ -21,8 +23,18 @@ import {
 })
 export class AccountingMappingComponent implements OnInit {
     private service = inject(AccountingMappingService);
+    private authService = inject(AuthService);
 
     readonly eventTypesConocidos = EVENT_TYPES_CONOCIDOS;
+
+    /**
+     * El backend expone crear/editar/eliminar/probar bajo
+     * `AppConstants.Seguridad.ADMIN_OR_INTERNAL` (`hasRole('ADMIN') or hasAuthority('ROLE_INTERNAL_SERVICE')`)
+     * en `AccountingMappingController`. La autoridad `ROLE_INTERNAL_SERVICE` es s2s (header
+     * `X-Internal-Token`), nunca la tiene un usuario logueado desde el navegador — por eso
+     * acá solo se evalúa el rol `ADMIN` exacto (no `isAdmin()`, que también incluye EMPLOYEE).
+     */
+    readonly puedeAdministrar = computed(() => this.authService.currentUser()?.role === USER_ROLE.ADMIN);
 
     readonly mapeos = signal<AccountingMapping[]>([]);
     readonly cargando = signal(false);
@@ -84,17 +96,17 @@ export class AccountingMappingComponent implements OnInit {
     readonly actions: TableAction<AccountingMapping>[] = [
         {
             label: 'Probar', icon: 'zap', class: 'btn-view',
-            show: m => m.activo,
+            show: m => m.activo && this.puedeAdministrar(),
             onClick: m => this.probar(m),
         },
         {
             label: 'Editar', icon: 'edit', class: 'btn-view',
-            show: m => m.activo,
+            show: m => m.activo && this.puedeAdministrar(),
             onClick: m => this.abrirEditar(m),
         },
         {
             label: 'Eliminar', icon: 'trash-2', class: 'btn-view',
-            show: m => m.activo,
+            show: m => m.activo && this.puedeAdministrar(),
             onClick: m => this.eliminar(m.id),
         },
     ];

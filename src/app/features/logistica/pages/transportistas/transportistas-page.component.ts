@@ -180,8 +180,16 @@ export class TransportistasPageComponent implements OnInit {
         this.submitting.set(true);
         this.submitError.set(null);
 
+        // Fix ronda 3 (2026-07-26): el PUT de transportista usa `CreateCarrierRequest` COMPLETO y
+        // `CarrierCommandService.update()` asigna baseCost/costPerKg sin null-check. Este formulario
+        // no edita tarifas (se configuran en la página de SLA) → si no las reenviamos, editar el
+        // nombre/teléfono acá BORRABA silenciosamente la tarifa del transportista y el costo de
+        // envío volvía a registrarse en S/ 0.00. Se reenvían tal como vinieron del listado.
+        const actual = this.selected();
         const payload = {
             ...this.form.value,
+            baseCost:  actual?.baseCost ?? null,
+            costPerKg: actual?.costPerKg ?? null,
             tenantId:  this.companyId,
             companyId: this.companyId
         };
@@ -204,7 +212,7 @@ export class TransportistasPageComponent implements OnInit {
     }
 
     toggleActivo(item: Transportista, active: boolean) {
-        this.service.toggleActivo(item.id, active, this.companyId).subscribe({
+        this.service.toggleActivo(item.id, active).subscribe({
             next: () => this.loadItems(),
             error: (err: Error) => this.error.set(err.message)
         });

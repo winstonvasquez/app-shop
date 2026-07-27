@@ -4,9 +4,11 @@
             <h1 class="page-title">Mapeo Contable de Logística</h1>
             <p class="page-subtitle">Configura qué cuentas PCGE se afectan por cada evento logístico (envíos, devoluciones, ajustes de inventario)</p>
         </div>
-        <div class="page-actions">
-            <app-button label="Nuevo Mapeo" icon="plus" variant="primary" (click)="abrirNuevo()" />
-        </div>
+        @if (puedeAdministrar()) {
+            <div class="page-actions">
+                <app-button label="Nuevo Mapeo" icon="plus" variant="primary" (click)="abrirNuevo()" />
+            </div>
+        }
     </div>
 
     @if (error()) {

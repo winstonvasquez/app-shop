@@ -63,6 +63,36 @@
       </div>
     }
 
+    <!-- Tarifas del transportista -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 mb-6">
+      <h3 class="form-section-title" style="margin-bottom:0.5rem">Tarifas</h3>
+      <p class="text-xs text-gray-400 mb-3">
+        Tarifa real usada para calcular el costo de envío al despachar (baseCost + costPerKg × peso).
+        Si se deja vacío, el costo se registra en S/ 0.00 (o el shippingCost manual del envío, si lo hubiera).
+      </p>
+
+      @if (tarifaError()) {
+        <app-alert type="error" [message]="tarifaError()!" [dismissible]="true" (dismiss)="tarifaError.set(null)" />
+      }
+      @if (tarifaSaved()) {
+        <app-alert type="success" message="Tarifa actualizada." [dismissible]="true" (dismiss)="tarifaSaved.set(false)" />
+      }
+
+      <form [formGroup]="tarifaForm" (ngSubmit)="submitTarifa()">
+        <div class="drawer-form-grid">
+          <app-form-field label="Tarifa base (S/)" [control]="getCtrl(tarifaForm, 'baseCost')"
+            type="number" placeholder="(sin configurar)" />
+          <app-form-field label="Costo por kg (S/)" [control]="getCtrl(tarifaForm, 'costPerKg')"
+            type="number" placeholder="(sin configurar)" />
+        </div>
+        <div style="margin-top:1rem;text-align:right">
+          <app-button type="submit" variant="primary" icon="save"
+            [label]="tarifaSubmitting() ? 'Guardando...' : 'Guardar tarifa'"
+            [loading]="tarifaSubmitting()" [disabled]="tarifaSubmitting() || tarifaForm.invalid" />
+        </div>
+      </form>
+    </div>
+
     <!-- SLAs configurados -->
     <h3 class="form-section-title" style="margin-bottom:0.5rem">SLAs configurados</h3>
     <app-data-table
