@@ -18,6 +18,7 @@
         [searchable]="true"
         searchPlaceholder="Buscar por código o título..."
         [filters]="estadoFilters"
+        [dateRangeFilters]="dateRangeFilters"
         [exportable]="true"
         exportFileName="cotizaciones"
         [exportConfig]="exportConfig"
@@ -27,6 +28,7 @@
         [totalPages]="totalPages()"
         (searchChange)="onSearchTerm($event)"
         (filterChange)="onFilterChangeEvent($event)"
+        (dateRangeChange)="onDateRangeChange($event)"
         (pageChange)="onPageChange($event)">
     </app-data-table>
 </div>

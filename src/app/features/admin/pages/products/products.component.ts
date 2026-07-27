@@ -1,9 +1,10 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
+import { map } from 'rxjs';
 import { FormBuilder, ReactiveFormsModule, Validators, FormGroup, FormControl } from '@angular/forms';
 import { ProductService, ProductRequest, ProductFilter } from '@core/services/product.service';
 import { ProductResponse } from '@core/models/product.model';
 import { PaginationConfig, PageResponse, pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
-import { DataTableComponent, TableColumn, TableAction, PaginationEvent, SortEvent } from '@shared/ui/tables/data-table/data-table.component';
+import { DataTableComponent, TableColumn, TableAction, PaginationEvent, SortEvent, FilterConfig, FilterChangeEvent, DateRangeFilterConfig, DateRangeChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
@@ -54,6 +55,23 @@ export class ProductsComponent implements OnInit {
   searchQuery = signal('');
   sortField = signal('nombre');
   sortDirection = signal<'asc' | 'desc'>('asc');
+  filterCategoriaId = signal<number | null>(null);
+  filterFechaCreacionDesde = signal<string | undefined>(undefined);
+  filterFechaCreacionHasta = signal<string | undefined>(undefined);
+
+  // Filtro de categoría en el toolbar del data-table
+  readonly categoriaFilters: FilterConfig[] = [
+    {
+      field: 'categoriaId', label: 'Todas las categorías',
+      options: this.categoryService.getAllSimple().pipe(
+        map(cats => cats.map(c => ({ value: c.id, label: c.nombre })))
+      )
+    }
+  ];
+
+  readonly dateRangeFilters: DateRangeFilterConfig[] = [
+    { field: 'fechaCreacion', label: 'Fecha de creación' }
+  ];
 
   /**
    * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios
@@ -62,7 +80,12 @@ export class ProductsComponent implements OnInit {
   readonly exportConfig: BackendExportConfig = {
     url: `${environment.apiUrls.sales}/api/v1/productos/export`,
     filename: 'productos',
-    params: () => ({ search: this.searchQuery() }),
+    params: () => ({
+      search: this.searchQuery(),
+      categoriaId: this.filterCategoriaId() ?? undefined,
+      fechaCreacionDesde: this.filterFechaCreacionDesde(),
+      fechaCreacionHasta: this.filterFechaCreacionHasta(),
+    }),
   };
 
   // Modal state
@@ -192,7 +215,10 @@ export class ProductsComponent implements OnInit {
     };
 
     const filter: ProductFilter = {
-      search: this.searchQuery() || undefined
+      search: this.searchQuery() || undefined,
+      categoriaId: this.filterCategoriaId() ?? undefined,
+      fechaCreacionDesde: this.filterFechaCreacionDesde(),
+      fechaCreacionHasta: this.filterFechaCreacionHasta()
     };
 
     this.productService.getAllProductsFiltered(pagination, filter).subscribe({
@@ -223,6 +249,27 @@ export class ProductsComponent implements OnInit {
    */
   onPageChange(event: PaginationEvent): void {
     this.currentPage.set(event.page);
+    this.loadProducts();
+  }
+
+  /**
+   * Handle filter change emitted by the data-table toolbar (categoría)
+   */
+  onFilterChangeEvent(event: FilterChangeEvent): void {
+    if (event.field !== 'categoriaId') return;
+    this.filterCategoriaId.set(event.value != null ? Number(event.value) : null);
+    this.currentPage.set(0);
+    this.loadProducts();
+  }
+
+  /**
+   * Handle date range filter change emitted by the data-table toolbar (fecha de creación)
+   */
+  onDateRangeChange(event: DateRangeChangeEvent): void {
+    if (event.field !== 'fechaCreacion') return;
+    this.filterFechaCreacionDesde.set(event.from ?? undefined);
+    this.filterFechaCreacionHasta.set(event.to ?? undefined);
+    this.currentPage.set(0);
     this.loadProducts();
   }
 

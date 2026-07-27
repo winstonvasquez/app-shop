@@ -47,6 +47,8 @@ import {
     PaginationEvent,
     FilterConfig,
     FilterChangeEvent,
+    DateRangeFilterConfig,
+    DateRangeChangeEvent,
 } from '@shared/ui/tables/data-table/data-table.component';
 import { ProductLookupComponent } from '../../../inventory/components/product-lookup/product-lookup.component';
 import { ProductResponse } from '@core/models/product.model';
@@ -113,6 +115,8 @@ export class CotizacionesComponent implements OnInit {
     detalleCotizacion = signal<CotizacionDetalleDto | null>(null);
 
     filterEstado = signal('');
+    filterFechaEmisionDesde = signal<string | null>(null);
+    filterFechaEmisionHasta = signal<string | null>(null);
     currentPage = signal(0);
     pageSize = signal<number>(PAGINATION.defaultPageSize);
     totalElements = signal(0);
@@ -212,14 +216,23 @@ export class CotizacionesComponent implements OnInit {
         },
     ];
 
+    /** Rango de fecha de emisión para el toolbar del data-table. */
+    dateRangeFilters: DateRangeFilterConfig[] = [
+        { field: 'fechaEmision', label: 'Fecha de emisión' },
+    ];
+
     /**
      * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios
-     * (respeta el filtro de estado actual). Ver /purchases/api/cotizaciones/export.
+     * (respeta el filtro de estado y rango de fecha de emisión actuales). Ver /purchases/api/cotizaciones/export.
      */
     readonly exportConfig: BackendExportConfig = {
         url: `${environment.apiUrls.purchases}/api/cotizaciones/export`,
         filename: 'cotizaciones',
-        params: () => ({ estado: this.filterEstado() }),
+        params: () => ({
+            estado: this.filterEstado(),
+            fechaEmisionDesde: this.filterFechaEmisionDesde() ?? undefined,
+            fechaEmisionHasta: this.filterFechaEmisionHasta() ?? undefined,
+        }),
     };
 
     cotizacionForm = this.fb.group({
@@ -246,7 +259,13 @@ export class CotizacionesComponent implements OnInit {
         this.loading.set(true);
         this.error.set(null);
         this.cotizacionService
-            .listar(this.currentPage(), this.pageSize(), this.filterEstado() || undefined)
+            .listar(
+                this.currentPage(),
+                this.pageSize(),
+                this.filterEstado() || undefined,
+                this.filterFechaEmisionDesde() || undefined,
+                this.filterFechaEmisionHasta() || undefined
+            )
             .subscribe({
                 next: (page) => {
                     this.cotizaciones.set(page.content);
@@ -271,6 +290,15 @@ export class CotizacionesComponent implements OnInit {
     onFilterChangeEvent(event: FilterChangeEvent): void {
         if (event.field === 'estado') {
             this.filterEstado.set((event.value as string) ?? '');
+            this.currentPage.set(0);
+            this.loadCotizaciones();
+        }
+    }
+
+    onDateRangeChange(event: DateRangeChangeEvent): void {
+        if (event.field === 'fechaEmision') {
+            this.filterFechaEmisionDesde.set(event.from);
+            this.filterFechaEmisionHasta.set(event.to);
             this.currentPage.set(0);
             this.loadCotizaciones();
         }

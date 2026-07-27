@@ -36,11 +36,19 @@ export class RecepcionService {
         return new HttpHeaders({ 'X-Company-Id': companyId });
     }
 
-    getRecepciones(page = 0, size = 10, estado?: string): Observable<RecepcionPage> {
+    getRecepciones(
+        page = 0,
+        size = 10,
+        estado?: string,
+        fechaRecepcionDesde?: string,
+        fechaRecepcionHasta?: string
+    ): Observable<RecepcionPage> {
         let params = new HttpParams()
             .set('page', page.toString())
             .set('size', size.toString());
         if (estado) params = params.set('estado', estado);
+        if (fechaRecepcionDesde) params = params.set('fechaRecepcionDesde', fechaRecepcionDesde);
+        if (fechaRecepcionHasta) params = params.set('fechaRecepcionHasta', fechaRecepcionHasta);
 
         return this.http.get<unknown>(this.baseUrl, { params, headers: this.getHeaders() }).pipe(
             map((raw: unknown) => {

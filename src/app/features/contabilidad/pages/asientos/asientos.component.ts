@@ -3,7 +3,7 @@ import { toObservable } from '@angular/core/rxjs-interop';
 import { DecimalPipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
-import { map } from 'rxjs';
+import { map, of } from 'rxjs';
 import { AuthService } from '@core/auth/auth.service';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { DataTableComponent, TableColumn, TableAction, PaginationEvent, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
@@ -16,6 +16,27 @@ import { Asiento, AsientoRequest, MovimientoRequest } from '../../models/asiento
 import { PAGINATION } from '@shared/constants/app.constants';
 import { CatalogSelectComponent } from '@shared/components';
 import { CatalogService } from '@core/services/catalog.service';
+import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
+
+/** Opciones estáticas de estado/origen (enums del backend `AsientoContableEntity`, sin catálogo dinámico). */
+const ESTADO_ASIENTO_OPTIONS = [
+    { value: 'BORRADOR', label: 'Borrador' },
+    { value: 'CONAFECTAR', label: 'Por afectar' },
+    { value: 'DEFINITIVO', label: 'Definitivo' },
+    { value: 'CERRADO', label: 'Cerrado' },
+    { value: 'ANULADO', label: 'Anulado' },
+];
+
+const ORIGEN_ASIENTO_OPTIONS = [
+    { value: 'VENTA', label: 'Venta' },
+    { value: 'COMPRA', label: 'Compra' },
+    { value: 'COSTO_VENTA', label: 'Costo de venta' },
+    { value: 'TESORERIA', label: 'Tesorería' },
+    { value: 'LOGISTICA', label: 'Logística' },
+    { value: 'NOMINA', label: 'Nómina' },
+    { value: 'CIERRE', label: 'Cierre' },
+    { value: 'MANUAL', label: 'Manual' },
+];
 
 interface LineaForm {
     cuentaId: string;
@@ -195,7 +216,7 @@ interface LineaForm {
 
         <!-- ── LISTA DE ASIENTOS ─────────────────────────────────────────────── -->
         <app-data-table
-            [data]="asientosFiltrados()"
+            [data]="asientos()"
             [columns]="columns"
             [actions]="tableActions"
             [loading]="cargando()"
@@ -204,8 +225,8 @@ interface LineaForm {
             [filters]="filters"
             [currentPage]="currentPage()"
             [pageSize]="pageSize()"
-            [totalElements]="asientosFiltrados().length"
-            [totalPages]="totalPagesLocal()"
+            [totalElements]="totalElementsServer()"
+            [totalPages]="totalPagesServer()"
             [exportConfig]="exportConfig"
             (searchChange)="onSearchTerm($event)"
             (filterChange)="onFilterChange($event)"
@@ -275,16 +296,13 @@ export class AsientosComponent implements OnInit {
     readonly cargando = signal(false);
     readonly error = signal<string | null>(null);
     tipoFiltro = '';
+    readonly filterEstado = signal<string | null>(null);
+    readonly filterOrigen = signal<string | null>(null);
+    readonly totalElementsServer = signal(0);
+    readonly totalPagesServer = signal(1);
 
-    // ── Búsqueda client-side ───────────────────────────────────────────────
+    // ── Búsqueda server-side (código/glosa, via @RequestParam "search") ─────
     readonly searchQuery = signal('');
-    readonly asientosFiltrados = computed(() => {
-        const q = this.searchQuery().trim().toLowerCase();
-        if (!q) return this.asientos();
-        return this.asientos().filter(a =>
-            a.codigo.toLowerCase().includes(q) || a.glosa.toLowerCase().includes(q)
-        );
-    });
 
     // ── Filtros del data-table (periodo dinámico + tipo fijo) ───────────────
     readonly filters: FilterConfig[] = [
@@ -301,6 +319,16 @@ export class AsientosComponent implements OnInit {
             options: toObservable(this.catalog.options('TIPO_ASIENTO_CONTABLE')).pipe(
                 map(o => o.map(x => ({ value: x.codigo, label: x.valor })))
             )
+        },
+        {
+            field: 'estado',
+            label: 'Estado ▼',
+            options: of(ESTADO_ASIENTO_OPTIONS)
+        },
+        {
+            field: 'origen',
+            label: 'Origen ▼',
+            options: of(ORIGEN_ASIENTO_OPTIONS)
         }
     ];
 
@@ -314,7 +342,6 @@ export class AsientosComponent implements OnInit {
     // ── Paginación local ───────────────────────────────────────────────────
     readonly currentPage = signal(0);
     readonly pageSize = signal<number>(PAGINATION.defaultPageSize);
-    readonly totalPagesLocal = computed(() => Math.ceil(this.asientosFiltrados().length / this.pageSize()) || 1);
 
     // ── Formulario ─────────────────────────────────────────────────────────
     readonly mostrarForm = signal(false);
@@ -444,21 +471,38 @@ export class AsientosComponent implements OnInit {
 
     cambiarPeriodo(id: string) {
         this.periodoSeleccionado.set(id);
-        if (id) this.cargarAsientos();
-        else this.asientos.set([]);
+        this.currentPage.set(0);
+        if (id) {
+            this.cargarAsientos();
+        } else {
+            this.asientos.set([]);
+            this.totalElementsServer.set(0);
+            this.totalPagesServer.set(1);
+        }
     }
 
     onSearchTerm(term: string) {
         this.searchQuery.set(term);
+        this.currentPage.set(0);
+        this.cargarAsientos();
     }
 
     onFilterChange(event: FilterChangeEvent) {
         if (event.field === 'periodo') {
             this.cambiarPeriodo(String(event.value ?? ''));
-        } else if (event.field === 'tipo') {
-            this.tipoFiltro = String(event.value ?? '');
-            this.cargarAsientos();
+            return;
         }
+        if (event.field === 'tipo') {
+            this.tipoFiltro = String(event.value ?? '');
+        } else if (event.field === 'estado') {
+            this.filterEstado.set(event.value ? String(event.value) : null);
+        } else if (event.field === 'origen') {
+            this.filterOrigen.set(event.value ? String(event.value) : null);
+        } else {
+            return;
+        }
+        this.currentPage.set(0);
+        this.cargarAsientos();
     }
 
     cargarAsientos() {
@@ -466,8 +510,20 @@ export class AsientosComponent implements OnInit {
         if (!periodoId) return;
         this.cargando.set(true);
         this.error.set(null);
-        this.asientoService.obtenerAsientos(periodoId).subscribe({
-            next: (lista) => { this.asientos.set(lista); this.cargando.set(false); },
+        this.asientoService.obtenerAsientos(periodoId, {
+            page: this.currentPage(),
+            size: this.pageSize(),
+            estado: this.filterEstado() ?? undefined,
+            tipo: this.tipoFiltro || undefined,
+            origen: this.filterOrigen() ?? undefined,
+            search: this.searchQuery() || undefined,
+        }).subscribe({
+            next: (page) => {
+                this.asientos.set(page.content);
+                this.totalElementsServer.set(pageTotalElements(page));
+                this.totalPagesServer.set(pageTotalPages(page) || 1);
+                this.cargando.set(false);
+            },
             error: () => { this.error.set('Error al cargar asientos'); this.cargando.set(false); }
         });
     }
@@ -623,6 +679,7 @@ export class AsientosComponent implements OnInit {
     onPaginationChange(event: PaginationEvent): void {
         this.currentPage.set(event.page);
         this.pageSize.set(event.size);
+        this.cargarAsientos();
     }
 
     abrirExtorno(asiento: Asiento, tipo: 'EXTORNO' | 'ANULACION') {

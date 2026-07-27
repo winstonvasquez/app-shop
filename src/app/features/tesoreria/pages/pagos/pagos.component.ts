@@ -1,15 +1,20 @@
 import {
     Component, DestroyRef, OnInit, inject, signal, computed, ChangeDetectionStrategy
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import { map, of } from 'rxjs';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, FormControl } from '@angular/forms';
 import { DecimalPipe } from '@angular/common';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
-import { DataTableComponent, TableColumn, TableAction } from '@shared/ui/tables/data-table/data-table.component';
+import {
+    DataTableComponent, TableColumn, TableAction,
+    FilterConfig, FilterChangeEvent, DateRangeFilterConfig, DateRangeChangeEvent
+} from '@shared/ui/tables/data-table/data-table.component';
 import { PageHeaderComponent } from '@shared/ui/layout/page-header/page-header.component';
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
 import { DatePickerComponent } from '@shared/ui/forms/date-picker/date-picker.component';
 import { ButtonComponent, CatalogSelectComponent } from '@shared/components';
+import { CatalogService } from '@core/services/catalog.service';
 import { PagosService } from '../../services/pagos.service';
 import { AuthService } from '@core/auth/auth.service';
 import { Payment, PaymentRequest, Page } from '../../models/tesoreria.model';
@@ -34,6 +39,7 @@ export class PagosComponent implements OnInit {
     private auth         = inject(AuthService);
     private fb           = inject(FormBuilder);
     private destroyRef   = inject(DestroyRef);
+    private readonly catalog = inject(CatalogService);
 
     pagos         = signal<Payment[]>([]);
     cargando      = signal(false);
@@ -45,6 +51,44 @@ export class PagosComponent implements OnInit {
     pageSize      = signal<number>(PAGINATION.defaultPageSize);
     totalElements = signal(0);
     totalPages    = signal(0);
+
+    // ── Filtros server-side ──────────────────────────────────────────────
+    filterEstado     = signal('');
+    filterTipoPago   = signal('');
+    filterMetodoPago = signal('');
+    filterFechaSolicitudDesde = signal<string | null>(null);
+    filterFechaSolicitudHasta = signal<string | null>(null);
+
+    readonly filters: FilterConfig[] = [
+        {
+            field: 'estado',
+            label: 'Estado',
+            options: of([
+                { value: 'PENDING', label: 'Pendiente' },
+                { value: 'APPROVED', label: 'Aprobado' },
+                { value: 'PAID', label: 'Pagado' },
+                { value: 'REJECTED', label: 'Rechazado' },
+            ])
+        },
+        {
+            field: 'tipoPago',
+            label: 'Tipo de pago',
+            options: toObservable(this.catalog.options('TIPO_PAGO')).pipe(
+                map(o => o.map(x => ({ value: x.codigo, label: x.valor })))
+            )
+        },
+        {
+            field: 'metodoPago',
+            label: 'Método de pago',
+            options: toObservable(this.catalog.options('METODO_PAGO')).pipe(
+                map(o => o.map(x => ({ value: x.codigo, label: x.valor })))
+            )
+        },
+    ];
+
+    readonly dateRangeFilters: DateRangeFilterConfig[] = [
+        { field: 'fechaSolicitud', label: 'Fecha de solicitud' }
+    ];
 
     pagoForm: FormGroup = this.fb.group({
         beneficiarioNombre:    ['', [Validators.required, Validators.minLength(2)]],
@@ -81,14 +125,21 @@ export class PagosComponent implements OnInit {
     ];
 
     /**
-     * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios
-     * (mismo listado completo de pagos, sin filtros adicionales en esta vista).
+     * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios,
+     * respetando los mismos filtros activos en la vista.
      * Ver GET /api/tesoreria/pagos/export.
      */
     readonly exportConfig: BackendExportConfig = {
         url: `${environment.apiUrls.treasury}/api/tesoreria/pagos/export`,
         filename: 'pagos',
-        params: () => ({ tenantId: this.auth.currentUser()?.activeCompanyId ?? 1 }),
+        params: () => ({
+            tenantId: this.auth.currentUser()?.activeCompanyId ?? 1,
+            estado: this.filterEstado() || undefined,
+            tipoPago: this.filterTipoPago() || undefined,
+            metodoPago: this.filterMetodoPago() || undefined,
+            fechaSolicitudDesde: this.filterFechaSolicitudDesde() ?? undefined,
+            fechaSolicitudHasta: this.filterFechaSolicitudHasta() ?? undefined,
+        }),
     };
 
     actions: TableAction<Payment>[] = [
@@ -107,7 +158,13 @@ export class PagosComponent implements OnInit {
 
     load(): void {
         this.cargando.set(true);
-        this.pagosService.getAll(this.currentPage(), this.pageSize())
+        this.pagosService.getAll(this.currentPage(), this.pageSize(), {
+            estado: this.filterEstado() || undefined,
+            tipoPago: this.filterTipoPago() || undefined,
+            metodoPago: this.filterMetodoPago() || undefined,
+            fechaSolicitudDesde: this.filterFechaSolicitudDesde() ?? undefined,
+            fechaSolicitudHasta: this.filterFechaSolicitudHasta() ?? undefined,
+        })
             .pipe(takeUntilDestroyed(this.destroyRef))
             .subscribe({
                 next: (res: Page<Payment> | Payment[]) => {
@@ -124,6 +181,27 @@ export class PagosComponent implements OnInit {
     onPageChange(event: { page: number; size: number }): void {
         this.currentPage.set(event.page);
         this.pageSize.set(event.size);
+        this.load();
+    }
+
+    onFilterChangeEvent(event: FilterChangeEvent): void {
+        if (event.field === 'estado') {
+            this.filterEstado.set(event.value ? String(event.value) : '');
+        } else if (event.field === 'tipoPago') {
+            this.filterTipoPago.set(event.value ? String(event.value) : '');
+        } else if (event.field === 'metodoPago') {
+            this.filterMetodoPago.set(event.value ? String(event.value) : '');
+        } else {
+            return;
+        }
+        this.currentPage.set(0);
+        this.load();
+    }
+
+    onDateRangeChange(event: DateRangeChangeEvent): void {
+        this.filterFechaSolicitudDesde.set(event.from ?? null);
+        this.filterFechaSolicitudHasta.set(event.to ?? null);
+        this.currentPage.set(0);
         this.load();
     }
 

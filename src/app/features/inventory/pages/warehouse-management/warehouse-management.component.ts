@@ -1,8 +1,9 @@
 import {
-    ChangeDetectionStrategy, Component, computed, inject, signal, OnInit
+    ChangeDetectionStrategy, Component, inject, signal, OnInit
 } from '@angular/core';
+import { of } from 'rxjs';
 import { FormBuilder, ReactiveFormsModule, Validators, FormGroup, FormControl } from '@angular/forms';
-import { DataTableComponent, TableColumn, TableAction, PaginationEvent } from '@shared/ui/tables/data-table/data-table.component';
+import { DataTableComponent, TableColumn, TableAction, PaginationEvent, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
@@ -11,6 +12,7 @@ import { ModalComponent } from '@shared/components/modal/modal.component';
 import { ButtonComponent } from '@shared/components';
 import { InventoryApiService } from '../../services/inventory-api.service';
 import { Warehouse } from '../../models/inventory.models';
+import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 import { PAGINATION, ROUTES } from '@shared/constants/app.constants';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
@@ -41,11 +43,18 @@ export class WarehouseManagementComponent implements OnInit {
     totalElements = signal(0);
     totalPages = signal(0);
 
-    /** Página visible (slicing local: el listado de almacenes llega completo). */
-    readonly pagedWarehouses = computed(() => {
-        const start = this.currentPage() * this.pageSize();
-        return this.warehouses().slice(start, start + this.pageSize());
-    });
+    filterActive = signal<boolean | null>(null);
+
+    readonly filters: FilterConfig[] = [
+        {
+            field: 'active',
+            label: 'Estado',
+            options: of([
+                { value: 'true', label: 'Activo' },
+                { value: 'false', label: 'Inactivo' },
+            ])
+        }
+    ];
 
     showDrawer = signal(false);
     editMode = signal(false);
@@ -126,15 +135,26 @@ export class WarehouseManagementComponent implements OnInit {
 
     loadWarehouses(): void {
         this.loading.set(true);
-        this.api.getWarehouses().subscribe({
-            next: (data) => {
-                this.warehouses.set(data);
-                this.totalElements.set(data.length);
-                this.totalPages.set(Math.ceil(data.length / this.pageSize()));
+        this.api.searchWarehousesPaged(
+            this.currentPage(), this.pageSize(), undefined, this.filterActive() ?? undefined
+        ).subscribe({
+            next: (page) => {
+                this.warehouses.set(page.content);
+                this.totalElements.set(pageTotalElements(page));
+                this.totalPages.set(pageTotalPages(page));
                 this.loading.set(false);
             },
             error: (err: Error) => { this.error.set(err.message); this.loading.set(false); }
         });
+    }
+
+    onFilterChangeEvent(event: FilterChangeEvent): void {
+        if (event.field !== 'active') return;
+        this.filterActive.set(event.value === null || event.value === ''
+            ? null
+            : String(event.value) === 'true');
+        this.currentPage.set(0);
+        this.loadWarehouses();
     }
 
     openCreate(): void {
@@ -194,7 +214,7 @@ export class WarehouseManagementComponent implements OnInit {
     onPageChange(e: PaginationEvent): void {
         this.currentPage.set(e.page);
         this.pageSize.set(e.size);
-        this.totalPages.set(Math.ceil(this.totalElements() / e.size));
+        this.loadWarehouses();
     }
 
     getCtrl(name: string): FormControl {

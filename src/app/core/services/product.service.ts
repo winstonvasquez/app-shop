@@ -25,6 +25,8 @@ export interface ProductFilter {
     maxPrice?: number;
     marcas?: string[];
     minRating?: number;
+    fechaCreacionDesde?: string;
+    fechaCreacionHasta?: string;
 }
 
 export interface FiltrosDisponibles {
@@ -76,6 +78,12 @@ export class ProductService extends BaseApiService<ProductRequest, ProductRespon
         }
         if (filter?.minRating !== undefined) {
             params = params.set('minRating', filter.minRating.toString());
+        }
+        if (filter?.fechaCreacionDesde) {
+            params = params.set('fechaCreacionDesde', filter.fechaCreacionDesde);
+        }
+        if (filter?.fechaCreacionHasta) {
+            params = params.set('fechaCreacionHasta', filter.fechaCreacionHasta);
         }
 
         return this.getPaginated<PageResponse<ProductResponse>>(params);

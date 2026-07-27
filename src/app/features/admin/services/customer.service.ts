@@ -28,7 +28,12 @@ export class CustomerService {
         page: number,
         size: number,
         sort: string,
-        search?: string
+        search?: string,
+        filters?: {
+            tipoCliente?: string;
+            fechaCreacionDesde?: string;
+            fechaCreacionHasta?: string;
+        }
     ): Observable<PageResponse<CustomerResponse>> {
         let params = new HttpParams()
             .set('companyId', companyId.toString())
@@ -38,6 +43,15 @@ export class CustomerService {
 
         if (search) {
             params = params.set('search', search);
+        }
+        if (filters?.tipoCliente) {
+            params = params.set('tipoCliente', filters.tipoCliente);
+        }
+        if (filters?.fechaCreacionDesde) {
+            params = params.set('fechaCreacionDesde', filters.fechaCreacionDesde);
+        }
+        if (filters?.fechaCreacionHasta) {
+            params = params.set('fechaCreacionHasta', filters.fechaCreacionHasta);
         }
 
         return this.http

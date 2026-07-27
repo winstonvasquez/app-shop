@@ -10,7 +10,7 @@ import { AuthService } from '../../../../core/auth/auth.service';
 import { ButtonComponent } from '@shared/components';
 import { map } from 'rxjs';
 import { toObservable } from '@angular/core/rxjs-interop';
-import { DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
+import { DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent, DateRangeFilterConfig, DateRangeChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { DateInputComponent } from '@shared/ui/forms/date-input/date-input.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
@@ -77,6 +77,8 @@ export class EnviosPageComponent implements OnInit {
 
     // Filters
     filterStatus = '';
+    filterDispatchedAtDesde = signal<string | undefined>(undefined);
+    filterDispatchedAtHasta = signal<string | undefined>(undefined);
 
     // Pagination
     currentPage   = signal(0);
@@ -90,6 +92,10 @@ export class EnviosPageComponent implements OnInit {
           options: toObservable(this.catalog.options('ESTADO_ENVIO')).pipe(
             map(o => o.map(x => ({ value: x.codigo, label: x.valor }))))
         }
+    ];
+
+    readonly dateRangeFilters: DateRangeFilterConfig[] = [
+        { field: 'dispatchedAt', label: 'Fecha de despacho' }
     ];
 
     breadcrumbs: Breadcrumb[] = [
@@ -177,7 +183,8 @@ export class EnviosPageComponent implements OnInit {
         this.error.set(null);
         this.envioService.getEnvios(
             this.companyId, this.currentPage(), this.pageSize(),
-            this.filterStatus || undefined
+            this.filterStatus || undefined,
+            this.filterDispatchedAtDesde(), this.filterDispatchedAtHasta()
         ).subscribe({
             next: (res) => {
                 this.envios.set(res.content);
@@ -202,6 +209,14 @@ export class EnviosPageComponent implements OnInit {
     onPaginationChange(event: PaginationChangeEvent) {
         this.currentPage.set(event.page);
         this.pageSize.set(event.size);
+        this.loadEnvios();
+    }
+
+    onDateRangeChange(event: DateRangeChangeEvent) {
+        if (event.field !== 'dispatchedAt') return;
+        this.filterDispatchedAtDesde.set(event.from ?? undefined);
+        this.filterDispatchedAtHasta.set(event.to ?? undefined);
+        this.currentPage.set(0);
         this.loadEnvios();
     }
 

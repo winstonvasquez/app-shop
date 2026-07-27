@@ -1,12 +1,13 @@
-import { Component, inject, signal, computed, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, signal, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
-import { map } from 'rxjs';
+import { map, of } from 'rxjs';
 import { CuentaService } from '../../services/cuenta.service';
 import { CatalogService } from '@core/services/catalog.service';
 import { PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
 import { DataTableComponent, TableColumn, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
+import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 
 interface CuentaPCGE {
     id?: string | number;
@@ -78,7 +79,7 @@ const PCGE_DEMO: CuentaPCGE[] = [
             <div>
                 <h1 class="page-title">Plan de Cuentas PCGE 2020</h1>
                 <p class="page-subtitle">
-                    Plan Contable General Empresarial · {{ cuentasFiltradas().length }} cuentas
+                    Plan Contable General Empresarial · {{ totalElementsServer() }} cuentas
                     @if (modoDemo()) {
                         <span class="badge badge-warning" style="margin-left: 8px">Demo</span>
                     }
@@ -87,19 +88,19 @@ const PCGE_DEMO: CuentaPCGE[] = [
         </div>
 
         <app-data-table
-            [data]="cuentasPaginadas()"
+            [data]="cuentas()"
             [columns]="columns"
             [loading]="cargando()"
             [searchable]="true"
             searchPlaceholder="Buscar por código o nombre..."
-            [filters]="tipoFilters"
+            [filters]="filters"
             [exportable]="true"
             exportFileName="plan-cuentas"
             [exportConfig]="exportConfig"
             [currentPage]="currentPage()"
             [pageSize]="pageSize()"
-            [totalElements]="cuentasFiltradas().length"
-            [totalPages]="totalPages()"
+            [totalElements]="totalElementsServer()"
+            [totalPages]="totalPagesServer()"
             (searchChange)="onBusquedaChange($event)"
             (filterChange)="onFilterChangeEvent($event)"
             (pageChange)="onPageChange($event)">
@@ -115,8 +116,11 @@ export class PlanCuentasComponent implements OnInit {
     readonly cuentas = signal<CuentaPCGE[]>([]);
     readonly busqueda = signal('');
     readonly tipoFiltro = signal<TipoFiltro>('TODOS');
+    readonly filterEstado = signal('');
+    readonly totalElementsServer = signal(0);
+    readonly totalPagesServer = signal(1);
 
-    // Filtro de tipo para el toolbar del data-table
+    // Filtros del toolbar del data-table (tipo + estado, ambos filtrados en el backend)
     readonly tipoFilters: FilterConfig[] = [
         {
             field: 'tipo',
@@ -126,6 +130,19 @@ export class PlanCuentasComponent implements OnInit {
             )
         }
     ];
+
+    readonly estadoFilters: FilterConfig[] = [
+        {
+            field: 'estado',
+            label: 'Estado',
+            options: of([
+                { value: 'ACTIVO', label: 'Activo' },
+                { value: 'INACTIVO', label: 'Inactivo' },
+            ])
+        }
+    ];
+
+    readonly filters: FilterConfig[] = [...this.tipoFilters, ...this.estadoFilters];
 
     /**
      * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios
@@ -138,32 +155,9 @@ export class PlanCuentasComponent implements OnInit {
         params: () => ({ busqueda: this.busqueda(), tipo: this.tipoFiltro() }),
     };
 
-    // Paginación (client-side)
+    // Paginación (server-side)
     readonly currentPage = signal(0);
     readonly pageSize = signal(20);
-
-    readonly cuentasFiltradas = computed(() => {
-        const lista = this.cuentas();
-        const q = this.busqueda().toLowerCase().trim();
-        const tipo = this.tipoFiltro();
-        return lista.filter(c => {
-            const coincideBusqueda = !q
-                || c.codigo.toLowerCase().includes(q)
-                || c.nombre.toLowerCase().includes(q);
-            const coincideTipo = tipo === 'TODOS' || c.tipo === tipo;
-            return coincideBusqueda && coincideTipo;
-        });
-    });
-
-    readonly cuentasPaginadas = computed(() => {
-        const todas = this.cuentasFiltradas();
-        const inicio = this.currentPage() * this.pageSize();
-        return todas.slice(inicio, inicio + this.pageSize());
-    });
-
-    readonly totalPages = computed(() =>
-        Math.ceil(this.cuentasFiltradas().length / this.pageSize()) || 1
-    );
 
     columns: TableColumn<CuentaPCGE>[] = [
         {
@@ -193,13 +187,31 @@ export class PlanCuentasComponent implements OnInit {
     ];
 
     ngOnInit(): void {
-        this.cuentaService.listarTodas().subscribe({
-            next: (lista) => {
-                this.cuentas.set(lista);
+        this.cargarCuentas();
+    }
+
+    /** Recarga desde el backend paginado (GET /cuentas), con los filtros server-side activos. */
+    private cargarCuentas(): void {
+        this.cargando.set(true);
+        this.cuentaService.listarPaginado({
+            page: this.currentPage(),
+            size: this.pageSize(),
+            busqueda: this.busqueda() || undefined,
+            tipo: this.tipoFiltro() !== 'TODOS' ? this.tipoFiltro() : undefined,
+            estado: this.filterEstado() || undefined,
+        }).subscribe({
+            next: (page) => {
+                this.cuentas.set(page.content);
+                this.totalElementsServer.set(pageTotalElements(page));
+                this.totalPagesServer.set(pageTotalPages(page) || 1);
+                this.modoDemo.set(false);
                 this.cargando.set(false);
             },
             error: () => {
+                // Fallback offline: PCGE_DEMO no se filtra server-side (no hay backend disponible).
                 this.cuentas.set(PCGE_DEMO);
+                this.totalElementsServer.set(PCGE_DEMO.length);
+                this.totalPagesServer.set(1);
                 this.modoDemo.set(true);
                 this.cargando.set(false);
             }
@@ -209,18 +221,25 @@ export class PlanCuentasComponent implements OnInit {
     onBusquedaChange(value: string): void {
         this.busqueda.set(value);
         this.currentPage.set(0);
+        this.cargarCuentas();
     }
 
     onFilterChangeEvent(event: FilterChangeEvent): void {
         if (event.field === 'tipo') {
             this.tipoFiltro.set((event.value as TipoFiltro) ?? 'TODOS');
-            this.currentPage.set(0);
+        } else if (event.field === 'estado') {
+            this.filterEstado.set(event.value ? String(event.value) : '');
+        } else {
+            return;
         }
+        this.currentPage.set(0);
+        this.cargarCuentas();
     }
 
     onPageChange(event: PaginationChangeEvent): void {
         this.currentPage.set(event.page);
         this.pageSize.set(event.size);
+        this.cargarCuentas();
     }
 
     indentacion(nivel: number): string {

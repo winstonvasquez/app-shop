@@ -9,6 +9,7 @@ import { ButtonComponent } from '@shared/components';
 import {
   UserResponse,
   UserRequest,
+  UserFilter,
   RolDto,
   TIPO_DOCUMENTO_OPTIONS
 } from '@features/admin/models/user.model';
@@ -42,6 +43,8 @@ export class UsersComponent implements OnInit {
   // Filter and sort state
   searchQuery = signal('');
   filterRolId = signal<number | null>(null);
+  filterFechaCreacionDesde = signal<string | null>(null);
+  filterFechaCreacionHasta = signal<string | null>(null);
   sortField = signal('id');
   sortDirection = signal<'asc' | 'desc'>('asc');
 
@@ -103,7 +106,13 @@ export class UsersComponent implements OnInit {
       }
     };
 
-    this.userService.getAll(pagination).subscribe({
+    const filter: UserFilter = {
+      rolId: this.filterRolId() ?? undefined,
+      fechaCreacionDesde: this.filterFechaCreacionDesde() ?? undefined,
+      fechaCreacionHasta: this.filterFechaCreacionHasta() ?? undefined
+    };
+
+    this.userService.getAll(pagination, filter).subscribe({
       next: (response: PageResponse<UserResponse>) => {
         this.users.set(response?.content ?? []);
         this.totalElements.set(response?.page?.totalElements ?? 0);
@@ -126,6 +135,24 @@ export class UsersComponent implements OnInit {
   onPaginationChange(event: PaginationChangeEvent): void {
     this.currentPage.set(event.page);
     this.pageSize.set(event.size);
+    this.loadUsers();
+  }
+
+  onFilterRolChange(value: string): void {
+    this.filterRolId.set(value ? Number(value) : null);
+    this.currentPage.set(0);
+    this.loadUsers();
+  }
+
+  onFechaCreacionDesdeChange(value: string): void {
+    this.filterFechaCreacionDesde.set(value || null);
+    this.currentPage.set(0);
+    this.loadUsers();
+  }
+
+  onFechaCreacionHastaChange(value: string): void {
+    this.filterFechaCreacionHasta.set(value || null);
+    this.currentPage.set(0);
     this.loadUsers();
   }
 

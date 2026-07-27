@@ -1217,6 +1217,34 @@
     min-width: 170px;
   }
 
+  /* Filtro de rango de fechas nativo del data-table ([dateRangeFilters]) — mismo
+     tratamiento compacto de 32px que .table-toolbar-extra */
+  .table-daterange {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+
+    app-date-input {
+      display: inline-flex;
+      align-items: center;
+
+      input, .di-input {
+        height: 32px;
+        min-height: 32px;
+        padding-top: 0;
+        padding-bottom: 0;
+        border-radius: 6px;
+        font-size: 13px;
+      }
+      label, .di-label { display: none; }
+    }
+
+    .table-daterange-sep {
+      color: var(--color-text-muted);
+      font-size: 12px;
+    }
+  }
+
   /* Slot de filtros custom proyectados (date-inputs, radios, selects propios):
      todo a 32px, alineado con el resto del toolbar */
   .table-toolbar-extra {

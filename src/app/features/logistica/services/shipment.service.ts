@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { PageResponse } from '@core/models/pagination.model';
 
 export interface ShipmentResponse {
     id: string;
@@ -33,8 +34,16 @@ export class ShipmentService {
     private baseUrl = '/logistics/api/shipments';
     private trackingUrl = '/logistics/api/tracking';
 
-    getShipments(): Observable<ShipmentResponse[]> {
-        return this.http.get<ShipmentResponse[]>(this.baseUrl);
+    /**
+     * Listado PAGINADO de envíos. El backend (`ShipmentController#getAllShipments`)
+     * pasó de `List` a `Page` en la ronda 2026-07-27, así que la respuesta viene
+     * envuelta en `content` — no es un array plano.
+     */
+    getShipments(page = 0, size = 20): Observable<PageResponse<ShipmentResponse>> {
+        const params = new HttpParams()
+            .set('page', page.toString())
+            .set('size', size.toString());
+        return this.http.get<PageResponse<ShipmentResponse>>(this.baseUrl, { params });
     }
 
     trackShipment(trackingNumber: string): Observable<TrackingInfoResponse> {

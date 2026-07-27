@@ -10,7 +10,7 @@
 
   <!-- Tabla (filtro de estado en el toolbar) -->
   <app-data-table
-    [data]="guiasFiltradas()"
+    [data]="guias()"
     [columns]="columns"
     [actions]="actions"
     [loading]="loading()"
@@ -21,8 +21,10 @@
     [searchable]="true"
     searchPlaceholder="Buscar por serie, N° o destinatario..."
     [filters]="estadoFilters"
+    [dateRangeFilters]="dateRangeFilters"
     [exportConfig]="exportConfig"
     (filterChange)="onFilterChangeEvent($event)"
+    (dateRangeChange)="onDateRangeChange($event)"
     (pageChange)="onPageChange($event)">
   </app-data-table>
 </div>

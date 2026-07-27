@@ -19,7 +19,8 @@
     [loading]="loading()"
     [searchable]="true"
     searchPlaceholder="Buscar por código, nombre o documento..."
-    [filters]="estadoFilters"
+    [filters]="tableFilters"
+    [dateRangeFilters]="dateRangeFilters"
     [exportable]="true"
     exportFileName="empleados"
     [exportConfig]="exportConfig"
@@ -29,6 +30,7 @@
     [totalPages]="totalPages()"
     (searchChange)="onSearchTerm($event)"
     (filterChange)="onFilterChangeEvent($event)"
+    (dateRangeChange)="onDateRangeChange($event)"
     (pageChange)="onPaginationChange($event)" />
 
 <!-- ── Drawer: Crear / Editar Empleado ────────────────────────────────── -->

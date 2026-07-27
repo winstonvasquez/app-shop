@@ -8,7 +8,7 @@ import {
 } from '@features/admin/models/company.model';
 import { of } from 'rxjs';
 import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
-import { DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
+import { DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent, DateRangeFilterConfig, DateRangeChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
 import {
@@ -52,6 +52,8 @@ export class CompaniesComponent implements OnInit {
   // Filter state
   searchQuery = signal('');
   filterActive = signal<boolean | null>(null);
+  fechaCreacionDesde = signal<string | null>(null);
+  fechaCreacionHasta = signal<string | null>(null);
 
   // Pagination (server-side)
   currentPage   = signal(0);
@@ -83,7 +85,9 @@ export class CompaniesComponent implements OnInit {
     filename: 'empresas',
     params: () => ({
       search: this.searchQuery(),
-      active: this.filterActive() === null ? undefined : this.filterActive()
+      active: this.filterActive() === null ? undefined : this.filterActive(),
+      fechaCreacionDesde: this.fechaCreacionDesde() ?? undefined,
+      fechaCreacionHasta: this.fechaCreacionHasta() ?? undefined
     }),
   };
 
@@ -93,6 +97,11 @@ export class CompaniesComponent implements OnInit {
       { value: 'true', label: 'Activos' },
       { value: 'false', label: 'Inactivos' }
     ]) }
+  ];
+
+  // Filtro de rango de fecha de creación para el toolbar del data-table
+  fechaCreacionFilters: DateRangeFilterConfig[] = [
+    { field: 'fechaCreacion', label: 'Fecha de creación' }
   ];
 
   // Breadcrumbs
@@ -175,7 +184,9 @@ export class CompaniesComponent implements OnInit {
       this.currentPage(),
       this.pageSize(),
       this.searchQuery() || undefined,
-      this.filterActive()
+      this.filterActive(),
+      this.fechaCreacionDesde(),
+      this.fechaCreacionHasta()
     ).subscribe({
       next: (res) => {
         this.companies.set(res.content ?? []);
@@ -205,6 +216,18 @@ export class CompaniesComponent implements OnInit {
   onFilterChangeEvent(event: FilterChangeEvent): void {
     if (event.field === 'active') {
       this.filterActive.set(event.value == null ? null : String(event.value) === 'true');
+      this.currentPage.set(0);
+      this.loadCompanies();
+    }
+  }
+
+  /**
+   * Handle date-range filter change emitted by the data-table toolbar
+   */
+  onDateRangeChange(event: DateRangeChangeEvent): void {
+    if (event.field === 'fechaCreacion') {
+      this.fechaCreacionDesde.set(event.from);
+      this.fechaCreacionHasta.set(event.to);
       this.currentPage.set(0);
       this.loadCompanies();
     }

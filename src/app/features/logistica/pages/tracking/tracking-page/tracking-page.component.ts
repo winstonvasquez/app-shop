@@ -2,6 +2,7 @@ import { Component, inject, signal, computed, ChangeDetectionStrategy } from '@a
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { DatePipe } from '@angular/common';
 import { ShipmentService, TrackingInfoResponse, ShipmentResponse } from '../../../services/shipment.service';
+import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 import { DataTableComponent, TableColumn, TableAction, PaginationEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { ButtonComponent } from '@shared/components';
@@ -65,17 +66,13 @@ export class TrackingPageComponent {
     readonly loadingEnvios = signal(false);
     readonly errorMsg      = signal('');
 
-    // Paginación: ShipmentService.getShipments() devuelve un array plano sin paginación
-    // server-side. Los valores son coherentes con los datos reales recibidos;
-    // no se miente el total. Cuando el endpoint soporte paginación, agregar
-    // parámetros page/size aquí y en el servicio.
-    readonly currentPage  = signal(0);
-    readonly pageSize     = signal(20);
-    readonly totalPages   = computed(() => Math.max(1, Math.ceil(this.envios().length / this.pageSize())));
-    readonly enviosPagina = computed(() => {
-        const start = this.currentPage() * this.pageSize();
-        return this.envios().slice(start, start + this.pageSize());
-    });
+    // Paginación SERVER-SIDE: el endpoint devuelve un Page (ronda 2026-07-27),
+    // así que `envios()` ya es solo la página actual y el total viene del backend.
+    readonly currentPage   = signal(0);
+    readonly pageSize      = signal(20);
+    readonly totalElements = signal(0);
+    readonly totalPages    = signal(1);
+    readonly enviosPagina  = computed(() => this.envios());
 
     constructor() {
         this.cargarEnvios();
@@ -83,13 +80,17 @@ export class TrackingPageComponent {
 
     cargarEnvios() {
         this.loadingEnvios.set(true);
-        this.shipmentService.getShipments().subscribe({
-            next: (data) => {
-                this.envios.set(data);
+        this.shipmentService.getShipments(this.currentPage(), this.pageSize()).subscribe({
+            next: (page) => {
+                this.envios.set(page.content);
+                this.totalElements.set(pageTotalElements(page));
+                this.totalPages.set(pageTotalPages(page) || 1);
                 this.loadingEnvios.set(false);
             },
             error: () => {
                 this.envios.set([]);
+                this.totalElements.set(0);
+                this.totalPages.set(1);
                 this.loadingEnvios.set(false);
             }
         });
@@ -122,9 +123,7 @@ export class TrackingPageComponent {
     onPageChange(event: PaginationEvent) {
         this.currentPage.set(event.page);
         this.pageSize.set(event.size);
-        // Sin re-fetch: los datos ya están en memoria (endpoint plano).
-        // Si el endpoint adopta paginación server-side en el futuro,
-        // llamar this.cargarEnvios() aquí con los nuevos params.
+        this.cargarEnvios();
     }
 
     statusBadge(status: string): string {

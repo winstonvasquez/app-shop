@@ -39,6 +39,32 @@
         </div>
         <app-button label="Buscar" icon="search" variant="primary" size="sm"
             (click)="onSearch(searchInput.value)"></app-button>
+
+        <div class="filter-field">
+            <label class="input-label">Rol</label>
+            <select class="form-input"
+                [value]="filterRolId() ?? ''"
+                (change)="onFilterRolChange($any($event.target).value)">
+                <option value="">Todos</option>
+                @for (rol of roles(); track rol.id) {
+                    <option [value]="rol.id">{{ rol.nombre }}</option>
+                }
+            </select>
+        </div>
+
+        <div class="filter-field">
+            <label class="input-label">Fecha de creación (desde)</label>
+            <input type="date" class="form-input"
+                [value]="filterFechaCreacionDesde() ?? ''"
+                (change)="onFechaCreacionDesdeChange($any($event.target).value)" />
+        </div>
+
+        <div class="filter-field">
+            <label class="input-label">Fecha de creación (hasta)</label>
+            <input type="date" class="form-input"
+                [value]="filterFechaCreacionHasta() ?? ''"
+                (change)="onFechaCreacionHastaChange($any($event.target).value)" />
+        </div>
     </div>
 
     <!-- Loading -->

@@ -27,7 +27,7 @@
     <div class="card">
         <div class="card-body">
             <div class="text-muted" style="font-size: 0.875rem">Total</div>
-            <div style="font-size: 2.5rem; font-weight: 700; color: var(--color-primary)">{{ evaluations().length }}</div>
+            <div style="font-size: 2.5rem; font-weight: 700; color: var(--color-primary)">{{ totalElements() }}</div>
         </div>
     </div>
 </div>
@@ -35,10 +35,12 @@
 <!-- Filtros -->
 <!-- Tabla -->
 <app-data-table
-    [data]="pagedData()"
+    [data]="evaluations()"
     [columns]="columns"
     [actions]="actions"
+    [loading]="loading()"
     [filters]="toolbarFilters"
+    [dateRangeFilters]="dateRangeFilters"
     [exportable]="true"
     exportFileName="evaluaciones"
     [exportConfig]="exportConfig"
@@ -47,6 +49,7 @@
     [totalElements]="totalElements()"
     [totalPages]="totalPages()"
     (filterChange)="onFilterChangeEvent($event)"
+    (dateRangeChange)="onDateRangeChange($event)"
     (pageChange)="onPaginationChange($event)" />
 
 <!-- ── Drawer: Crear/Editar Evaluación ─────────────────────────────────── -->

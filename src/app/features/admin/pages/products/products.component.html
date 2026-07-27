@@ -33,10 +33,14 @@
         [sortDirection]="sortDirection()"
         [searchable]="true"
         searchPlaceholder="Buscar productos..."
+        [filters]="categoriaFilters"
+        [dateRangeFilters]="dateRangeFilters"
         [exportable]="true"
         exportFileName="productos"
         [exportConfig]="exportConfig"
         (searchChange)="onSearchTerm($event)"
+        (filterChange)="onFilterChangeEvent($event)"
+        (dateRangeChange)="onDateRangeChange($event)"
         (pageChange)="onPageChange($event)"
         (sortChange)="onSort($event)">
     </app-data-table>

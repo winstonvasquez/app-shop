@@ -49,6 +49,8 @@
         [selectable]="true"
         [searchable]="true"
         searchPlaceholder="Buscar por nombre, documento o email..."
+        [filters]="tipoClienteFilters"
+        [dateRangeFilters]="dateRangeFilters"
         [exportable]="true"
         exportFileName="clientes"
         [exportConfig]="exportConfig"
@@ -58,6 +60,8 @@
         [totalPages]="totalPages()"
         (searchChange)="onSearch($event)"
         (selectionChange)="onSelectionChange($event)"
+        (filterChange)="onFilterChangeEvent($event)"
+        (dateRangeChange)="onDateRangeChange($event)"
         (pageChange)="onPageChange($event)">
     </app-data-table>
 </div>

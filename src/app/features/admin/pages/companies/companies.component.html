@@ -25,6 +25,7 @@
         [searchable]="true"
         searchPlaceholder="Buscar por nombre o RUC..."
         [filters]="estadoFilters"
+        [dateRangeFilters]="fechaCreacionFilters"
         [exportable]="true"
         exportFileName="empresas"
         [exportConfig]="exportConfig"
@@ -34,6 +35,7 @@
         [totalPages]="totalPages()"
         (searchChange)="onSearchTerm($event)"
         (filterChange)="onFilterChangeEvent($event)"
+        (dateRangeChange)="onDateRangeChange($event)"
         (pageChange)="onPaginationChange($event)">
     </app-data-table>
 

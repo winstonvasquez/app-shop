@@ -91,7 +91,7 @@ export class DashboardTesoreriaComponent implements OnInit {
         forkJoin({
             cajas: this.cajasService.getAll(0, 50),
             pagos: this.pagosService.getAll(0, 10),
-            movimientos: this.movimientosService.getAll(undefined, undefined, 0, 20)
+            movimientos: this.movimientosService.getAll({ page: 0, size: 20 })
         }).subscribe({
             next: ({ cajas, pagos, movimientos }) => {
                 this.cajas.set(Array.isArray(cajas) ? cajas : (cajas?.content ?? []));

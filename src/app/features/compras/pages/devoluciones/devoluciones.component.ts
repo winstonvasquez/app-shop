@@ -66,6 +66,7 @@ export class DevolucionesComponent implements OnInit {
     actionError = signal<string | null>(null);
 
     filterEstado = signal('');
+    filterTipo = signal('');
     currentPage = signal(0);
     pageSize = signal<number>(PAGINATION.defaultPageSize);
     totalElements = signal(0);
@@ -117,6 +118,13 @@ export class DevolucionesComponent implements OnInit {
                 map((o) => o.map((x) => ({ value: x.codigo, label: x.valor })))
             ),
         },
+        {
+            field: 'tipo',
+            label: 'Todos los tipos',
+            options: toObservable(this.catalog.options('TIPO_DEVOLUCION')).pipe(
+                map((o) => o.map((x) => ({ value: x.codigo, label: x.valor })))
+            ),
+        },
     ];
 
     /**
@@ -126,7 +134,7 @@ export class DevolucionesComponent implements OnInit {
     readonly exportConfig: BackendExportConfig = {
         url: `${environment.apiUrls.purchases}/api/devoluciones/export`,
         filename: 'devoluciones',
-        params: () => ({ estado: this.filterEstado() }),
+        params: () => ({ estado: this.filterEstado(), tipo: this.filterTipo() || undefined }),
     };
 
     devolucionForm = this.fb.group({
@@ -149,7 +157,12 @@ export class DevolucionesComponent implements OnInit {
     loadDevoluciones(): void {
         this.loading.set(true);
         this.error.set(null);
-        this.devolucionService.listar(this.currentPage(), this.pageSize(), this.filterEstado() || undefined).subscribe({
+        this.devolucionService.listar(
+            this.currentPage(),
+            this.pageSize(),
+            this.filterEstado() || undefined,
+            this.filterTipo() || undefined
+        ).subscribe({
             next: (page) => {
                 this.devoluciones.set(page.content);
                 this.totalElements.set(page.totalElements);
@@ -173,6 +186,10 @@ export class DevolucionesComponent implements OnInit {
     onFilterChangeEvent(event: FilterChangeEvent): void {
         if (event.field === 'estado') {
             this.filterEstado.set((event.value as string) ?? '');
+            this.currentPage.set(0);
+            this.loadDevoluciones();
+        } else if (event.field === 'tipo') {
+            this.filterTipo.set((event.value as string) ?? '');
             this.currentPage.set(0);
             this.loadDevoluciones();
         }

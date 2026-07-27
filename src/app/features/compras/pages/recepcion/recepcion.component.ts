@@ -5,7 +5,7 @@ import { map } from 'rxjs';
 import { CatalogService } from '@core/services/catalog.service';
 import { RecepcionService, RecepcionPage } from '../../services/recepcion.service';
 import { Recepcion, RecepcionItem } from '../../models/orden-compra.model';
-import { DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent, PaginationEvent } from '@shared/ui/tables/data-table/data-table.component';
+import { DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent, PaginationEvent, DateRangeFilterConfig, DateRangeChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
@@ -44,6 +44,8 @@ export class RecepcionComponent implements OnInit {
     detailError = signal<string | null>(null);
 
     estadoFiltro = signal('');
+    filterFechaRecepcionDesde = signal<string | null>(null);
+    filterFechaRecepcionHasta = signal<string | null>(null);
     searchQuery = signal('');
     showDetail = signal(false);
 
@@ -77,6 +79,11 @@ export class RecepcionComponent implements OnInit {
         }
     ];
 
+    /** Rango de fecha de recepción para el toolbar del data-table. */
+    dateRangeFilters: DateRangeFilterConfig[] = [
+        { field: 'fechaRecepcion', label: 'Fecha de recepción' }
+    ];
+
     breadcrumbs: Breadcrumb[] = [
         { label: 'Admin', url: '/admin' },
         { label: 'Compras', url: '/admin/compras/dashboard' },
@@ -90,7 +97,11 @@ export class RecepcionComponent implements OnInit {
     readonly exportConfig: BackendExportConfig = {
         url: `${environment.apiUrls.purchases}/api/recepciones/export`,
         filename: 'recepciones',
-        params: () => ({ estado: this.estadoFiltro() || undefined }),
+        params: () => ({
+            estado: this.estadoFiltro() || undefined,
+            fechaRecepcionDesde: this.filterFechaRecepcionDesde() ?? undefined,
+            fechaRecepcionHasta: this.filterFechaRecepcionHasta() ?? undefined
+        }),
     };
 
     columns: TableColumn<Recepcion>[] = [
@@ -134,7 +145,9 @@ export class RecepcionComponent implements OnInit {
         this.recepcionService.getRecepciones(
             this.currentPage(),
             this.pageSize(),
-            this.estadoFiltro() || undefined
+            this.estadoFiltro() || undefined,
+            this.filterFechaRecepcionDesde() || undefined,
+            this.filterFechaRecepcionHasta() || undefined
         ).subscribe({
             next: (res: RecepcionPage) => {
                 this.recepciones.set(res.content);
@@ -156,6 +169,15 @@ export class RecepcionComponent implements OnInit {
     onFilterChangeEvent(event: FilterChangeEvent): void {
         if (event.field === 'estado') {
             this.estadoFiltro.set(event.value != null ? String(event.value) : '');
+            this.currentPage.set(0);
+            this.loadRecepciones();
+        }
+    }
+
+    onDateRangeChange(event: DateRangeChangeEvent): void {
+        if (event.field === 'fechaRecepcion') {
+            this.filterFechaRecepcionDesde.set(event.from);
+            this.filterFechaRecepcionHasta.set(event.to);
             this.currentPage.set(0);
             this.loadRecepciones();
         }

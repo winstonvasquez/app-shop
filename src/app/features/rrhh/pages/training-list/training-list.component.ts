@@ -1,9 +1,9 @@
-import { Component, inject, signal, computed, ChangeDetectionStrategy, OnInit } from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy, OnInit } from '@angular/core';
 import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { map } from 'rxjs';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
-import { DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
+import { DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent, DateRangeFilterConfig, DateRangeChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { PaginationComponent, PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
@@ -66,9 +66,16 @@ export class TrainingListComponent implements OnInit {
     submitting = signal(false);
     submitError = signal<string | null>(null);
 
+    // ── Filtros server-side: estado + rango de fecha de inicio ────────────────
     filtroEstado = signal('');
+    filtroFechaInicioDesde = signal<string | undefined>(undefined);
+    filtroFechaInicioHasta = signal<string | undefined>(undefined);
+
+    // ── Paginación (server-side) ───────────────────────────────────────────────
     currentPage = signal(0);
     pageSize = signal<number>(PAGINATION.defaultPageSize);
+    totalElements = signal(0);
+    totalPages = signal(0);
 
     /**
      * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios
@@ -79,18 +86,6 @@ export class TrainingListComponent implements OnInit {
         filename: 'capacitaciones',
         params: () => ({ estado: this.filtroEstado() }),
     };
-
-    readonly filtered = computed(() => {
-        const f = this.filtroEstado();
-        return f ? this.trainings().filter(c => c.estado === f) : this.trainings();
-    });
-
-    readonly totalElements = computed(() => this.filtered().length);
-    readonly totalPages = computed(() => Math.ceil(this.totalElements() / this.pageSize()) || 1);
-    readonly pagedData = computed(() => {
-        const start = this.currentPage() * this.pageSize();
-        return this.filtered().slice(start, start + this.pageSize());
-    });
 
     breadcrumbs: Breadcrumb[] = [
         { label: 'Admin', url: '/admin' },
@@ -173,7 +168,8 @@ export class TrainingListComponent implements OnInit {
     });
 
     ngOnInit(): void {
-        this.trainingService.loadTrainings();
+        this.cargarCapacitaciones();
+        this.trainingService.loadStatsSnapshot();
     }
 
     readonly toolbarFilters: FilterConfig[] = [
@@ -185,15 +181,43 @@ export class TrainingListComponent implements OnInit {
         }
     ];
 
+    readonly dateRangeFilters: DateRangeFilterConfig[] = [
+        { field: 'fechaInicio', label: 'Fecha de inicio' }
+    ];
+
+    /** Carga la página actual server-side (estado + rango fecha inicio + paginación). */
+    private cargarCapacitaciones(): void {
+        this.trainingService.loadTrainingsPaged(
+            this.currentPage(),
+            this.pageSize(),
+            this.filtroEstado() || undefined,
+            this.filtroFechaInicioDesde(),
+            this.filtroFechaInicioHasta()
+        ).then(res => {
+            this.totalElements.set(res.totalElements);
+            this.totalPages.set(res.totalPages);
+        });
+    }
+
     onFilterChangeEvent(event: FilterChangeEvent): void {
         if (event.field !== 'estado') return;
         this.filtroEstado.set(event.value != null ? String(event.value) : '');
         this.currentPage.set(0);
+        this.cargarCapacitaciones();
+    }
+
+    onDateRangeChange(event: DateRangeChangeEvent): void {
+        if (event.field !== 'fechaInicio') return;
+        this.filtroFechaInicioDesde.set(event.from ?? undefined);
+        this.filtroFechaInicioHasta.set(event.to ?? undefined);
+        this.currentPage.set(0);
+        this.cargarCapacitaciones();
     }
 
     onPaginationChange(event: PaginationChangeEvent): void {
         this.currentPage.set(event.page);
         this.pageSize.set(event.size);
+        this.cargarCapacitaciones();
     }
 
     openCreate(): void {
@@ -247,6 +271,8 @@ export class TrainingListComponent implements OnInit {
                 await this.trainingService.createTraining(request);
             }
             this.closeDrawer();
+            this.cargarCapacitaciones();
+            this.trainingService.loadStatsSnapshot();
         } catch (err: unknown) {
             const message = err instanceof Error ? err.message : 'Error al guardar capacitación';
             this.submitError.set(message);
@@ -257,14 +283,20 @@ export class TrainingListComponent implements OnInit {
 
     async start(t: Training): Promise<void> {
         await this.trainingService.startTraining(t.id);
+        this.cargarCapacitaciones();
+        this.trainingService.loadStatsSnapshot();
     }
 
     async complete(t: Training): Promise<void> {
         await this.trainingService.completeTraining(t.id);
+        this.cargarCapacitaciones();
+        this.trainingService.loadStatsSnapshot();
     }
 
     async cancel(t: Training): Promise<void> {
         await this.trainingService.cancelTraining(t.id);
+        this.cargarCapacitaciones();
+        this.trainingService.loadStatsSnapshot();
     }
 
     getControl(name: string): FormControl {

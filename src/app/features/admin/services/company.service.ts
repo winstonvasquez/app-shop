@@ -31,11 +31,20 @@ export class CompanyService {
             .pipe(catchError(this.handleError));
     }
 
-    /** Listado paginado server-side (search + active opcionales). */
-    getPaged(page: number, size: number, search?: string, active?: boolean | null): Observable<PageResponse<CompanyResponse>> {
+    /** Listado paginado server-side (search + active + rango de fecha de creación opcionales). */
+    getPaged(
+        page: number,
+        size: number,
+        search?: string,
+        active?: boolean | null,
+        fechaCreacionDesde?: string | null,
+        fechaCreacionHasta?: string | null
+    ): Observable<PageResponse<CompanyResponse>> {
         let params: Record<string, string> = { page: String(page), size: String(size) };
         if (search) params['search'] = search;
         if (active !== null && active !== undefined) params['active'] = String(active);
+        if (fechaCreacionDesde) params['fechaCreacionDesde'] = fechaCreacionDesde;
+        if (fechaCreacionHasta) params['fechaCreacionHasta'] = fechaCreacionHasta;
         return this.http
             .get<PageResponse<CompanyResponse>>(`${this.baseUrl}/paged`, { params })
             .pipe(catchError(this.handleError));

@@ -54,6 +54,10 @@ export interface UserFilter {
     search?: string;
     rolId?: number;
     tipoDocumento?: string;
+    /** yyyy-MM-dd */
+    fechaCreacionDesde?: string;
+    /** yyyy-MM-dd */
+    fechaCreacionHasta?: string;
 }
 
 // Tipo de documento options

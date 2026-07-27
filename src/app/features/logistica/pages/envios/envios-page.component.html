@@ -28,10 +28,12 @@
     [searchable]="true"
     searchPlaceholder="Buscar por N° tracking o destinatario..."
     [filters]="estadoFilters"
+    [dateRangeFilters]="dateRangeFilters"
     [exportable]="true"
     exportFileName="envios-export"
     [exportConfig]="exportConfig"
     (filterChange)="onFilterChangeEvent($event)"
+    (dateRangeChange)="onDateRangeChange($event)"
     (pageChange)="onPaginationChange($event)">
   </app-data-table>
 </div>

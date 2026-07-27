@@ -9,7 +9,7 @@ import { AuthService } from '@core/auth/auth.service';
 import { OrdenCompraService } from '../../services/orden-compra.service';
 import { ProveedorService } from '../../services/proveedor.service';
 import { OrdenCompra, OrdenCompraItem } from '../../models/orden-compra.model';
-import { DataTableComponent, TableColumn, TableAction, SortEvent, FilterConfig, FilterChangeEvent, PaginationEvent } from '@shared/ui/tables/data-table/data-table.component';
+import { DataTableComponent, TableColumn, TableAction, SortEvent, FilterConfig, FilterChangeEvent, PaginationEvent, DateRangeFilterConfig, DateRangeChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
@@ -101,6 +101,9 @@ export class OrdenesCompraComponent implements OnInit {
 
     // Filters
     filterEstado = signal('');
+    filterCondicionPago = signal('');
+    filterFechaEmisionDesde = signal<string | null>(null);
+    filterFechaEmisionHasta = signal<string | null>(null);
     searchQuery = signal('');
 
     // Pagination
@@ -140,25 +143,42 @@ export class OrdenesCompraComponent implements OnInit {
         { label: 'Órdenes de Compra' }
     ];
 
-    // Filtro de estado para el toolbar del data-table
-    estadoFilters: FilterConfig[] = [
+    // Filtros de select para el toolbar del data-table (estado + condición de pago)
+    filters: FilterConfig[] = [
         {
             field: 'estado',
             label: 'Todos los estados',
             options: toObservable(this.catalog.options('ESTADO_ORDEN_COMPRA')).pipe(
                 map(o => o.map(x => ({ value: x.codigo, label: x.valor })))
             )
+        },
+        {
+            field: 'condicionPago',
+            label: 'Cond. de pago',
+            options: toObservable(this.catalog.options('CONDICION_PAGO')).pipe(
+                map(o => o.map(x => ({ value: x.codigo, label: x.valor })))
+            )
         }
+    ];
+
+    /** Rango de fecha de emisión para el toolbar del data-table. */
+    dateRangeFilters: DateRangeFilterConfig[] = [
+        { field: 'fechaEmision', label: 'Fecha de emisión' }
     ];
 
     /**
      * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios
-     * (respeta el filtro de estado actual). Ver /purchases/api/ordenes-compra/export.
+     * (respeta los filtros actuales). Ver /purchases/api/ordenes-compra/export.
      */
     readonly exportConfig: BackendExportConfig = {
         url: `${environment.apiUrls.purchases}/api/ordenes-compra/export`,
         filename: 'ordenes-compra',
-        params: () => ({ estado: this.filterEstado() }),
+        params: () => ({
+            estado: this.filterEstado(),
+            condicionPago: this.filterCondicionPago(),
+            fechaEmisionDesde: this.filterFechaEmisionDesde() ?? undefined,
+            fechaEmisionHasta: this.filterFechaEmisionHasta() ?? undefined
+        }),
     };
 
     columns: TableColumn<OrdenCompra>[] = [
@@ -240,7 +260,10 @@ export class OrdenesCompraComponent implements OnInit {
         this.ordenService.getOrdenes(
             this.currentPage(),
             this.pageSize(),
-            this.filterEstado() || undefined
+            this.filterEstado() || undefined,
+            this.filterCondicionPago() || undefined,
+            this.filterFechaEmisionDesde() || undefined,
+            this.filterFechaEmisionHasta() || undefined
         ).subscribe({
             next: (res) => {
                 this.ordenes.set(res.content);
@@ -262,6 +285,19 @@ export class OrdenesCompraComponent implements OnInit {
     onFilterChangeEvent(event: FilterChangeEvent): void {
         if (event.field === 'estado') {
             this.filterEstado.set(event.value != null ? String(event.value) : '');
+            this.currentPage.set(0);
+            this.loadOrdenes();
+        } else if (event.field === 'condicionPago') {
+            this.filterCondicionPago.set(event.value != null ? String(event.value) : '');
+            this.currentPage.set(0);
+            this.loadOrdenes();
+        }
+    }
+
+    onDateRangeChange(event: DateRangeChangeEvent): void {
+        if (event.field === 'fechaEmision') {
+            this.filterFechaEmisionDesde.set(event.from);
+            this.filterFechaEmisionHasta.set(event.to);
             this.currentPage.set(0);
             this.loadOrdenes();
         }

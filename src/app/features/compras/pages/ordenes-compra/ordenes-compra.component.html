@@ -19,7 +19,8 @@
         [loading]="loading()"
         [searchable]="true"
         searchPlaceholder="Buscar por OC # o proveedor..."
-        [filters]="estadoFilters"
+        [filters]="filters"
+        [dateRangeFilters]="dateRangeFilters"
         [exportable]="true"
         exportFileName="ordenes-compra"
         [exportConfig]="exportConfig"
@@ -31,6 +32,7 @@
         [sortDirection]="sortDirection()"
         (searchChange)="onSearchTerm($event)"
         (filterChange)="onFilterChangeEvent($event)"
+        (dateRangeChange)="onDateRangeChange($event)"
         (pageChange)="onPaginationChange($event)"
         (sortChange)="onSort($event)">
     </app-data-table>

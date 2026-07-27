@@ -4,15 +4,17 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, FormControl } from '@angular/forms';
 import { DecimalPipe } from '@angular/common';
+import { of } from 'rxjs';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
-import { DataTableComponent, TableColumn } from '@shared/ui/tables/data-table/data-table.component';
+import { DataTableComponent, TableColumn, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { PageHeaderComponent } from '@shared/ui/layout/page-header/page-header.component';
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
 import { DatePickerComponent } from '@shared/ui/forms/date-picker/date-picker.component';
 import { ButtonComponent, CatalogSelectComponent } from '@shared/components';
 import { MovimientosFinancierosService, FinancialMovementRequest } from '../../services/movimientos-financieros.service';
 import { AuthService } from '@core/auth/auth.service';
-import { FinancialMovement, Page } from '../../models/tesoreria.model';
+import { FinancialMovement } from '../../models/tesoreria.model';
+import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 import { MONEDA, CURRENCY_DISPLAY } from '@shared/constants/sunat.constants';
 import { PAGINATION } from '@shared/constants/app.constants';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
@@ -49,6 +51,31 @@ export class FlujoCajaComponent implements OnInit {
 
     fechaInicio = signal<string>('');
     fechaFin    = signal<string>('');
+    filterTipoMovimiento = signal('');
+    filterOrigen         = signal('');
+
+    readonly filters: FilterConfig[] = [
+        {
+            field: 'tipoMovimiento',
+            label: 'Tipo',
+            options: of([
+                { value: 'INGRESO', label: 'Ingreso' },
+                { value: 'EGRESO', label: 'Egreso' },
+                { value: 'TRANSFERENCIA', label: 'Transferencia' },
+            ])
+        },
+        {
+            field: 'origen',
+            label: 'Origen',
+            options: of([
+                { value: 'CAJA', label: 'Caja' },
+                { value: 'BANCO', label: 'Banco' },
+                { value: 'COBRO', label: 'Cobro' },
+                { value: 'PAGO', label: 'Pago' },
+                { value: 'TRANSFERENCIA_INTERNA', label: 'Transferencia interna' },
+            ])
+        },
+    ];
 
     movimientoForm: FormGroup = this.fb.group({
         tipoMovimiento: ['INGRESO', Validators.required],
@@ -99,6 +126,8 @@ export class FlujoCajaComponent implements OnInit {
             tenantId: this.auth.currentUser()?.activeCompanyId ?? 1,
             fechaInicio: this.fechaInicio(),
             fechaFin: this.fechaFin(),
+            tipoMovimiento: this.filterTipoMovimiento() || undefined,
+            origen: this.filterOrigen() || undefined,
         }),
     };
 
@@ -120,14 +149,20 @@ export class FlujoCajaComponent implements OnInit {
                 error: () => this.cargando.set(false)
             });
 
-        this.movService.getAll(this.fechaInicio(), this.fechaFin(), this.currentPage(), this.pageSize())
+        this.movService.getAll({
+            fechaDesde: this.fechaInicio() || undefined,
+            fechaHasta: this.fechaFin() || undefined,
+            tipoMovimiento: this.filterTipoMovimiento() || undefined,
+            origen: this.filterOrigen() || undefined,
+            page: this.currentPage(),
+            size: this.pageSize(),
+        })
             .pipe(takeUntilDestroyed(this.destroyRef))
             .subscribe({
-                next: (res: Page<FinancialMovement> | FinancialMovement[]) => {
-                    const data = Array.isArray(res) ? res : (res as Page<FinancialMovement>).content;
-                    this.movimientos.set(data);
-                    this.totalElements.set(Array.isArray(res) ? data.length : (res as Page<FinancialMovement>).totalElements);
-                    this.totalPages.set(Array.isArray(res) ? 1 : (res as Page<FinancialMovement>).totalPages);
+                next: (res) => {
+                    this.movimientos.set(res.content);
+                    this.totalElements.set(pageTotalElements(res));
+                    this.totalPages.set(pageTotalPages(res));
                     this.cargando.set(false);
                 },
                 error: () => this.cargando.set(false)
@@ -137,6 +172,18 @@ export class FlujoCajaComponent implements OnInit {
     onPageChange(event: { page: number; size: number }): void {
         this.currentPage.set(event.page);
         this.pageSize.set(event.size);
+        this.loadData();
+    }
+
+    onFilterChangeEvent(event: FilterChangeEvent): void {
+        if (event.field === 'tipoMovimiento') {
+            this.filterTipoMovimiento.set(event.value ? String(event.value) : '');
+        } else if (event.field === 'origen') {
+            this.filterOrigen.set(event.value ? String(event.value) : '');
+        } else {
+            return;
+        }
+        this.currentPage.set(0);
         this.loadData();
     }
 

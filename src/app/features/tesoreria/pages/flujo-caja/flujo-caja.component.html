@@ -39,11 +39,13 @@
     [data]="movimientos()"
     [columns]="columns"
     [loading]="cargando()"
+    [filters]="filters"
     [currentPage]="currentPage()"
     [pageSize]="pageSize()"
     [totalElements]="totalElements()"
     [totalPages]="totalPages()"
     [exportConfig]="exportConfig"
+    (filterChange)="onFilterChangeEvent($event)"
     (pageChange)="onPageChange($event)">
   </app-data-table>
 

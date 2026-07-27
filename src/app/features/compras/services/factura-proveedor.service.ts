@@ -18,11 +18,21 @@ export class FacturaProveedorService {
         return new HttpHeaders({ 'X-Company-Id': companyId });
     }
 
-    listar(page = 0, size = 10, estado?: string): Observable<Page<FacturaProveedor>> {
+    listar(
+        page = 0,
+        size = 10,
+        estado?: string,
+        tipoDocumento?: string,
+        fechaEmisionDesde?: string,
+        fechaEmisionHasta?: string
+    ): Observable<Page<FacturaProveedor>> {
         let params = new HttpParams()
             .set('page', page.toString())
             .set('size', size.toString());
         if (estado) params = params.set('estado', estado);
+        if (tipoDocumento) params = params.set('tipoDocumento', tipoDocumento);
+        if (fechaEmisionDesde) params = params.set('fechaEmisionDesde', fechaEmisionDesde);
+        if (fechaEmisionHasta) params = params.set('fechaEmisionHasta', fechaEmisionHasta);
 
         return this.http.get<unknown>(this.baseUrl, { params, headers: this.getHeaders() }).pipe(
             map((raw: unknown) => {

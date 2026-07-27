@@ -48,15 +48,20 @@ export class EmployeeService {
         }
     }
 
-    /** Carga server-side paginada (search + estado opcionales). Devuelve totales de página. */
-    async loadEmployeesPaged(page: number, size: number, search?: string, status?: string):
-        Promise<{ totalElements: number; totalPages: number }> {
+    /** Carga server-side paginada (search + estado + departamento + rango de fecha de ingreso, todos opcionales). Devuelve totales de página. */
+    async loadEmployeesPaged(
+        page: number, size: number, search?: string, status?: string,
+        departmentId?: number | null, fechaIngresoDesde?: string, fechaIngresoHasta?: string
+    ): Promise<{ totalElements: number; totalPages: number }> {
         this._loading.set(true);
         this._error.set(null);
         try {
             const params: Record<string, string> = { page: String(page), size: String(size) };
             if (search) params['search'] = search;
             if (status) params['status'] = status;
+            if (departmentId != null) params['departmentId'] = String(departmentId);
+            if (fechaIngresoDesde) params['fechaIngresoDesde'] = fechaIngresoDesde;
+            if (fechaIngresoHasta) params['fechaIngresoHasta'] = fechaIngresoHasta;
             const res = await firstValueFrom(
                 this.http.get<PageResponse<Employee>>(`${this.baseUrl}/paged`, { params })
             );

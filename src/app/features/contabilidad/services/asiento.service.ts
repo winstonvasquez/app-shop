@@ -1,7 +1,9 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
+import { Observable } from 'rxjs';
 import { environment } from '@env/environment';
 import { Asiento, AsientoRequest } from '../models/asiento.model';
+import { PageResponse } from '@core/models/pagination.model';
 
 export interface LibroDiarioEntry {
     fecha: string;
@@ -37,11 +39,25 @@ export class AsientoService {
         return this.http.post<Asiento>(`${this.baseUrl}/asientos`, asiento);
     }
 
-    obtenerAsientos(periodoId: string, fechaDesde?: string, fechaHasta?: string) {
+    /**
+     * Listado PAGINADO de asientos (backend: GET /asientos, ronda 2026-07-27).
+     * Filtros opcionales: rango de fechas + estado/tipo/origen (enums del backend).
+     */
+    obtenerAsientos(periodoId: string, options?: {
+        page?: number; size?: number;
+        fechaDesde?: string; fechaHasta?: string;
+        estado?: string; tipo?: string; origen?: string; search?: string;
+    }): Observable<PageResponse<Asiento>> {
         let params = new HttpParams().set('periodo', periodoId);
-        if (fechaDesde) params = params.set('fechaDesde', fechaDesde);
-        if (fechaHasta) params = params.set('fechaHasta', fechaHasta);
-        return this.http.get<Asiento[]>(`${this.baseUrl}/asientos`, { params });
+        if (options?.page !== undefined) params = params.set('page', options.page.toString());
+        if (options?.size !== undefined) params = params.set('size', options.size.toString());
+        if (options?.fechaDesde) params = params.set('fechaDesde', options.fechaDesde);
+        if (options?.fechaHasta) params = params.set('fechaHasta', options.fechaHasta);
+        if (options?.estado) params = params.set('estado', options.estado);
+        if (options?.tipo) params = params.set('tipo', options.tipo);
+        if (options?.origen) params = params.set('origen', options.origen);
+        if (options?.search) params = params.set('search', options.search);
+        return this.http.get<PageResponse<Asiento>>(`${this.baseUrl}/asientos`, { params });
     }
 
     obtenerAsiento(id: string) {
@@ -60,11 +76,10 @@ export class AsientoService {
         return this.http.put<Asiento>(`${this.baseUrl}/asientos/${id}/anular`, { motivo });
     }
 
-    obtenerLibroDiario(periodoId: string, fechaDesde: string, fechaHasta: string) {
-        const params = new HttpParams()
-            .set('periodo', periodoId)
-            .set('fechaDesde', fechaDesde)
-            .set('fechaHasta', fechaHasta);
+    obtenerLibroDiario(periodoId: string, fechaDesde?: string | null, fechaHasta?: string | null) {
+        let params = new HttpParams().set('periodo', periodoId);
+        if (fechaDesde) params = params.set('fechaDesde', fechaDesde);
+        if (fechaHasta) params = params.set('fechaHasta', fechaHasta);
         return this.http.get<LibroDiarioEntry[]>(`${this.baseUrl}/libro-diario`, { params });
     }
 

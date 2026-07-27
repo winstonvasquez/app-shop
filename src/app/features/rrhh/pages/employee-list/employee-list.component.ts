@@ -12,7 +12,7 @@ import { Employee, EmployeeRequest } from '../../models/employee.model';
 import { ButtonComponent, CatalogSelectComponent, ServerSearchSelectComponent } from '@shared/components';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { employeeSelectSource, departmentSelectSource, positionSelectSource } from '../../components/select-sources';
-import { DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
+import { DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent, DateRangeFilterConfig, DateRangeChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
 import { PaginationComponent, PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
@@ -57,6 +57,9 @@ export class EmployeeListComponent implements OnInit {
     readonly positionSource   = positionSelectSource(this.positionService);
     readonly supervisorSource = employeeSelectSource(this.employeeService);
 
+    // Se mantiene para el filtro de departamento del toolbar del data-table.
+    readonly departments = this.departmentService.activeDepartments;
+
     // ── Data ─────────────────────────────────────────────────────────────────
     readonly loading   = this.employeeService.loading;
     readonly employees = this.employeeService.employees;
@@ -72,6 +75,9 @@ export class EmployeeListComponent implements OnInit {
     // ── Filters ───────────────────────────────────────────────────────────────
     searchQuery  = signal('');
     filterEstado = signal('');
+    filterDepartmentId = signal<number | null>(null);
+    filterFechaIngresoDesde = signal<string | undefined>(undefined);
+    filterFechaIngresoHasta = signal<string | undefined>(undefined);
 
     // Filtro de estado para el toolbar del data-table (catálogo ESTADO_EMPLEADO)
     estadoFilters: FilterConfig[] = [
@@ -81,6 +87,23 @@ export class EmployeeListComponent implements OnInit {
                 map(o => o.map(x => ({ value: x.codigo, label: x.valor })))
             ),
         }
+    ];
+
+    // Filtro de departamento (dinámico) para el toolbar del data-table
+    departamentoFilters: FilterConfig[] = [
+        {
+            field: 'departmentId',
+            label: 'Todos los departamentos',
+            options: toObservable(this.departments).pipe(
+                map(list => list.map(d => ({ value: d.id, label: d.nombre })))
+            )
+        }
+    ];
+
+    readonly tableFilters: FilterConfig[] = [...this.estadoFilters, ...this.departamentoFilters];
+
+    readonly dateRangeFilters: DateRangeFilterConfig[] = [
+        { field: 'fechaIngreso', label: 'Fecha de ingreso' }
     ];
 
     /**
@@ -160,16 +183,20 @@ export class EmployeeListComponent implements OnInit {
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
     ngOnInit(): void {
+        this.departmentService.loadDepartments().catch(() => { /* dropdown depto opcional */ });
         this.loadPage();
     }
 
-    /** Carga la página actual server-side (search + estado + 20/pág). */
+    /** Carga la página actual server-side (search + estado + departamento + rango fecha ingreso + 20/pág). */
     private loadPage(): void {
         this.employeeService.loadEmployeesPaged(
             this.currentPage(),
             this.pageSize(),
             this.searchQuery() || undefined,
-            this.filterEstado() || undefined
+            this.filterEstado() || undefined,
+            this.filterDepartmentId(),
+            this.filterFechaIngresoDesde(),
+            this.filterFechaIngresoHasta()
         ).then(res => {
             this.totalElements.set(res.totalElements);
             this.totalPages.set(res.totalPages);
@@ -190,7 +217,19 @@ export class EmployeeListComponent implements OnInit {
             this.filterEstado.set(event.value != null ? String(event.value) : '');
             this.currentPage.set(0);
             this.loadPage();
+        } else if (event.field === 'departmentId') {
+            this.filterDepartmentId.set(event.value != null ? Number(event.value) : null);
+            this.currentPage.set(0);
+            this.loadPage();
         }
+    }
+
+    onDateRangeChange(event: DateRangeChangeEvent): void {
+        if (event.field !== 'fechaIngreso') return;
+        this.filterFechaIngresoDesde.set(event.from ?? undefined);
+        this.filterFechaIngresoHasta.set(event.to ?? undefined);
+        this.currentPage.set(0);
+        this.loadPage();
     }
 
     onPaginationChange(event: PaginationChangeEvent): void {

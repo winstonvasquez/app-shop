@@ -17,6 +17,7 @@
         [searchable]="true"
         searchPlaceholder="Buscar por proveedor, factura u OC..."
         [filters]="estadoFilters"
+        [dateRangeFilters]="dateRangeFilters"
         [exportable]="true"
         exportFileName="facturas-proveedor"
         [exportConfig]="exportConfig"
@@ -26,6 +27,7 @@
         [totalPages]="totalPages()"
         (searchChange)="onSearchTerm($event)"
         (filterChange)="onFilterChangeEvent($event)"
+        (dateRangeChange)="onDateRangeChange($event)"
         (pageChange)="onPageChange($event)">
     </app-data-table>
 </div>

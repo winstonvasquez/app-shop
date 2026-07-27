@@ -1,10 +1,12 @@
 import { Component, input, output, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { AsyncPipe } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { Observable } from 'rxjs';
 import { ExportService } from '@shared/services/export.service';
 import { BackendExportService, BackendExportConfig } from '@shared/services/backend-export.service';
 import { PaginationComponent, PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
 import { ButtonComponent } from '@shared/components';
+import { DateInputComponent } from '@shared/ui/forms/date-input/date-input.component';
 import { PAGINATION } from '@shared/constants/app.constants';
 import { SORT_DIRECTIONS } from '@shared/constants/ui.constants';
 
@@ -48,10 +50,23 @@ export interface FilterChangeEvent {
     value: string | number | null;
 }
 
+/** Filtro de rango de fechas para la toolbar (ej. { field: 'fechaPedido', label: 'Fecha de pedido' }). */
+export interface DateRangeFilterConfig {
+    field: string;
+    label: string;
+}
+
+/** `from`/`to` en formato yyyy-MM-dd (nativo de `<input type="date">`) o null si se limpió. */
+export interface DateRangeChangeEvent {
+    field: string;
+    from: string | null;
+    to: string | null;
+}
+
 @Component({
     selector: 'app-data-table',
     standalone: true,
-    imports: [AsyncPipe, PaginationComponent, ButtonComponent],
+    imports: [AsyncPipe, FormsModule, PaginationComponent, ButtonComponent, DateInputComponent],
     templateUrl: './data-table.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -77,6 +92,7 @@ export class DataTableComponent<T = any> {
     searchable = input<boolean>(false);
     searchPlaceholder = input<string>('Buscar...');
     filters = input<FilterConfig[]>([]);
+    dateRangeFilters = input<DateRangeFilterConfig[]>([]);
     exportable = input<boolean>(true);  // todas las tablas ofrecen export por defecto (CSV/XLSX)
     exportFileName = input<string>('export');
     /**
@@ -93,6 +109,7 @@ export class DataTableComponent<T = any> {
     selectionChange = output<T[]>();
     searchChange = output<string>();
     filterChange = output<FilterChangeEvent>();
+    dateRangeChange = output<DateRangeChangeEvent>();
 
     private readonly exportService = inject(ExportService);
     private readonly backendExport = inject(BackendExportService);
@@ -240,6 +257,31 @@ export class DataTableComponent<T = any> {
     onFilterChange(field: string, event: Event): void {
         const val = (event.target as HTMLSelectElement).value;
         this.filterChange.emit({ field, value: val === '' ? null : val });
+    }
+
+    /** Valores yyyy-MM-dd por campo de rango de fechas ({ from, to }). */
+    private readonly dateRangeValues = signal<Record<string, { from: string; to: string }>>({});
+
+    getDateRangeFrom(field: string): string {
+        return this.dateRangeValues()[field]?.from ?? '';
+    }
+
+    getDateRangeTo(field: string): string {
+        return this.dateRangeValues()[field]?.to ?? '';
+    }
+
+    onDateRangeFromChange(field: string, value: string): void {
+        const current = this.dateRangeValues()[field] ?? { from: '', to: '' };
+        const updated = { ...current, from: value };
+        this.dateRangeValues.update(v => ({ ...v, [field]: updated }));
+        this.dateRangeChange.emit({ field, from: value || null, to: updated.to || null });
+    }
+
+    onDateRangeToChange(field: string, value: string): void {
+        const current = this.dateRangeValues()[field] ?? { from: '', to: '' };
+        const updated = { ...current, to: value };
+        this.dateRangeValues.update(v => ({ ...v, [field]: updated }));
+        this.dateRangeChange.emit({ field, from: updated.from || null, to: value || null });
     }
 
     onExportCsv(): void {

@@ -17,11 +17,19 @@ export class PagosService {
         return String(this.auth.currentUser()?.activeCompanyId ?? 1);
     }
 
-    getAll(page: number = 0, size: number = 20): Observable<Page<Payment> | Payment[]> {
-        const params = new HttpParams()
+    getAll(page: number = 0, size: number = 20, filters?: {
+        estado?: string; tipoPago?: string; metodoPago?: string;
+        fechaSolicitudDesde?: string; fechaSolicitudHasta?: string;
+    }): Observable<Page<Payment> | Payment[]> {
+        let params = new HttpParams()
             .set('tenantId', this.tenantId)
             .set('page', page.toString())
             .set('size', size.toString());
+        if (filters?.estado) params = params.set('estado', filters.estado);
+        if (filters?.tipoPago) params = params.set('tipoPago', filters.tipoPago);
+        if (filters?.metodoPago) params = params.set('metodoPago', filters.metodoPago);
+        if (filters?.fechaSolicitudDesde) params = params.set('fechaSolicitudDesde', filters.fechaSolicitudDesde);
+        if (filters?.fechaSolicitudHasta) params = params.set('fechaSolicitudHasta', filters.fechaSolicitudHasta);
         return this.http.get<Page<Payment> | Payment[]>(this.apiUrl, { params });
     }
 

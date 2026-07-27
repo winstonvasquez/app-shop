@@ -8,7 +8,7 @@ import {
   CategoryFilter
 } from '@core/models/category.model';
 import { PaginationConfig, PageResponse, pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
-import { DataTableComponent, TableColumn, TableAction, PaginationEvent, SortEvent, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
+import { DataTableComponent, TableColumn, TableAction, PaginationEvent, SortEvent, FilterConfig, FilterChangeEvent, DateRangeFilterConfig, DateRangeChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
@@ -51,6 +51,9 @@ export class CategoriesComponent implements OnInit {
   // Filter and sort state
   searchQuery = signal('');
   filterLevel = signal<number | null>(null);
+  filterActivo = signal<boolean | null>(null);
+  filterFechaCreacionDesde = signal<string | undefined>(undefined);
+  filterFechaCreacionHasta = signal<string | undefined>(undefined);
   sortField = signal('nombre');
   sortDirection = signal<'asc' | 'desc'>('asc');
 
@@ -126,6 +129,24 @@ export class CategoriesComponent implements OnInit {
     { field: 'nivel', label: 'Todos los niveles', options: of(this.levelOptions) }
   ];
 
+  // Filtro de activo (Sí/No) para el toolbar del data-table
+  activoFilters: FilterConfig[] = [
+    {
+      field: 'activo', label: 'Activo (Sí/No)',
+      options: of([
+        { value: 'true', label: 'Sí' },
+        { value: 'false', label: 'No' }
+      ])
+    }
+  ];
+
+  // Filtros combinados que consume <app-data-table [filters]>
+  readonly tableFilters: FilterConfig[] = [...this.nivelFilters, ...this.activoFilters];
+
+  readonly dateRangeFilters: DateRangeFilterConfig[] = [
+    { field: 'fechaCreacion', label: 'Fecha de creación' }
+  ];
+
   /**
    * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios
    * (respeta los filtros actuales search + nivel). Ver /sales/api/v1/categorias/export.
@@ -181,7 +202,10 @@ export class CategoriesComponent implements OnInit {
 
     const filter: CategoryFilter = {
       search: this.searchQuery() || undefined,
-      nivel: this.filterLevel() ?? undefined
+      nivel: this.filterLevel() ?? undefined,
+      activo: this.filterActivo() ?? undefined,
+      fechaCreacionDesde: this.filterFechaCreacionDesde(),
+      fechaCreacionHasta: this.filterFechaCreacionHasta()
     };
 
     this.categoryService.getAll(pagination, filter).subscribe({
@@ -215,7 +239,22 @@ export class CategoriesComponent implements OnInit {
       this.filterLevel.set(event.value != null ? parseInt(String(event.value), 10) : null);
       this.currentPage.set(0);
       this.loadCategories();
+    } else if (event.field === 'activo') {
+      this.filterActivo.set(event.value == null ? null : String(event.value) === 'true');
+      this.currentPage.set(0);
+      this.loadCategories();
     }
+  }
+
+  /**
+   * Handle date range filter change emitted by the data-table toolbar (fecha de creación)
+   */
+  onDateRangeChange(event: DateRangeChangeEvent): void {
+    if (event.field !== 'fechaCreacion') return;
+    this.filterFechaCreacionDesde.set(event.from ?? undefined);
+    this.filterFechaCreacionHasta.set(event.to ?? undefined);
+    this.currentPage.set(0);
+    this.loadCategories();
   }
 
   /**

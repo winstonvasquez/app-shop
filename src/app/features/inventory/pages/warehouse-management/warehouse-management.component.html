@@ -14,15 +14,17 @@
   }
 
   <app-data-table
-    [data]="pagedWarehouses()"
+    [data]="warehouses()"
     [columns]="columns"
     [actions]="actions"
     [loading]="loading()"
+    [filters]="filters"
     [currentPage]="currentPage()"
     [pageSize]="pageSize()"
     [totalElements]="totalElements()"
     [totalPages]="totalPages()"
     [exportConfig]="exportConfig"
+    (filterChange)="onFilterChangeEvent($event)"
     (pageChange)="onPageChange($event)">
   </app-data-table>
 

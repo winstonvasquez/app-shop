@@ -38,12 +38,14 @@
         [sortDirection]="sortDirection()"
         [searchable]="true"
         searchPlaceholder="Buscar categorías..."
-        [filters]="nivelFilters"
+        [filters]="tableFilters"
+        [dateRangeFilters]="dateRangeFilters"
         [exportable]="true"
         exportFileName="categorias"
         [exportConfig]="exportConfig"
         (searchChange)="onSearchTerm($event)"
         (filterChange)="onFilterChangeEvent($event)"
+        (dateRangeChange)="onDateRangeChange($event)"
         (pageChange)="onPageChange($event)"
         (sortChange)="onSort($event)">
     </app-data-table>

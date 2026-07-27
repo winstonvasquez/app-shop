@@ -8,7 +8,7 @@ import { OrderResponse } from '@core/models/order.model';
 import { OrderStatus, OrderDetail } from '@features/admin/models/order.model';
 import { VentasParametrosService } from '../../services/ventas-parametros.service';
 import { PaginationConfig } from '@core/models/pagination.model';
-import { DataTableComponent, TableColumn, TableAction, PaginationEvent, SortEvent } from '@shared/ui/tables/data-table/data-table.component';
+import { DataTableComponent, TableColumn, TableAction, PaginationEvent, SortEvent, FilterConfig, FilterChangeEvent, DateRangeFilterConfig, DateRangeChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
@@ -73,6 +73,24 @@ export class OrdersComponent implements OnInit {
   sortField = signal('fechaPedido');
   sortDirection = signal<'asc' | 'desc'>('desc');
 
+  // Filtros server-side: estado + rango de fecha de pedido
+  filterEstado = signal('');
+  filterFechaPedidoDesde = signal<string | undefined>(undefined);
+  filterFechaPedidoHasta = signal<string | undefined>(undefined);
+
+  // Filtro de estado en el toolbar del data-table (usa el helper de labels de EstadoPedido ya existente)
+  readonly estadoFilters: FilterConfig[] = [
+    {
+      field: 'estado',
+      label: 'Todos los estados',
+      options: this.parametros.getEstadosPedido()
+    }
+  ];
+
+  readonly dateRangeFilters: DateRangeFilterConfig[] = [
+    { field: 'fechaPedido', label: 'Fecha de pedido' }
+  ];
+
   /**
    * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios
    * (respeta el filtro de búsqueda actual). Ver GET /api/pedidos/export.
@@ -80,7 +98,12 @@ export class OrdersComponent implements OnInit {
   readonly exportConfig: BackendExportConfig = {
     url: `${environment.apiUrls.sales}/api/pedidos/export`,
     filename: 'pedidos',
-    params: () => ({ search: this.searchQuery() || undefined }),
+    params: () => ({
+      search: this.searchQuery() || undefined,
+      estado: this.filterEstado() || undefined,
+      fechaPedidoDesde: this.filterFechaPedidoDesde(),
+      fechaPedidoHasta: this.filterFechaPedidoHasta()
+    }),
   };
 
   // Computed properties
@@ -153,7 +176,11 @@ export class OrdersComponent implements OnInit {
       sort: { field: 'fechaPedido', direction: 'desc' }
     };
 
-    this.orderService.getAll(pagination, this.searchQuery() || undefined).subscribe({
+    this.orderService.getAll(pagination, this.searchQuery() || undefined, {
+      estado: this.filterEstado() || undefined,
+      fechaPedidoDesde: this.filterFechaPedidoDesde(),
+      fechaPedidoHasta: this.filterFechaPedidoHasta()
+    }).subscribe({
       next: (response) => {
         this.orders.set(response.content);
         // Spring Boot 3.3+ puede anidar metadatos en "page": { totalElements, totalPages }

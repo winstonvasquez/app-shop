@@ -3,7 +3,8 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { AuthService } from '../../../core/auth/auth.service';
-import { FinancialMovement, Page } from '../models/tesoreria.model';
+import { FinancialMovement } from '../models/tesoreria.model';
+import { PageResponse } from '@core/models/pagination.model';
 
 export interface FinancialMovementRequest {
     tenantId: number;
@@ -28,16 +29,31 @@ export class MovimientosFinancierosService {
         return String(this.auth.currentUser()?.activeCompanyId ?? 1);
     }
 
-    getAll(fechaInicio?: string, fechaFin?: string, page: number = 0, size: number = 20): Observable<Page<FinancialMovement> | FinancialMovement[]> {
-        let params = new HttpParams()
-            .set('tenantId', this.tenantId)
-            .set('page', page.toString())
-            .set('size', size.toString());
+    /**
+     * Lista paginada de movimientos. Nombres de query params EXACTOS a
+     * FinancialMovementController#getAll (backend): tenantId, tipoMovimiento,
+     * origen, fechaDesde, fechaHasta, page, size.
+     */
+    getAll(params?: {
+        fechaDesde?: string;
+        fechaHasta?: string;
+        tipoMovimiento?: string;
+        origen?: string;
+        page?: number;
+        size?: number;
+    }): Observable<PageResponse<FinancialMovement>> {
+        let httpParams = new HttpParams().set('tenantId', this.tenantId);
 
-        if (fechaInicio) params = params.set('fechaInicio', fechaInicio);
-        if (fechaFin) params = params.set('fechaFin', fechaFin);
+        httpParams = httpParams
+            .set('page', (params?.page ?? 0).toString())
+            .set('size', (params?.size ?? 20).toString());
 
-        return this.http.get<Page<FinancialMovement> | FinancialMovement[]>(this.apiUrl, { params });
+        if (params?.fechaDesde) httpParams = httpParams.set('fechaDesde', params.fechaDesde);
+        if (params?.fechaHasta) httpParams = httpParams.set('fechaHasta', params.fechaHasta);
+        if (params?.tipoMovimiento) httpParams = httpParams.set('tipoMovimiento', params.tipoMovimiento);
+        if (params?.origen) httpParams = httpParams.set('origen', params.origen);
+
+        return this.http.get<PageResponse<FinancialMovement>>(this.apiUrl, { params: httpParams });
     }
 
     getFlujoCaja(fechaInicio: string, fechaFin: string): Observable<number> {

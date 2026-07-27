@@ -23,14 +23,11 @@
     [totalElements]="totalElements()"
     [totalPages]="totalPages()"
     [filters]="toolbarFilters"
+    [dateRangeFilters]="dateRangeFilters"
     [exportConfig]="exportConfig"
     (filterChange)="onFilterChangeEvent($event)"
+    (dateRangeChange)="onDateRangeChange($event)"
     (pageChange)="onPageChange($event)">
-    <div toolbarExtra class="flex items-center gap-2">
-      <input class="form-input" type="date" title="Desde" (change)="onFilterDate('from', $event)" />
-      <span class="text-subtle text-sm">—</span>
-      <input class="form-input" type="date" title="Hasta" (change)="onFilterDate('to', $event)" />
-    </div>
   </app-data-table>
 
 </div>

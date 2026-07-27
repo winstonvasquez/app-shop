@@ -10,12 +10,22 @@ export class OrdenCompraService {
     private http = inject(HttpClient);
     private baseUrl = `${environment.apiUrls.purchases}/api/ordenes-compra`;
 
-    getOrdenes(page = 0, size = 10, estado?: string): Observable<OrdenCompraPage> {
+    getOrdenes(
+        page = 0,
+        size = 10,
+        estado?: string,
+        condicionPago?: string,
+        fechaEmisionDesde?: string,
+        fechaEmisionHasta?: string
+    ): Observable<OrdenCompraPage> {
         let params = new HttpParams()
             .set('page', page.toString())
             .set('size', size.toString());
 
         if (estado) params = params.set('estado', estado);
+        if (condicionPago) params = params.set('condicionPago', condicionPago);
+        if (fechaEmisionDesde) params = params.set('fechaEmisionDesde', fechaEmisionDesde);
+        if (fechaEmisionHasta) params = params.set('fechaEmisionHasta', fechaEmisionHasta);
 
         return this.http.get<unknown>(this.baseUrl, { params }).pipe(
             map((raw: unknown) => {

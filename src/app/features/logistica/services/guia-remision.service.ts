@@ -10,12 +10,18 @@ export class GuiaRemisionService {
 
     getGuias(
         companyId: string,
-        params?: { page?: number; size?: number; sort?: string }
+        params?: {
+            page?: number; size?: number; sort?: string;
+            estado?: string; fechaEmisionDesde?: string; fechaEmisionHasta?: string;
+        }
     ): Observable<Pagination<GuiaRemision>> {
         let httpParams = new HttpParams().set('companyId', companyId);
         if (params?.page !== undefined) httpParams = httpParams.set('page', params.page.toString());
         if (params?.size !== undefined) httpParams = httpParams.set('size', params.size.toString());
         if (params?.sort) httpParams = httpParams.set('sort', params.sort);
+        if (params?.estado) httpParams = httpParams.set('estado', params.estado);
+        if (params?.fechaEmisionDesde) httpParams = httpParams.set('fechaEmisionDesde', params.fechaEmisionDesde);
+        if (params?.fechaEmisionHasta) httpParams = httpParams.set('fechaEmisionHasta', params.fechaEmisionHasta);
         return this.http.get<Pagination<GuiaRemision>>(this.baseUrl, { params: httpParams });
     }
 

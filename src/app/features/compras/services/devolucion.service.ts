@@ -18,11 +18,12 @@ export class DevolucionService {
         return new HttpHeaders({ 'X-Company-Id': companyId });
     }
 
-    listar(page = 0, size = 10, estado?: string): Observable<Page<Devolucion>> {
+    listar(page = 0, size = 10, estado?: string, tipo?: string): Observable<Page<Devolucion>> {
         let params = new HttpParams()
             .set('page', page.toString())
             .set('size', size.toString());
         if (estado) params = params.set('estado', estado);
+        if (tipo) params = params.set('tipo', tipo);
 
         return this.http.get<unknown>(this.baseUrl, { params, headers: this.getHeaders() }).pipe(
             map((raw: unknown) => {

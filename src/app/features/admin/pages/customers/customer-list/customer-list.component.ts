@@ -1,6 +1,7 @@
 import {
     Component, OnInit, ChangeDetectionStrategy, inject, signal, computed
 } from '@angular/core';
+import { of } from 'rxjs';
 
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -13,7 +14,10 @@ import {
 import { ButtonComponent, CatalogSelectComponent } from '@shared/components';
 import { PageHeaderComponent } from '@shared/ui/layout/page-header/page-header.component';
 import { PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
-import { DataTableComponent, TableColumn, TableAction } from '@shared/ui/tables/data-table/data-table.component';
+import {
+    DataTableComponent, TableColumn, TableAction,
+    FilterConfig, FilterChangeEvent, DateRangeFilterConfig, DateRangeChangeEvent,
+} from '@shared/ui/tables/data-table/data-table.component';
 import { AuthService } from '@core/auth/auth.service';
 import { CustomerFormComponent } from '../customer-form/customer-form.component';
 import { CURRENCY_DISPLAY } from '@shared/constants/sunat.constants';
@@ -46,6 +50,19 @@ export class CustomerListComponent implements OnInit {
     sortField = signal('id');
     sortDirection = signal<'asc' | 'desc'>('desc');
 
+    // Filtros server-side: tipo de cliente + rango de fecha de registro
+    filterTipoCliente = signal('');
+    filterFechaCreacionDesde = signal<string | undefined>(undefined);
+    filterFechaCreacionHasta = signal<string | undefined>(undefined);
+
+    readonly tipoClienteFilters: FilterConfig[] = [
+        { field: 'tipoCliente', label: 'Todos los tipos', options: of(TIPO_CLIENTE_OPTIONS.map(o => ({ value: o.value, label: o.label }))) }
+    ];
+
+    readonly dateRangeFilters: DateRangeFilterConfig[] = [
+        { field: 'fechaCreacion', label: 'Fecha de registro' }
+    ];
+
     showDrawer = signal(false);
     editingCustomer = signal<CustomerResponse | null>(null);
 
@@ -76,6 +93,9 @@ export class CustomerListComponent implements OnInit {
         params: () => ({
             companyId: this.authService.currentUser()?.activeCompanyId ?? undefined,
             search: this.searchQuery() || undefined,
+            tipoCliente: this.filterTipoCliente() || undefined,
+            fechaCreacionDesde: this.filterFechaCreacionDesde(),
+            fechaCreacionHasta: this.filterFechaCreacionHasta(),
         }),
     };
 
@@ -118,7 +138,11 @@ export class CustomerListComponent implements OnInit {
 
         const sort = `${this.sortField()},${this.sortDirection()}`;
         this.customerService
-            .getAll(companyId, this.currentPage(), this.pageSize(), sort, this.searchQuery() || undefined)
+            .getAll(companyId, this.currentPage(), this.pageSize(), sort, this.searchQuery() || undefined, {
+                tipoCliente: this.filterTipoCliente() || undefined,
+                fechaCreacionDesde: this.filterFechaCreacionDesde(),
+                fechaCreacionHasta: this.filterFechaCreacionHasta(),
+            })
             .subscribe({
                 next: (res) => {
                     this.customers.set(res.content);
@@ -142,6 +166,21 @@ export class CustomerListComponent implements OnInit {
     onPageChange(event: PaginationChangeEvent): void {
         this.currentPage.set(event.page);
         this.pageSize.set(event.size);
+        this.loadCustomers();
+    }
+
+    onFilterChangeEvent(event: FilterChangeEvent): void {
+        if (event.field !== 'tipoCliente') return;
+        this.filterTipoCliente.set(event.value != null ? String(event.value) : '');
+        this.currentPage.set(0);
+        this.loadCustomers();
+    }
+
+    onDateRangeChange(event: DateRangeChangeEvent): void {
+        if (event.field !== 'fechaCreacion') return;
+        this.filterFechaCreacionDesde.set(event.from ?? undefined);
+        this.filterFechaCreacionHasta.set(event.to ?? undefined);
+        this.currentPage.set(0);
         this.loadCustomers();
     }
 

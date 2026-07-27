@@ -26,6 +26,8 @@ export interface CategoryFilter {
     nivel?: number;
     hasImage?: boolean;
     activo?: boolean;
+    fechaCreacionDesde?: string;
+    fechaCreacionHasta?: string;
 }
 
 export interface Category {

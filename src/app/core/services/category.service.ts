@@ -45,6 +45,15 @@ export class CategoryService {
         if (filter?.hasImage !== undefined) {
             params = params.set('hasImage', filter.hasImage.toString());
         }
+        if (filter?.activo !== undefined) {
+            params = params.set('activo', filter.activo.toString());
+        }
+        if (filter?.fechaCreacionDesde) {
+            params = params.set('fechaCreacionDesde', filter.fechaCreacionDesde);
+        }
+        if (filter?.fechaCreacionHasta) {
+            params = params.set('fechaCreacionHasta', filter.fechaCreacionHasta);
+        }
 
         return this.http
             .get<PageResponse<CategoryResponse>>(this.baseUrl, { params })

@@ -20,7 +20,11 @@ export class OrderService {
     private readonly http = inject(HttpClient);
     private readonly baseUrl = `${environment.apiUrls.sales}/api/pedidos`;
 
-    getAll(pagination: PaginationConfig, search?: string): Observable<PageResponse<OrderResponse>> {
+    getAll(
+        pagination: PaginationConfig,
+        search?: string,
+        filters?: { estado?: string; fechaPedidoDesde?: string; fechaPedidoHasta?: string }
+    ): Observable<PageResponse<OrderResponse>> {
         let params = new HttpParams()
             .set('page', pagination.page.toString())
             .set('size', pagination.size.toString());
@@ -34,6 +38,18 @@ export class OrderService {
 
         if (search) {
             params = params.set('search', search);
+        }
+
+        if (filters?.estado) {
+            params = params.set('estado', filters.estado);
+        }
+
+        if (filters?.fechaPedidoDesde) {
+            params = params.set('fechaPedidoDesde', filters.fechaPedidoDesde);
+        }
+
+        if (filters?.fechaPedidoHasta) {
+            params = params.set('fechaPedidoHasta', filters.fechaPedidoHasta);
         }
 
         return this.http

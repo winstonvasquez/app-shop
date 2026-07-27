@@ -2,6 +2,7 @@ import { Injectable, inject, signal, computed } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '@env/environment';
 import { firstValueFrom } from 'rxjs';
+import { PageResponse, pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 import {
     Training,
     TrainingRequest,
@@ -14,7 +15,10 @@ export class TrainingService {
     private readonly http = inject(HttpClient);
     private readonly baseUrl = `${environment.apiUrls.hr}/api/trainings`;
 
+    /** Contenido de la página actual (server-side), lo que se pinta en la tabla. */
     private readonly _trainings = signal<Training[]>([]);
+    /** Snapshot completo sin filtros, usado SOLO para las KPI cards del toolbar. */
+    private readonly _allTrainings = signal<Training[]>([]);
     private readonly _loading = signal(false);
     private readonly _error = signal<string | null>(null);
 
@@ -22,23 +26,47 @@ export class TrainingService {
     readonly loading = this._loading.asReadonly();
     readonly error = this._error.asReadonly();
 
-    readonly planificadas = computed(() => this._trainings().filter(t => t.estado === 'PLANIFICADO').length);
-    readonly enCurso = computed(() => this._trainings().filter(t => t.estado === 'EN_CURSO').length);
-    readonly completadas = computed(() => this._trainings().filter(t => t.estado === 'COMPLETADO').length);
+    readonly planificadas = computed(() => this._allTrainings().filter(t => t.estado === 'PLANIFICADO').length);
+    readonly enCurso = computed(() => this._allTrainings().filter(t => t.estado === 'EN_CURSO').length);
+    readonly completadas = computed(() => this._allTrainings().filter(t => t.estado === 'COMPLETADO').length);
     readonly totalHoras = computed(() =>
-        this._trainings().filter(t => t.estado === 'COMPLETADO').reduce((s, t) => s + (t.duracionHoras || 0), 0)
+        this._allTrainings().filter(t => t.estado === 'COMPLETADO').reduce((s, t) => s + (t.duracionHoras || 0), 0)
     );
 
-    async loadTrainings(): Promise<void> {
+    /** Carga server-side paginada (estado + rango fecha inicio opcionales). Devuelve totales de página. */
+    async loadTrainingsPaged(
+        page: number, size: number,
+        estado?: string, fechaInicioDesde?: string, fechaInicioHasta?: string
+    ): Promise<{ totalElements: number; totalPages: number }> {
         this._loading.set(true);
         this._error.set(null);
         try {
-            const data = await firstValueFrom(this.http.get<Training[]>(this.baseUrl));
-            this._trainings.set(data);
-        } catch {
+            const params: Record<string, string> = { page: String(page), size: String(size) };
+            if (estado) params['estado'] = estado;
+            if (fechaInicioDesde) params['fechaInicioDesde'] = fechaInicioDesde;
+            if (fechaInicioHasta) params['fechaInicioHasta'] = fechaInicioHasta;
+            const res = await firstValueFrom(
+                this.http.get<PageResponse<Training>>(this.baseUrl, { params })
+            );
+            this._trainings.set(res.content ?? []);
+            return { totalElements: pageTotalElements(res), totalPages: pageTotalPages(res) };
+        } catch (error) {
             this._error.set('Error al cargar capacitaciones');
+            throw error;
         } finally {
             this._loading.set(false);
+        }
+    }
+
+    /** Snapshot sin filtros (page grande) para calcular las KPI cards del toolbar. */
+    async loadStatsSnapshot(): Promise<void> {
+        try {
+            const res = await firstValueFrom(
+                this.http.get<PageResponse<Training>>(this.baseUrl, { params: { page: '0', size: '10000' } })
+            );
+            this._allTrainings.set(res.content ?? []);
+        } catch {
+            // Las KPI cards no son críticas; se ignora el error silenciosamente.
         }
     }
 

@@ -10,12 +10,17 @@ export class EnvioService {
     private readonly baseUrl     = '/logistics/api/shipments';
     private readonly trackingUrl = '/logistics/api/tracking';
 
-    getEnvios(companyId: string, page = 0, size: number = PAGINATION.defaultPageSize, status?: string): Observable<EnvioPage> {
+    getEnvios(
+        companyId: string, page = 0, size: number = PAGINATION.defaultPageSize, status?: string,
+        dispatchedAtDesde?: string, dispatchedAtHasta?: string
+    ): Observable<EnvioPage> {
         let params = new HttpParams()
             .set('companyId', companyId)
             .set('page', String(page))
             .set('size', String(size));
         if (status) params = params.set('status', status);
+        if (dispatchedAtDesde) params = params.set('dispatchedAtDesde', dispatchedAtDesde);
+        if (dispatchedAtHasta) params = params.set('dispatchedAtHasta', dispatchedAtHasta);
         return this.http.get<EnvioPage>(this.baseUrl, { params });
     }
 

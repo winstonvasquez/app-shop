@@ -17,6 +17,7 @@
         [searchable]="true"
         searchPlaceholder="Buscar por OC referencia o guía..."
         [filters]="estadoFilters"
+        [dateRangeFilters]="dateRangeFilters"
         [exportable]="true"
         exportFileName="recepciones"
         [exportConfig]="exportConfig"
@@ -26,6 +27,7 @@
         [totalPages]="totalPages()"
         (searchChange)="onSearchTerm($event)"
         (filterChange)="onFilterChangeEvent($event)"
+        (dateRangeChange)="onDateRangeChange($event)"
         (pageChange)="onPaginationChange($event)">
     </app-data-table>
 

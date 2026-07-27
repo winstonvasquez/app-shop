@@ -1,12 +1,16 @@
-import { Component, inject, signal, computed, ChangeDetectionStrategy, OnInit } from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy, OnInit } from '@angular/core';
 import { FormBuilder, FormControl, FormArray, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { map } from 'rxjs';
 import { ButtonComponent, CatalogSelectComponent, ServerSearchSelectComponent } from '@shared/components';
 import { employeeSelectSource } from '../../components/select-sources';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
-import { DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
-import { PaginationComponent, PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
+import {
+    DataTableComponent, TableColumn, TableAction,
+    FilterConfig, FilterChangeEvent,
+    DateRangeFilterConfig, DateRangeChangeEvent,
+    PaginationEvent,
+} from '@shared/ui/tables/data-table/data-table.component';
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
@@ -31,7 +35,6 @@ import { PAGINATION } from '@shared/constants/app.constants';
         ButtonComponent,
         DrawerComponent,
         DataTableComponent,
-        PaginationComponent,
         FormFieldComponent,
         PageHeaderComponent,
         AlertComponent,
@@ -60,39 +63,37 @@ export class EvaluationListComponent implements OnInit {
     submitting = signal(false);
     submitError = signal<string | null>(null);
 
+    // Filtros server-side: estado + tipo + rango de fecha de evaluación
     filtroEstado = signal('');
     filtroTipo = signal('');
+    filtroFechaEvaluacionDesde = signal<string | undefined>(undefined);
+    filtroFechaEvaluacionHasta = signal<string | undefined>(undefined);
+
     currentPage = signal(0);
     pageSize = signal<number>(PAGINATION.defaultPageSize);
 
+    /** Paginación server-side: totalElements/totalPages vienen del backend. */
+    readonly totalElements = this.evaluationService.totalElements;
+    readonly totalPages = this.evaluationService.totalPages;
+
     /**
      * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios
-     * (respeta los filtros actuales estado + tipo). Ver /hr/api/evaluations/export.
+     * (respeta los filtros actuales estado + tipo + rango de fecha). Ver /hr/api/evaluations/export.
      */
     readonly exportConfig: BackendExportConfig = {
         url: `${environment.apiUrls.hr}/api/evaluations/export`,
         filename: 'evaluaciones',
-        params: () => ({ estado: this.filtroEstado(), tipo: this.filtroTipo() }),
+        params: () => ({
+            estado: this.filtroEstado(),
+            tipo: this.filtroTipo(),
+            fechaEvaluacionDesde: this.filtroFechaEvaluacionDesde(),
+            fechaEvaluacionHasta: this.filtroFechaEvaluacionHasta(),
+        }),
     };
 
-    readonly filtered = computed(() => {
-        let list = this.evaluations();
-        const estado = this.filtroEstado();
-        const tipo = this.filtroTipo();
-        if (estado) list = list.filter(e => e.estado === estado);
-        if (tipo) list = list.filter(e => e.tipoEvaluacion === tipo);
-        return list;
-    });
-
-    readonly totalElements = computed(() => this.filtered().length);
-    readonly totalPages = computed(() => Math.ceil(this.totalElements() / this.pageSize()) || 1);
-    readonly pagedData = computed(() => {
-        const start = this.currentPage() * this.pageSize();
-        return this.filtered().slice(start, start + this.pageSize());
-    });
-
-    readonly borradores = computed(() => this.evaluations().filter(e => e.estado === 'BORRADOR').length);
-    readonly completadas = computed(() => this.evaluations().filter(e => e.estado === 'COMPLETADA' || e.estado === 'APROBADA').length);
+    /** KPIs sobre el dataset completo (snapshot server-side), no la página visible. */
+    readonly borradores = this.evaluationService.borradores;
+    readonly completadas = this.evaluationService.completadas;
 
     breadcrumbs: Breadcrumb[] = [
         { label: 'Admin', url: '/admin' },
@@ -170,8 +171,9 @@ export class EvaluationListComponent implements OnInit {
     }
 
     ngOnInit(): void {
-        this.evaluationService.loadEvaluations();
+        this.cargarEvaluaciones();
         this.evaluationService.loadCriteria();
+        this.evaluationService.loadStatsSnapshot();
         // Los selects de empleado/evaluador cargan sus opciones bajo demanda (server-side).
     }
 
@@ -210,17 +212,42 @@ export class EvaluationListComponent implements OnInit {
         }
     ];
 
+    readonly dateRangeFilters: DateRangeFilterConfig[] = [
+        { field: 'fechaEvaluacion', label: 'Fecha de evaluación' }
+    ];
+
+    private cargarEvaluaciones(): void {
+        this.evaluationService.loadEvaluations({
+            page: this.currentPage(),
+            size: this.pageSize(),
+            estado: this.filtroEstado() || undefined,
+            tipo: this.filtroTipo() || undefined,
+            fechaEvaluacionDesde: this.filtroFechaEvaluacionDesde(),
+            fechaEvaluacionHasta: this.filtroFechaEvaluacionHasta(),
+        });
+    }
+
     onFilterChangeEvent(event: FilterChangeEvent): void {
         const v = event.value != null ? String(event.value) : '';
         if (event.field === 'estado') this.filtroEstado.set(v);
         else if (event.field === 'tipo') this.filtroTipo.set(v);
         else return;
         this.currentPage.set(0);
+        this.cargarEvaluaciones();
     }
 
-    onPaginationChange(event: PaginationChangeEvent): void {
+    onDateRangeChange(event: DateRangeChangeEvent): void {
+        if (event.field !== 'fechaEvaluacion') return;
+        this.filtroFechaEvaluacionDesde.set(event.from ?? undefined);
+        this.filtroFechaEvaluacionHasta.set(event.to ?? undefined);
+        this.currentPage.set(0);
+        this.cargarEvaluaciones();
+    }
+
+    onPaginationChange(event: PaginationEvent): void {
         this.currentPage.set(event.page);
         this.pageSize.set(event.size);
+        this.cargarEvaluaciones();
     }
 
     openCreate(): void {
@@ -300,6 +327,8 @@ export class EvaluationListComponent implements OnInit {
                 await this.evaluationService.createEvaluation(request);
             }
             this.closeDrawer();
+            this.cargarEvaluaciones();
+            this.evaluationService.loadStatsSnapshot();
         } catch (err: unknown) {
             const message = err instanceof Error ? err.message : 'Error al guardar evaluación';
             this.submitError.set(message);
@@ -310,14 +339,17 @@ export class EvaluationListComponent implements OnInit {
 
     async complete(ev: Evaluation): Promise<void> {
         await this.evaluationService.completeEvaluation(ev.id);
+        this.evaluationService.loadStatsSnapshot();
     }
 
     async approve(ev: Evaluation): Promise<void> {
         await this.evaluationService.approveEvaluation(ev.id);
+        this.evaluationService.loadStatsSnapshot();
     }
 
     async cancel(ev: Evaluation): Promise<void> {
         await this.evaluationService.cancelEvaluation(ev.id);
+        this.evaluationService.loadStatsSnapshot();
     }
 
     getControl(name: string): FormControl {

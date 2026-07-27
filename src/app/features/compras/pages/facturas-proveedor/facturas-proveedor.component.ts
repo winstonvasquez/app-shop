@@ -25,6 +25,8 @@ import {
     PaginationEvent,
     FilterConfig,
     FilterChangeEvent,
+    DateRangeFilterConfig,
+    DateRangeChangeEvent,
 } from '@shared/ui/tables/data-table/data-table.component';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
@@ -66,6 +68,9 @@ export class FacturasProveedorComponent implements OnInit {
     actionError = signal<string | null>(null);
 
     filterEstado = signal('');
+    filterTipoDocumento = signal('');
+    filterFechaEmisionDesde = signal<string | null>(null);
+    filterFechaEmisionHasta = signal<string | null>(null);
     currentPage = signal(0);
     pageSize = signal<number>(PAGINATION.defaultPageSize);
     totalElements = signal(0);
@@ -124,6 +129,18 @@ export class FacturasProveedorComponent implements OnInit {
                 map((o) => o.map((x) => ({ value: x.codigo, label: x.valor })))
             ),
         },
+        {
+            field: 'tipoDocumento',
+            label: 'Todos los tipos',
+            options: toObservable(this.catalog.options('TIPO_COMPROBANTE')).pipe(
+                map((o) => o.map((x) => ({ value: x.codigo, label: x.valor })))
+            ),
+        },
+    ];
+
+    /** Rango de fecha de emisión para el toolbar del data-table. */
+    dateRangeFilters: DateRangeFilterConfig[] = [
+        { field: 'fechaEmision', label: 'Fecha de emisión' }
     ];
 
     /**
@@ -133,7 +150,12 @@ export class FacturasProveedorComponent implements OnInit {
     readonly exportConfig: BackendExportConfig = {
         url: `${environment.apiUrls.purchases}/api/facturas-proveedor/export`,
         filename: 'facturas-proveedor',
-        params: () => ({ estado: this.filterEstado() }),
+        params: () => ({
+            estado: this.filterEstado(),
+            tipoDocumento: this.filterTipoDocumento() || undefined,
+            fechaEmisionDesde: this.filterFechaEmisionDesde() ?? undefined,
+            fechaEmisionHasta: this.filterFechaEmisionHasta() ?? undefined
+        }),
     };
 
     facturaForm = this.fb.group({
@@ -168,7 +190,14 @@ export class FacturasProveedorComponent implements OnInit {
     loadFacturas(): void {
         this.loading.set(true);
         this.error.set(null);
-        this.facturaService.listar(this.currentPage(), this.pageSize(), this.filterEstado() || undefined).subscribe({
+        this.facturaService.listar(
+            this.currentPage(),
+            this.pageSize(),
+            this.filterEstado() || undefined,
+            this.filterTipoDocumento() || undefined,
+            this.filterFechaEmisionDesde() || undefined,
+            this.filterFechaEmisionHasta() || undefined
+        ).subscribe({
             next: (page) => {
                 this.facturas.set(page.content);
                 this.totalElements.set(page.totalElements);
@@ -192,6 +221,19 @@ export class FacturasProveedorComponent implements OnInit {
     onFilterChangeEvent(event: FilterChangeEvent): void {
         if (event.field === 'estado') {
             this.filterEstado.set((event.value as string) ?? '');
+            this.currentPage.set(0);
+            this.loadFacturas();
+        } else if (event.field === 'tipoDocumento') {
+            this.filterTipoDocumento.set((event.value as string) ?? '');
+            this.currentPage.set(0);
+            this.loadFacturas();
+        }
+    }
+
+    onDateRangeChange(event: DateRangeChangeEvent): void {
+        if (event.field === 'fechaEmision') {
+            this.filterFechaEmisionDesde.set(event.from);
+            this.filterFechaEmisionHasta.set(event.to);
             this.currentPage.set(0);
             this.loadFacturas();
         }

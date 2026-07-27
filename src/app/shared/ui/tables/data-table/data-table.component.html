@@ -1,6 +1,6 @@
 <div class="data-table-container">
     <!-- Toolbar: búsqueda, filtros combo y exportación -->
-    @if (searchable() || filters().length > 0 || exportable()) {
+    @if (searchable() || filters().length > 0 || dateRangeFilters().length > 0 || exportable()) {
         <div class="table-toolbar">
             @if (searchable()) {
                 <div class="table-search">
@@ -34,6 +34,21 @@
                             <option [value]="opt.value">{{ opt.label }}</option>
                         }
                     </select>
+                </div>
+            }
+            @for (dr of dateRangeFilters(); track dr.field) {
+                <div class="table-daterange">
+                    <app-date-input
+                        [label]="dr.label + ' desde'"
+                        [ngModel]="getDateRangeFrom(dr.field)"
+                        (ngModelChange)="onDateRangeFromChange(dr.field, $event)"
+                        [maxDate]="getDateRangeTo(dr.field)" />
+                    <span class="table-daterange-sep">–</span>
+                    <app-date-input
+                        [label]="dr.label + ' hasta'"
+                        [ngModel]="getDateRangeTo(dr.field)"
+                        (ngModelChange)="onDateRangeToChange(dr.field, $event)"
+                        [minDate]="getDateRangeFrom(dr.field)" />
                 </div>
             }
             <!-- Slot para filtros custom (date-inputs, radios, etc.) alineados en el toolbar -->

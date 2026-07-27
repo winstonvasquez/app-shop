@@ -10,7 +10,7 @@ import { GuiaRemision, EstadoGuia, CreateGuiaRemisionDto, GuiaRemisionItemDto } 
 import { AuthService } from '../../../../../core/auth/auth.service';
 import { CatalogService } from '@core/services/catalog.service';
 import { map } from 'rxjs';
-import { DataTableComponent, TableColumn, TableAction, PaginationEvent, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
+import { DataTableComponent, TableColumn, TableAction, PaginationEvent, FilterConfig, FilterChangeEvent, DateRangeFilterConfig, DateRangeChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { DateInputComponent } from '@shared/ui/forms/date-input/date-input.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
@@ -48,7 +48,6 @@ export class GuiasPageComponent implements OnInit {
     );
 
     readonly guias           = signal<GuiaRemision[]>([]);
-    readonly guiasFiltradas  = signal<GuiaRemision[]>([]);
     readonly totalElements   = signal(0);
     readonly showModal       = signal(false);
     readonly loading         = signal(false);
@@ -67,10 +66,10 @@ export class GuiasPageComponent implements OnInit {
         { label: 'Guías de Remisión' }
     ];
 
-    // Filter — reactive (1 campo compacto)
-    filterForm = this.fb.group({
-        estado: ['']
-    });
+    // Filtros server-side: estado + rango de fecha de emisión
+    filterEstado = signal('');
+    filterFechaEmisionDesde = signal<string | undefined>(undefined);
+    filterFechaEmisionHasta = signal<string | undefined>(undefined);
 
     // Filtro de estado en el toolbar del data-table (opciones desde catálogo ESTADO_GUIA_REMISION)
     readonly estadoFilters: FilterConfig[] = [
@@ -80,6 +79,10 @@ export class GuiasPageComponent implements OnInit {
                 map(opts => opts.map(o => ({ value: o.codigo, label: o.valor })))
             )
         }
+    ];
+
+    readonly dateRangeFilters: DateRangeFilterConfig[] = [
+        { field: 'fechaEmision', label: 'Fecha de emisión' }
     ];
 
     /**
@@ -191,18 +194,19 @@ export class GuiasPageComponent implements OnInit {
         this.loading.set(true);
         this.guiaService.getGuias(this.companyId, {
             page: this.currentPage(),
-            size: this.pageSize()
+            size: this.pageSize(),
+            estado: this.filterEstado() || undefined,
+            fechaEmisionDesde: this.filterFechaEmisionDesde(),
+            fechaEmisionHasta: this.filterFechaEmisionHasta()
         }).subscribe({
             next: (res) => {
                 this.guias.set(res.content);
-                this.guiasFiltradas.set(res.content);
                 this.totalElements.set(pageTotalElements(res));
                 this.totalPages.set(pageTotalPages(res));
                 this.loading.set(false);
             },
             error: () => {
                 this.guias.set([]);
-                this.guiasFiltradas.set([]);
                 this.loading.set(false);
             }
         });
@@ -216,17 +220,17 @@ export class GuiasPageComponent implements OnInit {
 
     onFilterChangeEvent(event: FilterChangeEvent) {
         if (event.field !== 'estado') return;
-        this.filterForm.patchValue({ estado: event.value != null ? String(event.value) : '' });
-        this.aplicarFiltro();
+        this.filterEstado.set(event.value != null ? String(event.value) : '');
+        this.currentPage.set(0);
+        this.cargarGuias();
     }
 
-    aplicarFiltro() {
-        const estado = this.filterForm.value.estado ?? '';
-        if (!estado) {
-            this.guiasFiltradas.set(this.guias());
-        } else {
-            this.guiasFiltradas.set(this.guias().filter(g => g.estado === estado));
-        }
+    onDateRangeChange(event: DateRangeChangeEvent) {
+        if (event.field !== 'fechaEmision') return;
+        this.filterFechaEmisionDesde.set(event.from ?? undefined);
+        this.filterFechaEmisionHasta.set(event.to ?? undefined);
+        this.currentPage.set(0);
+        this.cargarGuias();
     }
 
     crearGuia() {

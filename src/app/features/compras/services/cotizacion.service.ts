@@ -25,11 +25,19 @@ export class CotizacionService {
         return new HttpHeaders({ 'X-Company-Id': companyId });
     }
 
-    listar(page = 0, size = 10, estado?: string): Observable<CotizacionesPage> {
+    listar(
+        page = 0,
+        size = 10,
+        estado?: string,
+        fechaEmisionDesde?: string,
+        fechaEmisionHasta?: string
+    ): Observable<CotizacionesPage> {
         let params = new HttpParams()
             .set('page', page.toString())
             .set('size', size.toString());
         if (estado) params = params.set('estado', estado);
+        if (fechaEmisionDesde) params = params.set('fechaEmisionDesde', fechaEmisionDesde);
+        if (fechaEmisionHasta) params = params.set('fechaEmisionHasta', fechaEmisionHasta);
 
         return this.http.get<unknown>(this.baseUrl, { params, headers: this.getHeaders() }).pipe(
             map((raw: unknown) => {

@@ -20,11 +20,15 @@
     [columns]="columns"
     [actions]="actions"
     [loading]="cargando()"
+    [filters]="filters"
+    [dateRangeFilters]="dateRangeFilters"
     [currentPage]="currentPage()"
     [pageSize]="pageSize()"
     [totalElements]="totalElements()"
     [totalPages]="totalPages()"
     [exportConfig]="exportConfig"
+    (filterChange)="onFilterChangeEvent($event)"
+    (dateRangeChange)="onDateRangeChange($event)"
     (pageChange)="onPageChange($event)">
   </app-data-table>
 

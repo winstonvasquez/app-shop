@@ -8,7 +8,7 @@ import {
 import { map } from 'rxjs';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { CatalogService } from '@core/services/catalog.service';
-import { DataTableComponent, TableColumn, PaginationEvent, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
+import { DataTableComponent, TableColumn, PaginationEvent, FilterConfig, FilterChangeEvent, DateRangeFilterConfig, DateRangeChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
@@ -56,8 +56,8 @@ export class MovementManagementComponent {
 
     filterWarehouseId = signal<number | undefined>(undefined);
     filterType = signal<string>('');
-    filterDateFrom = signal<string>('');
-    filterDateTo = signal<string>('');
+    filterMovementDateDesde = signal<string | undefined>(undefined);
+    filterMovementDateHasta = signal<string | undefined>(undefined);
 
     showDrawer = signal(false);
     submitting = signal(false);
@@ -150,8 +150,8 @@ export class MovementManagementComponent {
             size: this.pageSize(),
             warehouseId:  this.filterWarehouseId(),
             movementType: this.filterType() || undefined,
-            dateFrom:     this.filterDateFrom() || undefined,
-            dateTo:       this.filterDateTo() || undefined
+            movementDateDesde: this.filterMovementDateDesde(),
+            movementDateHasta: this.filterMovementDateHasta()
         }).subscribe({
             next: (res) => {
                 this.movements.set(res.content);
@@ -172,6 +172,10 @@ export class MovementManagementComponent {
             .pipe(map(o => o.map(x => ({ value: x.codigo, label: x.valor })))) }
     ];
 
+    readonly dateRangeFilters: DateRangeFilterConfig[] = [
+        { field: 'movementDate', label: 'Fecha de movimiento' }
+    ];
+
     onFilterChangeEvent(event: FilterChangeEvent): void {
         if (event.field === 'warehouse') {
             this.filterWarehouseId.set(event.value != null ? Number(event.value) : undefined);
@@ -182,10 +186,10 @@ export class MovementManagementComponent {
         this.loadMovements();
     }
 
-    onFilterDate(key: 'from' | 'to', event: Event): void {
-        const val = (event.target as HTMLInputElement).value;
-        if (key === 'from') this.filterDateFrom.set(val);
-        else this.filterDateTo.set(val);
+    onDateRangeChange(event: DateRangeChangeEvent): void {
+        if (event.field !== 'movementDate') return;
+        this.filterMovementDateDesde.set(event.from ?? undefined);
+        this.filterMovementDateHasta.set(event.to ?? undefined);
         this.currentPage.set(0);
         this.loadMovements();
     }

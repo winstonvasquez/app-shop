@@ -37,8 +37,15 @@ export class UserService {
             );
         }
 
-        // Note: Backend filters would need to be implemented
-        // For now, we'll filter on the client side if needed
+        if (filter?.rolId != null) {
+            params = params.set('rolId', filter.rolId.toString());
+        }
+        if (filter?.fechaCreacionDesde) {
+            params = params.set('fechaCreacionDesde', filter.fechaCreacionDesde);
+        }
+        if (filter?.fechaCreacionHasta) {
+            params = params.set('fechaCreacionHasta', filter.fechaCreacionHasta);
+        }
 
         return this.http
             .get<PageResponse<UserResponse>>(this.baseUrl, { params })

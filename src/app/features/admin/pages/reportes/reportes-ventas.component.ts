@@ -6,7 +6,7 @@ import { environment } from '@env/environment';
 import { AuthService } from '@core/auth/auth.service';
 import { BackendExportService } from '@shared/services/backend-export.service';
 import { ButtonComponent } from '@shared/components';
-import { DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent, PaginationEvent } from '@shared/ui/tables/data-table/data-table.component';
+import { DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent, DateRangeFilterConfig, DateRangeChangeEvent, PaginationEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { CURRENCY_DISPLAY } from '@shared/constants/sunat.constants';
 
 interface VentaPos {
@@ -56,6 +56,9 @@ export class ReportesVentasComponent implements OnInit {
     // Búsqueda/filtro server-side (por botón Buscar)
     private searchQuery = signal('');
     private filtroEstado = signal('');
+    private filtroMetodoPago = signal('');
+    private filtroFechaCreacionDesde = signal<string | undefined>(undefined);
+    private filtroFechaCreacionHasta = signal<string | undefined>(undefined);
 
     totalVentas = computed(() => this.ventas().length);
     montoTotal = computed(() => this.ventas().reduce((sum, v) => sum + (v.total ?? 0), 0));
@@ -69,9 +72,24 @@ export class ReportesVentasComponent implements OnInit {
         { value: 'ANULADA',    label: 'Anulada' },
     ];
 
-    // Filtro de estado para el toolbar del data-table
+    readonly metodoPagoOptions = [
+        { value: 'EFECTIVO',   label: 'Efectivo' },
+        { value: 'TARJETA',    label: 'Tarjeta' },
+        { value: 'YAPE',       label: 'Yape' },
+        { value: 'PLIN',       label: 'Plin' },
+        { value: 'MIXTO',      label: 'Mixto' },
+        { value: 'GIFT_CARD',  label: 'Gift Card' },
+    ];
+
+    // Filtros de estado + método de pago para el toolbar del data-table
     estadoFilters: FilterConfig[] = [
-        { field: 'estado', label: 'Todos los estados', options: of(this.estadoOptions) }
+        { field: 'estado', label: 'Todos los estados', options: of(this.estadoOptions) },
+        { field: 'metodoPago', label: 'Todos los métodos', options: of(this.metodoPagoOptions) },
+    ];
+
+    // Filtro de rango de fecha de creación
+    dateRangeFilters: DateRangeFilterConfig[] = [
+        { field: 'fechaCreacion', label: 'Fecha' }
     ];
 
     columns: TableColumn<VentaPos>[] = [
@@ -111,6 +129,9 @@ export class ReportesVentasComponent implements OnInit {
         };
         if (this.searchQuery()) params['search'] = this.searchQuery();
         if (this.filtroEstado()) params['estado'] = this.filtroEstado();
+        if (this.filtroMetodoPago()) params['metodoPago'] = this.filtroMetodoPago();
+        if (this.filtroFechaCreacionDesde()) params['fechaCreacionDesde'] = this.filtroFechaCreacionDesde()!;
+        if (this.filtroFechaCreacionHasta()) params['fechaCreacionHasta'] = this.filtroFechaCreacionHasta()!;
         this.http.get<PageResponse<VentaPos>>(`${environment.apiUrls.sales}/api/pos/ventas`, { params }).subscribe({
             next: (page) => {
                 this.ventas.set(page.content);
@@ -136,7 +157,19 @@ export class ReportesVentasComponent implements OnInit {
             this.filtroEstado.set(event.value != null ? String(event.value) : '');
             this.pagina.set(0);
             this.cargar();
+        } else if (event.field === 'metodoPago') {
+            this.filtroMetodoPago.set(event.value != null ? String(event.value) : '');
+            this.pagina.set(0);
+            this.cargar();
         }
+    }
+
+    onDateRangeChange(event: DateRangeChangeEvent): void {
+        if (event.field !== 'fechaCreacion') return;
+        this.filtroFechaCreacionDesde.set(event.from ?? undefined);
+        this.filtroFechaCreacionHasta.set(event.to ?? undefined);
+        this.pagina.set(0);
+        this.cargar();
     }
 
     onPageChange(event: PaginationEvent): void {
@@ -160,6 +193,9 @@ export class ReportesVentasComponent implements OnInit {
             companyId,
             search: this.searchQuery(),
             estado: this.filtroEstado(),
+            metodoPago: this.filtroMetodoPago(),
+            fechaCreacionDesde: this.filtroFechaCreacionDesde(),
+            fechaCreacionHasta: this.filtroFechaCreacionHasta(),
         };
     }
 

@@ -161,13 +161,14 @@ export class InventoryApiService {
     }
 
     /**
-     * Página de warehouses con `search` server-side. Pensado para el adapter
-     * `ServerSelectDataSource` (ver `warehouseSelectSource`) — no muta ningún
-     * estado compartido, solo envuelve la llamada HTTP.
+     * Página de warehouses con `search` + `active` server-side. Pensado para el adapter
+     * `ServerSelectDataSource` (ver `warehouseSelectSource`) y para el listado de
+     * `WarehouseManagementComponent` — no muta ningún estado compartido, solo envuelve
+     * la llamada HTTP.
      */
-    searchWarehousesPaged(page = 0, size = 10, search?: string): Observable<PageResponse<Warehouse>> {
+    searchWarehousesPaged(page = 0, size = 10, search?: string, active?: boolean): Observable<PageResponse<Warehouse>> {
         return this.http.get<PageResponse<Warehouse>>(`${this.baseUrl}/warehouses/paged`, {
-            params: this.buildParams({ page, size, search })
+            params: this.buildParams({ page, size, search, active })
         });
     }
 
@@ -226,15 +227,15 @@ export class InventoryApiService {
         page?: number;
         size?: number;
         movementType?: string;
-        dateFrom?: string;
-        dateTo?: string;
+        movementDateDesde?: string;
+        movementDateHasta?: string;
     }): Observable<PageResponse<InventoryMovement>> {
         const httpParams = this.buildParams({
             page: params?.page,
             size: params?.size,
             movementType: params?.movementType,
-            dateFrom: params?.dateFrom,
-            dateTo: params?.dateTo
+            movementDateDesde: params?.movementDateDesde,
+            movementDateHasta: params?.movementDateHasta
         });
 
         if (params?.warehouseId !== undefined) {

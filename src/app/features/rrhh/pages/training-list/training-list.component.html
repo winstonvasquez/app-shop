@@ -38,10 +38,12 @@
 <!-- Filtros -->
 <!-- Tabla -->
 <app-data-table
-    [data]="pagedData()"
+    [data]="trainings()"
     [columns]="columns"
     [actions]="actions"
+    [loading]="loading()"
     [filters]="toolbarFilters"
+    [dateRangeFilters]="dateRangeFilters"
     [exportable]="true"
     exportFileName="capacitaciones"
     [exportConfig]="exportConfig"
@@ -50,6 +52,7 @@
     [totalElements]="totalElements()"
     [totalPages]="totalPages()"
     (filterChange)="onFilterChangeEvent($event)"
+    (dateRangeChange)="onDateRangeChange($event)"
     (pageChange)="onPaginationChange($event)" />
 
 <!-- ── Drawer: Crear/Editar Capacitación ────────────────────────────────── -->

@@ -5,8 +5,8 @@ export interface Asiento {
     fecha: string;
     glosa: string;
     tipo: 'AUTOMATICO' | 'MANUAL' | 'CIERRE';
-    origen: 'VENTA' | 'COMPRA' | 'TESORERIA' | 'LOGISTICA' | 'MANUAL';
-    estado: 'BORRADOR' | 'CONAFECTAR' | 'DEFINITIVO' | 'CERRADO';
+    origen: 'VENTA' | 'COMPRA' | 'COSTO_VENTA' | 'TESORERIA' | 'LOGISTICA' | 'NOMINA' | 'CIERRE' | 'MANUAL';
+    estado: 'BORRADOR' | 'CONAFECTAR' | 'DEFINITIVO' | 'CERRADO' | 'ANULADO';
     periodoId: string;
     periodoNombre?: string;
     totalDebe: number;
