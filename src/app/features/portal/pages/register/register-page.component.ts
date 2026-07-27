@@ -1,9 +1,10 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import { PortalService } from '../../services/portal.service';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { LoginResponse } from '../../../../core/auth/auth.model';
+import { SaasPlanInfo } from '../../../../core/models/saas.model';
 import { Title, Meta } from '@angular/platform-browser';
 
 @Component({
@@ -106,7 +107,7 @@ import { Title, Meta } from '@angular/platform-browser';
           <div class="plan-select">
             <p class="plan-label">Confirma tu plan inicial seleccionado:</p>
             <div class="plan-options">
-              @for (p of planOptions; track p.code) {
+              @for (p of planOptions(); track p.code) {
                 <button type="button" class="plan-opt" [class.selected]="selectedPlan() === p.code" (click)="selectedPlan.set(p.code)" [id]="'opt-plan-' + p.code">
                   <div class="plan-opt-info">
                     <strong class="opt-name">{{ p.name }}</strong>
@@ -459,11 +460,17 @@ export class RegisterPageComponent implements OnInit {
     loading = signal(false);
     error = signal('');
 
-    readonly planOptions = [
-        { code: 'STARTER', name: 'Starter', price: 99, desc: 'POS + Ventas · 5 usuarios' },
-        { code: 'PROFESSIONAL', name: 'Professional', price: 299, desc: '7 módulos · 25 usuarios' },
-        { code: 'ENTERPRISE', name: 'Enterprise', price: 799, desc: 'Todo incluido · ilimitado' },
-    ];
+    private readonly plans = signal<SaasPlanInfo[]>([]);
+
+    /** Deriva las tarjetas de plan de los datos reales del backend (nunca hardcodeados). */
+    readonly planOptions = computed(() =>
+        this.plans().map((p) => ({
+            code: p.code,
+            name: p.name,
+            price: p.priceMonthly,
+            desc: `${p.moduleCodes.length} módulo${p.moduleCodes.length === 1 ? '' : 's'} · ${p.maxUsers >= 999 ? 'usuarios ilimitados' : `${p.maxUsers} usuarios`}`,
+        })),
+    );
 
     companyForm = this.fb.group({
         companyName: ['', Validators.required],
@@ -487,6 +494,8 @@ export class RegisterPageComponent implements OnInit {
 
         const plan = this.route.snapshot.queryParamMap.get('plan');
         if (plan) this.selectedPlan.set(plan);
+
+        this.portalService.getPlans().subscribe((plans) => this.plans.set(plans));
     }
 
     nextStep(): void {

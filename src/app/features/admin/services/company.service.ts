@@ -155,7 +155,7 @@ export class CompanyService {
             } else if (error.status === HTTP_STATUS.notFound) {
                 errorMessage = 'Empresa no encontrada';
             } else if (error.status === HTTP_STATUS.conflict) {
-                errorMessage = 'La empresa ya existe o el RUC está duplicado';
+                errorMessage = error.error?.detail || error.error?.message || 'La empresa ya existe o el RUC está duplicado';
             } else if (error.status === HTTP_STATUS.internalServerError) {
                 errorMessage = 'Error interno del servidor';
             } else {

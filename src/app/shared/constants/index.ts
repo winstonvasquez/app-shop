@@ -5,3 +5,4 @@ export * from './sunat.constants';
 export * from './order-status.constants';
 export * from './feature-flags.constants';
 export * from './regex.constants';
+export * from './saas-plan-catalog.constants';

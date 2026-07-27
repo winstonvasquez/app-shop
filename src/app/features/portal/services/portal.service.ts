@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { SaasPlanInfo, SaasRegisterPayload } from '../../../core/models/saas.model';
+import { SaasModuleInfo, SaasPlanInfo, SaasRegisterPayload } from '../../../core/models/saas.model';
 
 @Injectable({ providedIn: 'root' })
 export class PortalService {
@@ -9,6 +9,10 @@ export class PortalService {
 
     getPlans(): Observable<SaasPlanInfo[]> {
         return this.http.get<SaasPlanInfo[]>('/users/api/saas/plans');
+    }
+
+    getModules(): Observable<SaasModuleInfo[]> {
+        return this.http.get<SaasModuleInfo[]>('/users/api/saas/modules');
     }
 
     register(payload: SaasRegisterPayload): Observable<unknown> {

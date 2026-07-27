@@ -134,15 +134,15 @@ body:has(.ds-auth) {
     }
   }
 
-  /* Header & Navigation */
+  /* Header & Navigation — chrome propio de /portal/landing y hermanas: paleta Confianza clara, no el shell oscuro. */
   .portal-header {
     position: sticky;
     top: 0;
     z-index: 100;
-    background: rgba(5, 8, 20, 0.75);
-    backdrop-filter: blur(16px) saturate(180%);
-    -webkit-backdrop-filter: blur(16px) saturate(180%);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    background: rgba(247, 246, 243, 0.92);
+    backdrop-filter: blur(12px) saturate(140%);
+    -webkit-backdrop-filter: blur(12px) saturate(140%);
+    border-bottom: 1px solid var(--color-border, #DCD8CE);
     transition: all 0.3s ease;
   }
 
@@ -159,37 +159,34 @@ body:has(.ds-auth) {
   .portal-logo {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
     text-decoration: none;
-    font-size: 1.35rem;
-    font-weight: 800;
-    letter-spacing: -0.75px;
+    font-family: var(--f-display, 'Source Serif 4', serif);
+    font-size: 1.4rem;
+    font-weight: 700;
+    letter-spacing: -0.5px;
     position: relative;
     z-index: 10;
 
     .logo-app {
-      background: linear-gradient(135deg, #ffffff 40%, #a5b4fc 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+      color: var(--color-primary, #0B3D91);
     }
 
     .logo-shop {
-      background: linear-gradient(135deg, var(--neon-purple) 0%, var(--neon-teal) 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+      color: var(--color-accent, #F08C00);
     }
 
     .logo-tag {
+      font-family: var(--f-sans, 'Inter', sans-serif);
       font-size: 0.65rem;
       font-weight: 700;
       letter-spacing: 0.5px;
-      color: #fff;
-      background: rgba(255, 255, 255, 0.08);
-      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: var(--color-primary, #0B3D91);
+      background: transparent;
+      border: 1px solid var(--color-primary, #0B3D91);
       border-radius: 6px;
       padding: 1px 6px;
-      margin-left: 6px;
-      text-shadow: 0 0 8px rgba(168, 85, 247, 0.3);
+      margin-left: 4px;
     }
   }
 
@@ -197,18 +194,19 @@ body:has(.ds-auth) {
     display: flex;
     align-items: center;
     gap: 28px;
+    font-family: var(--f-sans, 'Inter', sans-serif);
 
     a {
       text-decoration: none;
-      color: var(--portal-muted);
+      color: var(--color-text-secondary, #5A6473);
       font-size: 0.925rem;
       font-weight: 500;
       transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
       position: relative;
 
       &.active-link {
-        color: #fff;
-        text-shadow: 0 0 10px rgba(168, 85, 247, 0.2);
+        color: var(--color-primary, #0B3D91);
+        font-weight: 600;
 
         &::after {
           content: '';
@@ -217,46 +215,45 @@ body:has(.ds-auth) {
           left: 0;
           width: 100%;
           height: 2px;
-          background: linear-gradient(90deg, var(--neon-purple), var(--neon-teal));
+          background: var(--color-accent, #F08C00);
           border-radius: 2px;
-          box-shadow: 0 0 8px rgba(168, 85, 247, 0.6);
         }
       }
 
       &:hover:not(.active-link):not(.btn-login):not(.btn-register) {
-        color: #ffffff;
+        color: var(--color-primary, #0B3D91);
       }
     }
 
     .btn-login {
-      color: var(--portal-text) !important;
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: var(--color-primary, #0B3D91) !important;
+      background: transparent;
+      border: 1px solid var(--color-border, #DCD8CE);
       padding: 8px 18px;
-      border-radius: 20px;
+      border-radius: var(--r-full, 20px);
       font-size: 0.85rem !important;
+      font-weight: 600;
 
       &:hover {
-        background: rgba(255, 255, 255, 0.1);
-        border-color: rgba(255, 255, 255, 0.15);
-        transform: translateY(-1px);
+        background: var(--color-surface-raised, #EFEDE7);
+        border-color: var(--color-primary, #0B3D91);
       }
     }
 
     .btn-register {
-      background: linear-gradient(135deg, var(--neon-purple) 0%, var(--neon-blue) 100%) !important;
-      color: #fff !important;
+      background: var(--color-accent, #F08C00) !important;
+      color: #ffffff !important;
       padding: 9px 20px;
-      border-radius: 20px;
-      font-weight: 600;
+      border-radius: var(--r-full, 20px);
+      font-weight: 700;
       font-size: 0.85rem !important;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      box-shadow: 0 4px 15px rgba(168, 85, 247, 0.25);
+      border: none;
+      box-shadow: var(--s-sm, 0 1px 2px rgba(15,23,42,.08));
 
       &:hover {
+        background: var(--color-accent-dark, #C97300) !important;
         transform: translateY(-1px);
-        box-shadow: 0 6px 20px rgba(168, 85, 247, 0.4);
-        filter: brightness(1.1);
+        box-shadow: var(--s-md, 0 2px 6px rgba(15,23,42,.12));
       }
     }
   }
@@ -268,17 +265,17 @@ body:has(.ds-auth) {
     z-index: 10;
   }
 
-  /* Footer */
+  /* Footer — misma paleta clara que el header, cierra el marco del funnel de adquisición. */
   .portal-footer {
     position: relative;
     z-index: 10;
     text-align: center;
     padding: 32px 24px;
-    color: var(--portal-subtle);
+    color: var(--color-text-muted, #8C95A3);
+    font-family: var(--f-sans, 'Inter', sans-serif);
     font-size: 0.825rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.04);
-    background: rgba(5, 8, 20, 0.8);
-    backdrop-filter: blur(12px);
+    border-top: 1px solid var(--color-border, #DCD8CE);
+    background: var(--color-surface-raised, #EFEDE7);
   }
 
   /* Glassmorphism Common Class */

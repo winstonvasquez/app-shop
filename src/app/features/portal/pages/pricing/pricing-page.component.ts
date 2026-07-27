@@ -1,17 +1,15 @@
-import { Component, signal, OnInit, inject } from '@angular/core';
+import { Component, signal, computed, OnInit, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { DecimalPipe } from '@angular/common';
 import { Title, Meta } from '@angular/platform-browser';
+import { forkJoin } from 'rxjs';
+import { PortalService } from '../../services/portal.service';
+import { SaasModuleInfo, SaasPlanInfo } from '../../../../core/models/saas.model';
+import { PLAN_CONTENT, SECURITY_BASELINE, SECURITY_PARITY_NOTE, UNLIMITED_ACROSS_PLANS, COMPLIANCE_BY_PLAN, PlanContentMeta } from '../../../../shared/constants';
 
-interface PlanCard {
-    code: string;
-    name: string;
-    priceMonthly: number;
-    priceAnnual: number;
-    maxUsers: number;
-    description: string;
-    modules: string[];
-    highlighted: boolean;
+interface PlanCard extends SaasPlanInfo {
+    content: PlanContentMeta;
+    moduleNames: string[];
 }
 
 @Component({
@@ -23,28 +21,28 @@ interface PlanCard {
       <div class="pricing-header">
         <h1 class="page-title">Planes y Precios</h1>
         <p class="page-subtitle">Elige el plan ideal para tu negocio. Sin contratos de permanencia mínima, cancela cuando quieras.</p>
-        
+
         <div class="billing-toggle-container">
           <span [class.active]="!annual()" class="toggle-label">Mensual</span>
           <button class="toggle-btn" (click)="annual.set(!annual())" id="btn-billing-toggle" aria-label="Cambiar tipo de facturación">
             <span class="toggle-thumb" [class.right]="annual()"></span>
           </button>
           <span [class.active]="annual()" class="toggle-label">
-            Anual <span class="discount-badge animate-pulse-glow">Ahorra 17%</span>
+            Anual <span class="discount-badge animate-pulse-glow">Ahorra hasta 17%</span>
           </span>
         </div>
       </div>
 
       <div class="plans-grid">
-        @for (plan of plans; track plan.code) {
-          <div class="plan-card glass-card" [class.highlighted]="plan.highlighted" [id]="'plan-card-' + plan.code">
-            @if (plan.highlighted) {
+        @for (plan of planCards(); track plan.code) {
+          <div class="plan-card glass-card" [class.highlighted]="plan.content.recommended" [id]="'plan-card-' + plan.code">
+            @if (plan.content.recommended) {
               <div class="popular-badge">El más recomendado</div>
             }
-            
+
             <div class="plan-info-header">
               <h2 class="plan-name">{{ plan.name }}</h2>
-              <p class="plan-desc">{{ plan.description }}</p>
+              <p class="plan-desc">{{ plan.content.audience }}</p>
             </div>
 
             <div class="plan-price-container">
@@ -66,10 +64,10 @@ interface PlanCard {
                   <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
                   <circle cx="9" cy="7" r="4"/>
                 </svg>
-                <span>Hasta <strong>{{ plan.maxUsers === 999 ? 'ilimitados' : plan.maxUsers }}</strong> usuarios</span>
+                <span>Hasta <strong>{{ plan.maxUsers >= 999 ? 'ilimitados' : plan.maxUsers }}</strong> usuarios</span>
               </div>
               <ul class="plan-modules-list">
-                @for (mod of plan.modules; track mod) {
+                @for (mod of plan.moduleNames; track mod) {
                   <li>
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--neon-teal)" stroke-width="3" class="check-icon">
                       <polyline points="20 6 9 17 4 12"/>
@@ -80,11 +78,59 @@ interface PlanCard {
               </ul>
             </div>
 
-            <a [routerLink]="['/portal/register']" [queryParams]="{plan: plan.code}" class="plan-cta" [class.cta-highlight]="plan.highlighted" [id]="'btn-pricing-cta-' + plan.code">
+            <div class="plan-support">
+              <div class="plan-support-row">
+                <strong>{{ plan.content.support.channel }}</strong>
+                <span>{{ plan.content.support.hours }}</span>
+              </div>
+              <div class="plan-support-sla">{{ plan.content.support.slaResponse }}</div>
+              @if (plan.content.support.extra) {
+                <div class="plan-support-extra">{{ plan.content.support.extra }}</div>
+              }
+            </div>
+
+            <a [routerLink]="['/portal/register']" [queryParams]="{plan: plan.code}" class="plan-cta" [class.cta-highlight]="plan.content.recommended" [id]="'btn-pricing-cta-' + plan.code">
               Comenzar prueba gratis
             </a>
           </div>
         }
+      </div>
+
+      <div class="unlimited-note">
+        @for (item of unlimitedAcrossPlans; track item) {
+          <span class="unlimited-item">{{ item }}</span>
+        }
+      </div>
+
+      <div class="security-panel glass-card">
+        <h2 class="security-title">Seguridad incluida en todos los planes</h2>
+        <ul class="security-list">
+          @for (item of securityBaseline; track item) {
+            <li>
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--neon-teal)" stroke-width="3" class="check-icon">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+              <span>{{ item }}</span>
+            </li>
+          }
+        </ul>
+        <div class="security-extra">
+          <strong>Nota:</strong> {{ securityParityNote }}
+        </div>
+      </div>
+
+      <div class="compliance-panel glass-card">
+        <h2 class="security-title">Cumplimiento SUNAT por plan</h2>
+        <ul class="security-list">
+          @for (item of complianceByPlan; track item) {
+            <li>
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--neon-purple)" stroke-width="3" class="check-icon">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+              <span>{{ item }}</span>
+            </li>
+          }
+        </ul>
       </div>
     </div>
     `,
@@ -294,7 +340,7 @@ interface PlanCard {
 
       .plan-features {
         flex: 1;
-        margin-bottom: 36px;
+        margin-bottom: 28px;
       }
 
       .plan-users {
@@ -334,6 +380,38 @@ interface PlanCard {
         }
       }
 
+      .plan-support {
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+        padding-top: 16px;
+        margin-bottom: 28px;
+        font-size: 0.8rem;
+        color: var(--portal-muted);
+      }
+
+      .plan-support-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        color: #ffffff;
+        margin-bottom: 4px;
+
+        strong {
+          font-weight: 700;
+          font-size: 0.85rem;
+        }
+      }
+
+      .plan-support-sla {
+        font-size: 0.775rem;
+      }
+
+      .plan-support-extra {
+        margin-top: 8px;
+        color: var(--neon-teal);
+        font-size: 0.775rem;
+        font-weight: 500;
+      }
+
       .plan-cta {
         display: block;
         text-align: center;
@@ -366,9 +444,100 @@ interface PlanCard {
         }
       }
 
+      .unlimited-note {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 12px 28px;
+        margin-top: 32px;
+        text-align: center;
+      }
+
+      .unlimited-item {
+        font-size: 0.85rem;
+        color: var(--portal-muted);
+        position: relative;
+        padding-left: 18px;
+
+        &::before {
+          content: '';
+          position: absolute;
+          left: 0;
+          top: 6px;
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+          background: var(--neon-teal);
+        }
+      }
+
+      .security-panel {
+        margin-top: 56px;
+        padding: 40px 36px;
+      }
+
+      .compliance-panel {
+        margin-top: 24px;
+        padding: 40px 36px;
+      }
+
+      .security-title {
+        font-size: 1.4rem;
+        font-weight: 800;
+        color: #ffffff;
+        margin: 0 0 24px;
+        text-align: center;
+      }
+
+      .security-list {
+        list-style: none;
+        padding: 0;
+        margin: 0 0 24px;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 14px 32px;
+
+        li {
+          font-size: 0.9rem;
+          color: var(--portal-muted);
+          display: flex;
+          align-items: flex-start;
+          line-height: 1.5;
+
+          .check-icon {
+            flex-shrink: 0;
+            margin-top: 3px;
+            margin-right: 10px;
+          }
+        }
+      }
+
+      .security-extra {
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+        padding-top: 20px;
+        font-size: 0.875rem;
+        color: var(--portal-muted);
+        line-height: 1.6;
+
+        strong {
+          color: var(--neon-purple);
+          font-weight: 700;
+        }
+      }
+
       @media (max-width: 640px) {
         .plans-grid {
           grid-template-columns: 1fr;
+        }
+
+        .security-panel,
+        .compliance-panel {
+          padding: 28px 20px;
+        }
+
+        .plan-support-row {
+          flex-direction: column;
+          gap: 2px;
         }
       }
     `]
@@ -376,22 +545,39 @@ interface PlanCard {
 export class PricingPageComponent implements OnInit {
     private readonly titleService = inject(Title);
     private readonly metaService = inject(Meta);
+    private readonly portalService = inject(PortalService);
 
     annual = signal(false);
+    plans = signal<SaasPlanInfo[]>([]);
+    modules = signal<SaasModuleInfo[]>([]);
 
-    readonly plans: PlanCard[] = [
-        { code: 'STARTER', name: 'Starter', priceMonthly: 99, priceAnnual: 990, maxUsers: 5, description: 'Perfecto para pequeñas empresas que comienzan su digitalización.', modules: ['Punto de Venta (POS)', 'Ventas y Facturación', 'Reportes básicos de stock', 'Soporte vía chat estándar'], highlighted: false },
-        { code: 'PROFESSIONAL', name: 'Professional', priceMonthly: 299, priceAnnual: 2990, maxUsers: 25, description: 'Para empresas en crecimiento que necesitan gestión completa integrada.', modules: ['Punto de Venta (POS)', 'Ventas y Facturación', 'Compras y Proveedores', 'Inventario multi-almacén', 'Contabilidad automatizada PLE', 'Logística y Guías de remisión', 'Tesorería y Flujo de caja', 'Soporte prioritario 24/7'], highlighted: true },
-        { code: 'ENTERPRISE', name: 'Enterprise', priceMonthly: 799, priceAnnual: 7990, maxUsers: 999, description: 'Solución corporativa completa para negocios con múltiples sucursales.', modules: ['Todos los módulos del ERP', 'Módulo completo de RRHH', 'Consolidación multi-empresa', 'API abierta de integración', 'Infraestructura dedicada cloud', 'Ejecutivo de cuentas asignado', 'Garantía de SLA 99.9%'], highlighted: false },
-    ];
+    readonly securityBaseline = SECURITY_BASELINE;
+    readonly securityParityNote = SECURITY_PARITY_NOTE;
+    readonly unlimitedAcrossPlans = UNLIMITED_ACROSS_PLANS;
+    readonly complianceByPlan = COMPLIANCE_BY_PLAN;
+
+    planCards = computed<PlanCard[]>(() => {
+        const modules = this.modules();
+        return [...this.plans()]
+            .sort((a, b) => a.priceMonthly - b.priceMonthly)
+            .map((p) => ({
+                ...p,
+                content: PLAN_CONTENT[p.code] ?? { audience: p.description, recommended: false, support: { channel: 'Soporte estándar', hours: 'Horario de oficina', slaResponse: 'Respuesta objetivo en 24h' } },
+                moduleNames: p.moduleCodes.map((code) => modules.find((m) => m.code === code)?.name ?? code),
+            }));
+    });
 
     ngOnInit(): void {
         this.titleService.setTitle('Planes y Precios - AppShop ERP');
         this.metaService.updateTag({ name: 'description', content: 'Encuentra el plan ideal para digitalizar tu negocio. Starter, Professional y Enterprise con soporte SUNAT y facturación electrónica. Sin permanencia mínima.' });
-        
+
         // OpenGraph
         this.metaService.updateTag({ property: 'og:title', content: 'Planes y Precios - AppShop ERP' });
         this.metaService.updateTag({ property: 'og:description', content: 'Planes flexibles y a tu medida para digitalizar las ventas, almacenes y contabilidad de tu pyme.' });
+
+        forkJoin({ plans: this.portalService.getPlans(), modules: this.portalService.getModules() }).subscribe(({ plans, modules }) => {
+            this.plans.set(plans);
+            this.modules.set(modules);
+        });
     }
 }
-

@@ -1,506 +1,664 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Title, Meta } from '@angular/platform-browser';
-import { Hero3dSceneComponent } from './hero-3d-scene.component';
+import { forkJoin } from 'rxjs';
+import { PortalService } from '../../services/portal.service';
+import { SaasModuleInfo, SaasPlanInfo } from '../../../../core/models/saas.model';
+import { MODULE_CONTENT, MODULE_DOMAINS, ModuleDomainKey, minPlanForModule } from '../../../../shared/constants';
 
-interface ModuleCard {
+/** Acento por DOMINIO (no por módulo): paleta Confianza extendida, 4 tonos disciplinados, no arcoíris neón. */
+const DOMAIN_ACCENT_COLORS: Record<ModuleDomainKey, string> = {
+    comercial: '#0B3D91', // Ink Blue — mismo azul de marca
+    'cadena-suministro': '#0B6FB8', // Info Blue — hermano del azul de marca
+    finanzas: '#0E8A5F', // Success Green — dinero, cumplimiento
+    personas: '#8B5E34', // Terracota cálido — el único tono "de calor humano"
+};
+
+interface ModuleCardView {
     code: string;
     name: string;
+    purpose: string;
+    capabilities: string[];
+    minPlan: SaasPlanInfo | undefined;
+}
+
+interface DomainGroupView {
+    key: ModuleDomainKey;
+    label: string;
     description: string;
-    color: string;
+    accent: string;
+    modules: ModuleCardView[];
 }
 
 @Component({
     selector: 'app-landing-page',
     standalone: true,
-    imports: [RouterLink, Hero3dSceneComponent],
+    imports: [RouterLink],
     template: `
-    <div class="landing">
-      <!-- Hero Section -->
-      <section class="hero-section">
-        <div class="hero-content">
-          <div class="hero-badge">🇵🇪 Diseñado para el Crecimiento de Empresas Peruanas</div>
-          <h1 class="hero-title">
-            El ERP todo-en-uno <br>
-            <span class="gradient-text">para tu empresa</span>
-          </h1>
-          <p class="hero-subtitle">
-            Gestiona ventas, inventario, compras, contabilidad y más de forma integrada. 
-            Cumple con SUNAT y automatiza tu facturación electrónica hoy mismo.
-          </p>
-          <div class="hero-actions">
-            <a routerLink="/portal/register" id="btn-hero-cta" class="cta-primary">
-              Empezar gratis
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-            </a>
-            <a routerLink="/portal/pricing" id="btn-hero-plans" class="cta-secondary">Ver planes</a>
-          </div>
-          
-          <div class="hero-stats">
-            <div class="stat-card glass-card">
-              <span class="stat-num text-gradient-pink">8+</span>
-              <span class="stat-label">Módulos listos</span>
-            </div>
-            <div class="stat-card glass-card">
-              <span class="stat-num text-gradient-teal">100%</span>
-              <span class="stat-label">SUNAT Activo</span>
-            </div>
-            <div class="stat-card glass-card">
-              <span class="stat-num text-gradient-blue">S/ 0</span>
-              <span class="stat-label">Costo Setup</span>
-            </div>
-          </div>
-        </div>
+    <div class="landing-canvas">
 
-        <div class="hero-visual">
-          <div class="visual-container">
-            <app-hero-3d-scene />
+      <!-- ============ HERO ============ -->
+      <section class="hero-section">
+        <div class="wrap hero-grid">
+          <div class="hero-copy">
+            <span class="kicker">🇵🇪 Hecho para el comercio peruano</span>
+            <h1 class="hero-title">
+              El ERP que entiende<br>
+              <span class="hero-title-accent">tu negocio</span>
+            </h1>
+            <p class="hero-subtitle">
+              Ventas, inventario, compras y contabilidad en un solo lugar. Emite tus comprobantes
+              electrónicos SUNAT desde el primer día, sin hojas de cálculo sueltas ni sistemas a medias.
+            </p>
+            <div class="hero-actions">
+              <a routerLink="/portal/register" id="btn-hero-cta" class="btn-primary">
+                Empezar gratis
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+              </a>
+              <a routerLink="/portal/pricing" id="btn-hero-plans" class="btn-secondary">Ver planes</a>
+            </div>
+
+            <div class="hero-ledger" role="list">
+              <span role="listitem">{{ modules().length || 8 }} módulos integrados</span>
+              <span class="dot" aria-hidden="true">·</span>
+              <span role="listitem">Comprobantes SUNAT desde el día uno</span>
+              <span class="dot" aria-hidden="true">·</span>
+              <span role="listitem">Soporte en español, hecho en Perú</span>
+            </div>
+          </div>
+
+          <div class="hero-art" aria-hidden="true">
+            <svg viewBox="0 0 360 380" class="art-svg">
+              <rect x="14" y="222" width="96" height="76" rx="10" fill="#EFEDE7" stroke="#DCD8CE" stroke-width="1.5" transform="rotate(-7 62 260)"/>
+              <rect x="248" y="46" width="86" height="68" rx="10" fill="#EFEDE7" stroke="#DCD8CE" stroke-width="1.5" transform="rotate(9 291 80)"/>
+
+              <g transform="rotate(-3 180 190)">
+                <rect x="88" y="46" width="184" height="284" rx="16" fill="#FFFFFF" stroke="#DCD8CE" stroke-width="1.5"/>
+
+                <rect x="110" y="72" width="92" height="11" rx="3" fill="#0B3D91"/>
+                <rect x="110" y="91" width="60" height="7" rx="3" fill="#8C95A3"/>
+
+                <g fill="#0E1B2C">
+                  <rect x="220" y="68" width="9" height="9"/>
+                  <rect x="233" y="68" width="9" height="9"/>
+                  <rect x="220" y="81" width="9" height="9"/>
+                  <rect x="246" y="68" width="9" height="9"/>
+                  <rect x="233" y="81" width="9" height="9"/>
+                  <rect x="246" y="94" width="9" height="9"/>
+                </g>
+
+                <line x1="110" y1="116" x2="250" y2="116" stroke="#DCD8CE" stroke-width="1.5" stroke-dasharray="3 4"/>
+
+                <rect x="110" y="134" width="122" height="7" rx="3" fill="#DCD8CE"/>
+                <rect x="110" y="152" width="98" height="7" rx="3" fill="#DCD8CE"/>
+                <rect x="110" y="170" width="112" height="7" rx="3" fill="#DCD8CE"/>
+                <rect x="110" y="188" width="86" height="7" rx="3" fill="#DCD8CE"/>
+
+                <line x1="110" y1="214" x2="250" y2="214" stroke="#0E1B2C" stroke-width="1.5"/>
+                <text x="110" y="242" font-family="'Source Serif 4', Georgia, serif" font-size="22" font-weight="700" fill="#0E1B2C">S/ 248.50</text>
+              </g>
+
+              <g transform="translate(238 268) rotate(-11)">
+                <circle r="48" fill="none" stroke="#0E8A5F" stroke-width="3"/>
+                <circle r="39" fill="none" stroke="#0E8A5F" stroke-width="1.5" stroke-dasharray="2 3"/>
+                <text x="0" y="-6" text-anchor="middle" font-family="'Inter', sans-serif" font-size="11" font-weight="800" fill="#0E8A5F" letter-spacing="1">SUNAT</text>
+                <text x="0" y="11" text-anchor="middle" font-family="'Inter', sans-serif" font-size="11" font-weight="800" fill="#0E8A5F" letter-spacing="1">VÁLIDO</text>
+                <path d="M -11 24 L -3 32 L 13 13" stroke="#0E8A5F" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+              </g>
+            </svg>
           </div>
         </div>
       </section>
 
-      <!-- Modules Section -->
+      <!-- ============ MÓDULOS POR DOMINIO ============ -->
       <section class="modules-section">
-        <h2 class="section-title">Todo lo que necesita tu empresa</h2>
-        <p class="section-subtitle">8 módulos especializados, 100% integrados y automatizados</p>
-        
-        <div class="modules-grid">
-          @for (mod of modules; track mod.code) {
-            <div class="module-card glass-card" [style]="'--accent:' + mod.color" [id]="'module-' + mod.code">
-              <div class="module-icon-container">
-                @switch (mod.code) {
-                  @case ('POS') {
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon-svg">
-                      <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
-                      <line x1="8" y1="21" x2="16" y2="21"/>
-                      <line x1="12" y1="17" x2="12" y2="21"/>
-                      <path d="M12 7h.01"/>
-                      <path d="M9 10h6"/>
-                    </svg>
-                  }
-                  @case ('VENTAS') {
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon-svg">
-                      <line x1="18" y1="20" x2="18" y2="10"/>
-                      <line x1="12" y1="20" x2="12" y2="4"/>
-                      <line x1="6" y1="20" x2="6" y2="14"/>
-                      <path d="M3 18l6-6 4 4 8-8"/>
-                    </svg>
-                  }
-                  @case ('COMPRAS') {
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon-svg">
-                      <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
-                      <line x1="3" y1="6" x2="21" y2="6"/>
-                      <path d="M16 10a4 4 0 0 1-8 0"/>
-                    </svg>
-                  }
-                  @case ('INVENTARIO') {
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon-svg">
-                      <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l-7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
-                      <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
-                      <line x1="12" y1="22.08" x2="12" y2="12"/>
-                    </svg>
-                  }
-                  @case ('CONTABILIDAD') {
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon-svg">
-                      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
-                      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
-                      <line x1="8" y1="6" x2="16" y2="6"/>
-                      <line x1="8" y1="10" x2="16" y2="10"/>
-                    </svg>
-                  }
-                  @case ('LOGISTICA') {
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon-svg">
-                      <rect x="1" y="3" width="15" height="13"/>
-                      <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/>
-                      <circle cx="5.5" cy="18.5" r="2.5"/>
-                      <circle cx="18.5" cy="18.5" r="2.5"/>
-                    </svg>
-                  }
-                  @case ('TESORERIA') {
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon-svg">
-                      <line x1="3" y1="21" x2="21" y2="21"/>
-                      <line x1="3" y1="10" x2="21" y2="10"/>
-                      <polygon points="12 2 2 7 22 7"/>
-                      <line x1="5" y1="10" x2="5" y2="21"/>
-                      <line x1="19" y1="10" x2="19" y2="21"/>
-                    </svg>
-                  }
-                  @case ('RRHH') {
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon-svg">
-                      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                      <circle cx="9" cy="7" r="4"/>
-                      <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                      <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                    </svg>
-                  }
+        <div class="wrap">
+          <div class="section-head">
+            <span class="section-kicker">Todo tu negocio, un solo sistema</span>
+            <h2 class="section-title">Organizado como realmente trabaja tu empresa</h2>
+            <p class="section-subtitle">
+              {{ modules().length }} módulos agrupados en {{ domainGroups().length }} frentes de tu operación diaria.
+            </p>
+          </div>
+
+          @for (group of domainGroups(); track group.key; let gi = $index) {
+            <div class="domain-block" [style]="'--accent:' + group.accent">
+              <div class="domain-heading">
+                <span class="domain-index">{{ gi + 1 < 10 ? '0' + (gi + 1) : gi + 1 }}</span>
+                <div class="domain-heading-text">
+                  <h3>{{ group.label }}</h3>
+                  <p>{{ group.description }}</p>
+                </div>
+              </div>
+
+              <div class="module-row">
+                @for (mod of group.modules; track mod.code) {
+                  <article class="module-card" [id]="'module-' + mod.code">
+                    <div class="module-card-top">
+                      <div class="module-icon">
+                        @switch (mod.code) {
+                          @case ('POS') {
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/><path d="M12 7h.01"/><path d="M9 10h6"/></svg>
+                          }
+                          @case ('VENTAS') {
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><path d="M3 18l6-6 4 4 8-8"/></svg>
+                          }
+                          @case ('COMPRAS') {
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+                          }
+                          @case ('INVENTARIO') {
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l-7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+                          }
+                          @case ('CONTABILIDAD') {
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="16" y2="10"/></svg>
+                          }
+                          @case ('LOGISTICA') {
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+                          }
+                          @case ('TESORERIA') {
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="21" x2="21" y2="21"/><line x1="3" y1="10" x2="21" y2="10"/><polygon points="12 2 2 7 22 7"/><line x1="5" y1="10" x2="5" y2="21"/><line x1="19" y1="10" x2="19" y2="21"/></svg>
+                          }
+                          @case ('RRHH') {
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                          }
+                        }
+                      </div>
+                      <h4>{{ mod.name }}</h4>
+                    </div>
+
+                    <p class="module-purpose">{{ mod.purpose }}</p>
+
+                    <div class="module-perf" aria-hidden="true"></div>
+
+                    <ul class="module-caps">
+                      @for (capability of mod.capabilities; track capability) {
+                        <li>{{ capability }}</li>
+                      }
+                    </ul>
+
+                    @if (mod.minPlan) {
+                      <a routerLink="/portal/pricing" class="module-plan">Desde plan {{ mod.minPlan.name }}</a>
+                    }
+                  </article>
                 }
               </div>
-              <h3>{{ mod.name }}</h3>
-              <p>{{ mod.description }}</p>
             </div>
           }
         </div>
       </section>
 
-      <!-- CTA Banner Section -->
-      <section class="cta-banner-section glass-card">
-        <div class="cta-glow"></div>
-        <h2>¿Listo para digitalizar tu negocio hoy?</h2>
-        <p>Comienza tu prueba gratuita de 30 días sin compromisos. No se requiere tarjeta de crédito.</p>
-        <a routerLink="/portal/register" id="btn-banner-cta" class="cta-primary animate-pulse-glow">
-          Registrar Empresa Gratis
-        </a>
+      <!-- ============ CTA FINAL ============ -->
+      <section class="cta-band">
+        <div class="wrap cta-inner">
+          <span class="sello">30 días gratis</span>
+          <h2>¿Listo para ordenar tu negocio?</h2>
+          <p>Registra tu RUC y empieza hoy mismo. Sin tarjeta, sin instalación, sin vueltas.</p>
+          <a routerLink="/portal/register" id="btn-banner-cta" class="btn-primary btn-on-band">Registrar mi empresa</a>
+        </div>
       </section>
+
     </div>
     `,
     styles: [`
-      .landing {
-        max-width: 1200px;
-        margin: 0 auto;
-        padding: 40px 24px;
+      .landing-canvas {
+        background: var(--color-background, #F7F6F3);
+        color: var(--color-text-primary, #0E1B2C);
+        font-family: var(--f-sans, 'Inter', sans-serif);
         position: relative;
         z-index: 10;
       }
 
-      /* Hero Section */
+      .wrap {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 0 24px;
+      }
+
+      /* ---------- Hero ---------- */
+      /* section/article traen margin-bottom global (_layout.scss "harmonic structural spacing") — se anula aquí para controlar el espaciado exacto de esta página. */
+      .hero-section,
+      .modules-section,
+      .cta-band {
+        margin-bottom: 0;
+      }
+
       .hero-section {
+        padding: 72px 0 88px;
+      }
+
+      .hero-grid {
         display: grid;
-        grid-template-columns: 1.2fr 0.8fr;
-        gap: 40px;
-        padding: 80px 0 100px;
+        grid-template-columns: 1.15fr 0.85fr;
+        gap: 56px;
         align-items: center;
       }
 
-      .hero-content {
-        text-align: left;
-      }
-
-      .hero-badge {
-        display: inline-block;
-        background: rgba(168, 85, 247, 0.12);
-        color: #d8b4fe;
-        border: 1px solid rgba(168, 85, 247, 0.3);
-        border-radius: 30px;
-        padding: 6px 16px;
-        font-size: 0.825rem;
+      .kicker {
+        display: inline-flex;
+        align-items: center;
+        font-size: 0.8rem;
         font-weight: 600;
-        margin-bottom: 24px;
-        letter-spacing: 0.25px;
-        box-shadow: 0 0 15px rgba(168, 85, 247, 0.1);
+        letter-spacing: 0.2px;
+        color: var(--color-primary, #0B3D91);
+        background: #ffffff;
+        border: 1px solid var(--color-border, #DCD8CE);
+        border-radius: var(--r-full, 999px);
+        padding: 6px 16px;
+        margin-bottom: 28px;
       }
 
       .hero-title {
-        font-size: clamp(2.25rem, 6vw, 3.75rem);
-        font-weight: 900;
-        line-height: 1.1;
-        color: #ffffff;
+        font-family: var(--f-display, 'Source Serif 4', serif);
+        font-size: clamp(2.4rem, 4.6vw, 3.75rem);
+        font-weight: 700;
+        line-height: 1.08;
+        letter-spacing: -0.5px;
         margin: 0 0 24px;
-        letter-spacing: -1.5px;
       }
 
-      .gradient-text {
-        background: linear-gradient(135deg, #a855f7 0%, #3b82f6 50%, #06b6d4 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        font-weight: 900;
+      .hero-title-accent {
+        color: var(--color-accent, #F08C00);
       }
 
       .hero-subtitle {
-        font-size: 1.15rem;
-        color: var(--portal-muted);
-        max-width: 580px;
-        margin: 0 0 40px;
-        line-height: 1.6;
+        font-size: 1.1rem;
+        line-height: 1.65;
+        color: var(--color-text-secondary, #5A6473);
+        max-width: 520px;
+        margin: 0 0 36px;
       }
 
       .hero-actions {
         display: flex;
         gap: 16px;
-        align-items: center;
         flex-wrap: wrap;
-        margin-bottom: 56px;
+        margin-bottom: 40px;
       }
 
-      .cta-primary {
-        background: linear-gradient(135deg, var(--neon-purple) 0%, var(--neon-blue) 100%);
-        color: #ffffff;
-        padding: 14px 28px;
-        border-radius: 30px;
-        text-decoration: none;
-        font-weight: 700;
-        font-size: 0.95rem;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        box-shadow: 0 4px 15px rgba(168, 85, 247, 0.25);
+      .btn-primary {
         display: inline-flex;
         align-items: center;
         gap: 8px;
-        transition: all 0.25s ease;
+        background: var(--color-accent, #F08C00);
+        color: #ffffff;
+        padding: 14px 28px;
+        border-radius: var(--r-md, 10px);
+        text-decoration: none;
+        font-weight: 700;
+        font-size: 0.95rem;
+        box-shadow: var(--s-sm, 0 1px 2px rgba(15,23,42,.08));
+        transition: transform 0.2s var(--ease-out, ease), box-shadow 0.2s ease, background 0.2s ease;
 
-        svg {
-          transition: transform 0.2s ease;
-        }
+        svg { transition: transform 0.2s ease; }
 
         &:hover {
+          background: var(--color-accent-dark, #C97300);
           transform: translateY(-2px);
-          box-shadow: 0 8px 25px rgba(168, 85, 247, 0.45);
-          filter: brightness(1.1);
+          box-shadow: var(--s-md, 0 4px 12px rgba(15,23,42,.12));
 
-          svg {
-            transform: translateX(4px);
-          }
+          svg { transform: translateX(3px); }
         }
       }
 
-      .cta-secondary {
-        background: rgba(255, 255, 255, 0.04);
-        color: #ffffff;
-        padding: 14px 28px;
-        border-radius: 30px;
+      .btn-secondary {
+        display: inline-flex;
+        align-items: center;
+        color: var(--color-primary, #0B3D91);
+        background: transparent;
+        border: 1.5px solid var(--color-border, #DCD8CE);
+        padding: 13px 26px;
+        border-radius: var(--r-md, 10px);
         text-decoration: none;
         font-weight: 600;
         font-size: 0.95rem;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        transition: all 0.25s ease;
+        transition: all 0.2s ease;
 
         &:hover {
-          background: rgba(255, 255, 255, 0.08);
-          border-color: rgba(255, 255, 255, 0.15);
-          transform: translateY(-1px);
+          border-color: var(--color-primary, #0B3D91);
+          background: var(--color-surface-raised, #EFEDE7);
         }
       }
 
-      .hero-stats {
+      .hero-ledger {
         display: flex;
-        gap: 20px;
         flex-wrap: wrap;
+        align-items: center;
+        gap: 10px;
+        padding-top: 24px;
+        border-top: 1px dashed var(--color-border, #DCD8CE);
+        font-size: 0.85rem;
+        color: var(--color-text-muted, #8C95A3);
+        max-width: 560px;
+
+        .dot { color: var(--color-border, #DCD8CE); }
       }
 
-      .stat-card {
-        padding: 16px 24px;
-        display: flex;
-        flex-direction: column;
-        min-width: 140px;
-        align-items: flex-start;
-      }
-
-      .stat-num {
-        font-size: 2rem;
-        font-weight: 900;
-        line-height: 1.1;
-      }
-
-      .text-gradient-pink {
-        background: linear-gradient(135deg, #f43f5e, #a855f7);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-      }
-
-      .text-gradient-teal {
-        background: linear-gradient(135deg, #06b6d4, #3b82f6);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-      }
-
-      .text-gradient-blue {
-        background: linear-gradient(135deg, #3b82f6, #6366f1);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-      }
-
-      .stat-label {
-        font-size: 0.775rem;
-        color: var(--portal-muted);
-        margin-top: 4px;
-        font-weight: 500;
-      }
-
-      /* Hero Visual — 3D scene */
-      .hero-visual {
+      .hero-art {
         display: flex;
         justify-content: center;
-        align-items: center;
       }
 
-      .visual-container {
+      .art-svg {
         width: 100%;
-        max-width: 320px;
-        aspect-ratio: 1 / 1;
+        max-width: 360px;
+        height: auto;
+        filter: drop-shadow(0 18px 30px rgba(14, 27, 44, 0.12));
       }
 
-      /* Modules Section */
+      /* ---------- Módulos ---------- */
       .modules-section {
-        padding: 80px 0;
+        padding: 40px 0 96px;
+      }
+
+      .section-head {
+        max-width: 640px;
+        margin: 0 0 56px;
+      }
+
+      .section-kicker {
+        display: block;
+        font-size: 0.8rem;
+        font-weight: 700;
+        letter-spacing: 0.6px;
+        text-transform: uppercase;
+        color: var(--color-accent-dark, #C97300);
+        margin-bottom: 12px;
       }
 
       .section-title {
-        font-size: 2.25rem;
-        font-weight: 800;
-        color: #ffffff;
-        text-align: center;
+        font-family: var(--f-display, 'Source Serif 4', serif);
+        font-size: clamp(1.9rem, 3vw, 2.5rem);
+        font-weight: 700;
         margin: 0 0 12px;
-        letter-spacing: -0.75px;
+        letter-spacing: -0.4px;
       }
 
       .section-subtitle {
-        text-align: center;
-        color: var(--portal-muted);
-        margin-bottom: 56px;
-        font-size: 1.05rem;
+        color: var(--color-text-secondary, #5A6473);
+        font-size: 1rem;
+        margin: 0;
       }
 
-      .modules-grid {
+      .domain-block {
+        margin-bottom: 64px;
+
+        &:last-child { margin-bottom: 0; }
+      }
+
+      .domain-heading {
+        display: flex;
+        align-items: baseline;
+        gap: 18px;
+        margin-bottom: 28px;
+        padding-bottom: 16px;
+        border-bottom: 2px solid var(--accent);
+      }
+
+      .domain-index {
+        font-family: var(--f-display, 'Source Serif 4', serif);
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--accent);
+        line-height: 1;
+        flex-shrink: 0;
+      }
+
+      .domain-heading-text {
+        h3 {
+          font-size: 1.3rem;
+          font-weight: 700;
+          margin: 0 0 4px;
+          color: var(--color-text-primary, #0E1B2C);
+        }
+
+        p {
+          margin: 0;
+          color: var(--color-text-secondary, #5A6473);
+          font-size: 0.925rem;
+        }
+      }
+
+      .module-row {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
         gap: 24px;
       }
 
       .module-card {
-        padding: 32px 24px;
-        border-top: 3px solid var(--accent);
-        cursor: pointer;
+        margin-bottom: 0;
+        position: relative;
+        background: var(--color-surface, #FFFFFF);
+        border: 1px solid var(--color-border, #DCD8CE);
+        border-radius: var(--r-lg, 14px);
+        padding: 26px 24px 22px;
+        display: flex;
+        flex-direction: column;
+        transition: transform 0.2s var(--ease-out, ease), box-shadow 0.2s ease, border-color 0.2s ease;
+
+        &::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 24px;
+          right: 24px;
+          height: 3px;
+          background: var(--accent);
+          border-radius: 0 0 3px 3px;
+        }
 
         &:hover {
-          transform: translateY(-5px);
-          box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4), 0 0 15px color-mix(in srgb, var(--accent) 20%, transparent);
+          transform: translateY(-4px);
           border-color: var(--accent);
+          box-shadow: var(--s-lg, 0 8px 24px rgba(15,23,42,.08));
+        }
+      }
 
-          .icon-svg {
-            transform: scale(1.1) rotate(5deg);
-            filter: drop-shadow(0 0 12px var(--accent));
+      .module-card-top {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 14px;
+      }
+
+      .module-icon {
+        width: 38px;
+        height: 38px;
+        flex-shrink: 0;
+        border-radius: var(--r-md, 10px);
+        background: color-mix(in srgb, var(--accent) 12%, white);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        svg {
+          width: 20px;
+          height: 20px;
+          color: var(--accent);
+        }
+      }
+
+      .module-card-top h4 {
+        margin: 0;
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: var(--color-text-primary, #0E1B2C);
+      }
+
+      .module-purpose {
+        font-size: 0.875rem;
+        color: var(--color-text-secondary, #5A6473);
+        line-height: 1.5;
+        margin: 0;
+      }
+
+      .module-perf {
+        height: 16px;
+        margin: 14px -24px 12px;
+        background-image: radial-gradient(circle at 8px 8px, var(--color-background, #F7F6F3) 5px, transparent 5.5px);
+        background-size: 16px 16px;
+        background-position: -8px center;
+        background-repeat: repeat-x;
+        border-top: 1px dashed var(--color-border, #DCD8CE);
+      }
+
+      .module-caps {
+        list-style: none;
+        margin: 0 0 18px;
+        padding: 0;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+
+        li {
+          position: relative;
+          padding-left: 16px;
+          font-size: 0.825rem;
+          color: var(--color-text-secondary, #5A6473);
+          line-height: 1.45;
+
+          &::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 7px;
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: var(--accent);
           }
         }
       }
 
-      .module-icon-container {
-        margin-bottom: 20px;
+      .module-plan {
+        align-self: flex-start;
+        font-size: 0.775rem;
+        font-weight: 700;
+        color: var(--accent);
+        text-decoration: none;
+        border-bottom: 1.5px solid color-mix(in srgb, var(--accent) 40%, transparent);
+        padding-bottom: 1px;
+
+        &:hover { border-color: var(--accent); }
       }
 
-      .icon-svg {
-        width: 42px;
-        height: 42px;
-        stroke: var(--accent);
-        fill: color-mix(in srgb, var(--accent) 12%, transparent);
-        filter: drop-shadow(0 0 6px color-mix(in srgb, var(--accent) 30%, transparent));
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      /* ---------- CTA final: momento "drenched" en Ink Blue ---------- */
+      .cta-band {
+        background: var(--color-primary, #0B3D91);
+        padding: 72px 0;
       }
 
-      .module-card h3 {
-        font-size: 1.15rem;
+      .cta-inner {
+        max-width: 620px;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .sello {
+        display: inline-flex;
+        align-items: center;
+        border: 2px solid var(--color-accent, #F08C00);
+        border-radius: var(--r-full, 999px);
+        padding: 7px 18px;
+        transform: rotate(-4deg);
+        font-size: 0.75rem;
+        font-weight: 800;
+        letter-spacing: 0.6px;
+        text-transform: uppercase;
+        color: #ffffff;
+        margin-bottom: 24px;
+      }
+
+      .cta-band h2 {
+        font-family: var(--f-display, 'Source Serif 4', serif);
+        font-size: clamp(1.8rem, 3.4vw, 2.5rem);
         font-weight: 700;
         color: #ffffff;
-        margin: 0 0 12px;
+        margin: 0 0 14px;
       }
 
-      .module-card p {
-        font-size: 0.875rem;
-        color: var(--portal-muted);
-        margin: 0;
-        line-height: 1.6;
+      .cta-band p {
+        color: rgba(255, 255, 255, 0.78);
+        font-size: 1.05rem;
+        margin: 0 0 32px;
       }
 
-      /* CTA Banner Section */
-      .cta-banner-section {
-        padding: 60px 40px;
-        text-align: center;
-        position: relative;
-        overflow: hidden;
-        margin: 40px 0 80px;
-
-        .cta-glow {
-          position: absolute;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          width: 300px;
-          height: 150px;
-          background: radial-gradient(circle, rgba(168, 85, 247, 0.15) 0%, transparent 70%);
-          pointer-events: none;
-        }
-
-        h2 {
-          font-size: 2.25rem;
-          font-weight: 800;
-          color: #ffffff;
-          margin: 0 0 16px;
-          position: relative;
-          z-index: 5;
-        }
-
-        p {
-          color: var(--portal-muted);
-          margin-bottom: 32px;
-          max-width: 600px;
-          margin-left: auto;
-          margin-right: auto;
-          position: relative;
-          z-index: 5;
-        }
-
-        .cta-primary {
-          position: relative;
-          z-index: 5;
-        }
+      .btn-on-band {
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
       }
 
-      /* Responsiveness */
-      @media (max-width: 768px) {
-        .hero-section {
+      /* ---------- Responsive ---------- */
+      @media (max-width: 860px) {
+        .hero-grid {
           grid-template-columns: 1fr;
-          padding: 40px 0 60px;
-          text-align: center;
         }
 
-        .hero-content {
-          text-align: center;
-        }
-
-        .hero-subtitle {
-          margin-left: auto;
-          margin-right: auto;
-        }
-
-        .hero-actions {
-          justify-content: center;
-        }
-
-        .hero-stats {
-          justify-content: center;
-        }
-
-        .hero-visual {
+        .hero-art {
           order: -1;
-          margin-bottom: 20px;
+          margin-bottom: 8px;
         }
 
-        .visual-container {
-          max-width: 220px;
+        .art-svg {
+          max-width: 260px;
         }
+      }
+
+      @media (max-width: 560px) {
+        .hero-section { padding: 48px 0 64px; }
+        .domain-heading { align-items: flex-start; }
       }
     `]
 })
 export class LandingPageComponent implements OnInit {
     private readonly titleService = inject(Title);
     private readonly metaService = inject(Meta);
+    private readonly portalService = inject(PortalService);
 
-    readonly modules: ModuleCard[] = [
-        { code: 'POS', name: 'Punto de Venta', description: 'POS táctil rápido con múltiples medios de pago, boletas y facturas electrónicas.', color: '#f43f5e' },
-        { code: 'VENTAS', name: 'Ventas', description: 'Pedidos, cotizaciones, comprobantes electrónicos SUNAT. Integración con e-commerce.', color: '#fb8c00' },
-        { code: 'COMPRAS', name: 'Compras', description: 'Gestión de proveedores, órdenes de compra y recepción de mercadería con validación SUNAT.', color: '#10b981' },
-        { code: 'INVENTARIO', name: 'Inventario', description: 'Control de almacenes, kardex valorizado, stock mínimo/máximo y múltiples almacenes.', color: '#3b82f6' },
-        { code: 'CONTABILIDAD', name: 'Contabilidad', description: 'Plan contable general empresarial, libro diario, mayor y generación de libros electrónicos PLE.', color: '#a855f7' },
-        { code: 'LOGISTICA', name: 'Logística', description: 'Guías de remisión electrónicas, tracking de despacho, y gestión de transportistas.', color: '#06b6d4' },
-        { code: 'TESORERIA', name: 'Tesorería', description: 'Control de cajas y cuentas bancarias, flujo de caja real, conciliaciones y egresos.', color: '#f59e0b' },
-        { code: 'RRHH', name: 'RRHH', description: 'Gestión de planillas, cálculo automático de beneficios de ley CTS, gratificación y contratos.', color: '#ec4899' },
-    ];
+    readonly plans = signal<SaasPlanInfo[]>([]);
+    readonly modules = signal<SaasModuleInfo[]>([]);
+
+    readonly domainGroups = computed<DomainGroupView[]>(() => {
+        const modules = this.modules();
+        const plans = this.plans();
+
+        return MODULE_DOMAINS
+            .map((domain) => ({
+                key: domain.key,
+                label: domain.label,
+                description: domain.description,
+                accent: DOMAIN_ACCENT_COLORS[domain.key],
+                modules: modules
+                    .filter((mod) => MODULE_CONTENT[mod.code]?.domain === domain.key)
+                    .map((mod) => ({
+                        code: mod.code,
+                        name: mod.name,
+                        purpose: MODULE_CONTENT[mod.code].purpose,
+                        capabilities: MODULE_CONTENT[mod.code].capabilities,
+                        minPlan: minPlanForModule(mod.code, plans),
+                    })),
+            }))
+            .filter((group) => group.modules.length > 0);
+    });
 
     ngOnInit(): void {
         this.titleService.setTitle('AppShop ERP - El ERP Todo-en-Uno para Empresas Peruanas');
         this.metaService.updateTag({ name: 'description', content: 'Gestiona ventas, inventario, compras, contabilidad y facturación electrónica SUNAT con AppShop ERP. Diseñado especialmente para pymes y empresas en Perú. Empieza gratis.' });
-        
+
         // OpenGraph tags for SEO
         this.metaService.updateTag({ property: 'og:title', content: 'AppShop ERP - El ERP Todo-en-Uno para Empresas Peruanas' });
         this.metaService.updateTag({ property: 'og:description', content: 'Gestiona ventas, inventario, compras, contabilidad y facturación electrónica SUNAT de forma unificada.' });
         this.metaService.updateTag({ property: 'og:type', content: 'website' });
+
+        forkJoin({
+            plans: this.portalService.getPlans(),
+            modules: this.portalService.getModules(),
+        }).subscribe({
+            next: ({ plans, modules }) => {
+                this.plans.set(plans);
+                this.modules.set(modules);
+            },
+        });
     }
 }
-
