@@ -72,6 +72,41 @@ const FAQ_ITEMS: { question: string; answer: string }[] = [
 
       <!-- ============ HERO ============ -->
       <section class="hero-section">
+        <!-- Modern connected ERP background graphic -->
+        <div class="hero-bg-graphic" aria-hidden="true">
+          <svg viewBox="0 0 1440 500" fill="none" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <pattern id="hero-grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(255, 255, 255, 0.04)" stroke-width="1"/>
+              </pattern>
+              <linearGradient id="flow-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#0B6FB8" stop-opacity="0.4"/>
+                <stop offset="50%" stop-color="#0E8A5F" stop-opacity="0.3"/>
+                <stop offset="100%" stop-color="#F08C00" stop-opacity="0.2"/>
+              </linearGradient>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#hero-grid)"/>
+            
+            <!-- Flow network lines -->
+            <g stroke-linecap="round" opacity="0.4">
+              <!-- Flow line 1 -->
+              <path d="M-100,120 C200,80 400,280 700,160 C1000,40 1200,260 1600,180" stroke="url(#flow-grad)" stroke-width="3" fill="none"/>
+              <!-- Flow line 2 -->
+              <path d="M-100,260 C250,300 500,120 800,220 C1100,320 1300,140 1600,160" stroke="rgba(255,255,255,0.08)" stroke-dasharray="8 6" stroke-width="1.5" fill="none" class="flow-path-2"/>
+            </g>
+
+            <!-- Decorative glow nodes -->
+            <g class="glow-nodes">
+              <circle cx="200" cy="100" r="4" fill="#ffffff" opacity="0.6"/>
+              <circle cx="400" cy="280" r="5" fill="#F08C00" class="pulse-node-1"/>
+              <circle cx="700" cy="160" r="4" fill="#ffffff" opacity="0.6"/>
+              <circle cx="800" cy="220" r="6" fill="#0E8A5F" class="pulse-node-2"/>
+              <circle cx="1000" cy="40" r="4" fill="#ffffff" opacity="0.6"/>
+              <circle cx="1200" cy="260" r="5" fill="#0B6FB8" class="pulse-node-3"/>
+            </g>
+          </svg>
+        </div>
+
         <div class="wrap hero-grid">
           <div class="hero-copy">
             <span class="kicker">🇵🇪 Hecho para el comercio peruano</span>
@@ -145,25 +180,55 @@ const FAQ_ITEMS: { question: string; answer: string }[] = [
 
       <!-- ============ PROBLEMA ============ -->
       <section class="problem-section">
+        <!-- Subtle background graphic for problem section -->
+        <div class="problem-graphic" aria-hidden="true">
+          <svg viewBox="0 0 320 280" class="problem-svg" xmlns="http://www.w3.org/2000/svg">
+            <!-- Floating disconnected spreadsheet cells & papers -->
+            <g transform="rotate(-8 180 140)">
+              <rect x="170" y="70" width="70" height="40" rx="4" fill="#FFFFFF" stroke="#B45309" stroke-width="1.5" opacity="0.95"/>
+              <line x1="180" y1="85" x2="230" y2="85" stroke="#B45309" stroke-width="1.5"/>
+              <line x1="180" y1="95" x2="210" y2="95" stroke="#B45309" stroke-width="1.5"/>
+              <circle cx="225" cy="95" r="3" fill="#B45309"/>
+            </g>
+            <g transform="rotate(12 210 180)">
+              <rect x="200" y="150" width="60" height="35" rx="4" fill="#FFFFFF" stroke="#DCD8CE" stroke-width="1.2" opacity="0.9"/>
+              <line x1="210" y1="162" x2="250" y2="162" stroke="#5A6473" stroke-width="1"/>
+              <line x1="210" y1="172" x2="235" y2="172" stroke="#5A6473" stroke-width="1"/>
+            </g>
+            <g transform="rotate(-15 60 160)">
+              <rect x="30" y="110" width="50" height="65" rx="5" fill="#FFFFFF" stroke="#B45309" stroke-width="1.5" opacity="0.95"/>
+              <rect x="40" y="122" width="30" height="8" rx="1" fill="rgba(180, 83, 9, 0.1)"/>
+              <circle cx="45" cy="142" r="2.5" fill="#B45309"/>
+              <circle cx="55" cy="142" r="2.5" fill="#B45309"/>
+              <circle cx="65" cy="142" r="2.5" fill="#B45309"/>
+              <circle cx="45" cy="155" r="2.5" fill="#B45309"/>
+              <circle cx="55" cy="155" r="2.5" fill="#B45309"/>
+              <circle cx="65" cy="155" r="2.5" fill="#B45309"/>
+            </g>
+          </svg>
+        </div>
+
         <div class="wrap problem-grid">
-          <div class="problem-head">
-            <span class="section-kicker">El caos que ya conoces</span>
-            <h2 class="section-title">Tu negocio ya no cabe en una hoja de cálculo</h2>
-            <p class="section-subtitle">Así se ve manejar una empresa sin un sistema conectado:</p>
+          <div class="problem-content">
+            <div class="problem-head">
+              <span class="section-kicker">El caos que ya conoces</span>
+              <h2 class="section-title">Tu negocio ya no cabe en una hoja de cálculo</h2>
+              <p class="section-subtitle">Así se ve manejar una empresa sin un sistema conectado:</p>
+            </div>
+
+            <ul class="problem-list">
+              @for (point of problemPoints; track point) {
+                <li class="problem-item">
+                  <span class="problem-mark" aria-hidden="true">✕</span>
+                  <span>{{ point }}</span>
+                </li>
+              }
+            </ul>
+
+            <p class="problem-bridge">
+              AppShop conecta las {{ modules().length || 8 }} áreas de tu negocio en un solo sistema, con comprobantes SUNAT desde el primer día.
+            </p>
           </div>
-
-          <ul class="problem-list">
-            @for (point of problemPoints; track point) {
-              <li class="problem-item">
-                <span class="problem-mark" aria-hidden="true">✕</span>
-                <span>{{ point }}</span>
-              </li>
-            }
-          </ul>
-
-          <p class="problem-bridge">
-            AppShop conecta las {{ modules().length || 8 }} áreas de tu negocio en un solo sistema, con comprobantes SUNAT desde el primer día.
-          </p>
         </div>
       </section>
 
@@ -236,6 +301,166 @@ const FAQ_ITEMS: { question: string; answer: string }[] = [
                     @if (mod.minPlan) {
                       <a routerLink="/portal/pricing" class="module-plan">Desde plan {{ mod.minPlan.name }}</a>
                     }
+
+                    <!-- Vibrant Multi-Tone Abstract SVG Background Graphic -->
+                    <div class="card-bg-graphic" aria-hidden="true">
+                      @switch (mod.code) {
+                        @case ('POS') {
+                          <svg viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <defs>
+                              <linearGradient id="pos-grad" x1="0" y1="0" x2="160" y2="160">
+                                <stop offset="0%" stop-color="#F08C00" stop-opacity="0.95"/>
+                                <stop offset="100%" stop-color="#0B3D91" stop-opacity="0.9"/>
+                              </linearGradient>
+                              <radialGradient id="pos-glow" cx="80%" cy="80%" r="70%">
+                                <stop offset="0%" stop-color="#F08C00" stop-opacity="0.3"/>
+                                <stop offset="100%" stop-color="#3B82F6" stop-opacity="0"/>
+                              </radialGradient>
+                            </defs>
+                            <circle cx="120" cy="120" r="60" fill="url(#pos-glow)"/>
+                            <path d="M 20,140 Q 60,80 100,110 T 150,50" stroke="url(#pos-grad)" stroke-width="3" stroke-linecap="round"/>
+                            <path d="M 40,150 Q 80,100 120,125 T 160,80" stroke="#3B82F6" stroke-width="1.8" stroke-dasharray="4 4" stroke-linecap="round" opacity="0.6"/>
+                            <circle cx="150" cy="50" r="6" fill="#F08C00"/>
+                            <circle cx="100" cy="110" r="4" fill="#3B82F6"/>
+                          </svg>
+                        }
+                        @case ('VENTAS') {
+                          <svg viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <defs>
+                              <linearGradient id="ventas-grad" x1="0" y1="0" x2="160" y2="160">
+                                <stop offset="0%" stop-color="#F08C00" stop-opacity="0.95"/>
+                                <stop offset="100%" stop-color="#0B3D91" stop-opacity="0.9"/>
+                              </linearGradient>
+                              <radialGradient id="ventas-glow" cx="80%" cy="80%" r="70%">
+                                <stop offset="0%" stop-color="#F08C00" stop-opacity="0.35"/>
+                                <stop offset="100%" stop-color="#3B82F6" stop-opacity="0"/>
+                              </radialGradient>
+                            </defs>
+                            <circle cx="120" cy="120" r="65" fill="url(#ventas-glow)"/>
+                            <path d="M 15,135 Q 55,100 95,115 T 150,45" stroke="url(#ventas-grad)" stroke-width="3.5" stroke-linecap="round"/>
+                            <path d="M 30,145 Q 70,110 110,125 T 165,55" stroke="#3B82F6" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+                            <circle cx="150" cy="45" r="7" fill="#F08C00"/>
+                            <circle cx="95" cy="115" r="4" fill="#3B82F6"/>
+                          </svg>
+                        }
+                        @case ('COMPRAS') {
+                          <svg viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <defs>
+                              <linearGradient id="compras-grad" x1="0" y1="0" x2="160" y2="160">
+                                <stop offset="0%" stop-color="#00A4EF" stop-opacity="0.95"/>
+                                <stop offset="100%" stop-color="#0078D4" stop-opacity="0.85"/>
+                              </linearGradient>
+                              <radialGradient id="compras-glow" cx="80%" cy="80%" r="70%">
+                                <stop offset="0%" stop-color="#00A4EF" stop-opacity="0.3"/>
+                                <stop offset="100%" stop-color="#60A5FA" stop-opacity="0"/>
+                              </radialGradient>
+                            </defs>
+                            <circle cx="120" cy="120" r="65" fill="url(#compras-glow)"/>
+                            <path d="M 130,30 Q 90,90 80,145" stroke="url(#compras-grad)" stroke-width="3" stroke-linecap="round"/>
+                            <path d="M 150,45 Q 110,105 100,160" stroke="#60A5FA" stroke-width="1.8" stroke-dasharray="4 4" stroke-linecap="round" opacity="0.6"/>
+                            <circle cx="130" cy="30" r="5" fill="#00A4EF"/>
+                            <circle cx="80" cy="145" r="6" fill="#0078D4"/>
+                          </svg>
+                        }
+                        @case ('INVENTARIO') {
+                          <svg viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <defs>
+                              <linearGradient id="inv-grad" x1="0" y1="0" x2="160" y2="160">
+                                <stop offset="0%" stop-color="#00A4EF" stop-opacity="0.95"/>
+                                <stop offset="100%" stop-color="#0078D4" stop-opacity="0.85"/>
+                              </linearGradient>
+                              <radialGradient id="inv-glow" cx="80%" cy="80%" r="70%">
+                                <stop offset="0%" stop-color="#00A4EF" stop-opacity="0.35"/>
+                                <stop offset="100%" stop-color="#60A5FA" stop-opacity="0"/>
+                              </radialGradient>
+                            </defs>
+                            <circle cx="120" cy="120" r="65" fill="url(#inv-glow)"/>
+                            <g transform="translate(100, 75)" stroke="url(#inv-grad)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                              <polygon points="0,-24 38,-4 0,16 -38,-4" fill="rgba(0,164,239,0.12)"/>
+                              <line x1="-38" y1="-4" x2="-38" y2="24"/>
+                              <line x1="38" y1="-4" x2="38" y2="24"/>
+                              <line x1="0" y1="16" x2="0" y2="44"/>
+                              <polygon points="-38,24 0,44 38,24 0,4" fill="rgba(0,120,212,0.16)"/>
+                            </g>
+                          </svg>
+                        }
+                        @case ('LOGISTICA') {
+                          <svg viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <defs>
+                              <linearGradient id="log-grad" x1="0" y1="0" x2="160" y2="160">
+                                <stop offset="0%" stop-color="#00A4EF" stop-opacity="0.95"/>
+                                <stop offset="100%" stop-color="#0078D4" stop-opacity="0.85"/>
+                              </linearGradient>
+                            </defs>
+                            <circle cx="120" cy="120" r="60" fill="rgba(0,164,239,0.12)"/>
+                            <path d="M 20,110 H 140" stroke="url(#log-grad)" stroke-width="3" stroke-linecap="round"/>
+                            <path d="M 125,95 L 142,110 L 125,125" stroke="url(#log-grad)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                            <circle cx="50" cy="110" r="4" fill="#00A4EF"/>
+                            <circle cx="90" cy="110" r="4" fill="#60A5FA"/>
+                          </svg>
+                        }
+                        @case ('CONTABILIDAD') {
+                          <svg viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <defs>
+                              <linearGradient id="conta-grad" x1="0" y1="0" x2="160" y2="160">
+                                <stop offset="0%" stop-color="#FBBF24" stop-opacity="0.95"/>
+                                <stop offset="50%" stop-color="#10B981" stop-opacity="0.9"/>
+                                <stop offset="100%" stop-color="#0E8A5F" stop-opacity="0.95"/>
+                              </linearGradient>
+                              <radialGradient id="conta-glow" cx="80%" cy="80%" r="70%">
+                                <stop offset="0%" stop-color="#10B981" stop-opacity="0.3"/>
+                                <stop offset="100%" stop-color="#0E8A5F" stop-opacity="0"/>
+                              </radialGradient>
+                            </defs>
+                            <circle cx="120" cy="120" r="65" fill="url(#conta-glow)"/>
+                            <path d="M 20,130 Q 70,75 110,120 T 155,70" stroke="url(#conta-grad)" stroke-width="3" stroke-linecap="round"/>
+                            <path d="M 35,145 Q 85,90 125,135 T 165,85" stroke="#FBBF24" stroke-width="1.8" stroke-dasharray="4 3" opacity="0.7"/>
+                            <circle cx="110" cy="120" r="5" fill="#FBBF24"/>
+                            <circle cx="155" cy="70" r="6" fill="#10B981"/>
+                          </svg>
+                        }
+                        @case ('TESORERIA') {
+                          <svg viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <defs>
+                              <linearGradient id="teso-grad" x1="0" y1="0" x2="160" y2="160">
+                                <stop offset="0%" stop-color="#FBBF24" stop-opacity="0.95"/>
+                                <stop offset="50%" stop-color="#10B981" stop-opacity="0.9"/>
+                                <stop offset="100%" stop-color="#0E8A5F" stop-opacity="0.95"/>
+                              </linearGradient>
+                              <radialGradient id="teso-glow" cx="80%" cy="80%" r="70%">
+                                <stop offset="0%" stop-color="#10B981" stop-opacity="0.35"/>
+                                <stop offset="100%" stop-color="#FBBF24" stop-opacity="0"/>
+                              </radialGradient>
+                            </defs>
+                            <circle cx="120" cy="120" r="65" fill="url(#teso-glow)"/>
+                            <path d="M 25,135 C 65,80 95,140 145,85" stroke="url(#teso-grad)" stroke-width="3" stroke-linecap="round"/>
+                            <path d="M 30,115 C 70,60 100,120 150,65" stroke="#FBBF24" stroke-width="1.8" stroke-dasharray="3 3" opacity="0.65"/>
+                            <circle cx="145" cy="85" r="6" fill="#FBBF24"/>
+                          </svg>
+                        }
+                        @case ('RRHH') {
+                          <svg viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <defs>
+                              <linearGradient id="rrhh-grad" x1="0" y1="0" x2="160" y2="160">
+                                <stop offset="0%" stop-color="#F97316" stop-opacity="0.95"/>
+                                <stop offset="100%" stop-color="#C94A29" stop-opacity="0.9"/>
+                              </linearGradient>
+                              <radialGradient id="rrhh-glow" cx="80%" cy="80%" r="70%">
+                                <stop offset="0%" stop-color="#F97316" stop-opacity="0.3"/>
+                                <stop offset="100%" stop-color="#FBBF24" stop-opacity="0"/>
+                              </radialGradient>
+                            </defs>
+                            <circle cx="120" cy="120" r="65" fill="url(#rrhh-glow)"/>
+                            <circle cx="85" cy="115" r="28" stroke="url(#rrhh-grad)" stroke-width="2.5"/>
+                            <circle cx="125" cy="115" r="28" stroke="#FBBF24" stroke-width="2"/>
+                            <circle cx="105" cy="85" r="20" stroke="#F97316" stroke-width="1.8" stroke-dasharray="3 3"/>
+                            <circle cx="105" cy="85" r="4" fill="#F97316"/>
+                            <circle cx="85" cy="115" r="4" fill="#C94A29"/>
+                            <circle cx="125" cy="115" r="4" fill="#FBBF24"/>
+                          </svg>
+                        }
+                      }
+                    </div>
                   </article>
                 }
               </div>
@@ -267,21 +492,62 @@ const FAQ_ITEMS: { question: string; answer: string }[] = [
       <!-- ============ CONFIANZA / SEGURIDAD ============ -->
       <section class="trust-section">
         <div class="wrap trust-panel">
-          <div class="trust-head">
-            <span class="section-kicker">Por qué confiar tus datos</span>
-            <h2 class="section-title">Seguridad de nivel empresarial, en todos los planes</h2>
+          <div class="trust-content">
+            <div class="trust-head">
+              <span class="section-kicker">Por qué confiar tus datos</span>
+              <h2 class="section-title">Seguridad de nivel empresarial, en todos los planes</h2>
+            </div>
+
+            <ul class="trust-list">
+              @for (point of trustPoints; track point) {
+                <li>
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--color-success, #0E8A5F)" stroke-width="3" class="trust-check"><polyline points="20 6 9 17 4 12"/></svg>
+                  <span>{{ point }}</span>
+                </li>
+              }
+            </ul>
+
+            <a routerLink="/portal/pricing" class="trust-link">Ver todos los controles de seguridad →</a>
           </div>
+          <div class="trust-graphic">
+            <svg viewBox="0 0 280 280" class="trust-svg" xmlns="http://www.w3.org/2000/svg">
+              <!-- Outer decorative tech circles -->
+              <circle cx="140" cy="140" r="110" fill="none" stroke="rgba(14, 138, 95, 0.15)" stroke-width="1.5"/>
+              <circle cx="140" cy="140" r="90" fill="none" stroke="rgba(14, 138, 95, 0.2)" stroke-width="1" stroke-dasharray="4 4"/>
+              
+              <!-- Encrypted nodes around the central lock -->
+              <g stroke="rgba(14, 138, 95, 0.25)" stroke-width="1">
+                <line x1="140" y1="40" x2="60" y2="100"/>
+                <line x1="140" y1="40" x2="220" y2="100"/>
+                <line x1="60" y1="100" x2="60" y2="180"/>
+                <line x1="220" y1="100" x2="220" y2="180"/>
+                <line x1="60" y1="180" x2="140" y2="240"/>
+                <line x1="220" y1="180" x2="140" y2="240"/>
+                <line x1="140" y1="140" x2="140" y2="40"/>
+                <line x1="140" y1="140" x2="60" y2="100"/>
+                <line x1="140" y1="140" x2="220" y2="100"/>
+                <line x1="140" y1="140" x2="60" y2="180"/>
+                <line x1="140" y1="140" x2="220" y2="180"/>
+                <line x1="140" y1="140" x2="140" y2="240"/>
+              </g>
 
-          <ul class="trust-list">
-            @for (point of trustPoints; track point) {
-              <li>
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--color-success, #0E8A5F)" stroke-width="3" class="trust-check"><polyline points="20 6 9 17 4 12"/></svg>
-                <span>{{ point }}</span>
-              </li>
-            }
-          </ul>
+              <!-- Nodes dots -->
+              <circle cx="140" cy="40" r="5" fill="#0E8A5F"/>
+              <circle cx="60" cy="100" r="5" fill="#0E8A5F"/>
+              <circle cx="220" cy="100" r="5" fill="#0E8A5F"/>
+              <circle cx="60" cy="180" r="5" fill="#0E8A5F"/>
+              <circle cx="220" cy="180" r="5" fill="#0E8A5F"/>
+              <circle cx="140" cy="240" r="5" fill="#0E8A5F"/>
 
-          <a routerLink="/portal/pricing" class="trust-link">Ver todos los controles de seguridad →</a>
+              <!-- Central Lock/Shield Graphic -->
+              <g transform="translate(110, 105)" fill="none" stroke="#0E8A5F" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="5" y="25" width="50" height="35" rx="6" fill="#FFFFFF" stroke="#0E8A5F" stroke-width="3"/>
+                <path d="M 18,25 V 15 A 12,12 0 0 1 42,15 V 25" stroke="#0E8A5F" stroke-width="3"/>
+                <circle cx="30" cy="40" r="3.5" fill="#0E8A5F" stroke="none"/>
+                <path d="M 30,43.5 V 50" stroke="#0E8A5F" stroke-width="2.5"/>
+              </g>
+            </svg>
+          </div>
         </div>
       </section>
 
@@ -304,8 +570,10 @@ const FAQ_ITEMS: { question: string; answer: string }[] = [
         </div>
       </section>
 
-      <!-- ============ CTA FINAL ============ -->
       <section class="cta-band">
+        <div class="cta-bg-image-container" aria-hidden="true">
+          <img src="/images/cta_blue_bg.png" class="cta-bg-image" alt="">
+        </div>
         <div class="wrap cta-inner">
           <span class="sello">30 días gratis</span>
           <h2>¿Listo para ordenar tu negocio?</h2>
@@ -350,16 +618,6 @@ const FAQ_ITEMS: { question: string; answer: string }[] = [
         padding: 100px 0 118px;
         color: #ffffff;
 
-        /* Textura sutil: trama de puntos, no glassmorphism — profundidad sin blur decorativo */
-        &::before {
-          content: '';
-          position: absolute;
-          inset: 0;
-          background-image: radial-gradient(rgba(255, 255, 255, 0.07) 1.5px, transparent 1.5px);
-          background-size: 28px 28px;
-          pointer-events: none;
-        }
-
         &::after {
           content: '';
           position: absolute;
@@ -369,6 +627,54 @@ const FAQ_ITEMS: { question: string; answer: string }[] = [
           height: 140%;
           background: radial-gradient(circle, rgba(240, 140, 0, 0.16) 0%, transparent 68%);
           pointer-events: none;
+          z-index: 1;
+        }
+      }
+
+      .hero-bg-graphic {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 0;
+        opacity: 0.85;
+
+        svg {
+          width: 100%;
+          height: 100%;
+          min-width: 1440px;
+        }
+
+        .flow-path-2 {
+          animation: flowDash 45s linear infinite;
+        }
+
+        .pulse-node-1, .pulse-node-2, .pulse-node-3 {
+          animation: pulseGlow 4s ease-in-out infinite alternate;
+        }
+
+        .pulse-node-2 {
+          animation-delay: 1.3s;
+        }
+
+        .pulse-node-3 {
+          animation-delay: 2.6s;
+        }
+      }
+
+      @keyframes flowDash {
+        to {
+          stroke-dashoffset: -1000;
+        }
+      }
+
+      @keyframes pulseGlow {
+        0% {
+          opacity: 0.35;
+        }
+        100% {
+          opacity: 0.95;
         }
       }
 
@@ -585,6 +891,7 @@ const FAQ_ITEMS: { question: string; answer: string }[] = [
         display: flex;
         flex-direction: column;
         transition: transform 0.2s var(--ease-out, ease), box-shadow 0.2s ease, border-color 0.2s ease;
+        overflow: hidden;
 
         &::before {
           content: '';
@@ -595,6 +902,7 @@ const FAQ_ITEMS: { question: string; answer: string }[] = [
           height: 3px;
           background: var(--accent);
           border-radius: 0 0 3px 3px;
+          z-index: 2;
         }
 
         &:hover {
@@ -602,6 +910,31 @@ const FAQ_ITEMS: { question: string; answer: string }[] = [
           border-color: var(--accent);
           box-shadow: var(--s-lg, 0 8px 24px rgba(15,23,42,.08));
         }
+      }
+
+      .card-bg-graphic {
+        position: absolute;
+        bottom: -15px;
+        right: -15px;
+        width: 145px;
+        height: 145px;
+        pointer-events: none;
+        z-index: 0;
+        opacity: 0.85;
+
+        svg {
+          width: 100%;
+          height: 100%;
+        }
+      }
+
+      .module-card-top,
+      .module-purpose,
+      .module-perf,
+      .module-caps,
+      .module-plan {
+        position: relative;
+        z-index: 1;
       }
 
       .module-card-top {
@@ -696,18 +1029,40 @@ const FAQ_ITEMS: { question: string; answer: string }[] = [
       /* ---------- Problema ---------- */
       .problem-section {
         padding: 24px 0 88px;
+        position: relative;
+        overflow: hidden;
       }
 
       .problem-grid {
         display: grid;
-        grid-template-columns: 0.9fr 1.1fr;
+        grid-template-columns: 1.2fr 0.8fr;
         gap: 56px;
-        align-items: start;
+        align-items: center;
+        position: relative;
+        z-index: 1;
       }
 
       .problem-head {
-        position: sticky;
-        top: 96px;
+        margin-bottom: 28px;
+      }
+
+      .problem-graphic {
+        position: absolute;
+        top: 50%;
+        right: 8%;
+        transform: translateY(-50%);
+        opacity: 0.12; /* Subtle background blend */
+        z-index: 0;
+        pointer-events: none;
+        display: flex;
+        justify-content: center;
+      }
+
+      .problem-svg {
+        width: 100%;
+        max-width: 320px;
+        height: auto;
+        display: block;
       }
 
       .problem-list {
@@ -750,7 +1105,6 @@ const FAQ_ITEMS: { question: string; answer: string }[] = [
         grid-column: 1 / -1;
         margin: 8px 0 0;
         padding-top: 32px;
-        border-top: 2px solid var(--color-primary, #0B3D91);
         font-family: var(--f-display, 'Source Serif 4', serif);
         font-size: 1.3rem;
         font-weight: 700;
@@ -805,11 +1159,34 @@ const FAQ_ITEMS: { question: string; answer: string }[] = [
         border: 1px solid color-mix(in srgb, var(--color-success, #0E8A5F) 22%, var(--color-border, #DCD8CE));
         border-radius: var(--r-lg, 14px);
         padding: 44px 40px;
+        display: grid;
+        grid-template-columns: 1.15fr 0.85fr;
+        gap: 56px;
+        align-items: center;
       }
 
       .trust-head {
-        max-width: 640px;
         margin: 0 0 28px;
+      }
+
+      .trust-graphic {
+        display: flex;
+        justify-content: center;
+      }
+
+      .trust-img {
+        width: 100%;
+        max-width: 320px;
+        height: auto;
+        border-radius: var(--r-md, 10px);
+        mix-blend-mode: multiply;
+      }
+
+      .trust-svg {
+        width: 100%;
+        max-width: 240px;
+        height: auto;
+        display: block;
       }
 
       .trust-list {
@@ -880,6 +1257,25 @@ const FAQ_ITEMS: { question: string; answer: string }[] = [
       .cta-band {
         background: var(--color-primary, #0B3D91);
         padding: 72px 0;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .cta-bg-image-container {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 0;
+        opacity: 0.28;
+        mix-blend-mode: screen;
+      }
+
+      .cta-bg-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
       }
 
       .cta-inner {
@@ -888,6 +1284,8 @@ const FAQ_ITEMS: { question: string; answer: string }[] = [
         display: flex;
         flex-direction: column;
         align-items: center;
+        position: relative;
+        z-index: 1;
       }
 
       .sello {
@@ -945,6 +1343,26 @@ const FAQ_ITEMS: { question: string; answer: string }[] = [
 
         .problem-head {
           position: static;
+        }
+
+        .problem-graphic {
+          position: relative;
+          top: auto;
+          right: auto;
+          transform: none;
+          opacity: 0.12;
+          margin-top: 24px;
+        }
+
+        .trust-panel {
+          grid-template-columns: 1fr;
+          gap: 32px;
+          padding: 32px 24px;
+        }
+
+        .trust-graphic {
+          order: -1;
+          margin-bottom: 12px;
         }
       }
 
