@@ -85,7 +85,7 @@
             <label class="input-label">Plantilla de descripción</label>
             <input class="form-input" type="text" placeholder="Ej: Costo de envío [{referencia}]"
                    [ngModel]="descriptionTemplate()" (ngModelChange)="descriptionTemplate.set($event)" />
-            <p class="text-muted text-sm mt-1">Opcional. Usa <code>{referencia}</code> como placeholder del ID del evento.</p>
+            <p class="text-muted text-sm mt-1">Opcional. Usa <code>{{ '{' }}referencia{{ '}' }}</code> como placeholder del ID del evento.</p>
         </div>
     </div>
 
