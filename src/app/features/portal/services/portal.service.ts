@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { SaasModuleInfo, SaasPlanInfo, SaasRegisterPayload } from '../../../core/models/saas.model';
+import { LandingContentSections } from '../../../core/models/landing-content.model';
 
 @Injectable({ providedIn: 'root' })
 export class PortalService {
@@ -17,5 +18,9 @@ export class PortalService {
 
     register(payload: SaasRegisterPayload): Observable<unknown> {
         return this.http.post('/users/api/saas/register', payload);
+    }
+
+    getLandingContent(): Observable<Partial<LandingContentSections>> {
+        return this.http.get<Partial<LandingContentSections>>('/users/api/saas/landing-content');
     }
 }

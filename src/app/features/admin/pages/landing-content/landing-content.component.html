@@ -1,0 +1,119 @@
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Contenido de la Landing</h1>
+        <p class="page-subtitle">Edita las secciones de /portal/landing (Problema, Cómo funciona, Confianza, FAQ)</p>
+    </div>
+</div>
+
+@if (successMsg()) {
+    <div class="card mb-4" style="border-left:3px solid var(--color-success); padding:12px 16px">
+        <p style="color:var(--color-success); font-size:.875rem; margin:0">✓ {{ successMsg() }}</p>
+    </div>
+}
+@if (errorMsg()) {
+    <div class="card mb-4" style="border-left:3px solid var(--color-error); padding:12px 16px">
+        <p style="color:var(--color-error); font-size:.875rem; margin:0">{{ errorMsg() }}</p>
+    </div>
+}
+
+<!-- PROBLEM_POINTS -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h3 class="card-title">Sección "Problema" — puntos de dolor</h3>
+        <button class="btn btn-secondary" style="font-size:.75rem; padding:4px 10px" (click)="addProblemPoint()">+ Agregar punto</button>
+    </div>
+    <div class="card-body" style="display:flex; flex-direction:column; gap:.5rem">
+        @for (point of problemPoints(); track $index) {
+            <div style="display:grid; grid-template-columns:1fr auto; gap:.375rem; align-items:center">
+                <textarea class="input-field" rows="2" [ngModel]="point" (ngModelChange)="problemPoints().splice($index, 1, $event)"></textarea>
+                <button class="btn btn-icon btn-icon-delete" (click)="removeProblemPoint($index)" title="Eliminar">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                </button>
+            </div>
+        }
+        @if (problemPoints().length === 0) {
+            <p style="font-size:.8rem; color:var(--color-text-muted); font-style:italic">Sin puntos aún.</p>
+        }
+        <button class="btn btn-primary" style="align-self:flex-start; margin-top:.5rem" [disabled]="saving() === 'PROBLEM_POINTS'" (click)="saveSection('PROBLEM_POINTS')">
+            @if (saving() === 'PROBLEM_POINTS') { Guardando... } @else { Guardar sección }
+        </button>
+    </div>
+</div>
+
+<!-- HOW_IT_WORKS -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h3 class="card-title">Sección "Cómo funciona" — pasos</h3>
+        <button class="btn btn-secondary" style="font-size:.75rem; padding:4px 10px" (click)="addHowItWorksStep()">+ Agregar paso</button>
+    </div>
+    <div class="card-body" style="display:flex; flex-direction:column; gap:.75rem">
+        @for (step of howItWorksSteps(); track $index) {
+            <div style="display:grid; grid-template-columns:1fr auto; gap:.375rem; align-items:start; border-bottom:1px solid var(--color-border); padding-bottom:.5rem">
+                <div style="display:flex; flex-direction:column; gap:.375rem">
+                    <input class="input-field" type="text" placeholder="Título" [(ngModel)]="step.title">
+                    <textarea class="input-field" rows="2" placeholder="Descripción" [(ngModel)]="step.description"></textarea>
+                </div>
+                <button class="btn btn-icon btn-icon-delete" (click)="removeHowItWorksStep($index)" title="Eliminar">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                </button>
+            </div>
+        }
+        @if (howItWorksSteps().length === 0) {
+            <p style="font-size:.8rem; color:var(--color-text-muted); font-style:italic">Sin pasos aún.</p>
+        }
+        <button class="btn btn-primary" style="align-self:flex-start" [disabled]="saving() === 'HOW_IT_WORKS'" (click)="saveSection('HOW_IT_WORKS')">
+            @if (saving() === 'HOW_IT_WORKS') { Guardando... } @else { Guardar sección }
+        </button>
+    </div>
+</div>
+
+<!-- TRUST_POINTS -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h3 class="card-title">Sección "Confianza" — puntos de seguridad</h3>
+        <button class="btn btn-secondary" style="font-size:.75rem; padding:4px 10px" (click)="addTrustPoint()">+ Agregar punto</button>
+    </div>
+    <div class="card-body" style="display:flex; flex-direction:column; gap:.5rem">
+        @for (point of trustPoints(); track $index) {
+            <div style="display:grid; grid-template-columns:1fr auto; gap:.375rem; align-items:center">
+                <input class="input-field" type="text" [ngModel]="point" (ngModelChange)="trustPoints().splice($index, 1, $event)">
+                <button class="btn btn-icon btn-icon-delete" (click)="removeTrustPoint($index)" title="Eliminar">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                </button>
+            </div>
+        }
+        @if (trustPoints().length === 0) {
+            <p style="font-size:.8rem; color:var(--color-text-muted); font-style:italic">Sin puntos aún.</p>
+        }
+        <button class="btn btn-primary" style="align-self:flex-start; margin-top:.5rem" [disabled]="saving() === 'TRUST_POINTS'" (click)="saveSection('TRUST_POINTS')">
+            @if (saving() === 'TRUST_POINTS') { Guardando... } @else { Guardar sección }
+        </button>
+    </div>
+</div>
+
+<!-- FAQ -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h3 class="card-title">Sección "FAQ" — preguntas frecuentes</h3>
+        <button class="btn btn-secondary" style="font-size:.75rem; padding:4px 10px" (click)="addFaqItem()">+ Agregar pregunta</button>
+    </div>
+    <div class="card-body" style="display:flex; flex-direction:column; gap:.75rem">
+        @for (item of faqItems(); track $index) {
+            <div style="display:grid; grid-template-columns:1fr auto; gap:.375rem; align-items:start; border-bottom:1px solid var(--color-border); padding-bottom:.5rem">
+                <div style="display:flex; flex-direction:column; gap:.375rem">
+                    <input class="input-field" type="text" placeholder="Pregunta" [(ngModel)]="item.question">
+                    <textarea class="input-field" rows="2" placeholder="Respuesta" [(ngModel)]="item.answer"></textarea>
+                </div>
+                <button class="btn btn-icon btn-icon-delete" (click)="removeFaqItem($index)" title="Eliminar">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                </button>
+            </div>
+        }
+        @if (faqItems().length === 0) {
+            <p style="font-size:.8rem; color:var(--color-text-muted); font-style:italic">Sin preguntas aún.</p>
+        }
+        <button class="btn btn-primary" style="align-self:flex-start" [disabled]="saving() === 'FAQ'" (click)="saveSection('FAQ')">
+            @if (saving() === 'FAQ') { Guardando... } @else { Guardar sección }
+        </button>
+    </div>
+</div>

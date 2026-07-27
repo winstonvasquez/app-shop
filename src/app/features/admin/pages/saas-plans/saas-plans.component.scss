@@ -1,0 +1,98 @@
+.saas-plans-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--color-surface, #fff);
+    border: 1px solid var(--color-border, #e5e7eb);
+    border-radius: 12px;
+    overflow: hidden;
+
+    th, td {
+        padding: 12px 16px;
+        text-align: left;
+        border-bottom: 1px solid var(--color-border, #e5e7eb);
+        font-size: 0.875rem;
+    }
+
+    th {
+        background: var(--color-surface-raised, #f8fafc);
+        font-weight: 600;
+        color: var(--color-text-secondary, #475569);
+        text-transform: uppercase;
+        font-size: 0.7rem;
+        letter-spacing: 0.04em;
+    }
+
+    tr:last-child td {
+        border-bottom: none;
+    }
+
+    tr.is-inactive {
+        opacity: 0.55;
+    }
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 700;
+
+    &--active {
+        background: color-mix(in srgb, var(--color-success, #0E8A5F) 12%, white);
+        color: var(--color-success, #0E8A5F);
+    }
+
+    &--inactive {
+        background: var(--color-surface-raised, #f1f5f9);
+        color: var(--color-text-muted, #94a3b8);
+    }
+}
+
+.actions-cell {
+    display: flex;
+    gap: 8px;
+    white-space: nowrap;
+}
+
+.icon-btn {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    border: 1px solid var(--color-border, #e5e7eb);
+    background: var(--color-surface, #fff);
+    cursor: pointer;
+    font-size: 0.9rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+
+    &:hover {
+        border-color: var(--color-primary, #0B3D91);
+        background: var(--color-surface-raised, #f8fafc);
+    }
+}
+
+.module-checklist {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 10px 16px;
+    margin-bottom: 8px;
+}
+
+.module-check {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.875rem;
+    color: var(--color-text-primary, #0f172a);
+    cursor: pointer;
+
+    input[type="checkbox"] {
+        width: 16px;
+        height: 16px;
+        accent-color: var(--color-primary, #0B3D91);
+        cursor: pointer;
+    }
+}

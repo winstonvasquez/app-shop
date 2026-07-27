@@ -60,6 +60,18 @@ export class AuthService {
         return role === ROLES.admin || role === ROLES.employee || role === 'ROLE_ADMIN' || role === 'ROLE_USER';
     }
 
+    /**
+     * Retorna true si el usuario autenticado es SUPERADMIN (super-admin de la plataforma,
+     * cross-tenant — distinto de un ADMIN normal, que solo administra su propia empresa).
+     */
+    isSuperAdmin(): boolean {
+        const user = this.currentUser();
+        if (!user) return false;
+        const role = user.role;
+        if (!role) return false;
+        return role === ROLES.superadmin || role === 'ROLE_SUPERADMIN';
+    }
+
     login(request: LoginRequest): Observable<LoginResponse> {
         return this.http.post<LoginResponse>(
             `${environment.apiUrls.users}${API_ENDPOINTS.auth.login}`,

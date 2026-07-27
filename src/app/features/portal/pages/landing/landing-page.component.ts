@@ -1,9 +1,11 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Title, Meta } from '@angular/platform-browser';
-import { forkJoin } from 'rxjs';
+import { forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { PortalService } from '../../services/portal.service';
 import { SaasModuleInfo, SaasPlanInfo } from '../../../../core/models/saas.model';
+import { LandingContentSections } from '../../../../core/models/landing-content.model';
 import { DOMAIN_ACCENT_COLORS, MODULE_CONTENT, MODULE_DOMAINS, ModuleDomainKey, minPlanForModule } from '../../../../shared/constants';
 
 interface ModuleCardView {
@@ -209,7 +211,7 @@ const FAQ_ITEMS: { question: string; answer: string }[] = [
             </div>
 
             <ul class="problem-list">
-              @for (point of problemPoints; track point) {
+              @for (point of problemPoints(); track point) {
                 <li class="problem-item">
                   <span class="problem-mark" aria-hidden="true">✕</span>
                   <span>{{ point }}</span>
@@ -434,7 +436,7 @@ const FAQ_ITEMS: { question: string; answer: string }[] = [
           </div>
 
           <div class="how-row">
-            @for (step of howItWorksSteps; track step.title; let si = $index) {
+            @for (step of howItWorksSteps(); track step.title; let si = $index) {
               <div class="how-step">
                 <span class="how-index">{{ si + 1 < 10 ? '0' + (si + 1) : si + 1 }}</span>
                 <h3>{{ step.title }}</h3>
@@ -455,7 +457,7 @@ const FAQ_ITEMS: { question: string; answer: string }[] = [
             </div>
 
             <ul class="trust-list">
-              @for (point of trustPoints; track point) {
+              @for (point of trustPoints(); track point) {
                 <li>
                   <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--color-success, #0E8A5F)" stroke-width="3" class="trust-check"><polyline points="20 6 9 17 4 12"/></svg>
                   <span>{{ point }}</span>
@@ -516,7 +518,7 @@ const FAQ_ITEMS: { question: string; answer: string }[] = [
           </div>
 
           <div class="faq-list">
-            @for (item of faqItems; track item.question) {
+            @for (item of faqItems(); track item.question) {
               <div class="faq-item">
                 <h3>{{ item.question }}</h3>
                 <p>{{ item.answer }}</p>
@@ -1329,11 +1331,12 @@ export class LandingPageComponent implements OnInit {
 
     readonly plans = signal<SaasPlanInfo[]>([]);
     readonly modules = signal<SaasModuleInfo[]>([]);
+    readonly landingContent = signal<Partial<LandingContentSections>>({});
 
-    readonly problemPoints = PROBLEM_POINTS;
-    readonly howItWorksSteps = HOW_IT_WORKS_STEPS;
-    readonly trustPoints = TRUST_POINTS;
-    readonly faqItems = FAQ_ITEMS;
+    readonly problemPoints = computed(() => this.landingContent().PROBLEM_POINTS ?? PROBLEM_POINTS);
+    readonly howItWorksSteps = computed(() => this.landingContent().HOW_IT_WORKS ?? HOW_IT_WORKS_STEPS);
+    readonly trustPoints = computed(() => this.landingContent().TRUST_POINTS ?? TRUST_POINTS);
+    readonly faqItems = computed(() => this.landingContent().FAQ ?? FAQ_ITEMS);
 
     readonly domainGroups = computed<DomainGroupView[]>(() => {
         const modules = this.modules();
@@ -1370,10 +1373,12 @@ export class LandingPageComponent implements OnInit {
         forkJoin({
             plans: this.portalService.getPlans(),
             modules: this.portalService.getModules(),
+            landingContent: this.portalService.getLandingContent().pipe(catchError(() => of({}))),
         }).subscribe({
-            next: ({ plans, modules }) => {
+            next: ({ plans, modules, landingContent }) => {
                 this.plans.set(plans);
                 this.modules.set(modules);
+                this.landingContent.set(landingContent);
             },
         });
     }

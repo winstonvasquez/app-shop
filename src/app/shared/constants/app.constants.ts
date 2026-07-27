@@ -71,6 +71,7 @@ export const ROUTES = {
 
 export const ROLES = {
   admin: 'ADMIN',
+  superadmin: 'SUPERADMIN',
   user: 'USER',
   manager: 'MANAGER',
   employee: 'EMPLOYEE',

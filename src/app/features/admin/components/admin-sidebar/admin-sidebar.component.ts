@@ -13,6 +13,7 @@ interface NavGroup {
   title: string;
   moduleCode: string | null; // null = always visible (no module restriction)
   items: NavItem[];
+  superAdminOnly?: boolean; // true = solo visible para SUPERADMIN (config global de la plataforma SaaS)
 }
 
 const ALL_NAV_GROUPS: NavGroup[] = [
@@ -149,7 +150,16 @@ const ALL_NAV_GROUPS: NavGroup[] = [
     moduleCode: null,
     items: [
       { label: 'Empresas', route: '/admin/companies', icon: 'building' },
+      { label: 'Usuarios', route: '/admin/users', icon: 'users' },
       { label: 'Sucursales', route: '/admin/sucursales', icon: 'location' }
+    ]
+  },
+  {
+    title: 'Plataforma SaaS',
+    moduleCode: null,
+    superAdminOnly: true,
+    items: [
+      { label: 'Planes SaaS', route: '/admin/saas-plans', icon: 'credit-card' }
     ]
   },
   {
@@ -160,6 +170,7 @@ const ALL_NAV_GROUPS: NavGroup[] = [
       { label: 'Apariencia',        route: '/admin/apariencia',      icon: 'paint'      },
       { label: 'Footer',            route: '/admin/footer-manager',  icon: 'layout'     },
       { label: 'Slider / Banners',  route: '/admin/slider-manager',  icon: 'image'      },
+      { label: 'Contenido Landing', route: '/admin/landing-content', icon: 'document-text' },
       { label: 'Parámetros Sistema', route: '/admin/general-config', icon: 'database'   }
     ]
   },
@@ -244,13 +255,11 @@ export class AdminSidebarComponent implements OnInit {
 
   readonly activeNavGroups = computed(() => {
     const modules = this.authService.enabledModules();
-    // Backward compatibility: if no modules configured, show all groups
-    if (modules.length === 0) {
-      return ALL_NAV_GROUPS;
-    }
-    return ALL_NAV_GROUPS.filter(group =>
-      group.moduleCode === null || modules.includes(group.moduleCode)
-    );
+    const isSuperAdmin = this.authService.isSuperAdmin();
+    const byModule = modules.length === 0
+      ? ALL_NAV_GROUPS // Backward compatibility: if no modules configured, show all groups
+      : ALL_NAV_GROUPS.filter(group => group.moduleCode === null || modules.includes(group.moduleCode));
+    return byModule.filter(group => !group.superAdminOnly || isSuperAdmin);
   });
 
   // Keep navGroups for backward compatibility with any template references

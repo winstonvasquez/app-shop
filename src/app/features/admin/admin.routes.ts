@@ -3,6 +3,7 @@ import { AdminLayoutComponent } from '@features/admin/layout/admin-layout/admin-
 import { DashboardComponent } from '@features/admin/pages/dashboard/dashboard.component';
 import { authGuard } from '@core/auth/auth.guard';
 import { moduleGuard } from '@core/auth/module.guard';
+import { superAdminGuard } from '@core/auth/super-admin.guard';
 
 export const adminRoutes: Routes = [
     {
@@ -103,6 +104,15 @@ export const adminRoutes: Routes = [
                 loadComponent: () => import('./pages/companies/companies.component').then(m => m.CompaniesComponent)
             },
             {
+                path: 'users',
+                loadComponent: () => import('./pages/users/users.component').then(m => m.UsersComponent)
+            },
+            {
+                path: 'saas-plans',
+                canActivate: [superAdminGuard],
+                loadComponent: () => import('./pages/saas-plans/saas-plans.component').then(m => m.SaasPlansComponent)
+            },
+            {
                 path: 'companies/:id',
                 loadComponent: () => import('./pages/company-detail/company-detail.component').then(m => m.CompanyDetailComponent)
             },
@@ -133,6 +143,10 @@ export const adminRoutes: Routes = [
             {
                 path: 'slider-manager',
                 loadComponent: () => import('./pages/slider-manager/slider-manager.component').then(m => m.SliderManagerComponent)
+            },
+            {
+                path: 'landing-content',
+                loadComponent: () => import('./pages/landing-content/landing-content.component').then(m => m.LandingContentComponent)
             },
             {
                 path: 'soporte/chat',
