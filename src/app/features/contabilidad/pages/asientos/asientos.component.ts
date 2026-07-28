@@ -70,6 +70,26 @@ interface LineaForm {
                 </div>
             </div>
 
+            <!--
+                Valores que la lista muestra pero que NO se registran desde el formulario:
+                el correlativo y el estado los asigna el backend / las acciones del asiento.
+                No se ocultan: se muestran bloqueados para que el usuario pueda leerlos.
+            -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div>
+                    <label class="input-label">Código (correlativo)</label>
+                    <input type="text" class="form-input" value="Se asigna al guardar" readonly>
+                </div>
+                <div>
+                    <label class="input-label">Origen</label>
+                    <input type="text" class="form-input" value="MANUAL" readonly>
+                </div>
+                <div>
+                    <label class="input-label">Estado</label>
+                    <input type="text" class="form-input" [value]="estadoPrevisto()" readonly>
+                </div>
+            </div>
+
             <!-- Líneas de movimiento -->
             <div class="overflow-x-auto mb-4">
                 <table class="table w-full">
@@ -294,12 +314,12 @@ export class AsientosComponent implements OnInit {
 
     // ── Filtros del data-table (periodo dinámico + catálogos + cuenta afectada) ─────
     readonly filters: FilterConfig[] = [
-        signalFilter('periodo', '— Seleccionar periodo —', this.periodos,
+        signalFilter('periodo', 'Periodo', this.periodos,
             p => ({ value: p.id, label: `${p.nombre} (${p.estado})` })),
         catalogFilter(this.catalog, 'TIPO_ASIENTO_CONTABLE', 'tipo', 'Tipo ▼'),
         catalogFilter(this.catalog, 'ESTADO_ASIENTO_CONTABLE', 'estado', 'Estado ▼'),
         catalogFilter(this.catalog, 'ORIGEN_ASIENTO_CONTABLE', 'origen', 'Origen ▼'),
-        signalFilter('cuentaId', 'Todas las cuentas', this.todasCuentas,
+        signalFilter('cuentaId', 'Cuenta', this.todasCuentas,
             c => ({ value: c.id, label: `${c.codigo} — ${c.nombre}` })),
     ];
 
@@ -348,6 +368,16 @@ export class AsientosComponent implements OnInit {
     readonly formularioValido = computed(() =>
         !!this.form.fecha && !!this.form.glosa.trim() &&
         this.lineas().some(l => (Number(l.debe) || 0) > 0 || (Number(l.haber) || 0) > 0)
+    );
+
+    /**
+     * Estado que tendrá el asiento: no se elige en el formulario, lo define el
+     * botón con el que se guarda (Borrador vs. Aprobar y Contabilizar).
+     */
+    readonly estadoPrevisto = computed(() =>
+        this.cuadra()
+            ? 'BORRADOR o DEFINITIVO (según el botón de guardado)'
+            : 'BORRADOR (no cuadra para contabilizar)'
     );
 
     // ── Extorno / Anulación ────────────────────────────────────────────────

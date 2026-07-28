@@ -57,7 +57,7 @@ export class SegmentsComponent implements OnInit {
     // (CATEGORIA_CLIENTE: VIP/REGULAR/OCASIONAL/MAYORISTA) para que los códigos coincidan con
     // lo que realmente se persiste en SegmentoEntity.tipoCliente.
     readonly filters: FilterConfig[] = [
-        catalogFilter(this.catalog, 'CATEGORIA_CLIENTE', 'tipoCliente', 'Todos los tipos de cliente'),
+        catalogFilter(this.catalog, 'CATEGORIA_CLIENTE', 'tipoCliente', 'Tipo de cliente'),
         staticFilter('activo', 'Estado', ACTIVO_OPTIONS),
     ];
 

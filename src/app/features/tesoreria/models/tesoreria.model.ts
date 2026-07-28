@@ -21,6 +21,8 @@ export interface PaymentRequest {
     beneficiarioNombre: string;
     beneficiarioDocumento: string;
     concepto: string;
+    /** Cuenta bancaria de la que sale el dinero (PaymentRequestDto.bankAccountId, backend). Opcional. */
+    bankAccountId?: number;
 }
 
 export interface Page<T> {
@@ -34,11 +36,13 @@ export interface Page<T> {
 export interface CashRegister {
     id?: number;
     nombre: string;
+    moneda?: string;
     estado: 'ABIERTA' | 'CERRADA';
     saldoActual: number;
     saldoInicial?: number;
     fechaApertura?: string;
     fechaCierre?: string;
+    observaciones?: string;
 }
 
 export interface FinancialMovement {

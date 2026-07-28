@@ -33,6 +33,9 @@
                     @if (err('numeroDocumento')) {
                         <span class="input-error-message">{{ err('numeroDocumento') }}</span>
                     }
+                    @if (customer()) {
+                        <small class="form-hint">Identidad tributaria: no editable tras el primer guardado</small>
+                    }
                 </div>
             </app-admin-form-section>
 
@@ -120,6 +123,12 @@
                         <span class="input-error-message">{{ err('limiteCredito') }}</span>
                     }
                 </div>
+                <!-- Saldo de crédito: lo calcula el backend a partir de las ventas al crédito -->
+                <div class="form-group">
+                    <label class="input-label">Saldo de Crédito (S/)</label>
+                    <input type="number" class="form-input" formControlName="saldoCredito">
+                    <small class="form-hint">Calculado por el sistema — no editable</small>
+                </div>
             </app-admin-form-section>
 
             <!-- Sección: Notas -->
@@ -129,6 +138,20 @@
                     <textarea class="form-input" formControlName="notas" rows="3"
                               placeholder="Observaciones adicionales"></textarea>
                 </div>
+            </app-admin-form-section>
+
+            <!-- Sección: Estado — baja lógica reversible (permite reactivar un cliente dado de baja) -->
+            <app-admin-form-section title="Estado" [columns]="1">
+                <div class="flex items-center gap-3">
+                    <input type="checkbox" id="clienteActivo" formControlName="activo"
+                           class="w-4 h-4 accent-[var(--color-primary)]" />
+                    <label for="clienteActivo" class="input-label" style="margin:0">
+                        Cliente activo
+                    </label>
+                </div>
+                <small class="form-hint">
+                    Al desmarcarlo el cliente queda inactivo (baja lógica); vuelve a marcarlo para reactivarlo.
+                </small>
             </app-admin-form-section>
 
             <!-- Acciones -->

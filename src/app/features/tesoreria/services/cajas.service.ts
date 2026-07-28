@@ -6,9 +6,18 @@ import { AuthService } from '@core/auth/auth.service';
 import { CashRegister, Page } from '../models/tesoreria.model';
 
 export interface CajaRequest {
+    tenantId: number;
     nombre: string;
+    moneda: string;
     sucursalId?: number;
     saldoInicial?: number;
+}
+
+/** PUT /{id} — solo mientras la caja esté CERRADA (ver CashRegisterController.update). */
+export interface CajaUpdateRequest {
+    nombre?: string;
+    moneda?: string;
+    observaciones?: string;
 }
 
 /** Filtros server-side del listado de cajas. Todos opcionales. */
@@ -60,19 +69,30 @@ export class CajasService {
         return this.http.get<Page<CashRegister>>(this.apiUrl, { params });
     }
 
+    /** El backend exige `tenantId` como query param en GET /{id} (@RequiresTenantAccess). */
     getById(id: number): Observable<CashRegister> {
-        return this.http.get<CashRegister>(`${this.apiUrl}/${id}`);
+        const params = new HttpParams().set('tenantId', this.tenantId.toString());
+        return this.http.get<CashRegister>(`${this.apiUrl}/${id}`, { params });
     }
 
     create(caja: CajaRequest): Observable<CashRegister> {
         return this.http.post<CashRegister>(this.apiUrl, caja);
     }
 
-    open(id: number, saldoInicial: number): Observable<CashRegister> {
-        return this.http.post<CashRegister>(`${this.apiUrl}/${id}/open`, { saldoInicial });
+    /** Ruta real del controller: PUT /{id} con tenantId por query param. Backend rechaza si la caja está ABIERTA. */
+    update(id: number, req: CajaUpdateRequest): Observable<CashRegister> {
+        const params = new HttpParams().set('tenantId', this.tenantId.toString());
+        return this.http.put<CashRegister>(`${this.apiUrl}/${id}`, req, { params });
     }
 
-    close(id: number): Observable<CashRegister> {
-        return this.http.post<CashRegister>(`${this.apiUrl}/${id}/close`, {});
+    /** Rutas reales del controller: POST /{id}/abrir y /{id}/cerrar, ambas con tenantId por query param. */
+    open(id: number, saldoInicial: number): Observable<CashRegister> {
+        const params = new HttpParams().set('tenantId', this.tenantId.toString());
+        return this.http.post<CashRegister>(`${this.apiUrl}/${id}/abrir`, { saldoInicial }, { params });
+    }
+
+    close(id: number, saldoFinal: number): Observable<CashRegister> {
+        const params = new HttpParams().set('tenantId', this.tenantId.toString());
+        return this.http.post<CashRegister>(`${this.apiUrl}/${id}/cerrar`, { saldoFinal }, { params });
     }
 }

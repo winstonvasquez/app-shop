@@ -232,6 +232,8 @@ export class EvaluacionService {
 
     actualizarConfiguracion(id: string, data: {
         stockMinimo?: number; puntoReorden?: number; cantidadSugerida?: number; proveedorId?: string;
+        /** null = no tocar; único canal para REACTIVAR un punto de reorden dado de baja. */
+        activo?: boolean;
     }): Observable<PuntoReorden> {
         return this.http.put<PuntoReorden>(
             `${this.baseUrl}/api/puntos-reorden/${id}`, data,

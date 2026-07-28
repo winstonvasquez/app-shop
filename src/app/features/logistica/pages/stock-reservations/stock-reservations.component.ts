@@ -62,7 +62,7 @@ export class StockReservationsComponent implements OnInit {
 
     // Filtro select del toolbar. El estado sale de erp_parameters (ESTADO_RESERVA_STOCK).
     filters: FilterConfig[] = [
-        catalogFilter(this.catalog, 'ESTADO_RESERVA_STOCK', 'status', 'Todos los estados')
+        catalogFilter(this.catalog, 'ESTADO_RESERVA_STOCK', 'status', 'Estado')
     ];
 
     dateRangeFilters: DateRangeFilterConfig[] = [

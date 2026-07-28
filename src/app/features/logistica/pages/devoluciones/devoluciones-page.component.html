@@ -3,6 +3,9 @@
     title="Devoluciones"
     subtitle="Gestión de solicitudes de devolución y reembolso"
     [breadcrumbs]="breadcrumbs">
+    <div actions>
+      <app-button icon="plus" variant="primary" label="Nueva Devolución" (click)="openCreate()" />
+    </div>
   </app-page-header>
 
   @if (error()) {
@@ -31,6 +34,70 @@
     (pageChange)="onPaginationChange($event)">
   </app-data-table>
 </div>
+
+<!-- Drawer: Nueva Devolución -->
+<app-drawer
+  [isOpen]="showCreate()"
+  title="Nueva Devolución"
+  size="md"
+  side="right"
+  [hasFooter]="true"
+  (closed)="closeCreate()">
+
+  <form [formGroup]="createForm">
+    @if (createError()) {
+      <app-alert type="error" [message]="createError()!" [dismissible]="true" (dismiss)="createError.set(null)" />
+    }
+
+    <div class="form-field-wrapper" style="margin-bottom:var(--space-md)">
+      <label class="input-label">Envío *</label>
+      <app-server-search-select [dataSource]="envioSource" formControlName="shipmentId"
+        placeholder="Buscar por N° de tracking…" />
+      @if (createForm.get('shipmentId')?.invalid && createForm.get('shipmentId')?.touched) {
+        <span class="input-error-message">Seleccione el envío a devolver</span>
+      }
+      @if (loadingSelectedEnvio()) {
+        <p class="text-subtle" style="font-size:0.8rem;margin-top:4px">Cargando datos del envío…</p>
+      } @else if (createForm.get('shipmentId')?.value && !selectedEnvio()?.orderId) {
+        <p class="text-error" style="font-size:0.8rem;margin-top:4px">Este envío no tiene un pedido asociado.</p>
+      }
+    </div>
+
+    <div class="form-field-wrapper" style="margin-bottom:var(--space-md)">
+      <label class="input-label">Cliente (ID) *</label>
+      <input class="form-input" type="text" formControlName="customerId" placeholder="UUID del cliente">
+      @if (createForm.get('customerId')?.invalid && createForm.get('customerId')?.touched) {
+        <span class="input-error-message">El ID del cliente es requerido</span>
+      }
+    </div>
+
+    <div class="form-field-wrapper" style="margin-bottom:var(--space-md)">
+      <label class="input-label">Motivo de devolución *</label>
+      <app-catalog-select tabla="MOTIVO_DEVOLUCION_LOGISTICA" formControlName="reason"
+        placeholder="-- Seleccione un motivo --"></app-catalog-select>
+      @if (createForm.get('reason')?.invalid && createForm.get('reason')?.touched) {
+        <span class="input-error-message">Seleccione un motivo</span>
+      }
+    </div>
+
+    <div class="form-field-wrapper">
+      <label class="input-label">Descripción</label>
+      <textarea class="form-input" rows="3" formControlName="description"
+                placeholder="Detalle adicional de la devolución (opcional)"
+                style="resize:vertical"></textarea>
+    </div>
+  </form>
+
+  <div slot="footer">
+    <app-button icon="x" label="Cancelar" variant="secondary" (click)="closeCreate()" />
+    <app-button icon="save"
+      [label]="creating() ? 'Creando...' : 'Crear Devolución'"
+      variant="primary"
+      [loading]="creating()"
+      [disabled]="creating()"
+      (click)="submitCreate()" />
+  </div>
+</app-drawer>
 
 <!-- Drawer Detalle + Workflow -->
 <app-drawer

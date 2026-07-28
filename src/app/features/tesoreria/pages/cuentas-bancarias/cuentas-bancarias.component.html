@@ -159,11 +159,13 @@
       hint="Código interbancario 20 dígitos">
     </app-form-field>
 
+    <!-- El saldo lo calcula el backend a partir de los movimientos: se muestra bloqueado. -->
     <app-form-field
-      label="Saldo Inicial (S/)"
+      label="Saldo actual (S/)"
       [control]="getControl(editForm, 'saldoInicial')"
       type="number"
-      placeholder="0.00">
+      placeholder="0.00"
+      hint="Calculado por el backend con los movimientos de la cuenta">
     </app-form-field>
 
     <app-form-field

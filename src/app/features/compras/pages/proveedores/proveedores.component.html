@@ -61,8 +61,11 @@
             <!-- Sección: Datos generales -->
             <h3 class="text-sm font-bold text-subtle uppercase tracking-wide mb-sm mt-xs">Datos Generales</h3>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-sm mb-md">
+                <!-- RUC: identidad tributaria — se registra al crear y queda bloqueado al editar -->
                 <app-form-field label="RUC" [control]="getControl('ruc')" type="text"
-                    placeholder="20XXXXXXXXX" hint="11 dígitos" [required]="true">
+                    placeholder="20XXXXXXXXX"
+                    [hint]="editMode() ? 'No editable: identifica al proveedor ante SUNAT' : '11 dígitos'"
+                    [required]="true">
                 </app-form-field>
                 <app-form-field label="Razón Social" [control]="getControl('razonSocial')" type="text"
                     placeholder="Ej: IMPORTACIONES SAC" [required]="true">
@@ -73,6 +76,23 @@
                 <div>
                     <label class="input-label">Condición SUNAT</label>
                     <app-catalog-select tabla="CONDICION_SUNAT" formControlName="condicionSunat"></app-catalog-select>
+                </div>
+                <div>
+                    <label class="input-label">Estado SUNAT</label>
+                    <app-catalog-select tabla="ESTADO_ACTIVO_INACTIVO" formControlName="estadoSunat"></app-catalog-select>
+                </div>
+                <!-- Estado del maestro: EDITABLE — es la vía para reactivar una baja lógica -->
+                <div>
+                    <label class="input-label">Estado</label>
+                    <app-catalog-select tabla="ESTADO_PROVEEDOR" formControlName="estado"></app-catalog-select>
+                    <p class="text-muted text-xs mt-1">Cámbialo a «Activo» para reactivar un proveedor dado de baja.</p>
+                </div>
+                <!-- Nivel de desempeño: editable, pero las evaluaciones lo recalculan -->
+                <div>
+                    <label class="input-label">Nivel de Proveedor</label>
+                    <app-catalog-select tabla="NIVEL_PROVEEDOR" formControlName="nivelProveedor"
+                        placeholder="Sin clasificar"></app-catalog-select>
+                    <p class="text-muted text-xs mt-1">Se recalcula automáticamente con las evaluaciones.</p>
                 </div>
                 <div class="md:col-span-2">
                     <app-form-field label="Domicilio Fiscal" [control]="getControl('domicilioFiscal')" type="text"
@@ -113,6 +133,14 @@
                 <div>
                     <label class="input-label">Moneda Preferida</label>
                     <app-catalog-select tabla="MONEDA" formControlName="monedaPreferida"></app-catalog-select>
+                </div>
+                <!-- COM-303: marca SUNAT que obliga a retener el 3% en los pagos al proveedor -->
+                <div class="md:col-span-2 flex items-center gap-2">
+                    <input type="checkbox" formControlName="agenteRetencion" id="proveedorAgenteRetencion" />
+                    <label for="proveedorAgenteRetencion" class="input-label mb-0 cursor-pointer">
+                        Agente de retención
+                    </label>
+                    <span class="text-muted text-xs">Designado por SUNAT: sus pagos están sujetos a retención.</span>
                 </div>
             </div>
         </form>

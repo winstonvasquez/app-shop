@@ -1,16 +1,19 @@
 /**
- * Conversión Long↔UUID sintético, espejo exacto de `new UUID(0, id)` en Java
- * (patrón usado en microshoplogistica para envolver el productId/varianteId
- * Long del catálogo de ventas como UUID en las entidades de `com.microshop.logistica`).
- * Con mostSigBits=0, el string resultante siempre es
- * "00000000-0000-0000-0000-" + id en hex (12 dígitos, zero-padded).
+ * Conversión Long↔UUID sintético para el `productId`/`varianteId` del catálogo de ventas
+ * envuelto como UUID en las entidades de `com.microshop.logistica`.
+ *
+ * La implementación canónica vive en `@core/utils/synthetic-uuid.util` — la misma conversión
+ * la necesitan tesorería/compras/contabilidad y llegó a estar triplicada. Aquí se conservan
+ * los nombres de dominio (`productIdToUuid`) porque son los que leen las pantallas de
+ * inventario, pero delegan: no hay una segunda implementación que pueda divergir.
  */
+import { longToSyntheticUuid, syntheticUuidToLong } from '@core/utils/synthetic-uuid.util';
+
 export function productIdToUuid(id: number): string {
-    return `00000000-0000-0000-0000-${id.toString(16).padStart(12, '0')}`;
+    return longToSyntheticUuid(id);
 }
 
 /** Inverso de productIdToUuid — recupera el Long original desde el UUID sintético. */
 export function uuidToProductId(uuid: string): number {
-    const hex = uuid.split('-').pop() ?? '0';
-    return parseInt(hex, 16);
+    return syntheticUuidToLong(uuid);
 }

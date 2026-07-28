@@ -68,10 +68,10 @@ export class CustomerListComponent implements OnInit {
     segmentosFiltro = signal<{ id: number; nombre: string }[]>([]);
 
     readonly filters: FilterConfig[] = [
-        staticFilter('tipoCliente', 'Todos los tipos', TIPO_CLIENTE_OPTIONS.map(o => ({ value: o.value, label: o.label }))),
+        staticFilter('tipoCliente', 'Tipo', TIPO_CLIENTE_OPTIONS.map(o => ({ value: o.value, label: o.label }))),
         catalogFilter(this.catalog, 'CONDICION_PAGO', 'condicionPago', 'Cond. de pago'),
         catalogFilter(this.catalog, 'TIPO_DOCUMENTO_IDENTIDAD', 'tipoDocumento', 'Tipo de documento'),
-        signalFilter('segmentoId', 'Todos los segmentos', this.segmentosFiltro,
+        signalFilter('segmentoId', 'Segmento', this.segmentosFiltro,
             s => ({ value: s.id, label: s.nombre })),
         staticFilter('activo', 'Estado', ACTIVO_OPTIONS),
         staticFilter('conCredito', 'Con línea de crédito', [

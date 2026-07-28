@@ -236,47 +236,82 @@ interface LineaDevolucion {
         </span>
       </div>
 
-      <!-- Filtros server-side -->
-      <div class="flex flex-wrap items-center gap-2 px-4 py-3 border-b border-[var(--color-border)]">
-        <input class="input-field !h-9 !w-48" type="text" placeholder="Buscar por N° ticket..."
-            [value]="dFilterSearch()" (input)="onDevSearch($any($event.target).value)" />
+      <!--
+        Filtros server-side. Misma estructura que la toolbar del data-table del ERP
+        (.table-toolbar > .toolbar-primary + .toolbar-filters) para que la rejilla y
+        las etiquetas se vean igual que en el resto del sistema.
+      -->
+      <div class="table-toolbar">
+        <div class="toolbar-primary">
+          <div class="toolbar-search">
+            <div class="search-box">
+              <input type="text" placeholder="Buscar por N° ticket..." aria-label="Buscar por N° ticket"
+                  [value]="dFilterSearch()" (input)="onDevSearch($any($event.target).value)" />
+            </div>
+          </div>
+          <div class="toolbar-actions">
+            @if (hasDevFiltrosActivos()) {
+              <button type="button" class="table-filters-clear" (click)="onDevFiltersClear()">Limpiar</button>
+            }
+          </div>
+        </div>
 
-        <select class="input-field !h-9 !w-44" [value]="dFilterMotivo()" (change)="onDevMotivoChange($any($event.target).value)">
-          <option value="">Todos los motivos</option>
-          @for (m of motivosCatalogo(); track m.codigo) {
-            <option [value]="m.codigo">{{ m.valor }}</option>
-          }
-        </select>
+        <div class="toolbar-filters">
+          <div class="filter-field">
+            <label class="filter-label" for="dev-flt-motivo">Motivo</label>
+            <select id="dev-flt-motivo" class="input-field" [value]="dFilterMotivo()"
+                (change)="onDevMotivoChange($any($event.target).value)">
+              <option value="">Todos</option>
+              @for (m of motivosCatalogo(); track m.codigo) {
+                <option [value]="m.codigo">{{ m.valor }}</option>
+              }
+            </select>
+          </div>
 
-        <select class="input-field !h-9 !w-36" [value]="dFilterEstado()" (change)="onDevEstadoChange($any($event.target).value)">
-          <option value="">Todos los estados</option>
-          @for (e of estadosDevolucion; track e.value) {
-            <option [value]="e.value">{{ e.label }}</option>
-          }
-        </select>
+          <div class="filter-field">
+            <label class="filter-label" for="dev-flt-estado">Estado</label>
+            <select id="dev-flt-estado" class="input-field" [value]="dFilterEstado()"
+                (change)="onDevEstadoChange($any($event.target).value)">
+              <option value="">Todos</option>
+              @for (e of estadosDevolucion; track e.value) {
+                <option [value]="e.value">{{ e.label }}</option>
+              }
+            </select>
+          </div>
 
-        <select class="input-field !h-9 !w-44" [value]="dFilterCajeroId()" (change)="onDevCajeroChange($any($event.target).value)">
-          <option value="">Todos los cajeros</option>
-          @for (c of cajeros(); track c.id) {
-            <option [value]="c.id">{{ c.persona.nombreCompleto }}</option>
-          }
-        </select>
+          <div class="filter-field">
+            <label class="filter-label" for="dev-flt-cajero">Cajero</label>
+            <select id="dev-flt-cajero" class="input-field" [value]="dFilterCajeroId()"
+                (change)="onDevCajeroChange($any($event.target).value)">
+              <option value="">Todos</option>
+              @for (c of cajeros(); track c.id) {
+                <option [value]="c.id">{{ c.persona.nombreCompleto }}</option>
+              }
+            </select>
+          </div>
 
-        <label class="text-[10px] text-muted uppercase tracking-wide">Devolución</label>
-        <input class="input-field !h-9" type="date" [value]="dFilterFechaDevDesde()"
-            (change)="onDevFechaDevDesdeChange($any($event.target).value)" title="Devolución desde" />
-        <input class="input-field !h-9" type="date" [value]="dFilterFechaDevHasta()"
-            (change)="onDevFechaDevHastaChange($any($event.target).value)" title="Devolución hasta" />
+          <div class="filter-field filter-field--range">
+            <span class="filter-label">Fecha de devolución</span>
+            <div class="filter-range">
+              <input class="input-field" type="date" aria-label="Fecha de devolución — desde"
+                  [value]="dFilterFechaDevDesde()" (change)="onDevFechaDevDesdeChange($any($event.target).value)" />
+              <span class="filter-range-sep" aria-hidden="true">→</span>
+              <input class="input-field" type="date" aria-label="Fecha de devolución — hasta"
+                  [value]="dFilterFechaDevHasta()" (change)="onDevFechaDevHastaChange($any($event.target).value)" />
+            </div>
+          </div>
 
-        <label class="text-[10px] text-muted uppercase tracking-wide">Venta</label>
-        <input class="input-field !h-9" type="date" [value]="dFilterFechaVentaDesde()"
-            (change)="onDevFechaVentaDesdeChange($any($event.target).value)" title="Venta desde" />
-        <input class="input-field !h-9" type="date" [value]="dFilterFechaVentaHasta()"
-            (change)="onDevFechaVentaHastaChange($any($event.target).value)" title="Venta hasta" />
-
-        @if (hasDevFiltrosActivos()) {
-          <button type="button" class="btn-secondary !h-9 !px-3 text-xs" (click)="onDevFiltersClear()">Limpiar</button>
-        }
+          <div class="filter-field filter-field--range">
+            <span class="filter-label">Fecha de venta</span>
+            <div class="filter-range">
+              <input class="input-field" type="date" aria-label="Fecha de venta — desde"
+                  [value]="dFilterFechaVentaDesde()" (change)="onDevFechaVentaDesdeChange($any($event.target).value)" />
+              <span class="filter-range-sep" aria-hidden="true">→</span>
+              <input class="input-field" type="date" aria-label="Fecha de venta — hasta"
+                  [value]="dFilterFechaVentaHasta()" (change)="onDevFechaVentaHastaChange($any($event.target).value)" />
+            </div>
+          </div>
+        </div>
       </div>
 
       @if (devolucionesLoading()) {

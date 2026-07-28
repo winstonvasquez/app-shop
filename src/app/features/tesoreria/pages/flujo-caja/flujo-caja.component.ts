@@ -14,13 +14,28 @@ import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.compo
 import { DatePickerComponent } from '@shared/ui/forms/date-picker/date-picker.component';
 import { ButtonComponent, CatalogSelectComponent } from '@shared/components';
 import { MovimientosFinancierosService, FinancialMovementRequest } from '../../services/movimientos-financieros.service';
+import { CajasService } from '../../services/cajas.service';
+import { CuentasBancariasService } from '../../services/cuentas-bancarias.service';
 import { AuthService } from '@core/auth/auth.service';
-import { FinancialMovement } from '../../models/tesoreria.model';
+import { FinancialMovement, Page, BankAccount } from '../../models/tesoreria.model';
 import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 import { MONEDA, CURRENCY_DISPLAY } from '@shared/constants/sunat.constants';
 import { PAGINATION } from '@shared/constants/app.constants';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
+
+/**
+ * Origen del movimiento: enum de dominio (MovementOrigin) en el backend, sin
+ * @JsonCreator ni deserialización laxa — cualquier texto que no coincida EXACTO
+ * devuelve 400. Se reutiliza tanto en el filtro de la tabla como en el drawer.
+ */
+const ORIGEN_MOVIMIENTO_OPTIONS: { value: string; label: string }[] = [
+    { value: 'CAJA', label: 'Caja' },
+    { value: 'BANCO', label: 'Banco' },
+    { value: 'COBRO', label: 'Cobro' },
+    { value: 'PAGO', label: 'Pago' },
+    { value: 'TRANSFERENCIA_INTERNA', label: 'Transferencia interna' },
+];
 
 @Component({
     selector: 'app-flujo-caja',
@@ -35,6 +50,8 @@ import { environment } from '@env/environment';
 })
 export class FlujoCajaComponent implements OnInit {
     private movService  = inject(MovimientosFinancierosService);
+    private cajasService = inject(CajasService);
+    private cuentasService = inject(CuentasBancariasService);
     private readonly catalog = inject(CatalogService);
     private auth        = inject(AuthService);
     private fb          = inject(FormBuilder);
@@ -73,15 +90,19 @@ export class FlujoCajaComponent implements OnInit {
         {
             field: 'origen',
             label: 'Origen',
-            options: of([
-                { value: 'CAJA', label: 'Caja' },
-                { value: 'BANCO', label: 'Banco' },
-                { value: 'COBRO', label: 'Cobro' },
-                { value: 'PAGO', label: 'Pago' },
-                { value: 'TRANSFERENCIA_INTERNA', label: 'Transferencia interna' },
-            ])
+            options: of(ORIGEN_MOVIMIENTO_OPTIONS)
         },
     ];
+
+    /** Opciones del enum MovementOrigin para el <select> del drawer. */
+    readonly origenOptions = ORIGEN_MOVIMIENTO_OPTIONS;
+
+    /** Origen elegido en el drawer, en sync con el FormControl (ver subscribeOrigenChanges). */
+    selectedOrigen = signal<string>('');
+    /** Cajas ABIERTAs del tenant, para el <select> de "origenId" cuando origen=CAJA. */
+    cajasOptions   = signal<{ value: number; label: string }[]>([]);
+    /** Cuentas bancarias ACTIVAs del tenant, para el <select> de "origenId" cuando origen=BANCO. */
+    cuentasOptions = signal<{ value: number; label: string }[]>([]);
 
     movimientoForm: FormGroup = this.fb.group({
         tipoMovimiento: ['INGRESO', Validators.required],
@@ -90,7 +111,7 @@ export class FlujoCajaComponent implements OnInit {
         monto:          [null, [Validators.required, Validators.min(0.01)]],
         moneda:         [MONEDA.PEN],
         fecha:          ['', Validators.required],
-        cajaId:         [null],
+        origenId:       [null],
     });
 
     ingresos = computed(() =>
@@ -147,12 +168,74 @@ export class FlujoCajaComponent implements OnInit {
         this.fechaFin.set(today.toISOString().split('T')[0]);
         this.fechaInicio.set(firstDay.toISOString().split('T')[0]);
         this.loadData();
+        this.loadOrigenRefOptions();
+        this.subscribeOrigenChanges();
     }
 
-    /** Rango de fecha del movimiento en el toolbar del data-table. */
-    readonly dateRangeFilters: DateRangeFilterConfig[] = [
-        { field: 'fecha', label: 'Fecha del movimiento' }
-    ];
+    /**
+     * Cajas y cuentas bancarias para los <select> de "origenId" (ver subscribeOrigenChanges).
+     *
+     * Cajas: se listan TODAS (abiertas y cerradas), no solo ABIERTA — un movimiento retroactivo
+     * (ej. un ajuste registrado después del cierre de turno) debe poder imputarse a una caja ya
+     * cerrada. Las cerradas se marcan en la etiqueta para que el usuario sepa lo que elige.
+     */
+    private loadOrigenRefOptions(): void {
+        this.cajasService.getAll({ size: 100 })
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe({
+                next: (res) => this.cajasOptions.set(
+                    res.content.filter(c => c.id != null).map(c => ({
+                        value: c.id as number,
+                        label: c.estado === 'CERRADA' ? `${c.nombre} (cerrada)` : c.nombre
+                    }))
+                ),
+                error: () => this.cajasOptions.set([])
+            });
+
+        this.cuentasService.getAll({ estado: 'ACTIVA', size: 100 })
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe({
+                next: (res) => {
+                    const data: BankAccount[] = Array.isArray(res) ? res : (res as Page<BankAccount>).content;
+                    this.cuentasOptions.set(
+                        data.filter(c => c.id != null).map(c => ({ value: c.id as number, label: `${c.banco} - ${c.numeroCuenta}` }))
+                    );
+                },
+                error: () => this.cuentasOptions.set([])
+            });
+    }
+
+    /**
+     * Sincroniza `selectedOrigen` con el FormControl "origen" y controla
+     * "origenId": limpia su valor al cambiar de origen (una caja no es una
+     * cuenta bancaria) y lo deshabilita para COBRO/PAGO/TRANSFERENCIA_INTERNA,
+     * donde todavía no hay catálogo de origen que ofrecer. Usar `.disable()`
+     * (NO `[disabled]` en el template): sobre `formControlName` ese atributo
+     * solo emite un warning y el control sigue habilitado.
+     */
+    private subscribeOrigenChanges(): void {
+        this.movimientoForm.get('origen')!.valueChanges
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe((origen: string) => {
+                this.selectedOrigen.set(origen ?? '');
+                const origenIdCtrl = this.movimientoForm.get('origenId')!;
+                origenIdCtrl.setValue(null, { emitEvent: false });
+                if (origen === 'CAJA' || origen === 'BANCO') {
+                    origenIdCtrl.enable({ emitEvent: false });
+                } else {
+                    origenIdCtrl.disable({ emitEvent: false });
+                }
+            });
+    }
+
+    /**
+     * Rango de fecha del movimiento en el toolbar del data-table. Es computado
+     * para que el periodo por defecto (mes en curso) se vea ya cargado en los
+     * campos en vez de aparecer vacío mientras la tabla muestra ese periodo.
+     */
+    readonly dateRangeFilters = computed<DateRangeFilterConfig[]>(() => [
+        { field: 'fecha', label: 'Fecha del movimiento', from: this.fechaInicio(), to: this.fechaFin() }
+    ]);
 
     loadData(): void {
         this.cargando.set(true);
@@ -229,14 +312,9 @@ export class FlujoCajaComponent implements OnInit {
         this.loadData();
     }
 
-    consultar(): void {
-        this.currentPage.set(0);
-        this.loadData();
-    }
-
     openCreateDrawer(): void {
         const today = new Date().toISOString().split('T')[0];
-        this.movimientoForm.reset({ tipoMovimiento: 'INGRESO', moneda: MONEDA.PEN, fecha: today, monto: null, origen: '', descripcion: '', cajaId: null });
+        this.movimientoForm.reset({ tipoMovimiento: 'INGRESO', moneda: MONEDA.PEN, fecha: today, monto: null, origen: '', descripcion: '', origenId: null });
         this.errorMsg.set(null);
         this.showCreateDrawer.set(true);
     }
@@ -253,7 +331,7 @@ export class FlujoCajaComponent implements OnInit {
             moneda:         v.moneda ?? MONEDA.PEN,
             fecha:          v.fecha,
             descripcion:    v.descripcion,
-            cajaId:         v.cajaId ?? undefined,
+            origenId:       v.origenId ?? undefined,
         };
         this.movService.registerMovement(req)
             .pipe(takeUntilDestroyed(this.destroyRef))

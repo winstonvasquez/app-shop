@@ -65,11 +65,6 @@ export class AsientoRecurrenteService {
     private http = inject(HttpClient);
     private baseUrl = `${environment.apiUrls.accounting}/api/v1/contabilidad/asientos-recurrentes`;
 
-    /** Sin filtros — mantiene compatibilidad con llamadores existentes fuera del listado. */
-    listar() {
-        return this.http.get<AsientoRecurrente[]>(this.baseUrl);
-    }
-
     /**
      * Listado paginado con filtros server-side (GET /asientos-recurrentes). La vista
      * nunca filtra la página cargada — todo el filtrado ocurre en el backend.
@@ -100,8 +95,16 @@ export class AsientoRecurrenteService {
         return this.http.post<AsientoRecurrente>(this.baseUrl, request);
     }
 
+    actualizar(id: string, request: AsientoRecurrenteRequest) {
+        return this.http.put<AsientoRecurrente>(`${this.baseUrl}/${id}`, request);
+    }
+
     ejecutarAhora(id: string) {
         return this.http.post<AsientoRecurrente>(`${this.baseUrl}/${id}/execute`, {});
+    }
+
+    activar(id: string) {
+        return this.http.put<AsientoRecurrente>(`${this.baseUrl}/${id}/activar`, {});
     }
 
     desactivar(id: string) {

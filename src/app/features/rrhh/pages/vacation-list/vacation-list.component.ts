@@ -1,9 +1,11 @@
 import {
-    Component, OnInit, inject, signal, effect,
+    Component, OnInit, inject, signal,
     ChangeDetectionStrategy
 } from '@angular/core';
-import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { VacationService, VacationRequest } from '../../services/vacation.service';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { merge } from 'rxjs';
+import { FormBuilder, FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { VacationService, VacationRequest, TipoVacacion } from '../../services/vacation.service';
 import { EmployeeService } from '../../services/employee.service';
 import { DepartmentService } from '../../services/department.service';
 import { Department } from '../../models/department.model';
@@ -22,8 +24,9 @@ import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.compo
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { DateInputComponent } from '@shared/ui/forms/date-input/date-input.component';
-import { ButtonComponent, ServerSearchSelectComponent } from '@shared/components';
+import { ButtonComponent, CatalogSelectComponent, ServerSearchSelectComponent } from '@shared/components';
 import { employeeSelectSource } from '../../components/select-sources';
+import { bloquearSiempre } from '@shared/utils/form-lock';
 
 @Component({
     selector: 'app-vacation-list',
@@ -31,6 +34,7 @@ import { employeeSelectSource } from '../../components/select-sources';
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
         ReactiveFormsModule,
+        FormsModule,
         DrawerComponent,
         DataTableComponent,
         PaginationComponent,
@@ -40,6 +44,7 @@ import { employeeSelectSource } from '../../components/select-sources';
         DateInputComponent,
         ButtonComponent,
         ServerSearchSelectComponent,
+        CatalogSelectComponent,
     ],
     templateUrl: './vacation-list.component.html',
 })
@@ -57,6 +62,17 @@ export class VacationListComponent implements OnInit {
     readonly balances        = this.vacationService.balances;
     readonly balancesLoading = this.vacationService.balancesLoading;
     readonly balanceYear     = signal(new Date().getFullYear());
+    /**
+     * Rango de años que ofrece el selector de balance: los últimos 5 (histórico ya
+     * generado, útil para auditar años cerrados) más el siguiente (permite generar el
+     * balance del próximo año con antelación, igual que hace "Generar balance anual").
+     * Nada de 1900-2100: no existen balances fuera de este rango.
+     */
+    readonly balanceYearOptions: number[] = ((actual: number) => {
+        const years: number[] = [];
+        for (let y = actual + 1; y >= actual - 5; y--) years.push(y);
+        return years;
+    })(new Date().getFullYear());
     generatingBalance         = signal(false);
     // Se mantiene para resolver el nombre del empleado en la tabla (getEmployeeName).
     readonly employees = this.employeeService.activeEmployees;
@@ -89,11 +105,11 @@ export class VacationListComponent implements OnInit {
 
     // Filtros select del toolbar. Las opciones salen de erp_parameters / listas dinámicas.
     filters: FilterConfig[] = [
-        catalogFilter(this.catalog, 'ESTADO_VACACION', 'estado', 'Todos los estados'),
+        catalogFilter(this.catalog, 'ESTADO_VACACION', 'estado', 'Estado'),
         catalogFilter(this.catalog, 'TIPO_VACACION', 'tipoVacacion', 'Tipo de vacación'),
-        signalFilter('employeeId', 'Todos los empleados', this.employees,
+        signalFilter('employeeId', 'Empleado', this.employees,
             e => ({ value: e.id, label: `${e.nombres} ${e.apellidos}` })),
-        signalFilter('departmentId', 'Todos los departamentos', this.departamentosFiltro,
+        signalFilter('departmentId', 'Departamento', this.departamentosFiltro,
             d => ({ value: d.id, label: d.nombre })),
         signalFilter('aprobadoPorId', 'Aprobado por', this.employees,
             e => ({ value: e.id, label: `${e.nombres} ${e.apellidos}` })),
@@ -157,6 +173,10 @@ export class VacationListComponent implements OnInit {
             render: r => new Date(r.fechaFin + 'T00:00').toLocaleDateString('es-PE')
         },
         { key: 'dias', label: 'Días', align: 'center', render: r => `${r.dias} día${r.dias === 1 ? '' : 's'}` },
+        {
+            key: 'tipoVacacion', label: 'Tipo',
+            render: r => r.tipoVacacion ? this.catalog.label('TIPO_VACACION', r.tipoVacacion) : '—'
+        },
         { key: 'motivo', label: 'Motivo', render: r => r.motivo ?? '—' },
         {
             key: 'estado', label: 'Estado', html: true,
@@ -191,11 +211,12 @@ export class VacationListComponent implements OnInit {
 
     // ── Form: Nueva Solicitud ─────────────────────────────────────────────────
     readonly vacacionForm = this.fb.group({
-        employeeId:  [null as number | null, Validators.required],
-        fechaInicio: ['', Validators.required],
-        fechaFin:    ['', Validators.required],
-        dias:        [0, [Validators.required, Validators.min(1)]],
-        motivo:      [''],
+        employeeId:   [null as number | null, Validators.required],
+        fechaInicio:  ['', Validators.required],
+        fechaFin:     ['', Validators.required],
+        dias:         [0, [Validators.required, Validators.min(1)]],
+        tipoVacacion: ['ANUAL' as string],
+        motivo:       [''],
     });
 
     // ── Form: Rechazo ─────────────────────────────────────────────────────────
@@ -203,20 +224,59 @@ export class VacationListComponent implements OnInit {
         comentarios: ['', Validators.required],
     });
 
-    // ── Effect: calcular días automáticamente ────────────────────────────────
+    // ── Recálculo de los días solicitados ────────────────────────────────────
     constructor() {
-        effect(() => {
-            const inicio = this.vacacionForm.get('fechaInicio')?.value;
-            const fin    = this.vacacionForm.get('fechaFin')?.value;
-            if (inicio && fin) {
-                const d1 = new Date(inicio as string);
-                const d2 = new Date(fin as string);
-                const diff = Math.round((d2.getTime() - d1.getTime()) / 86400000);
-                if (diff > 0) {
-                    this.vacacionForm.get('dias')?.setValue(diff, { emitEvent: false });
-                }
-            }
-        });
+        // "dias" es un valor calculado, igual que en el Portal del Empleado
+        // (diasSolicitadosLabel): el usuario no lo teclea, solo lo consulta. Y la
+        // autoridad real es el servidor — `VacationMapper.toEntity` ignora el valor del
+        // cliente y persiste `diasEntre(fechaInicio, fechaFin)`, porque el saldo de
+        // vacaciones se descuenta con ese número. Lo que se envía aquí es informativo,
+        // pero tiene que pasar el `@NotNull @Min(1)` del DTO.
+        bloquearSiempre(this.vacacionForm, ['dias']);
+
+        // NO usar `effect()` para esto: `AbstractControl.value` NO es una señal (en
+        // Angular 21 los únicos miembros reactivos del control son status/pristine/
+        // touched/submitted), así que un effect que lo lea no declara ninguna dependencia,
+        // corre una sola vez con el formulario vacío y nunca vuelve a ejecutarse. Con el
+        // campo además deshabilitado, `dias` se quedaba en 0 y TODA solicitud moría con
+        // 400 por el `@Min(1)`.
+        merge(
+            this.vacacionForm.controls.fechaInicio.valueChanges,
+            this.vacacionForm.controls.fechaFin.valueChanges,
+        )
+            .pipe(takeUntilDestroyed())
+            .subscribe(() => this.recalcularDias());
+    }
+
+    /**
+     * Días calendario que abarca la solicitud, EXTREMOS INCLUIDOS — misma fórmula que
+     * `VacationMapper.diasEntre` en el backend (`DAYS.between(desde, hasta) + 1`). La
+     * versión anterior calculaba la diferencia sin sumar 1 y descartaba el resultado
+     * cuando era 0, así que una licencia de un solo día quedaba en 0 días.
+     */
+    private recalcularDias(): void {
+        const inicio = this.vacacionForm.controls.fechaInicio.value;
+        const fin = this.vacacionForm.controls.fechaFin.value;
+        const control = this.vacacionForm.controls.dias;
+
+        if (!inicio || !fin) {
+            control.setValue(0, { emitEvent: false });
+            return;
+        }
+
+        const desde = new Date(inicio);
+        const hasta = new Date(fin);
+        const dias = Math.round((hasta.getTime() - desde.getTime()) / 86_400_000) + 1;
+        control.setValue(dias > 0 ? dias : 0, { emitEvent: false });
+    }
+
+    /**
+     * ¿El rango de fechas da al menos un día? El validador `Validators.min(1)` del control
+     * NO sirve para esto: un control deshabilitado no se valida, así que `form.valid` sería
+     * true con `dias = 0`. Se comprueba a mano antes de enviar.
+     */
+    protected rangoDeFechasValido(): boolean {
+        return (this.vacacionForm.getRawValue().dias ?? 0) >= 1;
     }
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
@@ -239,6 +299,12 @@ export class VacationListComponent implements OnInit {
         this.vacationService.getBalancesByYear(this.balanceYear()).catch(err => {
             this.error.set((err as Error).message ?? 'Error al cargar balances de vacaciones');
         });
+    }
+
+    /** Cambia el año del balance consultado y recarga la sección. */
+    onBalanceYearChange(year: number): void {
+        this.balanceYear.set(year);
+        this.loadBalances();
     }
 
     /** Carga la página actual server-side con TODOS los filtros del toolbar. */
@@ -332,7 +398,7 @@ export class VacationListComponent implements OnInit {
     }
 
     openCreateModal(): void {
-        this.vacacionForm.reset({ dias: 0 });
+        this.vacacionForm.reset({ dias: 0, tipoVacacion: 'ANUAL' });
         this.submitError.set(null);
         this.showModal.set(true);
     }
@@ -358,16 +424,27 @@ export class VacationListComponent implements OnInit {
             this.vacacionForm.markAllAsTouched();
             return;
         }
+        // El `Validators.min(1)` de `dias` no se evalúa porque el control está deshabilitado,
+        // así que `form.valid` sería true con un rango invertido o vacío. Se comprueba aparte
+        // para no mandar un 0 que el backend rechaza con 400.
+        if (!this.rangoDeFechasValido()) {
+            this.submitError.set('La fecha de fin debe ser igual o posterior a la de inicio.');
+            this.vacacionForm.markAllAsTouched();
+            return;
+        }
         this.submitting.set(true);
         this.submitError.set(null);
         try {
-            const val = this.vacacionForm.value;
+            // getRawValue(): "dias" está deshabilitado (bloquearSiempre) y por eso NO
+            // aparece en .value — con .value viajaría `undefined` al backend.
+            const val = this.vacacionForm.getRawValue();
             await this.vacationService.createVacationRequest({
                 employeeId: val.employeeId!,
                 fechaInicio: val.fechaInicio!,
                 fechaFin:    val.fechaFin!,
                 dias:        val.dias!,
                 motivo:      val.motivo ?? undefined,
+                tipoVacacion: (val.tipoVacacion as TipoVacacion) ?? undefined,
             });
             this.closeModal();
             this.loadPage();

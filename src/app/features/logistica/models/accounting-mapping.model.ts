@@ -15,11 +15,17 @@ export interface AccountingMapping {
     fechaModificacion: string;
 }
 
+/**
+ * Payload de POST y PUT (`AccountingMappingRequest` del backend).
+ * `activo` solo lo interpreta el PUT — permite REACTIVAR un mapeo dado de baja lógica
+ * (el alta siempre nace activa). Omitirlo = "no tocar" el estado actual.
+ */
 export interface AccountingMappingRequest {
     eventType: string;
     debitAccount: string;
     creditAccount: string;
     descriptionTemplate: string;
+    activo?: boolean;
 }
 
 /**

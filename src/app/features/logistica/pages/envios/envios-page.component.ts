@@ -62,6 +62,19 @@ export class EnviosPageComponent implements OnInit {
     submitting     = signal(false);
     submitError    = signal<string | null>(null);
 
+    // Avanzar estado (transportistas sin integración de tracking API)
+    showAdvance       = signal(false);
+    advanceTarget     = signal<Envio | null>(null);
+    advancing         = signal(false);
+    advanceError      = signal<string | null>(null);
+
+    /** Progresión lineal habilitada desde la UI; OUT_FOR_DELIVERY se cierra con 'Confirmar entrega'. */
+    private readonly NEXT_STATUS: Partial<Record<EnvioStatus, EnvioStatus>> = {
+        PENDING_DISPATCH: 'DISPATCHED',
+        DISPATCHED:       'IN_TRANSIT',
+        IN_TRANSIT:       'OUT_FOR_DELIVERY'
+    };
+
     // Confirmación de entrega (POD) con GPS
     showConfirm       = signal(false);
     confirmTarget     = signal<Envio | null>(null);
@@ -97,8 +110,8 @@ export class EnviosPageComponent implements OnInit {
     // Filtros select del toolbar. Las opciones salen de erp_parameters (fuente única)
     // y de `transportistas` (lista dinámica ya cargada en loadTransportistas()).
     readonly filters: FilterConfig[] = [
-        catalogFilter(this.catalog, 'ESTADO_ENVIO', 'status', 'Todos los estados'),
-        signalFilter('carrierId', 'Todos los transportistas', this.transportistas,
+        catalogFilter(this.catalog, 'ESTADO_ENVIO', 'status', 'Estado'),
+        signalFilter('carrierId', 'Transportista', this.transportistas,
             t => ({ value: t.id, label: t.name })),
         catalogFilter(this.catalog, 'TIPO_FULFILLMENT', 'fulfillmentType', 'Tipo de fulfillment'),
     ];
@@ -160,6 +173,11 @@ export class EnviosPageComponent implements OnInit {
             onClick: (row) => this.openDetail(row)
         },
         {
+            label: 'Avanzar estado', icon: '🚚', class: 'btn-view',
+            show: (row) => row.status in this.NEXT_STATUS,
+            onClick: (row) => this.openAdvance(row)
+        },
+        {
             label: 'Confirmar entrega', icon: '📍', class: 'btn-primary',
             show: (row) => row.status === 'OUT_FOR_DELIVERY',
             onClick: (row) => this.openConfirm(row)
@@ -168,6 +186,7 @@ export class EnviosPageComponent implements OnInit {
 
     form: FormGroup;
     confirmForm: FormGroup;
+    advanceForm: FormGroup;
 
     constructor() {
         this.form = this.fb.group({
@@ -184,6 +203,10 @@ export class EnviosPageComponent implements OnInit {
             receivedBy:       ['', Validators.required],
             receiverIdNumber: [''],
             notes:            ['']
+        });
+        this.advanceForm = this.fb.group({
+            location:    ['', Validators.required],
+            description: ['', Validators.required]
         });
     }
 
@@ -351,6 +374,53 @@ export class EnviosPageComponent implements OnInit {
             error: (err: Error) => {
                 this.submitError.set(err.message ?? 'Error al crear envío.');
                 this.submitting.set(false);
+            }
+        });
+    }
+
+    // ── Avanzar estado (PENDING_DISPATCH → DISPATCHED → IN_TRANSIT → OUT_FOR_DELIVERY) ──
+    openAdvance(envio: Envio): void {
+        this.advanceTarget.set(envio);
+        this.advanceForm.reset();
+        this.advanceError.set(null);
+        this.showAdvance.set(true);
+    }
+
+    closeAdvance(): void {
+        this.showAdvance.set(false);
+        this.advanceTarget.set(null);
+    }
+
+    /** Estado destino legible para el envío actualmente en el drawer (o '' si no aplica). */
+    nextStatusLabel(): string {
+        const envio = this.advanceTarget();
+        if (!envio) return '';
+        const next = this.NEXT_STATUS[envio.status];
+        return next ? this.statusLabel(next) : '';
+    }
+
+    submitAdvance(): void {
+        const envio = this.advanceTarget();
+        if (!envio) return;
+        const next = this.NEXT_STATUS[envio.status];
+        if (!next) return;
+        if (this.advanceForm.invalid) { this.advanceForm.markAllAsTouched(); return; }
+        const v = this.advanceForm.getRawValue();
+        this.advancing.set(true);
+        this.advanceError.set(null);
+        this.envioService.updateStatus(envio.id, {
+            status: next,
+            location: v.location,
+            description: v.description
+        }).subscribe({
+            next: () => {
+                this.advancing.set(false);
+                this.closeAdvance();
+                this.loadEnvios();
+            },
+            error: (err: Error) => {
+                this.advancing.set(false);
+                this.advanceError.set(err.message ?? 'Error al actualizar el estado del envío.');
             }
         });
     }

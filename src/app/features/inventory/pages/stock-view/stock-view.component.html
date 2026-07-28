@@ -10,7 +10,7 @@
     <app-alert type="error" [message]="error()!" [dismissible]="true" (dismiss)="error.set(null)" />
   }
 
-  <!-- Tabla: filtros server-side (almacén, ubicación, estado de stock, rango de fecha) + paginación real -->
+  <!-- Tabla: filtros server-side (almacén, estado de stock, rango de fecha) + paginación real -->
   <app-data-table
     [data]="stock()"
     [columns]="columns"

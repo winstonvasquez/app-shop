@@ -5,6 +5,8 @@ import { firstValueFrom } from 'rxjs';
 import { PageResponse, pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 import { LeaveBalance } from '../models/leave-balance.model';
 
+export type TipoVacacion = 'ANUAL' | 'TRUNCAS' | 'COMPENSATORIAS' | 'SIN_GOCE';
+
 export interface VacationRequest {
     id: number;
     tenantId: number;
@@ -13,6 +15,7 @@ export interface VacationRequest {
     fechaFin: string;
     dias: number;
     estado: 'SOLICITADO' | 'APROBADO' | 'RECHAZADO' | 'TOMADO' | 'CANCELADO';
+    tipoVacacion?: TipoVacacion;
     motivo?: string;
     aprobadoPor?: number;
     fechaAprobacion?: string;
@@ -27,6 +30,7 @@ export interface VacationRequestDto {
     fechaFin: string;
     dias: number;
     motivo?: string;
+    tipoVacacion?: TipoVacacion;
 }
 
 export interface VacationApprovalDto {

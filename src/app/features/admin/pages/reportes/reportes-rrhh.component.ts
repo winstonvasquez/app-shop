@@ -64,10 +64,10 @@ export class ReportesRrhhComponent implements OnInit {
     activosPagina = signal(0);
 
     filters: FilterConfig[] = [
-        catalogFilter(this.catalog, 'ESTADO_EMPLEADO', 'estado', 'Todos los estados'),
-        signalFilter('departmentId', 'Todas las áreas', this.departments,
+        catalogFilter(this.catalog, 'ESTADO_EMPLEADO', 'estado', 'Estado'),
+        signalFilter('departmentId', 'Área', this.departments,
             d => ({ value: d.id, label: d.nombre })),
-        signalFilter('positionId', 'Todos los cargos', this.positionsFiltro,
+        signalFilter('positionId', 'Cargo', this.positionsFiltro,
             p => ({ value: p.id, label: p.nombre })),
         catalogFilter(this.catalog, 'TIPO_DOCUMENTO_IDENTIDAD', 'tipoDocumento', 'Tipo de documento'),
         catalogFilter(this.catalog, 'TIPO_CONTRATO', 'tipoContrato', 'Tipo de contrato'),

@@ -4,7 +4,17 @@
       <h1 class="page-title">Configuración de Aprobaciones</h1>
       <p class="page-subtitle">Define los niveles jerárquicos de aprobación por monto</p>
     </div>
-    <app-button label="Agregar Nivel" variant="primary" icon="plus" (click)="abrirFormulario()" />
+    <div class="flex items-center gap-2">
+      <label class="input-label mb-0" for="filtro-estado-nivel">Estado</label>
+      <select id="filtro-estado-nivel" class="form-input" style="width:auto"
+          [value]="filterActivo()"
+          (change)="onFilterActivoChange($any($event.target).value)">
+        <option value="true">Activos</option>
+        <option value="false">Inactivos</option>
+        <option value="">Todos</option>
+      </select>
+      <app-button label="Agregar Nivel" variant="primary" icon="plus" (click)="abrirFormulario()" />
+    </div>
   </div>
 
   @if (loading()) {
@@ -13,7 +23,11 @@
     <div class="card">
       @if (niveles().length === 0) {
         <div class="card-body" style="text-align:center; padding:2rem;">
-          <p class="text-muted">No hay niveles configurados. Las órdenes se auto-aprobarán.</p>
+          @if (filterActivo() === 'true') {
+            <p class="text-muted">No hay niveles configurados. Las órdenes se auto-aprobarán.</p>
+          } @else {
+            <p class="text-muted">No hay niveles con este estado.</p>
+          }
         </div>
       } @else {
         <div class="card-body" style="padding:0">
@@ -101,6 +115,14 @@
               [value]="form().orden"
               (input)="updateForm('orden', +$any($event.target).value)" />
           </div>
+          @if (editingNivelId()) {
+            <div class="flex items-center gap-2">
+              <input type="checkbox" id="nivel-activo"
+                [checked]="form().activo"
+                (change)="updateForm('activo', $any($event.target).checked)" />
+              <label for="nivel-activo" class="input-label mb-0">Activo</label>
+            </div>
+          }
         </div>
       </div>
       <div class="modal-footer">

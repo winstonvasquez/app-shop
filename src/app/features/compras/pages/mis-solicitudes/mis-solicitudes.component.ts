@@ -68,7 +68,7 @@ export class MisSolicitudesComponent implements OnInit {
     ];
 
     filters: FilterConfig[] = [
-        catalogFilter(this.catalog, 'ESTADO_SOLICITUD_COMPRA', 'estado', 'Todos los estados'),
+        catalogFilter(this.catalog, 'ESTADO_SOLICITUD_COMPRA', 'estado', 'Estado'),
         catalogFilter(this.catalog, 'PRIORIDAD_SOLICITUD', 'prioridad', 'Prioridad'),
     ];
 
@@ -118,7 +118,7 @@ export class MisSolicitudesComponent implements OnInit {
         this.loading.set(true);
         this.error.set(null);
         this.solicitudService
-            .getMisSolicitudes(String(user.userId), {
+            .getMisSolicitudes(user.userId, {
                 page: this.currentPage(),
                 size: this.pageSize(),
                 q: this.searchQuery() || undefined,

@@ -20,6 +20,7 @@ import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
 import { ButtonComponent, CatalogSelectComponent, ServerSearchSelectComponent } from '@shared/components';
 import { ROUTES } from '@shared/constants/app.constants';
+import { bloquearEnEdicion } from '@shared/utils/form-lock';
 
 @Component({
     selector: 'app-zone-management',
@@ -259,6 +260,9 @@ export class ZoneManagementComponent {
         this.editMode.set(false);
         this.selectedId.set(null);
         this.form.reset({ almacenId: this.selectedAlmacenId(), temperatura: 'AMBIENTE', capacidadMaxima: 0, ordenPicking: 0 });
+        // `codigo` identifica la zona en las ubicaciones y en las órdenes de picking ya
+        // generadas: se escribe al crear y se lee bloqueado al editar.
+        bloquearEnEdicion(this.form, ['codigo'], false);
         this.submitError.set(null);
         this.showDrawer.set(true);
     }
@@ -267,6 +271,7 @@ export class ZoneManagementComponent {
         this.editMode.set(true);
         this.selectedId.set(zone.id);
         this.form.patchValue({ ...zone });
+        bloquearEnEdicion(this.form, ['codigo'], true);
         this.submitError.set(null);
         this.showDrawer.set(true);
     }

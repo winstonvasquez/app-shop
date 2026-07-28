@@ -8,6 +8,7 @@ import {
   ChevronDown, ChevronLeft, ChevronRight, ChevronUp,
   // Acciones / formularios
   Ban, BookOpen, Check, ClipboardCheck, Clock, Copy, DoorOpen, DoorClosed, Download,
+  Upload,
   Eye, EyeOff, FilePlus, FileSearch, FileText, Filter, SlidersHorizontal,
   GitCompare, HeartOff, Heart, Key, KeyRound, Layers, Link, Lock, LockOpen, LogIn,
   Pencil, Percent, Play, Plus, Minus, Power, Printer, Receipt, RefreshCw, RotateCcw,
@@ -133,6 +134,11 @@ export const appConfig: ApplicationConfig = {
         ChevronDown, ChevronLeft, ChevronRight, ChevronUp,
         // Acciones / formularios
         Ban, BookOpen, Check, ClipboardCheck, Clock, Copy, DoorOpen, DoorClosed, Download,
+        // `Upload` faltaba y el botón "Importar XML UBL" de facturas de proveedor
+        // (icon="upload") lanzaba "The upload icon has not been provided by any available
+        // icon providers": el set de lucide es curado, así que un icono no listado no falla
+        // en compilación, sólo en runtime y por consola.
+        Upload,
         Eye, EyeOff, FilePlus, FileSearch, FileText, Filter, SlidersHorizontal,
         GitCompare, HeartOff, Heart, Key, KeyRound, Layers, Link, Lock, LockOpen, LogIn,
         Pencil, Percent, Play, Plus, Minus, Power, Printer, Receipt, RefreshCw, RotateCcw,

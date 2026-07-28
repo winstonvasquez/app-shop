@@ -1,11 +1,14 @@
 import { Component, ChangeDetectionStrategy, OnInit, signal, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators, FormGroup } from '@angular/forms';
+import { HttpErrorResponse } from '@angular/common/http';
 import { CatalogService } from '@core/services/catalog.service';
 import { EvaluacionService } from '../../services/evaluacion.service';
 import { ProveedorService, ProveedorFiltroOption } from '../../services/proveedor.service';
-import { EvaluacionProveedor } from '../../models/evaluacion.model';
+import { OrdenCompraService } from '../../services/orden-compra.service';
+import { EvaluacionProveedor, CrearEvaluacionRequest } from '../../models/evaluacion.model';
 import { ButtonComponent, ServerSearchSelectComponent } from '@shared/components';
-import { proveedorSelectSource } from '../../components/select-sources';
+import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
+import { proveedorSelectSource, ordenCompraSelectSource } from '../../components/select-sources';
 import {
     DataTableComponent, TableColumn, FilterConfig, FilterChangeEvent,
     PaginationEvent, DateRangeFilterConfig, DateRangeChangeEvent, SortEvent
@@ -19,23 +22,27 @@ import { PAGINATION } from '@shared/constants/app.constants';
 @Component({
     selector: 'app-evaluaciones',
     standalone: true,
-    imports: [ReactiveFormsModule, ButtonComponent, ServerSearchSelectComponent, DataTableComponent],
+    imports: [ReactiveFormsModule, ButtonComponent, ServerSearchSelectComponent, AlertComponent, DataTableComponent],
     templateUrl: './evaluaciones.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class EvaluacionesComponent implements OnInit {
     private service = inject(EvaluacionService);
     private proveedorService = inject(ProveedorService);
+    private ordenCompraService = inject(OrdenCompraService);
     private fb = inject(FormBuilder);
     readonly catalog = inject(CatalogService);
 
     readonly proveedorSource = proveedorSelectSource(this.proveedorService);
+    readonly ordenCompraSource = ordenCompraSelectSource(this.ordenCompraService);
 
     // Data
     evaluaciones = signal<EvaluacionProveedor[]>([]);
     loading = signal(false);
     showForm = signal(false);
     saving = signal(false);
+    /** Mensaje de error del backend al guardar (400 de validación, etc.) — se muestra inline en el drawer. */
+    submitError = signal<string | null>(null);
 
     /** Proveedores activos para el select de filtro (lista acotada, no requiere server-search). */
     proveedoresFiltro = signal<ProveedorFiltroOption[]>([]);
@@ -61,8 +68,8 @@ export class EvaluacionesComponent implements OnInit {
 
     // Filtros select del toolbar. Las opciones salen de erp_parameters (fuente única).
     filters: FilterConfig[] = [
-        catalogFilter(this.catalog, 'NIVEL_PROVEEDOR', 'nivel', 'Todos los niveles'),
-        signalFilter('proveedorId', 'Todos los proveedores', this.proveedoresFiltro,
+        catalogFilter(this.catalog, 'NIVEL_PROVEEDOR', 'nivel', 'Nivel'),
+        signalFilter('proveedorId', 'Proveedor', this.proveedoresFiltro,
             p => ({ value: p.id, label: p.razonSocial })),
     ];
 
@@ -106,6 +113,9 @@ export class EvaluacionesComponent implements OnInit {
 
     form: FormGroup = this.fb.group({
         proveedorId: ['', Validators.required],
+        ordenCompraId: [''],
+        /** YYYY-MM. `@NotNull` en el backend (EvaluarProveedorRequest) — sin esto el POST siempre da 400. */
+        periodo: ['', Validators.required],
         puntajeEntrega: [80, [Validators.required, Validators.min(0), Validators.max(100)]],
         puntajeCalidad: [80, [Validators.required, Validators.min(0), Validators.max(100)]],
         puntajePrecio: [80, [Validators.required, Validators.min(0), Validators.max(100)]],
@@ -209,11 +219,25 @@ export class EvaluacionesComponent implements OnInit {
         this.loadEvaluaciones();
     }
 
+    /** Abre el drawer de alta con el formulario y el error de un intento previo limpios. */
+    abrirForm(): void {
+        this.submitError.set(null);
+        this.showForm.set(true);
+    }
+
+    cerrarForm(): void {
+        this.submitError.set(null);
+        this.showForm.set(false);
+    }
+
     guardar(): void {
         if (this.form.invalid) return;
         this.saving.set(true);
+        this.submitError.set(null);
         const v = this.form.value;
-        this.service.crearEvaluacion(v).subscribe({
+        // ordenCompraId es opcional (UUID nullable en el backend): '' rompería el parseo de UUID.
+        const payload: CrearEvaluacionRequest = { ...v, ordenCompraId: v.ordenCompraId || undefined };
+        this.service.crearEvaluacion(payload).subscribe({
             next: () => {
                 this.form.reset({ puntajeEntrega: 80, puntajeCalidad: 80, puntajePrecio: 80, puntajeServicio: 80 });
                 this.showForm.set(false);
@@ -221,7 +245,15 @@ export class EvaluacionesComponent implements OnInit {
                 this.currentPage.set(0);
                 this.loadEvaluaciones();
             },
-            error: () => this.saving.set(false),
+            error: (err: unknown) => {
+                this.saving.set(false);
+                // ProblemDetail RFC 7807 del backend de compras: el detalle viaja en `detail`.
+                this.submitError.set(
+                    err instanceof HttpErrorResponse
+                        ? (err.error?.detail ?? err.error?.message ?? 'Error al guardar la evaluación')
+                        : 'Error al guardar la evaluación'
+                );
+            },
         });
     }
 

@@ -50,8 +50,8 @@ export class TrackingPageComponent implements OnInit {
 
     // Filtros select del toolbar (catálogo + lista de transportistas ya cargada)
     readonly filters: FilterConfig[] = [
-        catalogFilter(this.catalog, 'ESTADO_ENVIO', 'status', 'Todos los estados'),
-        signalFilter('carrierId', 'Todos los transportistas', this.transportistas,
+        catalogFilter(this.catalog, 'ESTADO_ENVIO', 'status', 'Estado'),
+        signalFilter('carrierId', 'Transportista', this.transportistas,
             t => ({ value: t.id, label: t.name })),
         catalogFilter(this.catalog, 'TIPO_FULFILLMENT', 'fulfillmentType', 'Tipo de fulfillment'),
     ];

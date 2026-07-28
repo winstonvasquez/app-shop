@@ -43,6 +43,11 @@ export interface CustomerRequest {
     limiteCredito?: number;
     condicionPago?: string;
     notas?: string | null;
+    /**
+     * Estado activo/inactivo (baja lógica reversible). Si se omite en un update el
+     * backend deja el estado actual sin tocar; en el alta, omitirlo equivale a activo.
+     */
+    activo?: boolean | null;
 }
 
 export interface CustomerDireccionResponse {

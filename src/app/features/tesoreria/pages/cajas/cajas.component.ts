@@ -12,14 +12,15 @@ import {
 import { catalogFilter, staticFilter } from '@shared/ui/tables/data-table/filter-helpers';
 import { PageHeaderComponent } from '@shared/ui/layout/page-header/page-header.component';
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
-import { ButtonComponent } from '@shared/components';
-import { CajasService } from '../../services/cajas.service';
+import { ButtonComponent, CatalogSelectComponent } from '@shared/components';
+import { CajasService, CajaRequest, CajaUpdateRequest } from '../../services/cajas.service';
 import { CashRegister, Page } from '../../models/tesoreria.model';
 import { PAGINATION } from '@shared/constants/app.constants';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
 import { AuthService } from '@core/auth/auth.service';
 import { CatalogService } from '@core/services/catalog.service';
+import { MONEDA, CURRENCY_DISPLAY } from '@shared/constants/sunat.constants';
 
 @Component({
     selector: 'app-cajas',
@@ -28,7 +29,7 @@ import { CatalogService } from '@core/services/catalog.service';
     imports: [
         DecimalPipe, ReactiveFormsModule,
         DrawerComponent, DataTableComponent, PageHeaderComponent, FormFieldComponent,
-        ButtonComponent
+        ButtonComponent, CatalogSelectComponent
     ],
     templateUrl: './cajas.component.html'
 })
@@ -76,11 +77,13 @@ export class CajasComponent implements OnInit {
 
     showCreateDrawer = signal(false);
     showActionDrawer = signal(false);
+    showEditDrawer   = signal(false);
     selectedCaja     = signal<CashRegister | null>(null);
     actionType       = signal<'abrir' | 'cerrar'>('abrir');
 
     createForm: FormGroup = this.fb.group({
         nombre:       ['', [Validators.required, Validators.minLength(2), Validators.maxLength(50)]],
+        moneda:       [MONEDA.PEN, Validators.required],
         saldoInicial: [0,  [Validators.required, Validators.min(0)]]
     });
 
@@ -88,10 +91,29 @@ export class CajasComponent implements OnInit {
         saldoInicial: [0, [Validators.required, Validators.min(0)]]
     });
 
+    /** Solo editable mientras la caja esté CERRADA — ver CashRegisterService.update. */
+    editForm: FormGroup = this.fb.group({
+        nombre:        ['', [Validators.required, Validators.minLength(2), Validators.maxLength(50)]],
+        moneda:        [MONEDA.PEN, Validators.required],
+        observaciones: ['']
+    });
+
     cajasAbiertas = computed(() => this.cajas().filter(c => c.estado === 'ABIERTA').length);
     cajasCerradas = computed(() => this.cajas().filter(c => c.estado !== 'ABIERTA').length);
-    saldoTotal    = computed(() =>
-        this.cajas().filter(c => c.estado === 'ABIERTA').reduce((s, c) => s + (c.saldoActual ?? 0), 0)
+    /**
+     * Separado por moneda (mismo patrón que saldoTotalPEN/USD en cuentas-bancarias.component.ts):
+     * una caja puede abrirse en USD (ver createForm.moneda), así que sumar todo en una cifra
+     * mezclaría PEN y USD sin sentido.
+     */
+    saldoTotalPEN = computed(() =>
+        this.cajas()
+            .filter(c => c.estado === 'ABIERTA' && (c.moneda ?? MONEDA.PEN) === MONEDA.PEN)
+            .reduce((s, c) => s + (c.saldoActual ?? 0), 0)
+    );
+    saldoTotalUSD = computed(() =>
+        this.cajas()
+            .filter(c => c.estado === 'ABIERTA' && c.moneda === MONEDA.USD)
+            .reduce((s, c) => s + (c.saldoActual ?? 0), 0)
     );
 
     columns: TableColumn<CashRegister>[] = [
@@ -99,9 +121,9 @@ export class CajasComponent implements OnInit {
         { key: 'estado',        label: 'Estado',        align: 'center', html: true,
           render: r => `<span class="${r.estado === 'ABIERTA' ? 'badge badge-success' : 'badge badge-neutral'}">${r.estado}</span>` },
         { key: 'saldoActual',   label: 'Saldo Actual',  align: 'right',
-          render: r => `S/ ${(r.saldoActual ?? 0).toFixed(2)}` },
+          render: r => `${r.moneda === MONEDA.USD ? CURRENCY_DISPLAY.SYMBOL_USD : CURRENCY_DISPLAY.SYMBOL_PEN} ${(r.saldoActual ?? 0).toFixed(2)}` },
         { key: 'saldoInicial',  label: 'Saldo Inicial', align: 'right',
-          render: r => `S/ ${(r.saldoInicial ?? 0).toFixed(2)}` },
+          render: r => `${r.moneda === MONEDA.USD ? CURRENCY_DISPLAY.SYMBOL_USD : CURRENCY_DISPLAY.SYMBOL_PEN} ${(r.saldoInicial ?? 0).toFixed(2)}` },
         { key: 'fechaApertura', label: 'Apertura',
           render: r => r.fechaApertura ? new Date(r.fechaApertura).toLocaleDateString('es-PE') : '—' },
     ];
@@ -126,6 +148,9 @@ export class CajasComponent implements OnInit {
     };
 
     actions: TableAction<CashRegister>[] = [
+        { label: 'Editar', icon: '✏️', class: 'btn-icon-edit',
+          show: r => r.estado !== 'ABIERTA',
+          onClick: r => this.openEditDrawer(r) },
         { label: 'Abrir',  icon: '🔓', class: 'btn-view',
           show: r => r.estado !== 'ABIERTA',
           onClick: r => this.openActionDrawer(r, 'abrir') },
@@ -216,7 +241,7 @@ export class CajasComponent implements OnInit {
     }
 
     openCreateDrawer(): void {
-        this.createForm.reset({ nombre: '', saldoInicial: 0 });
+        this.createForm.reset({ nombre: '', moneda: MONEDA.PEN, saldoInicial: 0 });
         this.errorMsg.set(null);
         this.showCreateDrawer.set(true);
     }
@@ -229,15 +254,49 @@ export class CajasComponent implements OnInit {
         this.showActionDrawer.set(true);
     }
 
+    /** Solo se ofrece (ver `actions`) mientras la caja esté CERRADA: el backend también lo valida. */
+    openEditDrawer(caja: CashRegister): void {
+        this.selectedCaja.set(caja);
+        this.editForm.reset({
+            nombre: caja.nombre,
+            moneda: caja.moneda ?? MONEDA.PEN,
+            observaciones: caja.observaciones ?? ''
+        });
+        this.actionErrorMsg.set(null);
+        this.showEditDrawer.set(true);
+    }
+
     crearCaja(): void {
         if (this.createForm.invalid) { this.createForm.markAllAsTouched(); return; }
         this.guardando.set(true);
-        this.cajasService.create(this.createForm.value)
+        // El backend exige tenantId en el body (CashRegisterRequestDto): el interceptor
+        // de tenant solo agrega cabeceras, no rellena el payload.
+        const req: CajaRequest = {
+            ...this.createForm.value,
+            tenantId: this.auth.currentUser()?.activeCompanyId ?? 1
+        };
+        this.cajasService.create(req)
             .pipe(takeUntilDestroyed(this.destroyRef))
             .subscribe({
                 next: () => { this.showCreateDrawer.set(false); this.guardando.set(false); this.load(); },
                 error: (err: { error?: { detail?: string } }) => {
                     this.errorMsg.set(err?.error?.detail ?? 'Error al crear caja');
+                    this.guardando.set(false);
+                }
+            });
+    }
+
+    guardarEdicion(): void {
+        const caja = this.selectedCaja();
+        if (!caja?.id || this.editForm.invalid) { this.editForm.markAllAsTouched(); return; }
+        this.guardando.set(true);
+        const req: CajaUpdateRequest = this.editForm.value;
+        this.cajasService.update(caja.id, req)
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe({
+                next: () => { this.showEditDrawer.set(false); this.guardando.set(false); this.load(); },
+                error: (err: { error?: { detail?: string } }) => {
+                    this.actionErrorMsg.set(err?.error?.detail ?? 'Error al actualizar caja');
                     this.guardando.set(false);
                 }
             });
@@ -249,7 +308,7 @@ export class CajasComponent implements OnInit {
         this.guardando.set(true);
         const op = this.actionType() === 'abrir'
             ? this.cajasService.open(caja.id, this.actionForm.value.saldoInicial ?? 0)
-            : this.cajasService.close(caja.id);
+            : this.cajasService.close(caja.id, caja.saldoActual ?? 0);
         op.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
             next: () => { this.showActionDrawer.set(false); this.guardando.set(false); this.load(); },
             error: (err: { error?: { detail?: string } }) => {

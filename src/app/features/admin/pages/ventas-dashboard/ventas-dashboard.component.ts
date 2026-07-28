@@ -2,6 +2,7 @@ import { Component, inject, signal, computed, OnInit, ChangeDetectionStrategy } 
 import { HttpClient } from '@angular/common/http';
 import { NgApexchartsModule } from 'ng-apexcharts';
 import { environment } from '@env/environment';
+import { AuthService } from '@core/auth/auth.service';
 import { DataTableComponent, TableColumn } from '@shared/ui/tables/data-table/data-table.component';
 import { ButtonComponent } from '@shared/components';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
@@ -28,6 +29,7 @@ interface OrderSummary {
 })
 export class VentasDashboardComponent implements OnInit {
     private readonly http = inject(HttpClient);
+    private readonly auth = inject(AuthService);
     private readonly parametros = inject(VentasParametrosService);
     private readonly chartDefaults = inject(ChartDefaultsService);
 
@@ -100,7 +102,11 @@ export class VentasDashboardComponent implements OnInit {
 
     cargar(): void {
         this.cargando.set(true);
-        const url = `${environment.apiUrls.sales}/api/pedidos?page=0&size=50&sort=fechaPedido,desc`;
+        // El listado exige companyId; sin él el backend responde 400 y el panel
+        // se quedaba sin pedidos ni gráfico.
+        const companyId = this.auth.currentUser()?.activeCompanyId;
+        const url = `${environment.apiUrls.sales}/api/pedidos?page=0&size=50&sort=fechaPedido,desc`
+            + (companyId != null ? `&companyId=${companyId}` : '');
         this.http.get<PageResponse<OrderSummary>>(url).subscribe({
             next: (res) => {
                 this.pedidos.set(res.content ?? []);

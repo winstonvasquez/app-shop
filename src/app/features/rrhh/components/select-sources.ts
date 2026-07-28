@@ -1,8 +1,10 @@
+import { firstValueFrom } from 'rxjs';
 import { pageTotalPages } from '@core/models/pagination.model';
 import type { ServerSelectDataSource, ServerSelectOption } from '@shared/components';
 import type { EmployeeService } from '../services/employee.service';
 import type { DepartmentService } from '../services/department.service';
 import type { PositionService } from '../services/position.service';
+import type { UserService } from '@features/admin/services/user.service';
 
 /**
  * Adapters de `ServerSelectDataSource` para el `<app-server-search-select>`.
@@ -24,6 +26,9 @@ export function employeeSelectSource(svc: EmployeeService): ServerSelectDataSour
             return { items, last: page >= pageTotalPages(res) - 1 };
         },
         async resolveOption(id) {
+            // Sin id la URL se arma con NaN y el backend responde error: pasa al
+            // abrir un formulario cuya referencia todavía no está elegida.
+            if (id === null || id === undefined || String(id).trim() === '') return null;
             const e = await svc.getEmployeeById(Number(id));
             return e ? toOption(e) : null;
         },
@@ -53,6 +58,9 @@ export function departmentSelectSource(
             return { items, last: page >= pageTotalPages(res) - 1 };
         },
         async resolveOption(id) {
+            // Sin id la URL se arma con NaN y el backend responde error: pasa al
+            // abrir un formulario cuya referencia todavía no está elegida.
+            if (id === null || id === undefined || String(id).trim() === '') return null;
             const d = await svc.getDepartmentById(Number(id));
             return d ? toOption(d) : null;
         },
@@ -81,8 +89,36 @@ export function positionSelectSource(
             return { items, last: page >= pageTotalPages(res) - 1 };
         },
         async resolveOption(id) {
+            // Sin id la URL se arma con NaN y el backend responde error: pasa al
+            // abrir un formulario cuya referencia todavía no está elegida.
+            if (id === null || id === undefined || String(id).trim() === '') return null;
             const p = await svc.getPositionById(Number(id));
             return p ? toOption(p) : null;
+        },
+    };
+}
+
+/**
+ * Fuente de usuarios del sistema, para vincular un empleado con su cuenta de
+ * acceso. Ese vínculo (`Employee.userId`) es lo que habilita el portal de
+ * autoservicio: sin él, el empleado entra y no ve ninguno de sus datos.
+ */
+export function usuarioSelectSource(svc: UserService): ServerSelectDataSource {
+    const toOption = (u: { id: number; username: string; email?: string }): ServerSelectOption => ({
+        id: u.id,
+        label: u.username,
+        sublabel: u.email,
+    });
+    return {
+        async fetchPage(search, page, size) {
+            const res = await firstValueFrom(svc.getAll({ page, size }, search ? { search } : undefined));
+            const items = (res.content ?? []).map(toOption);
+            return { items, last: page >= pageTotalPages(res) - 1 };
+        },
+        async resolveOption(id) {
+            if (id === null || id === undefined || String(id).trim() === '') return null;
+            const u = await firstValueFrom(svc.getById(Number(id)));
+            return u ? toOption(u) : null;
         },
     };
 }

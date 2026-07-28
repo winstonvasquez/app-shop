@@ -77,6 +77,9 @@
                 <div class="form-group">
                     <label for="code">Código <span class="required">*</span></label>
                     <input type="text" id="code" formControlName="code" class="form-input" placeholder="STARTER" />
+                    @if (editMode()) {
+                        <small class="form-hint">No editable: las suscripciones vigentes referencian este código</small>
+                    }
                 </div>
                 <div class="form-group">
                     <label for="name">Nombre <span class="required">*</span></label>
@@ -106,6 +109,14 @@
                 <div class="form-group">
                     <label for="maxUsers">Usuarios máximos <span class="required">*</span></label>
                     <input type="number" id="maxUsers" formControlName="maxUsers" class="form-input" min="1" />
+                </div>
+                <!-- Estado: se puede definir al crear y REACTIVAR al editar (PATCH activate/deactivate) -->
+                <div class="form-group">
+                    <label class="checkbox-label" for="isActive">
+                        <input type="checkbox" id="isActive" formControlName="isActive" class="checkbox-input" />
+                        <span>Plan activo</span>
+                    </label>
+                    <small class="form-hint">Los planes inactivos no se ofrecen en el registro ni en el portal</small>
                 </div>
             </div>
 

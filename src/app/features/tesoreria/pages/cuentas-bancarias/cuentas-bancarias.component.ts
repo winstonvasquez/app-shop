@@ -22,6 +22,7 @@ import { MONEDA, CURRENCY_DISPLAY } from '@shared/constants/sunat.constants';
 import { PAGINATION } from '@shared/constants/app.constants';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
+import { bloquearEnEdicion, bloquearSiempre } from '@shared/utils/form-lock';
 
 @Component({
     selector: 'app-cuentas-bancarias',
@@ -275,6 +276,17 @@ export class CuentasBancariasComponent implements OnInit {
             });
     }
 
+    /**
+     * El número de cuenta identifica la cuenta ante el banco y ya está referenciado
+     * por movimientos y conciliaciones → solo lectura al editar.
+     *
+     * `moneda`, `banco` y `cuentaInterbancaria` se agregan porque cambiarlos tras
+     * el alta reinterpreta todos los movimientos ya registrados en esa cuenta y
+     * descuadra los KPI `saldoTotalPEN`/`saldoTotalUSD` (agregan por `moneda` sin
+     * recalcular histórico) y la identificación bancaria de conciliaciones previas.
+     */
+    private static readonly CAMPOS_BLOQUEADOS_EDICION = ['numeroCuenta', 'moneda', 'banco', 'cuentaInterbancaria'];
+
     openEditDrawer(cuenta: BankAccount): void {
         this.selectedCuenta.set(cuenta);
         this.editForm.reset({
@@ -286,6 +298,9 @@ export class CuentasBancariasComponent implements OnInit {
             cuentaInterbancaria: cuenta.cuentaInterbancaria ?? '',
             descripcion:         cuenta.descripcion ?? ''
         });
+        bloquearEnEdicion(this.editForm, CuentasBancariasComponent.CAMPOS_BLOQUEADOS_EDICION, true);
+        // El saldo lo calcula el backend con los movimientos: se muestra, no se edita.
+        bloquearSiempre(this.editForm, ['saldoInicial']);
         this.errorMsg.set(null);
         this.showEditDrawer.set(true);
     }
@@ -294,8 +309,9 @@ export class CuentasBancariasComponent implements OnInit {
         const cuenta = this.selectedCuenta();
         if (!cuenta?.id || this.editForm.invalid) { this.editForm.markAllAsTouched(); return; }
         this.guardando.set(true);
+        // getRawValue(): número de cuenta y saldo están bloqueados y no saldrían en .value.
         const req: BankAccountRequest = {
-            ...this.editForm.value,
+            ...this.editForm.getRawValue(),
             tenantId: this.auth.currentUser()?.activeCompanyId ?? 1
         };
         this.cuentasService.update(cuenta.id, req)

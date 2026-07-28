@@ -48,10 +48,11 @@ export interface AuditLogFiltros {
  * Convierte el `id` Long de un usuario (microshopusers) al UUID sintético
  * `new UUID(0, id)` que usa microshopcontabilidad para `AuditLogContableEntity.usuarioId`
  * (ver JwtAuthenticationFilter.parseUuidOrLong / TenantAccessAspect.toUuid).
+ *
+ * Se re-exporta desde `@core/utils/synthetic-uuid.util`, donde vive la única
+ * implementación: esta misma conversión llegó a estar copiada en tres sitios.
  */
-export function longToSyntheticUuid(id: number): string {
-    return `00000000-0000-0000-0000-${id.toString(16).padStart(12, '0')}`;
-}
+export { longToSyntheticUuid } from '@core/utils/synthetic-uuid.util';
 
 @Injectable({ providedIn: 'root' })
 export class AuditLogService {

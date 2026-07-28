@@ -4,7 +4,7 @@
       <h1 class="page-title">Catálogo de Compras</h1>
       <p class="page-subtitle">Ítems homologados con proveedores y precios de referencia</p>
     </div>
-    <app-button label="Nuevo Ítem" icon="plus" variant="primary" (click)="showForm.set(true)"></app-button>
+    <app-button label="Nuevo Ítem" icon="plus" variant="primary" (click)="abrirCrear()"></app-button>
   </div>
 
   <!-- Filtros -->
@@ -30,6 +30,14 @@
         <option [value]="cat">{{ cat }}</option>
       }
     </select>
+    <!-- Vigencia: sin este filtro los ítems dados de baja no aparecen en ninguna vista -->
+    <select class="form-input w-40" style="height:32px;padding-top:0;padding-bottom:0"
+            aria-label="Vigencia del ítem"
+            [value]="filtroActivo()"
+            (change)="cambiarFiltroActivo($any($event.target).value)">
+      <option value="true">Activos</option>
+      <option value="false">Inactivos</option>
+    </select>
     <app-button label="Buscar" icon="search" variant="primary" size="sm" (click)="cargar(0)"></app-button>
   </div>
 
@@ -37,17 +45,31 @@
   @if (loading()) {
     <div class="loading-container"><div class="spinner"></div></div>
   } @else if (items().length === 0) {
-    <div class="card p-8 text-center text-muted">No hay ítems en el catálogo</div>
+    <div class="card p-8 text-center text-muted">
+      {{ filtroActivo() === 'false' ? 'No hay ítems dados de baja' : 'No hay ítems en el catálogo' }}
+    </div>
   } @else {
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       @for (item of items(); track item.id) {
         <div class="card">
           <div class="card-header">
-            <div>
-              <p class="card-title text-sm">{{ item.codigo }}</p>
-              <p class="text-on font-semibold">{{ item.descripcion }}</p>
+            <div class="flex items-center gap-3 min-w-0">
+              <!-- La imagen se sirve como binario desde la BD (/purchases/api/catalogo/{id}/imagen) -->
+              @if (item.imagenUrl) {
+                <img [src]="item.imagenUrl" [alt]="item.descripcion"
+                     class="w-12 h-12 rounded object-cover border border-[var(--color-border)]" />
+              }
+              <div class="min-w-0">
+                <p class="card-title text-sm">{{ item.codigo }}</p>
+                <p class="text-on font-semibold">{{ item.descripcion }}</p>
+              </div>
             </div>
-            <span class="badge badge-neutral">{{ item.categoria }}</span>
+            <div class="flex items-center gap-2 shrink-0">
+              @if (!item.activo) {
+                <span class="badge badge-neutral">Inactivo</span>
+              }
+              <span class="badge badge-neutral">{{ item.categoria }}</span>
+            </div>
           </div>
           <div class="card-body">
             <p class="text-muted text-sm">Unidad: {{ item.unidadMedida }}</p>
@@ -78,11 +100,20 @@
               <p class="text-muted text-xs mt-2 italic">Sin proveedores homologados</p>
             }
           </div>
+          <!-- «Editar» SIEMPRE disponible (también en inactivos): desde el drawer se
+               puede volver a marcar «Activo». «Reactivar» es el atajo directo. -->
           <div class="card-footer flex gap-2">
+            <app-button label="Editar" icon="edit" variant="secondary" size="sm"
+              (click)="abrirEditar(item)"></app-button>
             <app-button label="Proveedor" icon="plus" variant="secondary" size="sm"
               (click)="abrirProveedorForm(item)"></app-button>
-            <app-button label="Desactivar" icon="trash" variant="danger" size="sm"
-              (click)="desactivarItem(item.id)"></app-button>
+            @if (item.activo) {
+              <app-button label="Desactivar" icon="trash" variant="danger" size="sm"
+                (click)="desactivarItem(item.id)"></app-button>
+            } @else {
+              <app-button label="Reactivar" icon="check" variant="primary" size="sm"
+                (click)="reactivarItem(item)"></app-button>
+            }
           </div>
         </div>
       }
@@ -103,13 +134,17 @@
 <div class="drawer-overlay" [class.open]="showForm()" (click)="showForm.set(false)"></div>
 <div class="drawer drawer-right" [class.open]="showForm()">
   <div class="drawer-header">
-    <h2 class="drawer-title">Nuevo Ítem de Catálogo</h2>
+    <h2 class="drawer-title">{{ editMode() ? 'Editar Ítem de Catálogo' : 'Nuevo Ítem de Catálogo' }}</h2>
     <button class="modal-close-btn" (click)="showForm.set(false)">✕</button>
   </div>
   <div class="drawer-body">
-    <form [formGroup]="form" (ngSubmit)="crear()">
+    <form [formGroup]="form" (ngSubmit)="guardar()">
+      @if (formError()) {
+        <p class="alert alert-error mb-4">{{ formError() }}</p>
+      }
       <div class="mb-4">
-        <label class="input-label">Código *</label>
+        <!-- Código: se referencia desde OCs y cotizaciones ya emitidas → bloqueado al editar -->
+        <label class="input-label">Código {{ editMode() ? '(no editable)' : '*' }}</label>
         <input class="form-input" formControlName="codigo" placeholder="Ej: MAT-001" />
       </div>
       <div class="mb-4">
@@ -128,8 +163,31 @@
         <label class="input-label">Especificaciones</label>
         <textarea class="form-input" formControlName="especificaciones" rows="3"></textarea>
       </div>
+
+      <!-- Imagen del ítem: binario en la base de datos, nunca una URL externa -->
+      <div class="mb-4">
+        <app-image-upload
+          label="Imagen del ítem"
+          [currentUrl]="form.get('imagenUrl')?.value"
+          (fileSelected)="imagenSeleccionada.set($event)"
+          (cleared)="quitarImagen()" />
+        @if (!editMode()) {
+          <p class="text-muted text-xs mt-1">Se subirá al crear el ítem.</p>
+        }
+      </div>
+
+      <!-- Activo: editable al editar (única vía para reactivar una baja lógica).
+           En el alta está bloqueado porque el backend siempre crea el ítem activo. -->
+      <div class="mb-4 flex items-center gap-2">
+        <input type="checkbox" formControlName="activo" id="catalogoActivo" />
+        <label for="catalogoActivo" class="input-label mb-0">Activo</label>
+        <span class="text-muted text-xs">
+          {{ editMode() ? 'Desmárcalo para dar de baja; márcalo para reactivar.' : 'El ítem se crea activo.' }}
+        </span>
+      </div>
+
       <div class="flex gap-3 mt-6">
-        <app-button label="Crear Ítem" icon="save" variant="primary" type="submit"
+        <app-button [label]="editMode() ? 'Guardar Cambios' : 'Crear Ítem'" icon="save" variant="primary" type="submit"
           [loading]="saving()" [disabled]="form.invalid || saving()"></app-button>
         <app-button label="Cancelar" icon="x" variant="secondary" type="button"
           (click)="showForm.set(false)"></app-button>

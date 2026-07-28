@@ -1,12 +1,17 @@
 import { Component, inject, signal, OnInit, ChangeDetectionStrategy } from '@angular/core';
-import { CuentaService } from '../../services/cuenta.service';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { CuentaService, CuentaContableRequest, CuentaContableUpdateRequest } from '../../services/cuenta.service';
 import { CatalogService } from '@core/services/catalog.service';
 import { PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
-import { DataTableComponent, TableColumn, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
+import { DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { catalogFilter, staticFilter } from '@shared/ui/tables/data-table/filter-helpers';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
 import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
+import { DrawerComponent } from '@shared/components/drawer/drawer.component';
+import { ButtonComponent, CatalogSelectComponent, ServerSearchSelectComponent } from '@shared/components';
+import { bloquearEnEdicion } from '@shared/utils/form-lock';
+import { cuentaContableSelectSource } from '../../components/select-sources';
 
 interface CuentaPCGE {
     id?: string | number;
@@ -15,9 +20,15 @@ interface CuentaPCGE {
     tipo: string;
     nivel: number;
     aceptaMovimiento: boolean;
+    esAnalitica?: boolean;
+    estado?: string;
+    cuentaPadreId?: string | null;
 }
 
 type TipoFiltro = 'TODOS' | string;
+
+/** Tope del CHECK de BD (nivel BETWEEN 1 AND 5) — igual que CuentaContableCommandService. */
+const NIVEL_MAXIMO = 5;
 
 const PCGE_DEMO: CuentaPCGE[] = [
     { codigo: '10', nombre: 'Efectivo y Equivalentes de Efectivo', tipo: 'ACTIVO', nivel: 2, aceptaMovimiento: false },
@@ -72,7 +83,10 @@ const PCGE_DEMO: CuentaPCGE[] = [
     selector: 'app-plan-cuentas',
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [DataTableComponent],
+    imports: [
+        DataTableComponent, ReactiveFormsModule, DrawerComponent,
+        ButtonComponent, CatalogSelectComponent, ServerSearchSelectComponent,
+    ],
     template: `
         <div class="page-header">
             <div>
@@ -84,16 +98,23 @@ const PCGE_DEMO: CuentaPCGE[] = [
                     }
                 </p>
             </div>
+            <div>
+                <app-button icon="plus" label="Nueva cuenta" variant="primary" [disabled]="modoDemo()"
+                            title="No disponible en modo demo (sin conexión al backend)" (click)="abrirAlta()" />
+            </div>
         </div>
 
         <app-data-table
             [data]="cuentas()"
             [columns]="columns"
+            [actions]="actions"
             [loading]="cargando()"
             [searchable]="true"
             searchPlaceholder="Buscar por código o nombre..."
             [filters]="filters"
-            [exportable]="true"
+            <!-- En modo demo el backend no responde, y la exportacion es server-side:
+                 ofrecerla seria la misma promesa falsa que ya se quito de Editar/Nueva. -->
+            [exportable]="!modoDemo()"
             exportFileName="plan-cuentas"
             [exportConfig]="exportConfig"
             [currentPage]="currentPage()"
@@ -105,11 +126,79 @@ const PCGE_DEMO: CuentaPCGE[] = [
             (filtersClear)="onFiltersClear()"
             (pageChange)="onPageChange($event)">
         </app-data-table>
+
+        <app-drawer
+            [isOpen]="showDrawer()"
+            [title]="editMode() ? 'Editar cuenta contable' : 'Nueva cuenta contable'"
+            size="md"
+            side="right"
+            [hasFooter]="true"
+            (closed)="cerrarDrawer()">
+
+            @if (submitError()) {
+                <div class="alert alert-error" style="margin-bottom: var(--space-md, 12px)">
+                    {{ submitError() }}
+                </div>
+            }
+
+            <form [formGroup]="cuentaForm" class="flex flex-col gap-3">
+                <div>
+                    <label class="input-label">Código PCGE <span class="text-error">*</span></label>
+                    <input class="form-input" type="text" formControlName="codigo"
+                           placeholder="Ej: 10411" maxlength="8" />
+                    @if (nivelPreview() !== null) {
+                        <span class="text-[var(--color-text-muted)]" style="font-size: 0.78rem">
+                            Nivel PCGE (calculado): {{ nivelPreview() }}
+                        </span>
+                    }
+                </div>
+
+                <div>
+                    <label class="input-label">Nombre <span class="text-error">*</span></label>
+                    <input class="form-input" type="text" formControlName="nombre" maxlength="255" />
+                </div>
+
+                <div>
+                    <label class="input-label">Tipo <span class="text-error">*</span></label>
+                    <app-catalog-select tabla="TIPO_CUENTA_PCGE" formControlName="tipo"
+                                        placeholder="Seleccionar tipo..."></app-catalog-select>
+                </div>
+
+                <div>
+                    <label class="input-label">Cuenta padre</label>
+                    <app-server-search-select [dataSource]="cuentaPadreSource" formControlName="cuentaPadreId"
+                        placeholder="Buscar cuenta por código o nombre…" />
+                </div>
+
+                <div>
+                    <label class="input-label">Estado</label>
+                    <app-catalog-select tabla="ESTADO_ACTIVO_INACTIVO" formControlName="estado"></app-catalog-select>
+                </div>
+
+                <div style="display: flex; gap: 24px; margin-top: 4px">
+                    <label class="input-label" style="display: flex; align-items: center; gap: 6px">
+                        <input type="checkbox" formControlName="esAnalitica" />
+                        Es analítica
+                    </label>
+                    <label class="input-label" style="display: flex; align-items: center; gap: 6px">
+                        <input type="checkbox" formControlName="aceptaMovimiento" />
+                        Acepta movimiento
+                    </label>
+                </div>
+            </form>
+
+            <div slot="footer">
+                <app-button icon="x" label="Cancelar" variant="secondary" [disabled]="submitting()" (click)="cerrarDrawer()" />
+                <app-button icon="save" [label]="editMode() ? 'Actualizar' : 'Guardar'" variant="primary"
+                            [loading]="submitting()" [disabled]="submitting() || cuentaForm.invalid" (click)="onSubmit()" />
+            </div>
+        </app-drawer>
     `,
 })
 export class PlanCuentasComponent implements OnInit {
     private cuentaService = inject(CuentaService);
     private readonly catalog = inject(CatalogService);
+    private readonly fb = inject(FormBuilder);
 
     readonly cargando = signal(true);
     readonly modoDemo = signal(false);
@@ -123,9 +212,30 @@ export class PlanCuentasComponent implements OnInit {
     readonly totalElementsServer = signal(0);
     readonly totalPagesServer = signal(1);
 
+    // Drawer de alta/edición manual (subcuentas analíticas que el seed PCGE no trae).
+    readonly showDrawer = signal(false);
+    readonly editMode = signal(false);
+    readonly selectedId = signal<string | null>(null);
+    readonly submitting = signal(false);
+    readonly submitError = signal<string | null>(null);
+    /** Nivel PCGE derivado de la longitud del código — informativo, el backend lo recalcula igual. */
+    readonly nivelPreview = signal<number | null>(null);
+
+    readonly cuentaPadreSource = cuentaContableSelectSource(this.cuentaService);
+
+    cuentaForm: FormGroup = this.fb.group({
+        codigo: ['', [Validators.required, Validators.pattern(/^[0-9]{1,8}$/)]],
+        nombre: ['', [Validators.required, Validators.maxLength(255)]],
+        tipo: ['', Validators.required],
+        cuentaPadreId: [null as string | null],
+        estado: ['ACTIVO'],
+        esAnalitica: [false],
+        aceptaMovimiento: [true],
+    });
+
     // Filtros del toolbar del data-table, TODOS server-side (backend: GET /cuentas, ronda 2026-07-27).
     readonly filters: FilterConfig[] = [
-        catalogFilter(this.catalog, 'TIPO_CUENTA_PCGE', 'tipo', 'Todos los tipos'),
+        catalogFilter(this.catalog, 'TIPO_CUENTA_PCGE', 'tipo', 'Tipo'),
         catalogFilter(this.catalog, 'ESTADO_ACTIVO_INACTIVO', 'estado', 'Estado'),
         catalogFilter(this.catalog, 'NIVEL_CUENTA_PCGE', 'nivel', 'Nivel PCGE'),
         staticFilter('aceptaMovimiento', 'Acepta movimiento', [
@@ -185,7 +295,33 @@ export class PlanCuentasComponent implements OnInit {
                 ? `<span style="color: var(--color-success); font-size: 1.1rem">&#10003;</span>`
                 : `<span class="text-[var(--color-text-muted)]">—</span>`
         },
+        {
+            key: 'esAnalitica', label: 'Analítica', align: 'center', width: '110px',
+            html: true,
+            render: (r) => r.esAnalitica
+                ? `<span style="color: var(--color-success); font-size: 1.1rem">&#10003;</span>`
+                : `<span class="text-[var(--color-text-muted)]">—</span>`
+        },
+        {
+            key: 'estado', label: 'Estado', align: 'center', width: '110px',
+            html: true,
+            render: (r) => r.estado === 'INACTIVO'
+                ? `<span class="badge badge-neutral">Inactivo</span>`
+                : `<span class="badge badge-success">Activo</span>`
+        },
     ];
+
+    readonly actions: TableAction<CuentaPCGE>[] = [
+        // Las filas de PCGE_DEMO no tienen `id` real: si se permitiera editar, onSubmit
+        // caería a crear() con el código de la fila demo → 409 duplicado contra el backend.
+        { label: 'Editar', icon: '✏️', class: 'btn-icon-edit', show: () => !this.modoDemo(), onClick: (r) => this.abrirEdicion(r) },
+    ];
+
+    constructor() {
+        this.cuentaForm.get('codigo')?.valueChanges.subscribe((v: string) => {
+            this.nivelPreview.set(v ? Math.min(v.trim().length, NIVEL_MAXIMO) : null);
+        });
+    }
 
     ngOnInit(): void {
         this.cargarCuentas();
@@ -274,5 +410,87 @@ export class PlanCuentasComponent implements OnInit {
             'ANALITICA': 'badge badge-neutral',
         };
         return map[tipo] ?? 'badge badge-neutral';
+    }
+
+    abrirAlta(): void {
+        this.editMode.set(false);
+        this.selectedId.set(null);
+        this.submitError.set(null);
+        this.cuentaForm.reset({
+            codigo: '', nombre: '', tipo: '', cuentaPadreId: null,
+            estado: 'ACTIVO', esAnalitica: false, aceptaMovimiento: true,
+        });
+        bloquearEnEdicion(this.cuentaForm, ['codigo'], false);
+        this.nivelPreview.set(null);
+        this.showDrawer.set(true);
+    }
+
+    abrirEdicion(row: CuentaPCGE): void {
+        this.editMode.set(true);
+        this.selectedId.set(row.id != null ? String(row.id) : null);
+        this.submitError.set(null);
+        this.cuentaForm.reset({
+            codigo: row.codigo,
+            nombre: row.nombre,
+            tipo: row.tipo,
+            cuentaPadreId: row.cuentaPadreId ?? null,
+            estado: row.estado ?? 'ACTIVO',
+            esAnalitica: row.esAnalitica ?? false,
+            aceptaMovimiento: row.aceptaMovimiento,
+        });
+        // Código (clave de negocio, referenciada desde asientos ya registrados) bloqueado
+        // en edición. El nivel ni siquiera es un campo del formulario: siempre se deriva
+        // del código en el backend (CuentaContableCommandService.derivarNivel).
+        bloquearEnEdicion(this.cuentaForm, ['codigo'], true);
+        this.nivelPreview.set(Math.min(row.codigo.length, NIVEL_MAXIMO));
+        this.showDrawer.set(true);
+    }
+
+    cerrarDrawer(): void {
+        this.showDrawer.set(false);
+    }
+
+    onSubmit(): void {
+        if (this.cuentaForm.invalid) {
+            this.cuentaForm.markAllAsTouched();
+            return;
+        }
+        this.submitting.set(true);
+        this.submitError.set(null);
+
+        // getRawValue(): en edición "codigo" está deshabilitado y no saldría en .value.
+        const raw = this.cuentaForm.getRawValue();
+        const id = this.selectedId();
+
+        const operacion = this.editMode() && id
+            ? this.cuentaService.actualizar(id, {
+                  nombre: raw.nombre,
+                  tipo: raw.tipo,
+                  cuentaPadreId: raw.cuentaPadreId || null,
+                  estado: raw.estado,
+                  esAnalitica: raw.esAnalitica,
+                  aceptaMovimiento: raw.aceptaMovimiento,
+              } satisfies CuentaContableUpdateRequest)
+            : this.cuentaService.crear({
+                  codigo: raw.codigo,
+                  nombre: raw.nombre,
+                  tipo: raw.tipo,
+                  cuentaPadreId: raw.cuentaPadreId || null,
+                  estado: raw.estado,
+                  esAnalitica: raw.esAnalitica,
+                  aceptaMovimiento: raw.aceptaMovimiento,
+              } satisfies CuentaContableRequest);
+
+        operacion.subscribe({
+            next: () => {
+                this.submitting.set(false);
+                this.showDrawer.set(false);
+                this.cargarCuentas();
+            },
+            error: (err: { error?: { detail?: string } }) => {
+                this.submitting.set(false);
+                this.submitError.set(err?.error?.detail ?? 'No se pudo guardar la cuenta contable.');
+            },
+        });
     }
 }

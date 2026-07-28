@@ -100,6 +100,14 @@ export class AccountingMappingComponent implements OnInit {
         },
     ];
 
+    /**
+     * "Editar" se muestra TAMBIÉN para los mapeos inactivos: es la única vía para reactivarlos
+     * (el drawer expone el estado como casilla y el PUT ahora acepta `activo`). Antes las tres
+     * acciones exigían `m.activo`, así que un mapeo desactivado quedaba inalcanzable desde la UI
+     * y tampoco se podía recrear — la unique constraint (event_type, tenant_id) no filtra por
+     * `activo`. "Probar" y "Eliminar" sí siguen restringidas a los activos: no tiene sentido
+     * disparar un asiento con un mapeo dado de baja, ni volver a darlo de baja.
+     */
     readonly actions: TableAction<AccountingMapping>[] = [
         {
             label: 'Probar', icon: 'zap', class: 'btn-view',
@@ -108,7 +116,7 @@ export class AccountingMappingComponent implements OnInit {
         },
         {
             label: 'Editar', icon: 'edit', class: 'btn-view',
-            show: m => m.activo && this.puedeAdministrar(),
+            show: () => this.puedeAdministrar(),
             onClick: m => this.abrirEditar(m),
         },
         {
@@ -123,6 +131,13 @@ export class AccountingMappingComponent implements OnInit {
     readonly debitAccount = signal('');
     readonly creditAccount = signal('');
     readonly descriptionTemplate = signal('');
+    /**
+     * Estado del mapeo en edición — EDITABLE: `AccountingMappingRequest` declara `activo` y el
+     * PUT lo aplica, de modo que desmarcar la casilla da de baja el mapeo y volver a marcarla lo
+     * reactiva. Es la única vía de reactivación: la unique constraint (event_type, tenant_id) no
+     * filtra por `activo`, así que un mapeo desactivado impide crear otro para el mismo evento.
+     */
+    readonly activoEditando = signal(true);
 
     ngOnInit() { this.cargar(); }
 
@@ -201,6 +216,7 @@ export class AccountingMappingComponent implements OnInit {
         this.debitAccount.set('');
         this.creditAccount.set('');
         this.descriptionTemplate.set('');
+        this.activoEditando.set(true);
         this.errorForm.set('');
         this.mostrarForm.set(true);
     }
@@ -218,6 +234,7 @@ export class AccountingMappingComponent implements OnInit {
         this.debitAccount.set(m.debitAccount);
         this.creditAccount.set(m.creditAccount);
         this.descriptionTemplate.set(m.descriptionTemplate ?? '');
+        this.activoEditando.set(m.activo);
         this.errorForm.set('');
         this.mostrarForm.set(true);
     }
@@ -226,15 +243,18 @@ export class AccountingMappingComponent implements OnInit {
 
     guardar() {
         if (!this.eventType() || !this.debitAccount() || !this.creditAccount()) return;
+        const id = this.editandoId();
         const req: AccountingMappingRequest = {
             eventType: this.eventType().trim(),
             debitAccount: this.debitAccount().trim(),
             creditAccount: this.creditAccount().trim(),
             descriptionTemplate: this.descriptionTemplate().trim(),
+            // Solo el PUT lo interpreta (permite reactivar); el alta siempre nace activa,
+            // así que no lo enviamos al crear para no sugerir lo contrario.
+            ...(id ? { activo: this.activoEditando() } : {}),
         };
         this.guardando.set(true);
         this.errorForm.set('');
-        const id = this.editandoId();
         const obs = id ? this.service.actualizar(id, req) : this.service.crear(req);
         obs.subscribe({
             next: () => {

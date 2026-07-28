@@ -92,9 +92,9 @@ export class LibroMayorComponent implements OnInit {
 
     // Filtros del toolbar. periodo va incluido: es obligatorio para el endpoint.
     readonly filters: FilterConfig[] = [
-        signalFilter('periodo', '— Periodo —', this.periodos,
+        signalFilter('periodo', 'Periodo', this.periodos,
             p => ({ value: p.id, label: `${p.nombre} (${p.estado})` })),
-        signalFilter('cuenta', 'Todas las cuentas', this.cuentas,
+        signalFilter('cuenta', 'Cuenta', this.cuentas,
             c => ({ value: c.id, label: `${c.codigo} — ${c.nombre}` })),
         catalogFilter(this.catalog, 'TIPO_ASIENTO_CONTABLE', 'tipoAsiento', 'Tipo de asiento'),
         catalogFilter(this.catalog, 'ORIGEN_ASIENTO_CONTABLE', 'origen', 'Origen del asiento'),

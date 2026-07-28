@@ -19,6 +19,7 @@ import { CURRENCY_DISPLAY } from '@shared/constants/sunat.constants';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
 import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
+import { bloquearEnEdicion, bloquearSiempre } from '@shared/utils/form-lock';
 
 type EstadoPromocion = 'ACTIVA' | 'INACTIVA' | 'VENCIDA';
 
@@ -103,7 +104,7 @@ export class PromotionsComponent implements OnInit {
     // (ver comentario de ESTADO_PROMOCION_OPTIONS). 'tipo'/'alcance' reutilizan las mismas opciones
     // que el formulario (parámetros de ventas, con fallback local si el backend no responde).
     readonly filters: FilterConfig[] = [
-        staticFilter('estado', 'Todos los estados', ESTADO_PROMOCION_OPTIONS),
+        staticFilter('estado', 'Estado', ESTADO_PROMOCION_OPTIONS),
         observableFilter('tipo', 'Tipo de descuento', this.parametros.getTiposPromocion()),
         observableFilter('alcance', 'Alcance', this.parametros.getAlcancesPromocion()),
         staticFilter('subtipo', 'Subtipo', SUBTIPO_PROMOCION_OPTIONS),
@@ -212,7 +213,17 @@ export class PromotionsComponent implements OnInit {
         fechaInicio:  [new Date().toISOString().split('T')[0], Validators.required],
         fechaFin:     ['', Validators.required],
         activo:       [true],
+        // DERIVADOS (nunca se envían): usosActuales lo lleva el backend y estado se
+        // calcula desde activo + fechaFin. Se muestran bloqueados para poder leerlos.
+        usosActuales: [0],
+        estado:       ['ACTIVA' as EstadoPromocion],
     });
+
+    /** El código de cupón ya circula entre los clientes: cambiarlo invalida los repartidos. */
+    private static readonly CAMPOS_BLOQUEADOS = ['codigoCupon'] as const;
+
+    /** Valores derivados/calculados: nunca editables, ni al crear ni al editar. */
+    private static readonly CAMPOS_CALCULADOS = ['usosActuales', 'estado'] as const;
 
     columns: TableColumn<PromocionVM>[] = [
         { key: 'nombre',    label: 'Nombre' },
@@ -315,6 +326,8 @@ export class PromotionsComponent implements OnInit {
 
     abrirNueva(): void {
         this.resetForm();
+        bloquearEnEdicion(this.form, PromotionsComponent.CAMPOS_BLOQUEADOS, false);
+        bloquearSiempre(this.form, PromotionsComponent.CAMPOS_CALCULADOS);
         this.editMode.set(false);
         this.editId.set(null);
         this.submitError.set('');
@@ -333,7 +346,11 @@ export class PromotionsComponent implements OnInit {
             fechaInicio: row.fechaInicio,
             fechaFin:    row.fechaFin,
             activo:      row.activo,
+            usosActuales: row.usosActuales ?? 0,
+            estado:      row.estado,
         });
+        bloquearEnEdicion(this.form, PromotionsComponent.CAMPOS_BLOQUEADOS, true);
+        bloquearSiempre(this.form, PromotionsComponent.CAMPOS_CALCULADOS);
         this.form.markAsPristine();
         this.editMode.set(true);
         this.editId.set(row.id ?? null);
@@ -437,6 +454,8 @@ export class PromotionsComponent implements OnInit {
             fechaInicio: new Date().toISOString().split('T')[0],
             fechaFin:    '',
             activo:      true,
+            usosActuales: 0,
+            estado:      'ACTIVA',
         });
         this.form.markAsPristine();
     }

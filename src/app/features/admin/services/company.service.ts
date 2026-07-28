@@ -175,4 +175,21 @@ export class CompanyService {
         console.error('CompanyService Error:', error);
         return throwError(() => new Error(errorMessage));
     }
+
+    /**
+     * Sube el logotipo de la empresa. El backend lo guarda como binario en la
+     * base de datos y devuelve la empresa con la URL del binario servido.
+     */
+    subirLogo(companyId: number, archivo: File): Observable<CompanyResponse> {
+        const formData = new FormData();
+        formData.append('file', archivo);
+        return this.http.post<CompanyResponse>(`${this.baseUrl}/${companyId}/logo`, formData);
+    }
+
+    /**
+     * Elimina el logotipo de la empresa: el backend borra el binario y sus metadatos.
+     */
+    eliminarLogo(companyId: number): Observable<CompanyResponse> {
+        return this.http.delete<CompanyResponse>(`${this.baseUrl}/${companyId}/logo`);
+    }
 }

@@ -11,6 +11,10 @@ import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model
 import { PAGINATION } from '@shared/constants/app.constants';
 import { ProveedorService } from '../../services/proveedor.service';
 import { proveedorSelectSource } from '../../components/select-sources';
+import { SucursalService, Sucursal } from '../../../admin/services/sucursal.service';
+import { ProductLookupComponent } from '../../../inventory/components/product-lookup/product-lookup.component';
+import { ProductResponse } from '@core/models/product.model';
+import { productIdToUuid } from '../../../inventory/utils/synthetic-uuid.util';
 
 interface TiendaReq { storeId: string; storeNombre: string; cantidad: number; }
 interface LineaReq { productoId: string; sku?: string; productoNombre: string; unidadMedida?: string; tiendas: TiendaReq[]; }
@@ -38,7 +42,7 @@ interface ConsolidacionDto {
 @Component({
     selector: 'app-consolidaciones',
     standalone: true,
-    imports: [ReactiveFormsModule, DecimalPipe, ButtonComponent, ServerSearchSelectComponent, PaginationComponent],
+    imports: [ReactiveFormsModule, FormsModule, DecimalPipe, ButtonComponent, ServerSearchSelectComponent, ProductLookupComponent, PaginationComponent],
     templateUrl: './consolidaciones.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -47,10 +51,16 @@ export class ConsolidacionesComponent implements OnInit {
     private fb = inject(FormBuilder);
     private authService = inject(AuthService);
     private proveedorService = inject(ProveedorService);
+    private sucursalService = inject(SucursalService);
     protected readonly catalog = inject(CatalogService);
     private baseUrl = `${environment.apiUrls.purchases}/api/consolidaciones`;
 
     readonly proveedorSource = proveedorSelectSource(this.proveedorService);
+
+    /** Sucursales del tenant para el select de tienda de cada línea (reemplaza el ID libre). */
+    sucursales = signal<Sucursal[]>([]);
+    /** Índice de la línea con el mini-panel de búsqueda de producto abierto (null = cerrado). */
+    lookupOpenIndex = signal<number | null>(null);
 
     consolidaciones = signal<ConsolidacionDto[]>([]);
     cargando = signal(false);
@@ -90,7 +100,23 @@ export class ConsolidacionesComponent implements OnInit {
         return this.form.get('lineas') as FormArray;
     }
 
-    ngOnInit(): void { this.cargar(); }
+    ngOnInit(): void {
+        this.cargar();
+        this.loadSucursales();
+    }
+
+    /** Sucursales activas del tenant, para el select de tienda (lista chica, no requiere server-search). */
+    private loadSucursales(): void {
+        const companyId = this.authService.currentUser()?.activeCompanyId;
+        if (companyId === undefined || companyId === null) {
+            this.sucursales.set([]);
+            return;
+        }
+        this.sucursalService.list(companyId).subscribe({
+            next: (list) => this.sucursales.set(list),
+            error: () => this.sucursales.set([]),
+        });
+    }
 
     private getHeaders(): HttpHeaders {
         const companyId = this.authService.currentUser()?.activeCompanyId ?? '';
@@ -178,11 +204,13 @@ export class ConsolidacionesComponent implements OnInit {
         this.form.reset({ descripcion: '' });
         while (this.lineasArray.length > 0) this.lineasArray.removeAt(0);
         this.lineasArray.push(this.createLineaFormGroup());
+        this.lookupOpenIndex.set(null);
         this.mostrarForm.set(true);
     }
 
     cerrarForm(): void {
         this.mostrarForm.set(false);
+        this.lookupOpenIndex.set(null);
     }
 
     tiendasArray(lineaIndex: number): FormArray {
@@ -195,6 +223,27 @@ export class ConsolidacionesComponent implements OnInit {
 
     removeLinea(index: number): void {
         if (this.lineasArray.length > 1) this.lineasArray.removeAt(index);
+        if (this.lookupOpenIndex() === index) this.lookupOpenIndex.set(null);
+    }
+
+    /** Abre/cierra el mini-panel de búsqueda de producto de la línea `index`. */
+    toggleLookup(index: number): void {
+        this.lookupOpenIndex.set(this.lookupOpenIndex() === index ? null : index);
+    }
+
+    /** Aplica el producto elegido en `<app-product-lookup>` a la línea `index` (SKU queda manual: ProductResponse no lo trae). */
+    onProductoSeleccionado(index: number, product: ProductResponse): void {
+        const linea = this.lineasArray.at(index) as FormGroup;
+        linea.patchValue({ productoId: productIdToUuid(product.id), productoNombre: product.nombre });
+        this.lookupOpenIndex.set(null);
+    }
+
+    /** Al elegir una sucursal en el select de tienda, autocompleta `storeNombre` en la misma fila. */
+    onStoreChange(lineaIndex: number, tiendaIndex: number, event: Event): void {
+        const id = (event.target as HTMLSelectElement).value;
+        const tienda = this.tiendasArray(lineaIndex).at(tiendaIndex) as FormGroup;
+        const sucursal = this.sucursales().find(s => String(s.id) === id);
+        tienda.patchValue({ storeId: id, storeNombre: sucursal?.nombre ?? '' });
     }
 
     addTienda(lineaIndex: number): void {

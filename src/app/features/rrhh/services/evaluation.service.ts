@@ -255,6 +255,11 @@ export class EvaluationService {
         this._criteria.update(list => list.map(c => c.id === id ? { ...c, activo: false } : c));
     }
 
+    async activateCriteria(id: number): Promise<void> {
+        await firstValueFrom(this.http.patch<void>(`${this.evalUrl}/criteria/${id}/activate`, {}));
+        this._criteria.update(list => list.map(c => c.id === id ? { ...c, activo: true } : c));
+    }
+
     // ── Goals ───────────────────────────────────────────────────────────────
 
     async loadGoals(): Promise<void> {

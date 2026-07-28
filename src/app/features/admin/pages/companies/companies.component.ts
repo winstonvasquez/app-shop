@@ -19,8 +19,10 @@ import {
   PageHeaderComponent,
   Breadcrumb,
 } from '@shared/ui';
+import { ImageUploadComponent } from '@shared/ui/forms/image-upload/image-upload.component';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { ButtonComponent } from '@shared/components';
+import { bloquearEnEdicion } from '@shared/utils/form-lock';
 
 @Component({
   selector: 'app-companies',
@@ -34,13 +36,17 @@ import { ButtonComponent } from '@shared/components';
     DrawerComponent,
     PageHeaderComponent,
     AlertComponent,
-    ButtonComponent
+    ButtonComponent,
+    ImageUploadComponent
   ],
   templateUrl: './companies.component.html',
   styleUrl: './companies.component.scss'
 })
 export class CompaniesComponent implements OnInit {
   private readonly companyService = inject(CompanyService);
+
+  /** Logotipo elegido en el drawer, pendiente de subir tras guardar. */
+  readonly logoSeleccionado = signal<File | null>(null);
   private readonly fb = inject(FormBuilder);
   private readonly router = inject(Router);
 
@@ -100,6 +106,14 @@ export class CompaniesComponent implements OnInit {
   fechaCreacionFilters: DateRangeFilterConfig[] = [
     { field: 'fechaCreacion', label: 'Fecha de creación' }
   ];
+
+  /**
+   * Campos no editables tras el primer guardado: el `ruc` es la identidad tributaria del
+   * tenant (todos los CPE emitidos lo referencian) y el `domain` es la clave con la que se
+   * resuelve la empresa en el storefront (cambiarlo deja huérfanos los enlaces existentes).
+   * Se muestran bloqueados, no ocultos.
+   */
+  private static readonly CAMPOS_BLOQUEADOS = ['ruc', 'domain'] as const;
 
   // Breadcrumbs
   breadcrumbs: Breadcrumb[] = [
@@ -260,6 +274,7 @@ export class CompaniesComponent implements OnInit {
     this.companyForm.reset({
       active: true
     });
+    bloquearEnEdicion(this.companyForm, CompaniesComponent.CAMPOS_BLOQUEADOS, false);
     this.showModal.set(true);
     this.submitError.set(null);
   }
@@ -282,6 +297,7 @@ export class CompaniesComponent implements OnInit {
       logoUrl: company.logoUrl ?? '',
       domain: company.domain ?? ''
     });
+    bloquearEnEdicion(this.companyForm, CompaniesComponent.CAMPOS_BLOQUEADOS, true);
 
     this.showModal.set(true);
     this.submitError.set(null);
@@ -307,7 +323,9 @@ export class CompaniesComponent implements OnInit {
     this.submitting.set(true);
     this.submitError.set(null);
 
-    const formValue = this.companyForm.value;
+    // getRawValue(): ruc y domain quedan deshabilitados en edición y no saldrían en
+    // form.value — se enviarían nulls y se borrarían del tenant.
+    const formValue = this.companyForm.getRawValue();
     const companyRequest: CompanyRequest = {
       name: formValue.name,
       ruc: formValue.ruc,
@@ -325,15 +343,45 @@ export class CompaniesComponent implements OnInit {
       : this.companyService.create(companyRequest);
 
     operation.subscribe({
-      next: () => {
-        this.submitting.set(false);
-        this.closeModal();
-        this.loadCompanies();
+      next: (empresa) => {
+        // El logo se sube aparte: el POST multipart necesita el id de la empresa.
+        const archivo = this.logoSeleccionado();
+        const id = this.editMode() ? this.selectedCompanyId()! : empresa?.id;
+        if (archivo && id) {
+          this.companyService.subirLogo(id, archivo).subscribe({
+            next: () => this.finalizarGuardado(),
+            error: () => {
+              this.submitError.set('La empresa se guardó, pero falló la subida del logotipo.');
+              this.submitting.set(false);
+            },
+          });
+          return;
+        }
+        this.finalizarGuardado();
       },
       error: (err: Error) => {
         this.submitError.set(err.message);
         this.submitting.set(false);
       }
+    });
+  }
+
+  /** Cierra el drawer y refresca la lista tras un guardado correcto. */
+  private finalizarGuardado(): void {
+    this.logoSeleccionado.set(null);
+    this.submitting.set(false);
+    this.closeModal();
+    this.loadCompanies();
+  }
+
+  /** Quita el logotipo actual de la empresa (el backend borra el binario). */
+  onQuitarLogo(): void {
+    this.logoSeleccionado.set(null);
+    const id = this.selectedCompanyId();
+    this.companyForm.get('logoUrl')?.setValue('');
+    if (!this.editMode() || !id) return;
+    this.companyService.eliminarLogo(id).subscribe({
+      error: () => this.submitError.set('No se pudo eliminar el logotipo.'),
     });
   }
 

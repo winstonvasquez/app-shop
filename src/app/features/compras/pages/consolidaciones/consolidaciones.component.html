@@ -161,19 +161,28 @@
                                 <app-button type="button" label="Quitar" icon="x" variant="secondary" size="sm"
                                             [disabled]="lineasArray.length <= 1" (click)="removeLinea(i)" />
                             </div>
-                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:.75rem">
+                            <div style="margin-top:.5rem">
+                                <label class="input-label">Nombre del producto *</label>
+                                <div style="display:flex;gap:4px;align-items:center">
+                                    <input class="form-input" formControlName="productoNombre" placeholder="Nombre del producto" />
+                                    <button type="button" class="btn btn-secondary" title="Buscar producto"
+                                        style="padding:4px 8px;font-size:0.75rem" (click)="toggleLookup(i)">🔍</button>
+                                </div>
+                            </div>
+                            @if (lookupOpenIndex() === i) {
+                                <div style="margin-top:.5rem">
+                                    <app-product-lookup placeholder="Buscar producto por nombre o SKU" (selected)="onProductoSeleccionado(i, $event)" />
+                                </div>
+                            }
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:.75rem; margin-top:.5rem">
                                 <div>
-                                    <label class="input-label">ID Producto *</label>
-                                    <input class="form-input" formControlName="productoId" placeholder="UUID del producto" />
+                                    <label class="input-label">ID Producto (autogenerado)</label>
+                                    <input class="form-input" formControlName="productoId" readonly placeholder="Selecciona un producto arriba" />
                                 </div>
                                 <div>
                                     <label class="input-label">SKU</label>
                                     <input class="form-input" formControlName="sku" />
                                 </div>
-                            </div>
-                            <div style="margin-top:.5rem">
-                                <label class="input-label">Nombre del producto *</label>
-                                <input class="form-input" formControlName="productoNombre" />
                             </div>
                             <div style="margin-top:.5rem; max-width:160px">
                                 <label class="input-label">Unidad</label>
@@ -186,14 +195,15 @@
                             </div>
                             <div formArrayName="tiendas" style="display:flex; flex-direction:column; gap:.5rem; margin-top:.5rem">
                                 @for (tienda of tiendasArray(i).controls; track tienda; let j = $index) {
-                                    <div [formGroupName]="j" style="display:grid; grid-template-columns:1fr 1fr 80px auto; gap:.5rem; align-items:end">
+                                    <div [formGroupName]="j" style="display:grid; grid-template-columns:1fr 80px auto; gap:.5rem; align-items:end">
                                         <div>
-                                            <label class="input-label">ID Tienda *</label>
-                                            <input class="form-input" formControlName="storeId" />
-                                        </div>
-                                        <div>
-                                            <label class="input-label">Nombre tienda *</label>
-                                            <input class="form-input" formControlName="storeNombre" />
+                                            <label class="input-label">Tienda *</label>
+                                            <select class="form-input" formControlName="storeId" (change)="onStoreChange(i, j, $event)">
+                                                <option value="">— Seleccionar —</option>
+                                                @for (s of sucursales(); track s.id) {
+                                                    <option [value]="s.id">{{ s.nombre }}</option>
+                                                }
+                                            </select>
                                         </div>
                                         <div>
                                             <label class="input-label">Cant. *</label>

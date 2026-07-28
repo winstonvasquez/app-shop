@@ -1,7 +1,14 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Envio, EnvioPage, CreateEnvioDto, TrackingEvent } from '../models/envio.model';
+import { Envio, EnvioPage, CreateEnvioDto, TrackingEvent, EnvioStatus } from '../models/envio.model';
+
+/** Body de `PUT /logistics/api/shipments/{id}/status` — alineado con `UpdateShipmentStatusRequest`. */
+export interface UpdateEnvioStatusBody {
+    status: EnvioStatus;
+    location: string;
+    description: string;
+}
 import { PAGINATION } from '@shared/constants/app.constants';
 
 /** Filtros server-side del listado de envíos (`GET /logistics/api/shipments`). Todos opcionales. */
@@ -61,6 +68,15 @@ export class EnvioService {
 
     create(dto: CreateEnvioDto): Observable<Envio> {
         return this.http.post<Envio>(this.baseUrl, dto);
+    }
+
+    /**
+     * Avanza el estado de un envío (ver `ShipmentController.updateShipmentStatus`).
+     * Vía usada por transportistas sin integración API: sin esto, un envío nunca
+     * llegaba a OUT_FOR_DELIVERY y "Confirmar entrega" quedaba inalcanzable.
+     */
+    updateStatus(id: string, body: UpdateEnvioStatusBody): Observable<Envio> {
+        return this.http.put<Envio>(`${this.baseUrl}/${id}/status`, body);
     }
 
     addTrackingEvent(shipmentId: string, event: Partial<TrackingEvent>): Observable<TrackingEvent> {

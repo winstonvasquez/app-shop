@@ -8,6 +8,7 @@ import { Sucursal, SucursalInput, SucursalService } from '@features/admin/servic
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
 import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
+import { bloquearEnEdicion } from '@shared/utils/form-lock';
 
 @Component({
     selector: 'app-sucursales',
@@ -49,7 +50,7 @@ export class SucursalesComponent implements OnInit {
     // un filtro que siempre devuelve 0 resultados.
     readonly filters: FilterConfig[] = [
         staticFilter('activo', 'Estado', ACTIVO_OPTIONS),
-        signalFilter('listaPreciosId', 'Todas las listas de precios', this.listasPreciosFiltro,
+        signalFilter('listaPreciosId', 'Lista de precios', this.listasPreciosFiltro,
             l => ({ value: l.id, label: l.nombre })),
     ];
 
@@ -102,7 +103,16 @@ export class SucursalesComponent implements OnInit {
         telefono: [''],
         serieBoleta: [''],
         serieFactura: [''],
+        // Baja lógica reversible: permite reactivar una sucursal desactivada desde el propio formulario.
+        activo: [true],
     });
+
+    /**
+     * Series CPE: son los correlativos SUNAT de la sucursal. Cambiarlas después de emitir
+     * el primer comprobante rompe la numeración declarada (y el PLE). Se muestran
+     * bloqueadas en edición, nunca ocultas.
+     */
+    private static readonly CAMPOS_BLOQUEADOS = ['serieBoleta', 'serieFactura'] as const;
 
     isEmpty = computed(() => !this.loading() && this.sucursales().length === 0);
 
@@ -196,7 +206,8 @@ export class SucursalesComponent implements OnInit {
 
     openCreate() {
         this.editingId.set(null);
-        this.form.reset();
+        this.form.reset({ activo: true });
+        bloquearEnEdicion(this.form, SucursalesComponent.CAMPOS_BLOQUEADOS, false);
         this.showForm.set(true);
     }
 
@@ -209,7 +220,9 @@ export class SucursalesComponent implements OnInit {
             telefono: s.telefono ?? '',
             serieBoleta: s.serieBoleta ?? '',
             serieFactura: s.serieFactura ?? '',
+            activo: s.activo,
         });
+        bloquearEnEdicion(this.form, SucursalesComponent.CAMPOS_BLOQUEADOS, true);
         this.showForm.set(true);
     }
 
@@ -223,9 +236,15 @@ export class SucursalesComponent implements OnInit {
         this.submitting.set(true);
         this.submitError.set(null);
 
+        // getRawValue(): serieBoleta/serieFactura quedan deshabilitadas en edición y no
+        // saldrían en form.value — se enviarían nulls y se borrarían las series SUNAT.
+        // El spread incluye `activo` (checkbox de estado); el backend solo respeta el
+        // estado actual cuando llega null, así que se manda siempre explícito.
+        const raw = this.form.getRawValue();
         const input: SucursalInput = {
             companyId: this.currentCompanyId(),
-            ...this.form.value,
+            ...raw,
+            activo: raw.activo !== false,
         };
 
         const id = this.editingId();

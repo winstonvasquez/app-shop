@@ -5,8 +5,11 @@ import { DevolucionService } from '../../services/devolucion.service';
 import { Devolucion, DevolucionStatus } from '../../models/devolucion.model';
 import { AlmacenService } from '../../services/almacen.service';
 import { Almacen } from '../../models/almacen.model';
+import { EnvioService } from '../../services/envio.service';
+import { Envio } from '../../models/envio.model';
+import { envioSelectSource } from '../../components/select-sources';
 import { AuthService } from '../../../../core/auth/auth.service';
-import { ButtonComponent } from '@shared/components';
+import { ButtonComponent, CatalogSelectComponent, ServerSearchSelectComponent } from '@shared/components';
 import { DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent, DateRangeFilterConfig, DateRangeChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { catalogFilter, signalFilter } from '@shared/ui/tables/data-table/filter-helpers';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
@@ -26,6 +29,8 @@ import { CatalogService } from '@core/services/catalog.service';
     imports: [
         ReactiveFormsModule,
         ButtonComponent,
+        CatalogSelectComponent,
+        ServerSearchSelectComponent,
         DataTableComponent,
         DrawerComponent,
         AlertComponent,
@@ -37,9 +42,13 @@ import { CatalogService } from '@core/services/catalog.service';
 export class DevolucionesPageComponent implements OnInit {
     private readonly service       = inject(DevolucionService);
     private readonly almacenService = inject(AlmacenService);
+    private readonly envioService  = inject(EnvioService);
     private readonly authService   = inject(AuthService);
     private readonly fb            = inject(FormBuilder);
     protected readonly catalog     = inject(CatalogService);
+
+    /** Fuente del select "Envío" del alta: deriva orderId/shipmentId de un mismo envío. */
+    readonly envioSource = envioSelectSource(this.envioService, () => this.companyId);
 
     // Data
     // Backend (GET /logistics/api/returns) devuelve Page<ReturnRequestResponse> — la
@@ -57,6 +66,14 @@ export class DevolucionesPageComponent implements OnInit {
     showDetail      = signal(false);
     actionLoading   = signal(false);
     actionError     = signal<string | null>(null);
+
+    // Alta de devolución (drawer "Nueva Devolución")
+    showCreate         = signal(false);
+    creating           = signal(false);
+    createError        = signal<string | null>(null);
+    /** Envío elegido en el select — de aquí se deriva orderId (shipmentId es el mismo id). */
+    selectedEnvio       = signal<Envio | null>(null);
+    loadingSelectedEnvio = signal(false);
 
     // Filtros (TODOS server-side — la vista nunca filtra la página cargada)
     searchQuery = signal('');
@@ -78,6 +95,15 @@ export class DevolucionesPageComponent implements OnInit {
         refundNotas:     ['']
     });
 
+    // Alta drawer — reactive. shipmentId sale del select de envío; orderId se
+    // deriva de ese mismo envío (Envio.orderId) al enviar, no es un control propio.
+    createForm = this.fb.group({
+        shipmentId: ['', [Validators.required]],
+        customerId: ['', [Validators.required]],
+        reason:     ['', [Validators.required]],
+        description: ['']
+    });
+
     // Pagination
     currentPage   = signal(0);
     pageSize      = signal<number>(PAGINATION.defaultPageSize);
@@ -87,9 +113,9 @@ export class DevolucionesPageComponent implements OnInit {
     // Filtros select del toolbar. Las opciones salen de erp_parameters (fuente única)
     // y de `almacenesFiltro` (lista dinámica cargada en ngOnInit).
     readonly estadoFilters: FilterConfig[] = [
-        catalogFilter(this.catalog, 'ESTADO_DEVOLUCION_LOGISTICA', 'status', 'Todos los estados'),
+        catalogFilter(this.catalog, 'ESTADO_DEVOLUCION_LOGISTICA', 'status', 'Estado'),
         catalogFilter(this.catalog, 'MOTIVO_DEVOLUCION_LOGISTICA', 'reason', 'Motivo de devolución'),
-        signalFilter('warehouseId', 'Todos los almacenes', this.almacenesFiltro,
+        signalFilter('warehouseId', 'Almacén', this.almacenesFiltro,
             a => ({ value: a.id, label: a.nombre })),
     ];
 
@@ -152,6 +178,18 @@ export class DevolucionesPageComponent implements OnInit {
     ngOnInit() {
         this.loadDevoluciones();
         this.loadAlmacenesFiltro();
+
+        // Al elegir un envío en el drawer de alta, trae el registro completo
+        // para derivar orderId (Envio.orderId) al enviar — el select solo emite el id.
+        this.createForm.controls.shipmentId.valueChanges.subscribe((id: string | null) => {
+            this.selectedEnvio.set(null);
+            if (!id) return;
+            this.loadingSelectedEnvio.set(true);
+            this.envioService.getById(id, this.companyId).subscribe({
+                next: (envio) => { this.selectedEnvio.set(envio); this.loadingSelectedEnvio.set(false); },
+                error: () => { this.loadingSelectedEnvio.set(false); }
+            });
+        });
     }
 
     /** Almacenes activos para el select de filtro "Almacén de recepción" del toolbar. */
@@ -251,6 +289,46 @@ export class DevolucionesPageComponent implements OnInit {
         this.currentPage.set(event.page);
         this.pageSize.set(event.size);
         this.loadDevoluciones();
+    }
+
+    // ── Alta ("Nueva Devolución") ─────────────────────────
+    openCreate(): void {
+        this.createForm.reset({ shipmentId: '', customerId: '', reason: '', description: '' });
+        this.selectedEnvio.set(null);
+        this.createError.set(null);
+        this.showCreate.set(true);
+    }
+
+    closeCreate(): void {
+        this.showCreate.set(false);
+    }
+
+    submitCreate(): void {
+        if (this.createForm.invalid) { this.createForm.markAllAsTouched(); return; }
+        const envio = this.selectedEnvio();
+        if (!envio?.orderId) {
+            this.createError.set('El envío seleccionado no tiene un pedido asociado.');
+            return;
+        }
+        const v = this.createForm.getRawValue();
+        this.creating.set(true);
+        this.createError.set(null);
+        this.service.create({
+            orderId: envio.orderId,
+            shipmentId: v.shipmentId!,
+            reason: v.reason!,
+            description: v.description || undefined
+        }, v.customerId!).subscribe({
+            next: () => {
+                this.creating.set(false);
+                this.closeCreate();
+                this.loadDevoluciones();
+            },
+            error: (err: Error) => {
+                this.creating.set(false);
+                this.createError.set(err.message ?? 'Error al crear la devolución.');
+            }
+        });
     }
 
     // ── Detalle y workflow ───────────────────────────────

@@ -4,6 +4,7 @@ import { HttpClient } from '@angular/common/http';
 import { environment } from '@env/environment';
 import { PageResponse, pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
+import { bloquearEnEdicion } from '@shared/utils/form-lock';
 import { DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent, DateRangeFilterConfig, DateRangeChangeEvent, PaginationEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { DateInputComponent } from '@shared/ui/forms/date-input/date-input.component';
@@ -104,9 +105,9 @@ export class ReturnsComponent implements OnInit {
     // Filtros select del toolbar — opciones dinámicas desde parámetros (BD, grupos de ventas
     // MOTIVO_DEVOLUCION / TIPO_RESOLUCION; no viven en erp_parameters, ver catalogos-disponibles.md).
     filters: FilterConfig[] = [
-        { field: 'estado', label: 'Todos los estados', options: this.parametros.getEstadosDevolucion() },
-        { field: 'motivo', label: 'Todos los motivos', options: this.parametros.getMotivosDevolucion() },
-        { field: 'tipoResolucion', label: 'Todas las resoluciones', options: this.parametros.getTiposResolucion() }
+        { field: 'estado', label: 'Estado', options: this.parametros.getEstadosDevolucion() },
+        { field: 'motivo', label: 'Motivo', options: this.parametros.getMotivosDevolucion() },
+        { field: 'tipoResolucion', label: 'Resolución', options: this.parametros.getTiposResolucion() }
     ];
 
     dateRangeFilters: DateRangeFilterConfig[] = [
@@ -269,6 +270,7 @@ export class ReturnsComponent implements OnInit {
     // ── Drawer / CRUD ─────────────────────────────────────────────────────────
     abrirNueva(): void {
         this.resetForm();
+        bloquearEnEdicion(this.returnForm, ['pedidoId', 'numeroOrden', 'fechaSolicitud'], false);
         this.editMode.set(false);
         this.selectedId.set(null);
         this.submitError.set('');
@@ -287,6 +289,9 @@ export class ReturnsComponent implements OnInit {
             observaciones:  row.observaciones ?? '',
         });
         this.returnForm.markAsPristine();
+        // El pedido de origen y su número identifican la devolución: reapuntarla a
+        // otro pedido descuadraría el stock y la nota de crédito ya emitida.
+        bloquearEnEdicion(this.returnForm, ['pedidoId', 'numeroOrden', 'fechaSolicitud'], true);
         this.editMode.set(true);
         this.selectedId.set(row.id);
         this.submitError.set('');

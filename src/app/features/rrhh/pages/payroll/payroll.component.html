@@ -1,0 +1,262 @@
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Planilla Remunerativa</h1>
+    <p class="page-subtitle">Corrida mensual — cálculo AFP/ONP, Renta 5ta, ESSALUD y beneficios en el servidor</p>
+  </div>
+  <div class="page-actions">
+    <input class="input-field" type="month" [(ngModel)]="periodo" (ngModelChange)="cargarPeriodo()"
+           style="width:160px" [max]="mesMaximo">
+    <button class="btn btn-primary" (click)="generarPlanilla()" [disabled]="cargando()">
+      {{ cargando() ? 'Procesando…' : 'Generar Planilla' }}
+    </button>
+    <button class="btn btn-secondary" (click)="openNuevaBoleta()">Nueva boleta</button>
+  </div>
+</div>
+
+@if (mensaje(); as m) {
+  <div class="card" style="margin-bottom:var(--space-md);border-left:3px solid var(--color-info)">
+    <div class="card-body" style="padding:12px 16px;font-size:0.85rem;color:var(--color-text-on)">{{ m }}</div>
+  </div>
+}
+@if (error(); as e) {
+  <div class="card" style="margin-bottom:var(--space-md);border-left:3px solid var(--color-error)">
+    <div class="card-body" style="padding:12px 16px;font-size:0.85rem;color:var(--color-error)">{{ e }}</div>
+  </div>
+}
+
+@if (cargando()) {
+  <div class="loading-container"><div class="spinner"></div></div>
+}
+
+@if (planillas().length > 0) {
+  <!-- KPIs resumen -->
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:var(--space-md);margin-bottom:var(--space-lg)">
+    <div class="card"><div class="card-body">
+      <div class="text-sm" style="color:var(--color-text-muted)">Total haberes brutos</div>
+      <div class="font-bold" style="font-size:1.75rem;color:var(--color-primary)">S/ {{ totalBruto() | number:'1.2-2' }}</div>
+      <div class="text-sm" style="color:var(--color-text-muted)">{{ planillas().length }} trabajadores</div>
+    </div></div>
+    <div class="card"><div class="card-body">
+      <div class="text-sm" style="color:var(--color-text-muted)">Total descuentos</div>
+      <div class="font-bold" style="font-size:1.75rem;color:var(--color-warning)">S/ {{ totalDescuentos() | number:'1.2-2' }}</div>
+      <div class="text-sm" style="color:var(--color-text-muted)">AFP/ONP + Renta 5ta</div>
+    </div></div>
+    <div class="card"><div class="card-body">
+      <div class="text-sm" style="color:var(--color-text-muted)">Total neto a pagar</div>
+      <div class="font-bold" style="font-size:1.75rem;color:var(--color-success)">S/ {{ totalNeto() | number:'1.2-2' }}</div>
+    </div></div>
+    <div class="card"><div class="card-body">
+      <div class="text-sm" style="color:var(--color-text-muted)">ESSALUD empleador (9%)</div>
+      <div class="font-bold" style="font-size:1.75rem">S/ {{ totalEssalud() | number:'1.2-2' }}</div>
+    </div></div>
+    <div class="card"><div class="card-body">
+      <div class="text-sm" style="color:var(--color-text-muted)">Costo total empresa</div>
+      <div class="font-bold" style="font-size:1.75rem">S/ {{ (totalBruto() + totalEssalud()) | number:'1.2-2' }}</div>
+      <div class="text-sm" style="color:var(--color-text-muted)">bruto + ESSALUD</div>
+    </div></div>
+  </div>
+
+  <!-- Tabla planilla -->
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title">Detalle de Planilla — {{ periodoLabel() }}</h3>
+      <span class="badge badge-neutral">{{ planillas().length }} boletas</span>
+    </div>
+    <div style="overflow-x:auto">
+      <table class="table" style="font-size:0.8rem;min-width:1080px">
+        <thead>
+          <tr>
+            <th class="table-header-cell">Empleado / Previsional</th>
+            <th class="table-header-cell text-right">S. Base</th>
+            <th class="table-header-cell text-right">As.Fam.</th>
+            <th class="table-header-cell text-right">H.Extra</th>
+            <th class="table-header-cell text-right" style="color:var(--color-success)">BRUTO</th>
+            <th class="table-header-cell text-right">AFP/ONP</th>
+            <th class="table-header-cell text-right">Renta 5ta</th>
+            <th class="table-header-cell text-right" style="color:var(--color-warning)">DESCT.</th>
+            <th class="table-header-cell text-right" style="color:var(--color-success)">NETO</th>
+            <th class="table-header-cell">Estado</th>
+            <th class="table-header-cell">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (p of planillas(); track p.id) {
+            <tr class="table-row">
+              <td class="table-cell">
+                <div class="font-bold">{{ p.employeeName || ('Empleado #' + p.employeeId) }}</div>
+                <div style="color:var(--color-text-muted);font-size:0.72rem">
+                  <span class="badge badge-neutral" style="font-size:0.65rem">{{ p.afpOnp || '—' }}</span>
+                  · {{ p.diasTrabajados ?? 30 }} días
+                </div>
+              </td>
+              <td class="table-cell text-right font-mono">{{ p.sueldoBase | number:'1.2-2' }}</td>
+              <td class="table-cell text-right font-mono">{{ (p.asignacionFamiliar || 0) > 0 ? (p.asignacionFamiliar | number:'1.2-2') : '—' }}</td>
+              <td class="table-cell text-right font-mono">{{ (p.montoHorasExtras || 0) > 0 ? (p.montoHorasExtras | number:'1.2-2') : '—' }}</td>
+              <td class="table-cell text-right font-mono font-bold" style="color:var(--color-success)">{{ bruto(p) | number:'1.2-2' }}</td>
+              <td class="table-cell text-right font-mono" style="color:var(--color-warning)">{{ p.montoAfpOnp | number:'1.2-2' }}</td>
+              <td class="table-cell text-right font-mono" style="color:var(--color-warning)">{{ (p.rentaQuinta || 0) > 0 ? (p.rentaQuinta | number:'1.2-2') : '—' }}</td>
+              <td class="table-cell text-right font-mono font-bold" style="color:var(--color-warning)">{{ descuentos(p) | number:'1.2-2' }}</td>
+              <td class="table-cell text-right font-mono font-bold" style="color:var(--color-success)">{{ p.neto | number:'1.2-2' }}</td>
+              <td class="table-cell">
+                <span class="badge" [class]="estadoBadge(p.estado)">{{ p.estado }}</span>
+                @if (p.estado === 'PAGADO' && p.fechaPago) {
+                  <div style="font-size:0.65rem;color:var(--color-text-muted);margin-top:2px">{{ p.fechaPago | date:'dd/MM/yyyy' }}</div>
+                }
+              </td>
+              <td class="table-cell">
+                <div style="display:flex;gap:6px;flex-wrap:wrap">
+                  <button class="btn btn-secondary" style="font-size:0.72rem;padding:4px 10px" (click)="verBoleta(p.id)">Ver boleta</button>
+                  @if (p.estado === 'GENERADO') {
+                    <button class="btn btn-primary" style="font-size:0.72rem;padding:4px 10px" [disabled]="accionando()" (click)="aprobar(p)">Aprobar</button>
+                  }
+                  @if (p.estado === 'APROBADO') {
+                    <button class="btn btn-primary" style="font-size:0.72rem;padding:4px 10px" [disabled]="accionando()" (click)="pagar(p)">Pagar</button>
+                  }
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+        <tfoot>
+          <tr style="font-weight:700;border-top:2px solid var(--color-border)">
+            <td class="table-cell">TOTALES</td>
+            <td class="table-cell text-right font-mono">{{ totalSueldoBase() | number:'1.2-2' }}</td>
+            <td class="table-cell text-right">—</td>
+            <td class="table-cell text-right">—</td>
+            <td class="table-cell text-right font-mono" style="color:var(--color-success)">{{ totalBruto() | number:'1.2-2' }}</td>
+            <td class="table-cell text-right">—</td>
+            <td class="table-cell text-right">—</td>
+            <td class="table-cell text-right font-mono" style="color:var(--color-warning)">{{ totalDescuentos() | number:'1.2-2' }}</td>
+            <td class="table-cell text-right font-mono" style="color:var(--color-success)">{{ totalNeto() | number:'1.2-2' }}</td>
+            <td class="table-cell"></td>
+            <td class="table-cell"></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+}
+
+@if (planillas().length === 0 && !cargando()) {
+  <div class="card">
+    <div class="card-body" style="text-align:center;padding:var(--space-xl)">
+      <p style="color:var(--color-text-muted)">
+        No hay planilla generada para <strong>{{ periodoLabel() }}</strong>.
+        Pulse <strong>Generar Planilla</strong> para calcular las boletas de todos los empleados activos.
+      </p>
+    </div>
+  </div>
+}
+
+<!-- ── Listado completo de boletas (TODOS los periodos, filtros avanzados) ──── -->
+<!-- No reemplaza la generación por periodo de arriba: es un listado/consulta aparte. -->
+<div style="margin-top:var(--space-xl)">
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:var(--space-md);flex-wrap:wrap;margin-bottom:var(--space-xs)">
+    <h3 class="text-lg font-semibold">Todas las Boletas</h3>
+    <div style="display:flex;align-items:center;gap:var(--space-sm)">
+      <label class="input-label" style="margin:0">Periodo</label>
+      <input class="input-field" type="month" [(ngModel)]="periodoLista" (ngModelChange)="onPeriodoListaChange()"
+             style="width:160px" [max]="mesMaximo">
+    </div>
+  </div>
+  <p class="text-subtle text-sm" style="margin-bottom:var(--space-md)">
+    Consulta de boletas ya generadas, de cualquier periodo — filtre por estado, empleado, departamento,
+    sistema previsional o rango de fecha de pago, y exporte el resultado.
+  </p>
+
+  @if (boletasError()) {
+    <div class="card" style="margin-bottom:var(--space-md);border-left:3px solid var(--color-error)">
+      <div class="card-body" style="padding:12px 16px;font-size:0.85rem;color:var(--color-error)">{{ boletasError() }}</div>
+    </div>
+  }
+
+  <app-data-table
+      [data]="boletas()"
+      [columns]="boletasColumns"
+      [actions]="boletasActions"
+      [loading]="boletasLoading()"
+      [searchable]="true"
+      searchPlaceholder="Buscar por nombre o código de empleado..."
+      [filters]="filters"
+      [dateRangeFilters]="dateRangeFilters"
+      [exportable]="true"
+      exportFileName="planillas"
+      [exportConfig]="exportConfig"
+      [currentPage]="currentPage()"
+      [pageSize]="pageSize()"
+      [totalElements]="totalElements()"
+      [totalPages]="totalPages()"
+      (searchChange)="onSearchTerm($event)"
+      (filterChange)="onFilterChangeEvent($event)"
+      (dateRangeChange)="onDateRangeChange($event)"
+      (filtersClear)="onFiltersClear()"
+      (pageChange)="onPaginationChange($event)" />
+</div>
+
+<!-- Drawer: Nueva boleta individual (POST /hr/api/payroll) / corregir (PUT /hr/api/payroll/{id}) -->
+<app-drawer
+    [isOpen]="showBoletaDrawer()"
+    [title]="boletaCorrigiendo() ? 'Corregir boleta' : 'Nueva boleta'"
+    size="lg"
+    [hasFooter]="true"
+    (closed)="closeBoletaDrawer()">
+
+  <form [formGroup]="boletaForm" (ngSubmit)="guardarBoleta()">
+
+    @if (boletaSubmitError()) {
+      <div class="card" style="margin-bottom:var(--space-md);border-left:3px solid var(--color-error)">
+        <div class="card-body" style="padding:12px 16px;font-size:0.85rem;color:var(--color-error)">{{ boletaSubmitError() }}</div>
+      </div>
+    }
+
+    @if (boletaCorrigiendo(); as bc) {
+      <p class="text-subtle text-sm" style="margin-bottom:var(--space-md)">
+        Se corregirá la boleta de <strong>{{ bc.employeeName || ('Empleado #' + bc.employeeId) }}</strong>
+        — periodo <strong>{{ bc.periodo }}</strong>. Solo se puede corregir mientras la boleta está
+        en estado GENERADO; si ya fue aprobada o pagada el servidor rechaza la operación.
+      </p>
+    }
+
+    <div style="margin-bottom: var(--space-md)">
+      <label class="input-label">Empleado *</label>
+      <app-server-search-select [dataSource]="employeeSource"
+                                formControlName="employeeId"
+                                placeholder="Buscar empleado por nombre o código…" />
+    </div>
+
+    <app-admin-form-section title="Periodo y sueldo base" [columns]="2">
+      <app-form-field
+          label="Periodo"
+          type="month"
+          [control]="getBoletaControl('periodo')"
+          [required]="true" />
+
+      <app-form-field
+          label="Sueldo Base"
+          type="number"
+          [control]="getBoletaControl('sueldoBase')"
+          placeholder="0.00"
+          [required]="true" />
+    </app-admin-form-section>
+
+    <app-admin-form-section title="Ingresos adicionales" [columns]="3">
+      <app-form-field label="Bonos" type="number" [control]="getBoletaControl('bonos')" placeholder="0.00" />
+      <app-form-field label="Asignación Familiar" type="number" [control]="getBoletaControl('asignacionFamiliar')" placeholder="0.00" />
+      <app-form-field label="Monto Horas Extras" type="number" [control]="getBoletaControl('montoHorasExtras')" placeholder="0.00" />
+    </app-admin-form-section>
+
+    <app-admin-form-section title="Descuentos y asistencia" [columns]="2">
+      <app-form-field label="Descuentos" type="number" [control]="getBoletaControl('descuentos')" placeholder="0.00" />
+      <app-form-field label="Días Trabajados" type="number" [control]="getBoletaControl('diasTrabajados')" placeholder="30" />
+    </app-admin-form-section>
+
+  </form>
+
+  <div slot="footer" class="form-actions">
+    <button class="btn btn-secondary" type="button" (click)="closeBoletaDrawer()">Cancelar</button>
+    <button class="btn btn-primary" type="button" [disabled]="boletaSubmitting()" (click)="guardarBoleta()">
+      {{ boletaSubmitting() ? 'Guardando…' : (boletaCorrigiendo() ? 'Guardar corrección' : 'Crear boleta') }}
+    </button>
+  </div>
+
+</app-drawer>

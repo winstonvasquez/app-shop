@@ -9,7 +9,7 @@ import { FilterConfig } from './data-table.component';
  *
  * Antes cada página repetía a mano el mismo bloque:
  *
- *     { field: 'estado', label: 'Todos los estados',
+ *     { field: 'estado', label: 'Estado',
  *       options: toObservable(this.catalog.options('ESTADO_ORDEN_COMPRA'))
  *                  .pipe(map(o => o.map(x => ({ value: x.codigo, label: x.valor })))) }
  *
@@ -26,9 +26,9 @@ import { FilterConfig } from './data-table.component';
  *     private readonly catalog = inject(CatalogService);
  *
  *     readonly filters: FilterConfig[] = [
- *         catalogFilter(this.catalog, 'ESTADO_ORDEN_COMPRA', 'estado', 'Todos los estados'),
+ *         catalogFilter(this.catalog, 'ESTADO_ORDEN_COMPRA', 'estado', 'Estado'),
  *         catalogFilter(this.catalog, 'CONDICION_PAGO', 'condicionPago', 'Cond. de pago'),
- *         signalFilter('almacenId', 'Todos los almacenes', this.almacenes, a => ({ value: a.id, label: a.nombre })),
+ *         signalFilter('almacenId', 'Almacén', this.almacenes, a => ({ value: a.id, label: a.nombre })),
  *     ];
  */
 

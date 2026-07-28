@@ -17,6 +17,7 @@ import { InventoryApiService } from '../../services/inventory-api.service';
 import { Warehouse } from '../../models/inventory.models';
 import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 import { PAGINATION, ROUTES } from '@shared/constants/app.constants';
+import { bloquearEnEdicion } from '@shared/utils/form-lock';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
 
@@ -213,6 +214,9 @@ export class WarehouseManagementComponent implements OnInit {
         this.editMode.set(false);
         this.selectedId.set(null);
         this.form.reset({ active: true, isPrincipal: false });
+        // `code` es la clave que referencian ubicaciones, stock y movimientos ya registrados:
+        // se escribe al crear y se lee bloqueado al editar. Ver @shared/utils/form-lock.
+        bloquearEnEdicion(this.form, ['code'], false);
         this.submitError.set(null);
         this.showDrawer.set(true);
     }
@@ -221,6 +225,7 @@ export class WarehouseManagementComponent implements OnInit {
         this.editMode.set(true);
         this.selectedId.set(w.id);
         this.form.patchValue(w);
+        bloquearEnEdicion(this.form, ['code'], true);
         this.submitError.set(null);
         this.showDrawer.set(true);
     }

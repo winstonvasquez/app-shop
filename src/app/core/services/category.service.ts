@@ -105,6 +105,25 @@ export class CategoryService {
             .pipe(catchError(this.handleError));
     }
 
+    /**
+     * Sube la imagen de la categoría; el backend la guarda como binario en la
+     * base de datos y devuelve la categoría con la URL del binario servido.
+     */
+    subirImagen(id: number, archivo: File): Observable<CategoryResponse> {
+        const formData = new FormData();
+        formData.append('file', archivo);
+        return this.http
+            .post<CategoryResponse>(`${this.baseUrl}/${id}/imagen`, formData, { params: this.tenantParams() })
+            .pipe(catchError(this.handleError));
+    }
+
+    /** Elimina la imagen binaria de la categoría. */
+    eliminarImagen(id: number): Observable<void> {
+        return this.http
+            .delete<void>(`${this.baseUrl}/${id}/imagen`, { params: this.tenantParams() })
+            .pipe(catchError(this.handleError));
+    }
+
     private tenantParams(): HttpParams {
         const id = this.auth.currentUser()?.activeCompanyId;
         return id != null ? new HttpParams().set('companyId', String(id)) : new HttpParams();

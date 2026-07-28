@@ -4,6 +4,7 @@
     subtitle="Gestión de rutas de despacho y distribución"
     [breadcrumbs]="breadcrumbs">
     <div actions>
+      <app-button icon="plus" variant="primary" label="Nueva Ruta" (click)="openCreateDrawer()" />
       <app-button icon="refresh-cw" variant="ghost" size="sm" label="Actualizar" (click)="loadRoutes()" />
     </div>
   </app-page-header>
@@ -39,3 +40,74 @@
     (pageChange)="onPageChange($event)">
   </app-data-table>
 </div>
+
+<!-- Drawer: Nueva Ruta -->
+<app-drawer
+  [isOpen]="showCreateDrawer()"
+  title="Nueva Ruta"
+  size="lg"
+  side="right"
+  [hasFooter]="true"
+  (closed)="closeCreateDrawer()">
+
+  <form [formGroup]="createForm">
+    @if (createError()) {
+      <app-alert type="error" [message]="createError()!" [dismissible]="true" (dismiss)="createError.set(null)" />
+    }
+
+    <div class="form-field-wrapper">
+      <app-date-input label="Fecha de ruta" [required]="true" formControlName="date" />
+      @if (createForm.get('date')?.invalid && createForm.get('date')?.touched) {
+        <span class="input-error-message">La fecha de ruta es requerida</span>
+      }
+    </div>
+
+    <div class="form-field-wrapper">
+      <label class="input-label">Almacén de origen *</label>
+      <app-server-search-select [dataSource]="almacenSource" formControlName="warehouseId"
+        placeholder="Buscar almacén…" />
+      @if (createForm.get('warehouseId')?.invalid && createForm.get('warehouseId')?.touched) {
+        <span class="input-error-message">Seleccione un almacén de origen</span>
+      }
+    </div>
+
+    <div class="form-grid">
+      <div class="form-field-wrapper">
+        <label class="input-label">Conductor</label>
+        <input class="form-input" type="text" formControlName="driverName" placeholder="Nombre del conductor">
+      </div>
+      <div class="form-field-wrapper">
+        <label class="input-label">Placa del vehículo</label>
+        <input class="form-input" type="text" formControlName="vehiclePlate" placeholder="ABC-123">
+      </div>
+    </div>
+
+    <div class="form-section">
+      <h4 class="form-section-title">Envíos pendientes de despacho *</h4>
+      @if (loadingPendingShipments()) {
+        <p class="text-subtle" style="font-size:0.85rem">Cargando envíos…</p>
+      } @else if (pendingShipments().length === 0) {
+        <p class="text-subtle" style="font-size:0.85rem">No hay envíos pendientes de despacho.</p>
+      } @else {
+        <div style="max-height:260px;overflow-y:auto;display:flex;flex-direction:column;gap:8px">
+          @for (envio of pendingShipments(); track envio.id) {
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+              <input type="checkbox" style="width:16px;height:16px;accent-color:var(--color-primary);flex-shrink:0"
+                     [checked]="isShipmentSelected(envio.id)"
+                     (change)="toggleShipment(envio.id)">
+              <span style="font-size:0.85rem">{{ envio.trackingNumber }} — {{ envio.recipientName }} ({{ envio.shippingAddress }})</span>
+            </label>
+          }
+        </div>
+      }
+    </div>
+  </form>
+
+  <div slot="footer">
+    <app-button icon="x" variant="secondary" label="Cancelar" (click)="closeCreateDrawer()" />
+    <app-button icon="send" variant="primary"
+      [label]="creatingRoute() ? 'Generando...' : 'Generar Ruta'"
+      [disabled]="creatingRoute()"
+      (click)="submitGenerate()" />
+  </div>
+</app-drawer>

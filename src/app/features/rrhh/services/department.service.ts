@@ -169,4 +169,13 @@ export class DepartmentService {
             list.map(d => d.id === id ? { ...d, activo: false } : d)
         );
     }
+
+    async activateDepartment(id: number): Promise<void> {
+        await firstValueFrom(
+            this.http.patch<void>(`${this.baseUrl}/${id}/activate`, {})
+        );
+        this._departments.update(list =>
+            list.map(d => d.id === id ? { ...d, activo: true } : d)
+        );
+    }
 }

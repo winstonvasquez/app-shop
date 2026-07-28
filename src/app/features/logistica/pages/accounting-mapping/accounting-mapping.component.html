@@ -92,6 +92,23 @@
                    [ngModel]="descriptionTemplate()" (ngModelChange)="descriptionTemplate.set($event)" />
             <p class="text-muted text-sm mt-1">Opcional. Usa <code>{{ '{' }}referencia{{ '}' }}</code> como placeholder del ID del evento.</p>
         </div>
+        @if (editandoId()) {
+            <!-- Editable: el PUT acepta `activo`, y reactivar desde acá es la única vía —
+                 un mapeo inactivo sigue ocupando el tipo de evento (unique event_type+tenant). -->
+            <div>
+                <label class="input-label">Estado</label>
+                <label class="flex items-center gap-2">
+                    <input type="checkbox" class="toggle-input"
+                           [ngModel]="activoEditando()" (ngModelChange)="activoEditando.set($event)" />
+                    <span class="text-muted text-sm">Activo</span>
+                </label>
+                <p class="text-muted text-sm mt-1">
+                    Desmarcar da de baja el mapeo: los eventos de este tipo dejan de generar asiento
+                    automático. Volver a marcarlo lo reactiva — es la única forma de recuperarlo,
+                    porque el tipo de evento sigue reservado y no admite un mapeo duplicado.
+                </p>
+            </div>
+        }
     </div>
 
     <ng-container slot="footer">

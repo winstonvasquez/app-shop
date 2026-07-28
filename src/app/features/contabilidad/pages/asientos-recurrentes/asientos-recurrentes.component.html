@@ -49,7 +49,7 @@
 <!-- ── DRAWER NUEVO ASIENTO RECURRENTE ─────────────────────────────────── -->
 <app-drawer
     [isOpen]="mostrarForm()"
-    title="Nuevo Asiento Recurrente"
+    [title]="editandoId() ? 'Editar Asiento Recurrente' : 'Nuevo Asiento Recurrente'"
     size="lg"
     side="right"
     (closed)="cerrarForm()">

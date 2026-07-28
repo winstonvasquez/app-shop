@@ -9,12 +9,18 @@ import {
 } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators, FormArray, FormGroup } from '@angular/forms';
 import { RouterModule } from '@angular/router';
+import { HttpErrorResponse } from '@angular/common/http';
 import { SolicitudCompraService } from '../../services/solicitud-compra.service';
 import { AuthService } from '@core/auth/auth.service';
 import { CatalogService } from '@core/services/catalog.service';
 import { SolicitudCompra, SolicitudCompraItem } from '../../models/solicitud-compra.model';
-import { ButtonComponent, CatalogSelectComponent } from '@shared/components';
+import { ButtonComponent, CatalogSelectComponent, ServerSearchSelectComponent } from '@shared/components';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
+import { bloquearEnEdicion } from '@shared/utils/form-lock';
+import { ProveedorService } from '../../services/proveedor.service';
+import { proveedorSelectSource } from '../../components/select-sources';
+import { AlmacenService } from '../../../logistica/services/almacen.service';
+import { almacenSelectSource } from '../../../logistica/components/select-sources';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import {
@@ -34,6 +40,7 @@ import { PAGINATION } from '@shared/constants/app.constants';
         RouterModule,
         ButtonComponent,
         CatalogSelectComponent,
+        ServerSearchSelectComponent,
         DrawerComponent,
         PageHeaderComponent,
         AlertComponent,
@@ -44,9 +51,15 @@ import { PAGINATION } from '@shared/constants/app.constants';
 export class SolicitudesCompraComponent implements OnInit {
     private readonly solicitudService = inject(SolicitudCompraService);
     private readonly authService = inject(AuthService);
+    private readonly proveedorService = inject(ProveedorService);
+    private readonly almacenService = inject(AlmacenService);
     private readonly fb = inject(FormBuilder);
     private readonly cdr = inject(ChangeDetectorRef);
     protected readonly catalog = inject(CatalogService);
+
+    /** Data sources para los selects server-side del modal "Convertir a OC". */
+    readonly proveedorSource = proveedorSelectSource(this.proveedorService);
+    readonly almacenSource = almacenSelectSource(this.almacenService, () => this.authService.currentUser()?.activeCompanyId);
 
     // Data
     solicitudes = signal<SolicitudCompra[]>([]);
@@ -56,6 +69,7 @@ export class SolicitudesCompraComponent implements OnInit {
     loading = signal(false);
     error = signal<string | null>(null);
     showForm = signal(false);
+    editMode = signal(false);
     showDetail = signal(false);
     submitting = signal(false);
     submitError = signal<string | null>(null);
@@ -84,7 +98,7 @@ export class SolicitudesCompraComponent implements OnInit {
 
     // Filtros select del toolbar. Las opciones salen de erp_parameters (fuente única).
     filters: FilterConfig[] = [
-        catalogFilter(this.catalog, 'ESTADO_SOLICITUD_COMPRA', 'estado', 'Todos los estados'),
+        catalogFilter(this.catalog, 'ESTADO_SOLICITUD_COMPRA', 'estado', 'Estado'),
         catalogFilter(this.catalog, 'PRIORIDAD_SOLICITUD', 'prioridad', 'Prioridad'),
     ];
 
@@ -110,6 +124,11 @@ export class SolicitudesCompraComponent implements OnInit {
         {
             label: 'Ver', icon: '👁️', class: 'btn-view',
             onClick: (row) => this.openDetail(row)
+        },
+        {
+            label: 'Editar', icon: '✏️', class: 'btn-edit',
+            show: (row) => row.estado === 'BORRADOR',
+            onClick: (row) => this.openEditForm(row)
         },
     ];
 
@@ -244,15 +263,67 @@ export class SolicitudesCompraComponent implements OnInit {
     }
 
     openCreateForm(): void {
+        this.editMode.set(false);
         this.solicitudForm.reset({ prioridad: 'NORMAL' });
         while (this.itemsArray.length > 0) this.itemsArray.removeAt(0);
         this.itemsArray.push(this.createItemFormGroup());
+        // Alta: 'departamento' viaja en CrearSolicitudRequest, se edita libremente.
+        bloquearEnEdicion(this.solicitudForm, ['departamento'], false);
+        this.submitError.set(null);
+        this.showForm.set(true);
+    }
+
+    /**
+     * Solo disponible para solicitudes en BORRADOR (guard también en el backend:
+     * `SolicitudCompraCommandService.actualizar` rechaza cualquier otro estado).
+     * `ActualizarSolicitudRequest` NO acepta `departamento` — se bloquea el campo
+     * para no sugerir un cambio que el backend va a ignorar.
+     */
+    openEditForm(solicitud: SolicitudCompra): void {
+        this.editMode.set(true);
+        this.selectedSolicitud.set(solicitud);
+        this.solicitudForm.patchValue({
+            justificacion: solicitud.justificacion ?? '',
+            departamento: solicitud.departamento ?? '',
+            prioridad: solicitud.prioridad ?? 'NORMAL',
+            fechaRequerida: solicitud.fechaRequerida ?? '',
+        });
+
+        while (this.itemsArray.length > 0) this.itemsArray.removeAt(0);
+        const items = solicitud.items ?? [];
+        if (items.length === 0) {
+            this.itemsArray.push(this.createItemFormGroup());
+        } else {
+            for (const item of items) {
+                const group = this.createItemFormGroup();
+                group.patchValue({
+                    productoId: item.productoId ?? '',
+                    proveedorSugeridoId: item.proveedorSugeridoId ?? '',
+                    productoNombre: item.productoNombre ?? '',
+                    sku: item.sku ?? '',
+                    cantidad: item.cantidad ?? 1,
+                    unidadMedida: item.unidadMedida ?? 'UNIDAD',
+                    precioEstimado: item.precioEstimado ?? null,
+                    observaciones: item.observaciones ?? '',
+                });
+                this.itemsArray.push(group);
+            }
+        }
+
+        bloquearEnEdicion(this.solicitudForm, ['departamento'], true);
         this.submitError.set(null);
         this.showForm.set(true);
     }
 
     closeForm(): void {
         this.showForm.set(false);
+        this.editMode.set(false);
+        this.selectedSolicitud.set(null);
+        // Limpia el form para que la próxima apertura (alta o edición) no arrastre datos.
+        this.solicitudForm.reset({ prioridad: 'NORMAL' });
+        while (this.itemsArray.length > 0) this.itemsArray.removeAt(0);
+        this.itemsArray.push(this.createItemFormGroup());
+        bloquearEnEdicion(this.solicitudForm, ['departamento'], false);
     }
 
     openDetail(solicitud: SolicitudCompra): void {
@@ -276,20 +347,22 @@ export class SolicitudesCompraComponent implements OnInit {
         }
     }
 
-    createSolicitud(): void {
+    /** Dispatcher del submit del drawer alta/edición: distingue por `editMode()`. */
+    submitSolicitud(): void {
         if (this.solicitudForm.invalid) return;
+        if (this.editMode()) {
+            this.actualizarSolicitud();
+        } else {
+            this.crearSolicitud();
+        }
+    }
+
+    private crearSolicitud(): void {
         const user = this.authService.currentUser();
         if (!user) return;
 
         const formValue = this.solicitudForm.value;
-        const items: SolicitudCompraItem[] = (formValue.items ?? []).map((i: Record<string, unknown>) => ({
-            productoNombre: i['productoNombre'] as string,
-            sku: i['sku'] as string | undefined,
-            cantidad: Number(i['cantidad']),
-            unidadMedida: (i['unidadMedida'] as string) || 'UNIDAD',
-            precioEstimado: i['precioEstimado'] ? Number(i['precioEstimado']) : undefined,
-            observaciones: i['observaciones'] as string | undefined,
-        }));
+        const items = this.buildItemsPayload(formValue.items ?? []);
 
         const payload: Partial<SolicitudCompra> = {
             solicitanteNombre: user.username,
@@ -302,19 +375,73 @@ export class SolicitudesCompraComponent implements OnInit {
 
         this.submitting.set(true);
         this.submitError.set(null);
-        this.solicitudService.createSolicitud(payload, String(user.userId), user.username).subscribe({
+        this.solicitudService.createSolicitud(payload, user.userId, user.username).subscribe({
             next: () => {
                 this.submitting.set(false);
-                this.showForm.set(false);
+                this.closeForm();
                 this.loadSolicitudes();
             },
             error: (err) => {
-                this.submitError.set('Error al crear la solicitud');
+                this.submitError.set(this.extractErrorMessage(err, 'Error al crear la solicitud'));
                 this.submitting.set(false);
                 console.error(err);
                 this.cdr.markForCheck();
             },
         });
+    }
+
+    private actualizarSolicitud(): void {
+        const solicitud = this.selectedSolicitud();
+        if (!solicitud?.id) return;
+
+        // getRawValue(): 'departamento' está deshabilitado en edición (ActualizarSolicitudRequest
+        // no lo acepta) y no aparecería en `.value` — con `.value` se perdería el resto del payload
+        // por desincronía de índices de FormArray, así que se usa getRawValue de forma consistente.
+        const formValue = this.solicitudForm.getRawValue();
+        const items = this.buildItemsPayload(formValue.items ?? []);
+
+        const payload: Partial<SolicitudCompra> = {
+            justificacion: formValue.justificacion ?? '',
+            prioridad: formValue.prioridad ?? 'NORMAL',
+            fechaRequerida: formValue.fechaRequerida ?? undefined,
+            items,
+        };
+
+        this.submitting.set(true);
+        this.submitError.set(null);
+        this.solicitudService.updateSolicitud(solicitud.id, payload).subscribe({
+            next: () => {
+                this.submitting.set(false);
+                this.closeForm();
+                this.loadSolicitudes();
+            },
+            error: (err) => {
+                this.submitError.set(this.extractErrorMessage(err, 'Error al actualizar la solicitud'));
+                this.submitting.set(false);
+                console.error(err);
+                this.cdr.markForCheck();
+            },
+        });
+    }
+
+    private buildItemsPayload(items: Record<string, unknown>[]): SolicitudCompraItem[] {
+        return items.map((i) => ({
+            productoId: (i['productoId'] as string) || undefined,
+            proveedorSugeridoId: (i['proveedorSugeridoId'] as string) || undefined,
+            productoNombre: i['productoNombre'] as string,
+            sku: i['sku'] as string | undefined,
+            cantidad: Number(i['cantidad']),
+            unidadMedida: (i['unidadMedida'] as string) || 'UNIDAD',
+            precioEstimado: i['precioEstimado'] ? Number(i['precioEstimado']) : undefined,
+            observaciones: i['observaciones'] as string | undefined,
+        }));
+    }
+
+    /** ProblemDetail RFC 7807 del backend de compras: el detalle viaja en `detail`. */
+    private extractErrorMessage(err: unknown, fallback: string): string {
+        return err instanceof HttpErrorResponse
+            ? (err.error?.detail ?? err.error?.message ?? fallback)
+            : fallback;
     }
 
     enviarSolicitud(id: string): void {
@@ -452,6 +579,12 @@ export class SolicitudesCompraComponent implements OnInit {
 
     private createItemFormGroup(): FormGroup {
         return this.fb.group({
+            // Ocultos (sin input en el template): el alta actual no los captura, pero
+            // hay que preservarlos en edición — si no viajan, `actualizar()` los pone en
+            // null al reconstruir los items (hallazgo P2 2026-07-27: reintroducía la causa
+            // raíz "productoId null → NPE en Recepción", ya que convertirAOC los propaga tal cual).
+            productoId: [''],
+            proveedorSugeridoId: [''],
             productoNombre: ['', Validators.required],
             sku: [''],
             cantidad: [1, [Validators.required, Validators.min(1)]],

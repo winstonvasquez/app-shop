@@ -7,6 +7,9 @@ import { HistorialPrecio } from '../../models/evaluacion.model';
 import { MONEDA } from '@shared/constants/sunat.constants';
 import { proveedorSelectSource } from '../../components/select-sources';
 import { ButtonComponent, CatalogSelectComponent, ServerSearchSelectComponent } from '@shared/components';
+import { ProductLookupComponent } from '../../../inventory/components/product-lookup/product-lookup.component';
+import { ProductResponse } from '@core/models/product.model';
+import { productIdToUuid } from '../../../inventory/utils/synthetic-uuid.util';
 import {
     DataTableComponent, TableColumn, FilterConfig, FilterChangeEvent,
     PaginationEvent, DateRangeFilterConfig, DateRangeChangeEvent, SortEvent
@@ -20,7 +23,7 @@ import { PAGINATION } from '@shared/constants/app.constants';
     selector: 'app-historial-precios',
     standalone: true,
     imports: [ReactiveFormsModule, ButtonComponent, CatalogSelectComponent,
-        ServerSearchSelectComponent, DataTableComponent],
+        ServerSearchSelectComponent, ProductLookupComponent, DataTableComponent],
     templateUrl: './historial-precios.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -37,6 +40,8 @@ export class HistorialPreciosComponent implements OnInit {
     loading = signal(false);
     showForm = signal(false);
     saving = signal(false);
+    /** Controla el mini-panel de búsqueda de producto del drawer de alta. */
+    lookupOpen = signal(false);
 
     /** Proveedores activos para el select de filtro (lista acotada, no requiere server-search). */
     proveedoresFiltro = signal<ProveedorFiltroOption[]>([]);
@@ -60,7 +65,7 @@ export class HistorialPreciosComponent implements OnInit {
 
     filters: FilterConfig[] = [
         catalogFilter(this.catalog, 'MONEDA', 'moneda', 'Moneda'),
-        signalFilter('proveedorId', 'Todos los proveedores', this.proveedoresFiltro,
+        signalFilter('proveedorId', 'Proveedor', this.proveedoresFiltro,
             p => ({ value: p.id, label: p.razonSocial })),
     ];
 
@@ -193,11 +198,25 @@ export class HistorialPreciosComponent implements OnInit {
             next: () => {
                 this.form.reset({ moneda: MONEDA.PEN });
                 this.showForm.set(false);
+                this.lookupOpen.set(false);
                 this.saving.set(false);
                 this.currentPage.set(0);
                 this.loadHistorial();
             },
             error: () => this.saving.set(false),
         });
+    }
+
+    /**
+     * Aplica el producto elegido en `<app-product-lookup>` al alta: `productoId`
+     * (UUID sintético) y `productoNombre`. El SKU se deja para tecleo manual —
+     * `ProductResponse` no lo trae (mismo patrón que `puntos-reorden.component.ts`).
+     */
+    onProductoSeleccionado(product: ProductResponse): void {
+        this.form.patchValue({
+            productoId: productIdToUuid(product.id),
+            productoNombre: product.nombre,
+        });
+        this.lookupOpen.set(false);
     }
 }

@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { environment } from '@env/environment';
 import { AuthService } from '@core/auth/auth.service';
+import { longToSyntheticUuid } from '@core/utils/synthetic-uuid.util';
 import { SolicitudCompra, SolicitudCompraPage } from '../models/solicitud-compra.model';
 
 /**
@@ -93,15 +94,35 @@ export class SolicitudCompraService {
     }
 
     /**
+     * Cabeceras de identidad para los endpoints que resuelven al solicitante.
+     *
+     * `X-Solicitante-Id` y `X-Company-Id` los declara el backend como `UUID`
+     * (`SolicitudCompraController.findMisSolicitudes` / `crear`), pero el `userId` y el
+     * `activeCompanyId` del token son `Long`. Mandar el número en crudo NO devuelve datos
+     * vacíos: Spring no puede convertir `"14"` a UUID y responde **400**, que es lo que hacían
+     * el listado "Mis Solicitudes" y el alta de solicitudes. La conversión es el UUID sintético
+     * `new UUID(0, id)` que usa el resto del ERP.
+     */
+    private getSolicitanteHeaders(solicitanteId: number, solicitanteNombre?: string): HttpHeaders {
+        const companyId = this.authService.currentUser()?.activeCompanyId;
+        const base: Record<string, string> = {
+            'X-Solicitante-Id': longToSyntheticUuid(solicitanteId)
+        };
+        if (companyId !== undefined && companyId !== null) {
+            base['X-Company-Id'] = longToSyntheticUuid(companyId);
+        }
+        if (solicitanteNombre !== undefined) {
+            base['X-Solicitante-Nombre'] = solicitanteNombre;
+        }
+        return new HttpHeaders(base);
+    }
+
+    /**
      * Solicitudes del solicitante autenticado. Mismos filtros server-side que
      * `getSolicitudes`, salvo `departamento` (el endpoint /mis-solicitudes no lo acepta).
      */
-    getMisSolicitudes(solicitanteId: string, filtros: SolicitudCompraFiltros = {}): Observable<SolicitudCompraPage> {
-        const companyId = this.authService.currentUser()?.activeCompanyId ?? '';
-        const headers = new HttpHeaders({
-            'X-Company-Id': companyId,
-            'X-Solicitante-Id': solicitanteId
-        });
+    getMisSolicitudes(solicitanteId: number, filtros: SolicitudCompraFiltros = {}): Observable<SolicitudCompraPage> {
+        const headers = this.getSolicitanteHeaders(solicitanteId);
         const page = filtros.page ?? 0;
         const size = filtros.size ?? 10;
         const params = this.buildFiltrosParams(filtros, page, size);
@@ -113,16 +134,12 @@ export class SolicitudCompraService {
 
     createSolicitud(
         solicitud: Partial<SolicitudCompra>,
-        solicitanteId: string,
+        solicitanteId: number,
         solicitanteNombre: string
     ): Observable<SolicitudCompra> {
-        const companyId = this.authService.currentUser()?.activeCompanyId ?? '';
-        const headers = new HttpHeaders({
-            'X-Company-Id': companyId,
-            'X-Solicitante-Id': solicitanteId,
-            'X-Solicitante-Nombre': solicitanteNombre
+        return this.http.post<SolicitudCompra>(this.baseUrl, solicitud, {
+            headers: this.getSolicitanteHeaders(solicitanteId, solicitanteNombre)
         });
-        return this.http.post<SolicitudCompra>(this.baseUrl, solicitud, { headers });
     }
 
     updateSolicitud(id: string, solicitud: Partial<SolicitudCompra>): Observable<SolicitudCompra> {

@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, firstValueFrom } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { environment } from '@env/environment';
 import { OrdenCompra, OrdenCompraPage } from '../models/orden-compra.model';
@@ -64,6 +64,15 @@ export class OrdenCompraService {
                 } as OrdenCompraPage;
             })
         );
+    }
+
+    /**
+     * Variante pura (Promise) de `getOrdenes`, pensada para adapters
+     * `ServerSelectDataSource` (ver `ordenCompraSelectSource`). No muta ningún
+     * signal de estado compartido — solo envuelve la misma llamada HTTP.
+     */
+    async searchPage(page = 0, size = 10, search?: string): Promise<OrdenCompraPage> {
+        return firstValueFrom(this.getOrdenes({ page, size, q: search }));
     }
 
     getOrdenById(id: string): Observable<OrdenCompra> {

@@ -1,7 +1,8 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { map } from 'rxjs';
 import { FormBuilder, ReactiveFormsModule, Validators, FormGroup, FormControl } from '@angular/forms';
-import { ProductService, ProductRequest, ProductFilter } from '@core/services/product.service';
+import { ProductService, ProductRequest, ProductFilter, ProductoImagen } from '@core/services/product.service';
+import { ImageUploadComponent } from '@shared/ui/forms/image-upload/image-upload.component';
 import { ProductResponse } from '@core/models/product.model';
 import { PaginationConfig, PageResponse, pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 import { DataTableComponent, TableColumn, TableAction, PaginationEvent, SortEvent, FilterConfig, FilterChangeEvent, DateRangeFilterConfig, DateRangeChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
@@ -43,13 +44,19 @@ const MIN_RATING_OPTIONS = [
     DrawerComponent,
     PageHeaderComponent,
     AlertComponent,
-    ButtonComponent
+    ButtonComponent,
+    ImageUploadComponent
   ],
   templateUrl: './products.component.html',
   styleUrl: './products.component.scss'
 })
 export class ProductsComponent implements OnInit {
   private readonly productService = inject(ProductService);
+
+  /** Imágenes ya guardadas del producto en edición (binarios en base de datos). */
+  readonly imagenes = signal<ProductoImagen[]>([]);
+  /** Imagen elegida en el drawer, pendiente de subir tras guardar. */
+  readonly imagenSeleccionada = signal<File | null>(null);
   private readonly fb = inject(FormBuilder);
   private readonly authService = inject(AuthService);
   private readonly categoryService = inject(CategoryService);
@@ -88,12 +95,12 @@ export class ProductsComponent implements OnInit {
   // Filtros del toolbar del data-table (categoría, marca, estado, precio y calificación).
   readonly filters: FilterConfig[] = [
     {
-      field: 'categoriaId', label: 'Todas las categorías',
+      field: 'categoriaId', label: 'Categoría',
       options: this.categoryService.getAllSimple().pipe(
         map(cats => cats.map(c => ({ value: c.id, label: c.nombre })))
       )
     },
-    signalFilter('marca', 'Todas las marcas', this.marcasFiltro, m => ({ value: m, label: m })),
+    signalFilter('marca', 'Marca', this.marcasFiltro, m => ({ value: m, label: m })),
     staticFilter('activo', 'Estado', ACTIVO_OPTIONS),
     staticFilter('precioRango', 'Rango de precio', PRECIO_RANGO_OPTIONS),
     staticFilter('minRating', 'Calificación mínima', MIN_RATING_OPTIONS),
@@ -377,6 +384,8 @@ export class ProductsComponent implements OnInit {
     this.productForm.reset({
       categoriaIds: []
     });
+    this.imagenSeleccionada.set(null);
+    this.imagenes.set([]);
     this.showModal.set(true);
     this.submitError.set(null);
   }
@@ -396,6 +405,8 @@ export class ProductsComponent implements OnInit {
       categoriaIds: product.categorias?.map((c: { id: number }) => c.id) || []
     });
 
+    this.imagenSeleccionada.set(null);
+    this.cargarImagenes(product.id);
     this.showModal.set(true);
     this.submitError.set(null);
   }
@@ -441,15 +452,53 @@ export class ProductsComponent implements OnInit {
       : this.productService.create(productRequest);
 
     operation.subscribe({
-      next: () => {
-        this.submitting.set(false);
-        this.closeModal();
-        this.loadProducts();
+      next: (producto) => {
+        // La imagen se sube después: el POST multipart necesita el id del producto.
+        const archivo = this.imagenSeleccionada();
+        const id = this.editMode() ? this.selectedProductId()! : producto?.id;
+        if (archivo && id) {
+          const primera = this.imagenes().length === 0;
+          this.productService.subirImagen(id, archivo, primera).subscribe({
+            next: () => this.finalizarGuardado(),
+            error: () => {
+              this.submitError.set('El producto se guardó, pero falló la subida de la imagen.');
+              this.submitting.set(false);
+            },
+          });
+          return;
+        }
+        this.finalizarGuardado();
       },
       error: (err: Error) => {
         this.submitError.set(err.message);
         this.submitting.set(false);
       }
+    });
+  }
+
+  /** Cierra el drawer y refresca la lista tras un guardado correcto. */
+  private finalizarGuardado(): void {
+    this.imagenSeleccionada.set(null);
+    this.submitting.set(false);
+    this.closeModal();
+    this.loadProducts();
+  }
+
+  /** Carga los metadatos de las imágenes del producto que se está editando. */
+  private cargarImagenes(productoId: number): void {
+    this.productService.getImagenes(productoId).subscribe({
+      next: imgs => this.imagenes.set(imgs ?? []),
+      error: () => this.imagenes.set([]),
+    });
+  }
+
+  /** Elimina una imagen ya guardada del producto. */
+  onEliminarImagen(imagen: ProductoImagen): void {
+    const productoId = this.selectedProductId();
+    if (!productoId) return;
+    this.productService.eliminarImagen(productoId, imagen.id).subscribe({
+      next: () => this.cargarImagenes(productoId),
+      error: () => this.submitError.set('No se pudo eliminar la imagen.'),
     });
   }
 

@@ -21,6 +21,8 @@ export interface EvaluacionProveedor {
 export interface CrearEvaluacionRequest {
     proveedorId: string;
     ordenCompraId?: string;
+    /** YYYY-MM. `@NotNull` en el backend (EvaluarProveedorRequest) — sin esto el POST siempre da 400. */
+    periodo: string;
     puntajeEntrega: number;
     puntajeCalidad: number;
     puntajePrecio: number;

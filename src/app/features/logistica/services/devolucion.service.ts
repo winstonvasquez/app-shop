@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Devolucion } from '../models/devolucion.model';
+import { Devolucion, CreateDevolucionDto } from '../models/devolucion.model';
 import { PageResponse } from '@core/models/pagination.model';
 
 /** Filtros server-side del listado de devoluciones (`GET /logistics/api/returns`). Todos opcionales. */
@@ -53,6 +53,14 @@ export class DevolucionService {
 
     getById(id: string, companyId: string): Observable<Devolucion> {
         return this.http.get<Devolucion>(`${this.baseUrl}/${id}`, { params: { companyId } });
+    }
+
+    /**
+     * Crea una solicitud de devolución logística (ver `ReturnController.createReturnRequest`).
+     * `customerId` va como query param, NO en el body (contrato del backend).
+     */
+    create(dto: CreateDevolucionDto, customerId: string): Observable<Devolucion> {
+        return this.http.post<Devolucion>(this.baseUrl, dto, { params: { customerId } });
     }
 
     aprobar(id: string, companyId: string, returnTrackingNumber?: string): Observable<Devolucion> {

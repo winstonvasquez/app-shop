@@ -272,6 +272,38 @@ export class DataTableComponent<T = any> {
      */
     private readonly filterValues = signal<Record<string, string>>({});
 
+    /** Hay algún control de filtro que pintar en la rejilla. */
+    readonly hasFilterControls = computed(
+        () => this.filters().length > 0 || this.dateRangeFilters().length > 0,
+    );
+
+    /** id estable por campo para enlazar `<label for>` con su control. */
+    private readonly instanceId = Math.random().toString(36).slice(2, 8);
+    controlId(field: string): string {
+        return `flt-${this.instanceId}-${field.replace(/[^\w-]/g, '')}`;
+    }
+
+    /**
+     * Nombre del campo para la etiqueta visible. Red de seguridad para las vistas
+     * que aún escriban el label como texto de la opción vacía ("Todos los
+     * estados"): se queda con el nombre del campo. Lo correcto es declarar el
+     * label ya en singular en el FilterConfig de la vista.
+     */
+    filterLabel(filter: FilterConfig): string {
+        const limpio = filter.label.trim().replace(/[▼:]\s*$/, '').replace(/^[—–-]\s*/, '').trim();
+        const m = /^(?:todos|todas)(?:\s+(?:los|las))?\s+(.+)$/i.exec(limpio);
+        const texto = m ? m[1] : limpio;
+        return texto.charAt(0).toUpperCase() + texto.slice(1);
+    }
+
+    /**
+     * Texto de la opción "sin filtrar". Siempre genérico: el nombre del campo ya
+     * está en la etiqueta, repetirlo dentro del control es ruido.
+     */
+    emptyOptionLabel(filter: FilterConfig): string {
+        return /^todas/i.test(filter.label.trim()) ? 'Todas' : 'Todos';
+    }
+
     /** Valor a pintar en el `<select>`: el elegido por el usuario, o el `value` inicial del config. */
     getFilterValue(filter: FilterConfig): string {
         const override = this.filterValues()[filter.field];

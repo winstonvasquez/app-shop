@@ -15,7 +15,7 @@ import { catalogFilter, signalFilter } from '@shared/ui/tables/data-table/filter
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
 import { PAGINATION } from '@shared/constants/app.constants';
-import { PaginationComponent, PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
+import { PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
 import { AdminFormSectionComponent } from '@shared/ui/forms/admin-form-section/admin-form-section.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
@@ -24,6 +24,7 @@ import { ButtonComponent, CatalogSelectComponent, ServerSearchSelectComponent } 
 import { employeeSelectSource } from '../../components/select-sources';
 import { MONEDA, CURRENCY_DISPLAY } from '@shared/constants/sunat.constants';
 import { CatalogService } from '@core/services/catalog.service';
+import { bloquearEnEdicion } from '@shared/utils/form-lock';
 
 @Component({
     selector: 'app-contract-list',
@@ -33,7 +34,6 @@ import { CatalogService } from '@core/services/catalog.service';
         ReactiveFormsModule,
         DrawerComponent,
         DataTableComponent,
-        PaginationComponent,
         FormFieldComponent,
         AdminFormSectionComponent,
         PageHeaderComponent,
@@ -87,13 +87,13 @@ export class ContractListComponent implements OnInit {
     // Filtros select del toolbar. Las opciones salen de erp_parameters (fuente única)
     // o de listas dinámicas ya cargadas (empleados, departamentos).
     contratoFilters: FilterConfig[] = [
-        catalogFilter(this.catalog, 'ESTADO_CONTRATO_LABORAL', 'status', 'Todos los estados'),
-        catalogFilter(this.catalog, 'TIPO_CONTRATO', 'type', 'Todos los tipos'),
+        catalogFilter(this.catalog, 'ESTADO_CONTRATO_LABORAL', 'status', 'Estado'),
+        catalogFilter(this.catalog, 'TIPO_CONTRATO', 'type', 'Tipo'),
         catalogFilter(this.catalog, 'JORNADA_LABORAL', 'jornadaLaboral', 'Jornada laboral'),
         catalogFilter(this.catalog, 'MONEDA', 'moneda', 'Moneda'),
-        signalFilter('employeeId', 'Todos los empleados', this.empleadosFiltro,
+        signalFilter('employeeId', 'Empleado', this.empleadosFiltro,
             e => ({ value: e.id, label: `${e.nombres} ${e.apellidos}` })),
-        signalFilter('departmentId', 'Todos los departamentos', this.departments,
+        signalFilter('departmentId', 'Departamento', this.departments,
             d => ({ value: d.id, label: d.nombre })),
     ];
 
@@ -207,6 +207,43 @@ export class ContractListComponent implements OnInit {
         documentoContratoUrl: [''],
     });
 
+    /**
+     * Reapuntar el contrato a otro empleado descuadra planilla, vacaciones y
+     * liquidaciones ya calculadas → el empleado se muestra bloqueado al editar/renovar.
+     */
+    private static readonly CAMPOS_BLOQUEADOS = ['employeeId'];
+
+    /**
+     * Al EDITAR (no al renovar) además se bloquean fechaInicio y salarioBase: el motor
+     * de planilla lee el salario vigente del contrato ACTIVO para calcular boletas ya
+     * emitidas — cambiarlo en caliente las desincroniza retroactivamente. El canal
+     * correcto para un cambio de sueldo es el tab Salarios de employee-detail o
+     * "Renovar contrato" (crea un contrato NUEVO con sus propios valores, por eso
+     * openRenewModal sigue usando solo CAMPOS_BLOQUEADOS, sin estos dos).
+     */
+    private static readonly CAMPOS_BLOQUEADOS_EDICION = [
+        ...ContractListComponent.CAMPOS_BLOQUEADOS, 'fechaInicio', 'salarioBase',
+    ];
+
+    /**
+     * Aplica los bloqueos del modo en el que se abre el formulario.
+     *
+     * <p>Es obligatorio pasar por aquí y no llamar a `bloquearEnEdicion` directamente:
+     * ese helper solo toca los campos que recibe, así que un candado puesto en un modo
+     * sobrevive al siguiente. Concretamente, tras editar un contrato (que bloquea
+     * fechaInicio y salarioBase), abrir "Nuevo contrato" dejaba fechaInicio deshabilitada
+     * — y un control deshabilitado no se valida, así que `form.valid` era true, el
+     * `getRawValue()` mandaba `fechaInicio: null` y el `@NotNull` del backend respondía
+     * 400. En "Renovar" el que quedaba bloqueado era salarioBase, que es justo lo que una
+     * renovación necesita poder cambiar.</p>
+     *
+     * <p>Por eso se reabre SIEMPRE el superset antes de cerrar lo que toque.</p>
+     */
+    private aplicarBloqueos(campos: string[]): void {
+        bloquearEnEdicion(this.contractForm, ContractListComponent.CAMPOS_BLOQUEADOS_EDICION, false);
+        bloquearEnEdicion(this.contractForm, campos, true);
+    }
+
     readonly terminateMotivo = new FormControl('', Validators.required);
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
@@ -315,7 +352,8 @@ export class ContractListComponent implements OnInit {
         this.editMode.set(false);
         this.selectedContract.set(null);
         this.contractForm.reset({ moneda: MONEDA.PEN as string, horasSemanales: 48 });
-        this.contractForm.get('employeeId')!.enable();
+        // Alta libre: se reabre todo (ver aplicarBloqueos).
+        this.aplicarBloqueos([]);
         this.submitError.set(null);
         this.showModal.set(true);
     }
@@ -335,7 +373,7 @@ export class ContractListComponent implements OnInit {
             periodoPruebaMeses:  contract.periodoPruebaMeses ?? null,
             documentoContratoUrl: contract.documentoContratoUrl ?? '',
         });
-        this.contractForm.get('employeeId')!.disable();
+        this.aplicarBloqueos(ContractListComponent.CAMPOS_BLOQUEADOS_EDICION);
         this.submitError.set(null);
         this.showModal.set(true);
     }
@@ -351,7 +389,9 @@ export class ContractListComponent implements OnInit {
             horasSemanales: contract.horasSemanales,
             salarioBase:    contract.salarioBase,
         });
-        this.contractForm.get('employeeId')!.disable();
+        // Renovación: el contrato nuevo pertenece al MISMO empleado, no se puede reapuntar,
+        // pero fechaInicio y salarioBase SÍ deben quedar editables (es un contrato nuevo).
+        this.aplicarBloqueos(ContractListComponent.CAMPOS_BLOQUEADOS);
         this.submitError.set(null);
         this.showModal.set(true);
     }

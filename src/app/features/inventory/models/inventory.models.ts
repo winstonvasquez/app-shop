@@ -168,8 +168,6 @@ export interface InventoryCountDetail {
     lotNumber?: string;
     serialNumberId?: number;
     serialNumber?: string;
-    locationId?: number;
-    locationName?: string;
     notes?: string;
     adjusted: boolean;
 }
@@ -198,7 +196,6 @@ export interface InventoryCountDetailRequest {
     countedQuantity: number;
     lotId?: number;
     serialNumberId?: number;
-    locationId?: number;
     notes?: string;
 }
 

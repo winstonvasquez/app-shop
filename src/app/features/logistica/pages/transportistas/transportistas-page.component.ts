@@ -15,6 +15,7 @@ import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/p
 import { PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
 import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 import { PAGINATION } from '@shared/constants/app.constants';
+import { bloquearEnEdicion } from '@shared/utils/form-lock';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
 import { CatalogService } from '@core/services/catalog.service';
@@ -229,6 +230,9 @@ export class TransportistasPageComponent implements OnInit {
         this.editMode.set(false);
         this.selected.set(null);
         this.form.reset({ serviceType: 'STANDARD', active: true });
+        // `code` es la clave del transportista en envíos y guías de remisión ya emitidas:
+        // se escribe al crear y se lee bloqueado al editar. Ver @shared/utils/form-lock.
+        bloquearEnEdicion(this.form, ['code'], false);
         this.submitError.set(null);
         this.showForm.set(true);
     }
@@ -245,6 +249,7 @@ export class TransportistasPageComponent implements OnInit {
             apiUrl:       item.apiUrl ?? '',
             active:       item.active
         });
+        bloquearEnEdicion(this.form, ['code'], true);
         this.submitError.set(null);
         this.showForm.set(true);
     }
@@ -265,9 +270,11 @@ export class TransportistasPageComponent implements OnInit {
         // no edita tarifas (se configuran en la página de SLA) → si no las reenviamos, editar el
         // nombre/teléfono acá BORRABA silenciosamente la tarifa del transportista y el costo de
         // envío volvía a registrarse en S/ 0.00. Se reenvían tal como vinieron del listado.
+        // getRawValue() y NO .value: `code` va deshabilitado en edición y .value lo omitiría,
+        // enviando `code: null` en el PUT y borrando el código del transportista.
         const actual = this.selected();
         const payload = {
-            ...this.form.value,
+            ...this.form.getRawValue(),
             baseCost:  actual?.baseCost ?? null,
             costPerKg: actual?.costPerKg ?? null,
             tenantId:  this.companyId,

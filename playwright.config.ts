@@ -1,5 +1,11 @@
 import { defineConfig, devices } from '@playwright/test';
 
+/** Sesión real del superadmin, generada por el proyecto `setup`. */
+const STORAGE_STATE = 'e2e/.auth/superadmin.json';
+
+/** Specs que corren autenticados contra el backend real. */
+const ERP_SPECS = /.*\.erp\.spec\.ts/;
+
 export default defineConfig({
     testDir: './e2e',
     fullyParallel: false,
@@ -16,7 +22,21 @@ export default defineConfig({
     },
     projects: [
         {
+            // Login real una sola vez; deja la sesión en STORAGE_STATE.
+            name: 'setup',
+            testMatch: /auth\.setup\.ts/,
+        },
+        {
+            // Suite del ERP: navegación de menús, CRUD y filtros con sesión real.
+            name: 'erp',
+            testMatch: ERP_SPECS,
+            dependencies: ['setup'],
+            use: { ...devices['Desktop Chrome'], storageState: STORAGE_STATE },
+        },
+        {
+            // Suite heredada (tokens simulados, storefront y ruteo).
             name: 'chromium',
+            testIgnore: [ERP_SPECS, /auth\.setup\.ts/],
             use: { ...devices['Desktop Chrome'] },
         },
     ],

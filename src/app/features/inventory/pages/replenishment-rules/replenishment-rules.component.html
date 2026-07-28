@@ -134,6 +134,21 @@
       <app-form-field label="Costo unitario máximo" [control]="getCtrl('maxUnitCost')"
         type="number" placeholder="0.00" />
 
+      <!-- Estado de la regla: bloqueado en el alta (nace ACTIVE), editable al editar
+           para poder pausarla o reactivarla sin salir del drawer. -->
+      <div class="col-span-2">
+        <label class="input-label">Estado de la regla</label>
+        <app-catalog-select tabla="ESTADO_REGLA_REPOSICION" formControlName="status"
+          placeholder="Seleccioná un estado…" />
+        <p class="text-subtle text-xs">
+          @if (editMode()) {
+            Pausá o reactivá la regla desde acá; equivale a las acciones "Pausar"/"Reactivar" de la lista.
+          } @else {
+            Las reglas nuevas se crean activas.
+          }
+        </p>
+      </div>
+
       <div class="col-span-2">
         <label class="flex items-center gap-2 cursor-pointer">
           <input type="checkbox" class="toggle-input" formControlName="autoCreatePo" />

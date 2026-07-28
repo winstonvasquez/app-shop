@@ -159,4 +159,13 @@ export class PositionService {
             list.map(p => p.id === id ? { ...p, activo: false } : p)
         );
     }
+
+    async activatePosition(id: number): Promise<void> {
+        await firstValueFrom(
+            this.http.patch<void>(`${this.baseUrl}/${id}/activate`, {})
+        );
+        this._positions.update(list =>
+            list.map(p => p.id === id ? { ...p, activo: true } : p)
+        );
+    }
 }

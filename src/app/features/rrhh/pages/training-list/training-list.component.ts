@@ -183,8 +183,8 @@ export class TrainingListComponent implements OnInit {
 
     // Filtros select del toolbar. Instructor se deriva del snapshot (no hay endpoint dedicado).
     readonly toolbarFilters: FilterConfig[] = [
-        catalogFilter(this.catalog, 'ESTADO_CAPACITACION', 'estado', 'Todos los estados'),
-        signalFilter('instructor', 'Todos los instructores', this.trainingService.instructorOptions, o => o),
+        catalogFilter(this.catalog, 'ESTADO_CAPACITACION', 'estado', 'Estado'),
+        signalFilter('instructor', 'Instructor', this.trainingService.instructorOptions, o => o),
     ];
 
     readonly dateRangeFilters: DateRangeFilterConfig[] = [

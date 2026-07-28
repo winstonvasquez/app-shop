@@ -30,8 +30,11 @@ export interface PersonaDto {
 export interface UserRequest {
     username: string;
     email: string;
-    password: string;
+    /** Opcional al editar: vacío/omitido = mantener la contraseña actual. */
+    password?: string;
     rolId: number;
+    /** Estado activo/inactivo. Si se omite en un update el backend NO cambia el estado. */
+    activo?: boolean;
     nombres: string;
     apellidos: string;
     tipoDocumento: string;

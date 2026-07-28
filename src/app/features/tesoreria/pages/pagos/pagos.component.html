@@ -10,7 +10,8 @@
       <span class="header-kpi header-kpi--warning">Pendientes <b>{{ countPendientes() }}</b></span>
       <span class="header-kpi header-kpi--success">Aprobados <b>{{ countAprobados() }}</b></span>
       <span class="header-kpi header-kpi--neutral">Pagados <b>{{ countPagados() }}</b></span>
-      <span class="header-kpi">Total comprometido <b>S/ {{ totalComprometido() | number:'1.2-2' }}</b></span>
+      <span class="header-kpi">Comprometido PEN <b>S/ {{ totalComprometidoPEN() | number:'1.2-2' }}</b></span>
+      <span class="header-kpi">Comprometido USD <b>$ {{ totalComprometidoUSD() | number:'1.2-2' }}</b></span>
     </div>
   </app-page-header>
 
@@ -95,19 +96,43 @@
 
     <div class="grid grid-cols-2 gap-3">
       <app-form-field
-        label="Monto (S/)"
+        label="Monto"
         [control]="getControl('monto')"
         type="number"
         placeholder="0.00"
         [required]="true">
       </app-form-field>
 
-      <app-date-picker
-        label="Fecha de Solicitud"
-        [control]="getControl('fechaSolicitud')"
-        [required]="true">
-      </app-date-picker>
+      <div>
+        <label class="input-label">Moneda <span class="text-[var(--color-error)]">*</span></label>
+        <app-catalog-select tabla="MONEDA" formControlName="moneda"></app-catalog-select>
+        @if (getControl('moneda').invalid && getControl('moneda').touched) {
+          <span class="input-error-message">Campo requerido</span>
+        }
+      </div>
     </div>
+
+    <!--
+        Cuenta bancaria de la que sale el dinero (PaymentRequestDto.bankAccountId).
+        Opcional; se filtra por la moneda elegida arriba porque una cuenta en USD
+        no puede fondear un pago registrado en PEN (y viceversa).
+    -->
+    <div>
+      <label class="input-label">Cuenta Bancaria de Origen</label>
+      <select class="form-input" formControlName="bankAccountId">
+        <option [ngValue]="null">-- Sin cuenta específica --</option>
+        @for (c of cuentasFiltradas(); track c.id) {
+          <option [ngValue]="c.id">{{ c.banco }} - {{ c.numeroCuenta }}</option>
+        }
+      </select>
+      <span class="input-hint">Solo se listan cuentas activas en la moneda elegida</span>
+    </div>
+
+    <app-date-picker
+      label="Fecha de Solicitud"
+      [control]="getControl('fechaSolicitud')"
+      [required]="true">
+    </app-date-picker>
 
   </form>
 

@@ -18,6 +18,7 @@ import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
 import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 import { PAGINATION, ROUTES } from '@shared/constants/app.constants';
+import { bloquearEnEdicion } from '@shared/utils/form-lock';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
 import { warehouseSelectSource } from '../../components/select-sources';
@@ -63,7 +64,7 @@ export class LocationManagementComponent implements OnInit {
     // Filtros select del toolbar. Almacén = lista dinámica cargada en ngOnInit;
     // tipo = catálogo de erp_parameters; estado = booleano (sin catálogo).
     filters: FilterConfig[] = [
-        signalFilter('warehouseId', 'Todos los almacenes', this.warehouses,
+        signalFilter('warehouseId', 'Almacén', this.warehouses,
             w => ({ value: w.id, label: `${w.code} — ${w.name}` })),
         catalogFilter(this.catalog, 'TIPO_UBICACION', 'locationType', 'Tipo de ubicación'),
         staticFilter('active', 'Estado', ACTIVO_OPTIONS)
@@ -218,6 +219,11 @@ export class LocationManagementComponent implements OnInit {
         this.editMode.set(false);
         this.selectedId.set(null);
         this.form.reset({ active: true, warehouseId: this.filterWarehouseId() });
+        // `code` identifica la ubicación en el stock y en los movimientos ya registrados:
+        // se escribe al crear y se lee bloqueado al editar. `warehouseId` igual: mover una
+        // ubicación de almacén deja huérfanas las filas de inventory_stock que ya apuntan
+        // a este locationId con el warehouseId anterior. Ver @shared/utils/form-lock.
+        bloquearEnEdicion(this.form, ['code', 'warehouseId'], false);
         this.submitError.set(null);
         this.showDrawer.set(true);
     }
@@ -226,6 +232,7 @@ export class LocationManagementComponent implements OnInit {
         this.editMode.set(true);
         this.selectedId.set(loc.id);
         this.form.patchValue({ ...loc });
+        bloquearEnEdicion(this.form, ['code', 'warehouseId'], true);
         this.submitError.set(null);
         this.showDrawer.set(true);
     }

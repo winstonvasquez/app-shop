@@ -46,7 +46,7 @@ export class PresupuestosComponent implements OnInit {
     // NOTA: NO se agrega select de `estado` — el catálogo ESTADO_PRESUPUESTO_COMPRAS no existe
     // (solo hay un valor real 'ACTIVO' en BD); ver CONTRATOS-CAMBIADOS.md "Incoherencias conocidas".
     filters: FilterConfig[] = [
-        signalFilter('categoria', 'Todas las categorías', this.categoriasFiltro,
+        signalFilter('categoria', 'Categoría', this.categoriasFiltro,
             c => ({ value: c, label: c })),
     ];
 

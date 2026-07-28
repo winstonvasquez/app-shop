@@ -48,10 +48,17 @@ export interface DeliveryRouteFiltros {
     completedAtHasta?: string;
 }
 
+/**
+ * Body de `POST /logistics/api/routes/generate` — alineado byte a byte con
+ * `GenerateRouteRequest` (Java): fecha + almacén de origen son obligatorios,
+ * shipmentIds no puede ir vacío. driverName/driverId/vehiclePlate son libres
+ * (no hay entidad "Conductor": ver `DeliveryRouteCommandService`).
+ */
 export interface GenerateRouteBody {
-    orderIds: string[];
-    companyId: string;
+    date: string;
+    warehouseId: string;
+    shipmentIds: string[];
+    driverName?: string;
     driverId?: string;
-    vehicleId?: string;
-    optimizeOrder?: boolean;
+    vehiclePlate?: string;
 }

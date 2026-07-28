@@ -41,6 +41,7 @@ import { NG_VALUE_ACCESSOR, ControlValueAccessor } from '@angular/forms';
                 [id]="inputId"
                 type="date"
                 class="di-input"
+                [attr.aria-label]="ariaLabel() || label() || null"
                 [min]="minDate()"
                 [max]="maxDate()"
                 [disabled]="isDisabled()"
@@ -207,6 +208,8 @@ import { NG_VALUE_ACCESSOR, ControlValueAccessor } from '@angular/forms';
 })
 export class DateInputComponent implements ControlValueAccessor {
     label     = input<string>('');
+    /** Nombre accesible cuando el campo no lleva label visible (ej. extremos de un rango). */
+    ariaLabel = input<string>('');
     required  = input<boolean>(false);
     minDate   = input<string>('');
     maxDate   = input<string>('');

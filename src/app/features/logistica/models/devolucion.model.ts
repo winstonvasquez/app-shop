@@ -34,3 +34,11 @@ export type DevolucionStatus =
 // (ReturnController.getAllReturnRequests), con filtros server-side de q/status/reason/
 // warehouseId/rangos de fecha. La paginación se resuelve enteramente en el backend —
 // ver DevolucionService.getDevoluciones() y @core/models/pagination.model#PageResponse.
+
+/** Body de `POST /logistics/api/returns` — alineado con `CreateReturnRequest` (Java). */
+export interface CreateDevolucionDto {
+    orderId: string;
+    shipmentId: string;
+    reason: string;
+    description?: string;
+}

@@ -1,5 +1,4 @@
 import { Component, inject, signal, computed, OnInit, ChangeDetectionStrategy } from '@angular/core';
-import { FormsModule } from '@angular/forms';
 import { AuditLogService, AuditLog, UsuarioFiltroOption, longToSyntheticUuid } from '../../services/audit-log.service';
 import { ButtonComponent } from '@shared/components';
 import { pageTotalElements } from '@core/models/pagination.model';
@@ -16,7 +15,7 @@ import { environment } from '@env/environment';
     selector: 'app-auditoria',
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [FormsModule, ButtonComponent, DataTableComponent],
+    imports: [ButtonComponent, DataTableComponent],
     templateUrl: './auditoria.component.html',
 })
 export class AuditoriaComponent implements OnInit {
@@ -44,9 +43,9 @@ export class AuditoriaComponent implements OnInit {
     readonly usuariosFiltro = signal<UsuarioFiltroOption[]>([]);
 
     filters: FilterConfig[] = [
-        catalogFilter(this.catalog, 'ENTIDAD_AUDITORIA_CONTABLE', 'entidadTipo', 'Todas las entidades'),
-        catalogFilter(this.catalog, 'ACCION_AUDITORIA', 'accion', 'Todas las acciones'),
-        signalFilter('usuarioId', 'Todos los usuarios', this.usuariosFiltro, u => ({ value: u.id, label: u.nombre })),
+        catalogFilter(this.catalog, 'ENTIDAD_AUDITORIA_CONTABLE', 'entidadTipo', 'Entidad'),
+        catalogFilter(this.catalog, 'ACCION_AUDITORIA', 'accion', 'Acción'),
+        signalFilter('usuarioId', 'Usuario', this.usuariosFiltro, u => ({ value: u.id, label: u.nombre })),
     ];
 
     dateRangeFilters: DateRangeFilterConfig[] = [

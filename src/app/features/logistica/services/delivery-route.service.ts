@@ -36,12 +36,18 @@ export class DeliveryRouteService {
         return this.http.get<DeliveryRoute>(`${this.baseUrl}/${id}`);
     }
 
+    /**
+     * Genera una ruta optimizada (TSP nearest-neighbor) a partir de envíos PENDING_DISPATCH.
+     * Ver `DeliveryRouteController.generateRoute` — @PostMapping("/generate"), NO en el baseUrl.
+     */
     generate(body: GenerateRouteBody): Observable<DeliveryRoute> {
-        return this.http.post<DeliveryRoute>(this.baseUrl, body);
+        return this.http.post<DeliveryRoute>(`${this.baseUrl}/generate`, body);
     }
 
+    // Bug fix (2026-07-28): el backend expone /{id}/start como @PutMapping — un POST
+    // aquí respondía 405 Method Not Allowed y dejaba la acción 'Iniciar' rota.
     start(id: string): Observable<DeliveryRoute> {
-        return this.http.post<DeliveryRoute>(`${this.baseUrl}/${id}/start`, {});
+        return this.http.put<DeliveryRoute>(`${this.baseUrl}/${id}/start`, {});
     }
 
     complete(id: string): Observable<DeliveryRoute> {

@@ -25,6 +25,7 @@ import {
   TIPO_DOCUMENTO_OPTIONS
 } from '@features/admin/models/user.model';
 import { PaginationConfig, PageResponse, pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
+import { bloquearEnEdicion } from '@shared/utils/form-lock';
 
 @Component({
   selector: 'app-users',
@@ -81,9 +82,17 @@ export class UsersComponent implements OnInit {
   // Constants
   tipoDocumentoOptions = TIPO_DOCUMENTO_OPTIONS;
 
+  /**
+   * Campos que no pueden cambiar una vez creado el usuario: `username` es la clave de
+   * login (cambiarla rompe el acceso y la trazabilidad de auditoría) y el par
+   * tipoDocumento + numeroDocumento es la identidad tributaria de la persona.
+   * Se muestran BLOQUEADOS, no ocultos, para que el usuario los pueda leer.
+   */
+  private static readonly CAMPOS_BLOQUEADOS = ['username', 'tipoDocumento', 'numeroDocumento'] as const;
+
   // Filtros select del toolbar. Las opciones salen de erp_parameters / roles cargados.
   filters: FilterConfig[] = [
-    signalFilter('rolId', 'Todos los roles', this.roles, r => ({ value: r.id, label: r.nombre })),
+    signalFilter('rolId', 'Rol', this.roles, r => ({ value: r.id, label: r.nombre })),
     staticFilter('activo', 'Estado', ACTIVO_OPTIONS),
     catalogFilter(this.catalog, 'TIPO_DOCUMENTO_IDENTIDAD', 'tipoDocumento', 'Tipo de documento')
   ];
@@ -123,6 +132,9 @@ export class UsersComponent implements OnInit {
       email: ['', [Validators.required, Validators.email, Validators.maxLength(100)]],
       password: ['', [Validators.required, Validators.minLength(8), Validators.maxLength(100)]],
       rolId: [null, [Validators.required]],
+      // Estado activo/inactivo: permite reactivar a un usuario dado de baja lógica
+      // desde el propio formulario (el DELETE solo desactiva).
+      activo: [true],
       nombres: ['', [Validators.required, Validators.maxLength(100)]],
       apellidos: ['', [Validators.required, Validators.maxLength(100)]],
       tipoDocumento: ['DNI', [Validators.required]],
@@ -235,11 +247,25 @@ export class UsersComponent implements OnInit {
   openCreateModal(): void {
     this.editMode.set(false);
     this.selectedUserId.set(null);
-    this.userForm.reset({ tipoDocumento: 'DNI' });
-    this.userForm.get('password')?.setValidators([Validators.required, Validators.minLength(8)]);
-    this.userForm.get('password')?.updateValueAndValidity();
+    this.userForm.reset({ tipoDocumento: 'DNI', activo: true });
+    this.aplicarValidadoresPassword(false);
+    bloquearEnEdicion(this.userForm, UsersComponent.CAMPOS_BLOQUEADOS, false);
     this.showDrawer.set(true);
     this.submitError.set(null);
+  }
+
+  /**
+   * Al crear, la contraseña es obligatoria. Al editar es OPCIONAL: dejarla vacía
+   * significa "no cambiar", pero si el usuario escribe algo debe seguir cumpliendo
+   * la longitud mínima.
+   */
+  private aplicarValidadoresPassword(esEdicion: boolean): void {
+    const control = this.userForm.get('password');
+    if (!control) return;
+    control.setValidators(esEdicion
+      ? [Validators.minLength(8), Validators.maxLength(100)]
+      : [Validators.required, Validators.minLength(8), Validators.maxLength(100)]);
+    control.updateValueAndValidity({ emitEvent: false });
   }
 
   openEditModal(user: UserResponse): void {
@@ -251,6 +277,7 @@ export class UsersComponent implements OnInit {
       email: user.email,
       password: '',
       rolId: user.rol.id,
+      activo: user.activo,
       nombres: user.persona.nombres,
       apellidos: user.persona.apellidos,
       tipoDocumento: user.persona.tipoDocumento,
@@ -258,9 +285,9 @@ export class UsersComponent implements OnInit {
       fechaNacimiento: user.persona.fechaNacimiento
     });
 
-    // Password is optional on edit
-    this.userForm.get('password')?.clearValidators();
-    this.userForm.get('password')?.updateValueAndValidity();
+    // La contraseña es opcional al editar (vacío = no cambiar)
+    this.aplicarValidadoresPassword(true);
+    bloquearEnEdicion(this.userForm, UsersComponent.CAMPOS_BLOQUEADOS, true);
 
     this.showDrawer.set(true);
     this.submitError.set(null);
@@ -280,12 +307,17 @@ export class UsersComponent implements OnInit {
     this.submitting.set(true);
     this.submitError.set(null);
 
-    const formValue = this.userForm.value;
+    // getRawValue(): username / tipoDocumento / numeroDocumento quedan deshabilitados
+    // en edición y NO aparecerían en form.value (se enviarían nulls y se borrarían).
+    const formValue = this.userForm.getRawValue();
     const userRequest: UserRequest = {
       username: formValue.username,
       email: formValue.email,
-      password: formValue.password || '',
+      // En edición, contraseña vacía = no cambiarla: se omite del payload (el backend
+      // ya no exige @NotBlank fuera del alta).
+      password: formValue.password || undefined,
       rolId: formValue.rolId,
+      activo: formValue.activo ?? true,
       nombres: formValue.nombres,
       apellidos: formValue.apellidos,
       tipoDocumento: formValue.tipoDocumento,

@@ -65,7 +65,7 @@ export class KardexWarehouseComponent {
     filters: FilterConfig[] = [
         signalFilter('almacenId', 'Seleccionar almacén...', this.almacenesFiltro,
             a => ({ value: a.id, label: `${a.codigo} — ${a.nombre}` })),
-        catalogFilter(this.catalog, 'TIPO_MOVIMIENTO_INVENTARIO', 'tipoMovimiento', 'Todos los tipos')
+        catalogFilter(this.catalog, 'TIPO_MOVIMIENTO_INVENTARIO', 'tipoMovimiento', 'Tipo')
     ];
 
     dateRangeFilters: DateRangeFilterConfig[] = [

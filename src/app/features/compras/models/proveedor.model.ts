@@ -13,6 +13,10 @@ export interface Proveedor {
     cuentaBanco?: string;
     condicionPago?: string;
     monedaPreferida?: string;
+    /** EXCELENTE | BUENO | REGULAR | DEFICIENTE (catálogo NIVEL_PROVEEDOR). */
+    nivelProveedor?: string;
+    /** COM-303: marca SUNAT de agente de retención. */
+    agenteRetencion?: boolean;
     estado?: string;
     createdAt?: string;
     updatedAt?: string;

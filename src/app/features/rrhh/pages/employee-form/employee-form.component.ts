@@ -3,6 +3,7 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { Router, ActivatedRoute } from '@angular/router';
 import { EmployeeService } from '../../services/employee.service';
 import { CatalogSelectComponent } from '@shared/components';
+import { bloquearEnEdicion } from '@shared/utils/form-lock';
 
 @Component({
     selector: 'app-employee-form',
@@ -220,6 +221,9 @@ export class EmployeeFormComponent implements OnInit {
         estado: ['ACTIVO']
     });
 
+    /** Identidad del empleado: referenciada por boletas y contratos → solo lectura al editar. */
+    private static readonly CAMPOS_BLOQUEADOS = ['codigoEmpleado', 'documentoIdentidad'];
+
     async ngOnInit(): Promise<void> {
         const id = this.route.snapshot.paramMap.get('id');
         if (id) {
@@ -246,6 +250,7 @@ export class EmployeeFormComponent implements OnInit {
                 telefono: employee.telefono,
                 estado: employee.estado
             });
+            bloquearEnEdicion(this.employeeForm, EmployeeFormComponent.CAMPOS_BLOQUEADOS, true);
         } catch (error) {
             console.error('Error al cargar empleado', error);
         }
@@ -256,7 +261,9 @@ export class EmployeeFormComponent implements OnInit {
 
         this.loading.set(true);
         try {
-            const formValue = this.employeeForm.value;
+            // getRawValue(): código y documento están bloqueados en edición y no
+            // aparecerían en .value (se enviarían como null).
+            const formValue = this.employeeForm.getRawValue();
             const request = {
                 ...formValue,
                 fechaIngreso: typeof formValue.fechaIngreso === 'string'

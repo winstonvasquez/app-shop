@@ -75,10 +75,34 @@
         type="text" placeholder="LOTE-2026-001" [required]="true" />
       <app-date-input label="Fecha Fabricación" formControlName="fechaFabricacion" />
       <app-date-input label="Fecha Vencimiento" formControlName="fechaVencimiento" />
+      <!-- Solo editable al crear: es la línea base del kardex del lote (lo consumido se
+           deriva de cantidadInicial − cantidadActual), cambiarla después lo descuadraría. -->
       <app-form-field label="Cantidad Inicial" [control]="getCtrl('cantidadInicial')"
-        type="number" placeholder="0" [required]="true" />
+        type="number" placeholder="0" [required]="true"
+        [hint]="editMode()
+          ? 'No se puede cambiar después del alta: es la línea base del kardex del lote (lo consumido se calcula como Cantidad Inicial − Cantidad Actual). Para corregirla, registra un movimiento de ajuste de inventario.'
+          : 'Unidades con las que entra el lote. Después del alta ya no se puede cambiar.'" />
+      <!-- Calculada por el backend a partir de los consumos FIFO/FEFO: se lee, no se edita. -->
+      <app-form-field label="Cantidad Actual" [control]="getCtrl('cantidadActual')"
+        type="number" hint="La calcula el backend según los consumos del lote." />
       <app-form-field label="Proveedor" [control]="getCtrl('proveedorNombre')"
         type="text" placeholder="Nombre del proveedor" />
+      <div>
+        <label class="input-label">Estado del lote</label>
+        <label class="flex items-center gap-2">
+          <input type="checkbox" class="toggle-input" formControlName="activo" />
+          <span class="text-subtle text-xs">Activo</span>
+        </label>
+        <p class="text-subtle text-xs">
+          @if (editMode()) {
+            Desmarcar da de baja el lote (queda fuera del consumo FIFO/FEFO); volver a marcarlo
+            lo reactiva. Es la única forma de recuperar un lote eliminado: su número sigue
+            reservado, así que no se puede crear otro igual.
+          } @else {
+            El lote nuevo se crea activo. Se desactiva desde "Eliminar" o desmarcando esta casilla al editarlo.
+          }
+        </p>
+      </div>
       <div class="col-span-2">
         <app-form-field label="Notas" [control]="getCtrl('notas')"
           type="text" placeholder="Observaciones" />

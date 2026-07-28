@@ -93,7 +93,7 @@ export class EmployeeService {
             if (filtros.supervisorId != null) params['supervisorId'] = String(filtros.supervisorId);
             if (filtros.tipoDocumento) params['tipoDocumento'] = filtros.tipoDocumento;
             if (filtros.sistemaPrevisional) params['sistemaPrevisional'] = filtros.sistemaPrevisional;
-            if (filtros.afpNombre) params['afpNombre'] = filtros.afpNombre;
+            if (filtros.afpNombre) params['AFP'] = filtros.afpNombre;
             if (filtros.genero) params['genero'] = filtros.genero;
             if (filtros.estadoCivil) params['estadoCivil'] = filtros.estadoCivil;
             if (filtros.tipoContrato) params['tipoContrato'] = filtros.tipoContrato;
@@ -276,5 +276,22 @@ export class EmployeeService {
         return firstValueFrom(
             this.http.post<SalaryRecord>(`${this.baseUrl}/${employeeId}/salary-history`, request)
         );
+    }
+
+    /**
+     * Sube la foto del empleado; el backend la guarda como binario en la base de
+     * datos y devuelve el empleado con la URL del binario servido.
+     */
+    async subirFoto(id: number, archivo: File): Promise<Employee> {
+        const formData = new FormData();
+        formData.append('file', archivo);
+        return firstValueFrom(this.http.post<Employee>(`${this.baseUrl}/${id}/foto`, formData));
+    }
+
+    /**
+     * Elimina la foto del empleado: el backend borra el binario y sus metadatos.
+     */
+    async eliminarFoto(id: number): Promise<Employee> {
+        return firstValueFrom(this.http.delete<Employee>(`${this.baseUrl}/${id}/foto`));
     }
 }

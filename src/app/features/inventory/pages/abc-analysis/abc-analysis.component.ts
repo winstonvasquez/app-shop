@@ -112,8 +112,8 @@ export class AbcAnalysisComponent {
 
     // Filtros select del toolbar. La clase ABC sale de erp_parameters (fuente única).
     filters: FilterConfig[] = [
-        catalogFilter(this.catalog, 'CLASE_ABC', 'clase', 'Todas las clases'),
-        signalFilter('warehouseId', 'Todos los almacenes', this.warehousesFiltro,
+        catalogFilter(this.catalog, 'CLASE_ABC', 'clase', 'Clase'),
+        signalFilter('warehouseId', 'Almacén', this.warehousesFiltro,
             w => ({ value: w.id, label: w.name }))
     ];
 

@@ -40,6 +40,8 @@ export interface Employee {
     sistemaPrevisional?: string;
     afpNombre?: string;
     storeId?: number;
+    /** Usuario del sistema vinculado: es lo que permite al empleado entrar al portal de autoservicio. */
+    userId?: number;
     estado: EmployeeStatus;
     createdAt: string;
     updatedAt?: string;
@@ -78,6 +80,8 @@ export interface EmployeeRequest {
     sistemaPrevisional?: string;
     afpNombre?: string;
     storeId?: number;
+    /** Usuario del sistema al que se vincula el empleado (acceso al portal de autoservicio). */
+    userId?: number | null;
     estado?: EmployeeStatus;
 }
 

@@ -1,6 +1,8 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { map } from 'rxjs/operators';
 import { environment } from '@env/environment';
+import type { PageResponse } from '@core/models/pagination.model';
 
 export interface CuentaBancaria {
     id: string;
@@ -61,12 +63,23 @@ export class ConciliacionBancariaService {
     private http = inject(HttpClient);
     private base = `${environment.apiUrls.accounting}/api/v1/contabilidad`;
 
+    /**
+     * Los dos listados del backend devuelven `Page<...>` (`BankAccountController.getAll` y
+     * `ConciliacionBancariaController.listar`), no arrays. Tiparlos como array compilaba y
+     * la vista hacía `@for` sobre el objeto Page → `TypeError: newCollection[Symbol.iterator]
+     * is not a function`, o sea que la pantalla de conciliación no listaba nada.
+     * Se desempaqueta aquí para que los llamadores sigan recibiendo un array.
+     */
     listarCuentas() {
-        return this.http.get<CuentaBancaria[]>(`${this.base}/cuentas-bancarias`);
+        return this.http.get<PageResponse<CuentaBancaria>>(`${this.base}/cuentas-bancarias`).pipe(
+            map(res => res?.content ?? [])
+        );
     }
 
     listar() {
-        return this.http.get<Conciliacion[]>(`${this.base}/conciliacion`);
+        return this.http.get<PageResponse<Conciliacion>>(`${this.base}/conciliacion`).pipe(
+            map(res => res?.content ?? [])
+        );
     }
 
     obtener(id: string) {

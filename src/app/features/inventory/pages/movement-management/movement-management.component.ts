@@ -199,15 +199,15 @@ export class MovementManagementComponent {
 
     // Filtros del toolbar: almacén dinámico (BD), tipo de movimiento, tipo de referencia y ubicación.
     readonly toolbarFilters: FilterConfig[] = [
-        { field: 'warehouse', label: 'Todos los almacenes', options: toObservable(this.warehouses).pipe(
+        { field: 'warehouse', label: 'Almacén', options: toObservable(this.warehouses).pipe(
             map(list => list.map(w => ({ value: w.id, label: w.name }))) ) },
-        { field: 'tipo', label: 'Todos los tipos',
+        { field: 'tipo', label: 'Tipo',
           options: toObservable(this.catalog.options('TIPO_MOVIMIENTO_INVENTARIO'))
             .pipe(map(o => o.map(x => ({ value: x.codigo, label: x.valor })))) },
-        { field: 'referenceType', label: 'Todas las referencias',
+        { field: 'referenceType', label: 'Referencia',
           options: toObservable(this.catalog.options('TIPO_REFERENCIA_MOVIMIENTO'))
             .pipe(map(o => o.map(x => ({ value: x.codigo, label: x.valor })))) },
-        signalFilter('locationId', 'Todas las ubicaciones', this.locationsFiltro,
+        signalFilter('locationId', 'Ubicación', this.locationsFiltro,
             l => ({ value: l.id, label: l.name ? `${l.code} — ${l.name}` : l.code }))
     ];
 

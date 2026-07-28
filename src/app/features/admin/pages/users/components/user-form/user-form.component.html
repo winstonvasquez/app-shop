@@ -23,6 +23,9 @@
                 @if (hasError('username')) {
                 <span class="error-message">{{ getErrorMessage('username') }}</span>
                 }
+                @if (editMode()) {
+                <small class="form-hint">El usuario de login no se puede cambiar tras crearlo</small>
+                }
             </div>
             <div class="form-group">
                 <label for="email">Email <span class="required">*</span></label>
@@ -86,6 +89,9 @@
                 @if (hasError('numeroDocumento')) {
                 <span class="error-message">{{ getErrorMessage('numeroDocumento') }}</span>
                 }
+                @if (editMode()) {
+                <small class="form-hint">Documento de identidad: no editable tras el primer guardado</small>
+                }
             </div>
         </div>
 
@@ -110,6 +116,22 @@
                 @if (hasError('rolId')) {
                 <span class="error-message">{{ getErrorMessage('rolId') }}</span>
                 }
+            </div>
+        </div>
+
+        <!-- SECCIÓN: Estado — permite reactivar a un usuario dado de baja lógica -->
+        <h3 class="form-section-title">Estado</h3>
+
+        <div class="form-row">
+            <div class="form-group form-group--full">
+                <label class="checkbox-label" for="activo">
+                    <input type="checkbox" id="activo" formControlName="activo" class="checkbox-input" />
+                    <span>Usuario activo</span>
+                </label>
+                <small class="form-hint">
+                    Un usuario inactivo no puede iniciar sesión. Desmarcar equivale a darlo de baja;
+                    marcar lo reactiva.
+                </small>
             </div>
         </div>
 

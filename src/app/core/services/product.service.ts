@@ -1,10 +1,20 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { HttpParams } from '@angular/common/http';
 import { Observable, shareReplay } from 'rxjs';
 import { environment } from '@env/environment';
 import { ProductResponse } from '@core/models/product.model';
 import { PageResponse, PaginationConfig, Page } from '@core/models/pagination.model';
 import { BaseApiService } from './base-api.service';
+import { AuthService } from '@core/auth/auth.service';
+
+/** Imagen de producto guardada como binario en la base de datos. */
+export interface ProductoImagen {
+    id: number;
+    /** Ruta del binario servido por el backend: /api/v1/productos/imagenes/{id}/contenido */
+    url: string;
+    esPrincipal: boolean;
+    orden: number;
+}
 
 export interface ProductRequest {
     nombre: string;
@@ -43,6 +53,7 @@ export interface FiltrosDisponibles {
     providedIn: 'root'
 })
 export class ProductService extends BaseApiService<ProductRequest, ProductResponse> {
+    private readonly auth = inject(AuthService);
     protected readonly baseUrl = `${environment.apiUrls.sales}/api/v1/productos`;
     private cache = new Map<string, Observable<Page<ProductResponse>>>();
 
@@ -131,6 +142,35 @@ export class ProductService extends BaseApiService<ProductRequest, ProductRespon
     override delete(id: number): Observable<void> {
         this.invalidateCache();
         return super.delete(id);
+    }
+
+    // ── Imágenes del producto (binarias, guardadas en la base de datos) ──────
+
+    /** Metadatos de las imágenes del producto (sin el binario). */
+    getImagenes(productoId: number): Observable<ProductoImagen[]> {
+        return this.http.get<ProductoImagen[]>(`${this.baseUrl}/${productoId}/imagenes`);
+    }
+
+    /** Sube una imagen nueva al producto. El binario queda en la base de datos. */
+    subirImagen(productoId: number, archivo: File, esPrincipal = false): Observable<ProductoImagen> {
+        const formData = new FormData();
+        formData.append('file', archivo);
+        let params = this.tenantParams().set('esPrincipal', String(esPrincipal));
+        this.invalidateCache();
+        return this.http.post<ProductoImagen>(`${this.baseUrl}/${productoId}/imagenes`, formData, { params });
+    }
+
+    /** Elimina una imagen del producto; si era la principal, el backend promueve otra. */
+    eliminarImagen(productoId: number, imagenId: number): Observable<void> {
+        this.invalidateCache();
+        return this.http.delete<void>(`${this.baseUrl}/${productoId}/imagenes/${imagenId}`, {
+            params: this.tenantParams(),
+        });
+    }
+
+    private tenantParams(): HttpParams {
+        const id = this.auth.currentUser()?.activeCompanyId;
+        return id != null ? new HttpParams().set('companyId', String(id)) : new HttpParams();
     }
 
     getFiltrosDisponibles(categoriaId?: number): Observable<FiltrosDisponibles> {

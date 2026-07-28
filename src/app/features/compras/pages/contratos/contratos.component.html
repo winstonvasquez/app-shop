@@ -53,8 +53,15 @@
             <form [formGroup]="form" (ngSubmit)="guardar()">
                 <div style="display:grid; gap:.75rem">
                     <div>
-                        <label class="input-label">ID Proveedor {{ modoEdicion() ? '(no editable)' : '*' }}</label>
-                        <input class="form-input" formControlName="proveedorId" placeholder="UUID del proveedor" />
+                        @if (modoEdicion()) {
+                            <!-- Correlativo CONT-NNNN del backend: se muestra bloqueado, no se omite -->
+                            <label class="input-label">Código (no editable)</label>
+                            <input class="form-input mb-4" formControlName="codigo" />
+                        }
+                        <label class="input-label">Proveedor {{ modoEdicion() ? '(no editable)' : '*' }}</label>
+                        <app-server-search-select [dataSource]="proveedorSource"
+                                                  formControlName="proveedorId"
+                                                  placeholder="Buscar proveedor por nombre o RUC…" />
                     </div>
                     <div>
                         <label class="input-label">Tipo de Contrato *</label>

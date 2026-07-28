@@ -26,6 +26,11 @@ export interface SucursalInput {
     serieBoleta?: string;
     serieFactura?: string;
     almacenId?: number;
+    /**
+     * Estado activo/inactivo (baja lógica reversible). Si se omite en un update el
+     * backend deja el estado actual sin tocar; en el alta, omitirlo equivale a activa.
+     */
+    activo?: boolean;
 }
 
 /** Filtros server-side del listado paginado de sucursales. Todos opcionales. */

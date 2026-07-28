@@ -61,6 +61,11 @@
                 placeholder="Ej: 12345678"
                 [required]="true" />
 
+            <div>
+                <label class="input-label">Tipo de Documento</label>
+                <app-catalog-select tabla="TIPO_DOCUMENTO_IDENTIDAD" formControlName="tipoDocumento"></app-catalog-select>
+            </div>
+
             <app-form-field
                 label="Nombres"
                 [control]="getControl('nombres')"
@@ -72,6 +77,22 @@
                 [control]="getControl('apellidos')"
                 placeholder="Apellidos del empleado"
                 [required]="true" />
+
+            <div>
+                <app-date-input
+                    label="Fecha de Nacimiento"
+                    formControlName="fechaNacimiento" />
+            </div>
+
+            <div>
+                <label class="input-label">Género</label>
+                <app-catalog-select tabla="GENERO" formControlName="genero" placeholder="Seleccione…"></app-catalog-select>
+            </div>
+
+            <div>
+                <label class="input-label">Estado Civil</label>
+                <app-catalog-select tabla="ESTADO_CIVIL" formControlName="estadoCivil" placeholder="Seleccione…"></app-catalog-select>
+            </div>
 
             <div class="form-group-2col-span">
                 <app-date-input
@@ -119,6 +140,38 @@
             </div>
         </app-admin-form-section>
 
+        <app-admin-form-section title="Previsional" [columns]="2">
+            <div>
+                <label class="input-label">Sistema Previsional</label>
+                <app-catalog-select tabla="SISTEMA_PREVISIONAL" formControlName="sistemaPrevisional"></app-catalog-select>
+            </div>
+
+            @if (employeeForm.get('sistemaPrevisional')?.value === 'AFP') {
+                <div>
+                    <label class="input-label">AFP</label>
+                    <app-catalog-select tabla="AFP" formControlName="afpNombre" placeholder="Seleccione una AFP…"></app-catalog-select>
+                </div>
+            }
+        </app-admin-form-section>
+
+        <app-admin-form-section title="Cese" description="Solo si el empleado ya cesó o hay que corregir un registro previo." [columns]="2">
+            <div>
+                <app-date-input
+                    label="Fecha de Cese"
+                    formControlName="fechaSalida" />
+            </div>
+
+            <div class="form-group-2col-span">
+                <label class="input-label">Motivo de Cese</label>
+                <textarea
+                    class="form-input"
+                    rows="2"
+                    placeholder="Ej: Renuncia voluntaria, término de contrato…"
+                    formControlName="motivoSalida"
+                    style="resize: vertical"></textarea>
+            </div>
+        </app-admin-form-section>
+
         <app-admin-form-section title="Contacto" [columns]="2">
             <app-form-field
                 label="Email"
@@ -131,6 +184,28 @@
                 [control]="getControl('telefono')"
                 type="tel"
                 placeholder="Ej: 987654321" />
+        </app-admin-form-section>
+
+        <app-admin-form-section title="Acceso al sistema" [columns]="1">
+            <div class="form-group">
+                <label class="input-label">Usuario vinculado</label>
+                <app-server-search-select [dataSource]="usuarioSource"
+                                          formControlName="userId"
+                                          placeholder="Buscar usuario…" />
+                <small class="form-hint">
+                    Es lo que permite al empleado entrar al Portal del Empleado y ver sus boletas,
+                    vacaciones y evaluaciones. Sin usuario vinculado, el portal no le muestra datos.
+                </small>
+            </div>
+        </app-admin-form-section>
+
+        <app-admin-form-section title="Fotografía" [columns]="1">
+            <!-- La foto se guarda en la base de datos, no como enlace externo -->
+            <app-image-upload
+                label="Foto del empleado"
+                [currentUrl]="fotoActual()"
+                (fileSelected)="fotoSeleccionada.set($event)"
+                (cleared)="onQuitarFoto()" />
         </app-admin-form-section>
 
     </form>
@@ -147,3 +222,59 @@
     </div>
 
 </app-drawer>
+
+<!-- ── Modal: Desactivar Empleado (captura fecha y motivo de cese) ────────── -->
+<app-modal
+    [isOpen]="showDeactivateModal()"
+    title="Desactivar Empleado"
+    size="md"
+    [hasFooter]="true"
+    (closed)="closeDeactivateModal()">
+
+    <form [formGroup]="deactivateForm">
+
+        @if (deactivateError()) {
+            <app-alert type="error" [message]="deactivateError()!" />
+        }
+
+        @if (deactivatingEmployee(); as emp) {
+            <p class="form-hint" style="margin-bottom: var(--space-md)">
+                Vas a desactivar a <strong>{{ emp.nombres }} {{ emp.apellidos }}</strong>.
+                La fecha de cese es la base del cálculo de liquidación y CTS, así que
+                quedará registrada aunque el motivo se deje en blanco.
+            </p>
+        }
+
+        <div style="margin-bottom: var(--space-md)">
+            <app-date-input
+                label="Fecha de Cese"
+                [required]="true"
+                formControlName="fechaSalida" />
+            @if (getDeactivateControl('fechaSalida').invalid && getDeactivateControl('fechaSalida').touched) {
+                <p class="form-error">La fecha de cese es obligatoria</p>
+            }
+        </div>
+
+        <div>
+            <label class="input-label">Motivo de Cese</label>
+            <textarea
+                class="form-input"
+                rows="3"
+                placeholder="Ej: Renuncia voluntaria, término de contrato…"
+                formControlName="motivoSalida"
+                style="resize: vertical"></textarea>
+        </div>
+
+    </form>
+
+    <div slot="footer" class="form-actions">
+        <app-button icon="x" label="Cancelar" variant="secondary" type="button" (click)="closeDeactivateModal()" />
+        <!-- btn-migration: SKIP — label dinámico con ternario (submitting) -->
+        <button class="btn btn-primary" type="button"
+                [disabled]="deactivateSubmitting()"
+                (click)="confirmDeactivate()">
+            {{ deactivateSubmitting() ? 'Desactivando...' : 'Confirmar Desactivación' }}
+        </button>
+    </div>
+
+</app-modal>

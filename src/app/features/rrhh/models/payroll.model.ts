@@ -48,11 +48,18 @@ export interface Payroll {
     updatedAt?: string;
 }
 
-/** Payload para crear una planilla individual (POST /hr/api/payroll). */
+/**
+ * Payload para crear una planilla individual (POST /hr/api/payroll). Espeja
+ * PayrollRequestDto — solo employeeId/periodo/sueldoBase son obligatorios en
+ * el backend (@NotNull/@NotBlank); el resto es opcional (@DecimalMin/@Min).
+ */
 export interface PayrollRequest {
     employeeId: number;
     periodo: string;
     sueldoBase: number;
     bonos?: number;
     descuentos?: number;
+    asignacionFamiliar?: number;
+    montoHorasExtras?: number;
+    diasTrabajados?: number;
 }

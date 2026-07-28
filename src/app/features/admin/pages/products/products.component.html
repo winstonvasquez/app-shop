@@ -115,6 +115,39 @@
                     }
                 </div>
             </div>
+
+            <!-- Imágenes: se guardan como binario en la base de datos -->
+            <div class="form-group">
+                <label>Imágenes del producto</label>
+
+                @if (editMode() && imagenes().length > 0) {
+                    <div class="product-images">
+                        @for (img of imagenes(); track img.id) {
+                            <figure class="product-image" [class.is-main]="img.esPrincipal">
+                                <img [src]="img.url" [alt]="'Imagen ' + img.orden" />
+                                <figcaption>
+                                    @if (img.esPrincipal) {
+                                        <span class="badge badge-success">Principal</span>
+                                    }
+                                    <button type="button" class="btn-icon btn-icon-delete"
+                                            title="Eliminar imagen"
+                                            (click)="onEliminarImagen(img)">✕</button>
+                                </figcaption>
+                            </figure>
+                        }
+                    </div>
+                }
+
+                <app-image-upload
+                    [label]="''"
+                    (fileSelected)="imagenSeleccionada.set($event)"
+                    (cleared)="imagenSeleccionada.set(null)">
+                </app-image-upload>
+
+                @if (!editMode()) {
+                    <small class="form-hint">La imagen se subirá al crear el producto.</small>
+                }
+            </div>
         </form>
 
         <div slot="footer">

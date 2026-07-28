@@ -168,13 +168,15 @@
                 </textarea>
             </div>
 
-            <app-form-field
-                label="URL de Imagen"
-                [control]="getControl('imagenUrl')"
-                type="url"
-                placeholder="https://ejemplo.com/imagen.jpg"
-                hint="URL completa de la imagen (http:// o https://)">
-            </app-form-field>
+            <!-- La imagen se guarda en la base de datos, no como enlace externo -->
+            <div class="form-group">
+                <app-image-upload
+                    label="Imagen de la categoría"
+                    [currentUrl]="getControl('imagenUrl')?.value"
+                    (fileSelected)="imagenSeleccionada.set($event)"
+                    (cleared)="onQuitarImagen()">
+                </app-image-upload>
+            </div>
 
             <div class="form-group">
                 <label for="nivel">Nivel Jerárquico <span class="required">*</span></label>

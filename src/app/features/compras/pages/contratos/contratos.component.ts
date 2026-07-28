@@ -5,7 +5,7 @@ import { map } from 'rxjs';
 import { environment } from '@env/environment';
 import { AuthService } from '@core/auth/auth.service';
 import { MONEDA, Moneda } from '@shared/constants/sunat.constants';
-import { ButtonComponent, CatalogSelectComponent } from '@shared/components';
+import { ButtonComponent, CatalogSelectComponent, ServerSearchSelectComponent } from '@shared/components';
 import { CatalogService } from '@core/services/catalog.service';
 import {
     DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent, PaginationEvent,
@@ -14,7 +14,9 @@ import {
 import { catalogFilter, signalFilter, staticFilter } from '@shared/ui/tables/data-table/filter-helpers';
 import { PAGINATION } from '@shared/constants/app.constants';
 import { ProveedorService, ProveedorFiltroOption, toProveedorOptions } from '../../services/proveedor.service';
+import { proveedorSelectSource } from '../../components/select-sources';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
+import { bloquearEnEdicion } from '@shared/utils/form-lock';
 
 interface ContratoDto {
     id: string;
@@ -37,7 +39,7 @@ interface ContratoDto {
 @Component({
     selector: 'app-contratos',
     standalone: true,
-    imports: [ReactiveFormsModule, ButtonComponent, CatalogSelectComponent, DataTableComponent],
+    imports: [ReactiveFormsModule, ButtonComponent, CatalogSelectComponent, ServerSearchSelectComponent, DataTableComponent],
     templateUrl: './contratos.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -48,6 +50,9 @@ export class ContratosComponent implements OnInit {
     private readonly catalog = inject(CatalogService);
     private readonly proveedorService = inject(ProveedorService);
     private baseUrl = `${environment.apiUrls.purchases}/api/contratos`;
+
+    /** Data source del select server-side de proveedor en el drawer de alta. */
+    readonly proveedorSource = proveedorSelectSource(this.proveedorService);
 
     contratos = signal<ContratoDto[]>([]);
     proximosVencer = signal<ContratoDto[]>([]);
@@ -82,9 +87,9 @@ export class ContratosComponent implements OnInit {
     // `tipoContrato` NO se ofrece: en la BD solo existe el valor 'MARCO' → un select
     // de una sola opción no aporta (ver V35__seed_catalogos_filtros_avanzados.sql).
     estadoFilters: FilterConfig[] = [
-        catalogFilter(this.catalog, 'ESTADO_CONTRATO_PROVEEDOR', 'estado', 'Todos los estados'),
+        catalogFilter(this.catalog, 'ESTADO_CONTRATO_PROVEEDOR', 'estado', 'Estado'),
         catalogFilter(this.catalog, 'MONEDA', 'moneda', 'Moneda'),
-        signalFilter('proveedorId', 'Todos los proveedores', this.proveedoresFiltro,
+        signalFilter('proveedorId', 'Proveedor', this.proveedoresFiltro,
             p => ({ value: p.id, label: p.razonSocial })),
         staticFilter('renovacionAutomatica', 'Renovación', [
             { value: 'true', label: 'Automática' },
@@ -153,6 +158,8 @@ export class ContratosComponent implements OnInit {
     ];
 
     form = this.fb.group({
+        // Correlativo CONT-NNNN emitido por el backend: se muestra al editar, nunca se edita.
+        codigo: [''],
         proveedorId: ['', Validators.required],
         tipoContrato: ['MARCO', Validators.required],
         descripcion: ['', Validators.required],
@@ -232,11 +239,25 @@ export class ContratosComponent implements OnInit {
     guardar(): void {
         if (this.form.invalid) return;
         this.guardando.set(true);
-        const v = this.form.value;
+        // getRawValue(): los campos bloqueados (codigo / proveedorId / fechaInicio) no aparecen
+        // en `.value`, y al crear son obligatorios — sin esto se enviarían nulos.
+        const v = this.form.getRawValue();
         const editando = this.modoEdicion();
+
+        // El correlativo lo emite el backend; en edición además se omiten proveedorId y
+        // fechaInicio, que ActualizarContratoRequest no acepta.
+        const comun = {
+            tipoContrato: v.tipoContrato, descripcion: v.descripcion, fechaFin: v.fechaFin,
+            montoContrato: v.montoContrato, moneda: v.moneda,
+            condicionesPago: v.condicionesPago, penalidades: v.penalidades,
+            renovacionAutomatica: v.renovacionAutomatica,
+            diasAvisoVencimiento: v.diasAvisoVencimiento,
+        };
         const req = editando
-            ? this.http.put<ContratoDto>(`${this.baseUrl}/${editando.id}`, v, { headers: this.getHeaders() })
-            : this.http.post<ContratoDto>(this.baseUrl, v, { headers: this.getHeaders() });
+            ? this.http.put<ContratoDto>(`${this.baseUrl}/${editando.id}`, comun, { headers: this.getHeaders() })
+            : this.http.post<ContratoDto>(this.baseUrl,
+                { ...comun, proveedorId: v.proveedorId, fechaInicio: v.fechaInicio },
+                { headers: this.getHeaders() });
         req.subscribe({
             next: () => {
                 this.guardando.set(false);
@@ -250,13 +271,12 @@ export class ContratosComponent implements OnInit {
     /** Abre el drawer en modo creación, con el form limpio en sus valores por defecto. */
     abrirCrear(): void {
         this.modoEdicion.set(null);
-        this.form.get('proveedorId')?.enable();
-        this.form.get('fechaInicio')?.enable();
         this.form.reset({
-            proveedorId: '', tipoContrato: 'MARCO', descripcion: '',
+            codigo: '', proveedorId: '', tipoContrato: 'MARCO', descripcion: '',
             fechaInicio: '', fechaFin: '', montoContrato: 0, moneda: MONEDA.PEN,
             condicionesPago: '', penalidades: '', renovacionAutomatica: false, diasAvisoVencimiento: 30,
         });
+        this.aplicarBloqueos();
         this.mostrarForm.set(true);
     }
 
@@ -267,6 +287,7 @@ export class ContratosComponent implements OnInit {
     abrirEditar(contrato: ContratoDto): void {
         this.modoEdicion.set(contrato);
         this.form.reset({
+            codigo: contrato.codigo,
             proveedorId: contrato.proveedorId,
             tipoContrato: contrato.tipoContrato,
             descripcion: contrato.descripcion,
@@ -279,9 +300,16 @@ export class ContratosComponent implements OnInit {
             renovacionAutomatica: contrato.renovacionAutomatica,
             diasAvisoVencimiento: contrato.diasAvisoVencimiento,
         });
-        this.form.get('proveedorId')?.disable();
-        this.form.get('fechaInicio')?.disable();
+        this.aplicarBloqueos();
         this.mostrarForm.set(true);
+    }
+
+    /**
+     * Bloqueo unico del drawer (ver `@shared/utils/form-lock`): el codigo es el correlativo
+     * del contrato, y proveedorId / fechaInicio no los acepta ActualizarContratoRequest.
+     */
+    private aplicarBloqueos(): void {
+        bloquearEnEdicion(this.form, ['codigo', 'proveedorId', 'fechaInicio'], this.modoEdicion() !== null);
     }
 
     cerrarForm(): void {

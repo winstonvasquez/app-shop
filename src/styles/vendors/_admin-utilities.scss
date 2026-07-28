@@ -384,6 +384,34 @@
     color: var(--color-text-secondary);
 }
 
+/* Casilla con su texto al lado: .input-label es de bloque (correcto encima de un
+   input), y dentro de un checkbox dejaba el texto colgando debajo de la casilla.
+   Las dos reglas van separadas a propósito: agrupadas por coma, el optimizador
+   de CSS descartaba la del checkbox. */
+label:has(> input[type="checkbox"]) {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+
+    .input-label,
+    > span {
+        display: inline;
+        margin-bottom: 0;
+    }
+}
+
+label:has(> input[type="radio"]) {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+
+    .input-label,
+    > span {
+        display: inline;
+        margin-bottom: 0;
+    }
+}
+
 .input-error-message {
     @apply text-xs mt-1;
     color: var(--color-error);
@@ -1173,48 +1201,95 @@
   }
 }
 
-/* Toolbar de tabla (filtros + acciones sobre selección) */
+/* Toolbar de tabla: fila de búsqueda/acciones + rejilla de filtros etiquetados */
 .table-toolbar {
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: 0.75rem;
-  padding: 0.75rem 1rem;
+  padding: 0.875rem 1rem;
   background-color: var(--color-surface);
   border-bottom: 1px solid var(--color-border);
-  flex-wrap: wrap;
 
-  .table-toolbar-search {
-    flex: 1;
-    min-width: 200px;
-    max-width: 400px;
+  /* ── Fila 1: búsqueda a la izquierda, acciones de tabla a la derecha ── */
+  .toolbar-primary {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    min-height: 32px;
   }
 
-  /* Grupo de búsqueda del data-table: input (sm) + botón "Buscar", alineados */
-  .table-search {
+  .toolbar-search {
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    flex: 1 1 320px;
+    max-width: 520px;
 
     .search-box {
-      flex: 0 1 340px;
-      width: 340px;
-      max-width: 340px;
+      flex: 1 1 auto;
+      min-width: 0;
     }
     /* El botón Buscar comparte altura con el input (32px) */
     .btn {
       height: 32px;
       min-height: 32px;
       border-radius: 6px;
+      flex-shrink: 0;
     }
   }
 
-  /* Filtro combo dentro del toolbar a la misma altura del input */
-  .table-filter .input-field {
+  .toolbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-left: auto;
+    flex-shrink: 0;
+  }
+
+  /* ── Fila 2: rejilla de filtros ──
+     auto-fit mantiene las columnas alineadas entre sí en vez de dejar que el
+     wrap parta los controles donde caiga. */
+  .toolbar-filters {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 0.625rem 0.75rem;
+    align-items: end;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--color-border);
+  }
+
+  .filter-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+
+    /* El rango de fechas necesita dos columnas para no comprimir sus extremos */
+    &--range { grid-column: span 2; }
+  }
+
+  /* El slot no dibuja nada: sus hijos son celdas de la rejilla como los demás */
+  .toolbar-filters-slot { display: contents; }
+
+  .filter-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .filter-field.is-active .filter-label { color: var(--color-primary); }
+
+  .filter-field .input-field {
     height: 32px;
+    width: 100%;
     padding-top: 0;
     padding-bottom: 0;
-    width: auto;
-    min-width: 170px;
 
     /* Un select con valor elegido se marca para que el filtro activo se vea de un vistazo */
     &.is-active {
@@ -1222,6 +1297,69 @@
       background-color: color-mix(in oklch, var(--color-primary) 8%, transparent);
       font-weight: 500;
     }
+  }
+
+  .filter-range {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 0.375rem;
+
+    app-date-input { min-width: 0; }
+
+    .filter-range-sep {
+      color: var(--color-text-muted);
+      font-size: 12px;
+      line-height: 1;
+    }
+  }
+
+  /* Los date-input de la rejilla llevan la etiqueta del grupo, no la suya */
+  .filter-field app-date-input {
+    .di-label { display: none; }
+    .di-input {
+      height: 32px;
+      padding-left: 34px;
+      padding-right: 26px;
+      border-radius: 6px;
+      font-size: 13px;
+    }
+    .di-wrapper { border-radius: 6px; }
+    .di-icon { left: 9px; width: 16px; height: 16px; }
+    .di-clear { right: 4px; width: 22px; height: 22px; }
+  }
+
+  /* Los controles que proyecta la vista se alinean con el resto de la rejilla */
+  .toolbar-filters [toolbarExtra] {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+
+    input, select, .form-input, .input-field {
+      height: 32px;
+      min-height: 32px;
+      padding-top: 0;
+      padding-bottom: 0;
+      border-radius: 6px;
+      font-size: 13px;
+      width: 100%;
+    }
+    label, .input-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--color-text-muted);
+      margin-bottom: 0;
+    }
+  }
+
+  @media (max-width: 720px) {
+    .toolbar-filters { grid-template-columns: 1fr; }
+    .filter-field--range { grid-column: span 1; }
+    .toolbar-search { max-width: none; }
+    .toolbar-actions { margin-left: 0; }
   }
 
   /* Botón "Limpiar" — solo aparece con filtros activos, con el contador al lado */
@@ -1259,70 +1397,6 @@
       font-weight: 600;
       line-height: 1;
     }
-  }
-
-  /* Filtro de rango de fechas nativo del data-table ([dateRangeFilters]) — mismo
-     tratamiento compacto de 32px que .table-toolbar-extra */
-  .table-daterange {
-    display: flex;
-    align-items: center;
-    gap: 0.375rem;
-
-    app-date-input {
-      display: inline-flex;
-      align-items: center;
-
-      input, .di-input {
-        height: 32px;
-        min-height: 32px;
-        padding-top: 0;
-        padding-bottom: 0;
-        border-radius: 6px;
-        font-size: 13px;
-      }
-      label, .di-label { display: none; }
-    }
-
-    .table-daterange-sep {
-      color: var(--color-text-muted);
-      font-size: 12px;
-    }
-  }
-
-  /* Slot de filtros custom proyectados (date-inputs, radios, selects propios):
-     todo a 32px, alineado con el resto del toolbar */
-  .table-toolbar-extra {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-
-    &:empty { display: none; }
-
-    input, select, .form-input, .input-field {
-      height: 32px;
-      min-height: 32px;
-      padding-top: 0;
-      padding-bottom: 0;
-      border-radius: 6px;
-      font-size: 13px;
-    }
-    /* app-date-input proyectado: ocultar label para mantener una sola fila */
-    label, .input-label { display: none; }
-    app-date-input { display: inline-flex; align-items: center; }
-  }
-
-  .table-toolbar-filters {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-  }
-
-  .table-toolbar-actions {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin-left: auto;
   }
 
   /* Badge de selección activa */

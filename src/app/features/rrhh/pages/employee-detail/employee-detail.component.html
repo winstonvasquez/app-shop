@@ -37,8 +37,34 @@
 <!-- Tab: Datos Personales -->
 @if (activeTab() === 'personal') {
     <div class="card">
-        <div class="card-header"><h3 class="card-title">Datos Personales</h3></div>
+        <div class="card-header" style="display:flex;justify-content:space-between;align-items:center">
+            <h3 class="card-title">Datos Personales</h3>
+            <button class="btn btn-primary" style="font-size:0.8rem;padding:6px 14px" (click)="togglePersonalForm()">
+                {{ showPersonalForm() ? 'Cancelar' : 'Editar nacionalidad / tipo de sangre' }}
+            </button>
+        </div>
         <div class="card-body">
+            @if (showPersonalForm()) {
+                <!-- Único origen editable de nacionalidad/tipoSangre: no se capturan en el
+                     drawer de employee-list, así que se editan aquí mismo, donde se ven. -->
+                <form [formGroup]="personalForm" (ngSubmit)="guardarDatosPersonales()"
+                      style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:var(--space-md);align-items:end;margin-bottom:var(--space-lg);padding:var(--space-md);background:var(--color-surface);border:1px solid var(--color-border);border-radius:6px">
+                    <div class="form-group">
+                        <label class="input-label" for="perNacionalidad">Nacionalidad</label>
+                        <input id="perNacionalidad" type="text" class="form-control" formControlName="nacionalidad" placeholder="Ej: Peruana" maxlength="50">
+                    </div>
+                    <div class="form-group">
+                        <label class="input-label" for="perTipoSangre">Tipo de Sangre</label>
+                        <input id="perTipoSangre" type="text" class="form-control" formControlName="tipoSangre" placeholder="Ej: O+" maxlength="5">
+                    </div>
+                    <button class="btn btn-primary" type="submit" [disabled]="personalForm.invalid || savingPersonal()">
+                        {{ savingPersonal() ? 'Guardando…' : 'Guardar' }}
+                    </button>
+                </form>
+                @if (personalError(); as e) {
+                    <p style="color:var(--color-error);font-size:0.85rem;margin-bottom:var(--space-md)">{{ e }}</p>
+                }
+            }
             <div class="form-group-3col">
                 <div><span class="input-label">Tipo Documento</span><p>{{ employee()!.tipoDocumento ?? 'DNI' }}</p></div>
                 <div><span class="input-label">Documento</span><p>{{ employee()!.documentoIdentidad }}</p></div>
@@ -80,8 +106,40 @@
 <!-- Tab: Dirección -->
 @if (activeTab() === 'direccion') {
     <div class="card">
-        <div class="card-header"><h3 class="card-title">Contacto y Dirección</h3></div>
+        <div class="card-header" style="display:flex;justify-content:space-between;align-items:center">
+            <h3 class="card-title">Contacto y Dirección</h3>
+            <button class="btn btn-primary" style="font-size:0.8rem;padding:6px 14px" (click)="toggleAddressForm()">
+                {{ showAddressForm() ? 'Cancelar' : 'Editar' }}
+            </button>
+        </div>
         <div class="card-body">
+            @if (showAddressForm()) {
+                <form [formGroup]="addressForm" (ngSubmit)="guardarDireccion()"
+                      style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:var(--space-md);align-items:end;margin-bottom:var(--space-lg);padding:var(--space-md);background:var(--color-surface);border:1px solid var(--color-border);border-radius:6px">
+                    <div class="form-group" style="grid-column: span 2">
+                        <label class="input-label" for="dirDireccion">Dirección</label>
+                        <input id="dirDireccion" type="text" class="form-control" formControlName="direccion" placeholder="Av./Jr./Calle, número" maxlength="500">
+                    </div>
+                    <div class="form-group">
+                        <label class="input-label" for="dirDistrito">Distrito</label>
+                        <input id="dirDistrito" type="text" class="form-control" formControlName="distrito" placeholder="—" maxlength="100">
+                    </div>
+                    <div class="form-group">
+                        <label class="input-label" for="dirProvincia">Provincia</label>
+                        <input id="dirProvincia" type="text" class="form-control" formControlName="provincia" placeholder="—" maxlength="100">
+                    </div>
+                    <div class="form-group">
+                        <label class="input-label" for="dirDepartamentoGeo">Departamento</label>
+                        <input id="dirDepartamentoGeo" type="text" class="form-control" formControlName="departamentoGeo" placeholder="—" maxlength="100">
+                    </div>
+                    <button class="btn btn-primary" type="submit" [disabled]="addressForm.invalid || savingAddress()">
+                        {{ savingAddress() ? 'Guardando…' : 'Guardar' }}
+                    </button>
+                </form>
+                @if (addressError(); as e) {
+                    <p style="color:var(--color-error);font-size:0.85rem;margin-bottom:var(--space-md)">{{ e }}</p>
+                }
+            }
             <div class="form-group-3col">
                 <div style="grid-column: span 3"><span class="input-label">Dirección</span><p>{{ employee()!.direccion ?? '—' }}</p></div>
                 <div><span class="input-label">Distrito</span><p>{{ employee()!.distrito ?? '—' }}</p></div>
@@ -95,8 +153,40 @@
 <!-- Tab: Educación -->
 @if (activeTab() === 'educacion') {
     <div class="card">
-        <div class="card-header"><h3 class="card-title">Educación y Perfil</h3></div>
+        <div class="card-header" style="display:flex;justify-content:space-between;align-items:center">
+            <h3 class="card-title">Educación y Perfil</h3>
+            <button class="btn btn-primary" style="font-size:0.8rem;padding:6px 14px" (click)="toggleEducationForm()">
+                {{ showEducationForm() ? 'Cancelar' : 'Editar' }}
+            </button>
+        </div>
         <div class="card-body">
+            @if (showEducationForm()) {
+                <form [formGroup]="educationForm" (ngSubmit)="guardarEducacion()"
+                      style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:var(--space-md);align-items:end;margin-bottom:var(--space-lg);padding:var(--space-md);background:var(--color-surface);border:1px solid var(--color-border);border-radius:6px">
+                    <div class="form-group">
+                        <label class="input-label" for="eduNivel">Nivel Educación</label>
+                        <input id="eduNivel" type="text" class="form-control" formControlName="nivelEducacion" placeholder="Ej: Universitaria" maxlength="50">
+                    </div>
+                    <div class="form-group">
+                        <label class="input-label" for="eduProfesion">Profesión</label>
+                        <input id="eduProfesion" type="text" class="form-control" formControlName="profesion" placeholder="Ej: Contador" maxlength="100">
+                    </div>
+                    <div class="form-group">
+                        <label class="input-label" for="eduUniversidad">Universidad</label>
+                        <input id="eduUniversidad" type="text" class="form-control" formControlName="universidad" placeholder="—" maxlength="200">
+                    </div>
+                    <div class="form-group">
+                        <label class="input-label" for="eduLinkedin">LinkedIn</label>
+                        <input id="eduLinkedin" type="url" class="form-control" formControlName="linkedinUrl" placeholder="https://linkedin.com/in/…" maxlength="500">
+                    </div>
+                    <button class="btn btn-primary" type="submit" [disabled]="educationForm.invalid || savingEducation()">
+                        {{ savingEducation() ? 'Guardando…' : 'Guardar' }}
+                    </button>
+                </form>
+                @if (educationError(); as e) {
+                    <p style="color:var(--color-error);font-size:0.85rem;margin-bottom:var(--space-md)">{{ e }}</p>
+                }
+            }
             <div class="form-group-3col">
                 <div><span class="input-label">Nivel Educación</span><p>{{ employee()!.nivelEducacion ?? '—' }}</p></div>
                 <div><span class="input-label">Profesión</span><p>{{ employee()!.profesion ?? '—' }}</p></div>
@@ -156,10 +246,53 @@
 <!-- Tab: Contactos de Emergencia -->
 @if (activeTab() === 'emergencia') {
     <div class="card">
-        <div class="card-header">
+        <div class="card-header" style="display:flex;justify-content:space-between;align-items:center">
             <h3 class="card-title">Contactos de Emergencia</h3>
+            <button class="btn btn-primary" style="font-size:0.8rem;padding:6px 14px" (click)="toggleEmergencyForm()">
+                {{ showEmergencyForm() ? 'Cancelar' : '+ Agregar' }}
+            </button>
         </div>
         <div class="card-body">
+            @if (showEmergencyForm()) {
+                <form [formGroup]="emergencyForm" (ngSubmit)="guardarContactoEmergencia()"
+                      style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:var(--space-md);align-items:end;margin-bottom:var(--space-lg);padding:var(--space-md);background:var(--color-surface);border:1px solid var(--color-border);border-radius:6px">
+                    <div class="form-group">
+                        <label class="input-label" for="ecNombreCompleto">Nombre completo *</label>
+                        <input id="ecNombreCompleto" type="text" class="form-control" formControlName="nombreCompleto" placeholder="Nombre y apellidos">
+                    </div>
+                    <div class="form-group">
+                        <label class="input-label" for="ecRelacion">Relación *</label>
+                        <select id="ecRelacion" class="form-select" formControlName="relacion">
+                            <option value="">— Seleccionar —</option>
+                            @for (opt of emergencyRelacionOptions; track opt.value) {
+                                <option [value]="opt.value">{{ opt.label }}</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="input-label" for="ecTelefono">Teléfono *</label>
+                        <input id="ecTelefono" type="text" class="form-control" formControlName="telefono" placeholder="999 999 999">
+                    </div>
+                    <div class="form-group">
+                        <label class="input-label" for="ecTelefonoAlternativo">Teléfono alternativo</label>
+                        <input id="ecTelefonoAlternativo" type="text" class="form-control" formControlName="telefonoAlternativo" placeholder="—">
+                    </div>
+                    <div class="form-group" style="grid-column: span 2">
+                        <label class="input-label" for="ecDireccion">Dirección</label>
+                        <input id="ecDireccion" type="text" class="form-control" formControlName="direccion" placeholder="—">
+                    </div>
+                    <div class="form-group" style="display:flex;align-items:center;gap:8px">
+                        <input type="checkbox" id="ecEsPrincipal" formControlName="esPrincipal">
+                        <label class="input-label" for="ecEsPrincipal" style="margin:0">Contacto principal</label>
+                    </div>
+                    <button class="btn btn-primary" type="submit" [disabled]="emergencyForm.invalid || savingEmergency()">
+                        {{ savingEmergency() ? 'Guardando…' : (editingEmergencyContact() ? 'Actualizar contacto' : 'Guardar contacto') }}
+                    </button>
+                </form>
+                @if (emergencyError(); as e) {
+                    <p style="color:var(--color-error);font-size:0.85rem;margin-bottom:var(--space-md)">{{ e }}</p>
+                }
+            }
             @if (emergencyContacts().length === 0) {
                 <p style="color: var(--color-text-muted); text-align: center; padding: var(--space-lg)">Sin contactos de emergencia</p>
             } @else {
@@ -169,6 +302,7 @@
                         <th class="table-header-cell">Relación</th>
                         <th class="table-header-cell">Teléfono</th>
                         <th class="table-header-cell">Principal</th>
+                        <th class="table-header-cell"></th>
                     </tr></thead>
                     <tbody>
                         @for (ec of emergencyContacts(); track ec.id) {
@@ -179,6 +313,16 @@
                                 <td class="table-cell">
                                     @if (ec.esPrincipal) { <span class="badge badge-success">Sí</span> }
                                     @else { <span class="badge badge-neutral">No</span> }
+                                </td>
+                                <td class="table-cell">
+                                    @if (emergencyConfirmDeleteId() === ec.id) {
+                                        <span style="font-size:0.78rem;margin-right:6px">¿Eliminar?</span>
+                                        <button class="btn" style="font-size:0.72rem;padding:4px 10px;color:var(--color-error);border:1px solid var(--color-error)" (click)="confirmDeleteContactoEmergencia(ec)">Sí</button>
+                                        <button class="btn btn-secondary" style="font-size:0.72rem;padding:4px 10px" (click)="cancelDeleteContactoEmergencia()">No</button>
+                                    } @else {
+                                        <button class="btn btn-secondary" style="font-size:0.72rem;padding:4px 10px" (click)="editarContactoEmergencia(ec)">Editar</button>
+                                        <button class="btn" style="font-size:0.72rem;padding:4px 10px;color:var(--color-error);border:1px solid var(--color-error)" (click)="askDeleteContactoEmergencia(ec)">Eliminar</button>
+                                    }
                                 </td>
                             </tr>
                         }
@@ -192,10 +336,57 @@
 <!-- Tab: Dependientes -->
 @if (activeTab() === 'dependientes') {
     <div class="card">
-        <div class="card-header">
+        <div class="card-header" style="display:flex;justify-content:space-between;align-items:center">
             <h3 class="card-title">Dependientes / Familiares</h3>
+            <button class="btn btn-primary" style="font-size:0.8rem;padding:6px 14px" (click)="toggleDependentForm()">
+                {{ showDependentForm() ? 'Cancelar' : '+ Agregar' }}
+            </button>
         </div>
         <div class="card-body">
+            @if (showDependentForm()) {
+                <form [formGroup]="dependentForm" (ngSubmit)="guardarDependiente()"
+                      style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:var(--space-md);align-items:end;margin-bottom:var(--space-lg);padding:var(--space-md);background:var(--color-surface);border:1px solid var(--color-border);border-radius:6px">
+                    <div class="form-group">
+                        <label class="input-label" for="depNombreCompleto">Nombre completo *</label>
+                        <input id="depNombreCompleto" type="text" class="form-control" formControlName="nombreCompleto" placeholder="Nombre y apellidos">
+                    </div>
+                    <div class="form-group">
+                        <label class="input-label" for="depRelacion">Relación *</label>
+                        <select id="depRelacion" class="form-select" formControlName="relacion">
+                            <option value="">— Seleccionar —</option>
+                            @for (opt of dependentRelacionOptions; track opt.value) {
+                                <option [value]="opt.value">{{ opt.label }}</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="input-label" for="depFechaNacimiento">Fecha nacimiento *</label>
+                        <input id="depFechaNacimiento" type="date" class="form-control" formControlName="fechaNacimiento">
+                    </div>
+                    <div class="form-group">
+                        <label class="input-label" for="depDocumentoIdentidad">Documento identidad</label>
+                        <input id="depDocumentoIdentidad" type="text" class="form-control" formControlName="documentoIdentidad" placeholder="—">
+                    </div>
+                    <div class="form-group">
+                        <label class="input-label" for="depGenero">Género</label>
+                        <app-catalog-select tabla="GENERO" formControlName="genero" placeholder="—" />
+                    </div>
+                    <div class="form-group" style="display:flex;align-items:center;gap:8px">
+                        <input type="checkbox" id="depEsCargaFamiliar" formControlName="esCargaFamiliar">
+                        <label class="input-label" for="depEsCargaFamiliar" style="margin:0">Carga familiar (asignación familiar)</label>
+                    </div>
+                    <div class="form-group" style="display:flex;align-items:center;gap:8px">
+                        <input type="checkbox" id="depEsBeneficiarioSeguro" formControlName="esBeneficiarioSeguro">
+                        <label class="input-label" for="depEsBeneficiarioSeguro" style="margin:0">Beneficiario de seguro</label>
+                    </div>
+                    <button class="btn btn-primary" type="submit" [disabled]="dependentForm.invalid || savingDependent()">
+                        {{ savingDependent() ? 'Guardando…' : (editingDependent() ? 'Actualizar dependiente' : 'Guardar dependiente') }}
+                    </button>
+                </form>
+                @if (dependentError(); as e) {
+                    <p style="color:var(--color-error);font-size:0.85rem;margin-bottom:var(--space-md)">{{ e }}</p>
+                }
+            }
             @if (dependentsData().length === 0) {
                 <p style="color: var(--color-text-muted); text-align: center; padding: var(--space-lg)">Sin dependientes registrados</p>
             } @else {
@@ -205,6 +396,7 @@
                         <th class="table-header-cell">Relación</th>
                         <th class="table-header-cell">Nacimiento</th>
                         <th class="table-header-cell">Carga Familiar</th>
+                        <th class="table-header-cell"></th>
                     </tr></thead>
                     <tbody>
                         @for (d of dependentsData(); track d.id) {
@@ -215,6 +407,16 @@
                                 <td class="table-cell">
                                     @if (d.esCargaFamiliar) { <span class="badge badge-success">Sí</span> }
                                     @else { <span class="badge badge-neutral">No</span> }
+                                </td>
+                                <td class="table-cell">
+                                    @if (dependentConfirmDeleteId() === d.id) {
+                                        <span style="font-size:0.78rem;margin-right:6px">¿Eliminar?</span>
+                                        <button class="btn" style="font-size:0.72rem;padding:4px 10px;color:var(--color-error);border:1px solid var(--color-error)" (click)="confirmDeleteDependiente(d)">Sí</button>
+                                        <button class="btn btn-secondary" style="font-size:0.72rem;padding:4px 10px" (click)="cancelDeleteDependiente()">No</button>
+                                    } @else {
+                                        <button class="btn btn-secondary" style="font-size:0.72rem;padding:4px 10px" (click)="editarDependiente(d)">Editar</button>
+                                        <button class="btn" style="font-size:0.72rem;padding:4px 10px;color:var(--color-error);border:1px solid var(--color-error)" (click)="askDeleteDependiente(d)">Eliminar</button>
+                                    }
                                 </td>
                             </tr>
                         }
@@ -228,10 +430,53 @@
 <!-- Tab: Documentos -->
 @if (activeTab() === 'documentos') {
     <div class="card">
-        <div class="card-header">
+        <div class="card-header" style="display:flex;justify-content:space-between;align-items:center">
             <h3 class="card-title">Documentos</h3>
+            <button class="btn btn-primary" style="font-size:0.8rem;padding:6px 14px" (click)="toggleDocumentForm()">
+                {{ showDocumentForm() ? 'Cancelar' : '+ Agregar' }}
+            </button>
         </div>
         <div class="card-body">
+            @if (showDocumentForm()) {
+                <form [formGroup]="documentForm" (ngSubmit)="guardarDocumento()"
+                      style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:var(--space-md);align-items:end;margin-bottom:var(--space-lg);padding:var(--space-md);background:var(--color-surface);border:1px solid var(--color-border);border-radius:6px">
+                    <div class="form-group">
+                        <label class="input-label" for="docTipoDocumento">Tipo *</label>
+                        <select id="docTipoDocumento" class="form-select" formControlName="tipoDocumento">
+                            <option value="">— Seleccionar —</option>
+                            @for (opt of documentTipoOptions; track opt.value) {
+                                <option [value]="opt.value">{{ opt.label }}</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="input-label" for="docNombreArchivo">Nombre archivo *</label>
+                        <input id="docNombreArchivo" type="text" class="form-control" formControlName="nombreArchivo" placeholder="ej. DNI_frontal.pdf">
+                    </div>
+                    <div class="form-group" style="grid-column: span 2">
+                        <label class="input-label" for="docUrlArchivo">URL archivo *</label>
+                        <input id="docUrlArchivo" type="text" class="form-control" formControlName="urlArchivo" placeholder="https://…">
+                    </div>
+                    <div class="form-group">
+                        <label class="input-label" for="docFechaEmision">Fecha emisión</label>
+                        <input id="docFechaEmision" type="date" class="form-control" formControlName="fechaEmision">
+                    </div>
+                    <div class="form-group">
+                        <label class="input-label" for="docFechaVencimiento">Fecha vencimiento</label>
+                        <input id="docFechaVencimiento" type="date" class="form-control" formControlName="fechaVencimiento">
+                    </div>
+                    <div class="form-group" style="grid-column: span 2">
+                        <label class="input-label" for="docDescripcion">Descripción</label>
+                        <input id="docDescripcion" type="text" class="form-control" formControlName="descripcion" placeholder="—">
+                    </div>
+                    <button class="btn btn-primary" type="submit" [disabled]="documentForm.invalid || savingDocument()">
+                        {{ savingDocument() ? 'Guardando…' : (editingDocument() ? 'Actualizar documento' : 'Guardar documento') }}
+                    </button>
+                </form>
+                @if (documentError(); as e) {
+                    <p style="color:var(--color-error);font-size:0.85rem;margin-bottom:var(--space-md)">{{ e }}</p>
+                }
+            }
             @if (documentsData().length === 0) {
                 <p style="color: var(--color-text-muted); text-align: center; padding: var(--space-lg)">Sin documentos registrados</p>
             } @else {
@@ -241,6 +486,7 @@
                         <th class="table-header-cell">Nombre</th>
                         <th class="table-header-cell">Vencimiento</th>
                         <th class="table-header-cell">Estado</th>
+                        <th class="table-header-cell"></th>
                     </tr></thead>
                     <tbody>
                         @for (doc of documentsData(); track doc.id) {
@@ -252,6 +498,16 @@
                                 <td class="table-cell">{{ doc.fechaVencimiento ?? '—' }}</td>
                                 <td class="table-cell">
                                     <span class="badge" [class]="'badge-' + (doc.estado === 'VIGENTE' ? 'success' : doc.estado === 'VENCIDO' ? 'error' : 'neutral')">{{ doc.estado }}</span>
+                                </td>
+                                <td class="table-cell">
+                                    @if (documentConfirmDeleteId() === doc.id) {
+                                        <span style="font-size:0.78rem;margin-right:6px">¿Eliminar?</span>
+                                        <button class="btn" style="font-size:0.72rem;padding:4px 10px;color:var(--color-error);border:1px solid var(--color-error)" (click)="confirmDeleteDocumento(doc)">Sí</button>
+                                        <button class="btn btn-secondary" style="font-size:0.72rem;padding:4px 10px" (click)="cancelDeleteDocumento()">No</button>
+                                    } @else {
+                                        <button class="btn btn-secondary" style="font-size:0.72rem;padding:4px 10px" (click)="editarDocumento(doc)">Editar</button>
+                                        <button class="btn" style="font-size:0.72rem;padding:4px 10px;color:var(--color-error);border:1px solid var(--color-error)" (click)="askDeleteDocumento(doc)">Eliminar</button>
+                                    }
                                 </td>
                             </tr>
                         }

@@ -67,15 +67,15 @@ export class RegistroComprasComponent implements OnInit {
     filtros: FilterConfig[] = [
         {
             field: 'periodo',
-            label: '— Seleccionar periodo —',
+            label: 'Periodo',
             options: toObservable(this.periodos).pipe(
                 map(list => list.map(p => ({ value: p.id, label: `${p.nombre} (${p.estado})` })))
             )
         },
-        catalogFilter(this.catalog, 'ESTADO_ORDEN_COMPRA', 'estado', 'Todos los estados'),
+        catalogFilter(this.catalog, 'ESTADO_ORDEN_COMPRA', 'estado', 'Estado'),
         catalogFilter(this.catalog, 'CONDICION_PAGO', 'condicionPago', 'Cond. de pago'),
         catalogFilter(this.catalog, 'MONEDA', 'moneda', 'Moneda'),
-        signalFilter('proveedorId', 'Todos los proveedores', this.proveedoresFiltro,
+        signalFilter('proveedorId', 'Proveedor', this.proveedoresFiltro,
             p => ({ value: p.id, label: p.razonSocial }))
     ];
 

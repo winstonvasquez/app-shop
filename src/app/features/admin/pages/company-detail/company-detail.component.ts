@@ -3,6 +3,9 @@ import { DatePipe } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule, Validators, FormGroup, FormControl } from '@angular/forms';
 import { CompanyService } from '@features/admin/services/company.service';
+import { UserService } from '@features/admin/services/user.service';
+import { RolService } from '@features/admin/services/rol.service';
+import { userSelectSource } from '@features/admin/components/select-sources';
 import {
     CompanyResponse,
     CompanyRequest,
@@ -10,18 +13,33 @@ import {
     CompanyUserResponse,
     CompanySubscriptionResponse
 } from '@features/admin/models/company.model';
+import { RolDto } from '@features/admin/models/user.model';
 import { NOTIFICATION_DURATION } from '@shared/constants/ui.constants';
+import { bloquearSiempre } from '@shared/utils/form-lock';
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
+import { AdminFormLayoutComponent } from '@shared/ui/forms/admin-form-layout/admin-form-layout.component';
+import { AdminFormSectionComponent } from '@shared/ui/forms/admin-form-section/admin-form-section.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
-import { ButtonComponent } from '@shared/components';
+import { ButtonComponent, DrawerComponent, ServerSearchSelectComponent } from '@shared/components';
 
 type DetailTab = 'perfil' | 'modulos' | 'usuarios' | 'suscripcion';
 
 @Component({
     selector: 'app-company-detail',
     standalone: true,
-    imports: [DatePipe, ReactiveFormsModule, FormFieldComponent, PageHeaderComponent, AlertComponent, ButtonComponent],
+    imports: [
+        DatePipe,
+        ReactiveFormsModule,
+        FormFieldComponent,
+        AdminFormLayoutComponent,
+        AdminFormSectionComponent,
+        PageHeaderComponent,
+        AlertComponent,
+        ButtonComponent,
+        DrawerComponent,
+        ServerSearchSelectComponent
+    ],
     templateUrl: './company-detail.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -29,6 +47,8 @@ export class CompanyDetailComponent implements OnInit {
     private readonly route = inject(ActivatedRoute);
     private readonly router = inject(Router);
     private readonly companyService = inject(CompanyService);
+    private readonly userService = inject(UserService);
+    private readonly rolService = inject(RolService);
     private readonly fb = inject(FormBuilder);
 
     // State
@@ -42,6 +62,15 @@ export class CompanyDetailComponent implements OnInit {
     readonly error = signal<string | null>(null);
     readonly successMsg = signal<string | null>(null);
     readonly editingProfile = signal(false);
+
+    // Asignar usuario a la empresa (drawer del tab Usuarios)
+    readonly roles = signal<RolDto[]>([]);
+    readonly showAssignDrawer = signal(false);
+    readonly assigning = signal(false);
+    readonly assignError = signal<string | null>(null);
+    assignForm: FormGroup;
+    /** Fuente server-side de usuarios para el `<app-server-search-select>` del drawer. */
+    readonly userSource = userSelectSource(this.userService);
 
     // Form
     profileForm: FormGroup;
@@ -69,6 +98,11 @@ export class CompanyDetailComponent implements OnInit {
             logoUrl: ['', [Validators.maxLength(500)]],
             domain: ['', [Validators.maxLength(100)]]
         });
+
+        this.assignForm = this.fb.group({
+            userId: [null as number | null, [Validators.required]],
+            roleId: ['', [Validators.required]]
+        });
     }
 
     ngOnInit(): void {
@@ -78,6 +112,7 @@ export class CompanyDetailComponent implements OnInit {
             return;
         }
         this.loadCompany(id);
+        this.loadRoles();
     }
 
     getControl(name: string): FormControl {
@@ -114,6 +149,10 @@ export class CompanyDetailComponent implements OnInit {
             logoUrl: c.logoUrl ?? '',
             domain: c.domain ?? ''
         });
+        // ruc = identidad tributaria del tenant (todos los CPE emitidos lo referencian);
+        // domain = clave con la que se resuelve la empresa en el storefront. Coherente
+        // con companies.component.ts, que ya bloquea ambos campos en su propio formulario.
+        bloquearSiempre(this.profileForm, ['ruc', 'domain']);
         this.editingProfile.set(true);
     }
 
@@ -130,7 +169,9 @@ export class CompanyDetailComponent implements OnInit {
         if (!c) return;
 
         this.saving.set(true);
-        const fv = this.profileForm.value;
+        // getRawValue(): ruc y domain quedan deshabilitados (bloquearSiempre) y no
+        // saldrían en form.value — se enviarían nulls y se borrarían del tenant.
+        const fv = this.profileForm.getRawValue();
         const request: CompanyRequest = {
             name: fv.name,
             ruc: fv.ruc,
@@ -170,6 +211,58 @@ export class CompanyDetailComponent implements OnInit {
         this.router.navigate(['/admin/companies']);
     }
 
+    // ── Asignar usuario (drawer del tab Usuarios) ─────────────────
+
+    openAssignDrawer(): void {
+        if (this.roles().length === 0) this.loadRoles();
+        this.assignForm.reset({ userId: null, roleId: '' });
+        this.assignError.set(null);
+        this.showAssignDrawer.set(true);
+    }
+
+    closeAssignDrawer(): void {
+        this.showAssignDrawer.set(false);
+        this.assignForm.reset({ userId: null, roleId: '' });
+    }
+
+    submitAssign(): void {
+        if (this.assignForm.invalid) {
+            this.assignForm.markAllAsTouched();
+            return;
+        }
+        const c = this.company();
+        if (!c) return;
+
+        const fv = this.assignForm.getRawValue();
+        this.assigning.set(true);
+        this.assignError.set(null);
+
+        this.companyService.assignUserToCompany(fv.userId!, c.id, fv.roleId).subscribe({
+            next: () => {
+                this.assigning.set(false);
+                this.closeAssignDrawer();
+                this.loadUsers(c.id);
+                this.showSuccess('Usuario asignado correctamente');
+            },
+            // El backend responde 409 cuando la empresa alcanzó el límite de usuarios de
+            // su plan SaaS, con un mensaje ya redactado y accionable — se muestra tal cual,
+            // sin sustituirlo por uno genérico (CompanyService.handleError ya expone el
+            // ProblemDetail.detail del backend en err.message).
+            error: (err: Error) => {
+                this.assigning.set(false);
+                this.assignError.set(err.message);
+            }
+        });
+    }
+
+    /** Helper canónico de errores para assignForm. */
+    assignErr(field: string): string {
+        const c = this.assignForm.get(field);
+        if (!c || c.pristine || c.valid) return '';
+        if (c.hasError('required')) return 'Campo requerido';
+        return 'Campo inválido';
+    }
+
     // ── Private ─────────────────────────────────────────────────
 
     private loadCompany(id: number): void {
@@ -197,6 +290,13 @@ export class CompanyDetailComponent implements OnInit {
         this.companyService.getCompanyUsers(companyId).subscribe({
             next: (users) => this.users.set(users),
             error: (err: Error) => this.error.set(err.message)
+        });
+    }
+
+    private loadRoles(): void {
+        this.rolService.getAll().subscribe({
+            next: (roles) => this.roles.set(roles),
+            error: () => this.roles.set([])
         });
     }
 

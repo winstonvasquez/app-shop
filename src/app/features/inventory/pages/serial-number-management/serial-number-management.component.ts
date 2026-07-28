@@ -58,7 +58,7 @@ export class SerialNumberManagementComponent implements OnInit {
     totalPages = signal(0);
 
     filters: FilterConfig[] = [
-        catalogFilter(this.catalog, 'ESTADO_SERIAL_WMS', 'status', 'Todos los estados')
+        catalogFilter(this.catalog, 'ESTADO_SERIAL_WMS', 'status', 'Estado')
     ];
 
     dateRangeFilters: DateRangeFilterConfig[] = [

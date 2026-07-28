@@ -231,10 +231,10 @@ export class AsnComponent {
 
     // Filtros select del toolbar. El estado sale de erp_parameters (fuente única).
     filters: FilterConfig[] = [
-        catalogFilter(this.catalog, 'ESTADO_ASN', 'status', 'Todos los estados'),
-        signalFilter('warehouseId', 'Todos los almacenes', this.warehouses,
+        catalogFilter(this.catalog, 'ESTADO_ASN', 'status', 'Estado'),
+        signalFilter('warehouseId', 'Almacén', this.warehouses,
             w => ({ value: w.id, label: w.name })),
-        signalFilter('supplierName', 'Todos los proveedores', this.proveedoresFiltro,
+        signalFilter('supplierName', 'Proveedor', this.proveedoresFiltro,
             p => ({ value: p.razonSocial, label: p.razonSocial }))
     ];
 

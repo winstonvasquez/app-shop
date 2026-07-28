@@ -167,6 +167,13 @@
             <!-- Encabezado -->
             <h3 class="text-sm font-bold text-subtle uppercase tracking-wide mb-sm mt-xs">Encabezado</h3>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-sm mb-md">
+                @if (editMode()) {
+                    <!-- Correlativo del backend: se muestra bloqueado, no se omite -->
+                    <div class="md:col-span-2">
+                        <label class="input-label">Código (no editable)</label>
+                        <input class="form-input" formControlName="codigo" />
+                    </div>
+                }
                 <div class="md:col-span-2">
                     <label class="input-label">Proveedor <span class="text-error">*</span></label>
                     <app-server-search-select [dataSource]="proveedorSource" formControlName="proveedorId"

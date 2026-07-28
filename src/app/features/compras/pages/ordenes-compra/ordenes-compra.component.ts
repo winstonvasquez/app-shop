@@ -20,6 +20,7 @@ import { ButtonComponent, CatalogSelectComponent, ServerSearchSelectComponent } 
 import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 import { SUNAT_RATES, MONEDA, Moneda } from '@shared/constants/sunat.constants';
 import { PAGINATION } from '@shared/constants/app.constants';
+import { bloquearEnEdicion } from '@shared/utils/form-lock';
 import { proveedorSelectSource } from '../../components/select-sources';
 import { AlmacenService } from '../../../logistica/services/almacen.service';
 import { almacenSelectSource } from '../../../logistica/components/select-sources';
@@ -139,10 +140,10 @@ export class OrdenesCompraComponent implements OnInit {
 
     // Filtros select del toolbar. Las opciones salen de erp_parameters (fuente única).
     filters: FilterConfig[] = [
-        catalogFilter(this.catalog, 'ESTADO_ORDEN_COMPRA', 'estado', 'Todos los estados'),
+        catalogFilter(this.catalog, 'ESTADO_ORDEN_COMPRA', 'estado', 'Estado'),
         catalogFilter(this.catalog, 'CONDICION_PAGO', 'condicionPago', 'Cond. de pago'),
         catalogFilter(this.catalog, 'MONEDA', 'moneda', 'Moneda'),
-        signalFilter('proveedorId', 'Todos los proveedores', this.proveedoresFiltro,
+        signalFilter('proveedorId', 'Proveedor', this.proveedoresFiltro,
             p => ({ value: p.id, label: p.razonSocial }))
     ];
 
@@ -206,6 +207,8 @@ export class OrdenesCompraComponent implements OnInit {
 
     constructor() {
         this.ocForm = this.fb.group({
+            // Correlativo emitido por el backend: se muestra al editar, nunca se edita.
+            codigo: [''],
             proveedorId: ['', Validators.required],
             fechaEmision: ['', Validators.required],
             fechaEntregaEstimada: [''],
@@ -393,12 +396,14 @@ export class OrdenesCompraComponent implements OnInit {
         this.editMode.set(false);
         this.selectedOrden.set(null);
         this.ocForm.reset({
+            codigo: '',
             condicionPago: 'CONTADO',
             almacenDestino: '',
             contratoId: '',
             moneda: MONEDA.PEN,
             tipoCambio: null
         });
+        bloquearEnEdicion(this.ocForm, ['codigo'], false);
         this.formItems.set([this.emptyItem()]);
         this.lookupOpenIndex.set(null);
         this.submitError.set(null);
@@ -409,6 +414,7 @@ export class OrdenesCompraComponent implements OnInit {
         this.editMode.set(true);
         this.selectedOrden.set(orden);
         this.ocForm.patchValue({
+            codigo: orden.codigo,
             proveedorId: orden.proveedorId,
             fechaEmision: orden.fechaEmision,
             fechaEntregaEstimada: orden.fechaEntregaEstimada ?? '',
@@ -419,6 +425,7 @@ export class OrdenesCompraComponent implements OnInit {
             moneda: orden.moneda ?? MONEDA.PEN,
             tipoCambio: orden.tipoCambio ?? null
         });
+        bloquearEnEdicion(this.ocForm, ['codigo'], true);
         this.formItems.set((orden.items ?? []).map(i => ({
             productoId: i.productoId,
             productoNombre: i.productoNombre,
@@ -495,7 +502,9 @@ export class OrdenesCompraComponent implements OnInit {
         this.submitError.set(null);
 
         const { subtotal, igv, total } = this.totales();
-        const formValue = this.ocForm.value;
+        // getRawValue(): `codigo` está deshabilitado en edición y no aparecería en `.value`.
+        // Se descarta del payload: el correlativo lo emite el backend.
+        const { codigo: _codigo, ...formValue } = this.ocForm.getRawValue();
         const moneda: string = formValue.moneda || MONEDA.PEN;
         const payload: Partial<OrdenCompra> = {
             ...formValue,

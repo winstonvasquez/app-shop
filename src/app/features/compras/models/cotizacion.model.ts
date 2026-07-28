@@ -103,10 +103,15 @@ export interface CotizacionProveedorDetalleDto {
     estado: string;
 }
 
-/** Mapea ActualizarCotizacionRequest (microshopcompras) — PUT /api/cotizaciones/{id}. Solo permitido en estado CREADA. */
+/**
+ * Mapea ActualizarCotizacionRequest (microshopcompras) — PUT /api/cotizaciones/{id}. Solo permitido
+ * en estado CREADA. `proveedorIds` reemplaza la lista COMPLETA de invitados (mismo patrón que
+ * `items`): en CREADA ningún invitado tiene todavía respuesta registrada.
+ */
 export interface ActualizarCotizacionRequest {
     titulo: string;
     descripcion?: string;
     fechaVencimiento: string;
     items: CotizacionItemRequest[];
+    proveedorIds: string[];
 }

@@ -1,6 +1,8 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { map } from 'rxjs/operators';
 import { environment } from '@env/environment';
+import type { PageResponse } from '@core/models/pagination.model';
 
 export interface DetallePresupuesto {
     id: string;
@@ -47,8 +49,17 @@ export class PresupuestoService {
     private http = inject(HttpClient);
     private base = `${environment.apiUrls.accounting}/api/v1/contabilidad/presupuesto`;
 
+    /**
+     * `PresupuestoController.listar()` devuelve `Page<PresupuestoResponseDto>`, no un array.
+     * Tiparlo como `Presupuesto[]` compilaba (el tipo era una mentira) y la vista hacía
+     * `@for` sobre el objeto Page → `TypeError: newCollection[Symbol.iterator] is not a
+     * function`: la pantalla de presupuesto no listaba nada y ni el empty-state aparecía.
+     * Se desempaqueta aquí para que los llamadores sigan recibiendo un array.
+     */
     listar() {
-        return this.http.get<Presupuesto[]>(this.base);
+        return this.http.get<PageResponse<Presupuesto>>(this.base).pipe(
+            map(res => res?.content ?? [])
+        );
     }
 
     obtener(id: string) {

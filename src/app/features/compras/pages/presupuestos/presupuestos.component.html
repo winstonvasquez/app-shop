@@ -8,21 +8,6 @@
   </div>
 
   <!-- Rango de periodos: controles propios (YYYY-MM), no son fechas reales -->
-  <div class="filters-bar mb-4 flex gap-3 items-end">
-    <div>
-      <label class="input-label">Periodo desde</label>
-      <input type="month" class="form-input w-40"
-             [value]="filterPeriodoDesde()"
-             (change)="onPeriodoDesdeChange($any($event.target).value)" />
-    </div>
-    <div>
-      <label class="input-label">Periodo hasta</label>
-      <input type="month" class="form-input w-40"
-             [value]="filterPeriodoHasta()"
-             (change)="onPeriodoHastaChange($any($event.target).value)" />
-    </div>
-  </div>
-
   <app-data-table
       [data]="presupuestos()"
       [columns]="columns"
@@ -34,6 +19,19 @@
       [hidePagination]="true"
       (filterChange)="onFilterChangeEvent($event)"
       (filtersClear)="onFiltersClear()">
+      <!-- Filtros propios: el presupuesto se acota por periodos mensuales, no por fechas -->
+      <div toolbarExtra>
+        <label class="filter-label" for="pre-flt-desde">Periodo desde</label>
+        <input id="pre-flt-desde" type="month" class="form-input"
+               [value]="filterPeriodoDesde()"
+               (change)="onPeriodoDesdeChange($any($event.target).value)" />
+      </div>
+      <div toolbarExtra>
+        <label class="filter-label" for="pre-flt-hasta">Periodo hasta</label>
+        <input id="pre-flt-hasta" type="month" class="form-input"
+               [value]="filterPeriodoHasta()"
+               (change)="onPeriodoHastaChange($any($event.target).value)" />
+      </div>
   </app-data-table>
 </div>
 

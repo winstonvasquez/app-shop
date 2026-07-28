@@ -2,6 +2,7 @@ import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { of } from 'rxjs';
 import { FormBuilder, ReactiveFormsModule, Validators, FormGroup, FormControl } from '@angular/forms';
 import { CategoryService } from '@core/services/category.service';
+import { bloquearEnEdicion } from '@shared/utils/form-lock';
 import {
   CategoryResponse,
   CategoryRequest,
@@ -16,6 +17,7 @@ import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { ButtonComponent, CatalogSelectComponent } from '@shared/components';
+import { ImageUploadComponent } from '@shared/ui/forms/image-upload/image-upload.component';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
 
@@ -30,13 +32,17 @@ import { environment } from '@env/environment';
     PageHeaderComponent,
     AlertComponent,
     ButtonComponent,
-    CatalogSelectComponent
+    CatalogSelectComponent,
+    ImageUploadComponent
   ],
   templateUrl: './categories.component.html',
   styleUrl: './categories.component.scss'
 })
 export class CategoriesComponent implements OnInit {
   private readonly categoryService = inject(CategoryService);
+
+  /** Archivo de imagen elegido en el drawer, pendiente de subir tras guardar. */
+  readonly imagenSeleccionada = signal<File | null>(null);
   private readonly fb = inject(FormBuilder);
   readonly catalog = inject(CatalogService);
 
@@ -127,7 +133,7 @@ export class CategoriesComponent implements OnInit {
   // Filtros combinados que consume <app-data-table [filters]>. El nivel sale del catálogo
   // NIVEL_JERARQUICO_CATEGORIA (fuente única, ya no se hardcodean los <option>).
   readonly tableFilters: FilterConfig[] = [
-    catalogFilter(this.catalog, 'NIVEL_JERARQUICO_CATEGORIA', 'nivel', 'Todos los niveles'),
+    catalogFilter(this.catalog, 'NIVEL_JERARQUICO_CATEGORIA', 'nivel', 'Nivel'),
     {
       field: 'activo', label: 'Activo (Sí/No)',
       options: of([
@@ -178,10 +184,9 @@ export class CategoriesComponent implements OnInit {
       descripcion: ['', [
         Validators.maxLength(500)
       ]],
-      imagenUrl: ['', [
-        Validators.maxLength(512),
-        Validators.pattern(/^https?:\/\/.+/)
-      ]],
+      // Solo lectura desde el formulario: la imagen se sube como archivo y el
+      // backend devuelve la URL del binario servido desde la base de datos.
+      imagenUrl: [''],
       nivel: [0, [
         Validators.required,
         Validators.min(0),
@@ -335,6 +340,7 @@ export class CategoriesComponent implements OnInit {
     this.categoryForm.reset({
       nivel: 0
     });
+    bloquearEnEdicion(this.categoryForm, ['nivel'], false);
     this.showModal.set(true);
     this.submitError.set(null);
   }
@@ -352,6 +358,9 @@ export class CategoriesComponent implements OnInit {
       imagenUrl: category.imagenUrl,
       nivel: category.nivel
     });
+    // Cambiar el nivel de una categoría ya usada rompe la jerarquía padre-hijo: se
+    // muestra bloqueado en edición (onSubmit usa getRawValue(), así que no se pierde).
+    bloquearEnEdicion(this.categoryForm, ['nivel'], true);
 
     this.showModal.set(true);
     this.submitError.set(null);
@@ -377,7 +386,7 @@ export class CategoriesComponent implements OnInit {
     this.submitting.set(true);
     this.submitError.set(null);
 
-    const formValue = this.categoryForm.value;
+    const formValue = this.categoryForm.getRawValue();
     const categoryRequest: CategoryRequest = {
       nombre: formValue.nombre,
       descripcion: formValue.descripcion || null,
@@ -390,15 +399,45 @@ export class CategoriesComponent implements OnInit {
       : this.categoryService.create(categoryRequest);
 
     operation.subscribe({
-      next: () => {
-        this.submitting.set(false);
-        this.closeModal();
-        this.loadCategories();
+      next: (categoria) => {
+        // La imagen se sube después: el POST multipart necesita el id de la categoría.
+        const archivo = this.imagenSeleccionada();
+        const id = this.editMode() ? this.selectedCategoryId()! : categoria?.id;
+        if (archivo && id) {
+          this.categoryService.subirImagen(id, archivo).subscribe({
+            next: () => this.finalizarGuardado(),
+            error: () => {
+              this.submitError.set('La categoría se guardó, pero falló la subida de la imagen.');
+              this.submitting.set(false);
+            },
+          });
+          return;
+        }
+        this.finalizarGuardado();
       },
       error: (err: Error) => {
         this.submitError.set(err.message);
         this.submitting.set(false);
       }
+    });
+  }
+
+  /** Cierra el drawer y refresca la lista tras un guardado correcto. */
+  private finalizarGuardado(): void {
+    this.imagenSeleccionada.set(null);
+    this.submitting.set(false);
+    this.closeModal();
+    this.loadCategories();
+  }
+
+  /** Quita la imagen actual de la categoría (el backend borra el binario). */
+  onQuitarImagen(): void {
+    this.imagenSeleccionada.set(null);
+    const id = this.selectedCategoryId();
+    this.categoryForm.get('imagenUrl')?.setValue('');
+    if (!this.editMode() || !id) return;
+    this.categoryService.eliminarImagen(id).subscribe({
+      error: () => this.submitError.set('No se pudo eliminar la imagen.'),
     });
   }
 

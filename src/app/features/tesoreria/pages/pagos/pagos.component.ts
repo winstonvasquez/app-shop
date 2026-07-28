@@ -16,9 +16,10 @@ import { DatePickerComponent } from '@shared/ui/forms/date-picker/date-picker.co
 import { ButtonComponent, CatalogSelectComponent } from '@shared/components';
 import { CatalogService } from '@core/services/catalog.service';
 import { PagosService } from '../../services/pagos.service';
+import { CuentasBancariasService } from '../../services/cuentas-bancarias.service';
 import { AuthService } from '@core/auth/auth.service';
-import { Payment, PaymentRequest, Page } from '../../models/tesoreria.model';
-import { MONEDA } from '@shared/constants/sunat.constants';
+import { Payment, PaymentRequest, Page, BankAccount } from '../../models/tesoreria.model';
+import { MONEDA, CURRENCY_DISPLAY } from '@shared/constants/sunat.constants';
 import { PAGINATION } from '@shared/constants/app.constants';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
@@ -36,6 +37,7 @@ import { environment } from '@env/environment';
 })
 export class PagosComponent implements OnInit {
     private pagosService = inject(PagosService);
+    private cuentasService = inject(CuentasBancariasService);
     private auth         = inject(AuthService);
     private fb           = inject(FormBuilder);
     private destroyRef   = inject(DestroyRef);
@@ -97,15 +99,39 @@ export class PagosComponent implements OnInit {
         monto:                 [null, [Validators.required, Validators.min(0.01)]],
         tipoPago:              ['PROVEEDOR', Validators.required],
         metodoPago:            ['TRANSFERENCIA', Validators.required],
+        moneda:                [MONEDA.PEN, Validators.required],
+        bankAccountId:         [null],
         fechaSolicitud:        ['', Validators.required],
     });
+
+    /** Moneda elegida en el drawer, en sync con el FormControl (ver subscribeMonedaChanges). */
+    selectedMoneda = signal<string>(MONEDA.PEN);
+    /** Cuentas bancarias ACTIVAs del tenant, cargadas una vez al abrir el drawer. */
+    cuentasBancarias = signal<BankAccount[]>([]);
+    /**
+     * Un pago solo puede salir de una cuenta en la MISMA moneda del pago: mezclar
+     * (ej. pago en USD desde una cuenta PEN) deja el monto sin sentido cambiario.
+     * Se filtra aquí en vez de dejar que el usuario elija cualquier cuenta.
+     */
+    cuentasFiltradas = computed(() =>
+        this.cuentasBancarias().filter(c => c.moneda === this.selectedMoneda())
+    );
 
     countPendientes   = computed(() => this.pagos().filter(p => p.estado === 'PENDING').length);
     countAprobados    = computed(() => this.pagos().filter(p => p.estado === 'APPROVED').length);
     countPagados      = computed(() => this.pagos().filter(p => p.estado === 'PAID').length);
-    totalComprometido = computed(() =>
+    /**
+     * Separado por moneda (igual que saldoTotalPEN/USD en cuentas-bancarias.component.ts):
+     * sumar PEN + USD en una sola cifra no significa nada una vez que un pago puede ser en USD.
+     */
+    totalComprometidoPEN = computed(() =>
         this.pagos()
-            .filter(p => p.estado === 'PENDING' || p.estado === 'APPROVED')
+            .filter(p => (p.estado === 'PENDING' || p.estado === 'APPROVED') && (p.moneda ?? MONEDA.PEN) === MONEDA.PEN)
+            .reduce((s, p) => s + (p.monto ?? 0), 0)
+    );
+    totalComprometidoUSD = computed(() =>
+        this.pagos()
+            .filter(p => (p.estado === 'PENDING' || p.estado === 'APPROVED') && p.moneda === MONEDA.USD)
             .reduce((s, p) => s + (p.monto ?? 0), 0)
     );
 
@@ -119,7 +145,7 @@ export class PagosComponent implements OnInit {
         { key: 'tipoPago', label: 'Tipo', html: true,
           render: r => `<span class="badge badge-neutral">${r.tipoPago}</span>` },
         { key: 'monto', label: 'Monto', align: 'right',
-          render: r => `S/ ${(r.monto ?? 0).toFixed(2)}` },
+          render: r => `${r.moneda === MONEDA.USD ? CURRENCY_DISPLAY.SYMBOL_USD : CURRENCY_DISPLAY.SYMBOL_PEN} ${(r.monto ?? 0).toFixed(2)}` },
         { key: 'estado', label: 'Estado', align: 'center', html: true,
           render: r => `<span class="${this.badgePago(r.estado)}">${r.estado}</span>` },
     ];
@@ -154,7 +180,37 @@ export class PagosComponent implements OnInit {
           onClick: r => this.pay(r) },
     ];
 
-    ngOnInit(): void { this.load(); }
+    ngOnInit(): void {
+        this.load();
+        this.subscribeMonedaChanges();
+    }
+
+    /**
+     * Sincroniza `selectedMoneda` con el FormControl "moneda" y limpia
+     * "bankAccountId" al cambiar de moneda: la cuenta elegida podría ya no
+     * estar en la lista filtrada (ver cuentasFiltradas).
+     */
+    private subscribeMonedaChanges(): void {
+        this.pagoForm.get('moneda')!.valueChanges
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe((moneda: string) => {
+                this.selectedMoneda.set(moneda ?? MONEDA.PEN);
+                this.pagoForm.get('bankAccountId')!.setValue(null, { emitEvent: false });
+            });
+    }
+
+    /** Cuentas bancarias activas para el <select> de "bankAccountId" del drawer. */
+    private loadCuentasBancarias(): void {
+        this.cuentasService.getAll({ estado: 'ACTIVA', size: 100 })
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe({
+                next: (res) => {
+                    const data: BankAccount[] = Array.isArray(res) ? res : (res as Page<BankAccount>).content;
+                    this.cuentasBancarias.set(data);
+                },
+                error: () => this.cuentasBancarias.set([])
+            });
+    }
 
     load(): void {
         this.cargando.set(true);
@@ -218,7 +274,12 @@ export class PagosComponent implements OnInit {
 
     openCreateDrawer(): void {
         const today = new Date().toISOString().split('T')[0];
-        this.pagoForm.reset({ tipoPago: 'PROVEEDOR', metodoPago: 'TRANSFERENCIA', fechaSolicitud: today, monto: null });
+        this.pagoForm.reset({
+            tipoPago: 'PROVEEDOR', metodoPago: 'TRANSFERENCIA', moneda: MONEDA.PEN,
+            bankAccountId: null, fechaSolicitud: today, monto: null
+        });
+        this.selectedMoneda.set(MONEDA.PEN);
+        this.loadCuentasBancarias();
         this.errorMsg.set(null);
         this.showCreateDrawer.set(true);
     }
@@ -231,12 +292,13 @@ export class PagosComponent implements OnInit {
             tenantId:              this.auth.currentUser()?.activeCompanyId ?? 1,
             tipoPago:              v.tipoPago,
             monto:                 v.monto,
-            moneda:                MONEDA.PEN,
+            moneda:                v.moneda ?? MONEDA.PEN,
             metodoPago:            v.metodoPago,
             fechaSolicitud:        v.fechaSolicitud,
             beneficiarioNombre:    v.beneficiarioNombre,
             beneficiarioDocumento: v.beneficiarioDocumento ?? '',
-            concepto:              v.concepto
+            concepto:              v.concepto,
+            bankAccountId:         v.bankAccountId ?? undefined
         };
         this.pagosService.create(req)
             .pipe(takeUntilDestroyed(this.destroyRef))

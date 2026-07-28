@@ -28,4 +28,6 @@ export interface ConfigAprobacionRequest {
     montoMaximo: number | null;
     rolAprobador: string;
     orden: number;
+    /** null/undefined = no tocar. Único canal para REACTIVAR un nivel dado de baja (DELETE solo desactiva). Ignorado en la creación. */
+    activo?: boolean;
 }

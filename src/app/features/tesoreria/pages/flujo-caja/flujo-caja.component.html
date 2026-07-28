@@ -13,34 +13,17 @@
     </div>
   </app-page-header>
 
-  <!-- Filtros -->
-  <div class="filters-bar mb-6">
-    <div class="filter-field">
-      <label class="input-label">Desde</label>
-      <input
-        type="date"
-        class="form-input"
-        [value]="fechaInicio()"
-        (change)="fechaInicio.set($any($event.target).value)">
-    </div>
-    <div class="filter-field">
-      <label class="input-label">Hasta</label>
-      <input
-        type="date"
-        class="form-input"
-        [value]="fechaFin()"
-        (change)="fechaFin.set($any($event.target).value)">
-    </div>
-    <app-button icon="search" label="Consultar" variant="primary" size="sm" (click)="consultar()" />
-  </div>
-
+  <!--
+      El rango de fechas es el filtro "Fecha del movimiento" de la toolbar: la
+      barra propia que había aquí duplicaba esos mismos dos campos.
+  -->
   <!-- Tabla -->
   <app-data-table
     [data]="movimientos()"
     [columns]="columns"
     [loading]="cargando()"
     [filters]="filters"
-    [dateRangeFilters]="dateRangeFilters"
+    [dateRangeFilters]="dateRangeFilters()"
     [searchable]="true"
     searchPlaceholder="Buscar por descripción o referencia..."
     [currentPage]="currentPage()"
@@ -83,14 +66,48 @@
       }
     </div>
 
-    <!-- Origen -->
-    <app-form-field
-      label="Origen"
-      [control]="getControl('origen')"
-      type="text"
-      placeholder="Ej: Venta mostrador, Pago proveedor"
-      [required]="true">
-    </app-form-field>
+    <!-- Origen: enum MovementOrigin — el backend rechaza (400) cualquier valor que no sea exacto -->
+    <div>
+      <label class="input-label">Origen <span style="color:var(--color-error)">*</span></label>
+      <select class="form-input" formControlName="origen">
+        <option value="">-- Seleccionar --</option>
+        @for (o of origenOptions; track o.value) {
+          <option [value]="o.value">{{ o.label }}</option>
+        }
+      </select>
+      @if (getControl('origen').invalid && getControl('origen').touched) {
+        <span class="input-error-message">Campo requerido</span>
+      }
+    </div>
+
+    <!--
+        Referencia a la caja o cuenta bancaria de la que sale/entra el dinero
+        (FinancialMovementRequestDto.origenId). Se deshabilita para
+        COBRO/PAGO/TRANSFERENCIA_INTERNA: todavía no hay catálogo de origen
+        que ofrecer para esos orígenes (ver subscribeOrigenChanges).
+    -->
+    <div>
+      <label class="input-label">
+        @switch (selectedOrigen()) {
+          @case ('CAJA') { Caja de origen }
+          @case ('BANCO') { Cuenta bancaria de origen }
+          @default { ID de Origen (no aplica para este origen) }
+        }
+      </label>
+      <select class="form-input" formControlName="origenId">
+        <option [ngValue]="null">-- Seleccionar --</option>
+        @if (selectedOrigen() === 'CAJA') {
+          @for (c of cajasOptions(); track c.value) {
+            <option [ngValue]="c.value">{{ c.label }}</option>
+          }
+        } @else if (selectedOrigen() === 'BANCO') {
+          @for (c of cuentasOptions(); track c.value) {
+            <option [ngValue]="c.value">{{ c.label }}</option>
+          }
+        }
+      </select>
+      <span class="input-hint">ID de la caja o cuenta bancaria relacionada, según el origen elegido</span>
+    </div>
 
     <!-- Descripción -->
     <app-form-field

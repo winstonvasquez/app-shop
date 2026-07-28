@@ -83,10 +83,10 @@ export class GuiasPageComponent implements OnInit {
     // Filtros select del toolbar. Las opciones salen de erp_parameters (fuente única)
     // y de `almacenesFiltro` (lista dinámica cargada en ngOnInit).
     readonly filters: FilterConfig[] = [
-        catalogFilter(this.catalog, 'ESTADO_GUIA_REMISION', 'estado', 'Todos los estados'),
+        catalogFilter(this.catalog, 'ESTADO_GUIA_REMISION', 'estado', 'Estado'),
         catalogFilter(this.catalog, 'MOTIVO_TRASLADO_SUNAT', 'motivoTraslado', 'Motivo de traslado'),
         catalogFilter(this.catalog, 'MODALIDAD_TRASLADO_SUNAT', 'modalidadTraslado', 'Modalidad de traslado'),
-        signalFilter('almacenOrigenId', 'Todos los almacenes', this.almacenesFiltro,
+        signalFilter('almacenOrigenId', 'Almacén', this.almacenesFiltro,
             a => ({ value: a.id, label: a.nombre })),
     ];
 

@@ -20,6 +20,7 @@ import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.compo
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { CURRENCY_DISPLAY } from '@shared/constants/sunat.constants';
+import { bloquearEnEdicion } from '@shared/utils/form-lock';
 
 @Component({
     selector: 'app-position-list',
@@ -73,7 +74,7 @@ export class PositionListComponent implements OnInit {
     departamentoFilters: FilterConfig[] = [
         {
             field: 'department',
-            label: 'Todos los departamentos',
+            label: 'Departamento',
             options: toObservable(this.departments).pipe(
                 map(list => list.map(d => ({ value: d.id, label: d.nombre })))
             )
@@ -146,6 +147,11 @@ export class PositionListComponent implements OnInit {
             show: row => row.activo,
             onClick: row => this.onDeactivate(row),
         },
+        {
+            label: 'Activar', icon: '✓', class: 'btn-view',
+            show: row => !row.activo,
+            onClick: row => this.onActivate(row),
+        },
     ];
 
     // ── Form ──────────────────────────────────────────────────────────────────
@@ -159,6 +165,9 @@ export class PositionListComponent implements OnInit {
         salarioMaximo: [null as number | null],
         requisitos:    [''],
     });
+
+    /** El código del puesto se referencia desde contratos y empleados → solo lectura al editar. */
+    private static readonly CAMPOS_BLOQUEADOS = ['codigo'];
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
     ngOnInit(): void {
@@ -219,6 +228,7 @@ export class PositionListComponent implements OnInit {
         this.editMode.set(false);
         this.selectedPos.set(null);
         this.positionForm.reset();
+        bloquearEnEdicion(this.positionForm, PositionListComponent.CAMPOS_BLOQUEADOS, false);
         this.submitError.set(null);
         this.showModal.set(true);
     }
@@ -236,6 +246,7 @@ export class PositionListComponent implements OnInit {
             salarioMaximo: pos.salarioMaximo ?? null,
             requisitos:    pos.requisitos ?? '',
         });
+        bloquearEnEdicion(this.positionForm, PositionListComponent.CAMPOS_BLOQUEADOS, true);
         this.submitError.set(null);
         this.showModal.set(true);
     }
@@ -253,7 +264,8 @@ export class PositionListComponent implements OnInit {
         this.submitting.set(true);
         this.submitError.set(null);
         try {
-            const val = this.positionForm.value;
+            // getRawValue(): 'codigo' queda bloqueado en edición y no saldría en .value.
+            const val = this.positionForm.getRawValue();
             const request = {
                 codigo: val.codigo!,
                 nombre: val.nombre!,
@@ -285,6 +297,16 @@ export class PositionListComponent implements OnInit {
             this.loadPage();
         } catch (err) {
             this.error.set((err as Error).message ?? 'Error al desactivar puesto');
+        }
+    }
+
+    async onActivate(pos: Position): Promise<void> {
+        if (!confirm(`¿Reactivar el puesto "${pos.nombre}"?`)) return;
+        try {
+            await this.positionService.activatePosition(pos.id);
+            this.loadPage();
+        } catch (err) {
+            this.error.set((err as Error).message ?? 'Error al reactivar puesto');
         }
     }
 

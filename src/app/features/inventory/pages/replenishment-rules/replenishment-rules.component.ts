@@ -22,8 +22,9 @@ import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
-import { ButtonComponent, ServerSearchSelectComponent } from '@shared/components';
+import { ButtonComponent, CatalogSelectComponent, ServerSearchSelectComponent } from '@shared/components';
 import { ROUTES } from '@shared/constants/app.constants';
+import { bloquearEnEdicion } from '@shared/utils/form-lock';
 
 @Component({
     selector: 'app-replenishment-rules',
@@ -33,7 +34,8 @@ import { ROUTES } from '@shared/constants/app.constants';
         ReactiveFormsModule,
         DataTableComponent, DrawerComponent,
         PageHeaderComponent, AlertComponent, FormFieldComponent,
-        ButtonComponent, ProductLookupComponent, ServerSearchSelectComponent
+        ButtonComponent, ProductLookupComponent, ServerSearchSelectComponent,
+        CatalogSelectComponent
     ],
     templateUrl: './replenishment-rules.component.html',
     styleUrl: './replenishment-rules.component.scss'
@@ -78,8 +80,8 @@ export class ReplenishmentRulesComponent {
 
     // Filtros select del toolbar. El estado sale de erp_parameters (fuente única).
     filters: FilterConfig[] = [
-        catalogFilter(this.catalog, 'ESTADO_REGLA_REPOSICION', 'status', 'Todos los estados'),
-        signalFilter('almacenId', 'Todos los almacenes', this.almacenesFiltro,
+        catalogFilter(this.catalog, 'ESTADO_REGLA_REPOSICION', 'status', 'Estado'),
+        signalFilter('almacenId', 'Almacén', this.almacenesFiltro,
             a => ({ value: a.id, label: a.nombre })),
         staticFilter('autoCreatePo', 'Modo de reposición', [
             { value: 'true', label: 'Automática' },
@@ -160,8 +162,25 @@ export class ReplenishmentRulesComponent {
         reorderQuantity: [1, [Validators.required, Validators.min(1)]],
         preferredSupplierName: [''],
         maxUnitCost: [null as number | null],
-        autoCreatePo: [false]
+        autoCreatePo: [false],
+        status: ['ACTIVE']
     });
+
+    /** Estado con el que se abrió la regla — sirve para detectar si el usuario lo cambió. */
+    private readonly statusOriginal = signal('ACTIVE');
+
+    /**
+     * Bloqueo único de campos del drawer:
+     * - `sku` identifica el producto de la regla junto al `productoId`: editable al crear,
+     *   bloqueado al editar (cambiarlo desalinearía la regla del producto que dispara).
+     * - `status` solo existe una vez creada la regla (el backend la da de alta en ACTIVE):
+     *   bloqueado en el alta, habilitado en edición para poder pausar/reactivar.
+     *   De ahí el `!this.editMode()` (bloqueo invertido respecto a `sku`).
+     */
+    private bloquearCampos(): void {
+        bloquearEnEdicion(this.form, ['sku'], this.editMode());
+        bloquearEnEdicion(this.form, ['status'], !this.editMode());
+    }
 
     onProductSelected(p: ProductResponse): void {
         this.selectedProductoIdUuid.set(productIdToUuid(p.id));
@@ -281,8 +300,11 @@ export class ReplenishmentRulesComponent {
             productoNombre: s.productoNombre,
             reorderPoint: s.stockMinimo,
             reorderQuantity: s.suggestedReorder,
-            autoCreatePo: false
+            autoCreatePo: false,
+            status: 'ACTIVE'
         });
+        this.statusOriginal.set('ACTIVE');
+        this.bloquearCampos();
         this.submitError.set(null);
         this.showDrawer.set(true);
     }
@@ -291,7 +313,9 @@ export class ReplenishmentRulesComponent {
         this.editMode.set(false);
         this.selectedId.set(null);
         this.selectedProductoIdUuid.set(null);
-        this.form.reset({ reorderPoint: 0, reorderQuantity: 1, autoCreatePo: false });
+        this.form.reset({ reorderPoint: 0, reorderQuantity: 1, autoCreatePo: false, status: 'ACTIVE' });
+        this.statusOriginal.set('ACTIVE');
+        this.bloquearCampos();
         this.submitError.set(null);
         this.showDrawer.set(true);
     }
@@ -301,6 +325,8 @@ export class ReplenishmentRulesComponent {
         this.selectedId.set(rule.id);
         this.selectedProductoIdUuid.set(rule.productoId);
         this.form.patchValue({ ...rule });
+        this.statusOriginal.set(rule.status);
+        this.bloquearCampos();
         this.submitError.set(null);
         this.showDrawer.set(true);
     }
@@ -315,7 +341,11 @@ export class ReplenishmentRulesComponent {
             return;
         }
         this.submitting.set(true);
+        // getRawValue() y NO .value: `sku` (edición) y `status` (alta) van deshabilitados
+        // y .value los omitiría, mandando nulls al backend.
         const v = this.form.getRawValue();
+        // `status` NO viaja acá: `CreateReplenishmentRuleRequest` no lo declara.
+        // Se aplica aparte por PATCH /{id}/status (ver más abajo).
         const payload: CreateReplenishmentRuleRequest = {
             almacenId: v.almacenId ?? undefined,
             sku: v.sku,
@@ -331,7 +361,21 @@ export class ReplenishmentRulesComponent {
             ? this.api.updateReplenishmentRule(this.selectedId()!, payload)
             : this.api.createReplenishmentRule(payload);
         op.subscribe({
-            next: () => { this.submitting.set(false); this.closeDrawer(); this.loadRules(); },
+            next: () => {
+                const nuevoStatus = String(v.status ?? '');
+                // El PUT ignora el estado; si el usuario lo cambió en el drawer, se aplica
+                // con el MISMO endpoint que las acciones "Pausar"/"Reactivar" de la fila.
+                if (this.editMode() && nuevoStatus && nuevoStatus !== this.statusOriginal()) {
+                    this.api.cambiarStatusReplenishmentRule(this.selectedId()!, nuevoStatus).subscribe({
+                        next: () => { this.submitting.set(false); this.closeDrawer(); this.loadRules(); },
+                        error: (err: Error) => { this.submitting.set(false); this.submitError.set(err.message); }
+                    });
+                    return;
+                }
+                this.submitting.set(false);
+                this.closeDrawer();
+                this.loadRules();
+            },
             error: (err: Error) => { this.submitting.set(false); this.submitError.set(err.message); }
         });
     }

@@ -71,8 +71,8 @@ export class ReportesVentasComponent implements OnInit {
     // Filtros de estado + método de pago para el toolbar del data-table.
     // Las opciones salen de erp_parameters (fuente única) — nada de <option> hardcodeados.
     estadoFilters: FilterConfig[] = [
-        catalogFilter(this.catalog, 'ESTADO_VENTA_POS', 'estado', 'Todos los estados'),
-        catalogFilter(this.catalog, 'METODO_PAGO_POS', 'metodoPago', 'Todos los métodos'),
+        catalogFilter(this.catalog, 'ESTADO_VENTA_POS', 'estado', 'Estado'),
+        catalogFilter(this.catalog, 'METODO_PAGO_POS', 'metodoPago', 'Método de pago'),
     ];
 
     // Filtro de rango de fecha de creación

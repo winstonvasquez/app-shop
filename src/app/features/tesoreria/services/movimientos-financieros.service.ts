@@ -14,7 +14,8 @@ export interface FinancialMovementRequest {
     moneda: string;
     fecha: string;
     descripcion: string;
-    cajaId?: number;
+    /** Nombre EXACTO del campo en FinancialMovementRequestDto (backend): origenId, no cajaId. */
+    origenId?: number;
 }
 
 @Injectable({

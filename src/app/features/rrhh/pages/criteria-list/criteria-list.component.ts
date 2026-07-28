@@ -14,6 +14,7 @@ import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/p
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { ButtonComponent } from '@shared/components';
 import { PAGINATION } from '@shared/constants/app.constants';
+import { bloquearEnEdicion } from '@shared/utils/form-lock';
 
 /**
  * CRUD simple de criterios de evaluación 360 (nombre, descripción, peso %,
@@ -57,7 +58,7 @@ export class CriteriaListComponent implements OnInit {
     filtroActivo = signal('');
 
     filters: FilterConfig[] = [
-        staticFilter('activo', 'Todos', ACTIVO_OPTIONS),
+        staticFilter('activo', 'Estado', ACTIVO_OPTIONS),
     ];
 
     // ── Pagination (server-side) ────────────────────────────────────────────
@@ -98,6 +99,11 @@ export class CriteriaListComponent implements OnInit {
             show: row => row.activo,
             onClick: row => this.onDeactivate(row),
         },
+        {
+            label: 'Activar', icon: '✓', class: 'btn-view',
+            show: row => !row.activo,
+            onClick: row => this.onActivate(row),
+        },
     ];
 
     readonly criteriaForm = this.fb.group({
@@ -107,6 +113,14 @@ export class CriteriaListComponent implements OnInit {
         puntajeMinimo: [0, [Validators.min(0)]],
         puntajeMaximo: [100, [Validators.min(0)]],
     });
+
+    /**
+     * Cambiar el peso o el rango de puntaje de un criterio ya usado altera la
+     * comparabilidad de evaluaciones 360 pasadas (mismo puntaje, distinto peso
+     * relativo) → se bloquean al editar. Se pueden seguir consultando en el
+     * formulario, solo no editar.
+     */
+    private static readonly CAMPOS_BLOQUEADOS = ['pesoPorcentaje', 'puntajeMinimo', 'puntajeMaximo'];
 
     ngOnInit(): void {
         this.loadPage();
@@ -154,6 +168,7 @@ export class CriteriaListComponent implements OnInit {
         this.editMode.set(false);
         this.selected.set(null);
         this.criteriaForm.reset({ pesoPorcentaje: 0, puntajeMinimo: 0, puntajeMaximo: 100 });
+        bloquearEnEdicion(this.criteriaForm, CriteriaListComponent.CAMPOS_BLOQUEADOS, false);
         this.submitError.set(null);
         this.showDrawer.set(true);
     }
@@ -168,6 +183,7 @@ export class CriteriaListComponent implements OnInit {
             puntajeMinimo: c.puntajeMinimo,
             puntajeMaximo: c.puntajeMaximo,
         });
+        bloquearEnEdicion(this.criteriaForm, CriteriaListComponent.CAMPOS_BLOQUEADOS, true);
         this.submitError.set(null);
         this.showDrawer.set(true);
     }
@@ -185,7 +201,10 @@ export class CriteriaListComponent implements OnInit {
         this.submitting.set(true);
         this.submitError.set(null);
         try {
-            const val = this.criteriaForm.value;
+            // getRawValue(): pesoPorcentaje/puntajeMinimo/puntajeMaximo quedan DESHABILITADOS
+            // al editar (bloquearEnEdicion) — con .value viajarían como null y destruirían
+            // el criterio (el backend los recibiría vacíos en un update).
+            const val = this.criteriaForm.getRawValue();
             const request = {
                 nombre: val.nombre!,
                 descripcion: val.descripcion || undefined,
@@ -214,6 +233,16 @@ export class CriteriaListComponent implements OnInit {
             this.loadPage();
         } catch (err: unknown) {
             this.error.set(err instanceof Error ? err.message : 'Error al desactivar criterio');
+        }
+    }
+
+    async onActivate(c: EvaluationCriteria): Promise<void> {
+        if (!confirm(`¿Reactivar el criterio "${c.nombre}"?`)) return;
+        try {
+            await this.criteriaService.activateCriteria(c.id);
+            this.loadPage();
+        } catch (err: unknown) {
+            this.error.set(err instanceof Error ? err.message : 'Error al reactivar criterio');
         }
     }
 

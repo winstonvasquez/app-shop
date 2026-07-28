@@ -36,7 +36,15 @@
 
 <!-- ── Balance de Vacaciones ──────────────────────────────────────────────── -->
 <div style="margin-top: var(--space-xl); display: flex; align-items: center; justify-content: space-between; gap: var(--space-md)">
-    <h3 class="text-lg font-semibold">Balance de Vacaciones {{ balanceYear() }}</h3>
+    <div style="display: flex; align-items: center; gap: var(--space-sm)">
+        <h3 class="text-lg font-semibold">Balance de Vacaciones</h3>
+        <select class="form-input" style="width: auto"
+                [ngModel]="balanceYear()" (ngModelChange)="onBalanceYearChange($event)">
+            @for (year of balanceYearOptions; track year) {
+                <option [value]="year">{{ year }}</option>
+            }
+        </select>
+    </div>
     <app-button
         icon="refresh-cw"
         [label]="generatingBalance() ? 'Generando...' : 'Generar balance anual'"
@@ -104,6 +112,12 @@
                 placeholder="Se calcula automáticamente"
                 hint="Se recalcula al cambiar las fechas"
                 [required]="true" />
+        </div>
+
+        <!-- Tipo de vacación -->
+        <div style="margin-bottom: var(--space-md)">
+            <label class="input-label">Tipo de vacación</label>
+            <app-catalog-select tabla="TIPO_VACACION" formControlName="tipoVacacion" placeholder="— Seleccionar —" />
         </div>
 
         <!-- Motivo -->

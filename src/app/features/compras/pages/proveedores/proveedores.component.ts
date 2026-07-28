@@ -17,6 +17,7 @@ import { ButtonComponent, CatalogSelectComponent } from '@shared/components';
 import { CatalogService } from '@core/services/catalog.service';
 import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
+import { bloquearEnEdicion } from '@shared/utils/form-lock';
 import { environment } from '@env/environment';
 
 @Component({
@@ -66,7 +67,7 @@ export class ProveedoresComponent implements OnInit {
 
     // Filtros select del toolbar. Las opciones salen de erp_parameters (fuente única).
     estadoFilters: FilterConfig[] = [
-        catalogFilter(this.catalog, 'ESTADO_PROVEEDOR', 'estado', 'Todos los estados'),
+        catalogFilter(this.catalog, 'ESTADO_PROVEEDOR', 'estado', 'Estado'),
         catalogFilter(this.catalog, 'CONDICION_SUNAT', 'condicionSunat', 'Cond. SUNAT'),
         catalogFilter(this.catalog, 'CONDICION_PAGO', 'condicionPago', 'Cond. de pago'),
         catalogFilter(this.catalog, 'MONEDA', 'monedaPreferida', 'Moneda preferida'),
@@ -148,6 +149,8 @@ export class ProveedoresComponent implements OnInit {
         }
     ];
 
+    // «Editar» SIEMPRE visible (también en INACTIVO): es la vía para reactivar el
+    // proveedor desde el drawer. «Eliminar» (baja lógica) solo si sigue ACTIVO.
     actions: TableAction<Proveedor>[] = [
         {
             label: 'Editar', icon: '✏️', class: 'btn-view',
@@ -155,6 +158,7 @@ export class ProveedoresComponent implements OnInit {
         },
         {
             label: 'Eliminar', icon: '🗑️', class: 'btn-delete',
+            show: (row) => row.estado !== 'INACTIVO',
             onClick: (row) => this.onDelete(row)
         }
     ];
@@ -167,6 +171,11 @@ export class ProveedoresComponent implements OnInit {
             razonSocial: ['', [Validators.required, Validators.maxLength(200)]],
             nombreComercial: ['', [Validators.maxLength(200)]],
             condicionSunat: ['HABIDO'],
+            // Estado del RUC en el padrón SUNAT: sí lo acepta ProveedorRequestDto.
+            estadoSunat: ['ACTIVO'],
+            // Estado interno del maestro (ACTIVO / INACTIVO): editable, porque es la
+            // única forma de REACTIVAR un proveedor dado de baja con el botón Eliminar.
+            estado: ['ACTIVO'],
             domicilioFiscal: [''],
             contactoNombre: [''],
             contactoTelefono: [''],
@@ -174,7 +183,11 @@ export class ProveedoresComponent implements OnInit {
             banco: [''],
             cuentaBanco: [''],
             condicionPago: ['CONTADO'],
-            monedaPreferida: [MONEDA.PEN]
+            monedaPreferida: [MONEDA.PEN],
+            // Nivel de desempeño: editable, pero las evaluaciones lo recalculan después.
+            nivelProveedor: [''],
+            // COM-303: marca SUNAT de agente de retención (boolean en el backend).
+            agenteRetencion: [false]
         });
     }
 
@@ -275,9 +288,24 @@ export class ProveedoresComponent implements OnInit {
     openCreateModal(): void {
         this.editMode.set(false);
         this.selectedProveedor.set(null);
-        this.proveedorForm.reset({ condicionSunat: 'HABIDO', condicionPago: 'CONTADO', monedaPreferida: MONEDA.PEN });
+        this.proveedorForm.reset({
+            condicionSunat: 'HABIDO', estadoSunat: 'ACTIVO', estado: 'ACTIVO',
+            condicionPago: 'CONTADO', monedaPreferida: MONEDA.PEN,
+            nivelProveedor: '', agenteRetencion: false
+        });
+        this.aplicarBloqueos();
         this.submitError.set(null);
         this.showModal.set(true);
+    }
+
+    /**
+     * Bloqueo único del drawer (ver `@shared/utils/form-lock`):
+     * - `ruc` es la identidad tributaria: se registra al crear y no se puede reapuntar después.
+     * - `estado` YA NO se bloquea: el backend lo acepta en ProveedorRequestDto y es la
+     *   única vía para reactivar un proveedor dado de baja.
+     */
+    private aplicarBloqueos(): void {
+        bloquearEnEdicion(this.proveedorForm, ['ruc'], this.editMode());
     }
 
     openEditModal(proveedor: Proveedor): void {
@@ -288,6 +316,8 @@ export class ProveedoresComponent implements OnInit {
             razonSocial: proveedor.razonSocial,
             nombreComercial: proveedor.nombreComercial ?? '',
             condicionSunat: proveedor.condicionSunat ?? 'HABIDO',
+            estadoSunat: proveedor.estadoSunat ?? 'ACTIVO',
+            estado: proveedor.estado ?? 'ACTIVO',
             domicilioFiscal: proveedor.domicilioFiscal ?? '',
             contactoNombre: proveedor.contactoNombre ?? '',
             contactoTelefono: proveedor.contactoTelefono ?? '',
@@ -295,8 +325,11 @@ export class ProveedoresComponent implements OnInit {
             banco: proveedor.banco ?? '',
             cuentaBanco: proveedor.cuentaBanco ?? '',
             condicionPago: proveedor.condicionPago ?? 'CONTADO',
-            monedaPreferida: proveedor.monedaPreferida ?? MONEDA.PEN
+            monedaPreferida: proveedor.monedaPreferida ?? MONEDA.PEN,
+            nivelProveedor: proveedor.nivelProveedor ?? '',
+            agenteRetencion: proveedor.agenteRetencion ?? false
         });
+        this.aplicarBloqueos();
         this.submitError.set(null);
         this.showModal.set(true);
     }
@@ -314,7 +347,9 @@ export class ProveedoresComponent implements OnInit {
         this.submitting.set(true);
         this.submitError.set(null);
 
-        const val = this.proveedorForm.value as Partial<Proveedor>;
+        // getRawValue(): `ruc` (bloqueado en edición) no aparece en `.value` y se perdería.
+        // `estado` sí viaja: el backend lo aplica (null/'' = no tocar) y permite reactivar.
+        const val = this.proveedorForm.getRawValue() as Partial<Proveedor>;
         const op = this.editMode()
             ? this.proveedorService.updateProveedor(this.selectedProveedor()!.id!, val)
             : this.proveedorService.createProveedor(val);

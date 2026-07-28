@@ -62,9 +62,9 @@ export class LibroDiarioComponent implements OnInit {
     // Filtros del toolbar del data-table. periodo va incluido: es obligatorio para el
     // endpoint, así que se trata como un filtro más (igual que en asientos.component.ts).
     readonly filters: FilterConfig[] = [
-        signalFilter('periodo', '— Seleccionar periodo —', this.periodos,
+        signalFilter('periodo', 'Periodo', this.periodos,
             p => ({ value: p.id, label: `${p.nombre} (${p.estado})` })),
-        signalFilter('cuenta', 'Todas las cuentas', this.cuentas,
+        signalFilter('cuenta', 'Cuenta', this.cuentas,
             c => ({ value: c.id, label: `${c.codigo} — ${c.nombre}` })),
         catalogFilter(this.catalog, 'TIPO_ASIENTO_CONTABLE', 'tipoAsiento', 'Tipo de asiento'),
         catalogFilter(this.catalog, 'ORIGEN_ASIENTO_CONTABLE', 'origen', 'Origen del asiento'),

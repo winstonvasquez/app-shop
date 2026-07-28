@@ -72,7 +72,7 @@ export class TransferManagementComponent {
 
     // Filtros select del toolbar. Las opciones de estado salen de erp_parameters (fuente única).
     filters: FilterConfig[] = [
-        catalogFilter(this.catalog, 'ESTADO_TRANSFERENCIA_INVENTARIO', 'status', 'Todos los estados'),
+        catalogFilter(this.catalog, 'ESTADO_TRANSFERENCIA_INVENTARIO', 'status', 'Estado'),
         signalFilter('sourceWarehouseId', 'Almacén origen', this.warehousesFiltro,
             w => ({ value: w.id, label: w.name })),
         signalFilter('destinationWarehouseId', 'Almacén destino', this.warehousesFiltro,

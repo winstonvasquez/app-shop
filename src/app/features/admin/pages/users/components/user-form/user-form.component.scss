@@ -111,3 +111,20 @@
         font-size: 0.75rem;
     }
 }
+
+/* ── Checkbox de estado activo ────────────────────────── */
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    font-weight: 500;
+    color: var(--color-text-primary);
+}
+
+.checkbox-input {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: var(--color-primary);
+}

@@ -26,6 +26,7 @@ import {
     EvaluationStatus,
 } from '../../models/evaluation.model';
 import { PAGINATION } from '@shared/constants/app.constants';
+import { bloquearEnEdicion } from '@shared/utils/form-lock';
 
 @Component({
     selector: 'app-evaluation-list',
@@ -184,6 +185,12 @@ export class EvaluationListComponent implements OnInit {
         details: this.fb.array<FormGroup>([]),
     });
 
+    /**
+     * Empleado evaluado y periodo identifican la evaluación: reapuntarla a otro
+     * empleado o periodo descuadra los promedios y el histórico ya calculado.
+     */
+    private static readonly CAMPOS_BLOQUEADOS = ['employeeId', 'periodo'];
+
     get detailsArray(): FormArray {
         return this.evaluationForm.get('details') as FormArray;
     }
@@ -226,13 +233,13 @@ export class EvaluationListComponent implements OnInit {
 
     // Filtros select del toolbar. Las opciones salen de erp_parameters / listas dinámicas.
     readonly toolbarFilters: FilterConfig[] = [
-        catalogFilter(this.catalog, 'ESTADO_EVALUACION', 'estado', 'Todos los estados'),
-        catalogFilter(this.catalog, 'TIPO_EVALUACION', 'tipo', 'Todos los tipos'),
+        catalogFilter(this.catalog, 'ESTADO_EVALUACION', 'estado', 'Estado'),
+        catalogFilter(this.catalog, 'TIPO_EVALUACION', 'tipo', 'Tipo'),
         signalFilter('employeeId', 'Empleado evaluado', this.employees,
             e => ({ value: e.id, label: `${e.nombres} ${e.apellidos}` })),
         signalFilter('evaluadorId', 'Evaluador', this.employees,
             e => ({ value: e.id, label: `${e.nombres} ${e.apellidos}` })),
-        signalFilter('departmentId', 'Todos los departamentos', this.departamentosFiltro,
+        signalFilter('departmentId', 'Departamento', this.departamentosFiltro,
             d => ({ value: d.id, label: d.nombre })),
     ];
 
@@ -320,6 +327,7 @@ export class EvaluationListComponent implements OnInit {
     openCreate(): void {
         this.evaluationForm.reset({ tipoEvaluacion: 'ANUAL', puntaje: 0 });
         this.clearDetailsArray();
+        bloquearEnEdicion(this.evaluationForm, EvaluationListComponent.CAMPOS_BLOQUEADOS, false);
         this.editMode.set(false);
         this.selectedId.set(null);
         this.submitError.set(null);
@@ -343,6 +351,7 @@ export class EvaluationListComponent implements OnInit {
         (ev.details || []).forEach(d => {
             this.detailsArray.push(this.createDetailGroup(d.criteriaId, d.puntaje, d.comentarios || ''));
         });
+        bloquearEnEdicion(this.evaluationForm, EvaluationListComponent.CAMPOS_BLOQUEADOS, true);
         this.editMode.set(true);
         this.selectedId.set(ev.id);
         this.submitError.set(null);
@@ -367,7 +376,9 @@ export class EvaluationListComponent implements OnInit {
         this.submitting.set(true);
         this.submitError.set(null);
         try {
-            const val = this.evaluationForm.value;
+            // getRawValue(): empleado y periodo quedan bloqueados en edición y no
+            // aparecerían en .value (se enviarían como null).
+            const val = this.evaluationForm.getRawValue();
             const details = (this.detailsArray.value as Array<{ criteriaId: number | null; puntaje: number; comentarios: string }>)
                 .filter(d => d.criteriaId != null)
                 .map(d => ({

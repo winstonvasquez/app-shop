@@ -2,7 +2,8 @@ import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@ang
 import { FormBuilder, ReactiveFormsModule, Validators, FormGroup, FormControl } from '@angular/forms';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { WmsApiService } from '../../services/wms-api.service';
-import { Lot, LotExpirationAlert } from '../../models/wms-zone.models';
+import { CreateLotRequest, Lot, LotExpirationAlert } from '../../models/wms-zone.models';
+import { bloquearEnEdicion, bloquearSiempre } from '@shared/utils/form-lock';
 import { productIdToUuid } from '../../utils/synthetic-uuid.util';
 import { ProductLookupComponent } from '../../components/product-lookup/product-lookup.component';
 import { ProductResponse } from '@core/models/product.model';
@@ -77,7 +78,7 @@ export class LotManagementComponent implements OnInit {
             { value: 'VENCIDO', label: 'Vencido' }
         ]),
         staticFilter('activo', 'Estado del lote', ACTIVO_OPTIONS),
-        signalFilter('proveedorNombre', 'Todos los proveedores', this.proveedoresFiltro, p => p)
+        signalFilter('proveedorNombre', 'Proveedor', this.proveedoresFiltro, p => p)
     ];
 
     dateRangeFilters: DateRangeFilterConfig[] = [
@@ -120,15 +121,39 @@ export class LotManagementComponent implements OnInit {
         { label: 'Eliminar', icon: 'trash', class: 'btn-icon-delete', onClick: (r) => this.eliminar(r.id) }
     ];
 
+    /**
+     * `cantidadActual` la calcula el backend (siempre bloqueada). `activo` SÍ es editable:
+     * el PUT acepta el campo y reactivar por acá es la única vía para recuperar un lote
+     * dado de baja (el backend valida (producto, N° lote) sin filtrar por `activo`, así que
+     * un lote inactivo bloquea crear otro con el mismo número). Ver `bloquearCampos()`.
+     */
     form: FormGroup = this.fb.nonNullable.group({
         sku: ['', Validators.required],
         loteNumero: ['', Validators.required],
         fechaFabricacion: [''],
         fechaVencimiento: [''],
         cantidadInicial: [0, [Validators.required, Validators.min(0)]],
+        cantidadActual: [0],
         proveedorNombre: [''],
-        notas: ['']
+        notas: [''],
+        activo: [true]
     });
+
+    /**
+     * Bloqueo único de campos del drawer:
+     * - `sku` y `loteNumero` identifican el lote en el kardex y en las guías ya emitidas:
+     *   se pueden escribir al crear, se leen bloqueados al editar.
+     * - `cantidadInicial` es la línea base del kardex del lote: lo consumido se deriva de
+     *   `cantidadInicial - cantidadActual`. Reescribirla tras el alta descuadraría el kardex
+     *   (aparecerían o desaparecerían unidades consumidas sin movimiento de inventario que las
+     *   respalde), por eso el PUT del backend la ignora y acá se bloquea en edición — antes se
+     *   dejaba editable y el guardado no tenía efecto, en silencio.
+     * - `cantidadActual` la deriva el backend de los consumos FIFO/FEFO del lote.
+     */
+    private bloquearCampos(): void {
+        bloquearEnEdicion(this.form, ['sku', 'loteNumero', 'cantidadInicial'], this.editMode());
+        bloquearSiempre(this.form, ['cantidadActual']);
+    }
 
     ngOnInit(): void {
         this.loadLots();
@@ -263,7 +288,8 @@ export class LotManagementComponent implements OnInit {
         this.editMode.set(false);
         this.selectedId.set(null);
         this.editingProductoId.set(null);
-        this.form.reset({ cantidadInicial: 0 });
+        this.form.reset({ cantidadInicial: 0, cantidadActual: 0, activo: true });
+        this.bloquearCampos();
         this.submitError.set(null);
         this.showDrawer.set(true);
     }
@@ -273,6 +299,7 @@ export class LotManagementComponent implements OnInit {
         this.selectedId.set(lot.id);
         this.editingProductoId.set(lot.productoId);
         this.form.patchValue({ ...lot });
+        this.bloquearCampos();
         this.submitError.set(null);
         this.showDrawer.set(true);
     }
@@ -287,8 +314,23 @@ export class LotManagementComponent implements OnInit {
             return;
         }
         this.submitting.set(true);
+        // getRawValue() y NO .value: `sku`/`loteNumero`/`cantidadInicial` van deshabilitados en
+        // edición y .value los omitiría (se enviarían nulls y el backend rechazaría el request).
         const v = this.form.getRawValue();
-        const payload = { ...v, productoId };
+        // `cantidadActual` queda FUERA del payload: es de solo lectura, la deriva el backend.
+        const payload: CreateLotRequest = {
+            productoId,
+            sku: v.sku,
+            loteNumero: v.loteNumero,
+            fechaFabricacion: v.fechaFabricacion || undefined,
+            fechaVencimiento: v.fechaVencimiento || undefined,
+            cantidadInicial: Number(v.cantidadInicial),
+            proveedorNombre: v.proveedorNombre || undefined,
+            notas: v.notas || undefined,
+            // Solo el PUT lo interpreta (permite reactivar); al crear el backend lo ignora
+            // y el lote nace activo — no lo enviamos para no sugerir lo contrario.
+            ...(this.editMode() ? { activo: v.activo } : {})
+        };
         const op = this.editMode()
             ? this.api.updateLot(this.selectedId()!, payload)
             : this.api.createLot(payload);

@@ -70,8 +70,8 @@ export class InventoryCountComponent {
 
     // Filtros select del toolbar. Las opciones de estado salen de erp_parameters (fuente única).
     filters: FilterConfig[] = [
-        catalogFilter(this.catalog, 'ESTADO_CONTEO_INVENTARIO', 'status', 'Todos los estados'),
-        signalFilter('warehouseId', 'Todos los almacenes', this.warehousesFiltro,
+        catalogFilter(this.catalog, 'ESTADO_CONTEO_INVENTARIO', 'status', 'Estado'),
+        signalFilter('warehouseId', 'Almacén', this.warehousesFiltro,
             w => ({ value: w.id, label: w.name }))
     ];
 
@@ -101,9 +101,14 @@ export class InventoryCountComponent {
                 return `<span class="badge ${cls}">${r.difference > 0 ? '+' : ''}${r.difference}</span>`;
             }
         },
-        { key: 'lotNumber', label: 'Lote/Serie',
-          render: (r) => r.lotNumber ?? r.serialNumber ?? '—' },
-        { key: 'locationName', label: 'Ubicación', render: (r) => r.locationName ?? '—' },
+        // Columna "Lote/Serie" RETIRADA (2026-07-28): el conteo desde esta pantalla nunca manda
+        // lotId ni serialNumberId, así que siempre pintaba "—". Y no basta con añadir el selector:
+        // el `systemQuantity` contra el que se compara sale de `getOrCreateStock(almacén, producto)`,
+        // que es nivel ALMACÉN. Contar un solo lote daría `difference = contado_del_lote −
+        // total_del_almacén`, y `applyAdjustments` convertiría esa resta en una SALIDA_AJUSTE que
+        // arrasa el stock de los demás lotes — el mismo motivo por el que se quitó el selector de
+        // ubicación. Contar por lote exige antes stock a nivel de lote. El backend sigue
+        // resolviendo `lotId` (`resolveLot`) para quien cree conteos por API con esa semántica.
         { key: 'notes', label: 'Notas', render: (r) => r.notes ?? '—' },
         {
             key: 'adjusted', label: 'Ajustado', html: true,

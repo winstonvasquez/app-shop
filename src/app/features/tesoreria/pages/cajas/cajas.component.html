@@ -6,7 +6,8 @@
     <div meta class="header-kpis">
       <span class="header-kpi header-kpi--success">Cajas Abiertas <b>{{ cajasAbiertas() }}</b></span>
       <span class="header-kpi header-kpi--neutral">Cajas Cerradas <b>{{ cajasCerradas() }}</b></span>
-      <span class="header-kpi">Saldo Total (abiertas) <b>S/ {{ saldoTotal() | number:'1.2-2' }}</b></span>
+      <span class="header-kpi">Saldo PEN (abiertas) <b>S/ {{ saldoTotalPEN() | number:'1.2-2' }}</b></span>
+      <span class="header-kpi">Saldo USD (abiertas) <b>$ {{ saldoTotalUSD() | number:'1.2-2' }}</b></span>
     </div>
     <div actions>
       <app-button icon="plus" label="Nueva Caja" variant="primary" (click)="openCreateDrawer()" />
@@ -62,6 +63,10 @@
       placeholder="Ej: Caja Principal"
       [required]="true">
     </app-form-field>
+    <div>
+      <label class="input-label">Moneda *</label>
+      <app-catalog-select tabla="MONEDA" formControlName="moneda"></app-catalog-select>
+    </div>
     <app-form-field
       label="Saldo Inicial (S/)"
       [control]="getControl(createForm, 'saldoInicial')"
@@ -70,6 +75,26 @@
       hint="Monto de apertura">
     </app-form-field>
   </form>
+
+  <!--
+    Valores que la lista muestra pero que NO se registran aquí: el estado, el saldo
+    actual y la fecha de apertura los produce el backend con los movimientos y las
+    acciones de abrir/cerrar. No se ocultan: se muestran bloqueados.
+  -->
+  <div style="display:flex;flex-direction:column;gap:16px;margin-top:16px">
+    <div>
+      <label class="input-label">Estado</label>
+      <input class="form-input" type="text" value="CERRADA (se abre con la acción Abrir)" readonly>
+    </div>
+    <div>
+      <label class="input-label">Saldo actual (S/)</label>
+      <input class="form-input" type="text" value="0.00 — lo calcula el backend" readonly>
+    </div>
+    <div>
+      <label class="input-label">Fecha de apertura</label>
+      <input class="form-input" type="text" value="Se registra al abrir la caja" readonly>
+    </div>
+  </div>
 
   <div slot="footer">
     <app-button icon="x" label="Cancelar" variant="secondary" [disabled]="guardando()" (click)="showCreateDrawer.set(false)" />
@@ -96,6 +121,13 @@
     </div>
   }
 
+  <!-- Saldo calculado por el backend: informativo, no editable. -->
+  <div class="mb-4">
+    <label class="input-label">Saldo actual (S/)</label>
+    <input class="form-input" type="text"
+           [value]="(selectedCaja()?.saldoActual ?? 0) | number:'1.2-2'" readonly>
+  </div>
+
   @if (actionType() === 'abrir') {
     <form [formGroup]="actionForm">
       <app-form-field
@@ -113,5 +145,46 @@
   <div slot="footer">
     <app-button icon="x" label="Cancelar" variant="secondary" [disabled]="guardando()" (click)="showActionDrawer.set(false)" />
     <app-button [icon]="actionType() === 'abrir' ? 'door-open' : 'door-closed'" [label]="actionType() === 'abrir' ? 'Abrir Caja' : 'Confirmar Cierre'" [variant]="actionType() === 'abrir' ? 'primary' : 'secondary'" [loading]="guardando()" [disabled]="guardando()" (click)="ejecutarAccion()" />
+  </div>
+</app-drawer>
+
+<!-- Drawer: Editar Caja (solo mientras esté CERRADA — el backend también lo valida) -->
+<app-drawer
+  [isOpen]="showEditDrawer()"
+  title="Editar Caja"
+  size="md"
+  side="right"
+  [hasFooter]="true"
+  (closed)="showEditDrawer.set(false)">
+
+  @if (actionErrorMsg()) {
+    <div class="p-3 mb-4" style="background:var(--color-error-subtle,rgba(215,19,42,0.1));border:1px solid var(--color-error);border-radius:8px;color:var(--color-error);font-size:0.875rem">
+      {{ actionErrorMsg() }}
+    </div>
+  }
+
+  <form [formGroup]="editForm" style="display:flex;flex-direction:column;gap:16px">
+    <app-form-field
+      label="Nombre de la Caja"
+      [control]="getControl(editForm, 'nombre')"
+      type="text"
+      placeholder="Ej: Caja Principal"
+      [required]="true">
+    </app-form-field>
+    <div>
+      <label class="input-label">Moneda *</label>
+      <app-catalog-select tabla="MONEDA" formControlName="moneda"></app-catalog-select>
+    </div>
+    <app-form-field
+      label="Observaciones"
+      [control]="getControl(editForm, 'observaciones')"
+      type="text"
+      placeholder="Observaciones opcionales">
+    </app-form-field>
+  </form>
+
+  <div slot="footer">
+    <app-button icon="x" label="Cancelar" variant="secondary" [disabled]="guardando()" (click)="showEditDrawer.set(false)" />
+    <app-button icon="save" label="Guardar Cambios" variant="primary" [loading]="guardando()" [disabled]="guardando() || editForm.invalid" (click)="guardarEdicion()" />
   </div>
 </app-drawer>

@@ -15,6 +15,11 @@ export interface FacturaProveedor {
     moneda?: string;
     estado: string;
     resultadoMatch?: string;
+    /**
+     * Estado de la validación SUNAT (simulada). Mapeado en `FacturaProveedorDto`
+     * (fix P1 2026-07-27 — antes el DTO no lo exponía y la columna pintaba '—' siempre).
+     */
+    estadoSunat?: string;
     observaciones?: string;
     items?: FacturaProveedorItem[];
     createdAt?: string;

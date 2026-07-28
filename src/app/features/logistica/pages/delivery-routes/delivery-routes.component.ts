@@ -1,13 +1,19 @@
 import { Component, inject, signal, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import { FormBuilder, ReactiveFormsModule, Validators, FormGroup } from '@angular/forms';
 import { DeliveryRouteService } from '../../services/delivery-route.service';
-import { DeliveryRoute } from '../../models/delivery-route.model';
+import { DeliveryRoute, GenerateRouteBody } from '../../models/delivery-route.model';
 import { AlmacenService } from '../../services/almacen.service';
 import { Almacen } from '../../models/almacen.model';
+import { EnvioService } from '../../services/envio.service';
+import { Envio } from '../../models/envio.model';
+import { almacenSelectSource } from '../../components/select-sources';
 import { AuthService } from '@core/auth/auth.service';
 import { CatalogService } from '@core/services/catalog.service';
-import { ButtonComponent } from '@shared/components';
+import { ButtonComponent, ServerSearchSelectComponent } from '@shared/components';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
+import { DrawerComponent } from '@shared/components/drawer/drawer.component';
+import { DateInputComponent } from '@shared/ui/forms/date-input/date-input.component';
 import {
     DataTableComponent, TableColumn, TableAction, PaginationEvent,
     FilterConfig, FilterChangeEvent, DateRangeFilterConfig, DateRangeChangeEvent
@@ -20,15 +26,24 @@ import { environment } from '@env/environment';
 @Component({
     selector: 'app-delivery-routes',
     standalone: true,
-    imports: [ButtonComponent, AlertComponent, PageHeaderComponent, DataTableComponent],
+    imports: [
+        ReactiveFormsModule, ButtonComponent, AlertComponent, PageHeaderComponent,
+        DataTableComponent, DrawerComponent, DateInputComponent, ServerSearchSelectComponent
+    ],
     templateUrl: './delivery-routes.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DeliveryRoutesComponent implements OnInit {
     private readonly routeService = inject(DeliveryRouteService);
     private readonly almacenService = inject(AlmacenService);
+    private readonly envioService = inject(EnvioService);
     private readonly authService = inject(AuthService);
+    private readonly fb = inject(FormBuilder);
     readonly catalog = inject(CatalogService);
+
+    /** Fuente del select "Almacén de origen" del drawer de alta (mismo adapter que el filtro del toolbar). */
+    readonly almacenSource = almacenSelectSource(
+        this.almacenService, () => this.authService.currentUser()?.activeCompanyId);
 
     readonly breadcrumbs: Breadcrumb[] = [
         { label: 'Inicio',    url: '/admin/dashboard' },
@@ -41,6 +56,22 @@ export class DeliveryRoutesComponent implements OnInit {
     actionId = signal<string | null>(null);
     error = signal<string | null>(null);
     successMsg = signal<string | null>(null);
+
+    // ── Alta de ruta (drawer "Nueva ruta") ──────────────────────────────
+    showCreateDrawer = signal(false);
+    creatingRoute = signal(false);
+    createError = signal<string | null>(null);
+    /** Envíos PENDING_DISPATCH disponibles para incluir en la ruta nueva. */
+    pendingShipments = signal<Envio[]>([]);
+    loadingPendingShipments = signal(false);
+    selectedShipmentIds = signal<Set<string>>(new Set());
+
+    createForm: FormGroup = this.fb.group({
+        date: ['', Validators.required],
+        warehouseId: ['', Validators.required],
+        driverName: [''],
+        vehiclePlate: ['']
+    });
 
     // Filtros (TODOS server-side — la vista nunca filtra la página cargada)
     searchQuery = signal('');
@@ -62,8 +93,8 @@ export class DeliveryRoutesComponent implements OnInit {
     // Filtros select del toolbar. El estado sale de erp_parameters (ESTADO_RUTA_ENTREGA);
     // el almacén de salida, de la lista cargada en ngOnInit.
     filters: FilterConfig[] = [
-        catalogFilter(this.catalog, 'ESTADO_RUTA_ENTREGA', 'status', 'Todos los estados'),
-        signalFilter('warehouseId', 'Todos los almacenes', this.almacenesFiltro,
+        catalogFilter(this.catalog, 'ESTADO_RUTA_ENTREGA', 'status', 'Estado'),
+        signalFilter('warehouseId', 'Almacén', this.almacenesFiltro,
             a => ({ value: a.id, label: a.nombre }))
     ];
 
@@ -256,6 +287,79 @@ export class DeliveryRoutesComponent implements OnInit {
     private showSuccess(msg: string): void {
         this.successMsg.set(msg);
         setTimeout(() => this.successMsg.set(null), NOTIFICATION_DURATION.medium);
+    }
+
+    // ── Alta de ruta (drawer "Nueva ruta") ──────────────────────────────
+    openCreateDrawer(): void {
+        this.createError.set(null);
+        this.createForm.reset({ date: '', warehouseId: '', driverName: '', vehiclePlate: '' });
+        this.selectedShipmentIds.set(new Set());
+        this.loadPendingShipments();
+        this.showCreateDrawer.set(true);
+    }
+
+    closeCreateDrawer(): void {
+        this.showCreateDrawer.set(false);
+    }
+
+    /** Envíos PENDING_DISPATCH del tenant activo, candidatos a incluir en la ruta. */
+    private loadPendingShipments(): void {
+        const companyId = String(this.authService.currentUser()?.activeCompanyId ?? '');
+        if (!companyId) { this.pendingShipments.set([]); return; }
+        this.loadingPendingShipments.set(true);
+        this.envioService.getEnvios(companyId, { status: 'PENDING_DISPATCH', size: 100 }).subscribe({
+            next: (res) => {
+                this.pendingShipments.set(res.content ?? []);
+                this.loadingPendingShipments.set(false);
+            },
+            error: () => {
+                this.pendingShipments.set([]);
+                this.loadingPendingShipments.set(false);
+            }
+        });
+    }
+
+    isShipmentSelected(id: string): boolean {
+        return this.selectedShipmentIds().has(id);
+    }
+
+    toggleShipment(id: string): void {
+        this.selectedShipmentIds.update(set => {
+            const next = new Set(set);
+            if (next.has(id)) next.delete(id); else next.add(id);
+            return next;
+        });
+    }
+
+    submitGenerate(): void {
+        if (this.createForm.invalid) { this.createForm.markAllAsTouched(); return; }
+        const shipmentIds = Array.from(this.selectedShipmentIds());
+        if (shipmentIds.length === 0) {
+            this.createError.set('Seleccione al menos un envío pendiente de despacho.');
+            return;
+        }
+        const v = this.createForm.getRawValue();
+        const body: GenerateRouteBody = {
+            date: v.date,
+            warehouseId: v.warehouseId,
+            shipmentIds,
+            driverName: v.driverName || undefined,
+            vehiclePlate: v.vehiclePlate || undefined
+        };
+        this.creatingRoute.set(true);
+        this.createError.set(null);
+        this.routeService.generate(body).subscribe({
+            next: () => {
+                this.creatingRoute.set(false);
+                this.closeCreateDrawer();
+                this.loadRoutes();
+                this.showSuccess('Ruta generada');
+            },
+            error: (err: Error) => {
+                this.creatingRoute.set(false);
+                this.createError.set(err.message ?? 'Error al generar la ruta.');
+            }
+        });
     }
 
     statusBadgeClass(status: string): string {

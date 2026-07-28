@@ -6,31 +6,11 @@
         </div>
     </div>
 
-    <!-- Filtros (gobiernan la consulta al backend: entidadTipo/desde/hasta) -->
-    <div class="filters-bar mb-4">
-        <div class="flex gap-3 flex-wrap items-end">
-            <div>
-                <label class="input-label">Tipo de entidad</label>
-                <input class="form-input w-40" type="text" placeholder="ASIENTO, PERIODO..."
-                    [ngModel]="filtroTipo()" (ngModelChange)="filtroTipo.set($event)">
-            </div>
-            <div>
-                <label class="input-label">Desde</label>
-                <input class="form-input" type="date" [ngModel]="filtroDesde()" (ngModelChange)="filtroDesde.set($event)">
-            </div>
-            <div>
-                <label class="input-label">Hasta</label>
-                <input class="form-input" type="date" [ngModel]="filtroHasta()" (ngModelChange)="filtroHasta.set($event)">
-            </div>
-            <app-button
-                icon="search"
-                variant="primary"
-                label="Buscar"
-                (click)="buscar()">
-            </app-button>
-        </div>
-    </div>
-
+    <!--
+        Los filtros viven en la toolbar de la tabla (entidad, acción, usuario y
+        rango de fecha): la barra propia que había aquí repetía esos mismos
+        controles con otro estilo.
+    -->
     <div class="grid" [class]="seleccionado() ? 'grid-cols-2 gap-4' : 'grid-cols-1'">
         <!-- Tabla -->
         <div>

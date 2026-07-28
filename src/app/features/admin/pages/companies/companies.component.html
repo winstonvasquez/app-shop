@@ -76,7 +76,7 @@
                         [control]="getControl('ruc')"
                         type="text"
                         placeholder="Ej: 20123456789"
-                        hint="11 dígitos numéricos"
+                        [hint]="editMode() ? 'No editable: los CPE ya emitidos referencian este RUC' : '11 dígitos numéricos'"
                         [required]="true">
                     </app-form-field>
                 </app-admin-form-section>
@@ -107,19 +107,20 @@
 
                 <!-- Sección: Configuración -->
                 <app-admin-form-section title="Configuración" [columns]="2">
-                    <app-form-field
-                        label="Logo URL"
-                        [control]="getControl('logoUrl')"
-                        type="text"
-                        placeholder="Ej: https://cdn.empresa.pe/logo.png">
-                    </app-form-field>
+                    <!-- El logo se guarda en la base de datos, no como enlace externo -->
+                    <app-image-upload
+                        label="Logotipo"
+                        [currentUrl]="getControl('logoUrl')?.value"
+                        (fileSelected)="logoSeleccionado.set($event)"
+                        (cleared)="onQuitarLogo()">
+                    </app-image-upload>
 
                     <app-form-field
                         label="Dominio"
                         [control]="getControl('domain')"
                         type="text"
                         placeholder="Ej: empresa.microshop.pe"
-                        hint="Dominio personalizado del tenant">
+                        [hint]="editMode() ? 'No editable: resuelve el tenant en el storefront' : 'Dominio personalizado del tenant'">
                     </app-form-field>
                 </app-admin-form-section>
 

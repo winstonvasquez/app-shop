@@ -37,9 +37,9 @@
     </app-data-table>
 </div>
 
-<!-- Drawer: Crear solicitud -->
-<app-drawer title="Nueva Solicitud de Compra" [isOpen]="showForm()" (closed)="closeForm()">
-    <form [formGroup]="solicitudForm" (ngSubmit)="createSolicitud()">
+<!-- Drawer: Crear / Editar solicitud -->
+<app-drawer [title]="editMode() ? 'Editar Solicitud de Compra' : 'Nueva Solicitud de Compra'" [isOpen]="showForm()" (closed)="closeForm()">
+    <form [formGroup]="solicitudForm" (ngSubmit)="submitSolicitud()">
         @if (submitError()) {
             <app-alert type="error" [message]="submitError()!" [dismissible]="true" (dismiss)="submitError.set(null)"></app-alert>
         }
@@ -50,7 +50,7 @@
         </div>
 
         <div class="mb-md">
-            <label class="input-label">Departamento</label>
+            <label class="input-label">Departamento{{ editMode() ? ' (no editable)' : '' }}</label>
             <input class="form-input" type="text" formControlName="departamento" placeholder="Ej: Operaciones">
         </div>
 
@@ -111,7 +111,7 @@
 
         <div style="display:flex;gap:8px;justify-content:flex-end">
             <app-button label="Cancelar" icon="x" variant="secondary" type="button" (click)="closeForm()"></app-button>
-            <app-button label="Crear Solicitud" icon="save" variant="primary" type="submit"
+            <app-button [label]="editMode() ? 'Guardar Cambios' : 'Crear Solicitud'" icon="save" variant="primary" type="submit"
                 [loading]="submitting()"
                 [disabled]="submitting() || solicitudForm.invalid"></app-button>
         </div>
@@ -243,8 +243,10 @@
             <div class="modal-body">
                 <form [formGroup]="convertirForm">
                     <div class="mb-md">
-                        <label class="input-label">ID Proveedor *</label>
-                        <input class="form-input" type="text" formControlName="proveedorId" placeholder="UUID del proveedor">
+                        <label class="input-label">Proveedor *</label>
+                        <app-server-search-select [dataSource]="proveedorSource"
+                                                  formControlName="proveedorId"
+                                                  placeholder="Buscar proveedor por nombre o RUC…" />
                     </div>
                     <div class="mb-md">
                         <label class="input-label">Condición de Pago *</label>
@@ -252,7 +254,9 @@
                     </div>
                     <div class="mb-md">
                         <label class="input-label">Almacén Destino</label>
-                        <input class="form-input" type="text" formControlName="almacenDestino" placeholder="Opcional">
+                        <app-server-search-select [dataSource]="almacenSource"
+                                                  formControlName="almacenDestino"
+                                                  placeholder="Buscar almacén… (opcional)" />
                     </div>
                 </form>
             </div>

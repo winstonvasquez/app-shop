@@ -87,6 +87,36 @@
             }
         }
     }
+
+    // Estado activo/inactivo: el checkbox no debe heredar el estilo de input de texto
+    // (`.form-grid label input` lo estiraría a todo el ancho con padding y borde).
+    .checkbox-field {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+
+        .checkbox-label {
+            flex-direction: row;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            color: var(--color-text-primary);
+
+            input[type='checkbox'] {
+                width: 1rem;
+                height: 1rem;
+                padding: 0;
+                border-radius: 0.25rem;
+                accent-color: var(--color-primary);
+                flex: 0 0 auto;
+            }
+        }
+
+        .form-hint {
+            color: var(--color-text-muted);
+            font-size: 0.75rem;
+        }
+    }
 }
 
 .actions {

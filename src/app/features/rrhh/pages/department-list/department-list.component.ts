@@ -18,6 +18,7 @@ import { employeeSelectSource, departmentSelectSource } from '../../components/s
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
 import { PAGINATION } from '@shared/constants/app.constants';
+import { bloquearEnEdicion } from '@shared/utils/form-lock';
 
 @Component({
     selector: 'app-department-list',
@@ -87,10 +88,10 @@ export class DepartmentListComponent implements OnInit {
 
     // Filtros select del toolbar. "activo" es booleano (staticFilter); jefe/padre son listas dinámicas.
     estadoFilters: FilterConfig[] = [
-        staticFilter('activo', 'Todos', ACTIVO_OPTIONS),
-        signalFilter('managerId', 'Todos los jefes', this.empleadosFiltro,
+        staticFilter('activo', 'Estado', ACTIVO_OPTIONS),
+        signalFilter('managerId', 'Jefe', this.empleadosFiltro,
             e => ({ value: e.id, label: `${e.nombres} ${e.apellidos}` })),
-        signalFilter('parentId', 'Todos los departamentos padre', this.departamentosFiltro,
+        signalFilter('parentId', 'Departamento padre', this.departamentosFiltro,
             d => ({ value: d.id, label: d.nombre })),
     ];
 
@@ -145,6 +146,11 @@ export class DepartmentListComponent implements OnInit {
             show: row => row.activo,
             onClick: row => this.onDeactivate(row),
         },
+        {
+            label: 'Activar', icon: '✓', class: 'btn-view',
+            show: row => !row.activo,
+            onClick: row => this.onActivate(row),
+        },
     ];
 
     // ── Form ──────────────────────────────────────────────────────────────────
@@ -155,6 +161,9 @@ export class DepartmentListComponent implements OnInit {
         parentId:    [null as number | null],
         managerId:   [null as number | null],
     });
+
+    /** El código del departamento se referencia desde puestos y empleados → solo lectura al editar. */
+    private static readonly CAMPOS_BLOQUEADOS = ['codigo'];
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
     ngOnInit(): void {
@@ -246,6 +255,7 @@ export class DepartmentListComponent implements OnInit {
         this.editMode.set(false);
         this.selectedDept.set(null);
         this.departmentForm.reset();
+        bloquearEnEdicion(this.departmentForm, DepartmentListComponent.CAMPOS_BLOQUEADOS, false);
         this.submitError.set(null);
         this.showModal.set(true);
     }
@@ -260,6 +270,7 @@ export class DepartmentListComponent implements OnInit {
             parentId:    dept.parentId ?? null,
             managerId:   dept.managerId ?? null,
         });
+        bloquearEnEdicion(this.departmentForm, DepartmentListComponent.CAMPOS_BLOQUEADOS, true);
         this.submitError.set(null);
         this.showModal.set(true);
     }
@@ -277,7 +288,8 @@ export class DepartmentListComponent implements OnInit {
         this.submitting.set(true);
         this.submitError.set(null);
         try {
-            const val = this.departmentForm.value;
+            // getRawValue(): 'codigo' queda bloqueado en edición y no saldría en .value.
+            const val = this.departmentForm.getRawValue();
             const request = {
                 codigo: val.codigo!,
                 nombre: val.nombre!,
@@ -306,6 +318,16 @@ export class DepartmentListComponent implements OnInit {
             this.loadPage();
         } catch (err) {
             this.error.set((err as Error).message ?? 'Error al desactivar departamento');
+        }
+    }
+
+    async onActivate(dept: Department): Promise<void> {
+        if (!confirm(`¿Reactivar el departamento "${dept.nombre}"?`)) return;
+        try {
+            await this.departmentService.activateDepartment(dept.id);
+            this.loadPage();
+        } catch (err) {
+            this.error.set((err as Error).message ?? 'Error al reactivar departamento');
         }
     }
 

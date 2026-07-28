@@ -26,6 +26,7 @@ import { proveedorSelectSource } from '../../components/select-sources';
 import { AuthService } from '@core/auth/auth.service';
 import { CatalogService } from '@core/services/catalog.service';
 import { PAGINATION } from '@shared/constants/app.constants';
+import { bloquearEnEdicion } from '@shared/utils/form-lock';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
 import { catalogFilter, signalFilter, staticFilter } from '@shared/ui/tables/data-table/filter-helpers';
@@ -209,7 +210,7 @@ export class CotizacionesComponent implements OnInit {
 
     // Filtros select del toolbar. Las opciones salen de erp_parameters (fuente única).
     estadoFilters: FilterConfig[] = [
-        catalogFilter(this.catalog, 'ESTADO_COTIZACION', 'estado', 'Todos los estados'),
+        catalogFilter(this.catalog, 'ESTADO_COTIZACION', 'estado', 'Estado'),
         signalFilter('proveedorAdjudicadoId', 'Proveedor adjudicado', this.proveedoresFiltro,
             p => ({ value: p.id, label: p.razonSocial })),
         // Derivado del backend a partir de fechaVencimiento — códigos exactos del contrato de la API.
@@ -245,6 +246,8 @@ export class CotizacionesComponent implements OnInit {
     };
 
     cotizacionForm = this.fb.group({
+        // Correlativo emitido por el backend: se muestra al editar, nunca se edita.
+        codigo: [''],
         titulo: ['', Validators.required],
         descripcion: [''],
         fechaVencimiento: ['', Validators.required],
@@ -366,7 +369,8 @@ export class CotizacionesComponent implements OnInit {
 
     openCreateForm(): void {
         this.editingCotizacionId.set(null);
-        this.cotizacionForm.reset({ proveedorIds: [] });
+        this.cotizacionForm.reset({ codigo: '', proveedorIds: [] });
+        bloquearEnEdicion(this.cotizacionForm, ['codigo'], false);
         this.proveedoresSeleccionados.set([]);
         this.proveedorParaAgregar.setValue(null);
         while (this.itemsArray.length > 0) this.itemsArray.removeAt(0);
@@ -444,7 +448,8 @@ export class CotizacionesComponent implements OnInit {
 
     crearCotizacion(): void {
         if (this.cotizacionForm.invalid) return;
-        const formValue = this.cotizacionForm.value;
+        // getRawValue(): el form tiene campos bloqueados (`codigo`) que no aparecen en `.value`.
+        const formValue = this.cotizacionForm.getRawValue();
 
         const request: CrearCotizacionRequest = {
             titulo: formValue.titulo ?? '',
@@ -483,7 +488,8 @@ export class CotizacionesComponent implements OnInit {
         if (this.cotizacionForm.invalid) return;
         const id = this.editingCotizacionId();
         if (!id) return;
-        const formValue = this.cotizacionForm.value;
+        // getRawValue(): `codigo` está deshabilitado en edición y no aparecería en `.value`.
+        const formValue = this.cotizacionForm.getRawValue();
 
         const request: ActualizarCotizacionRequest = {
             titulo: formValue.titulo ?? '',
@@ -497,6 +503,7 @@ export class CotizacionesComponent implements OnInit {
                 unidadMedida: (i['unidadMedida'] as string) || 'UNIDAD',
                 especificaciones: (i['especificaciones'] as string) || undefined,
             })),
+            proveedorIds: (formValue.proveedorIds ?? []).filter((id): id is string => !!id),
         };
 
         this.submitting.set(true);
@@ -579,11 +586,13 @@ export class CotizacionesComponent implements OnInit {
         detalle.items.forEach(() => this.itemsArray.push(this.createItemGroup()));
 
         this.cotizacionForm.patchValue({
+            codigo: detalle.codigo,
             titulo: detalle.titulo,
             descripcion: detalle.descripcion ?? '',
             fechaVencimiento: detalle.fechaVencimiento,
             proveedorIds: detalle.proveedores.map((p) => p.proveedorId),
         });
+        bloquearEnEdicion(this.cotizacionForm, ['codigo'], true);
 
         detalle.items.forEach((item, idx) => {
             this.itemsArray.at(idx).patchValue({

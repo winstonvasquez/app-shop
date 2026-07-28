@@ -17,6 +17,12 @@ export class ConfigAprobacionesComponent implements OnInit {
     loading = signal(false);
     showForm = signal(false);
     editingNivelId = signal<string | null>(null);
+    /**
+     * 'true' preselecciona solo activos (comportamiento previo a este fix).
+     * '' = Todos → manda `activo=undefined` al service, sin filtrar (necesario para poder
+     * ver un nivel dado de baja y reactivarlo — antes era inalcanzable, hallazgo P1 2026-07-27).
+     */
+    filterActivo = signal<'true' | 'false' | ''>('true');
 
     form = signal<ConfigAprobacionRequest>({
         nombre: '',
@@ -24,6 +30,7 @@ export class ConfigAprobacionesComponent implements OnInit {
         montoMaximo: null,
         rolAprobador: '',
         orden: 1,
+        activo: true,
     });
 
     ngOnInit(): void {
@@ -32,7 +39,9 @@ export class ConfigAprobacionesComponent implements OnInit {
 
     cargarNiveles(): void {
         this.loading.set(true);
-        this.aprobacionService.getNiveles().subscribe({
+        const f = this.filterActivo();
+        const activo = f === '' ? undefined : f === 'true';
+        this.aprobacionService.getNiveles(activo).subscribe({
             next: (data) => {
                 this.niveles.set(data);
                 this.loading.set(false);
@@ -41,9 +50,23 @@ export class ConfigAprobacionesComponent implements OnInit {
         });
     }
 
+    onFilterActivoChange(value: string): void {
+        this.filterActivo.set(value as 'true' | 'false' | '');
+        this.cargarNiveles();
+    }
+
     abrirFormulario(): void {
         this.editingNivelId.set(null);
-        this.form.set({ nombre: '', montoMinimo: 0, montoMaximo: null, rolAprobador: '', orden: this.niveles().length + 1 });
+        // El orden propuesto se calcula sobre TODOS los niveles, no sobre la lista visible:
+        // con el filtro en "Inactivos" (una fila) proponia orden=2 aunque hubiera cinco activos.
+        this.aprobacionService.getNiveles().subscribe({
+            next: todos => this.form.update(f => ({ ...f, orden: todos.length + 1 })),
+            error: () => { /* si falla, se queda el orden que ya haya en el formulario */ },
+        });
+        this.form.set({
+            nombre: '', montoMinimo: 0, montoMaximo: null, rolAprobador: '',
+            orden: this.niveles().length + 1, activo: true,
+        });
         this.showForm.set(true);
     }
 
@@ -55,6 +78,7 @@ export class ConfigAprobacionesComponent implements OnInit {
             montoMaximo: nivel.montoMaximo,
             rolAprobador: nivel.rolAprobador,
             orden: nivel.orden,
+            activo: nivel.activo,
         });
         this.showForm.set(true);
     }
@@ -68,6 +92,11 @@ export class ConfigAprobacionesComponent implements OnInit {
             next: () => {
                 this.showForm.set(false);
                 this.editingNivelId.set(null);
+                // Un nivel NUEVO siempre nace activo (AprobacionCommandService.crearNivel), asi
+                // que crearlo con el filtro en "Inactivos" lo haria desaparecer al recargar.
+                if (!editingId && this.filterActivo() === 'false') {
+                    this.filterActivo.set('true');
+                }
                 this.cargarNiveles();
             },
         });

@@ -1,4 +1,5 @@
 import { Injectable, inject } from '@angular/core';
+import { AuthService } from '@core/auth/auth.service';
 import { HttpClient, HttpParams, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
@@ -32,6 +33,7 @@ export interface MisPedidosFiltros {
 })
 export class OrderService {
     private readonly http = inject(HttpClient);
+    private readonly auth = inject(AuthService);
     private readonly baseUrl = `${environment.apiUrls.sales}/api/pedidos`;
 
     /**
@@ -76,9 +78,16 @@ export class OrderService {
             cpeFechaEmisionHasta?: string;
         }
     ): Observable<PageResponse<OrderResponse>> {
+        // El listado de pedidos del admin exige companyId: sin él el backend
+        // responde 400 y la tabla queda vacía sin explicación.
         let params = new HttpParams()
             .set('page', pagination.page.toString())
             .set('size', pagination.size.toString());
+
+        const companyId = this.auth.currentUser()?.activeCompanyId;
+        if (companyId != null) {
+            params = params.set('companyId', String(companyId));
+        }
 
         if (pagination.sort) {
             params = params.set(

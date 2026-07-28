@@ -215,6 +215,51 @@
   }
 </app-drawer>
 
+<!-- Drawer: Avanzar estado (transportistas sin integración de tracking API) -->
+<app-drawer
+  [isOpen]="showAdvance()"
+  title="Avanzar estado del envío"
+  size="sm" side="right" [hasFooter]="true"
+  (closed)="closeAdvance()">
+
+  @if (advanceTarget(); as envio) {
+    <form [formGroup]="advanceForm">
+      @if (advanceError()) {
+        <app-alert type="error" [message]="advanceError()!" [dismissible]="true" (dismiss)="advanceError.set(null)" />
+      }
+
+      <p class="text-subtle" style="font-size:0.85rem;margin-bottom:0.75rem">
+        Envío <strong>{{ envio.trackingNumber }}</strong> · {{ envio.recipientName }}
+      </p>
+      <p class="text-sm" style="margin-bottom:0.75rem">
+        Nuevo estado: <strong>{{ nextStatusLabel() }}</strong>
+      </p>
+
+      <div style="margin-bottom:0.75rem">
+        <label class="input-label">Ubicación <span class="text-error">*</span></label>
+        <input class="form-input" formControlName="location" placeholder="Ej: Almacén San Miguel, Lima" />
+        @if (advanceForm.get('location')?.invalid && advanceForm.get('location')?.touched) {
+          <span class="input-error-message">La ubicación es requerida</span>
+        }
+      </div>
+
+      <div>
+        <label class="input-label">Descripción <span class="text-error">*</span></label>
+        <input class="form-input" formControlName="description" placeholder="Ej: Envío recogido por el transportista" />
+        @if (advanceForm.get('description')?.invalid && advanceForm.get('description')?.touched) {
+          <span class="input-error-message">La descripción es requerida</span>
+        }
+      </div>
+    </form>
+  }
+
+  <div slot="footer">
+    <app-button icon="x" label="Cancelar" variant="secondary" (click)="closeAdvance()" />
+    <app-button icon="check" label="Avanzar estado" variant="primary"
+      [loading]="advancing()" [disabled]="advanceForm.invalid" (click)="submitAdvance()" />
+  </div>
+</app-drawer>
+
 <!-- Drawer: Confirmar entrega (POD + GPS) -->
 <app-drawer
   [isOpen]="showConfirm()"

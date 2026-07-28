@@ -76,6 +76,12 @@ export interface Lot {
     fechaCreacion: string;
 }
 
+/**
+ * Payload de POST y PUT de lotes (`CreateLotRequest` del backend).
+ * - `cantidadInicial` solo se persiste al crear: es la línea base del kardex del lote
+ *   (`consumido = cantidadInicial - cantidadActual`); el PUT la ignora a propósito.
+ * - `activo` solo lo interpreta el PUT — permite REACTIVAR un lote dado de baja lógica.
+ */
 export interface CreateLotRequest {
     productoId: string;
     sku: string;
@@ -85,6 +91,7 @@ export interface CreateLotRequest {
     cantidadInicial: number;
     proveedorNombre?: string;
     notas?: string;
+    activo?: boolean;
 }
 
 export interface LotExpirationAlert {

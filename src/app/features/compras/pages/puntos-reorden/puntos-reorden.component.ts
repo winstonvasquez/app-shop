@@ -5,6 +5,9 @@ import { EvaluacionService } from '../../services/evaluacion.service';
 import { ProveedorService, ProveedorFiltroOption } from '../../services/proveedor.service';
 import { PuntoReorden } from '../../models/evaluacion.model';
 import { proveedorSelectSource } from '../../components/select-sources';
+import { ProductLookupComponent } from '../../../inventory/components/product-lookup/product-lookup.component';
+import { ProductResponse } from '@core/models/product.model';
+import { productIdToUuid } from '../../../inventory/utils/synthetic-uuid.util';
 import {
     DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent,
     PaginationEvent, DateRangeFilterConfig, DateRangeChangeEvent, SortEvent
@@ -12,12 +15,13 @@ import {
 import { signalFilter, staticFilter, ACTIVO_OPTIONS } from '@shared/ui/tables/data-table/filter-helpers';
 import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 import { PAGINATION } from '@shared/constants/app.constants';
+import { bloquearSiempre } from '@shared/utils/form-lock';
 
 
 @Component({
     selector: 'app-puntos-reorden',
     standalone: true,
-    imports: [ReactiveFormsModule, ButtonComponent, ServerSearchSelectComponent, DataTableComponent],
+    imports: [ReactiveFormsModule, ButtonComponent, ServerSearchSelectComponent, ProductLookupComponent, DataTableComponent],
     templateUrl: './puntos-reorden.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -33,6 +37,8 @@ export class PuntosReordenComponent implements OnInit {
     loading = signal(false);
     showForm = signal(false);
     saving = signal(false);
+    /** Controla el mini-panel de búsqueda de producto del drawer de alta. */
+    lookupOpen = signal(false);
 
     // Drawers de edición inline (el data-table solo soporta botones de acción, no forms embebidos por fila)
     selectedItem = signal<PuntoReorden | null>(null);
@@ -63,7 +69,7 @@ export class PuntosReordenComponent implements OnInit {
     sortDirection = signal<'asc' | 'desc'>('asc');
 
     filters: FilterConfig[] = [
-        signalFilter('proveedorId', 'Todos los proveedores', this.proveedoresFiltro,
+        signalFilter('proveedorId', 'Proveedor', this.proveedoresFiltro,
             p => ({ value: p.id, label: p.razonSocial })),
         staticFilter('activo', 'Estado', ACTIVO_OPTIONS, { value: 'true' }),
         // Derivado en backend comparando stockActual vs puntoReorden/stockMinimo (no es columna de catálogo).
@@ -113,15 +119,33 @@ export class PuntosReordenComponent implements OnInit {
         cantidadSugerida: [20, [Validators.required, Validators.min(1)]],
     });
 
+    /**
+     * SKU, producto y proveedor NO se pueden reapuntar tras el primer guardado (romperían el
+     * histórico de reposición), pero tampoco se ocultan: viajan en el form BLOQUEADOS SIEMPRE
+     * para que el usuario los lea sin salir del drawer. Ver `@shared/utils/form-lock`.
+     */
     stockForm: FormGroup = this.fb.group({
+        sku: [''],
+        productoNombre: [''],
+        proveedorNombre: [''],
         nuevoStock: [0, [Validators.required, Validators.min(0)]],
     });
 
     configForm: FormGroup = this.fb.group({
+        sku: [''],
+        productoNombre: [''],
+        /** A diferencia de sku/productoNombre (identidad, bloqueados), el proveedor preferido
+         * SÍ se puede reapuntar aquí — por eso es un select editable, no un campo bloqueado. */
+        proveedorId: [''],
         stockMinimo: [0, [Validators.required, Validators.min(0)]],
         puntoReorden: [0, [Validators.required, Validators.min(0)]],
         cantidadSugerida: [0, [Validators.required, Validators.min(1)]],
+        /** Único canal para REACTIVAR un punto de reorden dado de baja (antes solo había DELETE). */
+        activo: [true],
     });
+
+    /** Campos de identidad del punto de reorden: solo lectura en ambos drawers de edición. */
+    private static readonly IDENTIDAD_BLOQUEADA = ['sku', 'productoNombre', 'proveedorNombre'];
 
     ngOnInit(): void {
         this.cargar();
@@ -216,14 +240,22 @@ export class PuntosReordenComponent implements OnInit {
 
     iniciarEditStock(item: PuntoReorden): void {
         this.selectedItem.set(item);
-        this.stockForm.setValue({ nuevoStock: item.stockActual });
+        this.stockForm.setValue({
+            sku: item.sku,
+            productoNombre: item.productoNombre,
+            proveedorNombre: item.proveedorNombre ?? '—',
+            nuevoStock: item.stockActual,
+        });
+        bloquearSiempre(this.stockForm, PuntosReordenComponent.IDENTIDAD_BLOQUEADA);
         this.showStockDrawer.set(true);
     }
 
     guardarStock(): void {
         const item = this.selectedItem();
         if (!item || this.stockForm.invalid) return;
-        this.service.actualizarStock(item.id, this.stockForm.value.nuevoStock).subscribe({
+        // getRawValue(): los campos bloqueados no aparecen en `.value`.
+        const { nuevoStock } = this.stockForm.getRawValue();
+        this.service.actualizarStock(item.id, nuevoStock).subscribe({
             next: () => {
                 this.showStockDrawer.set(false);
                 this.selectedItem.set(null);
@@ -235,17 +267,29 @@ export class PuntosReordenComponent implements OnInit {
     iniciarEditConfig(item: PuntoReorden): void {
         this.selectedItem.set(item);
         this.configForm.setValue({
+            sku: item.sku,
+            productoNombre: item.productoNombre,
+            proveedorId: item.proveedorId ?? '',
             stockMinimo: item.stockMinimo,
             puntoReorden: item.puntoReorden,
             cantidadSugerida: item.cantidadSugerida,
+            activo: item.activo,
         });
+        bloquearSiempre(this.configForm, PuntosReordenComponent.IDENTIDAD_BLOQUEADA);
         this.showConfigDrawer.set(true);
     }
 
     guardarConfig(): void {
         const item = this.selectedItem();
         if (!item || this.configForm.invalid) return;
-        this.service.actualizarConfiguracion(item.id, this.configForm.value).subscribe({
+        // getRawValue(): los campos bloqueados no aparecen en `.value`; el endpoint solo
+        // acepta la configuración de stock más el proveedor preferido y `activo` (reactivación).
+        const { stockMinimo, puntoReorden, cantidadSugerida, proveedorId, activo } = this.configForm.getRawValue();
+        this.service.actualizarConfiguracion(item.id, {
+            stockMinimo, puntoReorden, cantidadSugerida,
+            proveedorId: proveedorId || undefined,
+            activo,
+        }).subscribe({
             next: () => {
                 this.showConfigDrawer.set(false);
                 this.selectedItem.set(null);
@@ -269,11 +313,21 @@ export class PuntosReordenComponent implements OnInit {
             next: () => {
                 this.form.reset({ stockMinimo: 5, puntoReorden: 10, cantidadSugerida: 20 });
                 this.showForm.set(false);
+                this.lookupOpen.set(false);
                 this.saving.set(false);
                 this.currentPage.set(0);
                 this.cargar();
             },
             error: () => this.saving.set(false),
         });
+    }
+
+    /** Aplica el producto elegido en `<app-product-lookup>` al alta (deja el SKU para tecleo manual: ProductResponse no lo trae). */
+    onProductoSeleccionado(product: ProductResponse): void {
+        this.form.patchValue({
+            productoId: productIdToUuid(product.id),
+            productoNombre: product.nombre,
+        });
+        this.lookupOpen.set(false);
     }
 }

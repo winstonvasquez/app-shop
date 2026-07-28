@@ -56,12 +56,12 @@ export class KardexViewComponent {
 
     // Filtros select del toolbar: almacén dinámico (BD), tipo de movimiento y tipo de referencia.
     readonly filters: FilterConfig[] = [
-        { field: 'warehouseId', label: 'Todos los almacenes', options: toObservable(this.warehouses).pipe(
+        { field: 'warehouseId', label: 'Almacén', options: toObservable(this.warehouses).pipe(
             map(list => list.map(w => ({ value: w.id, label: `${w.code} — ${w.name}` }))) ) },
-        { field: 'movementType', label: 'Todos los tipos',
+        { field: 'movementType', label: 'Tipo',
           options: toObservable(this.catalog.options('TIPO_MOVIMIENTO_INVENTARIO'))
             .pipe(map(o => o.map(x => ({ value: x.codigo, label: x.valor })))) },
-        { field: 'referenceType', label: 'Todas las referencias',
+        { field: 'referenceType', label: 'Referencia',
           options: toObservable(this.catalog.options('TIPO_REFERENCIA_MOVIMIENTO'))
             .pipe(map(o => o.map(x => ({ value: x.codigo, label: x.valor })))) }
     ];

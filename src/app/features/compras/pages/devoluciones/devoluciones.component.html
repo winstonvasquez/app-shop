@@ -39,12 +39,21 @@
         @if (submitError()) { <app-alert type="error" [message]="submitError()!" /> }
 
         <div class="mb-4">
-            <label class="input-label">ID Orden de Compra *</label>
-            <input class="form-input" formControlName="ordenCompraId" placeholder="UUID de la OC" />
+            <label class="input-label">Orden de Compra *</label>
+            <app-server-search-select [dataSource]="ordenCompraSource" formControlName="ordenCompraId"
+                placeholder="Buscar OC por código o proveedor…" />
         </div>
         <div class="mb-4">
-            <label class="input-label">ID Recepción (opcional)</label>
-            <input class="form-input" formControlName="recepcionId" placeholder="UUID de la recepción" />
+            <label class="input-label">Recepción (opcional)</label>
+            <select class="form-input" formControlName="recepcionId">
+                <option value="">— Sin recepción vinculada —</option>
+                @for (rec of recepcionesOrdenSeleccionada(); track rec.id) {
+                    <option [value]="rec.id">REC-{{ (rec.id ?? '').slice(0, 8).toUpperCase() }}{{ rec.numeroGuia ? ' — ' + rec.numeroGuia : '' }}</option>
+                }
+            </select>
+            @if (loadingDatosOrden()) {
+                <p class="text-xs text-muted mt-1">Cargando datos de la OC...</p>
+            }
         </div>
         <div class="grid grid-cols-2 gap-4 mb-4">
             <div>
@@ -80,7 +89,13 @@
                             <div class="col-span-2">
                                 <input class="form-input" formControlName="productoNombre" placeholder="Nombre del producto *" />
                             </div>
-                            <input class="form-input" formControlName="ordenItemId" placeholder="ID Ítem OC" />
+                            <select class="form-input" formControlName="ordenItemId"
+                                (change)="onOrdenItemSeleccionado($index, $any($event.target).value)">
+                                <option value="">— Ítem no vinculado a OC —</option>
+                                @for (it of itemsOrdenSeleccionada(); track it.id) {
+                                    <option [value]="it.id">{{ it.productoNombre }}{{ it.sku ? ' (' + it.sku + ')' : '' }}</option>
+                                }
+                            </select>
                             <input class="form-input" formControlName="sku" placeholder="SKU" />
                             <input type="number" class="form-input" formControlName="cantidad" placeholder="Cantidad" min="1" />
                             <input class="form-input" formControlName="motivoItem" placeholder="Motivo específico" />

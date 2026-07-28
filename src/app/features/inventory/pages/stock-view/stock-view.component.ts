@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { InventoryApiService, StockFiltros } from '../../services/inventory-api.service';
 import { ProductsApiService } from '@features/products/services/products-api.service';
-import { InventoryStock, Location, Warehouse } from '../../models/inventory.models';
+import { InventoryStock, Warehouse } from '../../models/inventory.models';
 import { DataTableComponent, TableColumn, TableAction, PaginationEvent, FilterConfig, FilterChangeEvent, DateRangeFilterConfig, DateRangeChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { signalFilter, staticFilter } from '@shared/ui/tables/data-table/filter-helpers';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
@@ -35,8 +35,6 @@ export class StockViewComponent {
     private readonly productNames = signal<Map<number, string>>(new Map());
 
     warehouses = signal<Warehouse[]>([]);
-    /** Ubicaciones del almacén elegido en el filtro (se recargan al cambiar `filterWarehouseId`). */
-    locationsFiltro = signal<Location[]>([]);
 
     stock = signal<InventoryStock[]>([]);
     loading = signal(false);
@@ -44,7 +42,6 @@ export class StockViewComponent {
 
     // Filtros (TODOS server-side — la vista nunca filtra la página cargada)
     filterWarehouseId = signal<number | undefined>(undefined);
-    filterLocationId = signal<number | undefined>(undefined);
     filterEstadoStock = signal<string>('');
     filterUpdatedAtDesde = signal<string | null>(null);
     filterUpdatedAtHasta = signal<string | null>(null);
@@ -55,16 +52,16 @@ export class StockViewComponent {
     totalPages = signal(0);
 
     // Filtros select del toolbar.
+    // NOTA: sin filtro de Ubicación a propósito — ver comentario sobre `locationName`
+    // en `columns` más abajo (el modelo de stock agregado no soporta una ubicación única).
     filters: FilterConfig[] = [
-        signalFilter('warehouseId', 'Todos los almacenes', this.warehouses,
+        signalFilter('warehouseId', 'Almacén', this.warehouses,
             w => ({ value: w.id, label: `${w.code} — ${w.name}` })),
         staticFilter('estadoStock', 'Estado de stock', [
             { value: 'BAJO_MINIMO', label: 'Bajo mínimo' },
             { value: 'REORDEN', label: 'Requiere reorden' },
             { value: 'NORMAL', label: 'Normal' }
-        ]),
-        signalFilter('locationId', 'Todas las ubicaciones', this.locationsFiltro,
-            l => ({ value: l.id, label: l.name ? `${l.code} — ${l.name}` : l.code }))
+        ])
     ];
 
     /** Rango de fecha de última actualización de stock para el toolbar del data-table. */
@@ -88,7 +85,6 @@ export class StockViewComponent {
         filename: 'stock',
         params: () => ({
             warehouseId: this.filterWarehouseId(),
-            locationId: this.filterLocationId(),
             estadoStock: this.filterEstadoStock() || undefined,
             updatedAtDesde: this.filterUpdatedAtDesde() ?? undefined,
             updatedAtHasta: this.filterUpdatedAtHasta() ?? undefined
@@ -100,8 +96,12 @@ export class StockViewComponent {
           render: (r) => this.productNames().get(r.productId) ?? `Producto #${r.productId}` },
         { key: 'warehouseName',     label: 'Almacén',
           render: (r) => r.warehouseName ?? String(r.warehouseId) },
-        { key: 'locationName',      label: 'Ubicación',
-          render: (r) => r.locationName ?? '—' },
+        // Sin columna "Ubicación": InventoryStockEntity es una fila AGREGADA por
+        // (tenant, almacén, producto) — uk_stock_warehouse_product no incluye location_id,
+        // y PutawaySuggestionService/locationsHoldingProduct asumen que un mismo producto
+        // puede repartirse en VARIAS ubicaciones del mismo almacén. Mostrar aquí "la"
+        // ubicación de esta fila sería forzar un dato falso (single-valued donde el
+        // dominio es multi-valuado); ver notas del cambio para el detalle.
         { key: 'quantity',          label: 'Stock',        sortable: true, align: 'right',
           render: (r) => r.quantity.toLocaleString('es-PE') },
         { key: 'reservedQuantity',  label: 'Reservado',    align: 'right',
@@ -168,15 +168,6 @@ export class StockViewComponent {
         });
     }
 
-    /** Ubicaciones del almacén elegido, para el select de ubicación del toolbar. */
-    private loadLocationsForWarehouse(warehouseId: number | undefined): void {
-        if (!warehouseId) { this.locationsFiltro.set([]); return; }
-        this.api.getLocationsByWarehouse(warehouseId).subscribe({
-            next: (data) => this.locationsFiltro.set(data),
-            error: () => this.locationsFiltro.set([])
-        });
-    }
-
     /** Carga el stock del backend respetando TODOS los filtros actuales (búsqueda incluida). */
     loadStock(): void {
         this.loading.set(true);
@@ -185,7 +176,6 @@ export class StockViewComponent {
             page: this.currentPage(),
             size: this.pageSize(),
             warehouseId: this.filterWarehouseId(),
-            locationId: this.filterLocationId(),
             estadoStock: this.filterEstadoStock() || undefined,
             updatedAtDesde: this.filterUpdatedAtDesde() ?? undefined,
             updatedAtHasta: this.filterUpdatedAtHasta() ?? undefined
@@ -206,13 +196,8 @@ export class StockViewComponent {
             case 'warehouseId': {
                 const id = event.value != null ? Number(event.value) : undefined;
                 this.filterWarehouseId.set(id);
-                this.filterLocationId.set(undefined);
-                this.loadLocationsForWarehouse(id);
                 break;
             }
-            case 'locationId':
-                this.filterLocationId.set(event.value != null ? Number(event.value) : undefined);
-                break;
             case 'estadoStock':
                 this.filterEstadoStock.set(event.value != null ? String(event.value) : '');
                 break;
@@ -234,11 +219,9 @@ export class StockViewComponent {
     /** "Limpiar filtros": resetea todo y recarga UNA sola vez. */
     onFiltersClear(): void {
         this.filterWarehouseId.set(undefined);
-        this.filterLocationId.set(undefined);
         this.filterEstadoStock.set('');
         this.filterUpdatedAtDesde.set(null);
         this.filterUpdatedAtHasta.set(null);
-        this.locationsFiltro.set([]);
         this.currentPage.set(0);
         this.loadStock();
     }

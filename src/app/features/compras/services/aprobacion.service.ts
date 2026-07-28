@@ -52,9 +52,15 @@ export class AprobacionService {
             { motivo }, { headers });
     }
 
-    getNiveles(): Observable<NivelAprobacion[]> {
+    /** `activo` undefined = sin filtrar (activos + inactivos, necesario para reactivar). */
+    getNiveles(activo?: boolean): Observable<NivelAprobacion[]> {
+        let params = new HttpParams();
+        if (activo !== undefined) {
+            params = params.set('activo', String(activo));
+        }
         return this.http.get<NivelAprobacion[]>(`${this.baseUrl}/config/niveles-aprobacion`, {
             headers: this.getHeaders(),
+            params,
         });
     }
 

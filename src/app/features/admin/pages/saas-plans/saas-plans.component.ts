@@ -5,6 +5,8 @@ import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { SaasPlanAdmin, SaasPlanAdminRequest, SaasPlanAdminService } from '@features/admin/services/saas-plan-admin.service';
 import { PortalService } from '@features/portal/services/portal.service';
 import { SaasModuleInfo } from '@core/models/saas.model';
+import { bloquearEnEdicion } from '@shared/utils/form-lock';
+import { switchMap, of, Observable } from 'rxjs';
 
 @Component({
     selector: 'app-saas-plans',
@@ -37,8 +39,18 @@ export class SaasPlansComponent implements OnInit {
         priceMonthly: [0, [Validators.required, Validators.min(0)]],
         priceAnnual: [0, [Validators.required, Validators.min(0)]],
         maxUsers: [5, [Validators.required, Validators.min(1)]],
-        moduleCodes: this.fb.control<string[]>([])
+        moduleCodes: this.fb.control<string[]>([]),
+        // Estado del plan: se persiste con los endpoints PATCH activate/deactivate,
+        // no viaja en SaasPlanAdminRequest.
+        isActive: [true]
     });
+
+    /**
+     * `code` es la clave con la que las suscripciones y el registro SaaS referencian al
+     * plan: cambiarla tras el alta deja las empresas apuntando a un plan inexistente.
+     * Se muestra bloqueada en edición, no oculta.
+     */
+    private static readonly CAMPOS_BLOQUEADOS = ['code'] as const;
 
     ngOnInit(): void {
         this.loadPlans();
@@ -66,7 +78,8 @@ export class SaasPlansComponent implements OnInit {
     openCreateModal(): void {
         this.editMode.set(false);
         this.selectedPlanId.set(null);
-        this.planForm.reset({ priceMonthly: 0, priceAnnual: 0, maxUsers: 5, moduleCodes: [] });
+        this.planForm.reset({ priceMonthly: 0, priceAnnual: 0, maxUsers: 5, moduleCodes: [], isActive: true });
+        bloquearEnEdicion(this.planForm, SaasPlansComponent.CAMPOS_BLOQUEADOS, false);
         this.showDrawer.set(true);
         this.submitError.set(null);
     }
@@ -81,8 +94,10 @@ export class SaasPlansComponent implements OnInit {
             priceMonthly: plan.priceMonthly,
             priceAnnual: plan.priceAnnual,
             maxUsers: plan.maxUsers,
-            moduleCodes: [...plan.moduleCodes]
+            moduleCodes: [...plan.moduleCodes],
+            isActive: plan.isActive
         });
+        bloquearEnEdicion(this.planForm, SaasPlansComponent.CAMPOS_BLOQUEADOS, true);
         this.showDrawer.set(true);
         this.submitError.set(null);
     }
@@ -110,7 +125,8 @@ export class SaasPlansComponent implements OnInit {
         this.submitting.set(true);
         this.submitError.set(null);
 
-        const value = this.planForm.value;
+        // getRawValue(): `code` queda deshabilitado en edición y no saldría en form.value.
+        const value = this.planForm.getRawValue();
         const request: SaasPlanAdminRequest = {
             code: value.code!,
             name: value.name!,
@@ -121,11 +137,17 @@ export class SaasPlansComponent implements OnInit {
             moduleCodes: value.moduleCodes ?? []
         };
 
+        const activoDeseado = value.isActive ?? true;
+
         const operation = this.editMode()
             ? this.saasPlanAdminService.update(this.selectedPlanId()!, request)
             : this.saasPlanAdminService.create(request);
 
-        operation.subscribe({
+        // El estado (activo/inactivo) NO viaja en SaasPlanAdminRequest: se persiste con los
+        // endpoints PATCH activate/deactivate justo después de guardar el resto del plan.
+        operation.pipe(
+            switchMap((plan) => this.sincronizarEstado(plan, activoDeseado))
+        ).subscribe({
             next: () => {
                 this.submitting.set(false);
                 this.closeModal();
@@ -136,6 +158,14 @@ export class SaasPlansComponent implements OnInit {
                 this.submitting.set(false);
             }
         });
+    }
+
+    /** Aplica el estado elegido en el drawer si difiere del que devolvió el backend. */
+    private sincronizarEstado(plan: SaasPlanAdmin, activo: boolean): Observable<unknown> {
+        if (!plan || plan.isActive === activo) return of(plan);
+        return activo
+            ? this.saasPlanAdminService.activate(plan.id)
+            : this.saasPlanAdminService.deactivate(plan.id);
     }
 
     toggleActive(plan: SaasPlanAdmin): void {

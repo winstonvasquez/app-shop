@@ -92,10 +92,10 @@ export class AttendanceComponent implements OnInit {
 
     // Filtros select del toolbar. Las opciones salen de erp_parameters / listas dinámicas.
     filters: FilterConfig[] = [
-        catalogFilter(this.catalog, 'TIPO_REGISTRO_ASISTENCIA', 'tipoRegistro', 'Todos los tipos'),
-        signalFilter('employeeId', 'Todos los empleados', this.employees,
+        catalogFilter(this.catalog, 'TIPO_REGISTRO_ASISTENCIA', 'tipoRegistro', 'Tipo'),
+        signalFilter('employeeId', 'Empleado', this.employees,
             e => ({ value: e.id, label: `${e.nombres} ${e.apellidos}` })),
-        signalFilter('departmentId', 'Todos los departamentos', this.departamentosFiltro,
+        signalFilter('departmentId', 'Departamento', this.departamentosFiltro,
             d => ({ value: d.id, label: d.nombre })),
         signalFilter('aprobadoPorId', 'Aprobado por', this.employees,
             e => ({ value: e.id, label: `${e.nombres} ${e.apellidos}` })),

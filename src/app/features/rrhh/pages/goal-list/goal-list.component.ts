@@ -26,6 +26,7 @@ import {
     GOAL_PRIORITY_LABELS,
 } from '../../models/evaluation.model';
 import { PAGINATION } from '@shared/constants/app.constants';
+import { bloquearEnEdicion } from '@shared/utils/form-lock';
 
 @Component({
     selector: 'app-goal-list',
@@ -172,17 +173,23 @@ export class GoalListComponent implements OnInit {
         porcentajeAvance: [0, [Validators.min(0), Validators.max(100)]],
     });
 
+    /**
+     * La meta pertenece a un empleado: reapuntarla descuadra el avance y las
+     * estadísticas ya calculadas → se muestra bloqueada al editar.
+     */
+    private static readonly CAMPOS_BLOQUEADOS = ['employeeId'];
+
     readonly progressControl = new FormControl<number>(0, { nonNullable: true, validators: [Validators.min(0), Validators.max(100)] });
 
     // Filtros select del toolbar. Las opciones salen de erp_parameters / listas dinámicas.
     filters: FilterConfig[] = [
-        catalogFilter(this.catalog, 'ESTADO_META', 'estado', 'Todos los estados'),
-        catalogFilter(this.catalog, 'PRIORIDAD_META', 'prioridad', 'Todas las prioridades'),
-        signalFilter('employeeId', 'Todos los empleados', this.employees,
+        catalogFilter(this.catalog, 'ESTADO_META', 'estado', 'Estado'),
+        catalogFilter(this.catalog, 'PRIORIDAD_META', 'prioridad', 'Prioridad'),
+        signalFilter('employeeId', 'Empleado', this.employees,
             e => ({ value: e.id, label: `${e.nombres} ${e.apellidos}` })),
         signalFilter('asignadoPorId', 'Asignado por', this.employees,
             e => ({ value: e.id, label: `${e.nombres} ${e.apellidos}` })),
-        signalFilter('departmentId', 'Todos los departamentos', this.departamentosFiltro,
+        signalFilter('departmentId', 'Departamento', this.departamentosFiltro,
             d => ({ value: d.id, label: d.nombre })),
     ];
 
@@ -285,6 +292,7 @@ export class GoalListComponent implements OnInit {
 
     openCreate(): void {
         this.goalForm.reset({ prioridad: 'MEDIA', porcentajeAvance: 0 });
+        bloquearEnEdicion(this.goalForm, GoalListComponent.CAMPOS_BLOQUEADOS, false);
         this.editMode.set(false);
         this.selectedId.set(null);
         this.submitError.set(null);
@@ -301,6 +309,7 @@ export class GoalListComponent implements OnInit {
             prioridad: goal.prioridad,
             porcentajeAvance: goal.porcentajeAvance,
         });
+        bloquearEnEdicion(this.goalForm, GoalListComponent.CAMPOS_BLOQUEADOS, true);
         this.editMode.set(true);
         this.selectedId.set(goal.id);
         this.submitError.set(null);
@@ -320,7 +329,8 @@ export class GoalListComponent implements OnInit {
         this.submitting.set(true);
         this.submitError.set(null);
         try {
-            const val = this.goalForm.value;
+            // getRawValue(): 'employeeId' queda bloqueado en edición y no saldría en .value.
+            const val = this.goalForm.getRawValue();
             const request = {
                 employeeId: val.employeeId!,
                 titulo: val.titulo!,

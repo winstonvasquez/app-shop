@@ -58,7 +58,7 @@ export class ReportesClientesComponent implements OnInit {
     // Filtros select del toolbar
     filters: FilterConfig[] = [
         staticFilter('activo', 'Estado', ACTIVO_OPTIONS),
-        signalFilter('rolId', 'Todos los roles', this.roles, r => ({ value: r.id, label: r.nombre })),
+        signalFilter('rolId', 'Rol', this.roles, r => ({ value: r.id, label: r.nombre })),
         catalogFilter(this.catalog, 'TIPO_DOCUMENTO_IDENTIDAD', 'tipoDocumento', 'Tipo de documento')
     ];
 

@@ -54,3 +54,6 @@ capture-*.mjs
 /test-results
 /test-*.js
 
+
+# storageState de Playwright: contiene un JWT REAL de sesion. Nunca versionar.
+/e2e/.auth

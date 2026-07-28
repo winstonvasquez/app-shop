@@ -10,7 +10,8 @@ import {
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '@env/environment';
-import { catchError, of } from 'rxjs';
+import type { PageResponse } from '@core/models/pagination.model';
+import { catchError, map, of } from 'rxjs';
 import { ChatConversacion, ChatMessage } from '@core/services/chat/chat.service';
 
 @Component({
@@ -310,9 +311,18 @@ export class ChatSoporteComponent implements OnInit, OnDestroy {
         }
     }
 
+    /**
+     * `ChatController.listarConversacionesAdmin` devuelve `Page<ChatConversacionResponseDto>`,
+     * no un array: tipar la respuesta como array compilaba y el `@for` de la lista de
+     * conversaciones recibía el objeto Page → `TypeError: newCollection[Symbol.iterator] is
+     * not a function`. Se desempaqueta con `content`.
+     */
     loadConversaciones(): void {
-        this.http.get<ChatConversacion[]>(`${this.adminBase}/conversaciones`)
-            .pipe(catchError(() => of([])))
+        this.http.get<PageResponse<ChatConversacion>>(`${this.adminBase}/conversaciones`)
+            .pipe(
+                map(res => res?.content ?? []),
+                catchError(() => of([] as ChatConversacion[]))
+            )
             .subscribe(convs => {
                 this.conversaciones.set(convs);
                 this.loading.set(false);

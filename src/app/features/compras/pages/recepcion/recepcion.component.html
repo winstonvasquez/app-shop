@@ -3,6 +3,9 @@
         title="Recepción de Mercadería"
         subtitle="Registro y confirmación de recepciones de compras"
         [breadcrumbs]="breadcrumbs">
+        <div actions>
+            <app-button label="Nueva Recepción" icon="plus" variant="primary" (click)="openCreateForm()"></app-button>
+        </div>
     </app-page-header>
 
     @if (error()) {
@@ -10,15 +13,6 @@
     }
 
     <!-- Filtros de texto libre (exact-match en backend, sin catálogo/lista de valores): transportista y responsable -->
-    <div class="filters-bar mb-3" style="gap:.75rem">
-        <input class="form-input" style="max-width:220px" placeholder="Transportista (exacto)…"
-               [value]="filterTransportista()"
-               (input)="onFilterTransportista($any($event.target).value)" />
-        <input class="form-input" style="max-width:220px" placeholder="Responsable (exacto)…"
-               [value]="filterResponsable()"
-               (input)="onFilterResponsable($any($event.target).value)" />
-    </div>
-
     <app-data-table
         [data]="recepciones()"
         [columns]="columns"
@@ -40,6 +34,19 @@
         (dateRangeChange)="onDateRangeChange($event)"
         (filtersClear)="onFiltersClear()"
         (pageChange)="onPaginationChange($event)">
+        <!-- Filtros propios de la vista: coincidencia exacta contra el backend -->
+        <div toolbarExtra class="filter-field">
+            <label class="filter-label" for="rec-flt-transportista">Transportista</label>
+            <input id="rec-flt-transportista" class="form-input" placeholder="Nombre exacto"
+                   [value]="filterTransportista()"
+                   (input)="onFilterTransportista($any($event.target).value)" />
+        </div>
+        <div toolbarExtra class="filter-field">
+            <label class="filter-label" for="rec-flt-responsable">Responsable</label>
+            <input id="rec-flt-responsable" class="form-input" placeholder="Nombre exacto"
+                   [value]="filterResponsable()"
+                   (input)="onFilterResponsable($any($event.target).value)" />
+        </div>
     </app-data-table>
 
     <!-- Drawer: Detalle Recepción -->
@@ -148,6 +155,97 @@
                 label="Cerrar"
                 (click)="closeDetail()">
             </app-button>
+        </div>
+    </app-drawer>
+
+    <!-- Drawer: Nueva Recepción -->
+    <app-drawer
+        [isOpen]="showCreateForm()"
+        title="Nueva Recepción de Mercadería"
+        size="lg"
+        side="right"
+        [hasFooter]="true"
+        (closed)="closeCreateForm()">
+
+        <form [formGroup]="recepcionForm">
+            @if (createError()) {
+                <app-alert type="error" [message]="createError()!" [dismissible]="true" (dismiss)="createError.set(null)"></app-alert>
+            }
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-sm mb-md">
+                <div class="md:col-span-2">
+                    <label class="input-label">Orden de Compra <span class="text-error">*</span></label>
+                    <app-server-search-select [dataSource]="ordenCompraSource" formControlName="ordenCompraId"
+                        placeholder="Buscar OC por código o proveedor…" />
+                </div>
+                <div>
+                    <label class="input-label">N° Guía</label>
+                    <input class="form-input" formControlName="numeroGuia" placeholder="Guía de remisión" />
+                </div>
+                <div>
+                    <label class="input-label">Transportista</label>
+                    <input class="form-input" formControlName="transportista" placeholder="Empresa transportista" />
+                </div>
+                <div>
+                    <label class="input-label">Responsable</label>
+                    <input class="form-input" formControlName="responsable" placeholder="Quién recibe" />
+                </div>
+                <div>
+                    <label class="input-label">Fecha Recepción <span class="text-error">*</span></label>
+                    <app-date-input formControlName="fechaRecepcion" [required]="true"></app-date-input>
+                </div>
+                <div class="md:col-span-2">
+                    <label class="input-label">Almacén Destino <span class="text-error">*</span></label>
+                    <app-server-search-select [dataSource]="almacenSource" formControlName="almacenDestino"
+                        placeholder="Buscar almacén…" />
+                </div>
+            </div>
+
+            <h3 class="text-sm font-bold text-subtle uppercase tracking-wide mb-sm">Ítems a Recibir</h3>
+            @if (loadingOrdenItems()) {
+                <app-loading-spinner size="sm" message="Cargando ítems de la OC..."></app-loading-spinner>
+            } @else if (formItems().length > 0) {
+                <div class="table-erp-container mb-md">
+                    <table class="table-erp">
+                        <thead>
+                            <tr>
+                                <th>Producto</th>
+                                <th class="text-right" style="width:100px">Pedido</th>
+                                <th class="text-right" style="width:120px">Recibido</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (item of formItems(); track item.ordenItemId; let i = $index) {
+                                <tr>
+                                    <td>{{ item.productoNombre }}</td>
+                                    <td class="text-right">{{ item.cantidadPedida }}</td>
+                                    <td>
+                                        <input type="number" class="form-input text-right" min="0"
+                                            [value]="item.cantidadRecibida"
+                                            (input)="updateCantidadRecibida(i, +$any($event.target).value)" />
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            } @else {
+                <p class="text-subtle text-sm mb-md">Seleccione una OC para precargar sus ítems.</p>
+            }
+
+            <div>
+                <label class="input-label">Observaciones</label>
+                <textarea class="form-input" rows="2" placeholder="Notas adicionales..."
+                    formControlName="observaciones"></textarea>
+            </div>
+        </form>
+
+        <div slot="footer">
+            <app-button label="Cancelar" icon="x" variant="secondary" type="button"
+                [disabled]="creating()" (click)="closeCreateForm()"></app-button>
+            <app-button label="Registrar Recepción" icon="save" variant="primary" type="button"
+                [loading]="creating()" [disabled]="creating() || recepcionForm.invalid || formItems().length === 0"
+                (click)="submitCreate()"></app-button>
         </div>
     </app-drawer>
 </div>

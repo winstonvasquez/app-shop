@@ -1,82 +1,107 @@
 <div class="data-table-container">
-    <!-- Toolbar: búsqueda, filtros combo y exportación -->
-    @if (searchable() || filters().length > 0 || dateRangeFilters().length > 0 || exportable()) {
+    <!--
+        Toolbar en dos zonas: arriba la búsqueda y las acciones de la tabla;
+        debajo, la rejilla de filtros con cada control etiquetado. Las etiquetas
+        son obligatorias: sin ellas dos rangos de fecha seguidos son
+        indistinguibles y un select con valor elegido pierde su nombre.
+    -->
+    @if (searchable() || hasFilterControls() || exportable()) {
         <div class="table-toolbar">
-            @if (searchable()) {
-                <div class="table-search">
-                    <div class="search-box">
-                        <svg class="search-box-icon" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                        </svg>
-                        <input
-                            type="text"
-                            [placeholder]="searchPlaceholder()"
-                            [value]="searchTerm()"
-                            (input)="onSearchInput($event)"
-                            (keyup.enter)="onSearchSubmit()" />
-                        @if (searchTerm()) {
-                            <button type="button" class="search-clear" aria-label="Limpiar búsqueda"
-                                (click)="onSearchClear()">
-                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                            </button>
-                        }
+            <div class="toolbar-primary">
+                @if (searchable()) {
+                    <div class="toolbar-search">
+                        <div class="search-box">
+                            <svg class="search-box-icon" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                            <input
+                                type="text"
+                                [placeholder]="searchPlaceholder()"
+                                [attr.aria-label]="searchPlaceholder()"
+                                [value]="searchTerm()"
+                                (input)="onSearchInput($event)"
+                                (keyup.enter)="onSearchSubmit()" />
+                            @if (searchTerm()) {
+                                <button type="button" class="search-clear" aria-label="Limpiar búsqueda"
+                                    (click)="onSearchClear()">
+                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            }
+                        </div>
+                        <app-button label="Buscar" icon="search" variant="primary" size="sm" (click)="onSearchSubmit()" />
                     </div>
+                }
+
+                <div class="toolbar-actions">
+                    <!-- Limpiar: solo con filtros activos; emite UN evento (no N requests) -->
+                    @if (activeFilterCount() > 0) {
+                        <button type="button" class="table-filters-clear" (click)="onClearFilters()">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                            Limpiar
+                            <span class="table-filters-count">{{ activeFilterCount() }}</span>
+                        </button>
+                    }
+                    @if (exportable()) {
+                        <div class="table-export-buttons">
+                            <app-button label="CSV" icon="download" variant="secondary" size="sm" (click)="onExportCsv()" />
+                            <app-button label="XLSX" icon="file-text" variant="secondary" size="sm" (click)="onExportExcel()" />
+                        </div>
+                    }
                 </div>
-            }
-            @for (filter of filters(); track filter.field) {
-                <div class="table-filter">
-                    <select class="input-field"
-                        [value]="getFilterValue(filter)"
-                        [attr.aria-label]="filter.label"
-                        [class.is-active]="getFilterValue(filter) !== ''"
-                        (change)="onFilterChange(filter.field, $event)">
-                        <option value="">{{ filter.label }}</option>
-                        @for (opt of filter.options | async; track opt.value) {
-                            <option [value]="opt.value">{{ opt.label }}</option>
-                        }
-                    </select>
-                </div>
-            }
-            @for (dr of dateRangeFilters(); track dr.field) {
-                <div class="table-daterange">
-                    <app-date-input
-                        [label]="dr.label + ' desde'"
-                        [ngModel]="getDateRangeFrom(dr.field)"
-                        (ngModelChange)="onDateRangeFromChange(dr.field, $event)"
-                        [maxDate]="getDateRangeTo(dr.field)" />
-                    <span class="table-daterange-sep">–</span>
-                    <app-date-input
-                        [label]="dr.label + ' hasta'"
-                        [ngModel]="getDateRangeTo(dr.field)"
-                        (ngModelChange)="onDateRangeToChange(dr.field, $event)"
-                        [minDate]="getDateRangeFrom(dr.field)" />
-                </div>
-            }
-            <!-- Slot para filtros custom (date-inputs, radios, etc.) alineados en el toolbar -->
-            <div class="table-toolbar-extra">
-                <ng-content select="[toolbarExtra]"></ng-content>
             </div>
-            <!-- El botón Buscar SIEMPRE al final de los filtros -->
-            @if (searchable()) {
-                <app-button label="Buscar" icon="search" variant="primary" size="sm" (click)="onSearchSubmit()" />
-            }
-            <!-- Limpiar: solo visible con filtros activos; emite UN evento (no N requests) -->
-            @if (activeFilterCount() > 0) {
-                <button type="button" class="table-filters-clear" (click)="onClearFilters()">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                    Limpiar
-                    <span class="table-filters-count">{{ activeFilterCount() }}</span>
-                </button>
-            }
-            @if (exportable()) {
-                <div class="table-export-buttons">
-                    <app-button label="CSV" icon="download" variant="secondary" size="sm" (click)="onExportCsv()" />
-                    <app-button label="XLSX" icon="file-text" variant="secondary" size="sm" (click)="onExportExcel()" />
+
+            @if (hasFilterControls()) {
+                <!-- Orden fijo en todo el ERP: selects, filtros propios de la vista, rangos de fecha -->
+                <div class="toolbar-filters">
+                    @for (filter of filters(); track filter.field) {
+                        <div class="filter-field" [class.is-active]="getFilterValue(filter) !== ''">
+                            <label class="filter-label" [attr.for]="controlId(filter.field)">{{ filterLabel(filter) }}</label>
+                            <select class="input-field"
+                                [id]="controlId(filter.field)"
+                                [value]="getFilterValue(filter)"
+                                [class.is-active]="getFilterValue(filter) !== ''"
+                                (change)="onFilterChange(filter.field, $event)">
+                                <option value="">{{ emptyOptionLabel(filter) }}</option>
+                                @for (opt of filter.options | async; track opt.value) {
+                                    <option [value]="opt.value">{{ opt.label }}</option>
+                                }
+                            </select>
+                        </div>
+                    }
+
+                    <!--
+                        Slot para filtros propios de la vista (lookups, toggles,
+                        selects especiales). `display: contents` deja que cada
+                        control proyectado sea una celda más de la rejilla.
+                    -->
+                    <div class="toolbar-filters-slot">
+                        <ng-content select="[toolbarExtra]"></ng-content>
+                    </div>
+
+                    @for (dr of dateRangeFilters(); track dr.field) {
+                        <div class="filter-field filter-field--range"
+                            [class.is-active]="getDateRangeFrom(dr.field) !== '' || getDateRangeTo(dr.field) !== ''">
+                            <span class="filter-label">{{ dr.label }}</span>
+                            <div class="filter-range">
+                                <app-date-input
+                                    [ariaLabel]="dr.label + ' — desde'"
+                                    [ngModel]="getDateRangeFrom(dr.field)"
+                                    (ngModelChange)="onDateRangeFromChange(dr.field, $event)"
+                                    [maxDate]="getDateRangeTo(dr.field)" />
+                                <span class="filter-range-sep" aria-hidden="true">→</span>
+                                <app-date-input
+                                    [ariaLabel]="dr.label + ' — hasta'"
+                                    [ngModel]="getDateRangeTo(dr.field)"
+                                    (ngModelChange)="onDateRangeToChange(dr.field, $event)"
+                                    [minDate]="getDateRangeFrom(dr.field)" />
+                            </div>
+                        </div>
+                    }
                 </div>
             }
         </div>

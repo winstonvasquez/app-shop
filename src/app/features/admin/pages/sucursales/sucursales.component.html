@@ -44,11 +44,27 @@
                 <label>
                     Serie Boleta
                     <input type="text" formControlName="serieBoleta" maxlength="4" placeholder="B001">
+                    @if (editingId()) {
+                        <small class="form-hint">Correlativo SUNAT: no editable tras el primer comprobante</small>
+                    }
                 </label>
                 <label>
                     Serie Factura
                     <input type="text" formControlName="serieFactura" maxlength="4" placeholder="F001">
+                    @if (editingId()) {
+                        <small class="form-hint">Correlativo SUNAT: no editable tras el primer comprobante</small>
+                    }
                 </label>
+                <!-- Estado: baja lógica reversible (permite reactivar una sucursal desactivada) -->
+                <div class="full checkbox-field">
+                    <label class="checkbox-label">
+                        <input type="checkbox" formControlName="activo">
+                        <span>Sucursal activa</span>
+                    </label>
+                    <small class="form-hint">
+                        Al desmarcarla la sucursal queda inactiva; vuelve a marcarla para reactivarla.
+                    </small>
+                </div>
             </div>
 
             <div class="actions">

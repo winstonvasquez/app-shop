@@ -52,11 +52,20 @@
       </div>
       <div class="mb-4">
         <label class="input-label">Nombre del Producto *</label>
-        <input class="form-input" formControlName="productoNombre" />
+        <div style="display:flex;gap:4px;align-items:center">
+          <input class="form-input" formControlName="productoNombre" placeholder="Nombre del producto" />
+          <button type="button" class="btn btn-secondary" title="Buscar producto"
+              style="padding:4px 8px;font-size:0.75rem" (click)="lookupOpen.set(!lookupOpen())">🔍</button>
+        </div>
       </div>
+      @if (lookupOpen()) {
+        <div class="mb-4">
+          <app-product-lookup placeholder="Buscar producto por nombre o SKU" (selected)="onProductoSeleccionado($event)" />
+        </div>
+      }
       <div class="mb-4">
-        <label class="input-label">ID Producto *</label>
-        <input class="form-input" formControlName="productoId" placeholder="UUID del producto" />
+        <label class="input-label">ID Producto (autogenerado)</label>
+        <input class="form-input" formControlName="productoId" readonly placeholder="Selecciona un producto arriba" />
       </div>
       <div class="mb-4">
         <label class="input-label">Proveedor Preferido</label>
@@ -78,7 +87,7 @@
       </div>
       <div class="flex gap-3 mt-6">
         <app-button [label]="saving() ? 'Guardando...' : 'Crear'" icon="save" variant="primary" type="submit" [disabled]="form.invalid" [loading]="saving()" class="flex-1" />
-        <app-button label="Cancelar" icon="x" variant="secondary" type="button" (click)="showForm.set(false)" />
+        <app-button label="Cancelar" icon="x" variant="secondary" type="button" (click)="showForm.set(false); lookupOpen.set(false)" />
       </div>
     </form>
   </div>
@@ -93,6 +102,21 @@
   </div>
   <div class="drawer-body">
     <form [formGroup]="stockForm" (ngSubmit)="guardarStock()">
+      <!-- Identidad del punto de reorden: se muestra bloqueada, no se omite -->
+      <div class="grid grid-cols-2 gap-3 mb-4">
+        <div>
+          <label class="input-label">SKU</label>
+          <input class="form-input" formControlName="sku" />
+        </div>
+        <div>
+          <label class="input-label">Producto</label>
+          <input class="form-input" formControlName="productoNombre" />
+        </div>
+      </div>
+      <div class="mb-4">
+        <label class="input-label">Proveedor Preferido</label>
+        <input class="form-input" formControlName="proveedorNombre" />
+      </div>
       <div class="mb-4">
         <label class="input-label">Nuevo Stock Actual *</label>
         <input type="number" class="form-input" formControlName="nuevoStock" min="0" />
@@ -114,6 +138,21 @@
   </div>
   <div class="drawer-body">
     <form [formGroup]="configForm" (ngSubmit)="guardarConfig()">
+      <!-- Identidad del punto de reorden: se muestra bloqueada, no se omite -->
+      <div class="grid grid-cols-2 gap-3 mb-4">
+        <div>
+          <label class="input-label">SKU</label>
+          <input class="form-input" formControlName="sku" />
+        </div>
+        <div>
+          <label class="input-label">Producto</label>
+          <input class="form-input" formControlName="productoNombre" />
+        </div>
+      </div>
+      <div class="mb-4">
+        <label class="input-label">Proveedor Preferido</label>
+        <app-server-search-select [dataSource]="proveedorSource" formControlName="proveedorId" placeholder="Buscar proveedor por nombre o RUC…" />
+      </div>
       <div class="mb-4">
         <label class="input-label">Stock Mínimo *</label>
         <input type="number" class="form-input" formControlName="stockMinimo" min="0" />
@@ -125,6 +164,10 @@
       <div class="mb-4">
         <label class="input-label">Cantidad Sugerida *</label>
         <input type="number" class="form-input" formControlName="cantidadSugerida" min="1" />
+      </div>
+      <div class="mb-4 flex items-center gap-2">
+        <input type="checkbox" id="config-activo" formControlName="activo" />
+        <label for="config-activo" class="input-label mb-0">Activo</label>
       </div>
       <div class="flex gap-3 mt-6">
         <app-button label="Guardar" icon="save" variant="primary" type="submit" [disabled]="configForm.invalid" class="flex-1" />

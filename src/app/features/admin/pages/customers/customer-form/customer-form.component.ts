@@ -14,6 +14,7 @@ import {
     CustomerResponse,
     CustomerRequest,
 } from '@features/admin/models/customer.model';
+import { bloquearEnEdicion, bloquearSiempre } from '@shared/utils/form-lock';
 
 @Component({
     selector: 'app-customer-form',
@@ -52,12 +53,27 @@ export class CustomerFormComponent {
         celular: ['', Validators.maxLength(20)],
         condicionPago: ['CONTADO'],
         limiteCredito: [0, [Validators.min(0)]],
+        // Calculado por el backend (deuda vigente del cliente): se muestra, nunca se envía.
+        saldoCredito: [0],
         notas: [''],
+        // Baja lógica reversible: permite reactivar un cliente dado de baja desde el propio drawer.
+        activo: [true],
     });
 
     isJuridica = signal(false);
 
+    /**
+     * Identidad tributaria del cliente: cambiarla tras el primer guardado desalinea los
+     * comprobantes ya emitidos a ese documento. Se muestra bloqueada, no oculta.
+     */
+    private static readonly CAMPOS_BLOQUEADOS = ['tipoDocumento', 'numeroDocumento'] as const;
+
+    /** Campos calculados por el backend: nunca editables (ni al crear ni al editar). */
+    private static readonly CAMPOS_CALCULADOS = ['saldoCredito'] as const;
+
     constructor() {
+        // El saldo de crédito lo calcula el backend en TODO momento (alta y edición).
+        bloquearSiempre(this.form, CustomerFormComponent.CAMPOS_CALCULADOS);
         // app-catalog-select no expone (change) nativo del <select>; el control
         // reactivo sigue notificando via valueChanges (reemplaza el (change) previo).
         this.form.get('tipoCliente')!.valueChanges.subscribe((value: string) => {
@@ -80,18 +96,27 @@ export class CustomerFormComponent {
                     celular: c.celular,
                     condicionPago: c.condicionPago,
                     limiteCredito: c.limiteCredito,
+                    saldoCredito: c.saldoCredito,
                     notas: c.notas,
+                    activo: c.activo,
                 });
                 this.isJuridica.set(c.tipoCliente === 'PERSONA_JURIDICA');
+                bloquearEnEdicion(this.form, CustomerFormComponent.CAMPOS_BLOQUEADOS, true);
             } else {
                 this.form.reset({
                     tipoCliente: 'PERSONA_NATURAL',
                     tipoDocumento: 'DNI',
                     condicionPago: 'CONTADO',
                     limiteCredito: 0,
+                    saldoCredito: 0,
+                    activo: true,
                 });
                 this.isJuridica.set(false);
+                bloquearEnEdicion(this.form, CustomerFormComponent.CAMPOS_BLOQUEADOS, false);
             }
+            // bloquearEnEdicion(...,false) rehabilita todo lo listado: el saldo calculado
+            // se vuelve a bloquear siempre, sea alta o edición.
+            bloquearSiempre(this.form, CustomerFormComponent.CAMPOS_CALCULADOS);
             this.submitError.set(null);
         });
     }
@@ -119,7 +144,10 @@ export class CustomerFormComponent {
             return;
         }
 
-        const v = this.form.value;
+        // getRawValue(): tipoDocumento/numeroDocumento quedan deshabilitados en edición y
+        // no saldrían en form.value (se enviarían nulls). `saldoCredito` se omite a
+        // propósito del DTO: lo calcula el backend.
+        const v = this.form.getRawValue();
         const dto: CustomerRequest = {
             companyId,
             tipoCliente: v.tipoCliente,
@@ -135,6 +163,8 @@ export class CustomerFormComponent {
             condicionPago: v.condicionPago || 'CONTADO',
             limiteCredito: v.limiteCredito || 0,
             notas: v.notas || null,
+            // Estado explícito: el backend solo respeta el actual si llega null/ausente.
+            activo: v.activo !== false,
         };
 
         const op = this.customer()

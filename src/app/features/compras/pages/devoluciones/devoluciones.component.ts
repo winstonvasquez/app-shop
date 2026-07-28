@@ -14,11 +14,15 @@ import { toObservable } from '@angular/core/rxjs-interop';
 import { map } from 'rxjs';
 import { DevolucionService } from '../../services/devolucion.service';
 import { CrearDevolucionRequest, Devolucion } from '../../models/devolucion.model';
+import { OrdenCompraService } from '../../services/orden-compra.service';
+import { RecepcionService } from '../../services/recepcion.service';
+import { ordenCompraSelectSource } from '../../components/select-sources';
+import { OrdenCompraItem, Recepcion } from '../../models/orden-compra.model';
 import { PAGINATION } from '@shared/constants/app.constants';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
-import { ButtonComponent, CatalogSelectComponent } from '@shared/components';
+import { ButtonComponent, CatalogSelectComponent, ServerSearchSelectComponent } from '@shared/components';
 import { CatalogService } from '@core/services/catalog.service';
 import {
     DataTableComponent,
@@ -48,15 +52,26 @@ import { environment } from '@env/environment';
         ButtonComponent,
         DataTableComponent,
         CatalogSelectComponent,
+        ServerSearchSelectComponent,
     ],
     templateUrl: './devoluciones.component.html',
 })
 export class DevolucionesComponent implements OnInit {
     private readonly devolucionService = inject(DevolucionService);
     private readonly proveedorService = inject(ProveedorService);
+    private readonly ordenCompraService = inject(OrdenCompraService);
+    private readonly recepcionService = inject(RecepcionService);
     private readonly fb = inject(FormBuilder);
     private readonly cdr = inject(ChangeDetectorRef);
     readonly catalog = inject(CatalogService);
+
+    // Data source para <app-server-search-select> de OC en el drawer de alta
+    readonly ordenCompraSource = ordenCompraSelectSource(this.ordenCompraService);
+    /** Ítems de la OC seleccionada, para resolver `ordenItemId` sin UUIDs a mano. */
+    itemsOrdenSeleccionada = signal<OrdenCompraItem[]>([]);
+    /** Recepciones de la OC seleccionada, para resolver `recepcionId` sin UUIDs a mano. */
+    recepcionesOrdenSeleccionada = signal<Recepcion[]>([]);
+    loadingDatosOrden = signal(false);
 
     devoluciones = signal<Devolucion[]>([]);
     selected = signal<Devolucion | null>(null);
@@ -115,10 +130,10 @@ export class DevolucionesComponent implements OnInit {
 
     // Filtros select del toolbar. Las opciones salen de erp_parameters (fuente única).
     estadoFilters: FilterConfig[] = [
-        catalogFilter(this.catalog, 'ESTADO_DEVOLUCION_COMPRA', 'estado', 'Todos los estados'),
-        catalogFilter(this.catalog, 'TIPO_DEVOLUCION', 'tipo', 'Todos los tipos'),
-        catalogFilter(this.catalog, 'MOTIVO_DEVOLUCION_COMPRA', 'motivo', 'Todos los motivos'),
-        signalFilter('proveedorId', 'Todos los proveedores', this.proveedoresFiltro,
+        catalogFilter(this.catalog, 'ESTADO_DEVOLUCION_COMPRA', 'estado', 'Estado'),
+        catalogFilter(this.catalog, 'TIPO_DEVOLUCION', 'tipo', 'Tipo'),
+        catalogFilter(this.catalog, 'MOTIVO_DEVOLUCION_COMPRA', 'motivo', 'Motivo'),
+        signalFilter('proveedorId', 'Proveedor', this.proveedoresFiltro,
             p => ({ value: p.id, label: p.razonSocial })),
     ];
 
@@ -163,6 +178,91 @@ export class DevolucionesComponent implements OnInit {
     ngOnInit(): void {
         this.loadDevoluciones();
         this.loadProveedoresFiltro();
+        // Arranca deshabilitado: sin OC elegida no hay recepciones que ofrecer.
+        this.devolucionForm.get('recepcionId')!.disable({ emitEvent: false });
+        this.devolucionForm.get('ordenCompraId')!.valueChanges.subscribe((id: string | null) => {
+            this.onOrdenSeleccionada(id);
+        });
+    }
+
+    /**
+     * Al elegir la OC en el selector, precarga sus ítems (para `ordenItemId`) y
+     * sus recepciones (para `recepcionId`) sin que el usuario teclee UUIDs a mano.
+     */
+    private onOrdenSeleccionada(ordenCompraId: string | null): void {
+        // La recepción vinculada depende de la OC elegida: si cambia la OC, se limpia.
+        this.devolucionForm.patchValue({ recepcionId: '' }, { emitEvent: false });
+        this.devolucionForm.get('recepcionId')!.disable({ emitEvent: false });
+        if (!ordenCompraId) {
+            this.itemsOrdenSeleccionada.set([]);
+            this.recepcionesOrdenSeleccionada.set([]);
+            this.syncOrdenItemIdControls();
+            return;
+        }
+        this.loadingDatosOrden.set(true);
+        this.ordenCompraService.getOrdenById(ordenCompraId).subscribe({
+            next: (orden) => {
+                this.itemsOrdenSeleccionada.set(orden.items ?? []);
+                this.syncOrdenItemIdControls();
+                this.cdr.markForCheck();
+            },
+            error: () => {
+                this.itemsOrdenSeleccionada.set([]);
+                this.syncOrdenItemIdControls();
+                this.cdr.markForCheck();
+            }
+        });
+        this.recepcionService.getRecepcionesByOrden(ordenCompraId).subscribe({
+            next: (recepciones) => {
+                this.recepcionesOrdenSeleccionada.set(recepciones ?? []);
+                this.syncRecepcionIdControl();
+                this.loadingDatosOrden.set(false);
+                this.cdr.markForCheck();
+            },
+            error: () => {
+                this.recepcionesOrdenSeleccionada.set([]);
+                this.syncRecepcionIdControl();
+                this.loadingDatosOrden.set(false);
+                this.cdr.markForCheck();
+            }
+        });
+    }
+
+    /**
+     * `[disabled]` sobre `formControlName` NO deshabilita el control (Angular solo
+     * emite un `console.warn`, ver `@angular/forms`) — el enable/disable real de
+     * `recepcionId` se hace aquí, imperativamente, según haya o no recepciones
+     * disponibles para la OC elegida.
+     */
+    private syncRecepcionIdControl(): void {
+        const ctrl = this.devolucionForm.get('recepcionId')!;
+        if (this.recepcionesOrdenSeleccionada().length === 0) {
+            if (ctrl.enabled) ctrl.disable({ emitEvent: false });
+        } else if (ctrl.disabled) {
+            ctrl.enable({ emitEvent: false });
+        }
+    }
+
+    /** Mismo mecanismo que `syncRecepcionIdControl`, pero para `ordenItemId` de cada ítem del array. */
+    private syncOrdenItemIdControls(): void {
+        const disabled = this.itemsOrdenSeleccionada().length === 0;
+        this.itemsArray.controls.forEach((c) => {
+            const ctrl = (c as FormGroup).get('ordenItemId');
+            if (!ctrl) return;
+            if (disabled && ctrl.enabled) ctrl.disable({ emitEvent: false });
+            else if (!disabled && ctrl.disabled) ctrl.enable({ emitEvent: false });
+        });
+    }
+
+    /** Al elegir un ítem de la OC en el ítem `index` del form, precarga producto/SKU. */
+    onOrdenItemSeleccionado(index: number, ordenItemId: string): void {
+        const item = this.itemsOrdenSeleccionada().find(i => i.id === ordenItemId);
+        const group = this.itemsArray.at(index) as FormGroup;
+        group.patchValue({
+            ordenItemId,
+            productoNombre: item?.productoNombre ?? group.value.productoNombre,
+            sku: item?.sku ?? group.value.sku,
+        });
     }
 
     /** Proveedores activos para el select de filtro del toolbar. */
@@ -366,12 +466,15 @@ export class DevolucionesComponent implements OnInit {
     }
 
     private createItemGroup(): FormGroup {
-        return this.fb.group({
+        const group = this.fb.group({
             ordenItemId: [''],
             productoNombre: ['', Validators.required],
             sku: [''],
             cantidad: [1, [Validators.required, Validators.min(1)]],
             motivoItem: [''],
         });
+        // Sin OC elegida (o sin ítems) el selector de ítem-OC arranca deshabilitado.
+        if (this.itemsOrdenSeleccionada().length === 0) group.get('ordenItemId')!.disable({ emitEvent: false });
+        return group;
     }
 }

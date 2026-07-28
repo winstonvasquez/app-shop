@@ -38,13 +38,34 @@ const ALL_NAV_GROUPS: NavGroup[] = [
     ]
   },
   {
+    // Ordenado según el flujo purchase-to-pay: solicitud → aprobación → cotización → orden →
+    // recepción → factura → pago, y al final lo transversal (análisis y configuración).
+    // Hasta 2026-07-28 este grupo sólo exponía 4 de las 21 pantallas del módulo: las otras 17
+    // existían en el router sin ninguna entrada de menú ni enlace, o sea inalcanzables.
     title: 'Compras',
     moduleCode: 'COMPRAS',
     items: [
-      { label: 'Dashboard Compras', route: '/admin/compras/dashboard', icon: 'shopping-cart' },
-      { label: 'Proveedores', route: '/admin/compras/proveedores', icon: 'factory' },
-      { label: 'Órdenes de Compra', route: '/admin/compras/ordenes', icon: 'document' },
-      { label: 'Recepción Mercadería', route: '/admin/compras/recepcion', icon: 'truck' }
+      { label: 'Dashboard Compras',        route: '/admin/compras/dashboard',            icon: 'shopping-cart' },
+      { label: 'Proveedores',              route: '/admin/compras/proveedores',          icon: 'factory' },
+      { label: 'Catálogo de Compras',      route: '/admin/compras/catalogo',             icon: 'list' },
+      { label: 'Solicitudes de Compra',    route: '/admin/compras/solicitudes',          icon: 'clipboard' },
+      { label: 'Mis Solicitudes',          route: '/admin/compras/mis-solicitudes',      icon: 'document' },
+      { label: 'Bandeja de Aprobaciones',  route: '/admin/compras/bandeja-aprobaciones', icon: 'clipboard' },
+      { label: 'Cotizaciones (RFQ)',       route: '/admin/compras/cotizaciones',         icon: 'document-text' },
+      { label: 'Órdenes de Compra',        route: '/admin/compras/ordenes',              icon: 'document' },
+      { label: 'Tablero de Órdenes',       route: '/admin/compras/kanban',               icon: 'layout' },
+      { label: 'Recepción Mercadería',     route: '/admin/compras/recepcion',            icon: 'truck' },
+      { label: 'Facturas de Proveedor',    route: '/admin/compras/facturas-proveedor',   icon: 'document-text' },
+      { label: 'Devoluciones a Proveedor', route: '/admin/compras/devoluciones',         icon: 'return' },
+      { label: 'Contratos',                route: '/admin/compras/contratos',            icon: 'document' },
+      { label: 'Compras Centralizadas',    route: '/admin/compras/consolidaciones',      icon: 'shopping-cart' },
+      { label: 'Puntos de Reorden',        route: '/admin/compras/puntos-reorden',       icon: 'box' },
+      { label: 'Presupuestos de Compras',  route: '/admin/compras/presupuestos',         icon: 'calculator' },
+      { label: 'Evaluación de Proveedores', route: '/admin/compras/evaluaciones',        icon: 'chart-bar' },
+      { label: 'Historial de Precios',     route: '/admin/compras/historial-precios',    icon: 'chart-line' },
+      { label: 'Alertas de Compras',       route: '/admin/compras/alertas',              icon: 'file' },
+      { label: 'Reportes KPI',             route: '/admin/compras/reportes-kpi',         icon: 'chart-bar' },
+      { label: 'Niveles de Aprobación',    route: '/admin/compras/config-aprobaciones',  icon: 'settings' }
     ]
   },
   {
@@ -60,6 +81,11 @@ const ALL_NAV_GROUPS: NavGroup[] = [
       { label: 'Transportistas',       route: '/admin/logistica/transportistas', icon: 'factory' },
       { label: 'SLA Transportistas',   route: '/admin/logistica/transportistas-sla', icon: 'chart-bar' },
       { label: 'Devoluciones',         route: '/admin/logistica/devoluciones',   icon: 'return' },
+      { label: 'Batch Picking',        route: '/admin/logistica/batch-picking',  icon: 'box' },
+      { label: 'Picking Móvil',        route: '/admin/logistica/picking-mobile', icon: 'clipboard' },
+      { label: 'Reservas de Stock',    route: '/admin/logistica/stock-reservations', icon: 'warehouse' },
+      { label: 'KPI Logísticos',       route: '/admin/logistica/kpi',            icon: 'chart-bar' },
+      { label: 'Notificaciones',       route: '/admin/logistica/notificaciones', icon: 'file' },
       { label: 'Mapeo Contable',       route: '/admin/logistica/mapeo-contable', icon: 'calculator' }
     ]
   },
@@ -108,7 +134,18 @@ const ALL_NAV_GROUPS: NavGroup[] = [
       { label: 'Estado de Resultados', route: '/admin/contabilidad/estado-resultados', icon: 'chart-line' },
       { label: 'Registro Ventas',      route: '/admin/contabilidad/ventas',            icon: 'table' },
       { label: 'Registro Compras',     route: '/admin/contabilidad/compras',           icon: 'table' },
-      { label: 'Declaración IGV',      route: '/admin/contabilidad/igv',               icon: 'calculator' }
+      { label: 'Declaración IGV',      route: '/admin/contabilidad/igv',               icon: 'calculator' },
+      // Diez pantallas que existían en el router sin entrada de menú ni enlace (2026-07-28).
+      { label: 'Asientos Recurrentes', route: '/admin/contabilidad/asientos-recurrentes', icon: 'document-text' },
+      { label: 'Reglas de Asiento',    route: '/admin/contabilidad/reglas-asiento',    icon: 'settings' },
+      { label: 'Conciliación Bancaria', route: '/admin/contabilidad/conciliacion',     icon: 'table' },
+      { label: 'Presupuesto Anual',    route: '/admin/contabilidad/presupuesto',       icon: 'calculator' },
+      { label: 'Flujo de Efectivo',    route: '/admin/contabilidad/flujo-efectivo',    icon: 'chart-line' },
+      { label: 'Antigüedad de Saldos', route: '/admin/contabilidad/aging',             icon: 'table' },
+      { label: 'Tipo de Cambio',       route: '/admin/contabilidad/tipo-cambio',       icon: 'credit-card' },
+      { label: 'Cierre Contable',      route: '/admin/contabilidad/cierre',            icon: 'book' },
+      { label: 'Estados Consolidados', route: '/admin/contabilidad/consolidado',       icon: 'chart' },
+      { label: 'Auditoría Contable',   route: '/admin/contabilidad/auditoria',         icon: 'list' }
     ]
   },
   {
@@ -124,6 +161,8 @@ const ALL_NAV_GROUPS: NavGroup[] = [
       { label: 'Vacaciones',      route: '/admin/rrhh/vacations',   icon: 'sun'           },
       { label: 'Nómina',          route: '/admin/rrhh/payroll',     icon: 'document'      },
       { label: 'Evaluaciones',    route: '/admin/rrhh/evaluations', icon: 'chart-bar'     },
+      { label: 'Criterios de Evaluación', route: '/admin/rrhh/evaluations/criteria', icon: 'list' },
+      { label: 'Metas y Objetivos', route: '/admin/rrhh/goals',     icon: 'chart-bar'     },
       { label: 'Capacitaciones',  route: '/admin/rrhh/trainings',   icon: 'book'          },
       { label: 'Analytics',       route: '/admin/rrhh/analytics',   icon: 'chart-line'    },
       { label: 'Portal Empleado', route: '/admin/rrhh/portal',      icon: 'user-group'    }
@@ -134,7 +173,8 @@ const ALL_NAV_GROUPS: NavGroup[] = [
     moduleCode: 'POS',
     items: [
       { label: 'Abrir POS', route: '/pos', icon: 'cash-register' },
-      { label: 'Devoluciones', route: '/pos/devoluciones', icon: 'return' }
+      { label: 'Devoluciones', route: '/pos/devoluciones', icon: 'return' },
+      { label: 'Transacciones POS', route: '/admin/transactions', icon: 'table' }
     ]
   },
   {
@@ -142,7 +182,15 @@ const ALL_NAV_GROUPS: NavGroup[] = [
     moduleCode: null,
     items: [
       { label: 'Lista de Clientes', route: '/admin/customers', icon: 'users' },
+      { label: 'Dashboard Clientes', route: '/admin/customers/dashboard', icon: 'chart' },
       { label: 'Segmentos', route: '/admin/segments', icon: 'user-group' }
+    ]
+  },
+  {
+    title: 'Soporte',
+    moduleCode: null,
+    items: [
+      { label: 'Bandeja de Soporte', route: '/admin/soporte/chat', icon: 'user-group' }
     ]
   },
   {

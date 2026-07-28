@@ -107,13 +107,17 @@ export class ReglasAsientoComponent implements OnInit {
     readonly actions: TableAction<ReglaAsiento>[] = [
         {
             label: 'Editar', icon: 'edit', class: 'btn-view',
-            show: r => r.activo,
             onClick: r => this.abrirEditar(r)
         },
         {
             label: 'Desactivar', icon: 'x', class: 'btn-view',
             show: r => r.activo,
             onClick: r => this.desactivar(r.id)
+        },
+        {
+            label: 'Activar', icon: 'check', class: 'btn-view',
+            show: r => !r.activo,
+            onClick: r => this.activar(r.id)
         },
     ];
 
@@ -274,6 +278,15 @@ export class ReglasAsientoComponent implements OnInit {
             next: () => this.cargar(),
             error: (err: unknown) => {
                 this.error.set(err instanceof HttpErrorResponse ? (err.error?.message ?? err.message) : 'Error al desactivar');
+            },
+        });
+    }
+
+    activar(id: string) {
+        this.service.activar(id).subscribe({
+            next: () => this.cargar(),
+            error: (err: unknown) => {
+                this.error.set(err instanceof HttpErrorResponse ? (err.error?.message ?? err.message) : 'Error al activar');
             },
         });
     }

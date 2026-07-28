@@ -14,9 +14,12 @@ import { toObservable } from '@angular/core/rxjs-interop';
 import { map } from 'rxjs';
 import { FacturaProveedorService } from '../../services/factura-proveedor.service';
 import { ProveedorService, ProveedorFiltroOption, toProveedorOptions } from '../../services/proveedor.service';
+import { OrdenCompraService } from '../../services/orden-compra.service';
+import { ordenCompraSelectSource } from '../../components/select-sources';
+import { OrdenCompraItem } from '../../models/orden-compra.model';
 import { catalogFilter, signalFilter, staticFilter } from '@shared/ui/tables/data-table/filter-helpers';
 import { FacturaProveedor, RegistrarFacturaRequest, CpeParsedInvoice } from '../../models/factura-proveedor.model';
-import { ButtonComponent, CatalogSelectComponent } from '@shared/components';
+import { ButtonComponent, CatalogSelectComponent, ServerSearchSelectComponent } from '@shared/components';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
@@ -49,15 +52,23 @@ import { CatalogService } from '@core/services/catalog.service';
         AlertComponent,
         DataTableComponent,
         CatalogSelectComponent,
+        ServerSearchSelectComponent,
     ],
     templateUrl: './facturas-proveedor.component.html',
 })
 export class FacturasProveedorComponent implements OnInit {
     private readonly facturaService = inject(FacturaProveedorService);
     private readonly proveedorService = inject(ProveedorService);
+    private readonly ordenCompraService = inject(OrdenCompraService);
     private readonly fb = inject(FormBuilder);
     private readonly cdr = inject(ChangeDetectorRef);
     readonly catalog = inject(CatalogService);
+
+    // Data source para <app-server-search-select> de OC en el drawer de alta
+    readonly ordenCompraSource = ordenCompraSelectSource(this.ordenCompraService);
+    /** Ítems de la OC seleccionada, para resolver `ordenItemId` sin UUIDs a mano. */
+    itemsOrdenSeleccionada = signal<OrdenCompraItem[]>([]);
+    loadingItemsOrden = signal(false);
 
     facturas = signal<FacturaProveedor[]>([]);
     selectedFactura = signal<FacturaProveedor | null>(null);
@@ -119,6 +130,14 @@ export class FacturasProveedorComponent implements OnInit {
             render: (row) =>
                 `<span class="${this.getMatchBadge(row.resultadoMatch)}">${this.catalog.label('RESULTADO_MATCH_3VIA', row.resultadoMatch)}</span>`,
         },
+        {
+            key: 'estadoSunat',
+            label: 'Estado SUNAT',
+            html: true,
+            render: (row) => row.estadoSunat
+                ? `<span class="${this.getSunatBadge(row.estadoSunat)}">${this.catalog.label('ESTADO_VALIDACION_SUNAT', row.estadoSunat)}</span>`
+                : '—',
+        },
     ];
 
     actions: TableAction<FacturaProveedor>[] = [
@@ -127,12 +146,12 @@ export class FacturasProveedorComponent implements OnInit {
 
     // Filtros select del toolbar. Las opciones salen de erp_parameters (fuente unica).
     estadoFilters: FilterConfig[] = [
-        catalogFilter(this.catalog, 'ESTADO_FACTURA_PROVEEDOR', 'estado', 'Todos los estados'),
-        catalogFilter(this.catalog, 'TIPO_COMPROBANTE', 'tipoDocumento', 'Todos los tipos'),
+        catalogFilter(this.catalog, 'ESTADO_FACTURA_PROVEEDOR', 'estado', 'Estado'),
+        catalogFilter(this.catalog, 'TIPO_COMPROBANTE', 'tipoDocumento', 'Tipo'),
         catalogFilter(this.catalog, 'RESULTADO_MATCH_3VIA', 'resultadoMatch', 'Match 3 vias'),
         catalogFilter(this.catalog, 'ESTADO_VALIDACION_SUNAT', 'estadoSunat', 'Estado SUNAT'),
         catalogFilter(this.catalog, 'MONEDA', 'moneda', 'Moneda'),
-        signalFilter('proveedorId', 'Todos los proveedores', this.proveedoresFiltro,
+        signalFilter('proveedorId', 'Proveedor', this.proveedoresFiltro,
             p => ({ value: p.id, label: p.razonSocial })),
         staticFilter('conDetraccion', 'Detraccion', [
             { value: 'true', label: 'Con detraccion' },
@@ -197,6 +216,61 @@ export class FacturasProveedorComponent implements OnInit {
     ngOnInit(): void {
         this.loadFacturas();
         this.loadProveedoresFiltro();
+        this.facturaForm.get('ordenCompraId')!.valueChanges.subscribe((id: string | null) => {
+            this.onOrdenSeleccionada(id);
+        });
+    }
+
+    /** Al elegir la OC en el selector, precarga sus ítems para resolver `ordenItemId` sin UUIDs a mano. */
+    private onOrdenSeleccionada(ordenCompraId: string | null): void {
+        if (!ordenCompraId) {
+            this.itemsOrdenSeleccionada.set([]);
+            this.syncOrdenItemIdControls();
+            return;
+        }
+        this.loadingItemsOrden.set(true);
+        this.ordenCompraService.getOrdenById(ordenCompraId).subscribe({
+            next: (orden) => {
+                this.itemsOrdenSeleccionada.set(orden.items ?? []);
+                this.syncOrdenItemIdControls();
+                this.loadingItemsOrden.set(false);
+                this.cdr.markForCheck();
+            },
+            error: () => {
+                this.itemsOrdenSeleccionada.set([]);
+                this.syncOrdenItemIdControls();
+                this.loadingItemsOrden.set(false);
+                this.cdr.markForCheck();
+            }
+        });
+    }
+
+    /**
+     * `[disabled]` sobre `formControlName` NO deshabilita el control (Angular solo
+     * emite un `console.warn`, ver `@angular/forms`) — por eso el enable/disable real
+     * del selector de ítem de OC se hace aquí, imperativamente, cada vez que cambian
+     * los ítems disponibles de la OC elegida.
+     */
+    private syncOrdenItemIdControls(): void {
+        const disabled = this.itemsOrdenSeleccionada().length === 0;
+        this.itemsArray.controls.forEach((c) => {
+            const ctrl = (c as FormGroup).get('ordenItemId');
+            if (!ctrl) return;
+            if (disabled && ctrl.enabled) ctrl.disable({ emitEvent: false });
+            else if (!disabled && ctrl.disabled) ctrl.enable({ emitEvent: false });
+        });
+    }
+
+    /** Al elegir un ítem de la OC en el ítem `index` del form, precarga producto/SKU/precio. */
+    onOrdenItemSeleccionado(index: number, ordenItemId: string): void {
+        const item = this.itemsOrdenSeleccionada().find(i => i.id === ordenItemId);
+        const group = this.itemsArray.at(index) as FormGroup;
+        group.patchValue({
+            ordenItemId,
+            productoNombre: item?.productoNombre ?? group.value.productoNombre,
+            sku: item?.sku ?? group.value.sku,
+            precioUnitario: item?.precioUnitario ?? group.value.precioUnitario,
+        });
     }
 
     /** Proveedores activos para el select de filtro del toolbar. */
@@ -371,6 +445,7 @@ export class FacturasProveedorComponent implements OnInit {
         } else {
             this.itemsArray.push(this.createItemGroup());
         }
+        this.syncOrdenItemIdControls();
     }
 
     /** Normaliza `fechaEmision` (LocalDate ISO o datetime) al formato `yyyy-MM-dd` del `<input type="date">`. */
@@ -494,6 +569,13 @@ export class FacturasProveedorComponent implements OnInit {
             : 'badge badge-error';
     }
 
+    getSunatBadge(estadoSunat: string | undefined): string {
+        if (!estadoSunat) return 'badge badge-neutral';
+        return estadoSunat === 'ACEPTADA' ? 'badge badge-success'
+            : estadoSunat === 'RECHAZADA' ? 'badge badge-error'
+            : 'badge badge-warning';
+    }
+
     validarSunat(id: string): void {
         this.validandoSunatId.set(id);
         this.facturaService.validarSunat(id).subscribe({
@@ -511,12 +593,15 @@ export class FacturasProveedorComponent implements OnInit {
     }
 
     private createItemGroup(): FormGroup {
-        return this.fb.group({
+        const group = this.fb.group({
             ordenItemId: [''],
             productoNombre: ['', Validators.required],
             sku: [''],
             cantidad: [1, [Validators.required, Validators.min(1)]],
             precioUnitario: [0, [Validators.required, Validators.min(0)]],
         });
+        // Sin OC elegida (o sin ítems) el selector de ítem-OC arranca deshabilitado.
+        if (this.itemsOrdenSeleccionada().length === 0) group.get('ordenItemId')!.disable({ emitEvent: false });
+        return group;
     }
 }

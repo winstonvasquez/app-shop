@@ -92,7 +92,7 @@ export class OrdersComponent implements OnInit {
   readonly filters: FilterConfig[] = [
     {
       field: 'estado',
-      label: 'Todos los estados',
+      label: 'Estado',
       options: this.parametros.getEstadosPedido()
     },
     catalogFilter(this.catalog, 'TIPO_CPE', 'cpeTipo', 'Tipo de comprobante'),

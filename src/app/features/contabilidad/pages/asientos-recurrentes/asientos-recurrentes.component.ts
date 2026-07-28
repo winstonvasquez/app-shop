@@ -65,6 +65,7 @@ export class AsientosRecurrentesComponent implements OnInit {
     submitError = signal('');
 
     mostrarForm = signal(false);
+    readonly editandoId = signal<string | null>(null);
 
     readonly frecuenciaLabel = (f: string) => this.catalog.label('FRECUENCIA_RECURRENCIA', f);
 
@@ -147,6 +148,10 @@ export class AsientosRecurrentesComponent implements OnInit {
 
     readonly actions: TableAction<AsientoRecurrente>[] = [
         {
+            label: 'Editar', icon: 'edit', class: 'btn-view',
+            onClick: r => this.abrirEditar(r)
+        },
+        {
             label: 'Ejecutar ahora', icon: 'check', class: 'btn-view',
             show: r => r.active,
             onClick: r => this.ejecutarAhora(r.id)
@@ -155,6 +160,11 @@ export class AsientosRecurrentesComponent implements OnInit {
             label: 'Desactivar', icon: 'x', class: 'btn-view',
             show: r => r.active,
             onClick: r => this.desactivar(r.id)
+        },
+        {
+            label: 'Activar', icon: 'check', class: 'btn-view',
+            show: r => !r.active,
+            onClick: r => this.activar(r.id)
         },
     ];
 
@@ -279,7 +289,36 @@ export class AsientosRecurrentesComponent implements OnInit {
     }
 
     abrirForm(): void {
+        this.editandoId.set(null);
         this.resetForm();
+        this.mostrarForm.set(true);
+    }
+
+    /** Precarga el form con la plantilla existente. nextExecution/lastExecution NO se editan (calculados). */
+    abrirEditar(r: AsientoRecurrente): void {
+        this.editandoId.set(r.id);
+        this.form.reset({
+            nombre: r.name,
+            descripcion: r.description ?? '',
+            frecuencia: r.frequency,
+            diaEjecucion: r.executionDay,
+            fechaInicio: r.startDate,
+            fechaFin: r.endDate ?? '',
+            glosa: r.templateGloss,
+        });
+        while (this.lineasArray.length > 0) {
+            this.lineasArray.removeAt(0);
+        }
+        for (const linea of r.templateLines) {
+            this.lineasArray.push(
+                this.fb.group({
+                    accountCode: [linea.accountCode, Validators.required],
+                    movementType: [linea.movementType, Validators.required],
+                    amount: [linea.amount, [Validators.required, Validators.min(0.01)]],
+                }),
+            );
+        }
+        this.submitError.set('');
         this.mostrarForm.set(true);
     }
 
@@ -329,16 +368,20 @@ export class AsientosRecurrentesComponent implements OnInit {
             templateLines,
         };
 
+        const id = this.editandoId();
         this.guardando.set(true);
         this.submitError.set('');
-        this.service.crear(request).subscribe({
+        const obs = id ? this.service.actualizar(id, request) : this.service.crear(request);
+        obs.subscribe({
             next: () => {
                 this.guardando.set(false);
                 this.mostrarForm.set(false);
                 this.cargar();
             },
             error: () => {
-                this.submitError.set('No se pudo guardar el asiento recurrente.');
+                this.submitError.set(id
+                    ? 'No se pudo actualizar el asiento recurrente.'
+                    : 'No se pudo guardar el asiento recurrente.');
                 this.guardando.set(false);
             },
         });
@@ -348,6 +391,15 @@ export class AsientosRecurrentesComponent implements OnInit {
         this.service.ejecutarAhora(id).subscribe({
             next: actualizado => {
                 this.recurrentes.update(ls => ls.map(r => r.id === id ? actualizado : r));
+            },
+        });
+    }
+
+    activar(id: string): void {
+        this.service.activar(id).subscribe({
+            next: () => this.cargar(),
+            error: () => {
+                this.error.set('No se pudo reactivar el asiento recurrente.');
             },
         });
     }

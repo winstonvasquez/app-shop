@@ -58,6 +58,7 @@ export class ReglaAsientoService {
     crear(req: ReglaAsientoRequest)                   { return this.http.post<ReglaAsiento>(this.base, req); }
     actualizar(id: string, req: ReglaAsientoRequest)  { return this.http.put<ReglaAsiento>(`${this.base}/${id}`, req); }
     desactivar(id: string)                            { return this.http.delete<void>(`${this.base}/${id}`); }
+    activar(id: string)                               { return this.http.put<ReglaAsiento>(`${this.base}/${id}/activar`, {}); }
 
     /**
      * Listado paginado con filtros server-side (GET /reglas-asiento). La vista nunca
