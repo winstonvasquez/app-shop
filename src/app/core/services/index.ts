@@ -9,4 +9,3 @@ export * from './product.service';
 export * from './store-config.service';
 export * from './system-parameter.service';
 export * from './url-encryption.service';
-export * from './users-api.service';

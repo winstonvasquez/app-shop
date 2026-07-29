@@ -207,7 +207,12 @@ const ALL_NAV_GROUPS: NavGroup[] = [
     moduleCode: null,
     superAdminOnly: true,
     items: [
-      { label: 'Planes SaaS', route: '/admin/saas-plans', icon: 'credit-card' }
+      { label: 'Planes SaaS', route: '/admin/saas-plans', icon: 'credit-card' },
+      // Movido aquí desde 'Configuración Visual' el 2026-07-28 (B09): estos parámetros son
+      // GLOBALES de la plataforma (IGV_RATE es la tasa nacional de IGV, no un valor por empresa) y
+      // la escritura pasó a exigir SUPERADMIN en el backend. Dejarlo en un grupo visible a
+      // cualquier ADMIN mostraba una pantalla que ahora solo puede devolver 403 al guardar.
+      { label: 'Parámetros Sistema', route: '/admin/general-config', icon: 'database' }
     ]
   },
   {
@@ -218,8 +223,7 @@ const ALL_NAV_GROUPS: NavGroup[] = [
       { label: 'Apariencia',        route: '/admin/apariencia',      icon: 'paint'      },
       { label: 'Footer',            route: '/admin/footer-manager',  icon: 'layout'     },
       { label: 'Slider / Banners',  route: '/admin/slider-manager',  icon: 'image'      },
-      { label: 'Contenido Landing', route: '/admin/landing-content', icon: 'document-text' },
-      { label: 'Parámetros Sistema', route: '/admin/general-config', icon: 'database'   }
+      { label: 'Contenido Landing', route: '/admin/landing-content', icon: 'document-text' }
     ]
   },
   {

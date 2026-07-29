@@ -121,13 +121,18 @@ export const adminRoutes: Routes = [
                 loadComponent: () => import('./pages/sucursales/sucursales.component').then(m => m.SucursalesComponent)
             },
             {
+                // B09: los parámetros del sistema son configuración GLOBAL de la plataforma
+                // (IGV_RATE es la tasa nacional de IGV) y el backend ya solo permite escribirlos a
+                // SUPERADMIN. El guard evita que un ADMIN de tenant llegue a una pantalla que solo
+                // podría devolverle 403 al guardar.
                 path: 'general-config',
+                canActivate: [superAdminGuard],
                 loadComponent: () => import('./pages/configuracion/configuracion.component').then(m => m.ConfiguracionComponent)
             },
-            {
-                path: 'system-params',
-                loadComponent: () => import('./pages/configuracion/configuracion.component').then(m => m.ConfiguracionComponent)
-            },
+            // Ruta 'system-params' eliminada (m06 del backlog): era un duplicado exacto de
+            // 'general-config' apuntando al mismo componente, sin entrada de menú ni un solo
+            // routerLink en toda la app — alcanzable únicamente tecleando la URL, y por tanto una
+            // vía para saltarse el guard de arriba.
             {
                 path: 'store-theme',
                 loadComponent: () => import('./pages/store-theme/store-theme.component').then(m => m.StoreThemeComponent)
