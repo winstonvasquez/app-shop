@@ -151,6 +151,16 @@ export class CompaniesComponent implements OnInit {
       onClick: (row) => this.openEditModal(row),
       class: 'btn-edit'
     },
+    // Suspender/reactivar: la operación existía en el componente (`toggleActive`) pero NO estaba
+    // cableada a ninguna acción, así que la única forma de suspender una empresa era el botón
+    // «Eliminar» —que hace un soft delete pero no sabe reactivar— o entrar por SQL. El label sale del
+    // estado de la fila para que la acción diga lo que va a hacer, no lo que la empresa es.
+    {
+      label: 'Suspender / Reactivar',
+      icon: '⏸',
+      onClick: (row) => this.confirmarCambioEstado(row),
+      class: 'btn-icon'
+    },
     {
       label: 'Eliminar',
       icon: '🗑️',
@@ -388,6 +398,29 @@ export class CompaniesComponent implements OnInit {
   /**
    * Delete company
    */
+  /**
+   * Confirma y aplica la suspensión o reactivación de una empresa.
+   *
+   * Usa `confirm()` porque es el mecanismo que ya usa `onDelete` en esta misma pantalla y no merece la
+   * pena introducir un segundo patrón de confirmación aquí. El texto dice lo que va a pasar de verdad:
+   * suspender bloquea el login y el cambio de empresa, pero NO corta las sesiones ya emitidas —eso es
+   * un pendiente conocido del proyecto (el JWT vive 24 h y ningún servicio consulta el estado de la
+   * empresa por request), y ocultarlo aquí haría creer al operador que el corte es inmediato.
+   */
+  confirmarCambioEstado(company: CompanyResponse): void {
+    const suspender = company.isActive;
+    const mensaje = suspender
+      ? `¿Suspender la empresa "${company.name}"?\n\n`
+        + 'No podrá iniciar sesión ni cambiar de empresa. Las sesiones ya abiertas siguen siendo '
+        + 'válidas hasta que expiren.'
+      : `¿Reactivar la empresa "${company.name}"?`;
+
+    if (!confirm(mensaje)) {
+      return;
+    }
+    this.toggleActive(company);
+  }
+
   onDelete(company: CompanyResponse): void {
     if (!confirm(`¿Está seguro de eliminar la empresa "${company.name}"?`)) {
       return;
@@ -409,25 +442,15 @@ export class CompaniesComponent implements OnInit {
    * Toggle company active status
    */
   toggleActive(company: CompanyResponse): void {
-    const updatedCompany: CompanyRequest = {
-      name: company.name,
-      ruc: company.ruc,
-      active: !company.isActive,
-      legalName: company.legalName ?? undefined,
-      address: company.address ?? undefined,
-      phone: company.phone ?? undefined,
-      email: company.email ?? undefined,
-      logoUrl: company.logoUrl ?? undefined,
-      domain: company.domain ?? undefined
-    };
-
-    this.companyService.update(company.id, updatedCompany).subscribe({
-      next: () => {
-        this.loadCompanies();
-      },
-      error: (err: Error) => {
-        this.error.set(err.message);
-      }
+    // Antes esto armaba un CompanyRequest completo con el flag girado y lo mandaba por PUT. Dos
+    // problemas: (1) el método no estaba cableado a ninguna acción de la tabla, así que la capacidad
+    // existía y era inalcanzable desde la UI; (2) el backend sobrescribe ocho campos con lo que venga
+    // en el DTO, así que girar el estado BORRABA cualquier campo que la fila de la lista no llevara —
+    // en particular `domain`, del que depende la resolución de tenant del checkout de invitado.
+    // Ahora usa el endpoint que sólo toca el estado.
+    this.companyService.cambiarEstado(company.id, !company.isActive).subscribe({
+      next: () => this.loadCompanies(),
+      error: (err: Error) => this.error.set(err.message)
     });
   }
 

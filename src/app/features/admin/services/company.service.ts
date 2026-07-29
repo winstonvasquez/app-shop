@@ -78,6 +78,20 @@ export class CompanyService {
     }
 
     /**
+     * Suspende o reactiva una empresa tocando SOLO su estado.
+     *
+     * Reemplaza al patrón anterior de reenviar el DTO completo por PUT con el flag girado: el backend
+     * sobrescribe ocho campos de la empresa, así que cualquier campo que la fila de la lista no
+     * llevara se ponía a null — en particular `domain`, del que depende la resolución de tenant del
+     * checkout de invitado. Girar el estado no debe poder borrar datos.
+     */
+    cambiarEstado(id: number, activa: boolean): Observable<CompanyResponse> {
+        return this.http
+            .patch<CompanyResponse>(`${this.baseUrl}/${id}/estado`, { activa })
+            .pipe(catchError(this.handleError));
+    }
+
+    /**
      * Delete company
      */
     delete(id: number): Observable<void> {
