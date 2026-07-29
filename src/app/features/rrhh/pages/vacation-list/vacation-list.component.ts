@@ -19,7 +19,7 @@ import {
 import { catalogFilter, signalFilter } from '@shared/ui/tables/data-table/filter-helpers';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
-import { PaginationComponent, PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
+import { PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
@@ -37,7 +37,6 @@ import { bloquearSiempre } from '@shared/utils/form-lock';
         FormsModule,
         DrawerComponent,
         DataTableComponent,
-        PaginationComponent,
         FormFieldComponent,
         PageHeaderComponent,
         AlertComponent,

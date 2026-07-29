@@ -1,0 +1,51 @@
+# CI de app-shop
+#
+# La puerta que importa aquí es el BUILD AOT DE PRODUCCIÓN, no el type check. Esto no es una
+# preferencia: `tsc --noEmit` no mira las plantillas, así que no ve NG5002 ni NG8113 — y el día
+# que se cableó este CI el build de producción estaba ROTO desde hacía tiempo por un
+# `NG5002: Opening tag "app-data-table" not terminated` en
+# `features/contabilidad/pages/plan-cuentas` (un comentario HTML colado entre los atributos de
+# una etiqueta), mientras el type check daba 0 errores. El proyecto llevaba usando `tsc` como
+# único gate del frontend, y por eso nadie lo notó.
+#
+# Se corren los dos, en este orden, porque dan errores distintos y complementarios: `tsc` señala
+# el tipo con precisión, el compilador AOT señala la plantilla.
+#
+# NO se corre `ng test`: el proyecto `app-shop` no tiene target `test` en `angular.json` (sólo
+# lo tienen las librerías `auth-lib` y `ui-kit`) y hay un único `.spec.ts` en todo `src/`. Un
+# paso de tests aquí sería un check verde que no prueba nada. Cuando haya suite real, se añade.
+#
+# Tampoco se corre la suite E2E de Playwright: necesita los seis microservicios y la base de
+# datos levantados, que es justo lo que este runner no tiene (ver el CI de los backends y la
+# decisión D01 del backlog).
+
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+    branches: ['**']
+
+jobs:
+  build:
+    name: Type check y build de producción
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Bun, no npm: `npm install` falla en este proyecto (ENOENT en git bash) y el lockfile
+      # versionado que manda es `bun.lock`.
+      - name: Configurar Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Instalar dependencias
+        run: bun install --frozen-lockfile
+
+      # Se invoca el binario de TypeScript directamente, igual que el comando documentado en el
+      # CLAUDE.md del proyecto.
+      - name: Type check
+        run: node node_modules/typescript/bin/tsc --noEmit -p tsconfig.app.json
+
+      - name: Build AOT de producción
+        run: npx ng build --configuration production

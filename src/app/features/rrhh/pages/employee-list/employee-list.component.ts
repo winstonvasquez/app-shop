@@ -18,7 +18,7 @@ import { catalogFilter, signalFilter } from '@shared/ui/tables/data-table/filter
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
 import { PAGINATION } from '@shared/constants/app.constants';
-import { PaginationComponent, PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
+import { PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
 import { AdminFormSectionComponent } from '@shared/ui/forms/admin-form-section/admin-form-section.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
@@ -38,7 +38,6 @@ import { bloquearEnEdicion } from '@shared/utils/form-lock';
         DrawerComponent,
         ModalComponent,
         DataTableComponent,
-        PaginationComponent,
         FormFieldComponent,
         AdminFormSectionComponent,
         PageHeaderComponent,

@@ -104,6 +104,11 @@ const PCGE_DEMO: CuentaPCGE[] = [
             </div>
         </div>
 
+        <!-- [exportable]="!modoDemo()": en modo demo el backend no responde, y la exportación es
+             server-side, así que ofrecerla sería la misma promesa falsa que ya se quitó de
+             Editar/Nueva. El comentario va AQUÍ y no entre los atributos: un comentario HTML dentro
+             de la lista de atributos es sintaxis inválida y reventaba el build AOT con NG5002
+             («Opening tag not terminated»). tsc --noEmit no lo veía. -->
         <app-data-table
             [data]="cuentas()"
             [columns]="columns"
@@ -112,8 +117,6 @@ const PCGE_DEMO: CuentaPCGE[] = [
             [searchable]="true"
             searchPlaceholder="Buscar por código o nombre..."
             [filters]="filters"
-            <!-- En modo demo el backend no responde, y la exportacion es server-side:
-                 ofrecerla seria la misma promesa falsa que ya se quito de Editar/Nueva. -->
             [exportable]="!modoDemo()"
             exportFileName="plan-cuentas"
             [exportConfig]="exportConfig"

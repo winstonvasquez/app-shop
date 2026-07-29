@@ -5,11 +5,15 @@ import { environment } from '@env/environment';
 import { ButtonComponent } from '@shared/components';
 import { BackendExportService } from '@shared/services/backend-export.service';
 
-interface KpiVentas   { totalVentas: number; montoTotal: number; ticketPromedio: number; }
-interface KpiCompras  { totalOrdenes: number; montoTotal: number; ordenesAprobadas: number; }
-interface KpiRrhh     { empleadosActivos: number; planillasGeneradas: number; }
-interface KpiTesoreria { cajasAbiertas: number; saldoTotal: number; movimientosHoy: number; }
-interface KpiInventario { productosConStock: number; productosStockBajo: number; }
+// `disponible` lo envía el backend por módulo: es false cuando su llamada al microservicio
+// falló. Sin este flag, un módulo caído llegaba con todas sus métricas en 0 y era
+// indistinguible de un módulo que respondió "no hay nada" — que es como se descubrió que el KPI
+// de Ventas llevaba semanas en cero por un 403 de s2s.
+interface KpiVentas   { totalVentas: number; montoTotal: number; ticketPromedio: number; disponible: boolean; }
+interface KpiCompras  { totalOrdenes: number; montoTotal: number; ordenesAprobadas: number; disponible: boolean; }
+interface KpiRrhh     { empleadosActivos: number; planillasGeneradas: number; disponible: boolean; }
+interface KpiTesoreria { cajasAbiertas: number; saldoTotal: number; movimientosHoy: number; disponible: boolean; }
+interface KpiInventario { productosConStock: number; productosStockBajo: number; disponible: boolean; }
 interface ProductoTop { sku: string; nombre: string; totalVendido: number; cantidadVendida: number; }
 interface TendenciaMes { periodo: string; mes: number; anno: number; montoTotal: number; totalVentas: number; }
 
@@ -56,17 +60,15 @@ export class ReportesEjecutivoComponent implements OnInit {
                 this.cargando.set(false);
             },
             error: () => {
-                this.error.set('microshoprepoanalitica no disponible');
+                // Antes se fabricaba aquí un dashboard COMPLETO con todo en cero. Era una segunda
+                // capa de mentira apilada sobre la del backend: la plantilla pintaba las cinco
+                // tarjetas con S/ 0.00 y la tabla "Estado de Módulos" con OPERATIVO en verde,
+                // aunque el servicio de analítica estuviera caído por completo. Ahora se deja el
+                // dashboard en null y la plantilla muestra sólo el banner de error, que es lo
+                // único que se sabe.
+                this.error.set('microshoprepoanalitica no disponible — no se pudo obtener ningún KPI');
                 this.cargando.set(false);
-                this.dashboard.set({
-                    periodo: new Date().toISOString().substring(0, 7),
-                    generadoEn: new Date().toISOString().substring(0, 10),
-                    ventas:    { totalVentas: 0, montoTotal: 0, ticketPromedio: 0 },
-                    compras:   { totalOrdenes: 0, montoTotal: 0, ordenesAprobadas: 0 },
-                    rrhh:      { empleadosActivos: 0, planillasGeneradas: 0 },
-                    tesoreria: { cajasAbiertas: 0, saldoTotal: 0, movimientosHoy: 0 },
-                    inventario: { productosConStock: 0, productosStockBajo: 0 }
-                });
+                this.dashboard.set(null);
             }
         });
 

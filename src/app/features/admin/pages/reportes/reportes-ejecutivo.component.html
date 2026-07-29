@@ -30,57 +30,92 @@
     } @else if (dashboard()) {
         <!-- KPIs principales -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-[var(--space-md)] mb-[var(--space-lg)]">
+            <!-- Cuando un módulo no responde, el backend deja sus métricas en cero y marca
+                 `disponible: false`. Aquí se pinta «—» en vez del cero: un cero es una
+                 afirmación («no hubo ventas») y no es lo que se sabe. -->
             <div class="card">
                 <div class="card-body">
                     <p class="text-[0.75rem] text-[var(--color-text-muted)]">VENTAS DEL PERÍODO</p>
-                    <p class="text-[1.75rem] font-bold text-[var(--color-primary)]">
-                        S/ {{ dashboard()!.ventas.montoTotal | number:'1.2-2' }}
-                    </p>
-                    <p class="text-[0.75rem] text-[var(--color-text-muted)]">
-                        {{ dashboard()!.ventas.totalVentas }} transacciones
-                    </p>
-                    <p class="text-[0.75rem] mt-1">
-                        Ticket promedio: <strong>S/ {{ dashboard()!.ventas.ticketPromedio | number:'1.2-2' }}</strong>
-                    </p>
+                    @if (dashboard()!.ventas.disponible) {
+                        <p class="text-[1.75rem] font-bold text-[var(--color-primary)]">
+                            S/ {{ dashboard()!.ventas.montoTotal | number:'1.2-2' }}
+                        </p>
+                        <p class="text-[0.75rem] text-[var(--color-text-muted)]">
+                            {{ dashboard()!.ventas.totalVentas }} transacciones
+                        </p>
+                        <p class="text-[0.75rem] mt-1">
+                            Ticket promedio: <strong>S/ {{ dashboard()!.ventas.ticketPromedio | number:'1.2-2' }}</strong>
+                        </p>
+                    } @else {
+                        <p class="text-[1.75rem] font-bold text-[var(--color-text-muted)]">—</p>
+                        <p class="text-[0.75rem] text-[var(--color-error)]">Ventas no respondió</p>
+                    }
                 </div>
             </div>
             <div class="card">
                 <div class="card-body">
                     <p class="text-[0.75rem] text-[var(--color-text-muted)]">COMPRAS DEL PERÍODO</p>
-                    <p class="text-[1.75rem] font-bold text-[var(--color-accent)]">
-                        S/ {{ dashboard()!.compras.montoTotal | number:'1.2-2' }}
-                    </p>
-                    <p class="text-[0.75rem] text-[var(--color-text-muted)]">
-                        {{ dashboard()!.compras.totalOrdenes }} órdenes en total
-                    </p>
-                    <p class="text-[0.75rem] mt-1">
-                        Aprobadas: <strong>{{ dashboard()!.compras.ordenesAprobadas }}</strong>
-                    </p>
+                    @if (dashboard()!.compras.disponible) {
+                        <p class="text-[1.75rem] font-bold text-[var(--color-accent)]">
+                            S/ {{ dashboard()!.compras.montoTotal | number:'1.2-2' }}
+                        </p>
+                        <p class="text-[0.75rem] text-[var(--color-text-muted)]">
+                            {{ dashboard()!.compras.totalOrdenes }} órdenes en total
+                        </p>
+                        <p class="text-[0.75rem] mt-1">
+                            Aprobadas: <strong>{{ dashboard()!.compras.ordenesAprobadas }}</strong>
+                        </p>
+                    } @else {
+                        <p class="text-[1.75rem] font-bold text-[var(--color-text-muted)]">—</p>
+                        <p class="text-[0.75rem] text-[var(--color-error)]">Compras no respondió</p>
+                    }
                 </div>
             </div>
             <div class="card">
                 <div class="card-body">
                     <p class="text-[0.75rem] text-[var(--color-text-muted)]">EMPLEADOS ACTIVOS</p>
-                    <p class="text-[1.75rem] font-bold">{{ dashboard()!.rrhh.empleadosActivos }}</p>
-                    <p class="text-[0.75rem] text-[var(--color-text-muted)]">trabajadores en planilla</p>
+                    @if (dashboard()!.rrhh.disponible) {
+                        <p class="text-[1.75rem] font-bold">{{ dashboard()!.rrhh.empleadosActivos }}</p>
+                        <p class="text-[0.75rem] text-[var(--color-text-muted)]">trabajadores en planilla</p>
+                    } @else {
+                        <p class="text-[1.75rem] font-bold text-[var(--color-text-muted)]">—</p>
+                        <p class="text-[0.75rem] text-[var(--color-error)]">RRHH no respondió</p>
+                    }
                 </div>
             </div>
             <div class="card">
                 <div class="card-body">
                     <p class="text-[0.75rem] text-[var(--color-text-muted)]">SALDO EN CAJAS</p>
-                    <p class="text-[1.75rem] font-bold text-[var(--color-success)]">
-                        S/ {{ dashboard()!.tesoreria.saldoTotal | number:'1.2-2' }}
-                    </p>
-                    <p class="text-[0.75rem] text-[var(--color-text-muted)]">
-                        {{ dashboard()!.tesoreria.cajasAbiertas }} caja(s) abierta(s)
-                    </p>
+                    @if (dashboard()!.tesoreria.disponible) {
+                        <p class="text-[1.75rem] font-bold text-[var(--color-success)]">
+                            S/ {{ dashboard()!.tesoreria.saldoTotal | number:'1.2-2' }}
+                        </p>
+                        <p class="text-[0.75rem] text-[var(--color-text-muted)]">
+                            {{ dashboard()!.tesoreria.cajasAbiertas }} caja(s) abierta(s)
+                        </p>
+                        <!-- El saldo suma SOLO cajas en estado ABIERTA. Con todas cerradas es 0
+                             legítimamente, así que se dice para que no se lea como un fallo. -->
+                        @if (dashboard()!.tesoreria.cajasAbiertas === 0) {
+                            <p class="text-[0.75rem] mt-1 text-[var(--color-text-muted)]">
+                                Sin cajas abiertas: el saldo mostrado sólo agrega cajas en turno.
+                            </p>
+                        }
+                    } @else {
+                        <p class="text-[1.75rem] font-bold text-[var(--color-text-muted)]">—</p>
+                        <p class="text-[0.75rem] text-[var(--color-error)]">Tesorería no respondió</p>
+                    }
                 </div>
             </div>
             <div class="card">
                 <div class="card-body">
                     <p class="text-[0.75rem] text-[var(--color-text-muted)]">PRODUCTOS CON STOCK</p>
-                    <p class="text-[1.75rem] font-bold">{{ dashboard()!.inventario.productosConStock }}</p>
-                    <p class="text-[0.75rem] text-[var(--color-text-muted)]">ítems en inventario</p>
+                    @if (dashboard()!.inventario.disponible) {
+                        <p class="text-[1.75rem] font-bold">{{ dashboard()!.inventario.productosConStock }}</p>
+                        <p class="text-[0.75rem] text-[var(--color-text-muted)]">ítems en inventario</p>
+                    } @else {
+                        <p class="text-[1.75rem] font-bold text-[var(--color-text-muted)]">—</p>
+                        <p class="text-[0.75rem] text-[var(--color-error)]">Inventario no respondió</p>
+                    }
                 </div>
             </div>
         </div>
@@ -100,30 +135,75 @@
                         </tr>
                     </thead>
                     <tbody>
+                        <!-- El badge decía OPERATIVO en verde para los cinco módulos, hardcodeado,
+                             respondieran o no. Ahora sale del flag `disponible` que envía el
+                             backend, que es false cuando su llamada al servicio falló. Un módulo
+                             caído mostraba "0 trans." + "OPERATIVO": las dos mitades de la
+                             pantalla afirmando que todo iba bien. -->
                         <tr class="table-row">
                             <td class="table-cell font-bold">Ventas (POS)</td>
-                            <td class="table-cell text-right font-mono">{{ dashboard()!.ventas.totalVentas }} trans.</td>
-                            <td class="table-cell"><span class="badge badge-success">OPERATIVO</span></td>
+                            <td class="table-cell text-right font-mono">
+                                {{ dashboard()!.ventas.disponible ? dashboard()!.ventas.totalVentas + ' trans.' : '—' }}
+                            </td>
+                            <td class="table-cell">
+                                @if (dashboard()!.ventas.disponible) {
+                                    <span class="badge badge-success">OPERATIVO</span>
+                                } @else {
+                                    <span class="badge badge-error">SIN RESPUESTA</span>
+                                }
+                            </td>
                         </tr>
                         <tr class="table-row">
                             <td class="table-cell font-bold">Compras</td>
-                            <td class="table-cell text-right font-mono">{{ dashboard()!.compras.totalOrdenes }} órdenes</td>
-                            <td class="table-cell"><span class="badge badge-success">OPERATIVO</span></td>
+                            <td class="table-cell text-right font-mono">
+                                {{ dashboard()!.compras.disponible ? dashboard()!.compras.totalOrdenes + ' órdenes' : '—' }}
+                            </td>
+                            <td class="table-cell">
+                                @if (dashboard()!.compras.disponible) {
+                                    <span class="badge badge-success">OPERATIVO</span>
+                                } @else {
+                                    <span class="badge badge-error">SIN RESPUESTA</span>
+                                }
+                            </td>
                         </tr>
                         <tr class="table-row">
                             <td class="table-cell font-bold">RRHH</td>
-                            <td class="table-cell text-right font-mono">{{ dashboard()!.rrhh.empleadosActivos }} emp.</td>
-                            <td class="table-cell"><span class="badge badge-success">OPERATIVO</span></td>
+                            <td class="table-cell text-right font-mono">
+                                {{ dashboard()!.rrhh.disponible ? dashboard()!.rrhh.empleadosActivos + ' emp.' : '—' }}
+                            </td>
+                            <td class="table-cell">
+                                @if (dashboard()!.rrhh.disponible) {
+                                    <span class="badge badge-success">OPERATIVO</span>
+                                } @else {
+                                    <span class="badge badge-error">SIN RESPUESTA</span>
+                                }
+                            </td>
                         </tr>
                         <tr class="table-row">
                             <td class="table-cell font-bold">Tesorería</td>
-                            <td class="table-cell text-right font-mono">{{ dashboard()!.tesoreria.cajasAbiertas }} cajas</td>
-                            <td class="table-cell"><span class="badge badge-success">OPERATIVO</span></td>
+                            <td class="table-cell text-right font-mono">
+                                {{ dashboard()!.tesoreria.disponible ? dashboard()!.tesoreria.cajasAbiertas + ' cajas' : '—' }}
+                            </td>
+                            <td class="table-cell">
+                                @if (dashboard()!.tesoreria.disponible) {
+                                    <span class="badge badge-success">OPERATIVO</span>
+                                } @else {
+                                    <span class="badge badge-error">SIN RESPUESTA</span>
+                                }
+                            </td>
                         </tr>
                         <tr class="table-row">
                             <td class="table-cell font-bold">Inventario</td>
-                            <td class="table-cell text-right font-mono">{{ dashboard()!.inventario.productosConStock }} items</td>
-                            <td class="table-cell"><span class="badge badge-success">OPERATIVO</span></td>
+                            <td class="table-cell text-right font-mono">
+                                {{ dashboard()!.inventario.disponible ? dashboard()!.inventario.productosConStock + ' items' : '—' }}
+                            </td>
+                            <td class="table-cell">
+                                @if (dashboard()!.inventario.disponible) {
+                                    <span class="badge badge-success">OPERATIVO</span>
+                                } @else {
+                                    <span class="badge badge-error">SIN RESPUESTA</span>
+                                }
+                            </td>
                         </tr>
                     </tbody>
                 </table>
