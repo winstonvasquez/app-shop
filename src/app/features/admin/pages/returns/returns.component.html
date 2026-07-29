@@ -9,9 +9,21 @@
                 <span class="header-kpi header-kpi--neutral">Total Devoluciones <b>{{ stats().total }}</b></span>
                 <span class="header-kpi header-kpi--warning">Pendientes Revisión <b>{{ stats().pendientes }}</b></span>
                 <span class="header-kpi header-kpi--success">Aprobadas <b>{{ stats().aprobadas }}</b></span>
-                <span class="header-kpi">Monto Reembolsado <b>S/ {{ stats().montoReembolsado.toFixed(2) }}</b></span>
+                <!-- Decía "Monto Reembolsado", y era una promesa falsa: aprobar una devolución solo
+                     registra la resolución (setEstado + save). NO ejecuta reembolso, NO restaura stock
+                     y NO emite nota de crédito. Quien leía este KPI daba por hecho que el dinero se
+                     había devuelto. Se renombra en vez de "arreglarlo" porque implementar el efecto
+                     aquí duplicaría la restauración de stock que ya hace la cancelación del pedido, y
+                     el modelo actual no lo soporta: devolucion_pedido no tiene tabla de detalle y su
+                     pedido_id es nullable. -->
+                <span class="header-kpi">Aprobado a reembolsar <b>S/ {{ stats().montoReembolsado.toFixed(2) }}</b></span>
             </div>
         </div>
+        <p class="alert alert-info mb-4">
+            Aprobar una devolución <strong>registra la resolución</strong>, pero no ejecuta el reembolso
+            ni devuelve el stock al inventario. Para revertir la venta —restaurar stock y anular el
+            asiento contable— hay que <strong>cancelar el pedido</strong> desde su detalle.
+        </p>
         <app-button label="Nueva Devolución" variant="primary" icon="plus" (click)="abrirNueva()" />
     </div>
 
