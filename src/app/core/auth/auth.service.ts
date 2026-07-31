@@ -165,6 +165,21 @@ export class AuthService {
     }
 
     private setSession(response: LoginResponse): void {
+        // Aislamiento multi-tenant en el navegador: el carrito y los datos de invitado NO están
+        // namespaced por empresa, así que si la sesión que entra pertenece a una empresa distinta
+        // de la que estaba activa hay que descartarlos. Antes esto solo se hacía en logout() y en
+        // register-page, de modo que un login normal o un cambio de empresa activa dejaba resucitar
+        // el carrito de la empresa anterior (con productIds que no existen en la nueva).
+        // El punto de control va aquí, en setSession, porque TODOS los caminos que establecen
+        // sesión pasan por él (login, verifyOtpAndLogin, registerWithOtp, socialLogin y el switch
+        // de empresa vía setSessionFromResponse); parchear los llamadores uno a uno dejaría
+        // siempre alguno fuera.
+        const empresaAnterior = this.currentUserSignal()?.activeCompanyId
+            ?? this.loadUserFromStorage()?.activeCompanyId;
+        if (empresaAnterior != null && empresaAnterior !== response.activeCompanyId) {
+            this.clearTenantScopedLocalState();
+        }
+
         localStorage.setItem(TOKEN_KEY, response.token);
         // Extract modules and role from response or decode from JWT
         let modules: string[] = response.enabledModules ?? [];

@@ -9,6 +9,15 @@ export interface CategoryResponse {
     orden?: number;
     fechaCreacion?: string;
     fechaActualizacion?: string;
+    /**
+     * `true` si la categoría es de la TAXONOMÍA GLOBAL (no pertenece a ninguna empresa). Son 49 de
+     * las 54 filas: se listan a todas las empresas pero son de SOLO LECTURA, porque editarlas
+     * afectaría a las seis a la vez — el backend responde 409 a cualquier escritura.
+     *
+     * Hay que usarlo para OCULTAR las acciones de editar/borrar/subir imagen en esas filas. Sin eso,
+     * la pantalla ofrece botones que sólo pueden fallar.
+     */
+    global?: boolean;
 }
 
 export interface CategoryRequest {

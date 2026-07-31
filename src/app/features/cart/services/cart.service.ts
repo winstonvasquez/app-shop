@@ -1,5 +1,6 @@
 
 import { Injectable, computed, effect, signal, inject } from '@angular/core';
+import { AuthService } from '@core/auth/auth.service';
 import { AnalyticsService } from '@core/services/analytics.service';
 import { STORAGE_KEYS } from '@shared/constants/app.constants';
 
@@ -46,6 +47,14 @@ export class CartService {
         this.isDrawerOpen.set(false);
     }
 
+    private readonly authService = inject(AuthService);
+
+    /**
+     * Empresa a la que pertenece el carrito que hay ahora en memoria. `undefined` = todavía no se
+     * ha observado ninguna sesión (primera pasada del effect), que NO debe disparar limpieza.
+     */
+    private empresaDelCarrito: number | null | undefined = undefined;
+
     constructor() {
         // Load initial state from local storage
         const savedCart = localStorage.getItem(STORAGE_KEYS.cart);
@@ -56,6 +65,32 @@ export class CartService {
         // Save state to local storage whenever it changes
         effect(() => {
             localStorage.setItem(STORAGE_KEYS.cart, JSON.stringify(this.cartItems()));
+        });
+
+        // Aislamiento multi-tenant del carrito. AuthService.clearTenantScopedLocalState() borra la
+        // clave de localStorage, pero eso NO bastaba: la señal en memoria seguía viva y el effect
+        // de arriba la reescribía en la siguiente mutación, así que el carrito de una empresa
+        // reaparecía en la sesión de otra sin recargar la página. El estado es de este servicio,
+        // así que la limpieza va aquí y no en AuthService (que además no puede inyectar a
+        // CartService sin crear un ciclo).
+        //
+        // Transiciones y por qué:
+        //   null -> X  (invitado que inicia sesión): NO se limpia. El invitado estaba comprando en
+        //              ESE storefront; borrarle el carrito al loguearse sería una regresión de UX.
+        //   X -> Y     (cambio de empresa activa): se limpia. Los productIds de X no existen en Y.
+        //   X -> null  (logout): se limpia, para que el siguiente usuario del navegador no herede
+        //              el carrito del anterior.
+        // currentUser() es una señal de verdad, así que leerla en un effect es correcto (a
+        // diferencia de AbstractControl.value, que no lo es y solo se evaluaría una vez).
+        effect(() => {
+            const empresaActual = this.authService.currentUser()?.activeCompanyId ?? null;
+            const anterior = this.empresaDelCarrito;
+            this.empresaDelCarrito = empresaActual;
+            if (anterior === undefined || anterior === empresaActual) return;
+            if (anterior === null) return; // invitado -> sesión: se conserva
+            this.cartItems.set([]);
+            this.isDrawerOpen.set(false);
+            localStorage.removeItem(STORAGE_KEYS.cart);
         });
     }
 

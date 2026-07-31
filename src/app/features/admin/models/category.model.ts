@@ -6,6 +6,15 @@ export interface CategoryResponse {
     descripcion: string | null;
     imagenUrl: string | null;
     nivel: number;
+    /**
+     * `true` si la categoría es de la TAXONOMÍA GLOBAL (`company_id NULL` en BD): 49 de las 54 filas.
+     * Se listan a todas las empresas pero son de SOLO LECTURA — el backend responde 409 a cualquier
+     * escritura, porque editarlas afectaría a las seis empresas a la vez.
+     *
+     * La tabla debe ocultar editar/eliminar/subir-imagen cuando es `true`; ofrecerlos deja botones
+     * que sólo pueden fallar.
+     */
+    global?: boolean;
 }
 
 export interface CategoryRequest {

@@ -171,6 +171,23 @@
     background: var(--color-surface-raised);
 }
 
+/* Etiqueta que sustituye a los botones en la taxonomía compartida entre empresas. Deliberadamente
+   discreta: informa de por qué no hay acciones, sin competir visualmente con las tarjetas que sí
+   son editables. */
+.category-global-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.25rem 0.625rem;
+    border: 1px dashed var(--color-border);
+    border-radius: 999px;
+    font-size: 0.75rem;
+    line-height: 1.4;
+    color: var(--color-text-muted);
+    background: transparent;
+    cursor: help;
+}
+
 /* ── Responsive ── */
 @media (max-width: 768px) {
     .filters-section {
