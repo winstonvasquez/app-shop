@@ -67,7 +67,7 @@
         </div>
         <div class="mb-4">
             <label class="input-label">Observaciones</label>
-            <textarea class="form-input" formControlName="observaciones" rows="2"></textarea>
+            <app-rich-text-editor formControlName="observaciones" [rows]="2" />
         </div>
 
         <!-- Items -->
@@ -169,7 +169,7 @@
                 </p>
                 <form [formGroup]="rechazarForm">
                     <label class="input-label">Motivo *</label>
-                    <textarea class="form-input" formControlName="motivo" rows="3" placeholder="Motivo del rechazo"></textarea>
+                    <app-rich-text-editor formControlName="motivo" [rows]="3" placeholder="Motivo del rechazo" />
                 </form>
             </div>
             <div class="modal-footer">

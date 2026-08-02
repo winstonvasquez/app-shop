@@ -4,9 +4,25 @@
 
 
 @layer base {
-    /* Neutraliza los márgenes globales de _layout.scss sin anular utilidades de Tailwind.
-       Al estar en @layer base, las clases utilitarias (font-bold, mb-6, text-*) siempre ganan. */
+    /* Neutraliza los márgenes/box-sizing globales sin anular utilidades de Tailwind.
+       Tailwind v4 emite sus utilities en @layer utilities, y @layer utilities SIEMPRE
+       gana a @layer base sin importar especificidad (spec de CSS Cascade Layers).
+       Por eso el reset universal de .pos-layout vive AQUÍ (base) y no fuera de toda
+       capa: si estuviera sin capa, ganaría siempre a las utilities (px-4, mb-5, py-3…)
+       de Tailwind, y cualquier componente nuevo del POS que las use sin `!` colapsaría
+       en silencio. NO sacar este bloque de @layer base. */
     .pos-layout {
+        &,
+        & *,
+        &::before,
+        & *::before,
+        &::after,
+        & *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
         section,
         article {
             margin-bottom: 0;
@@ -83,16 +99,8 @@
     --a5: #8b5cf6;
     --a6: #ec4899;
 
-    &,
-    & *,
-    &::before,
-    & *::before,
-    &::after,
-    & *::after {
-        box-sizing: border-box;
-        margin: 0;
-        padding: 0;
-    }
+    /* box-sizing/margin/padding: ver @layer base arriba — NO duplicar aquí
+       (fuera de capa siempre ganaría a las utilities de Tailwind). */
 
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
@@ -970,9 +978,13 @@
         animation: shimmer 1.4s ease-in-out infinite;
     }
 
-    /* ── Input field override — more visible border in dark POS theme ── */
+    /* ── Input field override ──
+       Antes usaba un borde blanco al 10% pensado para un "dark POS theme" que ya
+       no se usa: el POS renderiza sobre fondo claro (confianza-erp), así que ese
+       borde quedaba invisible. Usa el token del sistema de diseño (--border, que
+       en el POS es alias de --color-border) para que se vea en cualquier tema. */
     .input-field {
-        border: 1.5px solid rgba(255, 255, 255, .1);
+        border: 1.5px solid var(--border);
         background: color-mix(in oklch, var(--card) 60%, var(--nav));
 
         &:focus {
@@ -2553,6 +2565,12 @@
         gap: var(--sp2);
         padding: var(--sp3) var(--sp5);
         flex-wrap: wrap;
+        /* El template trae además la utility Tailwind `mb-6` (sin `!`): antes del
+           fix de @layer base quedaba anulada por el reset y el espaciado real lo
+           daba este padding; ahora que la utility SÍ aplica, duplicaría el
+           espacio inferior y desbordaba el panel del numpad. Se neutraliza aquí
+           en vez de tocar el componente. */
+        margin-bottom: 0;
     }
 
     .quick-amount-btn {
@@ -2579,6 +2597,9 @@
         grid-template-columns: repeat(3, 1fr);
         gap: var(--sp2);
         padding: var(--sp3) var(--sp5);
+        /* Mismo caso que .quick-amounts: el template trae `mb-8 px-4` sin `!`,
+           redundantes con este padding ahora que la utility Tailwind aplica. */
+        margin-bottom: 0;
     }
 
     .num-key {
@@ -2656,6 +2677,9 @@
         display: flex;
         gap: var(--sp3);
         padding: var(--sp4) var(--sp5) var(--sp5);
+        /* El template trae además `mt-6` (sin `!`), redundante con este padding
+           superior ahora que la utility Tailwind aplica (ver .quick-amounts). */
+        margin-top: 0;
     }
 
     .numpad-back-btn {

@@ -1,15 +1,16 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { AuthService } from '@core/auth/auth.service';
 import { AprobacionService } from '../../services/aprobacion.service';
 import { AprobacionPendiente } from '../../models/aprobacion.model';
-import { ButtonComponent } from '@shared/components';
+import { ButtonComponent, RichTextEditorComponent } from '@shared/components';
 import { ROLES } from '@shared/constants/app.constants';
 
 @Component({
     selector: 'app-bandeja-aprobaciones',
     standalone: true,
-    imports: [DatePipe, ButtonComponent],
+    imports: [DatePipe, FormsModule, ButtonComponent, RichTextEditorComponent],
     templateUrl: './bandeja-aprobaciones.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
 })

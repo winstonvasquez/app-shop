@@ -10,6 +10,7 @@ import { AdminFormLayoutComponent } from '@shared/ui/forms/admin-form-layout/adm
 import { DataTableComponent, TableColumn, TableAction } from '@shared/ui/tables/data-table/data-table.component';
 import { ButtonComponent, CatalogSelectComponent } from '@shared/components';
 import { CustomerService } from '@features/admin/services/customer.service';
+import { AuthService } from '@core/auth/auth.service';
 import {
     CustomerResponse,
     CustomerDireccionResponse,
@@ -39,6 +40,7 @@ import {
 export class CustomerDetailComponent implements OnInit {
     private readonly route = inject(ActivatedRoute);
     private readonly customerService = inject(CustomerService);
+    private readonly authService = inject(AuthService);
     private readonly fb = inject(FormBuilder);
 
     customer = signal<CustomerResponse | null>(null);
@@ -157,7 +159,12 @@ export class CustomerDetailComponent implements OnInit {
 
     private loadCustomer(id: number): void {
         this.loading.set(true);
-        this.customerService.getById(id).subscribe({
+        const companyId = this.authService.currentUser()?.activeCompanyId;
+        if (!companyId) {
+            this.loading.set(false);
+            return;
+        }
+        this.customerService.getById(id, companyId).subscribe({
             next: (c) => {
                 this.customer.set(c);
                 this.loading.set(false);

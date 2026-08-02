@@ -5,7 +5,7 @@ import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { environment } from '@env/environment';
 import { AuthService } from '@core/auth/auth.service';
 import { CatalogService } from '@core/services/catalog.service';
-import { ButtonComponent, ServerSearchSelectComponent } from '@shared/components';
+import { ButtonComponent, ServerSearchSelectComponent, RichTextEditorComponent } from '@shared/components';
 import { PaginationComponent, PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
 import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 import { PAGINATION } from '@shared/constants/app.constants';
@@ -42,7 +42,7 @@ interface ConsolidacionDto {
 @Component({
     selector: 'app-consolidaciones',
     standalone: true,
-    imports: [ReactiveFormsModule, FormsModule, DecimalPipe, ButtonComponent, ServerSearchSelectComponent, ProductLookupComponent, PaginationComponent],
+    imports: [ReactiveFormsModule, FormsModule, DecimalPipe, ButtonComponent, ServerSearchSelectComponent, ProductLookupComponent, PaginationComponent, RichTextEditorComponent],
     templateUrl: './consolidaciones.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
 })

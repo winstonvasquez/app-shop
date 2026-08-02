@@ -110,9 +110,13 @@
     border-radius: 12px;
 }
 
-// Smooth transition for accordion groups
+// Smooth transition for accordion groups.
+// El tope de 500px cortaba el último item de grupos con muchas opciones (Logística
+// con 14, y peor aún Compras con 21): el contenido real supera los 500px pero
+// `overflow-hidden` (en la plantilla) lo recortaba en seco. 3000px cubre con margen
+// el grupo más largo hoy (Compras, ~900px) sin perder la animación de expansión.
 .group-items-list {
-    max-height: 500px;
+    max-height: 3000px;
     animation: expandDropdown 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -122,7 +126,7 @@
         opacity: 0;
     }
     to {
-        max-height: 500px;
+        max-height: 3000px;
         opacity: 1;
     }
 }

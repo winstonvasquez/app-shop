@@ -22,7 +22,7 @@ import { PAGINATION } from '@shared/constants/app.constants';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
-import { ButtonComponent, CatalogSelectComponent, ServerSearchSelectComponent } from '@shared/components';
+import { ButtonComponent, CatalogSelectComponent, ServerSearchSelectComponent, RichTextEditorComponent } from '@shared/components';
 import { CatalogService } from '@core/services/catalog.service';
 import {
     DataTableComponent,
@@ -53,6 +53,7 @@ import { environment } from '@env/environment';
         DataTableComponent,
         CatalogSelectComponent,
         ServerSearchSelectComponent,
+        RichTextEditorComponent,
     ],
     templateUrl: './devoluciones.component.html',
 })

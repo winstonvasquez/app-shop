@@ -18,7 +18,7 @@ import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/p
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { LoadingSpinnerComponent } from '@shared/ui/feedback/loading-spinner/loading-spinner.component';
 import { PAGINATION } from '@shared/constants/app.constants';
-import { ButtonComponent, ServerSearchSelectComponent } from '@shared/components';
+import { ButtonComponent, ServerSearchSelectComponent, RichTextEditorComponent } from '@shared/components';
 import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
@@ -45,7 +45,8 @@ export interface RecepcionItemForm {
     LoadingSpinnerComponent,
     DatePipe,
     ButtonComponent,
-    ServerSearchSelectComponent
+    ServerSearchSelectComponent,
+    RichTextEditorComponent
   ],
     templateUrl: './recepcion.component.html'
 })

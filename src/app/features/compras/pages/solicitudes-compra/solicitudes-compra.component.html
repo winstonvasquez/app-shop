@@ -46,12 +46,13 @@
 
         <div class="mb-md">
             <label class="input-label">Justificación *</label>
-            <textarea class="form-input" formControlName="justificacion" rows="3" placeholder="Motivo de la solicitud"></textarea>
+            <app-rich-text-editor formControlName="justificacion" [rows]="3" placeholder="Motivo de la solicitud" />
         </div>
 
         <div class="mb-md">
             <label class="input-label">Departamento{{ editMode() ? ' (no editable)' : '' }}</label>
-            <input class="form-input" type="text" formControlName="departamento" placeholder="Ej: Operaciones">
+            <app-server-search-select [dataSource]="departamentoSource" formControlName="departamento"
+                placeholder="Buscar departamento…" />
         </div>
 
         <div class="mb-md" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
@@ -154,13 +155,13 @@
 
         <div class="mb-md">
             <p class="input-label">Justificación</p>
-            <p>{{ sol.justificacion }}</p>
+            <p [innerHTML]="sol.justificacion"></p>
         </div>
 
         @if (sol.motivoRechazo) {
             <div class="mb-md">
                 <p class="input-label">Motivo de Rechazo</p>
-                <p class="text-error">{{ sol.motivoRechazo }}</p>
+                <p class="text-error" [innerHTML]="sol.motivoRechazo"></p>
             </div>
         }
 
@@ -220,7 +221,7 @@
             <div class="modal-body">
                 <form [formGroup]="rechazarForm">
                     <label class="input-label">Motivo de Rechazo *</label>
-                    <textarea class="form-input" formControlName="motivoRechazo" rows="4" placeholder="Indique el motivo del rechazo"></textarea>
+                    <app-rich-text-editor formControlName="motivoRechazo" [rows]="4" placeholder="Indique el motivo del rechazo" />
                 </form>
             </div>
             <div class="modal-footer">

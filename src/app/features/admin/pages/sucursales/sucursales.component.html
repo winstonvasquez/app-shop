@@ -1,13 +1,15 @@
 <div class="page-container">
-    <header class="page-header">
-        <div>
-            <h1>Sucursales</h1>
-            <p class="subtitle">Gestión de sucursales de la empresa — {{ totalElements() }} en total</p>
+    <!-- Mismo encabezado que el resto del ERP: replicarlo a mano desalineaba el
+         título 12px respecto a /admin/products y las demás vistas. -->
+    <app-page-header
+        title="Sucursales"
+        [subtitle]="'Gestión de sucursales de la empresa — ' + totalElements() + ' en total'">
+        <div actions>
+            @if (!showForm()) {
+                <button class="btn btn-primary" (click)="openCreate()">+ Nueva sucursal</button>
+            }
         </div>
-        @if (!showForm()) {
-            <button class="btn btn-primary" (click)="openCreate()">+ Nueva sucursal</button>
-        }
-    </header>
+    </app-page-header>
 
     @if (error()) {
         <div class="alert alert-error">{{ error() }}</div>

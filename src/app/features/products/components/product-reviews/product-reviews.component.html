@@ -75,7 +75,7 @@
                 }
                 <span class="text-accent ml-2 text-xs font-bold self-center">{{ ratingLabel(review.calificacion) }}</span>
             </div>
-            <p class="text-sm text-on">{{ review.comentario }}</p>
+            <p class="text-sm text-on" [innerHTML]="review.comentario"></p>
         </div>
         }
     </div>

@@ -7,7 +7,7 @@ import { DeliveryService } from '../../services/delivery.service';
 import { Envio, EnvioStatus, TrackingEvent } from '../../models/envio.model';
 import { Transportista } from '../../models/transportista.model';
 import { AuthService } from '../../../../core/auth/auth.service';
-import { ButtonComponent } from '@shared/components';
+import { ButtonComponent, RichTextEditorComponent } from '@shared/components';
 import { DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent, DateRangeFilterConfig, DateRangeChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { catalogFilter, signalFilter } from '@shared/ui/tables/data-table/filter-helpers';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
@@ -30,6 +30,7 @@ import { CatalogService } from '@core/services/catalog.service';
     FormsModule,
     ReactiveFormsModule,
     ButtonComponent,
+    RichTextEditorComponent,
     DataTableComponent,
     DrawerComponent,
     DateInputComponent,

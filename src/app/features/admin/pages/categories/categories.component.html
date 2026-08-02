@@ -77,7 +77,7 @@
             <div class="category-info">
                 <h3 class="category-name">{{ category.nombre }}</h3>
                 @if (category.descripcion) {
-                <p class="category-description">{{ category.descripcion }}</p>
+                <p class="category-description" [innerHTML]="category.descripcion"></p>
                 } @else {
                 <p class="category-description text-muted">Sin descripción</p>
                 }
@@ -168,14 +168,12 @@
             </app-form-field>
 
             <div class="form-group">
-                <label for="descripcion">Descripción</label>
-                <textarea
-                    id="descripcion"
+                <label>Descripción</label>
+                <app-rich-text-editor
+                    ariaLabel="Descripción"
                     formControlName="descripcion"
-                    class="form-input"
-                    rows="3"
-                    placeholder="Descripción de la categoría">
-                </textarea>
+                    [rows]="3"
+                    placeholder="Descripción de la categoría" />
             </div>
 
             <!-- La imagen se guarda en la base de datos, no como enlace externo -->

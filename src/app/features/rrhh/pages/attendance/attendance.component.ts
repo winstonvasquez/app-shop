@@ -20,7 +20,7 @@ import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/p
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { DateInputComponent } from '@shared/ui/forms/date-input/date-input.component';
 import { AdminFormSectionComponent } from '@shared/ui/forms/admin-form-section/admin-form-section.component';
-import { ButtonComponent, CatalogSelectComponent, ServerSearchSelectComponent } from '@shared/components';
+import { ButtonComponent, CatalogSelectComponent, ServerSearchSelectComponent, RichTextEditorComponent } from '@shared/components';
 import { employeeSelectSource } from '../../components/select-sources';
 import { CatalogService } from '@core/services/catalog.service';
 import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
@@ -42,6 +42,7 @@ type TipoRegistro = 'NORMAL' | 'TARDANZA' | 'FALTA' | 'PERMISO' | 'LICENCIA' | '
         ButtonComponent,
         CatalogSelectComponent,
         ServerSearchSelectComponent,
+        RichTextEditorComponent,
     ],
     templateUrl: './attendance.component.html',
 })
@@ -117,7 +118,7 @@ export class AttendanceComponent implements OnInit {
             key: 'tipoRegistro', label: 'Tipo', html: true,
             render: row => `<span class="badge badge-${this.badgeTipo(row.tipoRegistro)}">${this.catalog.label('TIPO_REGISTRO_ASISTENCIA', row.tipoRegistro)}</span>`
         },
-        { key: 'observaciones', label: 'Observaciones', render: row => row.observaciones ?? '—' },
+        { key: 'observaciones', label: 'Observaciones', html: true, render: row => row.observaciones ?? '—' },
     ];
 
     /**

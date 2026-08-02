@@ -3,7 +3,7 @@ import {
 } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators, FormGroup } from '@angular/forms';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
-import { ButtonComponent, CatalogSelectComponent } from '@shared/components';
+import { ButtonComponent, CatalogSelectComponent, RichTextEditorComponent } from '@shared/components';
 import {
     AdminFormLayoutComponent,
     AdminFormSectionComponent,
@@ -21,7 +21,7 @@ import { bloquearEnEdicion, bloquearSiempre } from '@shared/utils/form-lock';
     standalone: true,
     imports: [
         ReactiveFormsModule, DrawerComponent, ButtonComponent, AdminFormLayoutComponent,
-        AdminFormSectionComponent, CatalogSelectComponent,
+        AdminFormSectionComponent, CatalogSelectComponent, RichTextEditorComponent,
     ],
     templateUrl: './customer-form.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,

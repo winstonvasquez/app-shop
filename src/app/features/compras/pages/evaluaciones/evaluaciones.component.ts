@@ -6,7 +6,7 @@ import { EvaluacionService } from '../../services/evaluacion.service';
 import { ProveedorService, ProveedorFiltroOption } from '../../services/proveedor.service';
 import { OrdenCompraService } from '../../services/orden-compra.service';
 import { EvaluacionProveedor, CrearEvaluacionRequest } from '../../models/evaluacion.model';
-import { ButtonComponent, ServerSearchSelectComponent } from '@shared/components';
+import { ButtonComponent, ServerSearchSelectComponent, RichTextEditorComponent } from '@shared/components';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { proveedorSelectSource, ordenCompraSelectSource } from '../../components/select-sources';
 import {
@@ -22,7 +22,7 @@ import { PAGINATION } from '@shared/constants/app.constants';
 @Component({
     selector: 'app-evaluaciones',
     standalone: true,
-    imports: [ReactiveFormsModule, ButtonComponent, ServerSearchSelectComponent, AlertComponent, DataTableComponent],
+    imports: [ReactiveFormsModule, ButtonComponent, ServerSearchSelectComponent, AlertComponent, DataTableComponent, RichTextEditorComponent],
     templateUrl: './evaluaciones.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
 })

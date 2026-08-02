@@ -5,6 +5,8 @@ import type { OrderService } from '@core/services/order.service';
 import type { OrderResponse } from '@core/models/order.model';
 import type { UserService } from '@features/admin/services/user.service';
 import type { UserResponse } from '@features/admin/models/user.model';
+import type { ProductService } from '@core/services/product.service';
+import type { ProductResponse } from '@core/models/product.model';
 
 /**
  * Adapter de `ServerSelectDataSource` para el `<app-server-search-select>` — resuelve
@@ -63,6 +65,36 @@ export function userSelectSource(svc: UserService): ServerSelectDataSource {
             try {
                 const user = await firstValueFrom(svc.getById(Number(id)));
                 return toOption(user);
+            } catch {
+                return null;
+            }
+        },
+    };
+}
+
+/**
+ * Fuente de productos: usada por el drawer de Promociones cuando alcance = "Producto específico"
+ * (reemplaza el `<select>` que no dejaba elegir CUÁL producto, ver PromotionsComponent).
+ */
+export function productoSelectSource(svc: ProductService): ServerSelectDataSource {
+    const toOption = (p: ProductResponse): ServerSelectOption => ({
+        id: p.id,
+        label: p.nombre,
+        sublabel: p.marca,
+    });
+    return {
+        async fetchPage(search, page, size) {
+            const res = await firstValueFrom(
+                svc.getAllProductsFiltered({ page, size }, { search: search || undefined })
+            );
+            const items = (res.content ?? []).map(toOption);
+            return { items, last: page >= pageTotalPages(res) - 1 };
+        },
+        async resolveOption(id) {
+            if (id === null || id === undefined || String(id).trim() === '') return null;
+            try {
+                const producto = await firstValueFrom(svc.getById(Number(id)));
+                return toOption(producto);
             } catch {
                 return null;
             }

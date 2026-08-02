@@ -71,9 +71,9 @@
                            placeholder="Ej: Descuento verano 20%" />
                 </app-form-field>
                 <app-form-field label="Descripción" [error]="err('descripcion')">
-                    <textarea formControlName="descripcion"
-                              class="form-input" rows="2"
-                              placeholder="Descripción breve de la promoción..."></textarea>
+                    <app-rich-text-editor formControlName="descripcion"
+                              [rows]="2"
+                              placeholder="Descripción breve de la promoción..." />
                 </app-form-field>
             </app-admin-form-section>
 
@@ -100,6 +100,37 @@
                         }
                     </select>
                 </app-form-field>
+
+                <!-- Vínculo según alcance: mutuamente excluyentes (ver aplicarBloqueoAlcance) -->
+                @if (alcanceActual() === 'PRODUCTO') {
+                    <app-form-field label="Producto" [required]="true" [error]="err('productoId')">
+                        <app-server-search-select
+                            [dataSource]="productoSource"
+                            formControlName="productoId"
+                            placeholder="Buscar producto…" />
+                    </app-form-field>
+                }
+                @if (alcanceActual() === 'CATEGORIA') {
+                    <app-form-field label="Categoría" [required]="true" [error]="err('categoriaId')">
+                        <!-- Fix P1: [ngValue] (no [value]) -- categoriaId es number y
+                             SelectControlValueAccessor compara [value] por STRING de identidad
+                             (3 !== "3"), así que al editar el select salía vacío aunque el
+                             control tuviera el id correcto. [ngValue] compara por el valor real. -->
+                        <select formControlName="categoriaId" class="form-input">
+                            <option [ngValue]="null">Seleccionar…</option>
+                            @for (opt of categoriaOptions(); track opt.value) {
+                                <option [ngValue]="opt.value">{{ opt.label }}</option>
+                            }
+                        </select>
+                    </app-form-field>
+                }
+                @if (alcanceActual() === 'CARRITO') {
+                    <app-form-field label="Monto mínimo de compra (S/)" [required]="true" [error]="err('montoMinimo')">
+                        <input formControlName="montoMinimo" type="number"
+                               class="form-input" min="0.01" step="0.01"
+                               placeholder="Ej: 100.00" />
+                    </app-form-field>
+                }
             </app-admin-form-section>
 
             <!-- Sección: Vigencia -->

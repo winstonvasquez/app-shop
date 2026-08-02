@@ -82,7 +82,7 @@
                     @if (c.notas) {
                         <div class="form-group mt-4">
                             <p class="input-label">Notas</p>
-                            <p class="text-on">{{ c.notas }}</p>
+                            <p class="text-on" [innerHTML]="c.notas"></p>
                         </div>
                     }
                 </div>

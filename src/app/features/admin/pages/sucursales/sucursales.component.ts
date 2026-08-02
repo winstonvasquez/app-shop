@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } 
 import { HttpClient } from '@angular/common/http';
 import { DataTableComponent, TableColumn, TableAction, PaginationEvent, FilterConfig, FilterChangeEvent, DateRangeFilterConfig, DateRangeChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { staticFilter, signalFilter, ACTIVO_OPTIONS } from '@shared/ui/tables/data-table/filter-helpers';
+import { PageHeaderComponent } from '@shared/ui/layout/page-header/page-header.component';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { AuthService } from '@core/auth/auth.service';
 import { Sucursal, SucursalInput, SucursalService } from '@features/admin/services/sucursal.service';
@@ -14,7 +15,7 @@ import { bloquearEnEdicion } from '@shared/utils/form-lock';
     selector: 'app-sucursales',
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [ReactiveFormsModule, DataTableComponent],
+    imports: [ReactiveFormsModule, DataTableComponent, PageHeaderComponent],
     templateUrl: './sucursales.component.html',
     styleUrl: './sucursales.component.scss',
 })

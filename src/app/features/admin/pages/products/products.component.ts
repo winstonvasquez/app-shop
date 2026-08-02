@@ -1,8 +1,8 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { map } from 'rxjs';
 import { FormBuilder, ReactiveFormsModule, Validators, FormGroup, FormControl } from '@angular/forms';
+import { richTextMaxLength } from '@core/utils/rich-text.util';
 import { ProductService, ProductRequest, ProductFilter, ProductoImagen } from '@core/services/product.service';
-import { ImageUploadComponent } from '@shared/ui/forms/image-upload/image-upload.component';
 import { ProductResponse } from '@core/models/product.model';
 import { PaginationConfig, PageResponse, pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 import { DataTableComponent, TableColumn, TableAction, PaginationEvent, SortEvent, FilterConfig, FilterChangeEvent, DateRangeFilterConfig, DateRangeChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
@@ -11,7 +11,10 @@ import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.compo
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
-import { ButtonComponent } from '@shared/components';
+import {
+  ButtonComponent, RichTextEditorComponent, MultiCheckSelectComponent, MultiCheckOption,
+  ImageGalleryManagerComponent, PendingImage,
+} from '@shared/components';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
 import { AuthService } from '@core/auth/auth.service';
@@ -45,23 +48,39 @@ const MIN_RATING_OPTIONS = [
     PageHeaderComponent,
     AlertComponent,
     ButtonComponent,
-    ImageUploadComponent
+    RichTextEditorComponent,
+    MultiCheckSelectComponent,
+    ImageGalleryManagerComponent
   ],
   templateUrl: './products.component.html',
   styleUrl: './products.component.scss'
 })
-export class ProductsComponent implements OnInit {
+export class ProductsComponent implements OnInit, OnDestroy {
   private readonly productService = inject(ProductService);
 
   /** Imágenes ya guardadas del producto en edición (binarios en base de datos). */
   readonly imagenes = signal<ProductoImagen[]>([]);
-  /** Imagen elegida en el drawer, pendiente de subir tras guardar. */
-  readonly imagenSeleccionada = signal<File | null>(null);
+  /** Imágenes elegidas en el drawer, pendientes de subir tras guardar. */
+  readonly imagenesPendientes = signal<PendingImage[]>([]);
+  readonly imagenesError = signal<string | null>(null);
+  /**
+   * ¿Sabemos cuáles son las categorías REALES del producto en edición? Si no, el
+   * submit NO debe mandar `categoriaIds`: el backend interpreta la lista vacía como
+   * «quítalas todas» y borraría las que tuviera.
+   */
+  readonly categoriasCargadas = signal(false);
+  /** Un PUT de reorden en vuelo: dos clics rápidos partirían del mismo estado. */
+  readonly reordenando = signal(false);
+  private contadorPendientes = 0;
   private readonly fb = inject(FormBuilder);
   private readonly authService = inject(AuthService);
   private readonly categoryService = inject(CategoryService);
 
   categorias = signal<CategoryResponse[]>([]);
+
+  /** Opciones del selector múltiple de categorías. */
+  readonly categoriaOptions = computed<MultiCheckOption[]>(() =>
+    this.categorias().map(c => ({ id: c.id, label: c.nombre })));
 
   // Signals for reactive state
   products = signal<ProductResponse[]>([]);
@@ -156,6 +175,7 @@ export class ProductsComponent implements OnInit {
     {
       key: 'descripcion',
       label: 'Descripción',
+      html: true,
       render: (row) => row.descripcion || '-'
     },
     {
@@ -171,9 +191,9 @@ export class ProductsComponent implements OnInit {
       render: (row) => row.marca || '-'
     },
     {
-      key: 'companyId',
+      key: 'company',
       label: 'Empresa',
-      render: (row) => `Empresa #${row.companyId}`
+      render: (row) => row.company?.name ?? '—'
     },
     {
       key: 'categorias',
@@ -207,8 +227,9 @@ export class ProductsComponent implements OnInit {
         Validators.minLength(3),
         Validators.maxLength(100)
       ]],
+      // El editor de texto enriquecido guarda HTML: el límite mide el texto VISIBLE.
       descripcion: ['', [
-        Validators.maxLength(500)
+        richTextMaxLength(500)
       ]],
       precioBase: [null, [
         Validators.required,
@@ -231,17 +252,89 @@ export class ProductsComponent implements OnInit {
     });
   }
 
-  toggleCategoria(id: number): void {
-    const control = this.productForm.get('categoriaIds')!;
-    const current: number[] = control.value || [];
-    control.setValue(
-      current.includes(id) ? current.filter(c => c !== id) : [...current, id]
-    );
+  ngOnDestroy(): void {
+    // Navegar fuera de la página con la cola cargada filtraría los blobs.
+    this.limpiarPendientes();
   }
 
-  isCategoriaSelected(id: number): boolean {
-    const current: number[] = this.productForm.get('categoriaIds')?.value || [];
-    return current.includes(id);
+  // ── Galería de imágenes ────────────────────────────────────────────────
+
+  /** Añade archivos a la cola de subida; el primero de todos queda como principal. */
+  onImagenesElegidas(files: File[]): void {
+    this.imagenesError.set(null);
+    const nuevas = files.map(file => ({
+      key: `p${++this.contadorPendientes}`,
+      file,
+      previewUrl: URL.createObjectURL(file),
+      esPrincipal: false,
+    }));
+    const total = [...this.imagenesPendientes(), ...nuevas];
+    // Sólo hay una principal en todo el conjunto: si ya hay guardadas, manda una de ésas.
+    if (this.imagenes().length === 0 && !total.some(p => p.esPrincipal) && total.length > 0) {
+      total[0] = { ...total[0], esPrincipal: true };
+    }
+    this.imagenesPendientes.set(total);
+  }
+
+  onQuitarPendiente(item: PendingImage): void {
+    URL.revokeObjectURL(item.previewUrl);
+    const resto = this.imagenesPendientes().filter(p => p.key !== item.key);
+    // Si se quitó la principal y no hay ninguna guardada, promueve la primera que quede.
+    if (item.esPrincipal && resto.length > 0 && this.imagenes().length === 0) {
+      resto[0] = { ...resto[0], esPrincipal: true };
+    }
+    this.imagenesPendientes.set(resto);
+  }
+
+  /** Marca una pendiente como principal; desmarca el resto de pendientes. */
+  onPendientePrincipal(item: PendingImage): void {
+    this.imagenesPendientes.update(list =>
+      list.map(p => ({ ...p, esPrincipal: p.key === item.key })));
+    // Una guardada no puede seguir siendo principal si la elegida está por subir:
+    // se resuelve al subirla (el backend desmarca las demás).
+  }
+
+  onMoverPendiente({ item, delta }: { item: PendingImage; delta: number }): void {
+    const list = [...this.imagenesPendientes()];
+    const from = list.findIndex(p => p.key === item.key);
+    const to = from + delta;
+    if (from < 0 || to < 0 || to >= list.length) return;
+    [list[from], list[to]] = [list[to], list[from]];
+    this.imagenesPendientes.set(list);
+  }
+
+  /** Persiste el nuevo orden de las imágenes YA guardadas. */
+  onReordenarImagenes(imagenIds: number[]): void {
+    const productoId = this.selectedProductId();
+    if (!productoId) return;
+    this.reordenando.set(true);
+    this.productService.reordenarImagenes(productoId, imagenIds).subscribe({
+      next: imgs => {
+        this.imagenes.set(imgs ?? []);
+        this.reordenando.set(false);
+      },
+      error: () => {
+        this.imagenesError.set('No se pudo cambiar el orden de las imágenes.');
+        this.reordenando.set(false);
+      },
+    });
+  }
+
+  /** Marca como principal una imagen ya guardada. */
+  onMarcarPrincipal(imagen: ProductoImagen): void {
+    const productoId = this.selectedProductId();
+    if (!productoId) return;
+    this.reordenando.set(true);
+    this.productService.marcarImagenPrincipal(productoId, imagen.id).subscribe({
+      next: imgs => {
+        this.imagenes.set(imgs ?? []);
+        this.reordenando.set(false);
+      },
+      error: () => {
+        this.imagenesError.set('No se pudo marcar la imagen como principal.');
+        this.reordenando.set(false);
+      },
+    });
   }
 
   /**
@@ -384,7 +477,8 @@ export class ProductsComponent implements OnInit {
     this.productForm.reset({
       categoriaIds: []
     });
-    this.imagenSeleccionada.set(null);
+    this.categoriasCargadas.set(true); // en un alta, el formulario es la fuente de verdad
+    this.limpiarPendientes();
     this.imagenes.set([]);
     this.showModal.set(true);
     this.submitError.set(null);
@@ -405,7 +499,22 @@ export class ProductsComponent implements OnInit {
       categoriaIds: product.categorias?.map((c: { id: number }) => c.id) || []
     });
 
-    this.imagenSeleccionada.set(null);
+    // La fila de la tabla NO trae `categorias` (la proyección JPQL de la lista las
+    // deja en null), así que hay que pedir el producto completo: sin esto el
+    // selector abriría vacío y guardar le quitaría al producto sus categorías.
+    this.categoriasCargadas.set(false);
+    this.productService.getById(product.id).subscribe({
+      next: completo => {
+        this.productForm.patchValue({
+          categoriaIds: completo.categorias?.map((c: { id: number }) => c.id) || [],
+        });
+        this.categoriasCargadas.set(true);
+      },
+      error: () => this.submitError.set(
+        'No se pudieron cargar las categorías del producto: se guardarán sin cambios.'),
+    });
+
+    this.limpiarPendientes();
     this.cargarImagenes(product.id);
     this.showModal.set(true);
     this.submitError.set(null);
@@ -417,6 +526,8 @@ export class ProductsComponent implements OnInit {
   closeModal(): void {
     this.showModal.set(false);
     this.productForm.reset();
+    // Sin esto, cancelar deja vivas las object URLs de la previsualización.
+    this.limpiarPendientes();
   }
 
   /**
@@ -444,7 +555,8 @@ export class ProductsComponent implements OnInit {
       precioBase: formValue.precioBase,
       marca: formValue.marca || null,
       companyId,
-      categoriaIds: formValue.categoriaIds || []
+      // `undefined` = «no toques las categorías» (el backend distingue null de []).
+      categoriaIds: this.categoriasCargadas() ? (formValue.categoriaIds || []) : undefined
     };
 
     const operation = this.editMode()
@@ -453,18 +565,11 @@ export class ProductsComponent implements OnInit {
 
     operation.subscribe({
       next: (producto) => {
-        // La imagen se sube después: el POST multipart necesita el id del producto.
-        const archivo = this.imagenSeleccionada();
+        // Las imágenes se suben después: el POST multipart necesita el id del producto.
         const id = this.editMode() ? this.selectedProductId()! : producto?.id;
-        if (archivo && id) {
-          const primera = this.imagenes().length === 0;
-          this.productService.subirImagen(id, archivo, primera).subscribe({
-            next: () => this.finalizarGuardado(),
-            error: () => {
-              this.submitError.set('El producto se guardó, pero falló la subida de la imagen.');
-              this.submitting.set(false);
-            },
-          });
+        const pendientes = this.imagenesPendientes();
+        if (pendientes.length > 0 && id) {
+          this.subirPendientes(id, pendientes);
           return;
         }
         this.finalizarGuardado();
@@ -476,12 +581,58 @@ export class ProductsComponent implements OnInit {
     });
   }
 
+  /**
+   * Sube la cola en SERIE y respetando el orden de la lista: el backend asigna
+   * `orden` incremental, así que en paralelo llegarían desordenadas.
+   */
+  private subirPendientes(productoId: number, pendientes: PendingImage[]): void {
+    // `orden` arranca DESPUÉS del mayor ya guardado: usar la cantidad de imágenes
+    // daría un `orden` repetido en cuanto las guardadas se hayan reordenado.
+    const ordenBase = this.imagenes().reduce((max, img) => Math.max(max, img.orden ?? 0), -1) + 1;
+    const sinPrincipalGuardada = !this.imagenes().some(img => img.esPrincipal);
+    const alguna = pendientes.some(x => x.esPrincipal);
+
+    const subir = (i: number): void => {
+      if (i >= pendientes.length) {
+        this.finalizarGuardado();
+        return;
+      }
+      const p = pendientes[i];
+      const principal = p.esPrincipal || (sinPrincipalGuardada && i === 0 && !alguna);
+      this.productService.subirImagen(productoId, p.file, principal, ordenBase + i).subscribe({
+        next: () => {
+          // Se saca de la cola en cuanto sube: si una posterior falla y el usuario
+          // reintenta, las ya subidas NO se vuelven a enviar duplicadas.
+          this.imagenesPendientes.update(list => list.filter(x => x.key !== p.key));
+          URL.revokeObjectURL(p.previewUrl);
+          subir(i + 1);
+        },
+        error: () => {
+          const restantes = pendientes.length - i;
+          this.submitError.set(
+            `El producto se guardó, pero falló la subida de ${restantes} imagen(es). Corrige y vuelve a guardar.`);
+          // Refresca lo que sí entró para que el siguiente intento parta del estado real.
+          this.cargarImagenes(productoId);
+          this.submitting.set(false);
+        },
+      });
+    };
+    subir(0);
+  }
+
   /** Cierra el drawer y refresca la lista tras un guardado correcto. */
   private finalizarGuardado(): void {
-    this.imagenSeleccionada.set(null);
+    this.limpiarPendientes();
     this.submitting.set(false);
     this.closeModal();
     this.loadProducts();
+  }
+
+  /** Vacía la cola y libera las object URLs de la previsualización. */
+  private limpiarPendientes(): void {
+    this.imagenesPendientes().forEach(p => URL.revokeObjectURL(p.previewUrl));
+    this.imagenesPendientes.set([]);
+    this.imagenesError.set(null);
   }
 
   /** Carga los metadatos de las imágenes del producto que se está editando. */

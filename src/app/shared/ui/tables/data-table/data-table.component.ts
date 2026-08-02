@@ -2,6 +2,7 @@ import { Component, input, output, computed, inject, signal, ChangeDetectionStra
 import { AsyncPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Observable } from 'rxjs';
+import { htmlToText, RICH_TEXT_MARKUP } from '@core/utils/rich-text.util';
 import { ExportService } from '@shared/services/export.service';
 import { BackendExportService, BackendExportConfig } from '@shared/services/backend-export.service';
 import { PaginationComponent, PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
@@ -400,6 +401,12 @@ export class DataTableComponent<T = any> {
             return column.render(row);
         }
         const raw = (row as Record<string, unknown>)[column.key];
-        return raw === null || raw === undefined ? '' : String(raw);
+        if (raw === null || raw === undefined) return '';
+        const value = String(raw);
+        // Los campos editados con <app-rich-text-editor> guardan HTML: el dato "crudo"
+        // ya no es texto plano y saldría con etiquetas en el CSV/XLSX. Se exige marcado
+        // reconocible: un `<` suelto ("stock <minimo") es texto legítimo y el parser
+        // lo tomaría por una etiqueta abierta, tragándose el resto de la celda.
+        return RICH_TEXT_MARKUP.test(value) ? htmlToText(value) : value;
     }
 }

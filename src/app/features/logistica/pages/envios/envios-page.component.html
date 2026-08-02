@@ -117,9 +117,8 @@
 
         <div class="form-field-wrapper" style="grid-column:1/-1">
           <label class="input-label">Notas</label>
-          <textarea class="form-input" formControlName="notes" rows="2"
-                    placeholder="Instrucciones de entrega, referencias, etc."
-                    style="resize:vertical"></textarea>
+          <app-rich-text-editor formControlName="notes" [rows]="2"
+                    placeholder="Instrucciones de entrega, referencias, etc." />
         </div>
       </div>
     </div>

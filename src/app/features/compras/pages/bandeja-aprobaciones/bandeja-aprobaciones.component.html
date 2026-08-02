@@ -74,10 +74,10 @@
       </div>
       <div class="modal-body">
         <label class="input-label">Comentario (opcional)</label>
-        <textarea class="form-input" rows="3"
-          [value]="comentario()"
-          (input)="comentario.set($any($event.target).value)"
-          placeholder="Ingresa un comentario..."></textarea>
+        <app-rich-text-editor [rows]="3"
+          [ngModel]="comentario()"
+          (ngModelChange)="comentario.set($event)"
+          placeholder="Ingresa un comentario..." />
       </div>
       <div class="modal-footer">
         <app-button label="Cancelar" variant="secondary" icon="x" (click)="cerrarModales()" />
@@ -97,10 +97,10 @@
       </div>
       <div class="modal-body">
         <label class="input-label">Motivo del rechazo <span style="color:var(--color-error)">*</span></label>
-        <textarea class="form-input" rows="3"
-          [value]="motivo()"
-          (input)="motivo.set($any($event.target).value)"
-          placeholder="Indica el motivo..."></textarea>
+        <app-rich-text-editor [rows]="3"
+          [ngModel]="motivo()"
+          (ngModelChange)="motivo.set($event)"
+          placeholder="Indica el motivo..." />
       </div>
       <div class="modal-footer">
         <app-button label="Cancelar" variant="secondary" icon="x" (click)="cerrarModales()" />

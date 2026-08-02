@@ -45,8 +45,12 @@
 
 <!-- Drawer crear contrato -->
 @if (mostrarForm()) {
-    <div class="drawer-overlay" (click)="cerrarForm()">
-        <div class="drawer" style="width:480px; padding:1.5rem" (click)="$event.stopPropagation()">
+    <div class="drawer-overlay open" (click)="cerrarForm()">
+        <!-- `open` literal: este drawer solo se renderiza dentro de un @if, asi que su presencia
+     YA significa abierto. Sin la clase, la regla global `div.drawer:not(.open)` lo dejaba
+     con visibility:hidden y ancho 0 - el formulario era inalcanzable. Y sin ancho en linea
+     hereda el estandar de 540px del resto del ERP. -->
+        <div class="drawer drawer-right open" style="padding:1.5rem" (click)="$event.stopPropagation()">
             <h2 style="font-size:1.1rem; font-weight:700; margin-bottom:1.25rem">
                 {{ modoEdicion() ? 'Editar Contrato ' + modoEdicion()?.codigo : 'Nuevo Contrato' }}
             </h2>
@@ -69,7 +73,7 @@
                     </div>
                     <div>
                         <label class="input-label">Descripción *</label>
-                        <textarea class="form-input" formControlName="descripcion" rows="2"></textarea>
+                        <app-rich-text-editor formControlName="descripcion" [rows]="2" />
                     </div>
                     <div style="display:grid; grid-template-columns:1fr 1fr; gap:.75rem">
                         <div>

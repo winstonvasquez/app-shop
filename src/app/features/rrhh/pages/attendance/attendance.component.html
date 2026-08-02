@@ -94,12 +94,10 @@
         <!-- Observaciones -->
         <div>
             <label class="input-label">Observaciones</label>
-            <textarea
-                class="form-input"
-                rows="3"
+            <app-rich-text-editor
+                [rows]="3"
                 placeholder="Observaciones adicionales..."
-                formControlName="observaciones"
-                style="resize: vertical"></textarea>
+                formControlName="observaciones" />
         </div>
 
     </form>

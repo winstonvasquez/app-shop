@@ -1,0 +1,163 @@
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Mi perfil</h1>
+        <p class="page-subtitle">Datos de tu cuenta, contraseña y empresa activa</p>
+    </div>
+</div>
+
+<div class="mi-perfil-grid">
+
+    <!-- Datos del usuario -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Datos de la cuenta</h3>
+        </div>
+        <div class="card-body">
+            @if (cargandoPerfil()) {
+                <div class="loading-container"><div class="spinner"></div></div>
+            } @else if (errorPerfil()) {
+                <div class="alert alert-error">{{ errorPerfil() }}</div>
+            } @else if (perfil(); as p) {
+                <dl class="perfil-datos">
+                    <div class="perfil-dato">
+                        <dt>Nombre</dt>
+                        <dd>{{ p.persona?.nombreCompleto || (p.persona ? (p.persona.nombres + ' ' + p.persona.apellidos) : '—') }}</dd>
+                    </div>
+                    <div class="perfil-dato">
+                        <dt>Usuario</dt>
+                        <dd>{{ p.username }}</dd>
+                    </div>
+                    <div class="perfil-dato">
+                        <dt>Email</dt>
+                        <dd>{{ p.email || '—' }}</dd>
+                    </div>
+                    <div class="perfil-dato">
+                        <dt>Rol</dt>
+                        <dd>{{ p.rol?.nombre || '—' }}</dd>
+                    </div>
+                    <div class="perfil-dato">
+                        <dt>Empresa activa</dt>
+                        <dd>{{ empresaActivaNombre() }}</dd>
+                    </div>
+                </dl>
+            }
+        </div>
+    </div>
+
+    <!-- Cambiar contraseña -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Cambiar contraseña</h3>
+        </div>
+        <div class="card-body">
+            @if (exitoPassword()) {
+                <div class="alert alert-success">{{ exitoPassword() }}</div>
+            }
+            @if (errorPassword()) {
+                <div class="alert alert-error">{{ errorPassword() }}</div>
+            }
+            <form [formGroup]="passwordForm" (ngSubmit)="onSubmitPassword()">
+                <div class="form-group">
+                    <label for="currentPassword">Contraseña actual <span class="required">*</span></label>
+                    <input type="password" id="currentPassword" formControlName="currentPassword" class="form-input"
+                           [class.error]="!!errPassword('currentPassword')" autocomplete="current-password" />
+                    @if (errPassword('currentPassword')) {
+                        <span class="error-message">{{ errPassword('currentPassword') }}</span>
+                    }
+                </div>
+                <div class="form-group">
+                    <label for="newPassword">Nueva contraseña <span class="required">*</span></label>
+                    <input type="password" id="newPassword" formControlName="newPassword" class="form-input"
+                           [class.error]="!!errPassword('newPassword')" placeholder="Mínimo 8 caracteres" autocomplete="new-password" />
+                    @if (errPassword('newPassword')) {
+                        <span class="error-message">{{ errPassword('newPassword') }}</span>
+                    }
+                </div>
+                <div class="form-group">
+                    <label for="confirmPassword">Confirmar nueva contraseña <span class="required">*</span></label>
+                    <input type="password" id="confirmPassword" formControlName="confirmPassword" class="form-input"
+                           [class.error]="!!errPassword('confirmPassword')" autocomplete="new-password" />
+                    @if (errPassword('confirmPassword')) {
+                        <span class="error-message">{{ errPassword('confirmPassword') }}</span>
+                    }
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary" [disabled]="guardandoPassword() || passwordForm.invalid">
+                        {{ guardandoPassword() ? 'Guardando...' : 'Cambiar contraseña' }}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Cambiar empresa activa -->
+    @if (tieneVariasEmpresas()) {
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Empresa activa</h3>
+            </div>
+            <div class="card-body">
+                @if (errorEmpresa()) {
+                    <div class="alert alert-error">{{ errorEmpresa() }}</div>
+                }
+                <ul class="empresas-lista">
+                    @for (empresa of empresas(); track empresa.companyId) {
+                        <li class="empresa-item" [class.empresa-item--activa]="empresa.companyId === activeCompanyId()">
+                            <div class="empresa-info">
+                                <span class="empresa-nombre">{{ empresa.companyName }}</span>
+                                <span class="empresa-ruc">RUC {{ empresa.ruc }}</span>
+                            </div>
+                            @if (empresa.companyId === activeCompanyId()) {
+                                <span class="badge badge-success">Activa</span>
+                            } @else {
+                                <button type="button" class="btn btn-secondary btn-sm"
+                                        [disabled]="cambiandoEmpresa() !== null"
+                                        (click)="cambiarEmpresa(empresa.companyId)">
+                                    {{ cambiandoEmpresa() === empresa.companyId ? 'Cambiando...' : 'Cambiar a esta empresa' }}
+                                </button>
+                            }
+                        </li>
+                    }
+                </ul>
+            </div>
+        </div>
+    }
+
+    <!-- Permisos (solo lectura) -->
+    @if (permisos(); as perm) {
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Permisos de mi rol</h3>
+                <span class="badge badge-neutral">{{ perm.rolNombre }}</span>
+            </div>
+            <div class="card-body">
+                @if (perm.rolDescripcion) {
+                    <p class="perfil-permisos-desc">{{ perm.rolDescripcion }}</p>
+                }
+                @if (perm.permissions.length > 0) {
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th class="table-header-cell">Código</th>
+                                <th class="table-header-cell">Nombre</th>
+                                <th class="table-header-cell">Efecto</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (p of perm.permissions; track p.codigo) {
+                                <tr class="table-row">
+                                    <td class="table-cell font-mono" style="font-size:0.8rem">{{ p.codigo }}</td>
+                                    <td class="table-cell">{{ p.nombre }}</td>
+                                    <td class="table-cell">{{ p.efecto }}</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                } @else {
+                    <p style="color:var(--color-text-muted)">Este rol no tiene políticas específicas asignadas.</p>
+                }
+            </div>
+        </div>
+    }
+
+</div>

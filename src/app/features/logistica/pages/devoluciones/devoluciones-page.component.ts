@@ -9,7 +9,7 @@ import { EnvioService } from '../../services/envio.service';
 import { Envio } from '../../models/envio.model';
 import { envioSelectSource } from '../../components/select-sources';
 import { AuthService } from '../../../../core/auth/auth.service';
-import { ButtonComponent, CatalogSelectComponent, ServerSearchSelectComponent } from '@shared/components';
+import { ButtonComponent, CatalogSelectComponent, ServerSearchSelectComponent, RichTextEditorComponent } from '@shared/components';
 import { DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent, DateRangeFilterConfig, DateRangeChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { catalogFilter, signalFilter } from '@shared/ui/tables/data-table/filter-helpers';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
@@ -31,6 +31,7 @@ import { CatalogService } from '@core/services/catalog.service';
         ButtonComponent,
         CatalogSelectComponent,
         ServerSearchSelectComponent,
+        RichTextEditorComponent,
         DataTableComponent,
         DrawerComponent,
         AlertComponent,

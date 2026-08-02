@@ -6,6 +6,7 @@ import { HttpClient } from '@angular/common/http';
 import { environment } from '@env/environment';
 import { APP_CONFIG } from '@shared/constants/app.constants';
 import { StoreConfigService } from '@core/services/store-config.service';
+import { ButtonComponent } from '@shared/components';
 
 interface FooterLink { label: string; url: string; }
 
@@ -26,7 +27,7 @@ const COLUMNS: FooterColumn[] = [
 @Component({
     selector: 'app-footer-manager',
     standalone: true,
-    imports: [FormsModule],
+    imports: [FormsModule, ButtonComponent],
     changeDetection: ChangeDetectionStrategy.OnPush,
     template: `
         <div class="page-header">
@@ -54,10 +55,11 @@ const COLUMNS: FooterColumn[] = [
         <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:1.5rem; margin-bottom:1.5rem">
             @for (col of columns; track col.linksKey) {
                 <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">{{ col.label }}</h3>
-                        <button class="btn btn-secondary" style="font-size:.75rem; padding:4px 10px; width:100%"
-                                (click)="addLink(col.linksKey)">+ Agregar enlace</button>
+                    <div class="card-header" style="gap:.5rem; flex-wrap:wrap; row-gap:.5rem">
+                        <h3 class="card-title" style="white-space:nowrap">{{ col.label }}</h3>
+                        <app-button variant="secondary" size="xs" icon="plus"
+                                    label="Agregar"
+                                    (click)="addLink(col.linksKey)" />
                     </div>
                     <div class="card-body" style="display:flex; flex-direction:column; gap:.5rem">
                         <div>
@@ -78,19 +80,14 @@ const COLUMNS: FooterColumn[] = [
                                     <input class="input-field" type="url" placeholder="/ruta"
                                            style="font-size:.8rem; padding:6px 10px"
                                            [(ngModel)]="link.url">
-                                    <button class="btn btn-icon btn-icon-delete"
-                                            (click)="removeLink(col.linksKey, $index)"
-                                            title="Eliminar">
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-                                             stroke="currentColor" stroke-width="2">
-                                            <path d="M18 6L6 18M6 6l12 12"/>
-                                        </svg>
-                                    </button>
+                                    <app-button variant="danger" size="sm" icon="trash-2"
+                                                [iconOnly]="true" ariaLabel="Eliminar"
+                                                (click)="removeLink(col.linksKey, $index)" />
                                 </div>
                             }
                             @if (links()[col.linksKey].length === 0) {
                                 <p style="font-size:.8rem; color:var(--color-text-muted); font-style:italic">
-                                    Sin links. Haz clic en "+ Link" para agregar.
+                                    Sin links. Haz clic en "Agregar" para añadir uno.
                                 </p>
                             }
                         </div>

@@ -4,16 +4,25 @@ import { Subscription } from 'rxjs';
 import { NotificationLogisticaService } from '../../services/notification-logistica.service';
 import { LogisticsNotification } from '../../models/notification.model';
 import { ButtonComponent } from '@shared/components';
+import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
+import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
+import { ROUTES } from '@shared/constants/app.constants';
 
 @Component({
     selector: 'app-notifications-logistica',
     standalone: true,
-    imports: [DatePipe, ButtonComponent],
+    imports: [DatePipe, ButtonComponent, AlertComponent, PageHeaderComponent],
     templateUrl: './notifications.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class NotificationsComponent implements OnInit, OnDestroy {
     private readonly notifService = inject(NotificationLogisticaService);
+
+    breadcrumbs: Breadcrumb[] = [
+        { label: 'Admin', url: ROUTES.admin },
+        { label: 'Logística', url: '/admin/logistica/dashboard' },
+        { label: 'Notificaciones' }
+    ];
 
     notifications = signal<LogisticsNotification[]>([]);
     loading = signal(false);

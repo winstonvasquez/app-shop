@@ -11,11 +11,10 @@ import { DateInputComponent } from '@shared/ui/forms/date-input/date-input.compo
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
 import { AdminFormSectionComponent } from '@shared/ui/forms/admin-form-section/admin-form-section.component';
 import { AdminFormLayoutComponent } from '@shared/ui/forms/admin-form-layout/admin-form-layout.component';
-import { ButtonComponent } from '@shared/components';
+import { ButtonComponent, ServerSearchSelectComponent, RichTextEditorComponent } from '@shared/components';
 import { AuthService } from '@core/auth/auth.service';
 import { VentasParametrosService, SelectOption } from '../../services/ventas-parametros.service';
 import { CURRENCY_DISPLAY } from '@shared/constants/sunat.constants';
-import { ServerSearchSelectComponent } from '@shared/components';
 import { OrderService } from '@core/services/order.service';
 import { pedidoSelectSource } from '../../components/select-sources';
 
@@ -57,6 +56,7 @@ interface DevolucionStats {
         AdminFormLayoutComponent,
         ButtonComponent,
         ServerSearchSelectComponent,
+        RichTextEditorComponent,
     ],
     templateUrl: './returns.component.html',
 })

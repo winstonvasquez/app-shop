@@ -1,4 +1,4 @@
-import { Component, input, output, HostListener, ChangeDetectionStrategy } from '@angular/core';
+import { Component, input, output, HostListener, ChangeDetectionStrategy, effect, signal, DestroyRef, inject } from '@angular/core';
 import { LucideAngularModule } from 'lucide-angular';
 
 export type DrawerSide = 'left' | 'right';
@@ -12,11 +12,17 @@ export type DrawerSize = 'sm' | 'md' | 'lg' | 'xl' | 'full';
     template: `
         @if (isOpen()) {
           <!-- Overlay -->
-          <div class="drawer-overlay" (click)="close()"></div>
+          <div class="drawer-overlay open"
+               [style.z-index]="zIndex()"
+               [class.drawer-oculto]="isInert()"
+               (click)="close()"></div>
 
           <!-- Panel -->
           <aside class="drawer"
                  [class]="'drawer-' + side() + ' drawer-' + size()"
+                 [class.drawer-oculto]="isInert()"
+                 [style.z-index]="zIndex() + 1"
+                 [attr.inert]="isInert() ? '' : null"
                  role="complementary"
                  [attr.aria-label]="title()">
             <div class="drawer-header">
@@ -43,6 +49,16 @@ export type DrawerSize = 'sm' | 'md' | 'lg' | 'xl' | 'full';
     styles: [`
       /* ===== Estándar global de drawers — heredado por TODOS los <app-drawer> ===== */
       .drawer { overflow: hidden; }
+
+      /*
+       * Drawer tapado por otro encima: se oculta del todo en lugar de asomar detrás.
+       * Con dos abiertos (p. ej. «Nuevo ítem de catálogo» → «Homologar proveedor») se
+       * veían los dos paneles superpuestos y el título del de atrás quedaba cortado.
+       * Se usa visibility y NO @if / display:none: el nodo sigue en el DOM, así que
+       * el formulario a medio llenar conserva su estado y reaparece intacto al cerrar
+       * el de encima.
+       */
+      .drawer-oculto { visibility: hidden; }
 
       /* Header con color de marca + tipografía mejorada */
       .drawer-header {
@@ -160,7 +176,67 @@ export class DrawerComponent {
 
     closed = output<void>();
 
+    /**
+     * Pila global de drawers abiertos (contrato 2026-08-01): cuando se anida un
+     * `<app-drawer>` dentro de otro (p.ej. "Homologar Proveedor" abierto desde
+     * "Nuevo Ítem de Catálogo"), el de atrás debe quedar apilado visualmente
+     * (z-index) e INERTE (atributo `inert`: sin foco, sin clics, sin lectores
+     * de pantalla) para no interceptar eventos del que está encima. Se prefiere
+     * apilar-e-inertizar sobre cerrar el anterior porque el usuario suele estar
+     * a mitad de un alta y perder el formulario de atrás sería peor.
+     */
+    private static readonly openStack: DrawerComponent[] = [];
+    // 50/51 es la capa que el CSS global ya daba a `.drawer-overlay`/`.drawer`
+    // (_admin-utilities.scss). Con 1000 el overlay del drawer tapaba por completo
+    // los modales (`.modal-overlay`, z-50) abiertos DESDE un drawer: el modal era
+    // invisible y el clic cerraba el drawer. El paso de 2 mantiene el apilado
+    // (anidado: 52/53) sin cruzar la capa de modales, que ahora va por encima.
+    private static readonly BASE_Z_INDEX = 50;
+    private static readonly Z_INDEX_STEP = 2;
+
+    private readonly destroyRef = inject(DestroyRef);
+
+    /** z-index propio de este drawer dentro de la pila (overlay = zIndex, panel = zIndex+1). */
+    readonly zIndex = signal(DrawerComponent.BASE_Z_INDEX);
+    /** true si hay al menos un drawer abierto por encima de este en la pila. */
+    readonly isInert = signal(false);
+
+    constructor() {
+        effect(() => {
+            if (this.isOpen()) {
+                this.pushToStack();
+            } else {
+                this.removeFromStack();
+            }
+        });
+        this.destroyRef.onDestroy(() => this.removeFromStack());
+    }
+
+    private pushToStack(): void {
+        if (!DrawerComponent.openStack.includes(this)) {
+            DrawerComponent.openStack.push(this);
+        }
+        DrawerComponent.recomputeStack();
+    }
+
+    private removeFromStack(): void {
+        const idx = DrawerComponent.openStack.indexOf(this);
+        if (idx !== -1) {
+            DrawerComponent.openStack.splice(idx, 1);
+            DrawerComponent.recomputeStack();
+        }
+    }
+
+    private static recomputeStack(): void {
+        DrawerComponent.openStack.forEach((drawer, i) => {
+            drawer.zIndex.set(DrawerComponent.BASE_Z_INDEX + i * DrawerComponent.Z_INDEX_STEP);
+            drawer.isInert.set(i !== DrawerComponent.openStack.length - 1);
+        });
+    }
+
     close() {
+        // Un drawer inerte (tapado por otro encima) no debe cerrarse por click/Esc.
+        if (this.isInert()) return;
         if (this.closable()) this.closed.emit();
     }
 

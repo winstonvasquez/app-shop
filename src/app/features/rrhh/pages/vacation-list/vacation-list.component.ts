@@ -24,7 +24,7 @@ import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.compo
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { DateInputComponent } from '@shared/ui/forms/date-input/date-input.component';
-import { ButtonComponent, CatalogSelectComponent, ServerSearchSelectComponent } from '@shared/components';
+import { ButtonComponent, CatalogSelectComponent, ServerSearchSelectComponent, RichTextEditorComponent } from '@shared/components';
 import { employeeSelectSource } from '../../components/select-sources';
 import { bloquearSiempre } from '@shared/utils/form-lock';
 
@@ -44,6 +44,7 @@ import { bloquearSiempre } from '@shared/utils/form-lock';
         ButtonComponent,
         ServerSearchSelectComponent,
         CatalogSelectComponent,
+        RichTextEditorComponent,
     ],
     templateUrl: './vacation-list.component.html',
 })
@@ -176,7 +177,7 @@ export class VacationListComponent implements OnInit {
             key: 'tipoVacacion', label: 'Tipo',
             render: r => r.tipoVacacion ? this.catalog.label('TIPO_VACACION', r.tipoVacacion) : '—'
         },
-        { key: 'motivo', label: 'Motivo', render: r => r.motivo ?? '—' },
+        { key: 'motivo', label: 'Motivo', html: true, render: r => r.motivo ?? '—' },
         {
             key: 'estado', label: 'Estado', html: true,
             render: r => `<span class="badge badge-${this.badgeEstado(r.estado)}">${this.catalog.label('ESTADO_VACACION', r.estado)}</span>`

@@ -2,11 +2,12 @@ import { Component, ChangeDetectionStrategy, OnInit, inject, signal } from '@ang
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { LandingContentSections, LandingSectionKey } from '@core/models/landing-content.model';
+import { RichTextEditorComponent } from '@shared/components';
 
 @Component({
     selector: 'app-landing-content',
     standalone: true,
-    imports: [FormsModule],
+    imports: [FormsModule, RichTextEditorComponent],
     changeDetection: ChangeDetectionStrategy.OnPush,
     templateUrl: './landing-content.component.html',
 })

@@ -7,6 +7,7 @@ import {
   ArrowLeft, ArrowRight, ArrowRightCircle, ArrowRightLeft,
   ChevronDown, ChevronLeft, ChevronRight, ChevronUp,
   // Acciones / formularios
+  Edit, Trash, Undo2,
   Ban, BookOpen, Check, ClipboardCheck, Clock, Copy, DoorOpen, DoorClosed, Download,
   Upload,
   Eye, EyeOff, FilePlus, FileSearch, FileText, Filter, SlidersHorizontal,
@@ -133,6 +134,7 @@ export const appConfig: ApplicationConfig = {
         ArrowLeft, ArrowRight, ArrowRightCircle, ArrowRightLeft,
         ChevronDown, ChevronLeft, ChevronRight, ChevronUp,
         // Acciones / formularios
+        Edit, Trash, Undo2,
         Ban, BookOpen, Check, ClipboardCheck, Clock, Copy, DoorOpen, DoorClosed, Download,
         // `Upload` faltaba y el botón "Importar XML UBL" de facturas de proveedor
         // (icon="upload") lanzaba "The upload icon has not been provided by any available

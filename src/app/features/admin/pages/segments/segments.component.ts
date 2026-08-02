@@ -2,6 +2,7 @@ import {
     Component, OnInit, inject, signal, computed, ChangeDetectionStrategy
 } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators, FormGroup } from '@angular/forms';
+import { richTextMaxLength } from '@core/utils/rich-text.util';
 import { SegmentService } from '@features/admin/services/segment.service';
 import { PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
 import {
@@ -11,7 +12,7 @@ import {
 import { catalogFilter, staticFilter, ACTIVO_OPTIONS } from '@shared/ui/tables/data-table/filter-helpers';
 import { CatalogService } from '@core/services/catalog.service';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
-import { ButtonComponent, CatalogSelectComponent } from '@shared/components';
+import { ButtonComponent, CatalogSelectComponent, RichTextEditorComponent } from '@shared/components';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
 import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
@@ -25,7 +26,7 @@ import {
     selector: 'app-segments',
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [ReactiveFormsModule, DataTableComponent, DrawerComponent, ButtonComponent, CatalogSelectComponent],
+    imports: [ReactiveFormsModule, DataTableComponent, DrawerComponent, ButtonComponent, CatalogSelectComponent, RichTextEditorComponent],
     templateUrl: './segments.component.html',
     styleUrl: './segments.component.scss'
 })
@@ -78,7 +79,7 @@ export class SegmentsComponent implements OnInit {
           render: (s) => `<span class="segment-dot" style="background:${s.color};display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:8px;vertical-align:middle"></span><span class="font-medium">${s.nombre}</span>` },
         { key: 'tipoCliente', label: 'Tipo de Cliente', html: true,
           render: (s) => `<span class="badge badge-neutral">${s.tipoCliente}</span>` },
-        { key: 'descripcion', label: 'Descripción', render: (s) => s.descripcion || '—' },
+        { key: 'descripcion', label: 'Descripción', html: true, render: (s) => s.descripcion || '—' },
         { key: 'totalClientes', label: 'Clientes', align: 'right',
           render: (s) => String(s.totalClientes ?? 0) },
         { key: 'activo', label: 'Estado', html: true,
@@ -117,7 +118,7 @@ export class SegmentsComponent implements OnInit {
     constructor() {
         this.segmentForm = this.fb.group({
             nombre:      ['', [Validators.required, Validators.maxLength(100)]],
-            descripcion: ['', [Validators.maxLength(300)]],
+            descripcion: ['', [richTextMaxLength(300)]],
             color:       ['#d7132a', [Validators.required]],
             tipoCliente: ['REGULAR', [Validators.required]],
             activo:      [true]

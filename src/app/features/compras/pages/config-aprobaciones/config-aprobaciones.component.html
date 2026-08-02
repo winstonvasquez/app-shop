@@ -72,15 +72,17 @@
   }
 </div>
 
-<!-- Drawer de formulario -->
-@if (showForm()) {
-  <div class="modal-overlay" (click)="showForm.set(false)">
-    <div class="modal-content" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <h3 class="modal-title">{{ editingNivelId() ? 'Editar Nivel de Aprobación' : 'Nuevo Nivel de Aprobación' }}</h3>
-        <button class="modal-close-btn" (click)="showForm.set(false)">✕</button>
-      </div>
-      <div class="modal-body">
+<!-- Panel de formulario: drawer estandar del ERP (mismo marcado y ancho que el resto).
+     Antes estaba montado como modal (.modal-overlay/.modal-content) pese a que el propio
+     comentario decia "drawer": se renderizaba como una tira vertical inutilizable. -->
+<div class="drawer-overlay" [class.open]="showForm()" (click)="showForm.set(false)"></div>
+<div class="drawer drawer-right" [class.open]="showForm()">
+  <div class="drawer-header">
+    <h3 class="drawer-title">{{ editingNivelId() ? 'Editar Nivel de Aprobación' : 'Nuevo Nivel de Aprobación' }}</h3>
+    <button class="modal-close-btn" (click)="showForm.set(false)">✕</button>
+  </div>
+  @if (showForm()) {
+      <div class="drawer-body">
         <div style="display:flex; flex-direction:column; gap:1rem">
           <div>
             <label class="input-label">Nombre <span style="color:var(--color-error)">*</span></label>
@@ -125,10 +127,9 @@
           }
         </div>
       </div>
-      <div class="modal-footer">
+      <div class="drawer-footer">
         <app-button label="Cancelar" variant="secondary" icon="x" (click)="showForm.set(false)" />
         <app-button label="Guardar" variant="primary" icon="save" (click)="guardar()" />
       </div>
-    </div>
-  </div>
-}
+  }
+</div>

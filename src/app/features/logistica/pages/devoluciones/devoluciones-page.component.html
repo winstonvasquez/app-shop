@@ -82,9 +82,8 @@
 
     <div class="form-field-wrapper">
       <label class="input-label">Descripción</label>
-      <textarea class="form-input" rows="3" formControlName="description"
-                placeholder="Detalle adicional de la devolución (opcional)"
-                style="resize:vertical"></textarea>
+      <app-rich-text-editor [rows]="3" formControlName="description"
+                placeholder="Detalle adicional de la devolución (opcional)" />
     </div>
   </form>
 
@@ -131,7 +130,7 @@
             @if (selected()!.description) {
               <div style="grid-column:1/-1">
                 <p class="input-label">Descripción</p>
-                <p>{{ selected()!.description }}</p>
+                <p [innerHTML]="selected()!.description"></p>
               </div>
             }
             @if (selected()!.refundAmount != null) {
@@ -158,9 +157,8 @@
                 <p class="card-title" style="margin-bottom:var(--space-md)">Revisar solicitud</p>
                 <div class="form-field-wrapper" style="margin-bottom:var(--space-md)">
                   <label class="input-label">Motivo de rechazo (obligatorio para rechazar)</label>
-                  <textarea class="form-input" rows="2" formControlName="motivoRechazo"
-                            placeholder="Ej: producto fuera de plazo, sin comprobante..."
-                            style="resize:vertical"></textarea>
+                  <app-rich-text-editor [rows]="2" formControlName="motivoRechazo"
+                            placeholder="Ej: producto fuera de plazo, sin comprobante..." />
                   @if (actionForm.controls.motivoRechazo.invalid && actionForm.controls.motivoRechazo.touched) {
                     <p class="text-error" style="font-size:0.85em;margin-top:4px">El motivo es obligatorio.</p>
                   }
@@ -193,9 +191,8 @@
                 <p class="card-title" style="margin-bottom:var(--space-md)">Inspección de mercadería</p>
                 <div class="form-field-wrapper" style="margin-bottom:var(--space-md)">
                   <label class="input-label">Notas de inspección</label>
-                  <textarea class="form-input" rows="3" formControlName="inspectionNotes"
-                            placeholder="Estado del producto, daños encontrados..."
-                            style="resize:vertical"></textarea>
+                  <app-rich-text-editor [rows]="3" formControlName="inspectionNotes"
+                            placeholder="Estado del producto, daños encontrados..." />
                   @if (actionForm.controls.inspectionNotes.invalid && actionForm.controls.inspectionNotes.touched) {
                     <p class="text-error" style="font-size:0.85em;margin-top:4px">Las notas de inspección son obligatorias.</p>
                   }
@@ -222,9 +219,8 @@
                 </div>
                 <div class="form-field-wrapper" style="margin-bottom:var(--space-md)">
                   <label class="input-label">Notas del reembolso (opcional)</label>
-                  <textarea class="form-input" rows="2" formControlName="refundNotas"
-                            placeholder="Observaciones del reembolso..."
-                            style="resize:vertical"></textarea>
+                  <app-rich-text-editor [rows]="2" formControlName="refundNotas"
+                            placeholder="Observaciones del reembolso..." />
                 </div>
                 <app-button label="Registrar reembolso" variant="primary" icon="save"
                   [loading]="actionLoading()" (click)="registrarReembolso()" />

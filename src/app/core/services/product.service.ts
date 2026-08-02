@@ -134,14 +134,22 @@ export class ProductService extends BaseApiService<ProductRequest, ProductRespon
         return super.create(product);
     }
 
+    /**
+     * El PUT del backend exige `companyId` como query param (`@RequestParam`, no en el
+     * body), así que el `update` genérico de la clase base devolvía 400 «Parámetro
+     * requerido ausente: companyId» y **no se podía editar ningún producto**.
+     */
     override update(id: number, product: ProductRequest): Observable<ProductResponse> {
         this.invalidateCache();
-        return super.update(id, product);
+        return this.http.put<ProductResponse>(`${this.baseUrl}/${id}`, product, {
+            params: this.tenantParams(),
+        });
     }
 
+    /** Mismo caso que `update`: el DELETE exige `companyId` como query param. */
     override delete(id: number): Observable<void> {
         this.invalidateCache();
-        return super.delete(id);
+        return this.http.delete<void>(`${this.baseUrl}/${id}`, { params: this.tenantParams() });
     }
 
     // ── Imágenes del producto (binarias, guardadas en la base de datos) ──────
@@ -152,12 +160,32 @@ export class ProductService extends BaseApiService<ProductRequest, ProductRespon
     }
 
     /** Sube una imagen nueva al producto. El binario queda en la base de datos. */
-    subirImagen(productoId: number, archivo: File, esPrincipal = false): Observable<ProductoImagen> {
+    subirImagen(productoId: number, archivo: File, esPrincipal = false, orden?: number): Observable<ProductoImagen> {
         const formData = new FormData();
         formData.append('file', archivo);
         let params = this.tenantParams().set('esPrincipal', String(esPrincipal));
+        if (orden !== undefined) params = params.set('orden', String(orden));
         this.invalidateCache();
         return this.http.post<ProductoImagen>(`${this.baseUrl}/${productoId}/imagenes`, formData, { params });
+    }
+
+    /** Marca una imagen ya guardada como principal; devuelve la galería completa. */
+    marcarImagenPrincipal(productoId: number, imagenId: number): Observable<ProductoImagen[]> {
+        this.invalidateCache();
+        return this.http.patch<ProductoImagen[]>(
+            `${this.baseUrl}/${productoId}/imagenes/${imagenId}/principal`, null,
+            { params: this.tenantParams() });
+    }
+
+    /**
+     * Persiste el orden de la galería. El backend exige el conjunto COMPLETO de ids
+     * del producto (no acepta reordenar parcialmente) y devuelve la galería ya ordenada.
+     */
+    reordenarImagenes(productoId: number, imagenIds: number[]): Observable<ProductoImagen[]> {
+        this.invalidateCache();
+        return this.http.put<ProductoImagen[]>(
+            `${this.baseUrl}/${productoId}/imagenes/orden`, { imagenIds },
+            { params: this.tenantParams() });
     }
 
     /** Elimina una imagen del producto; si era la principal, el backend promueve otra. */

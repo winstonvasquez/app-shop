@@ -1,5 +1,6 @@
-import { Component, inject, signal, computed, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, signal, computed, DestroyRef, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import {
@@ -11,7 +12,7 @@ import { DateInputComponent } from '@shared/ui/forms/date-input/date-input.compo
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
 import { AdminFormSectionComponent } from '@shared/ui/forms/admin-form-section/admin-form-section.component';
 import { AdminFormLayoutComponent } from '@shared/ui/forms/admin-form-layout/admin-form-layout.component';
-import { ButtonComponent } from '@shared/components';
+import { ButtonComponent, RichTextEditorComponent, ServerSearchSelectComponent } from '@shared/components';
 import { AlertComponent } from '@shared/ui';
 import { PromotionsService, Promocion } from '../../services/promotions.service';
 import { VentasParametrosService, SelectOption } from '../../services/ventas-parametros.service';
@@ -20,6 +21,9 @@ import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
 import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 import { bloquearEnEdicion, bloquearSiempre } from '@shared/utils/form-lock';
+import { ProductService } from '@core/services/product.service';
+import { CategoryService } from '@core/services/category.service';
+import { productoSelectSource } from '@features/admin/components/select-sources';
 
 type EstadoPromocion = 'ACTIVA' | 'INACTIVA' | 'VENCIDA';
 
@@ -58,13 +62,25 @@ const SUBTIPO_PROMOCION_OPTIONS = [
         AdminFormLayoutComponent,
         ButtonComponent,
         AlertComponent,
+        RichTextEditorComponent,
+        ServerSearchSelectComponent,
     ],
     templateUrl: './promotions.component.html',
 })
 export class PromotionsComponent implements OnInit {
-    private readonly service    = inject(PromotionsService);
-    private readonly parametros = inject(VentasParametrosService);
-    private readonly fb         = inject(FormBuilder);
+    private readonly service        = inject(PromotionsService);
+    private readonly parametros     = inject(VentasParametrosService);
+    private readonly fb             = inject(FormBuilder);
+    private readonly productService  = inject(ProductService);
+    private readonly categoryService = inject(CategoryService);
+    private readonly destroyRef      = inject(DestroyRef);
+
+    /** Fuente server-side para el selector de "Producto específico" (alcance PRODUCTO). */
+    readonly productoSource = productoSelectSource(this.productService);
+    // Fix P1 (2026-08-01): value NUMÉRICO (no String(c.id)) -- el <select> del template usa
+    // [ngValue] para poder comparar por valor contra categoriaId (number), no por identidad de
+    // string contra number como hacía SelectControlValueAccessor con [value].
+    categoriaOptions = signal<{ value: number; label: string }[]>([]);
 
     promociones  = signal<PromocionVM[]>([]);
     cargando     = signal(false);
@@ -208,6 +224,10 @@ export class PromotionsComponent implements OnInit {
         tipo:         ['PORCENTAJE' as Promocion['tipo'], Validators.required],
         valor:        [0, [Validators.required, Validators.min(0)]],
         alcance:      ['CARRITO' as Promocion['alcance'], Validators.required],
+        // Vinculación según alcance (V69) — mutuamente excluyentes, ver aplicarBloqueoAlcance().
+        productoId:   [null as number | null, Validators.required],
+        categoriaId:  [null as number | string | null, Validators.required],
+        montoMinimo:  [null as number | null, [Validators.required, Validators.min(0.01)]],
         codigoCupon:  [''],
         limiteUsos:   [null as number | null],
         fechaInicio:  [new Date().toISOString().split('T')[0], Validators.required],
@@ -278,11 +298,43 @@ export class PromotionsComponent implements OnInit {
         return tipo === 'PORCENTAJE' ? 'Valor (%)' : `Valor (${CURRENCY_DISPLAY.SYMBOL_PEN})`;
     });
 
+    /** Alcance actual como signal, para condicionar qué control de vínculo se muestra en el template. */
+    alcanceActual = toSignal(this.form.controls.alcance.valueChanges, { initialValue: this.form.controls.alcance.value });
+
     ngOnInit(): void {
         this.cargar();
         this.cargarStats();
         this.parametros.getTiposPromocion().subscribe(opts => this.tipoOptions.set(opts));
         this.parametros.getAlcancesPromocion().subscribe(opts => this.alcanceOptions.set(opts));
+        this.categoryService.getAllSimple().subscribe({
+            next: (cats) => this.categoriaOptions.set(cats.map(c => ({ value: c.id, label: c.nombre }))),
+            error: () => this.categoriaOptions.set([]),
+        });
+
+        // Los 3 campos de vínculo son mutuamente excluyentes: al cambiar el alcance se limpia y
+        // deshabilita lo que no aplica. [disabled] en el template NO funciona con formControlName
+        // (solo emite un console.warn) -> se usa control.disable()/enable() aquí.
+        // Fix P0 (2026-08-01): takeUntilDestroyed() SIN argumento solo vale en contexto de
+        // inyección (constructor/field initializer); en ngOnInit lanza NG0203 y la suscripción
+        // nunca se instala -> productoId/categoriaId quedaban deshabilitados para siempre y
+        // montoMinimo seguía required, form.invalid permanente. Se pasa destroyRef explícito.
+        this.form.controls.alcance.valueChanges
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe(alcance => this.aplicarBloqueoAlcance(alcance));
+    }
+
+    /** Habilita SOLO el control del alcance elegido y limpia+deshabilita los otros dos. */
+    private aplicarBloqueoAlcance(alcance: Promocion['alcance'] | null): void {
+        const { productoId, categoriaId, montoMinimo } = this.form.controls;
+
+        if (alcance === 'PRODUCTO') { productoId.enable({ emitEvent: false }); }
+        else { productoId.setValue(null, { emitEvent: false }); productoId.disable({ emitEvent: false }); }
+
+        if (alcance === 'CATEGORIA') { categoriaId.enable({ emitEvent: false }); }
+        else { categoriaId.setValue(null, { emitEvent: false }); categoriaId.disable({ emitEvent: false }); }
+
+        if (alcance === 'CARRITO') { montoMinimo.enable({ emitEvent: false }); }
+        else { montoMinimo.setValue(null, { emitEvent: false }); montoMinimo.disable({ emitEvent: false }); }
     }
 
     cargar(): void {
@@ -328,6 +380,7 @@ export class PromotionsComponent implements OnInit {
         this.resetForm();
         bloquearEnEdicion(this.form, PromotionsComponent.CAMPOS_BLOQUEADOS, false);
         bloquearSiempre(this.form, PromotionsComponent.CAMPOS_CALCULADOS);
+        this.aplicarBloqueoAlcance(this.form.controls.alcance.value);
         this.editMode.set(false);
         this.editId.set(null);
         this.submitError.set('');
@@ -341,6 +394,9 @@ export class PromotionsComponent implements OnInit {
             tipo:        row.tipo,
             valor:       row.valor,
             alcance:     row.alcance,
+            productoId:  row.productoId ?? null,
+            categoriaId: row.categoriaId != null ? row.categoriaId : null,
+            montoMinimo: row.montoMinimo ?? null,
             codigoCupon: row.codigoCupon ?? '',
             limiteUsos:  row.limiteUsos ?? null,
             fechaInicio: row.fechaInicio,
@@ -351,6 +407,7 @@ export class PromotionsComponent implements OnInit {
         });
         bloquearEnEdicion(this.form, PromotionsComponent.CAMPOS_BLOQUEADOS, true);
         bloquearSiempre(this.form, PromotionsComponent.CAMPOS_CALCULADOS);
+        this.aplicarBloqueoAlcance(row.alcance);
         this.form.markAsPristine();
         this.editMode.set(true);
         this.editId.set(row.id ?? null);
@@ -380,6 +437,9 @@ export class PromotionsComponent implements OnInit {
             tipo:        v.tipo as Promocion['tipo'],
             valor:       v.valor!,
             alcance:     v.alcance as Promocion['alcance'],
+            productoId:  v.alcance === 'PRODUCTO' ? v.productoId : null,
+            categoriaId: v.alcance === 'CATEGORIA' ? (v.categoriaId != null ? Number(v.categoriaId) : null) : null,
+            montoMinimo: v.alcance === 'CARRITO' ? v.montoMinimo : null,
             codigoCupon: v.codigoCupon || undefined,
             limiteUsos:  v.limiteUsos ?? undefined,
             fechaInicio: v.fechaInicio!,
@@ -449,6 +509,9 @@ export class PromotionsComponent implements OnInit {
             tipo:        'PORCENTAJE',
             valor:       0,
             alcance:     'CARRITO',
+            productoId:  null,
+            categoriaId: null,
+            montoMinimo: null,
             codigoCupon: '',
             limiteUsos:  null,
             fechaInicio: new Date().toISOString().split('T')[0],

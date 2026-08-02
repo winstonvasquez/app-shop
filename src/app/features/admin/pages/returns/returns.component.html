@@ -119,8 +119,8 @@
             <app-admin-form-section title="Observaciones">
 
                 <app-form-field label="Observaciones" [error]="err('observaciones')">
-                    <textarea formControlName="observaciones" class="form-input" rows="3"
-                              placeholder="Detalles adicionales sobre la devolución..."></textarea>
+                    <app-rich-text-editor formControlName="observaciones" [rows]="3"
+                              placeholder="Detalles adicionales sobre la devolución..." />
                 </app-form-field>
 
             </app-admin-form-section>

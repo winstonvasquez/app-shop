@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
-import { EmployeeService, Employee, EmployeeRequest } from './employee.service';
+import { EmployeeService } from './employee.service';
+import { Employee, EmployeeRequest } from '../models/employee.model';
 import { environment } from '@env/environment';
 
 describe('EmployeeService', () => {
@@ -65,6 +66,8 @@ describe('EmployeeService', () => {
             id: 2,
             tenantId: 1,
             ...request,
+            // `EmployeeRequest.userId` admite null; `Employee.userId` no.
+            userId: request.userId ?? undefined,
             estado: 'ACTIVO',
             createdAt: '2024-03-01'
         };
@@ -96,6 +99,8 @@ describe('EmployeeService', () => {
             id: employeeId,
             tenantId: 1,
             ...request,
+            // `EmployeeRequest.userId` admite null; `Employee.userId` no.
+            userId: request.userId ?? undefined,
             estado: 'ACTIVO',
             createdAt: '2024-01-01',
             updatedAt: '2024-03-05'

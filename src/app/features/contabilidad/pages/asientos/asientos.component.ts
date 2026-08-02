@@ -444,18 +444,21 @@ export class AsientosComponent implements OnInit {
     readonly tableActions: TableAction<Asiento>[] = [
         {
             label: 'Cerrar',
+            icon: 'check',
             class: 'btn-icon btn-icon-delete',
             show: (r) => r.estado !== 'CERRADO' && r.estado !== 'DEFINITIVO',
             onClick: (r) => this.cerrarAsiento(r)
         },
         {
             label: 'Extornar',
+            icon: 'edit',
             class: 'btn-icon',
             show: (r) => r.estado === 'DEFINITIVO' || r.estado === 'CERRADO',
             onClick: (r) => this.abrirExtorno(r, 'EXTORNO')
         },
         {
             label: 'Anular',
+            icon: 'x',
             class: 'btn-icon btn-icon-delete',
             show: (r) => r.estado === 'DEFINITIVO' || r.estado === 'CERRADO',
             onClick: (r) => this.abrirExtorno(r, 'ANULACION')

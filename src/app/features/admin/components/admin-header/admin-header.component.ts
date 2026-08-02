@@ -37,6 +37,9 @@ export class AdminHeaderComponent {
     return ROLE_LABELS[code] ?? code;
   });
   isUserMenuOpen = signal(false);
+  /** «Configuración» (parámetros globales del ERP) requiere SUPERADMIN en el backend — se oculta
+   * para el resto de roles en vez de dejarles un enlace que solo redirige (superAdminGuard). */
+  isSuperAdmin = computed(() => this.authService.isSuperAdmin());
 
   onSearch(event: Event): void {
     const input = event.target as HTMLInputElement;

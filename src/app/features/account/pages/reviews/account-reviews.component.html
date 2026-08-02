@@ -41,7 +41,7 @@
                             }
                         </div>
                         @if (review.comentario) {
-                            <p class="review-comment">{{ review.comentario }}</p>
+                            <p class="review-comment" [innerHTML]="review.comentario"></p>
                         }
                         <p class="review-date">{{ review.fechaResena | date:'dd/MM/yyyy' }}</p>
 
@@ -54,7 +54,7 @@
                             </div>
                             <div class="field">
                                 <label class="lbl">Comentario</label>
-                                <textarea class="input textarea" formControlName="comentario" rows="3"></textarea>
+                                <app-rich-text-editor formControlName="comentario" [rows]="3" />
                             </div>
                             <div class="edit-actions">
                                 <ds-button variant="primary" size="sm" icon="save" type="submit"

@@ -67,44 +67,35 @@
     @if (cargando()) {
         <div class="loading-container"><div class="spinner"></div></div>
     } @else {
-        <div style="display:flex; gap:1rem; overflow-x:auto; padding-bottom:1rem">
+        <div class="kanban-board">
             @for (col of columnas(); track col.estado) {
-                <div style="min-width:220px; flex:0 0 220px">
-                    <!-- Cabecera columna -->
-                    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:.75rem">
-                        <span class="badge {{ col.color }}">{{ col.label }}</span>
-                        <span style="font-size:.75rem; color:var(--color-text-muted)">
-                            {{ col.ordenes.length }} OC
-                        </span>
-                    </div>
-
-                    <!-- Total columna -->
-                    <div style="font-size:.8rem; color:var(--color-text-subtle); margin-bottom:.5rem">
-                        S/ {{ totalColumna(col) | number:'1.2-2' }}
+                <div class="kanban-column">
+                    <!-- Cabecera columna: estado + contador + importe -->
+                    <div class="kanban-column-header">
+                        <div class="kanban-column-title-row">
+                            <span class="badge {{ col.color }}">{{ col.label }}</span>
+                            <span class="kanban-column-count">{{ col.ordenes.length }} OC</span>
+                        </div>
+                        <span class="kanban-column-total">S/ {{ totalColumna(col) | number:'1.2-2' }}</span>
                     </div>
 
                     <!-- Cards -->
-                    <div style="display:flex; flex-direction:column; gap:.5rem">
+                    <div class="kanban-column-body">
                         @for (oc of col.ordenes; track oc.id) {
-                            <div class="card p-3 cursor-default">
-                                <div style="font-weight:600; font-size:.85rem; color:var(--color-text-on)">
-                                    {{ oc.codigo }}
+                            <div class="card kanban-card">
+                                <div class="kanban-card-header">
+                                    <span class="kanban-card-codigo">{{ oc.codigo }}</span>
+                                    <span class="kanban-card-fecha">{{ oc.fechaEmision }}</span>
                                 </div>
-                                <div style="font-size:.78rem; color:var(--color-text-subtle); margin:.25rem 0">
-                                    {{ oc.proveedorNombre ?? 'Proveedor' }}
-                                </div>
-                                <div style="font-size:.8rem; font-weight:500; color:var(--color-primary)">
-                                    S/ {{ (oc.total ?? 0) | number:'1.2-2' }}
-                                </div>
+                                <div class="kanban-card-proveedor">{{ oc.proveedorNombre ?? 'Proveedor' }}</div>
+                                <div class="kanban-card-total">S/ {{ (oc.total ?? 0) | number:'1.2-2' }}</div>
                                 @if (oc.fechaEntregaEstimada) {
-                                    <div style="font-size:.73rem; color:var(--color-text-muted); margin-top:.25rem">
-                                        Entrega: {{ oc.fechaEntregaEstimada }}
-                                    </div>
+                                    <div class="kanban-card-entrega">Entrega: {{ oc.fechaEntregaEstimada }}</div>
                                 }
                                 @if (col.estado === 'APROBADA') {
                                     <button
                                         class="btn btn-secondary"
-                                        style="margin-top:.5rem; width:100%; font-size:.75rem; padding:.25rem"
+                                        style="margin-top:.375rem; width:100%; font-size:.75rem; padding:.3rem"
                                         [disabled]="enviandoId() === oc.id"
                                         (click)="enviarAlProveedor(oc)">
                                         @if (enviandoId() === oc.id) {
@@ -117,8 +108,8 @@
                             </div>
                         }
                         @if (col.ordenes.length === 0) {
-                            <div style="font-size:.8rem; color:var(--color-text-muted); text-align:center; padding:1rem">
-                                Sin OC
+                            <div class="kanban-empty">
+                                <span>Sin órdenes en «{{ col.label }}»</span>
                             </div>
                         }
                     </div>

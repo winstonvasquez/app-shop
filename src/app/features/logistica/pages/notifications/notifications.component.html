@@ -1,16 +1,11 @@
-<div class="p-6 max-w-3xl mx-auto">
-  <!-- Header -->
-  <div class="mb-6 flex items-center justify-between">
-    <div class="flex items-center gap-3">
-      <h1 class="text-2xl font-semibold text-gray-800">Notificaciones</h1>
-      @if (unreadCount() > 0) {
-        <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-error text-white text-xs font-bold">
-          {{ unreadCount() }}
-        </span>
-      }
-    </div>
-    <div class="flex gap-2">
-      <app-button icon="refresh-cw" variant="ghost" size="sm" label="Actualizar" (click)="loadNotifications()" />
+<div class="page-container">
+
+  <app-page-header
+    title="Notificaciones"
+    subtitle="Alertas de picking, stock y envíos en tiempo real"
+    [breadcrumbs]="breadcrumbs">
+    <div actions>
+      <app-button icon="refresh-cw" label="Actualizar" variant="secondary" (click)="loadNotifications()" />
       @if (unreadCount() > 0) {
         <app-button icon="check" variant="success" size="sm"
           [label]="markingAll() ? 'Marcando...' : 'Marcar todas leidas'"
@@ -18,13 +13,20 @@
           (click)="markAllRead()" />
       }
     </div>
-  </div>
+  </app-page-header>
+
+  @if (unreadCount() > 0) {
+    <div class="mb-4 flex items-center gap-2">
+      <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-error text-white text-xs font-bold">
+        {{ unreadCount() }}
+      </span>
+      <span class="text-sm text-subtle">sin leer</span>
+    </div>
+  }
 
   <!-- Error -->
   @if (error()) {
-    <div class="mb-4 bg-error/10 border border-error/30 text-error rounded-lg p-3 text-sm">
-      {{ error() }}
-    </div>
+    <app-alert type="error" [message]="error()!" [dismissible]="true" (dismiss)="error.set(null)" />
   }
 
   <!-- Loading -->

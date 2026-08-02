@@ -205,6 +205,7 @@ export const MENU_GROUPS: MenuGroup[] = [
         moduleCode: null,
         items: [
             { label: "Planes SaaS", route: "/admin/saas-plans" },
+            { label: "Parámetros Sistema", route: "/admin/general-config" },
         ],
     },
     {
@@ -216,7 +217,6 @@ export const MENU_GROUPS: MenuGroup[] = [
             { label: "Footer", route: "/admin/footer-manager" },
             { label: "Slider / Banners", route: "/admin/slider-manager" },
             { label: "Contenido Landing", route: "/admin/landing-content" },
-            { label: "Parámetros Sistema", route: "/admin/general-config" },
         ],
     },
     {

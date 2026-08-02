@@ -95,7 +95,7 @@
                     </div>
                     @if (selectedOrden()?.observaciones) {
                         <p class="text-sm text-subtle mt-md">
-                            <strong class="text-on">Obs.:</strong> {{ selectedOrden()?.observaciones }}
+                            <strong class="text-on">Obs.:</strong> <span [innerHTML]="selectedOrden()?.observaciones"></span>
                         </p>
                     }
                 </div>
@@ -316,8 +316,8 @@
             <!-- Observaciones -->
             <div>
                 <label class="input-label">Observaciones</label>
-                <textarea class="form-input" rows="2" placeholder="Notas adicionales..."
-                    formControlName="observaciones"></textarea>
+                <app-rich-text-editor [rows]="2" placeholder="Notas adicionales..."
+                    formControlName="observaciones" />
             </div>
         </form>
 

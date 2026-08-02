@@ -19,7 +19,7 @@ import { ordenCompraSelectSource } from '../../components/select-sources';
 import { OrdenCompraItem } from '../../models/orden-compra.model';
 import { catalogFilter, signalFilter, staticFilter } from '@shared/ui/tables/data-table/filter-helpers';
 import { FacturaProveedor, RegistrarFacturaRequest, CpeParsedInvoice } from '../../models/factura-proveedor.model';
-import { ButtonComponent, CatalogSelectComponent, ServerSearchSelectComponent } from '@shared/components';
+import { ButtonComponent, CatalogSelectComponent, ServerSearchSelectComponent, RichTextEditorComponent } from '@shared/components';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
@@ -53,6 +53,7 @@ import { CatalogService } from '@core/services/catalog.service';
         DataTableComponent,
         CatalogSelectComponent,
         ServerSearchSelectComponent,
+        RichTextEditorComponent,
     ],
     templateUrl: './facturas-proveedor.component.html',
 })

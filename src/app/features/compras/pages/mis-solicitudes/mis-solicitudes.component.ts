@@ -11,6 +11,7 @@ import { RouterModule } from '@angular/router';
 import { SolicitudCompraService } from '../../services/solicitud-compra.service';
 import { AuthService } from '@core/auth/auth.service';
 import { CatalogService } from '@core/services/catalog.service';
+import { htmlAttr } from '@core/utils/rich-text.util';
 import { SolicitudCompra } from '../../models/solicitud-compra.model';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
@@ -79,7 +80,7 @@ export class MisSolicitudesComponent implements OnInit {
 
     columns: TableColumn<SolicitudCompra>[] = [
         { key: 'codigo', label: 'Código', width: '130px' },
-        { key: 'justificacion', label: 'Justificación', render: (r) => r.justificacion },
+        { key: 'justificacion', label: 'Justificación', html: true, render: (r) => r.justificacion },
         { key: 'prioridad', label: 'Prioridad', render: (r) => r.prioridad ?? '—' },
         { key: 'fechaRequerida', label: 'Fecha Req.', render: (r) => r.fechaRequerida || '—' },
         {
@@ -89,7 +90,7 @@ export class MisSolicitudesComponent implements OnInit {
         {
             key: 'motivoRechazo', label: 'Motivo Rechazo', html: true,
             render: (r) => r.motivoRechazo
-                ? `<span class="badge badge-error" title="${r.motivoRechazo}">Ver motivo</span>`
+                ? `<span class="badge badge-error" title="${htmlAttr(r.motivoRechazo)}">Ver motivo</span>`
                 : '—'
         },
     ];

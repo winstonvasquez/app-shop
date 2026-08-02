@@ -1,6 +1,7 @@
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { of } from 'rxjs';
 import { FormBuilder, ReactiveFormsModule, Validators, FormGroup, FormControl } from '@angular/forms';
+import { richTextMaxLength } from '@core/utils/rich-text.util';
 import { CategoryService } from '@core/services/category.service';
 import { bloquearEnEdicion } from '@shared/utils/form-lock';
 import {
@@ -16,7 +17,7 @@ import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.compo
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
-import { ButtonComponent, CatalogSelectComponent } from '@shared/components';
+import { ButtonComponent, CatalogSelectComponent, RichTextEditorComponent } from '@shared/components';
 import { ImageUploadComponent } from '@shared/ui/forms/image-upload/image-upload.component';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
@@ -33,7 +34,8 @@ import { environment } from '@env/environment';
     AlertComponent,
     ButtonComponent,
     CatalogSelectComponent,
-    ImageUploadComponent
+    ImageUploadComponent,
+    RichTextEditorComponent
   ],
   templateUrl: './categories.component.html',
   styleUrl: './categories.component.scss'
@@ -97,6 +99,7 @@ export class CategoriesComponent implements OnInit {
     {
       key: 'descripcion',
       label: 'Descripción',
+      html: true,
       render: (row) => row.descripcion || '-'
     },
     {
@@ -181,8 +184,9 @@ export class CategoriesComponent implements OnInit {
         Validators.minLength(2),
         Validators.maxLength(100)
       ]],
+      // El editor de texto enriquecido guarda HTML: el límite mide el texto VISIBLE.
       descripcion: ['', [
-        Validators.maxLength(500)
+        richTextMaxLength(500)
       ]],
       // Solo lectura desde el formulario: la imagen se sube como archivo y el
       // backend devuelve la URL del binario servido desde la base de datos.

@@ -123,12 +123,10 @@
         <!-- Motivo -->
         <div>
             <label class="input-label">Motivo (opcional)</label>
-            <textarea
-                class="form-input"
-                rows="3"
+            <app-rich-text-editor
+                [rows]="3"
                 placeholder="Describa el motivo de la solicitud..."
-                formControlName="motivo"
-                style="resize: vertical"></textarea>
+                formControlName="motivo" />
         </div>
 
     </form>
@@ -156,12 +154,10 @@
             <label class="input-label">
                 Motivo del rechazo <span style="color: var(--color-error)">*</span>
             </label>
-            <textarea
-                class="form-input"
-                rows="4"
+            <app-rich-text-editor
+                [rows]="4"
                 placeholder="Explique el motivo del rechazo..."
-                formControlName="comentarios"
-                style="resize: vertical"></textarea>
+                formControlName="comentarios" />
             @if (getControl('reject','comentarios').invalid && getControl('reject','comentarios').touched) {
                 <span class="input-error-message">El motivo es obligatorio</span>
             }

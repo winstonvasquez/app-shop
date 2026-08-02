@@ -133,12 +133,10 @@
 
             <div>
                 <label class="input-label">Plan de Mejora</label>
-                <textarea
-                    class="form-input"
-                    rows="3"
+                <app-rich-text-editor
+                    [rows]="3"
                     placeholder="Plan de mejora..."
-                    formControlName="planMejora"
-                    style="resize: vertical"></textarea>
+                    formControlName="planMejora" />
             </div>
 
             <!-- ── Detalle por Criterios (evaluación 360) ─────────────────────── -->

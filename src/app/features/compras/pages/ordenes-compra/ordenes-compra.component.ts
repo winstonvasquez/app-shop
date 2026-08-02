@@ -16,7 +16,7 @@ import { DateInputComponent } from '@shared/ui/forms/date-input/date-input.compo
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { LoadingSpinnerComponent } from '@shared/ui/feedback/loading-spinner/loading-spinner.component';
-import { ButtonComponent, CatalogSelectComponent, ServerSearchSelectComponent } from '@shared/components';
+import { ButtonComponent, CatalogSelectComponent, ServerSearchSelectComponent, RichTextEditorComponent } from '@shared/components';
 import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 import { SUNAT_RATES, MONEDA, Moneda } from '@shared/constants/sunat.constants';
 import { PAGINATION } from '@shared/constants/app.constants';
@@ -59,7 +59,8 @@ export interface ContratoActivoOption {
     ButtonComponent,
     CatalogSelectComponent,
     ServerSearchSelectComponent,
-    ProductLookupComponent
+    ProductLookupComponent,
+    RichTextEditorComponent
   ],
     templateUrl: './ordenes-compra.component.html'
 })

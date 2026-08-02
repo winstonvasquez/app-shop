@@ -74,7 +74,7 @@
           <div class="card-body">
             <p class="text-muted text-sm">Unidad: {{ item.unidadMedida }}</p>
             @if (item.especificaciones) {
-              <p class="text-muted text-xs mt-1 line-clamp-2">{{ item.especificaciones }}</p>
+              <p class="text-muted text-xs mt-1 line-clamp-2" [innerHTML]="item.especificaciones"></p>
             }
 
             @if (item.proveedores.length > 0) {
@@ -161,7 +161,7 @@
       </div>
       <div class="mb-4">
         <label class="input-label">Especificaciones</label>
-        <textarea class="form-input" formControlName="especificaciones" rows="3"></textarea>
+        <app-rich-text-editor formControlName="especificaciones" [rows]="3" />
       </div>
 
       <!-- Imagen del ítem: binario en la base de datos, nunca una URL externa -->

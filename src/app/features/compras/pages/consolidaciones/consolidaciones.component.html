@@ -77,7 +77,7 @@
                             </div>
                         </div>
                         <div class="card-body">
-                            <p style="color:var(--color-text-subtle); margin-bottom:.75rem">{{ sol.descripcion }}</p>
+                            <p style="color:var(--color-text-subtle); margin-bottom:.75rem" [innerHTML]="sol.descripcion"></p>
                             <!-- Líneas -->
                             <table class="table" style="font-size:.82rem">
                                 <thead>
@@ -138,14 +138,18 @@
 
 <!-- Drawer nueva consolidación -->
 @if (mostrarForm()) {
-    <div class="drawer-overlay" (click)="cerrarForm()">
-        <div class="drawer" style="width:560px; padding:1.5rem" (click)="$event.stopPropagation()">
+    <div class="drawer-overlay open" (click)="cerrarForm()">
+        <!-- `open` literal: este drawer solo se renderiza dentro de un @if, asi que su presencia
+     YA significa abierto. Sin la clase, la regla global `div.drawer:not(.open)` lo dejaba
+     con visibility:hidden y ancho 0 - el formulario era inalcanzable. Y sin ancho en linea
+     hereda el estandar de 540px del resto del ERP. -->
+        <div class="drawer drawer-right open" style="padding:1.5rem" (click)="$event.stopPropagation()">
             <h2 style="font-size:1.1rem; font-weight:700; margin-bottom:1.25rem">Nueva Consolidación</h2>
             <form [formGroup]="form" (ngSubmit)="crear()">
                 <div>
                     <label class="input-label">Descripción *</label>
-                    <textarea class="form-input" formControlName="descripcion" rows="2"
-                              placeholder="Ej: Reposición semanal de abarrotes"></textarea>
+                    <app-rich-text-editor formControlName="descripcion" [rows]="2"
+                              placeholder="Ej: Reposición semanal de abarrotes" />
                 </div>
 
                 <div style="display:flex; align-items:center; justify-content:space-between; margin-top:1.25rem">
@@ -230,8 +234,12 @@
 
 <!-- Mini-modal asignar proveedor a línea -->
 @if (asignandoLineaId()) {
-    <div class="drawer-overlay" (click)="cerrarAsignarProveedor()">
-        <div class="drawer" style="width:420px; padding:1.5rem" (click)="$event.stopPropagation()">
+    <div class="drawer-overlay open" (click)="cerrarAsignarProveedor()">
+        <!-- `open` literal: este drawer solo se renderiza dentro de un @if, asi que su presencia
+     YA significa abierto. Sin la clase, la regla global `div.drawer:not(.open)` lo dejaba
+     con visibility:hidden y ancho 0 - el formulario era inalcanzable. Y sin ancho en linea
+     hereda el estandar de 540px del resto del ERP. -->
+        <div class="drawer drawer-right open" style="padding:1.5rem" (click)="$event.stopPropagation()">
             <h2 style="font-size:1.1rem; font-weight:700; margin-bottom:1.25rem">Asignar Proveedor</h2>
             <form [formGroup]="proveedorForm" (ngSubmit)="asignarProveedor()">
                 <div>

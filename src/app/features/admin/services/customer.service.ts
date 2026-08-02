@@ -4,6 +4,7 @@ import { Observable, of, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { environment } from '@env/environment';
 import { HTTP_STATUS } from '@shared/constants/app.constants';
+import { AuthService } from '@core/auth/auth.service';
 import { PageResponse } from '@core/models/pagination.model';
 import {
     CustomerResponse,
@@ -18,6 +19,7 @@ import {
 @Injectable({ providedIn: 'root' })
 export class CustomerService {
     private readonly http = inject(HttpClient);
+    private readonly auth = inject(AuthService);
     private readonly baseUrl = `${environment.apiUrls.sales}/api/clientes`;
 
     /**
@@ -82,9 +84,10 @@ export class CustomerService {
     /**
      * Obtiene un cliente por su ID
      */
-    getById(id: number): Observable<CustomerResponse> {
+    getById(id: number, companyId: number): Observable<CustomerResponse> {
+        const params = new HttpParams().set('companyId', companyId.toString());
         return this.http
-            .get<CustomerResponse>(`${this.baseUrl}/${id}`)
+            .get<CustomerResponse>(`${this.baseUrl}/${id}`, { params })
             .pipe(catchError(this.handleError));
     }
 
@@ -117,7 +120,7 @@ export class CustomerService {
      */
     update(id: number, dto: CustomerRequest): Observable<CustomerResponse> {
         return this.http
-            .put<CustomerResponse>(`${this.baseUrl}/${id}`, dto)
+            .put<CustomerResponse>(`${this.baseUrl}/${id}`, dto, { params: this.tenantParams() })
             .pipe(catchError(this.handleError));
     }
 
@@ -148,21 +151,35 @@ export class CustomerService {
      */
     deactivate(id: number): Observable<void> {
         return this.http
-            .delete<void>(`${this.baseUrl}/${id}`)
+            .delete<void>(`${this.baseUrl}/${id}`, { params: this.tenantParams() })
             .pipe(catchError(this.handleError));
+    }
+
+
+    /**
+     * `companyId` de la empresa activa como query param.
+     *
+     * Casi todos los endpoints de cliente lo exigen como `@RequestParam` (no en el
+     * body), así que llamarlos sin él devuelve 400 «Parámetro requerido ausente:
+     * companyId». Pasaba en el detalle del cliente y en TODOS los de direcciones y
+     * contactos: el panel de detalle abría con dos peticiones en 400.
+     */
+    private tenantParams(): HttpParams {
+        const id = this.auth.currentUser()?.activeCompanyId;
+        return id != null ? new HttpParams().set('companyId', String(id)) : new HttpParams();
     }
 
     // ── Direcciones ──────────────────────────────────────────────────────────
 
     getDirecciones(clienteId: number): Observable<CustomerDireccionResponse[]> {
         return this.http
-            .get<CustomerDireccionResponse[]>(`${this.baseUrl}/${clienteId}/direcciones`)
+            .get<CustomerDireccionResponse[]>(`${this.baseUrl}/${clienteId}/direcciones`, { params: this.tenantParams() })
             .pipe(catchError(this.handleError));
     }
 
     addDireccion(clienteId: number, dto: CustomerDireccionRequest): Observable<CustomerDireccionResponse> {
         return this.http
-            .post<CustomerDireccionResponse>(`${this.baseUrl}/${clienteId}/direcciones`, dto)
+            .post<CustomerDireccionResponse>(`${this.baseUrl}/${clienteId}/direcciones`, dto, { params: this.tenantParams() })
             .pipe(catchError(this.handleError));
     }
 
@@ -172,13 +189,13 @@ export class CustomerService {
         dto: CustomerDireccionRequest
     ): Observable<CustomerDireccionResponse> {
         return this.http
-            .put<CustomerDireccionResponse>(`${this.baseUrl}/${clienteId}/direcciones/${dirId}`, dto)
+            .put<CustomerDireccionResponse>(`${this.baseUrl}/${clienteId}/direcciones/${dirId}`, dto, { params: this.tenantParams() })
             .pipe(catchError(this.handleError));
     }
 
     deactivateDireccion(clienteId: number, dirId: number): Observable<void> {
         return this.http
-            .delete<void>(`${this.baseUrl}/${clienteId}/direcciones/${dirId}`)
+            .delete<void>(`${this.baseUrl}/${clienteId}/direcciones/${dirId}`, { params: this.tenantParams() })
             .pipe(catchError(this.handleError));
     }
 
@@ -186,13 +203,13 @@ export class CustomerService {
 
     getContactos(clienteId: number): Observable<CustomerContactoResponse[]> {
         return this.http
-            .get<CustomerContactoResponse[]>(`${this.baseUrl}/${clienteId}/contactos`)
+            .get<CustomerContactoResponse[]>(`${this.baseUrl}/${clienteId}/contactos`, { params: this.tenantParams() })
             .pipe(catchError(this.handleError));
     }
 
     addContacto(clienteId: number, dto: CustomerContactoRequest): Observable<CustomerContactoResponse> {
         return this.http
-            .post<CustomerContactoResponse>(`${this.baseUrl}/${clienteId}/contactos`, dto)
+            .post<CustomerContactoResponse>(`${this.baseUrl}/${clienteId}/contactos`, dto, { params: this.tenantParams() })
             .pipe(catchError(this.handleError));
     }
 
@@ -202,13 +219,13 @@ export class CustomerService {
         dto: CustomerContactoRequest
     ): Observable<CustomerContactoResponse> {
         return this.http
-            .put<CustomerContactoResponse>(`${this.baseUrl}/${clienteId}/contactos/${ctId}`, dto)
+            .put<CustomerContactoResponse>(`${this.baseUrl}/${clienteId}/contactos/${ctId}`, dto, { params: this.tenantParams() })
             .pipe(catchError(this.handleError));
     }
 
     deactivateContacto(clienteId: number, ctId: number): Observable<void> {
         return this.http
-            .delete<void>(`${this.baseUrl}/${clienteId}/contactos/${ctId}`)
+            .delete<void>(`${this.baseUrl}/${clienteId}/contactos/${ctId}`, { params: this.tenantParams() })
             .pipe(catchError(this.handleError));
     }
 

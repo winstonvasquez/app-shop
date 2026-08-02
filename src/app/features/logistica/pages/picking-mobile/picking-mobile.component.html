@@ -1,16 +1,16 @@
-<div class="p-4 max-w-2xl mx-auto">
-  <!-- Header con progreso global -->
-  <div class="mb-4 bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-    <div class="flex items-center justify-between mb-2">
-      <h1 class="text-lg font-semibold text-gray-800">Mis Órdenes de Picking</h1>
-      <button
-        type="button"
-        (click)="loadOrders()"
-        class="text-sm font-medium"
-        style="color:var(--color-primary)">
-        Actualizar
-      </button>
+<div class="page-container">
+
+  <app-page-header
+    title="Mis Órdenes de Picking"
+    subtitle="Órdenes de picking asignadas, con progreso por ítem y por orden"
+    [breadcrumbs]="breadcrumbs">
+    <div actions>
+      <app-button icon="refresh-cw" label="Actualizar" variant="secondary" (click)="loadOrders()" />
     </div>
+  </app-page-header>
+
+  <!-- Progreso global -->
+  <div class="mb-4 bg-white rounded-xl shadow-sm border border-gray-100 p-4">
     <div class="flex items-center gap-3">
       <div class="flex-1 bg-gray-200 rounded-full h-2">
         <div
@@ -26,17 +26,15 @@
     <p class="text-xs text-gray-400 mt-1">Progreso global: {{ overallProgress() }}%</p>
   </div>
 
+  <!-- Error -->
+  @if (error()) {
+    <app-alert type="error" [message]="error()!" [dismissible]="true" (dismiss)="error.set(null)" />
+  }
+
   <!-- Loading -->
   @if (loading()) {
     <div class="text-center py-12 text-gray-400">
       <p>Cargando ordenes...</p>
-    </div>
-  }
-
-  <!-- Error -->
-  @if (error()) {
-    <div class="bg-error/10 border border-error/30 text-error rounded-lg p-4 mb-4">
-      {{ error() }}
     </div>
   }
 

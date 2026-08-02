@@ -86,7 +86,7 @@ export class PortalComponent implements OnInit {
         { key: 'fechaInicio', label: 'Fecha Inicio' },
         { key: 'fechaFin', label: 'Fecha Fin' },
         { key: 'dias', label: 'Días', align: 'center', render: v => `${v.dias} día${v.dias === 1 ? '' : 's'}` },
-        { key: 'motivo', label: 'Motivo', render: v => v.motivo ?? '—' },
+        { key: 'motivo', label: 'Motivo', html: true, render: v => v.motivo ?? '—' },
         {
             key: 'estado', label: 'Estado', html: true,
             render: v => `<span class="badge badge-${this.vacationBadge(v.estado)}">${this.catalog.label('ESTADO_VACACION', v.estado)}</span>`,

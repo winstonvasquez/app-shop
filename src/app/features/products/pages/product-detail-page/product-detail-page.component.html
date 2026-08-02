@@ -231,7 +231,7 @@
                     <div class="tab-grid">
                         <div>
                             <h3 class="tab-title">{{ p.topBannerText ?? 'Sobre este producto' }}</h3>
-                            <p class="tab-text">{{ p.descripcion }}</p>
+                            <p class="tab-text" [innerHTML]="p.descripcion"></p>
                             @if (p.features) {
                                 <h3 class="tab-title">Características</h3>
                                 <p class="tab-text">{{ p.features }}</p>

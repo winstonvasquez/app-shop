@@ -91,7 +91,7 @@
                 <div><span class="input-label">Supervisor</span><p>{{ employee()!.supervisorName ?? '—' }}</p></div>
                 <div><span class="input-label">Fecha Ingreso</span><p>{{ employee()!.fechaIngreso }}</p></div>
                 <div><span class="input-label">Fecha Salida</span><p>{{ employee()!.fechaSalida ?? '—' }}</p></div>
-                <div><span class="input-label">Motivo Salida</span><p>{{ employee()!.motivoSalida ?? '—' }}</p></div>
+                <div><span class="input-label">Motivo Salida</span><p [innerHTML]="employee()!.motivoSalida ?? '—'"></p></div>
                 <div>
                     <span class="input-label">Estado</span>
                     <p><span class="badge" [class]="'badge-' + (employee()!.estado === 'ACTIVO' ? 'success' : 'neutral')">{{ employee()!.estado }}</span></p>
@@ -572,7 +572,7 @@
                                 <td class="table-cell">{{ s.fechaInicio }}</td>
                                 <td class="table-cell">{{ s.fechaFin ?? 'Actual' }}</td>
                                 <td class="table-cell">{{ s.moneda === 'USD' ? '$' : 'S/' }} {{ s.salarioBase }}</td>
-                                <td class="table-cell">{{ s.motivo ?? '—' }}</td>
+                                <td class="table-cell" [innerHTML]="s.motivo ?? '—'"></td>
                                 <td class="table-cell">{{ s.porcentajeIncremento ? s.porcentajeIncremento + '%' : '—' }}</td>
                             </tr>
                         }

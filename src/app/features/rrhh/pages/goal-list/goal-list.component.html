@@ -94,12 +94,10 @@
 
             <div>
                 <label class="input-label">Descripción</label>
-                <textarea
-                    class="form-input"
-                    rows="3"
+                <app-rich-text-editor
+                    [rows]="3"
                     placeholder="Descripción de la meta..."
-                    formControlName="descripcion"
-                    style="resize: vertical"></textarea>
+                    formControlName="descripcion" />
             </div>
 
             <div class="grid grid-cols-2 gap-4">

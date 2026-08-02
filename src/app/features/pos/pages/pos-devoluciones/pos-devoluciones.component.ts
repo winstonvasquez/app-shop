@@ -30,22 +30,31 @@ interface LineaDevolucion {
     imports: [DecimalPipe, DatePipe, ReactiveFormsModule, CatalogSelectComponent],
     changeDetection: ChangeDetectionStrategy.OnPush,
     template: `
+    <!--
+      NOTA CSS: .pos-layout (styles/pages/_pos-page.scss) aplica un reset
+      ".pos-layout *{margin:0;padding:0}" SIN @layer — una regla unlayered
+      siempre gana sobre las utilities de Tailwind (que sí viven en @layer
+      utilities), sin importar la especificidad. Por eso TODAS las utilities
+      de margin/padding de este componente van con el modificador "!"
+      (!mb-4, !px-4, etc.) — igual que ya hacían !h-10/!h-9 en este mismo
+      archivo. gap-* no lo necesita (gap no es margin/padding).
+    -->
     <!-- Header -->
-    <div class="mb-5">
+    <div class="!mb-5">
       <h2 class="text-lg font-bold text-on">Devoluciones Parciales</h2>
-      <p class="text-sm text-muted mt-0.5">Busque la venta y seleccione los items a devolver</p>
+      <p class="text-sm text-muted !mt-0.5">Busque la venta y seleccione los items a devolver</p>
     </div>
 
     <!-- Buscador -->
-    <form [formGroup]="formBusqueda" class="flex gap-3 items-end mb-4">
+    <form [formGroup]="formBusqueda" class="flex gap-3 items-end !mb-4">
       <div class="flex-1">
-        <label class="text-xs font-semibold text-subtle uppercase tracking-wide mb-1 block">N° Ticket / ID de Venta</label>
+        <label class="text-xs font-semibold text-subtle uppercase tracking-wide !mb-1 block">N° Ticket / ID de Venta</label>
         <input class="input-field !h-10" formControlName="busqueda"
                placeholder="Ej: TICK-001000 o ID numerico"
                (keydown.enter)="buscarVenta()">
       </div>
       <div class="w-36">
-        <label class="text-xs font-semibold text-subtle uppercase tracking-wide mb-1 block">Buscar por</label>
+        <label class="text-xs font-semibold text-subtle uppercase tracking-wide !mb-1 block">Buscar por</label>
         <app-catalog-select class="input-field !h-10" tabla="TIPO_BUSQUEDA_VENTA" formControlName="tipoBusqueda"></app-catalog-select>
       </div>
       <button type="button" class="btn-primary !h-10 !px-5 shrink-0" (click)="buscarVenta()" [disabled]="buscando() || !puedeBuscar()">
@@ -61,7 +70,7 @@ interface LineaDevolucion {
 
     <!-- Error -->
     @if (errorBusqueda()) {
-      <div class="flex items-center gap-2 px-4 py-3 mb-4 rounded-xl bg-[var(--color-error)]/10 border border-[var(--color-error)]/20 text-sm text-[var(--color-error)]">
+      <div class="flex items-center gap-2 !px-4 !py-3 !mb-4 rounded-xl bg-[var(--color-error)]/10 border border-[var(--color-error)]/20 text-sm text-[var(--color-error)]">
         <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16" class="shrink-0">
           <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
         </svg>
@@ -71,26 +80,26 @@ interface LineaDevolucion {
 
     <!-- Venta encontrada -->
     @if (ventaSeleccionada(); as venta) {
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start mb-4">
-        
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start !mb-4">
+
         <!-- Columna Izquierda: Detalle de venta y Tabla de items -->
         <div class="lg:col-span-2 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] overflow-hidden">
           <!-- Header de la venta -->
-          <div class="flex items-center justify-between px-4 py-3 border-b border-[var(--color-border)]">
+          <div class="flex items-center justify-between !px-4 !py-3 border-b border-[var(--color-border)]">
             <div class="flex items-center gap-3">
               <span class="font-bold text-on">{{ venta.numeroTicket }}</span>
               <span class="text-xs font-mono text-muted">ID: {{ venta.id }}</span>
             </div>
-            <span class="text-xs font-bold px-2.5 py-1 rounded-full"
+            <span class="text-xs font-bold !px-2.5 !py-1 rounded-full"
                 [class]="venta.estado === 'COMPLETADA'
                   ? 'bg-[var(--color-success)]/15 text-[var(--color-success)]'
                   : 'bg-[var(--color-error)]/15 text-[var(--color-error)]'">
               {{ venta.estado }}
             </span>
           </div>
-  
+
           <!-- Info grid -->
-          <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 px-4 py-3">
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 !px-4 !py-3">
             <div>
               <p class="text-[10px] text-muted uppercase tracking-wide">Fecha</p>
               <p class="text-sm font-medium text-on">{{ venta.fechaCreacion | date:'dd/MM/yyyy HH:mm' }}</p>
@@ -102,40 +111,40 @@ interface LineaDevolucion {
             <div>
               <p class="text-[10px] text-muted uppercase tracking-wide">Total</p>
               <p class="text-lg font-bold text-[var(--color-primary)]">
-                <span class="text-xs align-super mr-px">S/</span>{{ venta.total | number:'1.2-2' }}
+                <span class="text-xs align-super !mr-px">S/</span>{{ venta.total | number:'1.2-2' }}
               </p>
             </div>
           </div>
-  
+
           <!-- Items con checkboxes para devolucion parcial -->
           @if (venta.estado === 'COMPLETADA') {
           <div class="border-t border-[var(--color-border)] overflow-y-auto max-h-[380px]">
             <table class="w-full text-sm">
               <thead>
                 <tr class="bg-[var(--color-background)] sticky top-0 z-10 border-b border-[var(--color-border)]">
-                  <th class="px-3 py-2 text-left w-8"></th>
-                  <th class="px-3 py-2 text-left text-[10px] font-semibold text-muted uppercase">Producto</th>
-                  <th class="px-3 py-2 text-center text-[10px] font-semibold text-muted uppercase w-20">Vendido</th>
-                  <th class="px-3 py-2 text-center text-[10px] font-semibold text-muted uppercase w-24">Devolver</th>
-                  <th class="px-3 py-2 text-right text-[10px] font-semibold text-muted uppercase w-28">Reembolso</th>
+                  <th class="!px-3 !py-2 text-left w-8"></th>
+                  <th class="!px-3 !py-2 text-left text-[10px] font-semibold text-muted uppercase">Producto</th>
+                  <th class="!px-3 !py-2 text-center text-[10px] font-semibold text-muted uppercase w-20">Vendido</th>
+                  <th class="!px-3 !py-2 text-center text-[10px] font-semibold text-muted uppercase w-24">Devolver</th>
+                  <th class="!px-3 !py-2 text-right text-[10px] font-semibold text-muted uppercase w-28">Reembolso</th>
                 </tr>
               </thead>
               <tbody>
                 @for (linea of lineasDevolucion(); track linea.detalle.id) {
                   <tr class="border-t border-[var(--color-border)]/50"
                       [class.bg-[var(--color-primary)]/5]="linea.seleccionada">
-                    <td class="px-3 py-2 text-center">
+                    <td class="!px-3 !py-2 text-center">
                       <input type="checkbox" [checked]="linea.seleccionada"
                              [disabled]="linea.maxDevolvible === 0"
                              (change)="toggleLinea(linea.detalle.id)"
                              class="accent-[var(--color-primary)]">
                     </td>
-                    <td class="px-3 py-2">
+                    <td class="!px-3 !py-2">
                       <p class="text-on font-medium">{{ linea.detalle.varianteNombre }}</p>
                       <p class="text-[10px] text-muted font-mono">{{ linea.detalle.varianteSku }}</p>
                     </td>
-                    <td class="px-3 py-2 text-center text-on">{{ linea.detalle.cantidad }}</td>
-                    <td class="px-3 py-2 text-center">
+                    <td class="!px-3 !py-2 text-center text-on">{{ linea.detalle.cantidad }}</td>
+                    <td class="!px-3 !py-2 text-center">
                       @if (linea.seleccionada && linea.maxDevolvible > 0) {
                         <div class="flex items-center justify-center gap-1">
                           <button class="w-6 h-6 rounded bg-[var(--color-border)] text-on text-xs hover:bg-[var(--color-border)]/80"
@@ -148,7 +157,7 @@ interface LineaDevolucion {
                         <span class="text-xs text-muted">Ya devuelto</span>
                       }
                     </td>
-                    <td class="px-3 py-2 text-right font-mono font-semibold"
+                    <td class="!px-3 !py-2 text-right font-mono font-semibold"
                         [class.text-[var(--color-warning)]]="linea.montoDevuelto > 0"
                         [class.text-muted]="linea.montoDevuelto === 0">
                       S/ {{ linea.montoDevuelto | number:'1.2-2' }}
@@ -159,20 +168,20 @@ interface LineaDevolucion {
             </table>
           </div>
           } @else {
-            <div class="p-6 text-center border-t border-[var(--color-border)]">
+            <div class="!p-6 text-center border-t border-[var(--color-border)]">
               <p class="text-muted text-sm">Esta venta ya fue anulada previamente.</p>
             </div>
           }
         </div>
-  
+
         <!-- Columna Derecha: Formulario de devolucion -->
         <div class="flex flex-col gap-4">
           @if (venta.estado === 'COMPLETADA') {
-          <form [formGroup]="formDevolucion" class="rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] p-4 flex flex-col gap-4">
-            <h3 class="font-bold text-on text-sm border-b border-[var(--color-border)] pb-2">Resumen de Reembolso</h3>
-            
+          <form [formGroup]="formDevolucion" class="rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] !p-4 flex flex-col gap-4">
+            <h3 class="font-bold text-on text-sm border-b border-[var(--color-border)] !pb-2">Resumen de Reembolso</h3>
+
             <!-- Total devolucion -->
-            <div class="flex justify-between items-center py-2 bg-[var(--color-warning)]/10 px-3 rounded-lg border border-[var(--color-warning)]/20">
+            <div class="flex justify-between items-center !py-2 bg-[var(--color-warning)]/10 !px-3 rounded-lg border border-[var(--color-warning)]/20">
               <span class="text-xs font-semibold text-[var(--color-warning)] uppercase tracking-wider">Total Reembolso:</span>
               <span class="text-xl font-bold text-[var(--color-warning)] font-mono">
                 S/ {{ totalDevolucion() | number:'1.2-2' }}
@@ -180,30 +189,30 @@ interface LineaDevolucion {
             </div>
 
             <div>
-              <label class="text-xs font-semibold text-subtle uppercase tracking-wide mb-1 block">Motivo *</label>
+              <label class="text-xs font-semibold text-subtle uppercase tracking-wide !mb-1 block">Motivo *</label>
               <app-catalog-select class="input-field !h-10" tabla="MOTIVO_DEVOLUCION_POS" formControlName="motivo"
                   placeholder="Seleccionar motivo..."></app-catalog-select>
             </div>
             <div>
-              <label class="text-xs font-semibold text-subtle uppercase tracking-wide mb-1 block">Observaciones</label>
+              <label class="text-xs font-semibold text-subtle uppercase tracking-wide !mb-1 block">Observaciones</label>
               <textarea class="input-field" formControlName="observaciones" rows="2"
                         placeholder="Descripción adicional..."></textarea>
             </div>
-  
+
             <!-- Success message -->
             @if (procesado()) {
-              <div class="flex items-center gap-2 p-3 rounded-lg bg-[var(--color-success)]/10 border border-[var(--color-success)]/20">
+              <div class="flex items-center gap-2 !p-3 rounded-lg bg-[var(--color-success)]/10 border border-[var(--color-success)]/20">
                 <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16" class="text-[var(--color-success)] shrink-0">
                   <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
                 </svg>
                 <div class="text-sm">
                   <p class="font-bold text-[var(--color-success)]">Devolución procesada — NC: {{ ultimaNc() }}</p>
-                  <p class="text-subtle text-xs mt-0.5">Entregue S/ {{ totalDevolucion() | number:'1.2-2' }} al cliente.</p>
+                  <p class="text-subtle text-xs !mt-0.5">Entregue S/ {{ totalDevolucion() | number:'1.2-2' }} al cliente.</p>
                 </div>
               </div>
             }
-  
-            <div class="flex justify-end gap-2 pt-2 border-t border-[var(--color-border)]">
+
+            <div class="flex justify-end gap-2 !pt-2 border-t border-[var(--color-border)]">
               <button type="button" class="btn-secondary !h-9 !px-4" (click)="limpiar()">Cancelar</button>
               <button type="button" class="!h-9 !px-4 rounded-xl text-xs font-semibold text-white transition-colors"
                   [class]="!motivoSeleccionado() || !haySeleccion() || procesando() || procesado()
@@ -212,7 +221,7 @@ interface LineaDevolucion {
                   [disabled]="!motivoSeleccionado() || !haySeleccion() || procesando() || procesado()"
                   (click)="confirmarDevolucion()">
                 @if (procesando()) {
-                  <svg class="animate-spin inline mr-1" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                  <svg class="animate-spin inline !mr-1" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
                     <path d="M10 3a7 7 0 017 7" stroke-linecap="round" />
                   </svg>
                   Procesando...
@@ -228,38 +237,34 @@ interface LineaDevolucion {
     }
 
     <!-- Listado de devoluciones registradas — 100% server-side (GET /api/pos/devoluciones) -->
-    <div class="rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] overflow-hidden mt-4">
-      <div class="flex items-center justify-between px-4 py-3 border-b border-[var(--color-border)]">
+    <div class="rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] overflow-hidden !mt-4">
+      <div class="flex items-center justify-between !px-4 !py-3 border-b border-[var(--color-border)]">
         <h3 class="font-bold text-on text-sm">Devoluciones registradas</h3>
-        <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--color-border)] text-on">
+        <span class="text-xs font-bold !px-2 !py-0.5 rounded-full bg-[var(--color-border)] text-on">
           {{ devolucionesTotal() }}
         </span>
       </div>
 
       <!--
-        Filtros server-side. Misma estructura que la toolbar del data-table del ERP
-        (.table-toolbar > .toolbar-primary + .toolbar-filters) para que la rejilla y
-        las etiquetas se vean igual que en el resto del sistema.
+        Filtros server-side. Tailwind + tokens POS (NUNCA clases del data-table admin
+        .table-toolbar/.filter-field/.search-box — esas asumen el contexto/padding
+        del shell admin y colapsan dentro del POS con ViewEncapsulation.None: cabeceras
+        pegadas, bloque superpuesto con el formulario de arriba, pill del contador roto).
       -->
-      <div class="table-toolbar">
-        <div class="toolbar-primary">
-          <div class="toolbar-search">
-            <div class="search-box">
-              <input type="text" placeholder="Buscar por N° ticket..." aria-label="Buscar por N° ticket"
-                  [value]="dFilterSearch()" (input)="onDevSearch($any($event.target).value)" />
-            </div>
-          </div>
-          <div class="toolbar-actions">
-            @if (hasDevFiltrosActivos()) {
-              <button type="button" class="table-filters-clear" (click)="onDevFiltersClear()">Limpiar</button>
-            }
-          </div>
+      <div class="flex flex-col gap-3 !px-4 !py-3 border-b border-[var(--color-border)]">
+        <div class="flex flex-wrap items-center gap-3">
+          <input type="text" class="input-field !h-9 flex-1 min-w-[220px] max-w-[420px]"
+              placeholder="Buscar por N° ticket..." aria-label="Buscar por N° ticket"
+              [value]="dFilterSearch()" (input)="onDevSearch($any($event.target).value)" />
+          @if (hasDevFiltrosActivos()) {
+            <button type="button" class="btn-secondary !h-9 !px-3 text-xs !ml-auto shrink-0" (click)="onDevFiltersClear()">Limpiar</button>
+          }
         </div>
 
-        <div class="toolbar-filters">
-          <div class="filter-field">
-            <label class="filter-label" for="dev-flt-motivo">Motivo</label>
-            <select id="dev-flt-motivo" class="input-field" [value]="dFilterMotivo()"
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 items-end">
+          <div class="flex flex-col gap-1 min-w-0">
+            <label class="text-[11px] font-semibold text-subtle uppercase tracking-wide truncate" for="dev-flt-motivo">Motivo</label>
+            <select id="dev-flt-motivo" class="input-field !h-9 text-xs" [value]="dFilterMotivo()"
                 (change)="onDevMotivoChange($any($event.target).value)">
               <option value="">Todos</option>
               @for (m of motivosCatalogo(); track m.codigo) {
@@ -268,9 +273,9 @@ interface LineaDevolucion {
             </select>
           </div>
 
-          <div class="filter-field">
-            <label class="filter-label" for="dev-flt-estado">Estado</label>
-            <select id="dev-flt-estado" class="input-field" [value]="dFilterEstado()"
+          <div class="flex flex-col gap-1 min-w-0">
+            <label class="text-[11px] font-semibold text-subtle uppercase tracking-wide truncate" for="dev-flt-estado">Estado</label>
+            <select id="dev-flt-estado" class="input-field !h-9 text-xs" [value]="dFilterEstado()"
                 (change)="onDevEstadoChange($any($event.target).value)">
               <option value="">Todos</option>
               @for (e of estadosDevolucion; track e.value) {
@@ -279,9 +284,9 @@ interface LineaDevolucion {
             </select>
           </div>
 
-          <div class="filter-field">
-            <label class="filter-label" for="dev-flt-cajero">Cajero</label>
-            <select id="dev-flt-cajero" class="input-field" [value]="dFilterCajeroId()"
+          <div class="flex flex-col gap-1 min-w-0">
+            <label class="text-[11px] font-semibold text-subtle uppercase tracking-wide truncate" for="dev-flt-cajero">Cajero</label>
+            <select id="dev-flt-cajero" class="input-field !h-9 text-xs" [value]="dFilterCajeroId()"
                 (change)="onDevCajeroChange($any($event.target).value)">
               <option value="">Todos</option>
               @for (c of cajeros(); track c.id) {
@@ -290,24 +295,24 @@ interface LineaDevolucion {
             </select>
           </div>
 
-          <div class="filter-field filter-field--range">
-            <span class="filter-label">Fecha de devolución</span>
-            <div class="filter-range">
-              <input class="input-field" type="date" aria-label="Fecha de devolución — desde"
+          <div class="flex flex-col gap-1 min-w-0 col-span-2">
+            <span class="text-[11px] font-semibold text-subtle uppercase tracking-wide truncate">Fecha de devolución</span>
+            <div class="grid grid-cols-[1fr_auto_1fr] items-center gap-1.5">
+              <input class="input-field !h-9 text-xs" type="date" aria-label="Fecha de devolución — desde"
                   [value]="dFilterFechaDevDesde()" (change)="onDevFechaDevDesdeChange($any($event.target).value)" />
-              <span class="filter-range-sep" aria-hidden="true">→</span>
-              <input class="input-field" type="date" aria-label="Fecha de devolución — hasta"
+              <span class="text-muted text-xs" aria-hidden="true">→</span>
+              <input class="input-field !h-9 text-xs" type="date" aria-label="Fecha de devolución — hasta"
                   [value]="dFilterFechaDevHasta()" (change)="onDevFechaDevHastaChange($any($event.target).value)" />
             </div>
           </div>
 
-          <div class="filter-field filter-field--range">
-            <span class="filter-label">Fecha de venta</span>
-            <div class="filter-range">
-              <input class="input-field" type="date" aria-label="Fecha de venta — desde"
+          <div class="flex flex-col gap-1 min-w-0 col-span-2">
+            <span class="text-[11px] font-semibold text-subtle uppercase tracking-wide truncate">Fecha de venta</span>
+            <div class="grid grid-cols-[1fr_auto_1fr] items-center gap-1.5">
+              <input class="input-field !h-9 text-xs" type="date" aria-label="Fecha de venta — desde"
                   [value]="dFilterFechaVentaDesde()" (change)="onDevFechaVentaDesdeChange($any($event.target).value)" />
-              <span class="filter-range-sep" aria-hidden="true">→</span>
-              <input class="input-field" type="date" aria-label="Fecha de venta — hasta"
+              <span class="text-muted text-xs" aria-hidden="true">→</span>
+              <input class="input-field !h-9 text-xs" type="date" aria-label="Fecha de venta — hasta"
                   [value]="dFilterFechaVentaHasta()" (change)="onDevFechaVentaHastaChange($any($event.target).value)" />
             </div>
           </div>
@@ -315,7 +320,7 @@ interface LineaDevolucion {
       </div>
 
       @if (devolucionesLoading()) {
-        <div class="flex justify-center py-6">
+        <div class="flex justify-center !py-6">
           <svg class="animate-spin text-[var(--color-primary)]" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
             <path d="M10 3a7 7 0 017 7" stroke-linecap="round" />
           </svg>
@@ -324,41 +329,41 @@ interface LineaDevolucion {
         <table class="w-full text-sm">
           <thead>
             <tr class="bg-[var(--color-background)]">
-              <th class="px-4 py-2 text-left text-[10px] font-semibold text-muted uppercase">Venta</th>
-              <th class="px-4 py-2 text-left text-[10px] font-semibold text-muted uppercase">N° NC</th>
-              <th class="px-4 py-2 text-right text-[10px] font-semibold text-muted uppercase">Total devuelto</th>
-              <th class="px-4 py-2 text-left text-[10px] font-semibold text-muted uppercase">Motivo</th>
-              <th class="px-4 py-2 text-left text-[10px] font-semibold text-muted uppercase">Estado</th>
-              <th class="px-4 py-2 text-left text-[10px] font-semibold text-muted uppercase">Fecha</th>
+              <th class="!px-4 !py-2 text-left text-[10px] font-semibold text-muted uppercase">Venta</th>
+              <th class="!px-4 !py-2 text-left text-[10px] font-semibold text-muted uppercase">N° NC</th>
+              <th class="!px-4 !py-2 text-right text-[10px] font-semibold text-muted uppercase">Total devuelto</th>
+              <th class="!px-4 !py-2 text-left text-[10px] font-semibold text-muted uppercase">Motivo</th>
+              <th class="!px-4 !py-2 text-left text-[10px] font-semibold text-muted uppercase">Estado</th>
+              <th class="!px-4 !py-2 text-left text-[10px] font-semibold text-muted uppercase">Fecha</th>
             </tr>
           </thead>
           <tbody>
             @for (d of devolucionesListado(); track d.id) {
               <tr class="border-t border-[var(--color-border)]/50">
-                <td class="px-4 py-2 font-mono text-on">Venta #{{ d.ventaPosId }}</td>
-                <td class="px-4 py-2 font-mono text-xs text-muted">{{ d.numeroNc }}</td>
-                <td class="px-4 py-2 text-right font-mono font-bold text-[var(--color-warning)]">
+                <td class="!px-4 !py-2 font-mono text-on">Venta #{{ d.ventaPosId }}</td>
+                <td class="!px-4 !py-2 font-mono text-xs text-muted">{{ d.numeroNc }}</td>
+                <td class="!px-4 !py-2 text-right font-mono font-bold text-[var(--color-warning)]">
                   S/ {{ d.totalDevuelto | number:'1.2-2' }}
                 </td>
-                <td class="px-4 py-2 text-xs text-muted">{{ catalog.label('MOTIVO_DEVOLUCION_POS', d.motivo) }}</td>
-                <td class="px-4 py-2 text-xs">
-                  <span class="text-xs font-bold px-2 py-0.5 rounded-full"
+                <td class="!px-4 !py-2 text-xs text-muted">{{ catalog.label('MOTIVO_DEVOLUCION_POS', d.motivo) }}</td>
+                <td class="!px-4 !py-2 text-xs">
+                  <span class="text-xs font-bold !px-2 !py-0.5 rounded-full"
                       [class]="d.estado === 'PROCESADA' ? 'bg-[var(--color-success)]/15 text-[var(--color-success)]' : 'bg-[var(--color-error)]/15 text-[var(--color-error)]'">
                     {{ d.estado }}
                   </span>
                 </td>
-                <td class="px-4 py-2 text-xs text-muted">{{ d.fechaCreacion | date:'dd/MM/yyyy HH:mm' }}</td>
+                <td class="!px-4 !py-2 text-xs text-muted">{{ d.fechaCreacion | date:'dd/MM/yyyy HH:mm' }}</td>
               </tr>
             }
             @empty {
               <tr>
-                <td colspan="6" class="px-4 py-6 text-center text-muted text-sm">No hay devoluciones registradas</td>
+                <td colspan="6" class="!px-4 !py-6 text-center text-muted text-sm">No hay devoluciones registradas</td>
               </tr>
             }
           </tbody>
         </table>
 
-        <div class="flex items-center justify-between px-4 py-3 border-t border-[var(--color-border)] text-xs text-muted">
+        <div class="flex items-center justify-between !px-4 !py-3 border-t border-[var(--color-border)] text-xs text-muted">
           <span>Página {{ devolucionesPage() + 1 }} de {{ devolucionesTotalPages() || 1 }}</span>
           <div class="flex gap-2">
             <button type="button" class="btn-secondary !h-8 !px-3 text-xs" [disabled]="devolucionesPage() === 0"

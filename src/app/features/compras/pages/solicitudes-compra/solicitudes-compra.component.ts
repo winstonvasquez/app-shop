@@ -14,13 +14,14 @@ import { SolicitudCompraService } from '../../services/solicitud-compra.service'
 import { AuthService } from '@core/auth/auth.service';
 import { CatalogService } from '@core/services/catalog.service';
 import { SolicitudCompra, SolicitudCompraItem } from '../../models/solicitud-compra.model';
-import { ButtonComponent, CatalogSelectComponent, ServerSearchSelectComponent } from '@shared/components';
+import { ButtonComponent, CatalogSelectComponent, ServerSearchSelectComponent, RichTextEditorComponent } from '@shared/components';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { bloquearEnEdicion } from '@shared/utils/form-lock';
 import { ProveedorService } from '../../services/proveedor.service';
-import { proveedorSelectSource } from '../../components/select-sources';
+import { proveedorSelectSource, departamentoSelectSource } from '../../components/select-sources';
 import { AlmacenService } from '../../../logistica/services/almacen.service';
 import { almacenSelectSource } from '../../../logistica/components/select-sources';
+import { DepartmentService } from '@features/rrhh/services/department.service';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import {
@@ -41,6 +42,7 @@ import { PAGINATION } from '@shared/constants/app.constants';
         ButtonComponent,
         CatalogSelectComponent,
         ServerSearchSelectComponent,
+        RichTextEditorComponent,
         DrawerComponent,
         PageHeaderComponent,
         AlertComponent,
@@ -53,6 +55,7 @@ export class SolicitudesCompraComponent implements OnInit {
     private readonly authService = inject(AuthService);
     private readonly proveedorService = inject(ProveedorService);
     private readonly almacenService = inject(AlmacenService);
+    private readonly departmentService = inject(DepartmentService);
     private readonly fb = inject(FormBuilder);
     private readonly cdr = inject(ChangeDetectorRef);
     protected readonly catalog = inject(CatalogService);
@@ -60,6 +63,8 @@ export class SolicitudesCompraComponent implements OnInit {
     /** Data sources para los selects server-side del modal "Convertir a OC". */
     readonly proveedorSource = proveedorSelectSource(this.proveedorService);
     readonly almacenSource = almacenSelectSource(this.almacenService, () => this.authService.currentUser()?.activeCompanyId);
+    /** Data source del select "Departamento" (maestra de RRHH, ver `departamentoSelectSource`). */
+    readonly departamentoSource = departamentoSelectSource(this.departmentService);
 
     // Data
     solicitudes = signal<SolicitudCompra[]>([]);

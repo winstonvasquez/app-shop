@@ -163,12 +163,10 @@
 
             <div class="form-group-2col-span">
                 <label class="input-label">Motivo de Cese</label>
-                <textarea
-                    class="form-input"
-                    rows="2"
+                <app-rich-text-editor
+                    [rows]="2"
                     placeholder="Ej: Renuncia voluntaria, término de contrato…"
-                    formControlName="motivoSalida"
-                    style="resize: vertical"></textarea>
+                    formControlName="motivoSalida" />
             </div>
         </app-admin-form-section>
 
@@ -257,12 +255,10 @@
 
         <div>
             <label class="input-label">Motivo de Cese</label>
-            <textarea
-                class="form-input"
-                rows="3"
+            <app-rich-text-editor
+                [rows]="3"
                 placeholder="Ej: Renuncia voluntaria, término de contrato…"
-                formControlName="motivoSalida"
-                style="resize: vertical"></textarea>
+                formControlName="motivoSalida" />
         </div>
 
     </form>

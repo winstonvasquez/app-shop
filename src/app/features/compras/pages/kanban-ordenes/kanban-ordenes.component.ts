@@ -29,6 +29,7 @@ interface KanbanColumna {
         DateInputComponent
     ],
     templateUrl: './kanban-ordenes.component.html',
+    styleUrl: './kanban-ordenes.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class KanbanOrdenesComponent implements OnInit {

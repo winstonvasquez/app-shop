@@ -307,7 +307,10 @@ export class ProductsPageComponent implements OnInit {
             rating: p.rating,
             sold: p.salesCount,
             stock: p.stock,
-            badge: p.badge ?? (p.discount ? p.discount : (p.stock !== undefined && p.stock <= 5 ? 'POCAS' : undefined)),
+            // La etiqueta de promoción (V69) tiene prioridad: es la única con vínculo real a un
+            // descuento vigente; `badge`/`discount` son heurísticas de stock/precio sin relación
+            // con Promocion (ver ProductoMapper.resolverEtiquetaPromocion en el backend).
+            badge: p.promocionEtiqueta ?? p.badge ?? (p.discount ? p.discount : (p.stock !== undefined && p.stock <= 5 ? 'POCAS' : undefined)),
             tag: p.starSeller ? 'Recomendado' : undefined,
             shipFree: (p.precioBase ?? 0) >= 99,
             image,

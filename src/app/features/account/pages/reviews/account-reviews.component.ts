@@ -7,6 +7,7 @@ import { LucideAngularModule } from 'lucide-angular';
 import { AuthService } from '@core/auth/auth.service';
 import { environment } from '@env/environment';
 import { DsAccountShellComponent, DsButtonComponent } from '@shared/ui/ds';
+import { RichTextEditorComponent } from '@shared/components';
 
 interface ResenaResponse {
     id: number;
@@ -20,7 +21,7 @@ interface ResenaResponse {
 @Component({
     selector: 'app-account-reviews',
     standalone: true,
-    imports: [DatePipe, RouterLink, ReactiveFormsModule, LucideAngularModule, DsAccountShellComponent, DsButtonComponent],
+    imports: [DatePipe, RouterLink, ReactiveFormsModule, LucideAngularModule, DsAccountShellComponent, DsButtonComponent, RichTextEditorComponent],
     templateUrl: './account-reviews.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
 })

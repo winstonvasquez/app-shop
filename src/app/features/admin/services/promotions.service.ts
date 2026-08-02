@@ -20,6 +20,13 @@ export interface Promocion {
     fechaInicio: string;
     fechaFin: string;
     activo: boolean;
+    // Vinculación según alcance (V69, mutuamente excluyentes): PRODUCTO->productoId,
+    // CATEGORIA->categoriaId, CARRITO->montoMinimo. Los *Nombre son solo de lectura (backend).
+    productoId?: number | null;
+    productoNombre?: string;
+    categoriaId?: number | null;
+    categoriaNombre?: string;
+    montoMinimo?: number | null;
 }
 
 /** Filtros opcionales para GET /sales/api/v1/promociones (todos server-side). */

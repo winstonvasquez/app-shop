@@ -135,8 +135,8 @@
             <app-admin-form-section title="Notas" [columns]="1">
                 <div class="form-group">
                     <label class="input-label">Observaciones</label>
-                    <textarea class="form-input" formControlName="notas" rows="3"
-                              placeholder="Observaciones adicionales"></textarea>
+                    <app-rich-text-editor formControlName="notas" [rows]="3"
+                              placeholder="Observaciones adicionales" />
                 </div>
             </app-admin-form-section>
 

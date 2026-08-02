@@ -85,7 +85,7 @@
             </div>
             <div class="col-span-2">
                 <label class="input-label">Observaciones</label>
-                <textarea class="form-input" formControlName="observaciones" rows="2"></textarea>
+                <app-rich-text-editor formControlName="observaciones" [rows]="2" />
             </div>
         </div>
 
@@ -208,8 +208,8 @@
             <div class="modal-body">
                 <form [formGroup]="rechazarForm">
                     <label class="input-label">Motivo de rechazo *</label>
-                    <textarea class="form-input" formControlName="motivo" rows="3"
-                        placeholder="Explique el motivo del rechazo..."></textarea>
+                    <app-rich-text-editor formControlName="motivo" [rows]="3"
+                        placeholder="Explique el motivo del rechazo..." />
                 </form>
             </div>
             <div class="modal-footer">

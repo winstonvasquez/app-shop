@@ -54,7 +54,7 @@
 
         <div class="mb-4">
             <label class="input-label">Descripción</label>
-            <textarea class="form-input" formControlName="descripcion" rows="2"></textarea>
+            <app-rich-text-editor formControlName="descripcion" [rows]="2" />
         </div>
 
         <div class="mb-4">
@@ -218,7 +218,7 @@
                 <span class="badge" [class]="getBadgeClass(det.estado)">{{ estadoLabel(det.estado) }}</span>
             </div>
             @if (det.descripcion) {
-                <p class="text-sm text-muted mt-1">{{ det.descripcion }}</p>
+                <p class="text-sm text-muted mt-1" [innerHTML]="det.descripcion"></p>
             }
             <div class="grid grid-cols-2 gap-3 mt-3 text-sm">
                 <div><span class="text-muted">Emisión:</span> {{ det.fechaEmision }}</div>
@@ -245,7 +245,7 @@
                             <td class="table-cell">{{ item.sku || '—' }}</td>
                             <td class="table-cell text-center">{{ item.cantidad }}</td>
                             <td class="table-cell">{{ item.unidadMedida || '—' }}</td>
-                            <td class="table-cell">{{ item.especificaciones || '—' }}</td>
+                            <td class="table-cell" [innerHTML]="item.especificaciones || '—'"></td>
                         </tr>
                     }
                 </tbody>

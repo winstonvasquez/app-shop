@@ -3,11 +3,12 @@ import {
     ChangeDetectionStrategy
 } from '@angular/core';
 import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
+import { richTextMaxLength } from '@core/utils/rich-text.util';
 import { EmployeeService } from '../../services/employee.service';
 import { DepartmentService } from '../../services/department.service';
 import { PositionService } from '../../services/position.service';
 import { Employee, EmployeeRequest } from '../../models/employee.model';
-import { ButtonComponent, CatalogSelectComponent, ServerSearchSelectComponent } from '@shared/components';
+import { ButtonComponent, CatalogSelectComponent, ServerSearchSelectComponent, RichTextEditorComponent } from '@shared/components';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { ModalComponent } from '@shared/components/modal/modal.component';
 import { ImageUploadComponent } from '@shared/ui/forms/image-upload/image-upload.component';
@@ -46,6 +47,7 @@ import { bloquearEnEdicion } from '@shared/utils/form-lock';
         CatalogSelectComponent,
         ServerSearchSelectComponent,
         ImageUploadComponent,
+        RichTextEditorComponent,
     ],
     templateUrl: './employee-list.component.html',
 })
@@ -236,7 +238,7 @@ export class EmployeeListComponent implements OnInit {
         // Cese: correcciones desde el propio drawer (la captura inicial ocurre en el
         // diálogo de "Desactivar", ver deactivateForm más abajo).
         fechaSalida:        [''],
-        motivoSalida:       ['', Validators.maxLength(500)],
+        motivoSalida:       ['', richTextMaxLength(500)],
     });
 
     // ── Desactivar (captura fecha y motivo de cese, que el PATCH /deactivate del
@@ -248,7 +250,7 @@ export class EmployeeListComponent implements OnInit {
 
     readonly deactivateForm = this.fb.group({
         fechaSalida:  ['', Validators.required],
-        motivoSalida: ['', Validators.maxLength(500)],
+        motivoSalida: ['', richTextMaxLength(500)],
     });
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────

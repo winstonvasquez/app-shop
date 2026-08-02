@@ -6,7 +6,7 @@ import { environment } from '@env/environment';
 import { AuthService } from '@core/auth/auth.service';
 import { MONEDA } from '@shared/constants/sunat.constants';
 import { ProveedorService } from '../../services/proveedor.service';
-import { ButtonComponent, CatalogSelectComponent, ServerSearchSelectComponent } from '@shared/components';
+import { ButtonComponent, CatalogSelectComponent, ServerSearchSelectComponent, RichTextEditorComponent } from '@shared/components';
 import { ImageUploadComponent } from '@shared/ui/forms/image-upload/image-upload.component';
 import { bloquearEnEdicion } from '@shared/utils/form-lock';
 import { proveedorSelectSource } from '../../components/select-sources';
@@ -45,7 +45,7 @@ interface CatalogoPage {
     standalone: true,
     imports: [
         DecimalPipe, ReactiveFormsModule, ButtonComponent, CatalogSelectComponent,
-        ServerSearchSelectComponent, ImageUploadComponent
+        ServerSearchSelectComponent, ImageUploadComponent, RichTextEditorComponent
     ],
     templateUrl: './catalogo.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,

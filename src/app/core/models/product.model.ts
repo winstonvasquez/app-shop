@@ -9,6 +9,14 @@ export interface ProductCategoria {
     nombre: string;
 }
 
+/** Empresa dueña del producto, tal como la manda `ProductoResponseDto.company`. */
+export interface ProductCompany {
+    id: number;
+    name: string;
+    ruc?: string;
+    isActive?: boolean;
+}
+
 export interface ProductVendedor {
     id: number;
     nombre: string;
@@ -22,7 +30,7 @@ export interface ProductResponse {
     precioBase: number;
     marca?: string;
     stock: number;
-    companyId: number;
+    company?: ProductCompany;
     originalPrice?: number;
     discount?: string;
     badge?: string;
@@ -35,6 +43,9 @@ export interface ProductResponse {
     vendedor?: ProductVendedor;
     imagenes?: ProductImagen[];
     categorias?: ProductCategoria[];
+    /** Etiqueta de la promoción vigente vinculada (V69), ej. "-20%" o "-S/ 15.00". Null si no hay ninguna activa.
+     *  Distinta de `badge` (deducido de stock bajo, sin relación con Promocion). */
+    promocionEtiqueta?: string | null;
 }
 
 export interface Page<T> {

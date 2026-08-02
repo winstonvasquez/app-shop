@@ -2,16 +2,25 @@ import { Component, inject, signal, computed, OnInit, ChangeDetectionStrategy } 
 import { PickingService } from '../../services/picking.service';
 import { PickingOrder, PickingItem } from '../../models/picking.model';
 import { ButtonComponent } from '@shared/components';
+import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
+import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
+import { ROUTES } from '@shared/constants/app.constants';
 
 @Component({
     selector: 'app-picking-mobile',
     standalone: true,
-    imports: [ButtonComponent],
+    imports: [ButtonComponent, AlertComponent, PageHeaderComponent],
     templateUrl: './picking-mobile.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class PickingMobileComponent implements OnInit {
     private readonly pickingService = inject(PickingService);
+
+    breadcrumbs: Breadcrumb[] = [
+        { label: 'Admin', url: ROUTES.admin },
+        { label: 'Logística', url: '/admin/logistica/dashboard' },
+        { label: 'Picking' }
+    ];
 
     orders = signal<PickingOrder[]>([]);
     loading = signal(false);

@@ -121,6 +121,10 @@ export const adminRoutes: Routes = [
                 loadComponent: () => import('./pages/sucursales/sucursales.component').then(m => m.SucursalesComponent)
             },
             {
+                path: 'mi-perfil',
+                loadComponent: () => import('./pages/mi-perfil/mi-perfil.component').then(m => m.MiPerfilComponent)
+            },
+            {
                 // B09: los parámetros del sistema son configuración GLOBAL de la plataforma
                 // (IGV_RATE es la tasa nacional de IGV) y el backend ya solo permite escribirlos a
                 // SUPERADMIN. El guard evita que un ADMIN de tenant llegue a una pantalla que solo

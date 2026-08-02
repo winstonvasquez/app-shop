@@ -1,7 +1,9 @@
+// Sin padding/max-width propios: el gutter (p-6) y el ancho completo ya los
+// entrega `.dashboard-content` en admin-layout.component.scss para TODAS las
+// páginas admin. Duplicarlos aquí angostaba y descentraba esta vista respecto
+// al resto (p.ej. /admin/products, /admin/categories).
 .page-container {
-    padding: 1.5rem;
-    max-width: 1200px;
-    margin: 0 auto;
+    width: 100%;
 }
 
 .page-header {

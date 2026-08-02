@@ -84,8 +84,8 @@
 
       <div class="mb-4">
         <label class="input-label">Observaciones</label>
-        <textarea class="form-input" formControlName="observaciones" rows="3"
-                  placeholder="Observaciones adicionales..."></textarea>
+        <app-rich-text-editor formControlName="observaciones" [rows]="3"
+                  placeholder="Observaciones adicionales..." />
       </div>
 
       <div class="flex gap-3 mt-6">

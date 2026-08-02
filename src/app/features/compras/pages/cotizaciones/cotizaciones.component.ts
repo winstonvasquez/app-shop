@@ -37,7 +37,7 @@ import {
     ActualizarCotizacionRequest,
     CotizacionDetalleDto,
 } from '../../models/cotizacion.model';
-import { ButtonComponent, ServerSearchSelectComponent, ServerSelectOption, ServerSelectId } from '@shared/components';
+import { ButtonComponent, ServerSearchSelectComponent, ServerSelectOption, ServerSelectId, RichTextEditorComponent } from '@shared/components';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
@@ -75,6 +75,7 @@ function proveedoresRequeridosValidator(control: AbstractControl): ValidationErr
         AlertComponent,
         DataTableComponent,
         ProductLookupComponent,
+        RichTextEditorComponent,
     ],
     templateUrl: './cotizaciones.component.html',
 })

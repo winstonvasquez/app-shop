@@ -1,6 +1,6 @@
 import { Component, inject, signal, ChangeDetectionStrategy, OnInit } from '@angular/core';
 import { FormBuilder, FormControl, FormArray, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ButtonComponent, CatalogSelectComponent, ServerSearchSelectComponent } from '@shared/components';
+import { ButtonComponent, CatalogSelectComponent, ServerSearchSelectComponent, RichTextEditorComponent } from '@shared/components';
 import { employeeSelectSource } from '../../components/select-sources';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import {
@@ -43,6 +43,7 @@ import { bloquearEnEdicion } from '@shared/utils/form-lock';
         DateInputComponent,
         ServerSearchSelectComponent,
         CatalogSelectComponent,
+        RichTextEditorComponent,
     ],
     templateUrl: './evaluation-list.component.html',
 })

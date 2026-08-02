@@ -74,14 +74,12 @@
             </app-form-field>
 
             <div class="form-group">
-                <label for="descripcion">Descripción</label>
-                <textarea
-                    id="descripcion"
+                <label>Descripción</label>
+                <app-rich-text-editor
+                    ariaLabel="Descripción"
                     formControlName="descripcion"
-                    class="form-input"
-                    rows="3"
-                    placeholder="Descripción detallada del producto">
-                </textarea>
+                    [rows]="3"
+                    placeholder="Descripción detallada del producto" />
             </div>
 
             <app-form-field
@@ -102,52 +100,40 @@
 
             <div class="form-group">
                 <label>Categorías</label>
-                <div class="category-checkbox-list">
-                    @for (cat of categorias(); track cat.id) {
-                        <label class="category-checkbox-item">
-                            <input type="checkbox"
-                                [checked]="isCategoriaSelected(cat.id)"
-                                (change)="toggleCategoria(cat.id)">
-                            {{ cat.nombre }}
-                        </label>
-                    } @empty {
-                        <span class="text-subtle">Sin categorías disponibles</span>
-                    }
-                </div>
+                <app-multi-check-select
+                    [options]="categoriaOptions()"
+                    formControlName="categoriaIds"
+                    placeholder="Selecciona categorías…"
+                    searchPlaceholder="Buscar categoría…" />
             </div>
 
             <!-- Imágenes: se guardan como binario en la base de datos -->
             <div class="form-group">
                 <label>Imágenes del producto</label>
 
-                @if (editMode() && imagenes().length > 0) {
-                    <div class="product-images">
-                        @for (img of imagenes(); track img.id) {
-                            <figure class="product-image" [class.is-main]="img.esPrincipal">
-                                <img [src]="img.url" [alt]="'Imagen ' + img.orden" />
-                                <figcaption>
-                                    @if (img.esPrincipal) {
-                                        <span class="badge badge-success">Principal</span>
-                                    }
-                                    <button type="button" class="btn-icon btn-icon-delete"
-                                            title="Eliminar imagen"
-                                            (click)="onEliminarImagen(img)">✕</button>
-                                </figcaption>
-                            </figure>
-                        }
-                    </div>
+                <app-image-gallery-manager
+                    [images]="imagenes()"
+                    [pending]="imagenesPendientes()"
+                    [disabled]="submitting() || reordenando()"
+                    hint="JPG, PNG o WebP · máximo 500 KB cada una."
+                    (filesAdded)="onImagenesElegidas($event)"
+                    (pendingRemoved)="onQuitarPendiente($event)"
+                    (pendingMainChanged)="onPendientePrincipal($event)"
+                    (pendingMoved)="onMoverPendiente($event)"
+                    (removed)="onEliminarImagen($event)"
+                    (mainChanged)="onMarcarPrincipal($event)"
+                    (reordered)="onReordenarImagenes($event)" />
+
+                @if (!editMode() && imagenesPendientes().length > 0) {
+                    <small class="form-hint">
+                        Las {{ imagenesPendientes().length }} imágenes se subirán al crear el producto.
+                    </small>
                 }
-
-                <app-image-upload
-                    [label]="''"
-                    (fileSelected)="imagenSeleccionada.set($event)"
-                    (cleared)="imagenSeleccionada.set(null)">
-                </app-image-upload>
-
-                @if (!editMode()) {
-                    <small class="form-hint">La imagen se subirá al crear el producto.</small>
+                @if (imagenesError()) {
+                    <app-alert type="error" [message]="imagenesError()!" />
                 }
             </div>
+
         </form>
 
         <div slot="footer">

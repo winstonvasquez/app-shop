@@ -13,6 +13,7 @@ import { PosMovimientosCajaService, MovimientoCaja, MovimientoCajaRequest } from
 import { PosGiftCardService } from '../../services/pos-gift-card.service';
 import { PosOfflineSyncService } from '../../services/pos-offline-sync.service';
 import { PosManagerAuthService } from '../../services/pos-manager-auth.service';
+import { ActivatedRoute } from '@angular/router';
 import { AuthService } from '@core/auth/auth.service';
 import { ThemeService } from '@core/services/theme/theme';
 import { ProductoCatalogoPOS, DescuentoTipo } from '../../models/catalogo-pos.model';
@@ -75,6 +76,7 @@ export class PosPageComponent implements OnInit, OnDestroy {
     readonly keyboard = inject(PosKeyboardService);
     readonly offlineSync = inject(PosOfflineSyncService);
     private readonly auth = inject(AuthService);
+    private readonly route = inject(ActivatedRoute);
     private readonly themeService = inject(ThemeService);
     private readonly turnoService = inject(PosTurnoService);
     private readonly catalogoService = inject(PosCatalogoService);
@@ -86,7 +88,12 @@ export class PosPageComponent implements OnInit, OnDestroy {
     private readonly managerAuth = inject(PosManagerAuthService);
 
     // ── UI State ──────────────────────────────────────────────────
-    readonly activeScreen = signal<PosScreen>('main');
+    // Ruta 'pos/devoluciones' (enlazada desde admin-sidebar) llega con
+    // data.initialScreen = 'devoluciones' para abrir el shell del POS directamente
+    // en esa screen, en vez de 'main'.
+    readonly activeScreen = signal<PosScreen>(
+        (this.route.snapshot.data['initialScreen'] as PosScreen | undefined) ?? 'main'
+    );
     readonly catalogoItems = signal<ProductoCatalogoPOS[]>([]);
     readonly historialItems = signal<VentaPosResponse[]>([]);
     readonly lastVenta = signal<VentaPosResponse | null>(null);
