@@ -68,8 +68,7 @@
             <div class="group-items-list pl-4 pr-1 mt-1 space-y-1 overflow-hidden transition-all duration-300">
               @for (item of group.items; track item.route) {
                 <a [routerLink]="item.route" 
-                   routerLinkActive="active-nav-item"
-                   [routerLinkActiveOptions]="{ exact: item.route === '/admin/dashboard' }"
+                   [class.active-nav-item]="esRutaActiva(item.route)"
                    class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-[var(--color-sidebar-hover,#1A2A42)] text-[var(--color-sidebar-text,#E2E7F0)] hover:text-white"
                    [attr.aria-label]="item.label">
                   <svg class="w-4 h-4 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -90,8 +89,7 @@
               <div class="space-y-0.5">
                 @for (item of group.items; track item.route) {
                   <a [routerLink]="item.route" 
-                     routerLinkActive="active-nav-item"
-                     [routerLinkActiveOptions]="{ exact: item.route === '/admin/dashboard' }"
+                     [class.active-nav-item]="esRutaActiva(item.route)"
                      class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-xs font-semibold transition-all duration-200 hover:bg-[var(--color-sidebar-hover,#1A2A42)] text-[var(--color-sidebar-text,#E2E7F0)] hover:text-white">
                     <svg class="w-3.5 h-3.5 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" [attr.d]="getIconPath(item.icon)" />

@@ -1,5 +1,5 @@
 import { Component, computed, inject, signal, input, output, OnInit } from '@angular/core';
-import { RouterLink, RouterLinkActive, Router, NavigationEnd } from '@angular/router';
+import { RouterLink, Router, NavigationEnd } from '@angular/router';
 import { AuthService } from '@core/auth/auth.service';
 import { ThemeService, AppTheme, AVAILABLE_THEMES } from '@core/services/theme/theme';
 
@@ -242,7 +242,7 @@ const ALL_NAV_GROUPS: NavGroup[] = [
 @Component({
   selector: 'app-admin-sidebar',
   standalone: true,
-  imports: [RouterLink, RouterLinkActive],
+  imports: [RouterLink],
   templateUrl: './admin-sidebar.component.html',
   styleUrl: './admin-sidebar.component.scss'
 })
@@ -258,13 +258,41 @@ export class AdminSidebarComponent implements OnInit {
   readonly themePickerOpen = signal(false);
   readonly expandedGroup = signal<string | null>(null);
 
+  /** URL actual, para resolver qué entrada del menú queda resaltada. */
+  private readonly urlActual = signal<string>('');
+
   constructor() {
     // Listen to route changes to automatically expand the active section
     this.router.events.subscribe(event => {
       if (event instanceof NavigationEnd) {
-        this.autoExpandGroup(event.urlAfterRedirects || event.url);
+        const url = event.urlAfterRedirects || event.url;
+        this.autoExpandGroup(url);
+        this.urlActual.set(url);
       }
     });
+  }
+
+  /**
+   * ¿Es ESTA la entrada de menú que corresponde a la URL actual?
+   *
+   * No se puede delegar en `routerLinkActive` a secas: casa por prefijo, así que en tres pares de
+   * rutas del menú una es prefijo de la otra y las DOS quedaban resaltadas a la vez —
+   * `/admin/rrhh/evaluations` con `/evaluations/criteria`, `/admin/customers` con
+   * `/customers/dashboard`, y `/pos` con `/pos/devoluciones`.
+   *
+   * Tampoco vale `{ exact: true }`: dejaría «Clientes» sin resaltar al abrir el detalle de un
+   * cliente (`/admin/customers/123`), que no es una entrada de menú.
+   *
+   * La regla correcta es el prefijo MÁS LARGO que casa: `/admin/customers/123` resalta «Clientes»
+   * porque la ruta del dashboard no casa, y `/admin/customers/dashboard` resalta sólo el dashboard.
+   */
+  esRutaActiva(route: string): boolean {
+    const url = (this.urlActual() || this.router.url).split('?')[0].split('#')[0];
+    const casa = (r: string) => url === r || url.startsWith(r.replace(/\/$/, '') + '/');
+    if (!casa(route)) return false;
+    // Si otra entrada del menú casa con una ruta más larga, esa gana y ésta no se resalta.
+    return !ALL_NAV_GROUPS.some(g =>
+      g.items.some(i => i.route.length > route.length && casa(i.route)));
   }
 
   ngOnInit(): void {
