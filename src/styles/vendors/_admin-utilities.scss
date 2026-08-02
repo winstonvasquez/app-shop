@@ -652,44 +652,85 @@ label:has(> input[type="radio"]) {
        wrappers propios (-page) sin ese padding. */
 }
 
-/* ── Page Header — diseño moderno ───────────────────────────── */
+/* ── Cabecera de página — FUENTE ÚNICA para todo el ERP ──────────────────────────────
+   El ERP tenía DOS cabeceras visualmente distintas y ninguna era «la mala»:
+     · 61 vistas usan el componente <app-page-header>, que emite `.ph-root`;
+     · 58 vistas la escriben a mano con `class="page-header"`.
+   Y las clases de texto (`.page-title`, `.page-subtitle`) estaban definidas DOS veces —aquí
+   y otra vez dentro del componente— con valores distintos: el subtítulo salía en
+   `--color-text-muted` en una mitad del ERP y en `--color-text-secondary` en la otra, más
+   `letter-spacing` y `line-height` desalineados. Eso es lo que hacía que no se viera uniforme.
+
+   Decisión: la definición canónica es la del componente (la más reciente y la que llevan las
+   pantallas rehechas), y vive AQUÍ, una sola vez. El componente ya no la redefine, y las
+   cabeceras escritas a mano heredan exactamente el mismo aspecto sin tocar sus 58 plantillas:
+   separador en degradado + barra de acento a la izquierda del grupo del título.
+
+   Si hay que cambiar el aspecto de la cabecera del ERP, se cambia aquí y en ningún otro sitio.
+   ──────────────────────────────────────────────────────────────────────────────────── */
 .page-header {
     display: flex;
     justify-content: space-between;
     align-items: flex-end;
     gap: 1rem;
     padding-bottom: 1.25rem;
-    margin-bottom: 1.75rem;
-    border-bottom: 1px solid var(--color-border);
+    margin-bottom: 2rem;   /* igual que .ph-root */
     position: relative;
 }
 
-/* Línea de acento en el borde inferior izquierdo */
-.page-header::after {
+/* Separador inferior en degradado — el mismo que emite el componente. */
+.page-header::after,
+.ph-root::after {
     content: '';
     position: absolute;
-    bottom: -1px;
+    bottom: 0;
     left: 0;
-    width: 3rem;
-    height: 2px;
-    background: var(--color-primary);
-    border-radius: 1px;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg,
+        var(--color-border, #e2e8f0) 0%,
+        rgba(37, 99, 235, 0.15) 15%,
+        rgba(37, 99, 235, 0.02) 100%
+    );
 }
 
+/* Barra de acento del título. En el componente la lleva `.ph-title-group`; en las cabeceras
+   a mano el título va en el PRIMER hijo del `.page-header`, así que se le aplica a ése. */
+.page-header > :first-child {
+    position: relative;
+    padding-left: 0.75rem;
+}
+
+.page-header > :first-child::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 4px;
+    bottom: 4px;
+    width: 3px;
+    background: linear-gradient(180deg,
+        var(--color-primary, #2563eb) 0%,
+        var(--color-primary-hover, #1d4ed8) 100%);
+    border-radius: 4px;
+}
+
+/* Tipografía de la cabecera — definida SOLO aquí (el componente ya no la duplica). */
 .page-title {
     font-size: 1.375rem;
     font-weight: 700;
-    line-height: 1.2;
-    letter-spacing: -0.02em;
+    line-height: 1.25;
+    letter-spacing: -0.025em;
     color: var(--color-text-primary);
-    margin: 0 0 0.25rem 0;
+    margin: 0;
 }
 
 .page-subtitle {
     font-size: 0.8125rem;
-    color: var(--color-text-muted);
-    margin: 0;
+    font-weight: 450;
     line-height: 1.5;
+    letter-spacing: -0.01em;
+    color: var(--color-text-secondary);
+    margin: 0.25rem 0 0 0;
 }
 
 /* Filters bar */

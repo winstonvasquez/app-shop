@@ -53,20 +53,10 @@ export interface Breadcrumb {
     position: relative;
 }
 
-/* Modern bottom separator: a gradient border line */
-.ph-root::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 1px;
-    background: linear-gradient(90deg, 
-        var(--color-border, #e2e8f0) 0%, 
-        rgba(37, 99, 235, 0.15) 15%, 
-        rgba(37, 99, 235, 0.02) 100%
-    );
-}
+/* El separador en degradado y la tipografia (.page-title/.page-subtitle) viven en
+   styles/vendors/_admin-utilities.scss, como FUENTE UNICA: antes estaban duplicados aqui con
+   valores distintos y el ERP mostraba dos cabeceras diferentes segun la vista. No volver a
+   declararlos en este componente. */
 
 /* Left accent accentuating the title group */
 .ph-title-group {
@@ -86,23 +76,7 @@ export interface Breadcrumb {
     border-radius: 4px;
 }
 
-.page-title {
-    font-size: 1.375rem;
-    font-weight: 700;
-    color: var(--color-text-primary, #0f172a);
-    letter-spacing: -0.025em;
-    margin: 0;
-    line-height: 1.25;
-}
 
-.page-subtitle {
-    font-size: 0.8125rem;
-    font-weight: 450;
-    color: var(--color-text-secondary, #64748b);
-    margin-top: 0.25rem;
-    margin-bottom: 0;
-    letter-spacing: -0.01em;
-}
 
 /* ── Main row ──────────────────────────────────────── */
 .ph-main {
