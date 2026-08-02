@@ -17,6 +17,10 @@
     </div>
   </div>
 
+  @if (error()) {
+    <app-alert type="error" [message]="error()!" [dismissible]="true" (dismiss)="error.set(null)" />
+  }
+
   <!-- Filtro -->
   <div class="filters-bar mb-4">
     <div class="flex gap-2">

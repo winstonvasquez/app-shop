@@ -4,6 +4,8 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { environment } from '@env/environment';
 import { AuthService } from '@core/auth/auth.service';
 import { ButtonComponent } from '@shared/components';
+import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
+import { PageResponse } from '@core/models/pagination.model';
 
 interface AlertaCompras {
     id: string;
@@ -21,7 +23,7 @@ interface AlertaCompras {
 @Component({
     selector: 'app-alertas',
     standalone: true,
-    imports: [DatePipe, ButtonComponent],
+    imports: [DatePipe, ButtonComponent, AlertComponent],
     templateUrl: './alertas.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -32,6 +34,7 @@ export class AlertasComponent implements OnInit {
 
     alertas = signal<AlertaCompras[]>([]);
     loading = signal(false);
+    error = signal<string | null>(null);
     generando = signal(false);
     filtroLeidas = signal<'todas' | 'no-leidas'>('no-leidas');
 
@@ -46,13 +49,28 @@ export class AlertasComponent implements OnInit {
 
     cargar(): void {
         this.loading.set(true);
+        this.error.set(null);
         const url = this.filtroLeidas() === 'no-leidas'
             ? `${this.baseUrl}/no-leidas`
             : this.baseUrl;
-        this.http.get<AlertaCompras[]>(url, { headers: this.getHeaders() }).subscribe({
-            next: data => { this.alertas.set(data); this.loading.set(false); },
-            error: () => this.loading.set(false),
-        });
+        // Los dos endpoints NO devuelven la misma forma: `/no-leidas` responde una lista y
+        // `/alertas` un Page<T>. Tipar ambos como array hacía que al filtrar por «todas» la señal
+        // guardara el objeto Page entero, y el `noLeidas()` de la plantilla reventaba con
+        // «this.alertas(...).filter is not a function» — sin que la compilación viera nada.
+        this.http.get<AlertaCompras[] | PageResponse<AlertaCompras>>(url, { headers: this.getHeaders() })
+            .subscribe({
+                next: data => {
+                    this.alertas.set(Array.isArray(data) ? data : (data?.content ?? []));
+                    this.loading.set(false);
+                },
+                error: () => {
+                    // Antes se tragaba el error en silencio: la pantalla se quedaba vacía y
+                    // parecía «no hay alertas» en vez de «no se pudieron cargar».
+                    this.error.set('No se pudieron cargar las alertas de compras.');
+                    this.alertas.set([]);
+                    this.loading.set(false);
+                },
+            });
     }
 
     marcarLeida(id: string): void {
