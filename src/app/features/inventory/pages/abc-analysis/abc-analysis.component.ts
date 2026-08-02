@@ -44,16 +44,19 @@ interface AbcRow extends AbcItem {
                 <app-alert type="error" [message]="error()!" [dismissible]="true" (dismiss)="error.set(null)" />
             }
 
-            <!-- Resumen por clase (línea compacta; los KPI cards viven solo en dashboards). Cubre SIEMPRE
-                 el período completo (no la página actual) — no depende de los filtros de la tabla. -->
-            <div class="flex flex-wrap gap-md text-sm text-subtle mb-sm">
+            <!-- Resumen por clase (insignias; los KPI cards con tarjetas grandes viven solo en dashboards).
+                 Cubre SIEMPRE el período completo (no la página actual) — no depende de los filtros de la tabla. -->
+            <div class="flex flex-wrap gap-md items-center mb-sm">
                 @for (r of resumen(); track r.clase) {
-                    <span>
-                        <strong class="text-on">Clase {{ r.clase }}:</strong>
-                        {{ r.productos }} ítems · {{ r.valorPct }}% del valor · {{ r.productosPct }}% de ítems
-                    </span>
+                    <div class="flex items-center gap-xs">
+                        <span class="badge {{ claseBadgeClass(r.clase) }}">{{ r.productos }}</span>
+                        <span class="text-sm text-subtle">
+                            <strong class="text-on">Clase {{ r.clase }}</strong>
+                            · {{ r.valorPct }}% del valor · {{ r.productosPct }}% de ítems
+                        </span>
+                    </div>
                 } @empty {
-                    <span>Sin datos en el período</span>
+                    <span class="text-sm text-subtle">Sin datos en el período</span>
                 }
             </div>
 
@@ -146,16 +149,13 @@ export class AbcAnalysisComponent {
     readonly columns: TableColumn<AbcRow>[] = [
         {
             key: 'clase', label: 'Clase', width: '90px', html: true,
-            render: (r) => {
-                const cls = r.clase === 'A' ? 'badge-success' : r.clase === 'B' ? 'badge-warning' : 'badge-neutral';
-                return `<span class="badge ${cls}">${r.clase}</span>`;
-            }
+            render: (r) => `<span class="badge ${this.claseBadgeClass(r.clase)}">${r.clase}</span>`
         },
         { key: 'productName', label: 'Producto', render: (r) => r.productName },
-        { key: 'valorFmt', label: 'Valor consumo', render: (r) => r.valorFmt },
-        { key: 'unidades', label: 'Unidades', render: (r) => this.fmt(r.unidades) },
-        { key: 'participacionPct', label: '% del valor', render: (r) => `${r.participacionPct}%` },
-        { key: 'acumuladoPct', label: '% acumulado', render: (r) => `${r.acumuladoPct}%` }
+        { key: 'valorFmt', label: 'Valor consumo', align: 'right', render: (r) => r.valorFmt },
+        { key: 'unidades', label: 'Unidades', align: 'right', render: (r) => this.fmt(r.unidades) },
+        { key: 'participacionPct', label: '% del valor', align: 'right', render: (r) => `${r.participacionPct}%` },
+        { key: 'acumuladoPct', label: '% acumulado', align: 'right', render: (r) => `${r.acumuladoPct}%` }
     ];
 
     constructor() {
@@ -251,5 +251,10 @@ export class AbcAnalysisComponent {
 
     private fmt(v: number): string {
         return v.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    /** Color de insignia por clase ABC (convención Pareto: A concentra más valor). */
+    claseBadgeClass(clase: string): string {
+        return clase === 'A' ? 'badge-success' : clase === 'B' ? 'badge-warning' : clase === 'C' ? 'badge-error' : 'badge-neutral';
     }
 }

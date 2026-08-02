@@ -137,9 +137,21 @@
     font-size: var(--text-sm);
 }
 
+/* El estado vacío de la tabla comparte NOMBRE de clase con el `.empty-state` genérico de
+   `vendors/_admin-utilities.scss`, que es `@apply flex flex-col …` porque está pensado para un
+   `<div>`. Aplicado a un `<td>`, ese `display: flex` hace que la celda deje de ser celda de tabla
+   y **pierda el colspan**: el mensaje se encogía al ancho de la PRIMERA columna (medido: 315px de
+   una tabla de 970 en batch-picking, 108px en análisis ABC) y se partía en varias líneas pegado a
+   la izquierda, en vez de quedar centrado bajo toda la tabla.
+   Por eso se fuerza `table-cell` con especificidad suficiente para ganar a la clase genérica. */
+.data-table td.empty-state,
 .empty-state {
     text-align: center;
     padding: var(--spacing-2xl) var(--spacing-md);
+}
+
+.data-table td.empty-state {
+    display: table-cell;
 }
 
 .empty-message {

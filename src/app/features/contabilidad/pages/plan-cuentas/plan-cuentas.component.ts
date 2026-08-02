@@ -1,9 +1,11 @@
-import { Component, inject, signal, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, signal, computed, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CuentaService, CuentaContableRequest, CuentaContableUpdateRequest } from '../../services/cuenta.service';
 import { CatalogService } from '@core/services/catalog.service';
 import { PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
 import { DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
+import { TreeTableComponent, TreeNode } from '@shared/ui/tables/tree-table/tree-table.component';
+import { arbolPorPrefijoDeCodigo } from '@shared/ui/tables/tree-table/tree-from-codes.util';
 import { catalogFilter, staticFilter } from '@shared/ui/tables/data-table/filter-helpers';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
@@ -86,6 +88,7 @@ const PCGE_DEMO: CuentaPCGE[] = [
     imports: [
         DataTableComponent, ReactiveFormsModule, DrawerComponent,
         ButtonComponent, CatalogSelectComponent, ServerSearchSelectComponent,
+        TreeTableComponent,
     ],
     template: `
         <div class="page-header">
@@ -98,7 +101,18 @@ const PCGE_DEMO: CuentaPCGE[] = [
                     }
                 </p>
             </div>
-            <div>
+            <div style="display:flex; gap:8px; align-items:center">
+                <!-- El PCGE es una jerarquia real (codigo por prefijo, 5 niveles), asi que la vista
+                     de arbol no es adorno: sustituye a la sangria simulada con padding-left que
+                     tenia la tabla plana. Se cargan TODAS las cuentas al entrar en arbol porque un
+                     arbol paginado muestra nodos huerfanos -> peor que no tener arbol. Son 229 por
+                     empresa como maximo (medido), asi que cabe de sobra. -->
+                <div class="segmented">
+                    <button type="button" class="segmented-btn" [class.segmented-btn-active]="vista() === 'tabla'"
+                            (click)="cambiarVista('tabla')">Tabla</button>
+                    <button type="button" class="segmented-btn" [class.segmented-btn-active]="vista() === 'arbol'"
+                            (click)="cambiarVista('arbol')">Arbol</button>
+                </div>
                 <app-button icon="plus" label="Nueva cuenta" variant="primary" [disabled]="modoDemo()"
                             title="No disponible en modo demo (sin conexión al backend)" (click)="abrirAlta()" />
             </div>
@@ -109,6 +123,7 @@ const PCGE_DEMO: CuentaPCGE[] = [
              Editar/Nueva. El comentario va AQUÍ y no entre los atributos: un comentario HTML dentro
              de la lista de atributos es sintaxis inválida y reventaba el build AOT con NG5002
              («Opening tag not terminated»). tsc --noEmit no lo veía. -->
+        @if (vista() === 'tabla') {
         <app-data-table
             [data]="cuentas()"
             [columns]="columns"
@@ -129,6 +144,16 @@ const PCGE_DEMO: CuentaPCGE[] = [
             (filtersClear)="onFiltersClear()"
             (pageChange)="onPageChange($event)">
         </app-data-table>
+        } @else {
+            <app-tree-table
+                [nodes]="arbolCuentas()"
+                [columns]="columnasArbol"
+                title="Plan contable"
+                unidadSingular="cuenta"
+                unidadPlural="cuentas"
+                [defaultExpandedDepth]="2"
+                emptyMessage="No hay cuentas para mostrar" />
+        }
 
         <app-drawer
             [isOpen]="showDrawer()"
@@ -197,6 +222,33 @@ const PCGE_DEMO: CuentaPCGE[] = [
             </div>
         </app-drawer>
     `,
+    // Selector de vista tabla/arbol. Va aqui y no en los estilos compartidos porque hoy es el unico
+    // sitio que lo usa; si aparece un segundo, se promueve a `_admin-utilities.scss`.
+    styles: [`
+        .segmented {
+            display: inline-flex;
+            border: 1px solid var(--color-border);
+            border-radius: 10px;
+            overflow: hidden;
+            background: var(--color-surface);
+        }
+        .segmented-btn {
+            border: none;
+            background: none;
+            cursor: pointer;
+            padding: 7px 14px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--color-text-subtle);
+            transition: background-color 160ms ease, color 160ms ease;
+        }
+        .segmented-btn + .segmented-btn { border-inline-start: 1px solid var(--color-border); }
+        .segmented-btn:hover { background: var(--color-background); }
+        .segmented-btn-active {
+            background: var(--color-primary);
+            color: #fff;
+        }
+    `],
 })
 export class PlanCuentasComponent implements OnInit {
     private cuentaService = inject(CuentaService);
@@ -272,6 +324,72 @@ export class PlanCuentasComponent implements OnInit {
     // Paginación (server-side)
     readonly currentPage = signal(0);
     readonly pageSize = signal(20);
+
+    // ── Vista de arbol ────────────────────────────────────────────────────────
+    /** 'tabla' = listado paginado server-side; 'arbol' = jerarquia completa del PCGE. */
+    readonly vista = signal<'tabla' | 'arbol'>('tabla');
+    /** Conjunto COMPLETO de cuentas, sólo para el arbol (la tabla sigue paginada). */
+    readonly cuentasArbol = signal<CuentaPCGE[]>([]);
+
+    readonly arbolCuentas = computed<TreeNode<CuentaPCGE>[]>(() =>
+        arbolPorPrefijoDeCodigo(this.cuentasArbol(), (c) => c.codigo));
+
+    /**
+     * Mismas columnas que la tabla, con dos diferencias necesarias:
+     * - `nombre` SIN el padding-left por nivel: la sangria la pone el arbol, y sumar las dos
+     *   desplazaria los nodos el doble.
+     * - sin la columna `nivel`: en el arbol la profundidad ya se ve, asi que el numero es ruido.
+     */
+    columnasArbol: TableColumn<CuentaPCGE>[] = [
+        // La PRIMERA columna es la que lleva la jerarquia: aqui va el codigo, que es lo que define
+        // el arbol en el PCGE. Sin `html` para que el componente pinte texto plano en la celda con
+        // sangria (el chevron y la guia los pone el propio arbol).
+        { key: 'codigo', label: 'Codigo', width: '260px' },
+        { key: 'nombre', label: 'Nombre' },
+        {
+            key: 'tipo', label: 'Tipo', width: '130px', html: true,
+            render: (r) => `<span class="${this.badgeTipo(r.tipo)}">${this.catalog.label('TIPO_CUENTA_PCGE', r.tipo)}</span>`
+        },
+        {
+            key: 'aceptaMovimiento', label: 'Acepta Mov.', align: 'center', width: '120px', html: true,
+            render: (r) => r.aceptaMovimiento
+                ? `<span style="color: var(--color-success); font-size: 1.1rem">&#10003;</span>`
+                : `<span class="text-[var(--color-text-muted)]">&mdash;</span>`
+        },
+        {
+            key: 'estado', label: 'Estado', align: 'center', width: '110px', html: true,
+            render: (r) => r.estado === 'INACTIVO'
+                ? `<span class="badge badge-neutral">Inactivo</span>`
+                : `<span class="badge badge-success">Activo</span>`
+        },
+    ];
+
+    cambiarVista(v: 'tabla' | 'arbol'): void {
+        this.vista.set(v);
+        if (v === 'arbol' && this.cuentasArbol().length === 0) this.cargarArbolCompleto();
+    }
+
+    /**
+     * Carga TODAS las cuentas de la empresa para el arbol. No reutiliza `cuentas()` porque esa
+     * senal es una PAGINA: montar el arbol sobre una pagina deja hijos cuyo padre cayo en otra,
+     * que aparecerian como raices sueltas. Son 229 cuentas por empresa como maximo (medido en BD).
+     */
+    private cargarArbolCompleto(): void {
+        this.cargando.set(true);
+        this.cuentaService.listarPaginado({ page: 0, size: 1000 }).subscribe({
+            next: (page) => {
+                this.cuentasArbol.set(page.content);
+                this.cargando.set(false);
+            },
+            error: () => {
+                // Mismo fallback offline que la tabla: se ve el PCGE de demostracion, no una
+                // pantalla vacia que parezca «esta empresa no tiene plan contable».
+                this.cuentasArbol.set(PCGE_DEMO);
+                this.modoDemo.set(true);
+                this.cargando.set(false);
+            },
+        });
+    }
 
     columns: TableColumn<CuentaPCGE>[] = [
         {
