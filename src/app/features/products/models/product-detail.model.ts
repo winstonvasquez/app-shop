@@ -29,4 +29,11 @@ export interface ProductDetail {
     variants: Variant[];
     latestReviews: Review[];
     attributes: Attribute[];
+    /**
+     * ponytail: microshopventas NO tiene columna `video_url` ni campo en `ProductoResponseDto`,
+     * así que hoy nunca llega. Se deja el opcional para la rama de video de `product-gallery`;
+     * el día que se quiera de verdad hace falta migración + entidad + DTO + los sitios que
+     * construyen el record posicionalmente en `ProductoQueryService`.
+     */
+    videoUrl?: string;
 }

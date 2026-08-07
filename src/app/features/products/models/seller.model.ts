@@ -4,4 +4,5 @@ export interface Seller {
     rating: string;
     followers: string;
     salesLevel: string;
+    avatar?: string;
 }

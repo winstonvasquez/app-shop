@@ -99,9 +99,8 @@
                  placeholder="Av. Principal 123, Lima">
         </div>
         <div class="form-field-wrapper">
-          <label class="input-label">Ubigeo</label>
-          <input class="form-input" formControlName="ubigeoOrigen"
-                 placeholder="150101" maxlength="6" style="font-family:monospace">
+          <label class="input-label">Ubigeo de Origen</label>
+          <app-ubigeo-select formControlName="ubigeoOrigen" />
         </div>
       </div>
     </fieldset>
@@ -126,9 +125,8 @@
                  placeholder="Jr. Comercio 456, Callao">
         </div>
         <div class="form-field-wrapper">
-          <label class="input-label">Ubigeo Destino</label>
-          <input class="form-input" formControlName="ubigeoDestino"
-                 placeholder="070101" maxlength="6" style="font-family:monospace">
+          <label class="input-label">Ubigeo de Destino</label>
+          <app-ubigeo-select formControlName="ubigeoDestino" />
         </div>
       </div>
     </fieldset>

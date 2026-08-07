@@ -9,7 +9,13 @@ import { PLAN_CONTENT, SECURITY_BASELINE, SECURITY_PARITY_NOTE, UNLIMITED_ACROSS
 
 interface PlanCard extends SaasPlanInfo {
     content: PlanContentMeta;
-    moduleNames: string[];
+    /**
+     * TODOS los módulos del catálogo, en el mismo orden para las tres cards, cada uno marcado
+     * según entre o no en este plan. Antes era solo la lista de los incluidos (`string[]`), y
+     * eso hacía que las cards tuvieran alturas de contenido muy distintas —Starter con 2 filas
+     * frente a las 8 de Enterprise— dejando medio panel vacío.
+     */
+    moduleRows: { name: string; included: boolean }[];
 }
 
 interface ComparisonRow {
@@ -25,6 +31,11 @@ interface ComparisonRow {
     imports: [RouterLink, DecimalPipe],
     template: `
     <div class="pricing-canvas">
+      <!-- Glows de ambiente sutiles en armonía con la paleta de marca (Azul Ink, Naranja Accent, Verde Success) -->
+      <div class="pricing-orb pricing-orb-primary" aria-hidden="true"></div>
+      <div class="pricing-orb pricing-orb-accent" aria-hidden="true"></div>
+      <div class="pricing-orb pricing-orb-success" aria-hidden="true"></div>
+
       <div class="pricing-page">
         <div class="pricing-header">
           <span class="kicker">Planes</span>
@@ -45,9 +56,15 @@ interface ComparisonRow {
         <div class="plans-grid">
           @for (plan of planCards(); track plan.code) {
             <div class="plan-card" [class.highlighted]="plan.content.recommended" [id]="'plan-card-' + plan.code">
-              @if (plan.content.recommended) {
-                <div class="popular-badge">El más recomendado</div>
-              }
+              <!-- Fila reservada en TODAS las cards (aunque esté vacía) para que el subgrid alinee la cabecera de las tres -->
+              <div class="plan-badge-row">
+                @if (plan.content.recommended) {
+                  <span class="popular-badge">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                    <span>El más recomendado</span>
+                  </span>
+                }
+              </div>
 
               <div class="plan-info-header">
                 <h2 class="plan-name">{{ plan.name }}</h2>
@@ -61,45 +78,64 @@ interface ComparisonRow {
                   <span class="period">/mes</span>
                 </div>
                 @if (annual()) {
-                  <div class="annual-note">Facturado anualmente: S/ {{ plan.priceAnnual | number:'1.0-0' }}</div>
+                  <div class="annual-note">✓ Facturado anualmente: S/ {{ plan.priceAnnual | number:'1.0-0' }}</div>
                 }
               </div>
 
-              <div class="plan-divider"></div>
-
               <div class="plan-features">
                 <div class="plan-users">
-                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" class="user-icon">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" class="user-icon">
                     <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
                     <circle cx="9" cy="7" r="4"/>
                   </svg>
-                  <span>Hasta <strong>{{ plan.maxUsers >= 999 ? 'ilimitados' : plan.maxUsers }}</strong> usuarios</span>
+                  <!-- Sin «ilimitados»: UserCompanyCommandService corta con 409 en
+                       activeUsers >= maxUsers, y ENTERPRISE tiene max_users = 999. El tope
+                       existe, así que se dice el número. -->
+                  <span>Hasta <strong>{{ plan.maxUsers }}</strong> usuarios</span>
                 </div>
+                <!-- Las TRES cards listan los MISMOS módulos en el MISMO orden, marcando los que no
+                     entran. Antes cada card listaba solo los suyos, así que Starter mostraba 2 líneas
+                     frente a las 8 de Enterprise y dejaba un hueco vacío de media card. Además, al
+                     coincidir el orden, la fila N de una card es el mismo módulo en las tres. -->
                 <ul class="plan-modules-list">
-                  @for (mod of plan.moduleNames; track mod) {
-                    <li>
-                      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--color-success, #0E8A5F)" stroke-width="3" class="check-icon">
-                        <polyline points="20 6 9 17 4 12"/>
-                      </svg>
-                      <span>{{ mod }}</span>
+                  @for (mod of plan.moduleRows; track mod.name) {
+                    <li [class.not-included]="!mod.included">
+                      @if (mod.included) {
+                        <div class="check-icon-wrap">
+                          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="3.2" class="check-icon">
+                            <polyline points="20 6 9 17 4 12"/>
+                          </svg>
+                        </div>
+                      } @else {
+                        <div class="check-icon-wrap is-absent">
+                          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="3.2" aria-hidden="true">
+                            <line x1="5" y1="12" x2="19" y2="12"/>
+                          </svg>
+                        </div>
+                      }
+                      <span>{{ mod.name }}</span>
+                      @if (!mod.included) {
+                        <span class="sr-only">no incluido en este plan</span>
+                      }
                     </li>
                   }
                 </ul>
               </div>
 
               <div class="plan-support">
-                <div class="plan-support-row">
-                  <strong>{{ plan.content.support.channel }}</strong>
+                <div class="plan-support-channel">{{ plan.content.support.channel }}</div>
+                <div class="plan-support-meta">
                   <span>{{ plan.content.support.hours }}</span>
+                  <span>{{ plan.content.support.slaResponse }}</span>
                 </div>
-                <div class="plan-support-sla">{{ plan.content.support.slaResponse }}</div>
                 @if (plan.content.support.extra) {
                   <div class="plan-support-extra">{{ plan.content.support.extra }}</div>
                 }
               </div>
 
               <a [routerLink]="['/portal/register']" [queryParams]="{plan: plan.code}" class="plan-cta" [class.cta-highlight]="plan.content.recommended" [id]="'btn-pricing-cta-' + plan.code">
-                Comenzar prueba gratis
+                <span>Comenzar prueba gratis</span>
+                <svg class="cta-arrow" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
               </a>
             </div>
           }
@@ -149,7 +185,7 @@ interface ComparisonRow {
                 <tr class="row-users">
                   <td class="col-module">Usuarios incluidos</td>
                   @for (plan of planCards(); track plan.code) {
-                    <td [class.col-highlight]="plan.content.recommended">{{ plan.maxUsers >= 999 ? 'Ilimitados' : plan.maxUsers }}</td>
+                    <td [class.col-highlight]="plan.content.recommended">{{ plan.maxUsers }}</td>
                   }
                 </tr>
               </tbody>
@@ -192,17 +228,71 @@ interface ComparisonRow {
     `,
     styles: [`
       .pricing-canvas {
-        background: var(--color-background, #F7F6F3);
+        background-color: var(--color-background, #F7F6F3);
+        background-image: 
+          radial-gradient(ellipse at 50% 0%, rgba(255, 255, 255, 0.85) 0%, rgba(247, 246, 243, 0.72) 60%, rgba(247, 246, 243, 0.92) 100%),
+          url('/images/pricing_corporate_bg.png');
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
         color: var(--color-text-primary, #0E1B2C);
         font-family: var(--f-sans, 'Inter', sans-serif);
         position: relative;
         z-index: 10;
+        overflow: hidden;
+
+        &::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background-image: radial-gradient(color-mix(in srgb, var(--color-primary, #0B3D91) 6%, transparent) 1.2px, transparent 1.2px);
+          background-size: 28px 28px;
+          mask-image: radial-gradient(ellipse at 50% 40%, black 40%, transparent 90%);
+          -webkit-mask-image: radial-gradient(ellipse at 50% 40%, black 40%, transparent 90%);
+          pointer-events: none;
+          z-index: 0;
+        }
+      }
+
+      .pricing-orb {
+        position: absolute;
+        border-radius: 50%;
+        pointer-events: none;
+        z-index: 0;
+        filter: blur(100px);
+      }
+
+      .pricing-orb-primary {
+        top: -6%;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 700px;
+        height: 500px;
+        background: radial-gradient(circle, color-mix(in srgb, var(--color-primary, #0B3D91) 12%, transparent) 0%, transparent 70%);
+      }
+
+      .pricing-orb-accent {
+        top: 32%;
+        right: -8%;
+        width: 580px;
+        height: 580px;
+        background: radial-gradient(circle, color-mix(in srgb, var(--color-accent, #F08C00) 9%, transparent) 0%, transparent 68%);
+      }
+
+      .pricing-orb-success {
+        bottom: 5%;
+        left: -8%;
+        width: 540px;
+        height: 540px;
+        background: radial-gradient(circle, color-mix(in srgb, var(--color-success, #0E8A5F) 8%, transparent) 0%, transparent 68%);
       }
 
       .pricing-page {
         max-width: 1180px;
         margin: 0 auto;
         padding: 72px 24px 96px;
+        position: relative;
+        z-index: 1;
       }
 
       .pricing-header {
@@ -303,61 +393,159 @@ interface ComparisonRow {
         margin-left: 6px;
       }
 
-      /* Plans Grid */
+      /* ---------- Plans Grid ----------
+         Seis filas compartidas por las tres cards (badge · cabecera · precio · módulos ·
+         soporte · CTA). Con subgrid cada card se cuelga de esas filas, así el precio, el
+         bloque de soporte y el botón quedan a la MISMA altura aunque las descripciones
+         ocupen 2 o 3 líneas. Antes cada card se maquetaba por su cuenta y nada alineaba. */
       .plans-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        gap: 32px;
+        grid-template-rows: auto auto auto 1fr auto auto;
+        gap: 28px;
         align-items: stretch;
+        margin-top: 24px;
       }
 
       .plan-card {
-        background: var(--color-surface, #FFFFFF);
-        border: 1px solid var(--color-border, #DCD8CE);
-        border-radius: var(--r-lg, 14px);
-        padding: 44px 32px 36px;
+        grid-row: span 6;
+        display: grid;
+        grid-template-rows: subgrid;
+        row-gap: 22px;
+        background: #ffffff;
+        border: 1.5px solid rgba(220, 216, 206, 0.85);
+        border-radius: 20px;
+        padding: 26px 30px 32px;
         position: relative;
-        display: flex;
-        flex-direction: column;
-        height: 100%;
-        transition: transform 0.2s var(--ease-out, ease), box-shadow 0.2s ease, border-color 0.2s ease;
+        /* Recorta el filete al radio EXTERIOR de la card. Es la pieza que hace que el resto
+           funcione: sin esto, el pseudo-elemento tiene que redondearse por su cuenta y su
+           curva nunca casa con la del borde. */
+        overflow: hidden;
+        box-shadow: 0 10px 30px -10px rgba(15, 23, 42, 0.05);
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                    box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                    border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+        /* Filete de acento superior.
+           Un elemento absoluto con top/left/right en 0 se ancla al PADDING box, o sea por
+           DENTRO del borde de 1.5px: el filete quedaba más estrecho y más bajo que la card,
+           con el borde gris asomando por encima y por los lados, y su radio propio (18px)
+           no coincidía con el de la card (20px). Eso es lo que se leía como una barra suelta
+           flotando por encima del panel.
+           La solución es al revés de lo que parece: se SACA el filete hasta el border box con
+           offsets negativos del grosor del borde, y es el overflow:hidden de la card quien
+           lo recorta con la curva correcta. Por eso aquí no hace falta border-radius. */
+        &::before {
+          content: '';
+          position: absolute;
+          top: -1.5px;
+          left: -1.5px;
+          right: -1.5px;
+          height: 5px;
+          background: var(--color-primary, #0B3D91);
+          z-index: 1;
+          pointer-events: none;
+        }
 
         &.highlighted {
-          border-color: var(--color-primary, #0B3D91);
-          box-shadow: var(--s-lg, 0 8px 24px rgba(15,23,42,.08));
+          background: linear-gradient(180deg, #FFFFFF 0%, #F4F7FC 100%);
+          border: 2px solid var(--color-primary, #0B3D91);
+          box-shadow: 0 20px 48px -12px rgba(11, 61, 145, 0.18), 0 0 0 1px rgba(11, 61, 145, 0.15);
+
+          /* Su borde es de 2px, no de 1.5px: los offsets del filete se corrigen para que
+             siga alineado con el border box (si no, asoma medio píxel de azul del borde). */
+          &::before {
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            height: 6px;
+            background: linear-gradient(90deg, #0B3D91 0%, #F08C00 100%);
+          }
+
+          &:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 24px 56px -12px rgba(11, 61, 145, 0.25), 0 0 0 1px rgba(240, 140, 0, 0.3);
+          }
         }
 
-        &:hover {
+        &:hover:not(.highlighted) {
           transform: translateY(-4px);
-          box-shadow: var(--s-lg, 0 8px 24px rgba(15,23,42,.08));
+          box-shadow: 0 18px 40px -10px rgba(15, 23, 42, 0.1);
+          border-color: color-mix(in srgb, var(--color-primary, #0B3D91) 40%, transparent);
         }
+      }
+
+      /* Navegadores sin subgrid: se cae a la maqueta en columna de siempre. */
+      @supports not (grid-template-rows: subgrid) {
+        .plans-grid {
+          grid-template-rows: none;
+        }
+
+        .plan-card {
+          grid-row: auto;
+          display: flex;
+          flex-direction: column;
+          height: 100%;
+        }
+
+        .plan-features {
+          flex: 1;
+        }
+      }
+
+      /* El filete de Enterprise iba a un cian #06B6D4 que no pertenece a la paleta «Confianza»
+         (Ink Blue + Signal Orange): con las tres cards juntas se leían tres familias de color
+         distintas. Ahora los tres filetes son de la misma familia y la única card que rompe con
+         el naranja de marca es la recomendada, que es justo lo que debe destacar. */
+      /* El filete de Enterprise iba a un cian #06B6D4 que no pertenece a la paleta «Confianza»
+         (Ink Blue + Signal Orange): con las tres cards juntas se leían tres familias de color
+         distintas. El primer arreglo se pasó al otro extremo y lo degradaba casi a blanco, así
+         que el filete parecía cortado a media card. Ahora baja sólo hasta un azul medio, que se
+         distingue del de Starter sin llegar a desvanecerse contra el fondo. */
+      #plan-card-ENTERPRISE::before {
+        background: linear-gradient(90deg, #0B3D91 0%, #3E7BC8 100%);
+      }
+
+      /* El badge va EN FLUJO, no flotando sobre el borde: así no pisa el filete de acento
+         y la fila existe (vacía) en las otras dos cards, que es lo que las alinea. */
+      .plan-badge-row {
+        display: flex;
+        align-items: center;
+        min-height: 26px;
       }
 
       .popular-badge {
-        position: absolute;
-        top: -14px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: var(--color-primary, #0B3D91);
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: linear-gradient(135deg, #0B3D91 0%, #1D5BBF 100%);
         color: #ffffff;
-        font-size: 0.725rem;
-        font-weight: 700;
-        padding: 4px 16px;
-        border-radius: 20px;
+        font-size: 0.7rem;
+        font-weight: 800;
+        padding: 6px 16px;
+        border-radius: 100px;
         text-transform: uppercase;
-        letter-spacing: 0.5px;
+        letter-spacing: 0.7px;
+        line-height: 1;
+        white-space: nowrap;
+        box-shadow: 0 4px 14px rgba(11, 61, 145, 0.28);
+
+        svg {
+          flex-shrink: 0;
+        }
       }
 
       .plan-info-header {
-        margin-bottom: 24px;
+        align-self: start;
       }
 
       .plan-name {
         font-family: var(--f-display, 'Source Serif 4', serif);
-        font-size: 1.5rem;
-        font-weight: 700;
+        font-size: 1.65rem;
+        font-weight: 800;
         color: var(--color-text-primary, #0E1B2C);
         margin: 0 0 8px;
+        letter-spacing: -0.5px;
       }
 
       .plan-desc {
@@ -368,52 +556,53 @@ interface ComparisonRow {
       }
 
       .plan-price-container {
-        margin-bottom: 24px;
+        align-self: start;
       }
 
       .plan-price {
         display: flex;
         align-items: baseline;
-        gap: 6px;
+        gap: 4px;
       }
 
       .currency {
-        font-size: 1.5rem;
+        font-size: 1.25rem;
         font-weight: 700;
-        color: var(--color-text-muted, #8C95A3);
+        color: var(--color-primary, #0B3D91);
       }
 
       .amount {
         font-family: var(--f-display, 'Source Serif 4', serif);
-        font-size: 3.25rem;
-        font-weight: 700;
+        font-size: 3.5rem;
+        font-weight: 800;
         color: var(--color-text-primary, #0E1B2C);
         line-height: 1;
-        letter-spacing: -1px;
+        letter-spacing: -1.5px;
       }
 
       .period {
         color: var(--color-text-muted, #8C95A3);
-        font-size: 1rem;
-        font-weight: 500;
+        font-size: 0.95rem;
+        font-weight: 600;
+        margin-left: 2px;
       }
 
       .annual-note {
         font-size: 0.775rem;
         color: var(--color-success, #0E8A5F);
-        margin-top: 8px;
-        font-weight: 500;
-      }
-
-      .plan-divider {
-        height: 1px;
-        background: var(--color-border, #DCD8CE);
-        margin-bottom: 28px;
+        background: color-mix(in srgb, var(--color-success, #0E8A5F) 10%, transparent);
+        border: 1px solid color-mix(in srgb, var(--color-success, #0E8A5F) 22%, transparent);
+        padding: 4px 12px;
+        border-radius: 100px;
+        display: inline-block;
+        margin-top: 10px;
+        font-weight: 600;
       }
 
       .plan-features {
-        flex: 1;
-        margin-bottom: 28px;
+        align-self: start;
+        border-top: 1px solid rgba(220, 216, 206, 0.8);
+        padding-top: 22px;
       }
 
       .plan-users {
@@ -423,10 +612,19 @@ interface ComparisonRow {
         font-size: 0.9rem;
         color: var(--color-text-primary, #0E1B2C);
         margin-bottom: 20px;
-        font-weight: 500;
+        font-weight: 600;
+        background: rgba(11, 61, 145, 0.04);
+        border: 1px solid rgba(11, 61, 145, 0.1);
+        padding: 10px 14px;
+        border-radius: 12px;
 
         .user-icon {
-          color: var(--color-text-muted, #8C95A3);
+          color: var(--color-primary, #0B3D91);
+          flex-shrink: 0;
+        }
+
+        strong {
+          color: var(--color-primary, #0B3D91);
         }
       }
 
@@ -439,80 +637,171 @@ interface ComparisonRow {
         gap: 12px;
 
         li {
-          font-size: 0.875rem;
-          color: var(--color-text-secondary, #5A6473);
+          font-size: 0.9rem;
+          color: var(--color-text-secondary, #2C3E50);
           display: flex;
-          align-items: flex-start;
+          align-items: center;
+          gap: 10px;
           line-height: 1.4;
 
-          .check-icon {
+          .check-icon-wrap {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: color-mix(in srgb, var(--color-success, #0E8A5F) 12%, transparent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
             flex-shrink: 0;
-            margin-top: 2px;
-            margin-right: 10px;
+
+            svg {
+              stroke: var(--color-success, #0E8A5F);
+            }
+
+            /* Módulo que NO entra en el plan: mismo hueco, sin peso visual. Se marca con un
+               guion en gris y NO con una equis roja — un plan más barato no es un error. */
+            &.is-absent {
+              background: rgba(220, 216, 206, 0.35);
+
+              svg {
+                stroke: var(--color-text-muted, #8A8F98);
+              }
+            }
+          }
+
+          &.not-included {
+            color: var(--color-text-muted, #8A8F98);
           }
         }
       }
 
+      /* Texto solo para lectores de pantalla: el estado "no incluido" se comunica visualmente
+         con el color y el icono, que un lector de pantalla no percibe. */
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
+
+      /* El soporte iba con space-between: el canal y el horario se partían en dos líneas
+         cada uno y quedaban descuadrados. Ahora apila canal → detalle, siempre a la izquierda. */
       .plan-support {
-        border-top: 1px dashed var(--color-border, #DCD8CE);
-        padding-top: 16px;
-        margin-bottom: 28px;
+        align-self: stretch;
+        background: rgba(247, 246, 243, 0.75);
+        border: 1px solid rgba(220, 216, 206, 0.9);
+        border-radius: 14px;
+        padding: 14px 16px;
         font-size: 0.8rem;
         color: var(--color-text-secondary, #5A6473);
       }
 
-      .plan-support-row {
-        display: flex;
-        justify-content: space-between;
-        gap: 8px;
+      .plan-support-channel {
+        font-weight: 700;
+        font-size: 0.85rem;
         color: var(--color-text-primary, #0E1B2C);
         margin-bottom: 4px;
-
-        strong {
-          font-weight: 700;
-          font-size: 0.85rem;
-        }
+        line-height: 1.35;
       }
 
-      .plan-support-sla {
+      /* Apilado, no en línea con separador: el horario largo de Starter envolvía y dejaba
+         el separador colgando al final de la primera línea. */
+      .plan-support-meta {
+        display: flex;
+        flex-direction: column;
         font-size: 0.775rem;
+        color: var(--color-text-muted, #5A6473);
+        line-height: 1.45;
       }
 
       .plan-support-extra {
         margin-top: 8px;
         color: var(--color-success, #0E8A5F);
         font-size: 0.775rem;
-        font-weight: 500;
+        font-weight: 600;
+        line-height: 1.45;
       }
 
       .plan-cta {
-        display: block;
-        text-align: center;
-        background: var(--color-surface-raised, #EFEDE7);
-        color: var(--color-text-primary, #0E1B2C);
-        padding: 14px;
-        border-radius: var(--r-md, 10px);
+        align-self: end;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        width: 100%;
+        box-sizing: border-box;
+        background: rgba(255, 255, 255, 0.9);
+        color: var(--color-primary, #0B3D91);
+        padding: 14px 24px;
+        border-radius: 100px;
         text-decoration: none;
         font-weight: 700;
         font-size: 0.95rem;
-        border: 1px solid var(--color-border, #DCD8CE);
-        transition: all 0.25s ease;
-        margin-top: auto;
+        line-height: 1;
+        border: 2px solid color-mix(in srgb, var(--color-primary, #0B3D91) 30%, transparent);
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
 
-        &:hover {
+        span {
+          line-height: 1;
+        }
+
+        svg, .cta-arrow {
+          flex-shrink: 0;
+          width: 16px;
+          height: 16px;
+          transition: transform 0.25s ease;
+        }
+
+        &:hover:not(.cta-highlight) {
+          background: var(--color-primary, #0B3D91);
+          color: #ffffff;
           border-color: var(--color-primary, #0B3D91);
           transform: translateY(-2px);
+          box-shadow: 0 6px 18px rgba(11, 61, 145, 0.25);
+
+          .cta-arrow {
+            transform: translateX(3px);
+          }
         }
 
         &.cta-highlight {
-          background: var(--color-accent, #F08C00);
+          background: linear-gradient(135deg, #F08C00 0%, #D97706 100%);
           color: #ffffff;
           border-color: transparent;
-          box-shadow: var(--s-sm, 0 1px 2px rgba(15,23,42,.08));
+          box-shadow: 0 6px 20px rgba(240, 140, 0, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+          position: relative;
+          overflow: hidden;
+
+          &::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -60%;
+            width: 40%;
+            height: 200%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            transform: rotate(25deg);
+            transition: left 0.6s ease;
+          }
 
           &:hover {
-            background: var(--color-accent-dark, #C97300);
-            box-shadow: var(--s-md, 0 4px 12px rgba(15,23,42,.12));
+            background: linear-gradient(135deg, #FF9800 0%, #E07B00 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(240, 140, 0, 0.48);
+
+            &::after {
+              left: 130%;
+            }
+
+            .cta-arrow {
+              transform: translateX(3px);
+            }
           }
         }
       }
@@ -704,6 +993,30 @@ interface ComparisonRow {
         }
       }
 
+      /* En una sola columna no hay nada que alinear entre cards: se desactiva el subgrid
+         y cada card vuelve a maquetarse en columna. */
+      @media (max-width: 900px) {
+        .plans-grid {
+          grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+          grid-template-rows: none;
+        }
+
+        .plan-card {
+          grid-row: auto;
+          display: flex;
+          flex-direction: column;
+          gap: 22px;
+        }
+
+        .plan-features {
+          flex: 1;
+        }
+
+        .plan-badge-row:empty {
+          display: none;
+        }
+      }
+
       @media (max-width: 640px) {
         .plans-grid {
           grid-template-columns: 1fr;
@@ -712,11 +1025,6 @@ interface ComparisonRow {
         .security-panel,
         .compliance-panel {
           padding: 28px 20px;
-        }
-
-        .plan-support-row {
-          flex-direction: column;
-          gap: 2px;
         }
 
         .comparison-table th, .comparison-table td {
@@ -747,7 +1055,12 @@ export class PricingPageComponent implements OnInit {
             .map((p) => ({
                 ...p,
                 content: PLAN_CONTENT[p.code] ?? { audience: p.description, recommended: false, support: { channel: 'Soporte estándar', hours: 'Horario de oficina', slaResponse: 'Respuesta objetivo en 24h' } },
-                moduleNames: p.moduleCodes.map((code) => modules.find((m) => m.code === code)?.name ?? code),
+                // Se recorre el catálogo completo (no `p.moduleCodes`) para que las tres cards
+                // tengan las mismas filas en el mismo orden y sean comparables línea a línea.
+                moduleRows: modules.map((m) => ({
+                    name: m.name,
+                    included: p.moduleCodes.includes(m.code),
+                })),
             }));
     });
 

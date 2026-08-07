@@ -1,6 +1,6 @@
 import { Component, inject, signal, OnInit, ChangeDetectionStrategy, computed } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
-import { ButtonComponent, CatalogSelectComponent, ServerSearchSelectComponent } from '@shared/components';
+import { ButtonComponent, CatalogSelectComponent, ServerSearchSelectComponent, UbigeoSelectComponent } from '@shared/components';
 import { DrawerComponent } from '../../../../../shared/components/drawer/drawer.component';
 import { GuiaRemisionService } from '../../../services/guia-remision.service';
 import { AlmacenService } from '../../../services/almacen.service';
@@ -30,7 +30,7 @@ interface ItemForm {
 @Component({
     selector: 'app-guias-page',
     standalone: true,
-    imports: [ReactiveFormsModule, ButtonComponent, DrawerComponent, DataTableComponent, DateInputComponent, AlertComponent, PageHeaderComponent, CatalogSelectComponent, ServerSearchSelectComponent],
+    imports: [ReactiveFormsModule, ButtonComponent, DrawerComponent, DataTableComponent, DateInputComponent, AlertComponent, PageHeaderComponent, CatalogSelectComponent, ServerSearchSelectComponent, UbigeoSelectComponent],
     changeDetection: ChangeDetectionStrategy.OnPush,
     templateUrl: './guias-page.component.html'
 })

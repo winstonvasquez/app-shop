@@ -39,9 +39,9 @@
                     Dirección
                     <input type="text" formControlName="direccion" placeholder="Calle, número, distrito">
                 </label>
-                <label>
+                <label class="full">
                     Ubigeo SUNAT
-                    <input type="text" formControlName="ubigeo" maxlength="6" placeholder="150122">
+                    <app-ubigeo-select formControlName="ubigeo" />
                 </label>
                 <label>
                     Serie Boleta

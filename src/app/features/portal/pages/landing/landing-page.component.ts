@@ -1072,38 +1072,74 @@ const FAQ_ITEMS: { question: string; answer: string }[] = [
 
       /* ---------- Cómo funciona ---------- */
       .how-section {
-        background: var(--color-surface-raised, #EFEDE7);
-        padding: 72px 0;
+        background-color: var(--color-surface-raised, #EFEDE7);
+        background-image: 
+          radial-gradient(ellipse at 50% 50%, rgba(239, 237, 231, 0.82) 0%, rgba(239, 237, 231, 0.94) 100%),
+          url('/images/how_it_works_bg.png');
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        padding: 96px 0;
+        position: relative;
+        overflow: hidden;
+        border-top: 1px solid var(--color-border, #DCD8CE);
+        border-bottom: 1px solid var(--color-border, #DCD8CE);
       }
 
       .how-row {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-        gap: 40px;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 32px;
+        position: relative;
+        z-index: 2;
       }
 
       .how-step {
+        background: rgba(255, 255, 255, 0.78);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(220, 216, 206, 0.85);
+        border-radius: var(--r-lg, 16px);
+        padding: 36px 30px;
+        box-shadow: 0 10px 30px -10px rgba(15, 23, 42, 0.06);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+
+        &:hover {
+          transform: translateY(-4px);
+          background: rgba(255, 255, 255, 0.94);
+          border-color: color-mix(in srgb, var(--color-accent, #F08C00) 45%, transparent);
+          box-shadow: 0 18px 40px -8px rgba(15, 23, 42, 0.12);
+        }
+
         h3 {
-          font-size: 1.15rem;
+          font-size: 1.2rem;
           font-weight: 700;
-          margin: 10px 0 8px;
+          margin: 14px 0 8px;
           color: var(--color-text-primary, #0E1B2C);
         }
 
         p {
           margin: 0;
           color: var(--color-text-secondary, #5A6473);
-          font-size: 0.925rem;
-          line-height: 1.55;
+          font-size: 0.935rem;
+          line-height: 1.6;
         }
       }
 
       .how-index {
-        display: inline-block;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
         font-family: var(--f-display, 'Source Serif 4', serif);
-        font-size: 2.25rem;
-        font-weight: 700;
+        font-size: 1.3rem;
+        font-weight: 800;
         color: var(--color-accent, #F08C00);
+        background: color-mix(in srgb, var(--color-accent, #F08C00) 12%, transparent);
+        border: 1px solid color-mix(in srgb, var(--color-accent, #F08C00) 25%, transparent);
         line-height: 1;
       }
 

@@ -10,12 +10,13 @@ import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
 import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 import { bloquearEnEdicion } from '@shared/utils/form-lock';
+import { UbigeoSelectComponent } from '@shared/components';
 
 @Component({
     selector: 'app-sucursales',
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [ReactiveFormsModule, DataTableComponent, PageHeaderComponent],
+    imports: [ReactiveFormsModule, DataTableComponent, PageHeaderComponent, UbigeoSelectComponent],
     templateUrl: './sucursales.component.html',
     styleUrl: './sucursales.component.scss',
 })

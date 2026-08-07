@@ -6,6 +6,7 @@ export type { ButtonVariant, ButtonSize } from './button/button.component';
 // form-field/ (slot-only) fue eliminado 2026-04-21 — usar FormFieldComponent de @shared/ui (híbrido)
 export * from './number-input/number-input.component';
 export { CatalogSelectComponent } from './catalog-select/catalog-select.component';
+export { UbigeoSelectComponent } from './ubigeo-select/ubigeo-select.component';
 export { ServerSearchSelectComponent } from './server-search-select/server-search-select.component';
 export type { ServerSelectOption, ServerSelectDataSource, ServerSelectId } from './server-search-select/server-search-select.component';
 export { RichTextEditorComponent } from './rich-text-editor/rich-text-editor.component';

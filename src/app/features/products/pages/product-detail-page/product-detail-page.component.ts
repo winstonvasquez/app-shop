@@ -1,4 +1,4 @@
-import { Component, DestroyRef, inject, OnInit, signal, computed, HostListener } from '@angular/core';
+import { Component, DestroyRef, inject, OnInit, signal, computed } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Title } from '@angular/platform-browser';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -12,7 +12,6 @@ import { ProductAttributesComponent } from '@features/products/components/produc
 import { Variant } from '@features/products/models/variant.model';
 import { CartService } from '@features/cart/services/cart.service';
 import { ProductDetail } from '@features/products/models/product-detail.model';
-import { Image as ProductImage } from '@features/products/models/image.model';
 import { UrlEncryptionService } from '@core/services/url-encryption.service';
 import { AnalyticsService } from '@core/services/analytics.service';
 import { RecommendationsService } from '@core/services/recommendations.service';
@@ -33,6 +32,8 @@ interface DetailCrumb { label: string; route?: string[]; queryParams?: Record<st
 interface SpecRow { k: string; v: string }
 type DetailTab = 'desc' | 'specs' | 'reviews' | 'qa';
 
+import { ProductGalleryComponent } from '@features/products/components/product-gallery/product-gallery.component';
+
 @Component({
     selector: 'app-product-detail-page',
     standalone: true,
@@ -47,6 +48,7 @@ type DetailTab = 'desc' | 'specs' | 'reviews' | 'qa';
         DsProductCardComponent,
         ProductReviewsComponent,
         ProductAttributesComponent,
+        ProductGalleryComponent,
     ],
     templateUrl: './product-detail-page.component.html',
 })
@@ -73,13 +75,6 @@ export class ProductDetailPageComponent implements OnInit {
     readonly isLoading = this._isLoading;
     readonly error     = this._error;
 
-    /** Imagen activa de la galería. */
-    readonly activeImageIndex = signal<number>(0);
-    readonly activeImage = computed<ProductImage | null>(() => {
-        const p = this._product();
-        return p?.images?.[this.activeImageIndex()] ?? p?.images?.[0] ?? null;
-    });
-
     /** Variant seleccionado (default: primero). */
     readonly selectedVariantId = signal<number | null>(null);
     readonly selectedVariant = computed<Variant | null>(() => {
@@ -92,9 +87,6 @@ export class ProductDetailPageComponent implements OnInit {
     readonly qty = signal<number>(1);
 
     readonly activeTab = signal<DetailTab>('desc');
-
-    /** Lightbox abierto/cerrado. */
-    readonly lightboxOpen = signal<boolean>(false);
 
     /** ¿El producto actual está en la lista de deseos del cliente? */
     readonly isSaved = computed<boolean>(() => {
@@ -158,7 +150,6 @@ export class ProductDetailPageComponent implements OnInit {
             this.productDetailService.getProductDetail(id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
                 next: (data) => {
                     this._product.set(data);
-                    this.activeImageIndex.set(0);
                     this.selectedVariantId.set(data.variants?.[0]?.id ?? null);
                     this.qty.set(1);
                     this.activeTab.set('desc');
@@ -196,33 +187,11 @@ export class ProductDetailPageComponent implements OnInit {
         });
     }
 
-    selectImage(i: number): void { this.activeImageIndex.set(i); }
     selectVariant(v: Variant): void { this.selectedVariantId.set(v.id); }
     selectTab(t: DetailTab): void { this.activeTab.set(t); }
 
     incQty(): void { this.qty.update(q => Math.min(q + 1, this.stock() || 99)); }
     decQty(): void { this.qty.update(q => Math.max(1, q - 1)); }
-
-    /** Navega a la imagen anterior en el lightbox (con wrap). */
-    prevImage(): void {
-        const p = this._product();
-        if (!p?.images?.length) return;
-        this.activeImageIndex.update(i => (i - 1 + p.images.length) % p.images.length);
-    }
-
-    /** Navega a la imagen siguiente en el lightbox (con wrap). */
-    nextImage(): void {
-        const p = this._product();
-        if (!p?.images?.length) return;
-        this.activeImageIndex.update(i => (i + 1) % p.images.length);
-    }
-
-    @HostListener('document:keydown.escape')
-    closeLightboxOnEscape(): void {
-        if (this.lightboxOpen()) {
-            this.lightboxOpen.set(false);
-        }
-    }
 
     addToCart(): void {
         const p = this._product();

@@ -143,16 +143,22 @@ import { Title, Meta } from '@angular/platform-browser';
         padding: 60px 24px;
         position: relative;
         z-index: 10;
-        background: var(--color-background, #F7F6F3);
+        background-color: var(--color-background, #F7F6F3);
+        background-image: 
+          radial-gradient(ellipse at 50% 30%, rgba(247, 246, 243, 0.72) 0%, rgba(247, 246, 243, 0.92) 100%),
+          url('/images/register_corporate_bg.png');
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
         overflow: hidden;
       }
 
-      /* Textura sutil de puntos, misma firma visual del hero de landing (login tiene su propio tratamiento oscuro, no compartido) */
+      /* Textura sutil de puntos + glow visual */
       .register-page::before {
         content: '';
         position: absolute;
         inset: 0;
-        background-image: radial-gradient(color-mix(in srgb, var(--color-primary, #0B3D91) 5%, transparent) 1.2px, transparent 1.2px);
+        background-image: radial-gradient(color-mix(in srgb, var(--color-primary, #0B3D91) 6%, transparent) 1.2px, transparent 1.2px);
         background-size: 24px 24px;
         pointer-events: none;
         z-index: 1;
@@ -169,29 +175,42 @@ import { Title, Meta } from '@angular/platform-browser';
       .orb-primary {
         top: -12%;
         right: -8%;
-        width: 480px;
-        height: 480px;
-        background: radial-gradient(circle, color-mix(in srgb, var(--color-primary, #0B3D91) 14%, transparent) 0%, transparent 70%);
+        width: 520px;
+        height: 520px;
+        background: radial-gradient(circle, color-mix(in srgb, var(--color-primary, #0B3D91) 18%, transparent) 0%, transparent 70%);
       }
 
       .orb-accent {
         bottom: -14%;
         left: -8%;
-        width: 500px;
-        height: 500px;
-        background: radial-gradient(circle, color-mix(in srgb, var(--color-accent, #F08C00) 12%, transparent) 0%, transparent 65%);
+        width: 540px;
+        height: 540px;
+        background: radial-gradient(circle, color-mix(in srgb, var(--color-accent, #F08C00) 15%, transparent) 0%, transparent 65%);
       }
 
       .register-card {
         width: 100%;
-        max-width: 480px;
-        padding: 40px;
-        border-radius: var(--r-lg, 14px);
-        background: var(--color-surface, #FFFFFF);
-        border: 1px solid var(--color-border, #DCD8CE);
-        box-shadow: var(--s-lg, 0 24px 48px -12px rgba(15, 23, 42, 0.14));
+        max-width: 500px;
+        padding: 44px 40px;
+        border-radius: 20px;
+        background: rgba(255, 255, 255, 0.94);
+        backdrop-filter: blur(20px) saturate(160%);
+        -webkit-backdrop-filter: blur(20px) saturate(160%);
+        border: 1px solid rgba(220, 216, 206, 0.85);
+        box-shadow: 0 24px 64px -16px rgba(11, 61, 145, 0.16), 0 0 0 1px rgba(255, 255, 255, 0.8) inset;
         position: relative;
         z-index: 2;
+        overflow: hidden;
+
+        &::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          height: 4px;
+          background: linear-gradient(90deg, #0B3D91 0%, #F08C00 100%);
+        }
       }
 
       .register-header {

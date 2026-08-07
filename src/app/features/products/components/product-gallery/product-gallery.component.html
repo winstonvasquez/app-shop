@@ -1,0 +1,138 @@
+<div class="product-gallery" role="group" [attr.aria-label]="'Galería de ' + product().nombre">
+
+  @if (mediaItems().length === 0) {
+    <!-- Estado vacío honesto: ni fotos ajenas ni marco roto -->
+    <div class="gallery-empty">
+      <lucide-icon name="image-off" [size]="28" aria-hidden="true"/>
+      <p class="empty-title">Este producto aún no tiene imágenes</p>
+      <p class="empty-hint">Cuando se carguen fotos, aparecerán aquí.</p>
+    </div>
+  } @else {
+
+    <!-- ── Visor principal ── -->
+    <div class="stage">
+      @if (isPlayingVideo() && hasVideo()) {
+        <video [src]="activeItem()?.url" controls autoplay playsinline class="stage-video">
+          Tu navegador no soporta reproducción de video.
+        </video>
+        <button class="stage-close" type="button" (click)="isPlayingVideo.set(false)"
+                aria-label="Cerrar reproductor" title="Cerrar reproductor">
+          <lucide-icon name="x" [size]="16" aria-hidden="true"/>
+        </button>
+      } @else if (activeItem(); as active) {
+        <button class="stage-frame" type="button"
+                (click)="active.type === 'video' ? playVideo() : openLightbox()"
+                [attr.aria-label]="active.type === 'video' ? 'Reproducir video del producto' : 'Ampliar ' + active.label"
+                [title]="active.type === 'video' ? 'Reproducir video' : 'Ampliar'">
+          @if (hasFailed(active.url) && active.type === 'image') {
+            <span class="media-fallback">
+              <lucide-icon name="image-off" [size]="24" aria-hidden="true"/>
+              <span>Imagen no disponible</span>
+            </span>
+          } @else if (active.type === 'video') {
+            <img [src]="active.thumbnailUrl" [alt]="active.label"
+                 class="stage-img" (error)="onImageError(active.thumbnailUrl)"/>
+            <span class="stage-play" aria-hidden="true">
+              <lucide-icon name="play" [size]="22"/>
+            </span>
+          } @else {
+            <img [src]="active.url" [alt]="active.label" class="stage-img"
+                 (error)="onImageError(active.url)"/>
+            <span class="stage-zoom" aria-hidden="true">
+              <lucide-icon name="maximize-2" [size]="14"/>
+              <span>Ampliar</span>
+            </span>
+          }
+        </button>
+
+        @if (mediaItems().length > 1) {
+          <button class="stage-nav prev" type="button" (click)="step(-1)"
+                  aria-label="Media anterior" title="Anterior">
+            <lucide-icon name="chevron-left" [size]="20" aria-hidden="true"/>
+          </button>
+          <button class="stage-nav next" type="button" (click)="step(1)"
+                  aria-label="Media siguiente" title="Siguiente">
+            <lucide-icon name="chevron-right" [size]="20" aria-hidden="true"/>
+          </button>
+          <span class="stage-counter" aria-hidden="true">{{ positionLabel() }}</span>
+        }
+      }
+    </div>
+
+    <!-- ── Tira de miniaturas, navegable por teclado ── -->
+    @if (mediaItems().length > 1) {
+      <div class="thumbs"
+           role="listbox"
+           tabindex="0"
+           aria-label="Media del producto"
+           [attr.aria-activedescendant]="'thumb-' + selectedIndex()"
+           (keydown)="onGalleryKeydown($event)">
+        @for (item of mediaItems(); track item.id; let i = $index) {
+          <button class="thumb" type="button" role="option"
+                  [id]="'thumb-' + i"
+                  [attr.aria-selected]="i === selectedIndex()"
+                  [attr.aria-label]="item.label"
+                  [title]="item.label"
+                  [class.is-selected]="i === selectedIndex()"
+                  (click)="selectItem(i)">
+            @if (hasFailed(item.thumbnailUrl)) {
+              <span class="thumb-fallback" aria-hidden="true">
+                <lucide-icon name="image-off" [size]="15"/>
+              </span>
+            } @else {
+              <img [src]="item.thumbnailUrl" [alt]="item.label" loading="lazy"
+                   (error)="onImageError(item.thumbnailUrl)"/>
+            }
+            @if (item.type === 'video') {
+              <span class="thumb-video" aria-hidden="true">
+                <lucide-icon name="play" [size]="13"/>
+              </span>
+            }
+          </button>
+        }
+      </div>
+    }
+  }
+
+  <!-- ── Pantalla completa: Escape cierra, flechas navegan ── -->
+  @if (lightboxOpen()) {
+    <div class="lightbox-overlay"
+         role="dialog"
+         aria-modal="true"
+         [attr.aria-label]="'Media de ' + product().nombre"
+         tabindex="-1"
+         (click)="closeLightbox()">
+      <div class="lightbox-content" (click)="$event.stopPropagation()">
+
+        <div class="lightbox-bar">
+          <span class="lightbox-counter">{{ activeItem()?.label }}</span>
+          <button class="lightbox-close" type="button" (click)="closeLightbox()"
+                  aria-label="Cerrar (Escape)" title="Cerrar (Escape)">
+            <lucide-icon name="x" [size]="22" aria-hidden="true"/>
+          </button>
+        </div>
+
+        @if (activeItem(); as active) {
+          @if (active.type === 'video') {
+            <video [src]="active.url" controls autoplay class="lightbox-media"></video>
+          } @else {
+            <img [src]="active.url" [alt]="active.label" class="lightbox-media"
+                 (error)="onImageError(active.url)"/>
+          }
+        }
+
+        @if (mediaItems().length > 1) {
+          <button class="lightbox-nav prev" type="button" (click)="step(-1)"
+                  aria-label="Anterior" title="Anterior (←)">
+            <lucide-icon name="chevron-left" [size]="26" aria-hidden="true"/>
+          </button>
+          <button class="lightbox-nav next" type="button" (click)="step(1)"
+                  aria-label="Siguiente" title="Siguiente (→)">
+            <lucide-icon name="chevron-right" [size]="26" aria-hidden="true"/>
+          </button>
+        }
+      </div>
+    </div>
+  }
+
+</div>

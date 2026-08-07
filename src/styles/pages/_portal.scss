@@ -146,20 +146,33 @@ body:has(.ds-auth) {
     }
   }
 
-  /* Header & Navigation — chrome propio de /portal/landing y hermanas: paleta Confianza clara, no el shell oscuro. */
+  /* Header & Navigation — Executive Portal Header */
   .portal-header {
     position: sticky;
     top: 0;
     z-index: 100;
-    background: rgba(247, 246, 243, 0.92);
-    backdrop-filter: blur(12px) saturate(140%);
-    -webkit-backdrop-filter: blur(12px) saturate(140%);
-    border-bottom: 1px solid var(--color-border, #DCD8CE);
+    background: rgba(247, 246, 243, 0.88);
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    border-bottom: 1px solid rgba(220, 216, 206, 0.7);
+    box-shadow: 0 4px 20px -2px rgba(11, 61, 145, 0.05), 0 1px 2px rgba(0, 0, 0, 0.02);
     transition: all 0.3s ease;
+
+    /* Subtle top accent gradient bar */
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #0B3D91 0%, #F08C00 45%, #06B6D4 100%);
+      z-index: 101;
+    }
   }
 
   .portal-header-inner {
-    max-width: 1200px;
+    max-width: 1240px;
     margin: 0 auto;
     padding: 0 24px;
     height: 72px;
@@ -171,101 +184,214 @@ body:has(.ds-auth) {
   .portal-logo {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
     text-decoration: none;
     font-family: var(--f-display, 'Source Serif 4', serif);
-    font-size: 1.4rem;
+    font-size: 1.45rem;
     font-weight: 700;
     letter-spacing: -0.5px;
     position: relative;
     z-index: 10;
+    transition: transform 0.25s ease;
+
+    &:hover {
+      transform: translateY(-1px);
+
+      .logo-icon-wrap {
+        transform: scale(1.08) rotate(-4deg);
+        box-shadow: 0 6px 18px rgba(11, 61, 145, 0.35);
+      }
+    }
+
+    .logo-icon-wrap {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #0B3D91 0%, #1D5BBF 100%);
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(11, 61, 145, 0.25);
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .logo-text {
+      display: flex;
+      align-items: center;
+    }
 
     .logo-app {
       color: var(--color-primary, #0B3D91);
+      font-weight: 800;
     }
 
     .logo-shop {
       color: var(--color-accent, #F08C00);
+      font-weight: 800;
     }
 
     .logo-tag {
       font-family: var(--f-sans, 'Inter', sans-serif);
-      font-size: 0.65rem;
-      font-weight: 700;
-      letter-spacing: 0.5px;
+      font-size: 0.625rem;
+      font-weight: 800;
+      letter-spacing: 0.8px;
       color: var(--color-primary, #0B3D91);
-      background: transparent;
-      border: 1px solid var(--color-primary, #0B3D91);
-      border-radius: 6px;
-      padding: 1px 6px;
-      margin-left: 4px;
+      background: linear-gradient(135deg, rgba(11, 61, 145, 0.08), rgba(240, 140, 0, 0.12));
+      border: 1px solid color-mix(in srgb, var(--color-primary, #0B3D91) 25%, transparent);
+      border-radius: 100px;
+      padding: 2px 8px;
+      margin-left: 6px;
+      text-transform: uppercase;
+      box-shadow: 0 1px 3px rgba(11, 61, 145, 0.08);
     }
   }
 
   .portal-nav {
-    display: flex;
-    align-items: center;
-    gap: 28px;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 12px;
     font-family: var(--f-sans, 'Inter', sans-serif);
 
-    a {
+    a, .portal-nav-link {
+      display: inline-flex !important;
+      flex-direction: row !important;
+      align-items: center !important;
+      justify-content: center !important;
+      gap: 8px !important;
+      white-space: nowrap !important;
       text-decoration: none;
       color: var(--color-text-secondary, #5A6473);
-      font-size: 0.925rem;
-      font-weight: 500;
+      font-size: 0.9rem;
+      font-weight: 600;
+      padding: 8px 16px;
+      border-radius: 100px;
       transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
       position: relative;
 
+      svg {
+        display: inline-block !important;
+        flex-shrink: 0 !important;
+        width: 16px;
+        height: 16px;
+        opacity: 0.75;
+        transition: opacity 0.25s ease, transform 0.25s ease;
+      }
+
+      span {
+        display: inline-block !important;
+        line-height: 1 !important;
+      }
+
       &.active-link {
         color: var(--color-primary, #0B3D91);
-        font-weight: 600;
+        background: rgba(11, 61, 145, 0.08);
+        box-shadow: inset 0 0 0 1px rgba(11, 61, 145, 0.15);
+
+        svg {
+          opacity: 1;
+          color: var(--color-primary, #0B3D91);
+        }
 
         &::after {
           content: '';
           position: absolute;
-          bottom: -6px;
-          left: 0;
-          width: 100%;
-          height: 2px;
+          bottom: 2px;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 16px;
+          height: 3px;
           background: var(--color-accent, #F08C00);
-          border-radius: 2px;
+          border-radius: 3px;
         }
       }
 
       &:hover:not(.active-link):not(.btn-login):not(.btn-register) {
         color: var(--color-primary, #0B3D91);
+        background: rgba(11, 61, 145, 0.04);
+
+        svg {
+          opacity: 1;
+          transform: translateY(-1px);
+        }
       }
+    }
+
+    .nav-divider {
+      width: 1px;
+      height: 24px;
+      background: rgba(220, 216, 206, 0.8);
+      margin: 0 4px;
     }
 
     .btn-login {
       color: var(--color-primary, #0B3D91) !important;
-      background: transparent;
-      border: 1px solid var(--color-border, #DCD8CE);
-      padding: 8px 18px;
-      border-radius: var(--r-full, 20px);
-      font-size: 0.85rem !important;
+      background: rgba(255, 255, 255, 0.75);
+      border: 1.5px solid color-mix(in srgb, var(--color-primary, #0B3D91) 25%, transparent);
+      padding: 8px 20px;
+      border-radius: 100px;
+      font-size: 0.875rem !important;
       font-weight: 600;
+      text-decoration: none;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
 
       &:hover {
-        background: var(--color-surface-raised, #EFEDE7);
+        background: var(--color-primary, #0B3D91);
+        color: #ffffff !important;
         border-color: var(--color-primary, #0B3D91);
+        transform: translateY(-1.5px);
+        box-shadow: 0 4px 14px rgba(11, 61, 145, 0.25);
       }
     }
 
     .btn-register {
-      background: var(--color-accent, #F08C00) !important;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: linear-gradient(135deg, #F08C00 0%, #D97706 100%) !important;
       color: #ffffff !important;
-      padding: 9px 20px;
-      border-radius: var(--r-full, 20px);
+      padding: 9.5px 22px;
+      border-radius: 100px;
       font-weight: 700;
-      font-size: 0.85rem !important;
+      font-size: 0.875rem !important;
+      text-decoration: none;
       border: none;
-      box-shadow: var(--s-sm, 0 1px 2px rgba(15,23,42,.08));
+      box-shadow: 0 4px 14px rgba(240, 140, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+      position: relative;
+      overflow: hidden;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+
+      /* Shimmer sweep animation */
+      &::after {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -60%;
+        width: 40%;
+        height: 200%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+        transform: rotate(25deg);
+        transition: left 0.6s ease;
+      }
+
+      .btn-arrow {
+        transition: transform 0.25s ease;
+      }
 
       &:hover {
-        background: var(--color-accent-dark, #C97300) !important;
-        transform: translateY(-1px);
-        box-shadow: var(--s-md, 0 2px 6px rgba(15,23,42,.12));
+        background: linear-gradient(135deg, #FF9800 0%, #E07B00 100%) !important;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 22px rgba(240, 140, 0, 0.45);
+
+        &::after {
+          left: 130%;
+        }
+
+        .btn-arrow {
+          transform: translateX(3px);
+        }
       }
     }
   }

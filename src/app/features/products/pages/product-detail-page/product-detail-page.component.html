@@ -1,6 +1,6 @@
 <!--
     PRODUCT DETAIL — DS Confianza
-    Layout: thumbnail rail (80px) · main image (1fr) · buy box (380px)
+    Layout: galería (visor + miniaturas, 1fr) · buy box (380px)
     Bajo galería: 3 cards de garantías
     Tabs: Descripción · Especificaciones · Reseñas · Preguntas
 -->
@@ -25,11 +25,11 @@
 
     @if (product(); as p) {
 
-        <!-- ── Breadcrumb ─────────────────────────────────────── -->
-        <div class="bc-wrap">
-            <div class="bc">
+        <!-- ── Top Header Bar (Breadcrumbs + Seller Credit) ── -->
+        <div class="boommy-top-bar">
+            <div class="bc-trail">
                 @for (b of breadcrumbs(); track b.label; let i = $index, last = $last) {
-                    @if (i > 0) { <lucide-icon name="chevron-right" [size]="11"/> }
+                    @if (i > 0) { <lucide-icon name="chevron-right" [size]="12" class="bc-sep"/> }
                     @if (!last && b.route) {
                         <a class="bc-link" [routerLink]="b.route" [queryParams]="b.queryParams">{{ b.label }}</a>
                     } @else {
@@ -37,177 +37,262 @@
                     }
                 }
             </div>
+
+            @if (p.seller) {
+                <div class="seller-header-credit">
+                    <span>Productos de <strong>{{ p.seller.name }}</strong></span>
+                </div>
+            }
         </div>
 
-        <!-- ── Top: 3-col layout ──────────────────────────────── -->
-        <div class="top">
+        <!-- ── Main 2-Column Product Detail Layout (Image 1 Boommy Style) ── -->
+        <div class="boommy-detail-grid">
 
-            <!-- Thumbnail rail -->
-            <div class="rail">
-                @for (img of p.images; track img.url; let i = $index) {
-                    <button class="rail-item"
-                        [class.is-active]="i === activeImageIndex()"
-                        (click)="selectImage(i)"
-                        type="button">
-                        <img [src]="img.url" [alt]="p.nombre + ' ' + (i + 1)"/>
-                    </button>
-                }
-            </div>
-
-            <!-- Main image + trust cards -->
-            <div class="main-col">
-                <div class="main-img" (click)="lightboxOpen.set(true)" style="cursor: zoom-in" title="Clic para ampliar">
-                    @if (activeImage(); as img) {
-                        <img [src]="img.url" [alt]="p.nombre"/>
+            <!-- ── LEFT COLUMN: Gallery & Seller Showcase ── -->
+            <div class="left-col">
+                
+                <!-- Visor + miniaturas + pantalla completa: todo en app-product-gallery, que ya
+                     trae teclado, aria y fallback de imagen que no carga. -->
+                <div class="hero-image-card">
+                    <app-product-gallery [product]="p"/>
+                    @if (p.discount) {
+                        <div class="badge-discount-overlay">-{{ p.discount }}</div>
                     }
                 </div>
 
-                <div class="trust-grid">
-                    <div class="tcard">
-                        <lucide-icon name="truck" [size]="18" class="ic"/>
-                        <div>
-                            <div class="tt">{{ sc.productBadgeShippingTitle() }}</div>
-                            <div class="ts">{{ sc.productBadgeShippingSub() }}</div>
-                        </div>
-                    </div>
-                    <div class="tcard">
-                        <lucide-icon name="shield" [size]="18" class="ic"/>
-                        <div>
-                            <div class="tt">{{ sc.productBadgeWarrantyTitle() }}</div>
-                            <div class="ts">{{ sc.productBadgeWarrantySub() }}</div>
-                        </div>
-                    </div>
-                    <div class="tcard">
-                        <lucide-icon name="package" [size]="18" class="ic"/>
-                        <div>
-                            <div class="tt">{{ sc.productBadgeStockTitle() }}</div>
-                            <div class="ts">{{ sc.productBadgeStockSub() }}</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+                @if (similarProducts().length) {
+                <!-- Más productos (mismos datos del carrusel de similares, no del vendedor) -->
+                <div class="seller-items-showcase">
+                    <h4 class="showcase-heading">También te puede interesar</h4>
 
-            <!-- Buy box -->
-            <aside class="buy">
-
-                @if (p.badge || p.starSeller) {
-                    <div class="badges">
-                        @if (p.badge) { <ds-badge tone="brand">{{ p.badge }}</ds-badge> }
-                        @if (p.starSeller) { <ds-badge tone="success">Star Seller</ds-badge> }
-                    </div>
-                }
-
-                <h1 class="title">{{ p.nombre }}</h1>
-
-                <div class="rating-row">
-                    @if (p.rating) {
-                        <ds-stars [rating]="p.rating" [size]="14" [showValue]="true"/>
-                    }
-                    @if (p.salesCount) {
-                        <span class="dot">·</span>
-                        <span class="muted">{{ p.salesCount }} vendidos</span>
-                    }
-                </div>
-
-                @if (p.seller) {
-                    <div class="seller">
-                        Vendido por <strong>{{ p.seller.name }}</strong>
-                        @if (p.seller.rating) {
-                            <span class="muted">· ★ {{ p.seller.rating }}</span>
+                    <div class="showcase-grid">
+                        @for (sim of similarProducts().slice(0, 2); track sim.id) {
+                            <a [routerLink]="['/products', sim.id]" class="showcase-product-card">
+                                <div class="showcase-img-wrap">
+                                    <img [src]="sim.image" [alt]="sim.name"/>
+                                </div>
+                                <div class="showcase-meta">
+                                    <span class="showcase-name">{{ sim.name }}</span>
+                                    <span class="showcase-price">S/ {{ sim.now.toFixed(2) }}</span>
+                                </div>
+                            </a>
                         }
                     </div>
+
+                    <a routerLink="/products" class="btn-more-seller-items">Ver más productos</a>
+                </div>
                 }
 
-                <div class="divider"></div>
+            </div>
 
-                <div class="price-block">
-                    <ds-price [now]="effectivePrice()" [was]="p.originalPrice || null" size="2xl" tone="priceNow"/>
-                    <div class="price-meta">
-                        @if (p.discount) { <ds-badge tone="danger" size="sm">{{ p.discount }} OFF</ds-badge> }
-                        @if (p.timerEndTime) {
-                            <span class="timer">
-                                <lucide-icon name="timer" [size]="12"/>
-                                Oferta termina pronto
+            <!-- ── RIGHT COLUMN: Product Metadata, Purchase Box & Seller Info ── -->
+            <div class="right-col">
+
+                <!-- Header: Title + Brand + Actions -->
+                <div class="product-heading-section">
+                    <div class="title-with-actions">
+                        <h1 class="product-title-boommy">{{ p.nombre }}</h1>
+                        
+                        <div class="top-action-buttons">
+                            <button class="action-pill-btn" (click)="selectTab('qa')" type="button">
+                                <lucide-icon name="message-square" [size]="14"/>
+                                <span>Preguntar</span>
+                            </button>
+                            <button class="action-pill-btn" [class.is-saved]="isSaved()" (click)="toggleWishlist()" type="button">
+                                <lucide-icon name="heart" [size]="14" [class.filled]="isSaved()"/>
+                                <span>{{ isSaved() ? 'Guardado' : 'Favorito' }}</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="seller-brand-subtitle">
+                        @if (p.seller?.name) { <span>{{ p.seller.name }}</span> }
+                        @if (p.rating) {
+                            <span class="rating-sub">
+                                <ds-stars [rating]="p.rating" [size]="14" [showValue]="true"/>
+                                @if (p.salesCount) { <span>({{ p.salesCount }} vendidos)</span> }
                             </span>
                         }
                     </div>
-                    <div class="installments">
-                        o 12 cuotas sin interés de
-                        <strong>S/ {{ (effectivePrice() / 12).toFixed(2) }}</strong>
+                </div>
+
+                <!-- Ficha rápida. Sólo campos que el backend manda de verdad: condición, marca,
+                     garantía y categoría estaban escritos a mano en el HTML y no existen en
+                     ProductDetail, así que se fueron. Las especificaciones reales viven en su
+                     pestaña, alimentadas por `p.attributes`. -->
+                <div class="attribute-keyvalue-grid">
+                    <div class="attr-item">
+                        <span class="attr-lbl">Disponibilidad:</span>
+                        <span class="attr-val" [class.highlight-green]="stock() > 0">
+                            {{ stock() > 0 ? 'En stock (' + stock() + ' u.)' : 'Sin stock' }}
+                        </span>
+                    </div>
+                    @if (p.deliveryTimeframe) {
+                        <div class="attr-item">
+                            <span class="attr-lbl">Despacho:</span>
+                            <span class="attr-val">{{ p.deliveryTimeframe }}</span>
+                        </div>
+                    }
+                    @if (p.categoryRankText) {
+                        <div class="attr-item">
+                            <span class="attr-lbl">Categoría:</span>
+                            <span class="attr-val highlight-green">{{ p.categoryRankText }}</span>
+                        </div>
+                    }
+                </div>
+
+                <!-- `descripcion` es texto plano capturado en el admin: interpolado, no innerHTML. -->
+                <p class="description-snippet">{{ p.descripcion }}</p>
+
+                <!-- Soft Tinted Purchase Box (Mint / Cyan Box in Image 1) -->
+                <div class="purchase-box-tinted">
+                    
+                    <!-- Variant Options (Size / Colors / Config) -->
+                    @if (p.variants.length) {
+                        <div class="variants-picker">
+                            <div class="v-header-line">
+                                <span class="v-label">Configuración:</span>
+                                <strong class="v-current">{{ selectedVariant()?.nombre }}</strong>
+                                <a class="specs-link" (click)="selectTab('specs')">Tabla de especificaciones</a>
+                            </div>
+
+                            <div class="v-chips-row">
+                                @for (v of p.variants; track v.id) {
+                                    <button class="v-chip-item"
+                                            [class.is-active]="selectedVariant()?.id === v.id"
+                                            [class.is-out]="v.stockActual <= 0"
+                                            [disabled]="v.stockActual <= 0"
+                                            (click)="selectVariant(v)" type="button">
+                                        {{ v.nombre }}
+                                    </button>
+                                }
+                            </div>
+                        </div>
+                    }
+
+                    <!-- Cantidad: `addToCart()` envía `qty()`, así que sin este control el
+                         comprador no podía pedir más de una unidad. -->
+                    <div class="qty-row">
+                        <span class="qty-lbl">Cantidad:</span>
+                        <div class="qty">
+                            <button (click)="decQty()" [disabled]="qty() <= 1" type="button" aria-label="Disminuir">
+                                <lucide-icon name="minus" [size]="14"/>
+                            </button>
+                            <span class="qty-val">{{ qty() }}</span>
+                            <button (click)="incQty()" [disabled]="qty() >= stock()" type="button" aria-label="Aumentar">
+                                <lucide-icon name="plus" [size]="14"/>
+                            </button>
+                        </div>
+                        @if (stock() > 0 && stock() <= 10) {
+                            <span class="qty-warn">¡Solo {{ stock() }} disponibles!</span>
+                        }
+                    </div>
+
+                    <!-- Price Display + Green Primary CTA Row -->
+                    <div class="price-action-row">
+                        <div class="price-display-group">
+                            <span class="currency-sign">S/</span>
+                            <span class="price-val">{{ effectivePrice().toFixed(2) }}</span>
+                            @if (p.originalPrice) {
+                                <span class="price-was">S/ {{ p.originalPrice.toFixed(2) }}</span>
+                            }
+                        </div>
+
+                        <button class="btn-buy-primary-mint" [disabled]="!stock()" (click)="buyNow()" type="button">
+                            Comprar ahora
+                        </button>
+
+                        <button class="btn-quick-cart-action" (click)="addToCart()" type="button">
+                            <lucide-icon name="zap" [size]="14"/>
+                            <span>Agregar al carrito</span>
+                        </button>
+                    </div>
+
+                </div>
+
+                <!-- Envío y garantías. Antes eran dos tarifas de courier inventadas (S/ 15 y
+                     S/ 25) y una promesa de despacho que nadie cumple: el precio del envío lo
+                     calcula el checkout, no esta página. Aquí van los campos reales del producto
+                     y los textos de configuración de la tienda. -->
+                <div class="delivery-shipping-card">
+                    <div class="shipping-methods-table">
+                        <div class="ship-item">
+                            <div class="ship-name">
+                                <lucide-icon name="truck" [size]="16" class="ic"/>
+                                <span>{{ sc.productBadgeShippingTitle() }}</span>
+                            </div>
+                            <span class="ship-delay">{{ p.deliveryTimeframe || sc.productBadgeShippingSub() }}</span>
+                        </div>
+
+                        @if (p.carriers) {
+                            <div class="ship-item">
+                                <div class="ship-name">
+                                    <lucide-icon name="package" [size]="16" class="ic"/>
+                                    <span>Transportistas</span>
+                                </div>
+                                <span class="ship-delay">{{ p.carriers }}</span>
+                            </div>
+                        }
+
+                        <div class="ship-item">
+                            <div class="ship-name">
+                                <lucide-icon name="shield" [size]="16" class="ic"/>
+                                <span>{{ sc.productBadgeWarrantyTitle() }}</span>
+                            </div>
+                            <span class="ship-delay">{{ p.returnPolicyText || sc.productBadgeWarrantySub() }}</span>
+                        </div>
+                    </div>
+
+                    <div class="seller-ship-promise">
+                        <lucide-icon name="lock" [size]="15"/>
+                        <span>Pago seguro. El costo del envío se calcula en el checkout según tu dirección.</span>
                     </div>
                 </div>
 
-                @if (p.variants.length) {
-                    <div class="variants">
-                        <div class="vlabel">Configuración:
-                            <strong>{{ selectedVariant()?.nombre }}</strong>
-                        </div>
-                        <div class="vchips">
-                            @for (v of p.variants; track v.id) {
-                                <button class="vchip"
-                                    [class.is-active]="selectedVariant()?.id === v.id"
-                                    [class.is-out]="v.stockActual <= 0"
-                                    [disabled]="v.stockActual <= 0"
-                                    (click)="selectVariant(v)" type="button">
-                                    <span class="vchip-name">{{ v.nombre }}</span>
-                                    @if (v.stockActual <= 0) {
-                                        <small class="vchip-stock">Agotado</small>
-                                    } @else if (v.stockActual <= 5) {
-                                        <small class="vchip-stock">Últimas {{ v.stockActual }} u.</small>
-                                    }
+                <!-- Vendedor. Los votos 👍12/👎0, «Lima, Perú» y las cuatro cifras del pie
+                     (23 productos · 186 seguidores · 12 ventas · 15 reseñas) estaban escritos a
+                     mano e idénticos para todo producto; el avatar apuntaba a un PNG que no
+                     existe en public/images. `Seller` sí trae name, rating, followers y
+                     salesLevel: se pinta eso y nada más. El botón «+ Seguir» sólo movía un
+                     signal local (se perdía al recargar), así que se retira hasta que exista
+                     endpoint de seguimiento. -->
+                @if (p.seller?.name) {
+                    <div class="seller-profile-card">
+                        <div class="seller-top-info">
+                            @if (p.seller.avatar) {
+                                <div class="seller-avatar-wrap">
+                                    <img [src]="p.seller.avatar" [alt]="p.seller.name"/>
+                                </div>
+                            }
+                            <div class="seller-details">
+                                <h4 class="seller-name-heading">{{ p.seller.name }}</h4>
+                                @if (p.starSeller) {
+                                    <div class="seller-votes"><ds-badge tone="success">Star Seller</ds-badge></div>
+                                }
+                            </div>
+
+                            <div class="seller-actions-group">
+                                <button class="btn-seller-chat" (click)="selectTab('qa')" type="button">
+                                    Contactar
                                 </button>
+                            </div>
+                        </div>
+
+                        <div class="seller-stats-footer">
+                            @if (p.seller.rating) { <span><strong>{{ p.seller.rating }}</strong> valoración</span> }
+                            @if (p.seller.followers) {
+                                <span class="dot-sep">·</span>
+                                <span><strong>{{ p.seller.followers }}</strong> seguidores</span>
+                            }
+                            @if (p.seller.salesLevel) {
+                                <span class="dot-sep">·</span>
+                                <span>{{ p.seller.salesLevel }}</span>
                             }
                         </div>
                     </div>
                 }
 
-                <div class="qty-row">
-                    <span class="muted">Cantidad:</span>
-                    <div class="qty">
-                        <button (click)="decQty()" [disabled]="qty() <= 1" type="button" aria-label="Disminuir">
-                            <lucide-icon name="minus" [size]="14"/>
-                        </button>
-                        <span class="qty-val">{{ qty() }}</span>
-                        <button (click)="incQty()" [disabled]="qty() >= stock()" type="button" aria-label="Aumentar">
-                            <lucide-icon name="plus" [size]="14"/>
-                        </button>
-                    </div>
-                    @if (stock() > 0 && stock() <= 10) {
-                        <span class="warn">¡Solo {{ stock() }} disponibles!</span>
-                    }
-                </div>
-
-                <div class="cta-stack">
-                    <ds-button variant="primary" size="xl" [full]="true" icon="shopping-cart"
-                        [disabled]="!stock()" (click)="addToCart()">
-                        Agregar al carrito
-                    </ds-button>
-                    <ds-button variant="accent" size="lg" [full]="true"
-                        [disabled]="!stock()" (click)="buyNow()">
-                        Comprar ahora
-                    </ds-button>
-                    <ds-button variant="ghost" size="md" [full]="true" icon="heart"
-                        (click)="toggleWishlist()">
-                        {{ isSaved() ? 'Guardado en favoritos' : 'Guardar para después' }}
-                    </ds-button>
-                </div>
-
-                <div class="info-card">
-                    <div class="info-row">
-                        <lucide-icon name="map-pin" [size]="14"/>
-                        <span>Envío a todo el Perú. Llega <strong class="ok">en 24–72 h</strong> en ciudades principales.</span>
-                    </div>
-                    <div class="info-row">
-                        <lucide-icon name="lock" [size]="14"/>
-                        <span>Pago seguro con cifrado de extremo a extremo.</span>
-                    </div>
-                    <div class="info-row">
-                        <lucide-icon name="shield" [size]="14"/>
-                        <span>30 días para devolver. Reembolso garantizado.</span>
-                    </div>
-                </div>
-
-            </aside>
+            </div>
         </div>
 
         <!-- ── Tabs section ───────────────────────────────────── -->
@@ -296,25 +381,6 @@
             </ds-button>
         </div>
 
-        <!-- Lightbox de imagen ampliada -->
-        @if (lightboxOpen()) {
-        <div class="lightbox" (click)="lightboxOpen.set(false)">
-            <button class="lightbox-close" type="button" aria-label="Cerrar"
-                (click)="lightboxOpen.set(false)">✕</button>
-            @if (p.images.length > 1) {
-            <button class="lightbox-nav prev" type="button" aria-label="Imagen anterior"
-                (click)="$event.stopPropagation(); prevImage()">‹</button>
-            }
-            @if (activeImage(); as img) {
-            <img class="lightbox-img" [src]="img.url" [alt]="p.nombre" (click)="$event.stopPropagation()"/>
-            }
-            @if (p.images.length > 1) {
-            <button class="lightbox-nav next" type="button" aria-label="Imagen siguiente"
-                (click)="$event.stopPropagation(); nextImage()">›</button>
-            }
-        </div>
-        }
-
     }
 
 </div>
@@ -355,7 +421,535 @@
     .bc-link:hover { color: var(--c-brand); }
     .bc-current { color: var(--c-text); font-weight: 600; }
 
-    /* ── Top 3-col ─────────────────────────────────────── */
+    /* ── BOOMMY MARKETPLACE / STORE DETAIL LAYOUT (IMAGE 1 REFERENCE) ── */
+    .boommy-top-bar {
+        max-width: 1280px;
+        margin: 0 auto;
+        padding: 20px 24px 12px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 13px;
+        color: var(--c-muted, #8C95A3);
+    }
+    .bc-trail {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+    }
+    .bc-sep { opacity: 0.6; }
+    .seller-header-credit {
+        font-size: 13px;
+        color: var(--c-muted, #8C95A3);
+        strong { color: var(--c-text, #0E1B2C); }
+    }
+
+    .boommy-detail-grid {
+        max-width: 1280px;
+        margin: 0 auto;
+        padding: 0 24px 40px;
+        display: grid;
+        grid-template-columns: 460px 1fr;
+        gap: 36px;
+        align-items: start;
+    }
+
+    /* Left Column: Hero Image, Thumbnails, Seller Showcase */
+    .left-col {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    /* La galería trae su propia tarjeta y proporción; aquí sólo hace falta el ancla
+       del badge de descuento. */
+    .hero-image-card { position: relative; }
+
+    .badge-discount-overlay {
+        position: absolute;
+        top: 14px;
+        left: 14px;
+        background: #C0392B;
+        color: #ffffff;
+        font-size: 12px;
+        font-weight: 800;
+        padding: 4px 10px;
+        border-radius: 100px;
+        letter-spacing: 0.5px;
+    }
+
+    /* Seller Showcase Card ("Productos de [Vendedor]") */
+    .seller-items-showcase {
+        background: #ffffff;
+        border: 1px solid var(--c-border, #E2E8F0);
+        border-radius: 16px;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.03);
+    }
+    .seller-items-showcase .showcase-heading {
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--c-text, #0E1B2C);
+        margin: 0;
+    }
+    .seller-items-showcase .showcase-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+    .seller-items-showcase .showcase-product-card {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        text-decoration: none;
+        padding: 8px;
+        border-radius: 10px;
+        transition: background 0.2s ease;
+    }
+    .seller-items-showcase .showcase-product-card:hover {
+        background: #F8FAFC;
+    }
+    .seller-items-showcase .showcase-img-wrap {
+        width: 56px;
+        height: 56px;
+        border-radius: 8px;
+        overflow: hidden;
+        border: 1px solid var(--c-border, #E2E8F0);
+        background: #F8FAFC;
+        flex-shrink: 0;
+    }
+    .seller-items-showcase .showcase-img-wrap img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    .seller-items-showcase .showcase-meta {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+    }
+    .seller-items-showcase .showcase-name {
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--c-text, #0E1B2C);
+        line-height: 1.3;
+    }
+    .seller-items-showcase .showcase-price {
+        font-size: 13px;
+        font-weight: 800;
+        color: #0EA371;
+    }
+    .seller-items-showcase .btn-more-seller-items {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        padding: 10px;
+        border: 1.5px solid var(--c-border, #E2E8F0);
+        border-radius: 100px;
+        color: var(--c-text, #0E1B2C);
+        font-size: 13px;
+        font-weight: 700;
+        text-decoration: none;
+        text-align: center;
+        transition: all 0.2s ease;
+    }
+    .seller-items-showcase .btn-more-seller-items:hover {
+        border-color: #0EA371;
+        color: #0EA371;
+        background: rgba(14, 163, 113, 0.05);
+    }
+
+    /* Right Column: Title, Attributes Grid, Purchase Box, Delivery, Seller */
+    .right-col {
+        display: flex;
+        flex-direction: column;
+        gap: 22px;
+    }
+
+    .product-heading-section {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    .product-heading-section .title-with-actions {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 16px;
+    }
+    .product-heading-section .product-title-boommy {
+        font-family: var(--f-display, sans-serif);
+        font-size: 26px;
+        font-weight: 800;
+        color: var(--c-text, #0E1B2C);
+        margin: 0;
+        letter-spacing: -0.5px;
+        line-height: 1.2;
+    }
+    .product-heading-section .top-action-buttons {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-shrink: 0;
+    }
+    .product-heading-section .action-pill-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: transparent;
+        border: none;
+        color: var(--c-muted, #8C95A3);
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        padding: 6px 12px;
+        border-radius: 100px;
+        transition: all 0.2s ease;
+    }
+    .product-heading-section .action-pill-btn:hover {
+        color: #0EA371;
+        background: rgba(14, 163, 113, 0.08);
+    }
+    .product-heading-section .action-pill-btn.is-saved {
+        color: #C0392B;
+    }
+    .product-heading-section .seller-brand-subtitle {
+        font-size: 14px;
+        color: var(--c-muted, #8C95A3);
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    .product-heading-section .seller-brand-subtitle .rating-sub {
+        color: #F08C00;
+        font-weight: 700;
+    }
+
+    /* 2x3 Attribute Key-Value Grid Table (Image 1 Style) */
+    .attribute-keyvalue-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px 24px;
+        font-size: 13px;
+        padding: 16px 0;
+        border-top: 1px solid var(--c-border, #E2E8F0);
+        border-bottom: 1px solid var(--c-border, #E2E8F0);
+    }
+    .attribute-keyvalue-grid .attr-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .attribute-keyvalue-grid .attr-lbl {
+        color: var(--c-muted, #8C95A3);
+        min-width: 90px;
+    }
+    .attribute-keyvalue-grid .attr-val {
+        color: var(--c-text, #0E1B2C);
+        font-weight: 700;
+    }
+    .attribute-keyvalue-grid .attr-val.highlight-green {
+        color: #0EA371;
+        background: rgba(14, 163, 113, 0.1);
+        padding: 2px 8px;
+        border-radius: 6px;
+    }
+
+    .description-snippet {
+        font-size: 14px;
+        line-height: 1.6;
+        color: var(--c-muted, #5A6473);
+        margin: 0;
+    }
+
+    /* Soft Mint Tinted Purchase Box (Image 1 Style) */
+    .purchase-box-tinted {
+        background: rgba(14, 163, 113, 0.05);
+        border: 1px solid rgba(14, 163, 113, 0.18);
+        border-radius: 16px;
+        padding: 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+    .purchase-box-tinted .variants-picker {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    .purchase-box-tinted .v-header-line {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+    }
+    .purchase-box-tinted .v-header-line .v-label { color: var(--c-muted, #5A6473); }
+    .purchase-box-tinted .v-header-line .v-current { color: var(--c-text, #0E1B2C); font-weight: 700; }
+    .purchase-box-tinted .v-header-line .specs-link {
+        margin-left: auto;
+        color: #0EA371;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: underline;
+    }
+    .purchase-box-tinted .v-chips-row {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+    .purchase-box-tinted .v-chip-item {
+        padding: 10px 18px;
+        border: 1.5px solid rgba(14, 163, 113, 0.3);
+        border-radius: 10px;
+        background: #ffffff;
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--c-text, #0E1B2C);
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    .purchase-box-tinted .v-chip-item:hover:not(.is-disabled) {
+        border-color: #0EA371;
+        background: rgba(14, 163, 113, 0.1);
+    }
+    .purchase-box-tinted .v-chip-item.is-selected {
+        background: #0EA371;
+        color: #ffffff;
+        border-color: #0EA371;
+        box-shadow: 0 4px 12px rgba(14, 163, 113, 0.3);
+    }
+    .purchase-box-tinted .v-chip-item.is-disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+    }
+
+    .purchase-box-tinted .price-action-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        flex-wrap: wrap;
+    }
+    .purchase-box-tinted .price-display-group {
+        display: flex;
+        align-items: baseline;
+        gap: 6px;
+    }
+    .purchase-box-tinted .price-display-group .currency-sign {
+        font-size: 1.25rem;
+        font-weight: 800;
+        color: var(--c-text, #0E1B2C);
+    }
+    .purchase-box-tinted .price-display-group .price-val {
+        font-family: var(--f-display, sans-serif);
+        font-size: 2.25rem;
+        font-weight: 800;
+        color: var(--c-text, #0E1B2C);
+        line-height: 1;
+    }
+    .purchase-box-tinted .price-display-group .price-was {
+        font-size: 1rem;
+        color: var(--c-muted, #8C95A3);
+        text-decoration: line-through;
+        margin-left: 6px;
+    }
+
+    /* Large Mint Primary CTA Button */
+    .btn-buy-primary-mint {
+        background: linear-gradient(135deg, #20d09b 0%, #0ea371 100%);
+        color: #ffffff;
+        border: none;
+        border-radius: 100px;
+        padding: 14px 32px;
+        font-size: 1rem;
+        font-weight: 700;
+        cursor: pointer;
+        box-shadow: 0 6px 20px rgba(32, 208, 155, 0.35);
+        transition: all 0.25s ease;
+    }
+    .btn-buy-primary-mint:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(32, 208, 155, 0.5);
+    }
+    .btn-buy-primary-mint:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+    .btn-quick-cart-action {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: transparent;
+        border: none;
+        color: #0EA371;
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+    }
+    .btn-quick-cart-action:hover {
+        text-decoration: underline;
+    }
+
+    /* Delivery & Shipping Card Box */
+    .delivery-shipping-card {
+        background: #ffffff;
+        border: 1.5px solid var(--c-border, #E2E8F0);
+        border-radius: 16px;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.03);
+    }
+    .delivery-shipping-card .shipping-methods-table {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        font-size: 13px;
+    }
+    .delivery-shipping-card .ship-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding-bottom: 8px;
+        border-bottom: 1px dashed var(--c-border, #E2E8F0);
+    }
+    .delivery-shipping-card .ship-item:last-child {
+        border-bottom: none;
+        padding-bottom: 0;
+    }
+    .delivery-shipping-card .ship-name {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 600;
+        color: var(--c-text, #0E1B2C);
+    }
+    .delivery-shipping-card .ship-name .ic {
+        color: var(--c-primary, #0B3D91);
+    }
+    .delivery-shipping-card .ship-name .ic.express {
+        color: #F08C00;
+    }
+    .delivery-shipping-card .ship-delay {
+        color: var(--c-muted, #8C95A3);
+    }
+    .delivery-shipping-card .seller-ship-promise {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12px;
+        color: #0EA371;
+        font-weight: 600;
+        background: rgba(14, 163, 113, 0.08);
+        padding: 8px 12px;
+        border-radius: 8px;
+    }
+
+    /* Seller Profile Card Box (Image 1 Bottom Right) */
+    .seller-profile-card {
+        background: #ffffff;
+        border: 1.5px solid var(--c-border, #E2E8F0);
+        border-radius: 16px;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.03);
+    }
+    .seller-profile-card .seller-top-info {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+    }
+    .seller-profile-card .seller-avatar-wrap {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        overflow: hidden;
+        border: 2px solid #0EA371;
+        flex-shrink: 0;
+    }
+    .seller-profile-card .seller-avatar-wrap img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    .seller-profile-card .seller-details {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+    .seller-profile-card .seller-name-heading {
+        font-size: 15px;
+        font-weight: 800;
+        color: var(--c-text, #0E1B2C);
+        margin: 0;
+    }
+    .seller-profile-card .seller-votes {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 12px;
+        color: var(--c-muted, #8C95A3);
+    }
+    .seller-profile-card .seller-votes .vote-up { color: #0EA371; font-weight: 700; }
+    .seller-profile-card .seller-votes .vote-down { color: #C0392B; font-weight: 700; }
+    .seller-profile-card .seller-actions-group {
+        margin-left: auto;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .seller-profile-card .btn-seller-chat {
+        padding: 8px 16px;
+        border-radius: 100px;
+        border: 1.5px solid #0EA371;
+        background: transparent;
+        color: #0EA371;
+        font-size: 12px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    .seller-profile-card .btn-seller-chat:hover {
+        background: #0EA371;
+        color: #ffffff;
+    }
+    .seller-profile-card .seller-stats-footer {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12px;
+        color: var(--c-muted, #8C95A3);
+        border-top: 1px solid var(--c-border, #E2E8F0);
+        padding-top: 12px;
+        flex-wrap: wrap;
+    }
+    .seller-profile-card .seller-stats-footer strong { color: var(--c-text, #0E1B2C); }
+    .seller-profile-card .seller-stats-footer .dot-sep { opacity: 0.5; }
+
+    @media (max-width: 1024px) {
+        .boommy-detail-grid {
+            grid-template-columns: 1fr;
+            gap: 24px;
+        }
+    }
+
+    /* ── Top 2-col (Galería + Buy Box) ──────────────── */
+    .top-gallery-layout {
+        max-width: 1280px; margin: 0 auto;
+        padding: 8px 24px 32px;
+        display: grid; grid-template-columns: 1fr 380px; gap: 24px;
+        align-items: start;
+    }
+
     .top {
         max-width: 1280px; margin: 0 auto;
         padding: 8px 24px 32px;
@@ -625,29 +1219,4 @@
     /* Barra de compra sticky en móvil (oculta en desktop) */
     .mobile-buybar { display: none; }
 
-    /* Lightbox de imagen ampliada */
-    .lightbox {
-        position: fixed; inset: 0; z-index: 1000;
-        background: rgba(0,0,0,.85);
-        display: flex; align-items: center; justify-content: center;
-        padding: 24px;
-    }
-    .lightbox-img { max-width: 90vw; max-height: 90vh; object-fit: contain; border-radius: 8px; }
-    .lightbox-close {
-        position: absolute; top: 16px; right: 20px;
-        width: 44px; height: 44px; border-radius: 50%;
-        background: rgba(255,255,255,.14); color: #fff; border: none;
-        font-size: 20px; cursor: pointer; line-height: 1;
-    }
-    .lightbox-close:hover { background: rgba(255,255,255,.28); }
-    .lightbox-nav {
-        position: absolute; top: 50%; transform: translateY(-50%);
-        width: 52px; height: 52px; border-radius: 50%;
-        background: rgba(255,255,255,.14); color: #fff; border: none;
-        font-size: 32px; cursor: pointer; line-height: 1;
-        display: flex; align-items: center; justify-content: center;
-    }
-    .lightbox-nav:hover { background: rgba(255,255,255,.28); }
-    .lightbox-nav.prev { left: 20px; }
-    .lightbox-nav.next { right: 20px; }
 </style>

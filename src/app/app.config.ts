@@ -19,6 +19,8 @@ import {
   Truck, MapPin, Mail, Phone, User, Home, Bell, Box,
   // Layout / catalogo
   LayoutGrid, List, Grid3x3,
+  // Media / galeria de producto
+  Maximize2, ImageOff,
   // Marca / destacados
   Award, Star, Sparkles, Flame, Zap, Bolt, Shield, ShieldCheck, Settings,
   // Tiempo
@@ -150,6 +152,8 @@ export const appConfig: ApplicationConfig = {
         Truck, MapPin, Mail, Phone, User, Home, Bell, Box,
         // Layout / catálogo
         LayoutGrid, List, Grid3x3,
+        // Media / galería de producto
+        Maximize2, ImageOff,
         // Marca / destacados
         Award, Star, Sparkles, Flame, Zap, Bolt, Shield, ShieldCheck, Settings,
         // Tiempo
