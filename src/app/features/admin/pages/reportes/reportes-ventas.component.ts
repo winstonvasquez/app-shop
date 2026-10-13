@@ -108,9 +108,14 @@ export class ReportesVentasComponent implements OnInit {
     }
 
     cargar() {
+        const companyId = this.auth.currentUser()?.activeCompanyId;
+        if (!companyId) {
+            this.ventas.set([]);
+            this.error.set('Sin empresa activa: seleccione una empresa para consultar ventas.');
+            return;
+        }
         this.cargando.set(true);
         this.error.set(null);
-        const companyId = this.auth.currentUser()?.activeCompanyId ?? 1;
         let params = toHttpParams({
             companyId,
             page: this.pagina(),
@@ -191,7 +196,7 @@ export class ReportesVentasComponent implements OnInit {
         url: `${environment.apiUrls.sales}/api/pos/ventas/export`,
         filename: 'reporte-ventas-pos',
         params: () => ({
-            companyId: this.auth.currentUser()?.activeCompanyId ?? 1,
+            companyId: this.auth.currentUser()?.activeCompanyId,
             search: this.searchQuery(),
             estado: this.filtroEstado(),
             metodoPago: this.filtroMetodoPago(),

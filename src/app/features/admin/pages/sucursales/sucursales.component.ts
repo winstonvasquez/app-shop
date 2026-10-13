@@ -84,11 +84,13 @@ export class SucursalesComponent implements OnInit {
         }),
     };
 
-    actions: TableAction<Sucursal>[] = [
+    protected readonly puedeGestionar = this.auth.puedeGestionarTienda();
+
+    actions: TableAction<Sucursal>[] = this.puedeGestionar ? [
         { label: 'Editar', icon: 'edit', class: 'btn-icon-edit', onClick: (s) => this.openEdit(s) },
         { label: 'Desactivar', icon: 'delete', class: 'btn-icon-delete',
           show: (s) => s.activo, onClick: (s) => this.deactivate(s) }
-    ];
+    ] : [];
 
     loading = signal(false);
     error = signal<string | null>(null);

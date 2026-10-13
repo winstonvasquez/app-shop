@@ -133,11 +133,6 @@ describe('construirConsultaCatalogo', () => {
 // ── chips ───────────────────────────────────────────────────────────────────────────────────
 
 const CATEGORIAS = [{ id: 3, nombre: 'Calzado' }, { id: 8, nombre: 'Ropa' }];
-const ENVIOS = [
-    { key: 'free' as const, label: 'Envío gratis' },
-    { key: 'fast' as const, label: 'Llega mañana' },
-    { key: 'intl' as const, label: 'Internacional' },
-];
 
 const SIN_FILTROS: EstadoDeFiltros = {
     categoriaId: null,
@@ -145,8 +140,6 @@ const SIN_FILTROS: EstadoDeFiltros = {
     marcas: [],
     precioMin: null,
     precioMax: null,
-    envios: [],
-    opcionesDeEnvio: ENVIOS,
     calificacionMinima: null,
 };
 
@@ -155,7 +148,6 @@ function accionesEspia(): AccionesDeFiltro {
         quitarCategoria: vi.fn(),
         alternarMarca: vi.fn(),
         limpiarPrecio: vi.fn(),
-        alternarEnvio: vi.fn(),
         limpiarCalificacion: vi.fn(),
     };
 }
@@ -165,31 +157,25 @@ describe('describirFiltrosActivos', () => {
         expect(describirFiltrosActivos(SIN_FILTROS, accionesEspia())).toEqual([]);
     });
 
-    it('pinta todos los chips en su orden: categoría, marcas, precio, envíos y calificación', () => {
+    it('pinta todos los chips en su orden: categoría, marcas, precio y calificación', () => {
         const chips = describirFiltrosActivos({
             ...SIN_FILTROS,
             categoriaId: 8,
             marcas: ['Nike', 'Adidas'],
             precioMin: 50,
             precioMax: 300,
-            envios: ['fast', 'intl'],
             calificacionMinima: 4,
         }, accionesEspia());
         expect(chips.map((c) => c.key)).toEqual([
-            'cat', 'marca-Nike', 'marca-Adidas', 'price', 'envio-fast', 'envio-intl', 'rating',
+            'cat', 'marca-Nike', 'marca-Adidas', 'price', 'rating',
         ]);
         expect(chips.map((c) => c.label)).toEqual([
-            'Ropa', 'Nike', 'Adidas', 'S/ 50–S/ 300', 'Llega mañana', 'Internacional', '4★ y más',
+            'Ropa', 'Nike', 'Adidas', 'S/ 50–S/ 300', '4★ y más',
         ]);
     });
 
     it('una categoría que todavía no llegó del backend no genera chip', () => {
         expect(describirFiltrosActivos({ ...SIN_FILTROS, categoriaId: 99 }, accionesEspia())).toEqual([]);
-    });
-
-    it('un envío desconocido tampoco genera chip', () => {
-        const estado = { ...SIN_FILTROS, envios: ['fast' as const], opcionesDeEnvio: [] };
-        expect(describirFiltrosActivos(estado, accionesEspia())).toEqual([]);
     });
 
     it('el rango sin extremo inferior arranca en 0 y sin superior termina en ∞', () => {
@@ -205,21 +191,19 @@ describe('describirFiltrosActivos', () => {
         expect(chips[0].label).toBe('S/ 0–S/ 0');
     });
 
-    it('la «x» de cada chip dispara su propia acción, con la marca o el envío que le toca', () => {
+    it('la «x» de cada chip dispara su propia acción, con la marca que le toca', () => {
         const acciones = accionesEspia();
         const chips = describirFiltrosActivos({
             ...SIN_FILTROS,
             categoriaId: 3,
             marcas: ['Nike'],
             precioMin: 50,
-            envios: ['free'],
             calificacionMinima: 5,
         }, acciones);
         for (const c of chips) c.clear();
         expect(acciones.quitarCategoria).toHaveBeenCalledOnce();
         expect(acciones.alternarMarca).toHaveBeenCalledWith('Nike');
         expect(acciones.limpiarPrecio).toHaveBeenCalledOnce();
-        expect(acciones.alternarEnvio).toHaveBeenCalledWith('free');
         expect(acciones.limpiarCalificacion).toHaveBeenCalledOnce();
     });
 });

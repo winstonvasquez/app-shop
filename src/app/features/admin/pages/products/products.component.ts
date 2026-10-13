@@ -1,5 +1,5 @@
 import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
-import { map } from 'rxjs';
+import { map, switchMap } from 'rxjs';
 import { FormBuilder, ReactiveFormsModule, Validators, FormGroup, FormControl } from '@angular/forms';
 import { richTextMaxLength } from '@core/utils/rich-text.util';
 import { ProductService, ProductRequest, ProductFilter, ProductoImagen } from '@core/services/product.service';
@@ -20,7 +20,9 @@ import { environment } from '@env/environment';
 import { AuthService } from '@core/auth/auth.service';
 import { CategoryService } from '@core/services/category.service';
 import { CategoryResponse } from '@core/models/category.model';
-import { construirProductRequest } from './products.form';
+import { construirProductRequest, productoConActivo } from './products.form';
+import { estaActivo } from '../categories/categories.form';
+import { CURRENCY_DISPLAY } from '@shared/constants/sunat.constants';
 
 /** Bucket de precio para el select del toolbar -> se traduce a precioMin/precioMax al filtrar. */
 const PRECIO_RANGO_OPTIONS = [
@@ -75,6 +77,8 @@ export class ProductsComponent implements OnInit, OnDestroy {
   private contadorPendientes = 0;
   private readonly fb = inject(FormBuilder);
   private readonly authService = inject(AuthService);
+  // El backend exige ADMIN/GERENTE para escribir; la sesión no cambia de rol sin recargar.
+  protected readonly puedeGestionar = this.authService.puedeGestionarTienda();
   private readonly categoryService = inject(CategoryService);
 
   categorias = signal<CategoryResponse[]>([]);
@@ -184,7 +188,7 @@ export class ProductsComponent implements OnInit, OnDestroy {
       label: 'Precio',
       sortable: true,
       align: 'right',
-      render: (row) => `$${row.precioBase.toFixed(2)}`
+      render: (row) => `${CURRENCY_DISPLAY.SYMBOL_PEN} ${row.precioBase.toFixed(2)}`
     },
     {
       key: 'marca',
@@ -211,12 +215,26 @@ export class ProductsComponent implements OnInit, OnDestroy {
       label: 'Editar',
       icon: '✏️',
       onClick: (row) => this.openEditModal(row),
+      show: () => this.puedeGestionar,
       class: 'btn-edit'
+    },
+    {
+      label: 'Desactivar',
+      icon: '⏸️',
+      onClick: (row) => this.cambiarActivo(row, false),
+      show: (row) => this.puedeGestionar && this.estaActivo(row)
+    },
+    {
+      label: 'Activar',
+      icon: '▶️',
+      onClick: (row) => this.cambiarActivo(row, true),
+      show: (row) => this.puedeGestionar && !this.estaActivo(row)
     },
     {
       label: 'Eliminar',
       icon: '🗑️',
       onClick: (row) => this.onDelete(row),
+      show: () => this.puedeGestionar,
       class: 'btn-delete'
     }
   ];
@@ -644,6 +662,29 @@ export class ProductsComponent implements OnInit, OnDestroy {
     this.productService.eliminarImagen(productoId, imagen.id).subscribe({
       next: () => this.cargarImagenes(productoId),
       error: () => this.submitError.set('No se pudo eliminar la imagen.'),
+    });
+  }
+
+  private estaActivo(row: ProductResponse): boolean {
+    return estaActivo(row.activo, this.filterActivo() === '' ? null : this.filterActivo() === 'true');
+  }
+
+  /** Activa/desactiva: la fila de la lista es una proyección, así que se parte del producto completo. */
+  cambiarActivo(row: ProductResponse, activo: boolean): void {
+    const companyId = this.authService.currentUser()?.activeCompanyId;
+    if (!companyId) {
+      this.error.set('No se pudo determinar la empresa activa');
+      return;
+    }
+    this.loading.set(true);
+    this.productService.getById(row.id).pipe(
+      switchMap(completo => this.productService.update(row.id, productoConActivo(completo, companyId, activo)))
+    ).subscribe({
+      next: () => this.loadProducts(),
+      error: (err: Error) => {
+        this.error.set(err.message);
+        this.loading.set(false);
+      }
     });
   }
 

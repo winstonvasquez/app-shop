@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { CartItem } from '../services/cart.service';
-import { agregarItem, debeLimpiarPorCambioDeEmpresa, ProductoParaCarrito } from './carrito.util';
+import { agregarItem, debeLimpiarPorCambioDeEmpresa, lineasParaCupon, ProductoParaCarrito } from './carrito.util';
 
 function item(parcial: Partial<CartItem> = {}): CartItem {
     return {
@@ -122,5 +122,15 @@ describe('agregarItem', () => {
     it('deja intactas las líneas que no coinciden', () => {
         const r = agregarItem([item({ productId: 1 }), item({ productId: 2, quantity: 7 })], producto({ id: 1 }));
         expect(r[1]).toMatchObject({ productId: 2, quantity: 7 });
+    });
+});
+
+describe('lineasParaCupon', () => {
+    it('sólo manda las líneas seleccionadas, con subtotal = precio × cantidad', () => {
+        const lineas = lineasParaCupon([
+            item({ productId: 1, price: 30, quantity: 2 }),
+            item({ productId: 2, price: 10, quantity: 1, selected: false }),
+        ]);
+        expect(lineas).toEqual([{ productoId: 1, subtotal: 60 }]);
     });
 });

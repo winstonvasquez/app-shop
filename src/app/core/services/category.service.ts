@@ -53,12 +53,6 @@ export class CategoryService {
             .pipe(catchError(this.handleError));
     }
 
-    getSubcategories(parentId: number): Observable<CategoryResponse[]> {
-        return this.http
-            .get<CategoryResponse[]>(`${this.baseUrl}/${parentId}/subcategories`)
-            .pipe(catchError(this.handleError));
-    }
-
     create(category: CategoryRequest): Observable<CategoryResponse> {
         return this.http
             .post<CategoryResponse>(this.baseUrl, category)
@@ -122,7 +116,6 @@ export class CategoryService {
         console.error('CategoryService Error:', error);
         return throwError(() => new Error(mensajeDeErrorHttp(error, {
             [HTTP_STATUS.notFound]: 'Categoría no encontrada',
-            [HTTP_STATUS.conflict]: 'La categoría ya existe',
         })));
     }
 }

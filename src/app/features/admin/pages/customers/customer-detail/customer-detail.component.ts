@@ -48,6 +48,8 @@ export class CustomerDetailComponent implements OnInit {
     direcciones = signal<CustomerDireccionResponse[]>([]);
     contactos = signal<CustomerContactoResponse[]>([]);
     loading = signal(true);
+    /** Error de carga/borrado (el servicio ya lo entrega con texto de `mensajeDeErrorHttp`). */
+    error = signal('');
     activeTab = signal<'general' | 'direcciones' | 'contactos'>('general');
 
     breadcrumbs = [
@@ -160,6 +162,7 @@ export class CustomerDetailComponent implements OnInit {
 
     private loadCustomer(id: number): void {
         this.loading.set(true);
+        this.error.set('');
         const companyId = this.authService.currentUser()?.activeCompanyId;
         if (!companyId) {
             this.loading.set(false);
@@ -174,19 +177,21 @@ export class CustomerDetailComponent implements OnInit {
                     this.loadContactos(id);
                 }
             },
-            error: () => this.loading.set(false),
+            error: (err: Error) => { this.error.set(err.message); this.loading.set(false); },
         });
     }
 
     private loadDirecciones(clienteId: number): void {
         this.customerService.getDirecciones(clienteId).subscribe({
             next: (dirs) => this.direcciones.set(dirs),
+            error: (err: Error) => this.error.set(err.message),
         });
     }
 
     private loadContactos(clienteId: number): void {
         this.customerService.getContactos(clienteId).subscribe({
             next: (cts) => this.contactos.set(cts),
+            error: (err: Error) => this.error.set(err.message),
         });
     }
 
@@ -245,6 +250,7 @@ export class CustomerDetailComponent implements OnInit {
         const id = this.customer()!.id;
         this.customerService.deactivateDireccion(id, dirId).subscribe({
             next: () => this.loadDirecciones(id),
+            error: (err: Error) => this.error.set(err.message),
         });
     }
 
@@ -287,6 +293,7 @@ export class CustomerDetailComponent implements OnInit {
         const id = this.customer()!.id;
         this.customerService.deactivateContacto(id, ctId).subscribe({
             next: () => this.loadContactos(id),
+            error: (err: Error) => this.error.set(err.message),
         });
     }
 }

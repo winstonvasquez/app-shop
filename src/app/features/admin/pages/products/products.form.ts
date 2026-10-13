@@ -1,4 +1,5 @@
 import { ProductRequest } from '@core/services/product.service';
+import { ProductResponse } from '@core/models/product.model';
 
 /** Valores crudos del formulario de producto (`productForm.value`). */
 export interface ProductFormRaw {
@@ -32,5 +33,20 @@ export function construirProductRequest(
         marca: v.marca || null,
         companyId,
         categoriaIds: categoriasCargadas ? (v.categoriaIds || []) : undefined,
+    };
+}
+
+/**
+ * PUT que sólo cambia `activo`, a partir del producto COMPLETO (`getById`). `categoriaIds` se omite
+ * a propósito: ausente = «no toques las categorías» (la lista vacía las borraría).
+ */
+export function productoConActivo(p: ProductResponse, companyId: number, activo: boolean): ProductRequest {
+    return {
+        nombre: p.nombre,
+        descripcion: p.descripcion || null,
+        precioBase: p.precioBase,
+        marca: p.marca || null,
+        companyId,
+        activo,
     };
 }

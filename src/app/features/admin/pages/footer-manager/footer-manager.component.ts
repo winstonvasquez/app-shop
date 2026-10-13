@@ -7,6 +7,7 @@ import { environment } from '@env/environment';
 import { APP_CONFIG } from '@shared/constants/app.constants';
 import { StoreConfigService } from '@core/services/store-config.service';
 import { ButtonComponent } from '@shared/components';
+import { AuthService } from '@core/auth/auth.service';
 
 interface FooterLink { label: string; url: string; }
 
@@ -35,10 +36,18 @@ const COLUMNS: FooterColumn[] = [
                 <h1 class="page-title">Gestor de Footer</h1>
                 <p class="page-subtitle">Edita los títulos, enlaces y redes sociales del footer de la tienda</p>
             </div>
-            <button class="btn btn-primary" [disabled]="saving()" (click)="saveAll()">
-                @if (saving()) { Guardando... } @else { Guardar cambios }
-            </button>
+            @if (puedeGestionar) {
+                <button class="btn btn-primary" [disabled]="saving()" (click)="saveAll()">
+                    @if (saving()) { Guardando... } @else { Guardar cambios }
+                </button>
+            }
         </div>
+
+        @if (!puedeGestionar) {
+            <p style="font-size:.875rem; color:var(--color-text-muted); margin-bottom:1rem">
+                Sólo un administrador o gerente puede modificar esta configuración.
+            </p>
+        }
 
         @if (successMsg()) {
             <div class="card mb-4" style="border-left:3px solid var(--color-success); padding:12px 16px">
@@ -57,16 +66,18 @@ const COLUMNS: FooterColumn[] = [
                 <div class="card">
                     <div class="card-header" style="gap:.5rem; flex-wrap:wrap; row-gap:.5rem">
                         <h3 class="card-title" style="white-space:nowrap">{{ col.label }}</h3>
-                        <app-button variant="secondary" size="xs" icon="plus"
-                                    label="Agregar"
-                                    (click)="addLink(col.linksKey)" />
+                        @if (puedeGestionar) {
+                            <app-button variant="secondary" size="xs" icon="plus"
+                                        label="Agregar"
+                                        (click)="addLink(col.linksKey)" />
+                        }
                     </div>
                     <div class="card-body" style="display:flex; flex-direction:column; gap:.5rem">
                         <div>
                             <label class="input-label">Título de sección</label>
                             <input class="input-field" type="text"
                                    [placeholder]="'Ej: ' + col.label"
-                                   [(ngModel)]="titles()[col.titleKey]">
+                                   [(ngModel)]="titles()[col.titleKey]" [disabled]="!puedeGestionar">
                         </div>
                         <div style="border-top:1px solid var(--color-border); padding-top:.5rem; margin-top:.25rem">
                             <p style="font-size:.75rem; color:var(--color-text-muted); margin-bottom:.5rem">
@@ -76,13 +87,15 @@ const COLUMNS: FooterColumn[] = [
                                 <div style="display:grid; grid-template-columns:1fr 1fr auto; gap:.375rem; margin-bottom:.375rem; align-items:center">
                                     <input class="input-field" type="text" placeholder="Texto"
                                            style="font-size:.8rem; padding:6px 10px"
-                                           [(ngModel)]="link.label">
+                                           [(ngModel)]="link.label" [disabled]="!puedeGestionar">
                                     <input class="input-field" type="url" placeholder="/ruta"
                                            style="font-size:.8rem; padding:6px 10px"
-                                           [(ngModel)]="link.url">
-                                    <app-button variant="danger" size="sm" icon="trash-2"
-                                                [iconOnly]="true" ariaLabel="Eliminar"
-                                                (click)="removeLink(col.linksKey, $index)" />
+                                           [(ngModel)]="link.url" [disabled]="!puedeGestionar">
+                                    @if (puedeGestionar) {
+                                        <app-button variant="danger" size="sm" icon="trash-2"
+                                                    [iconOnly]="true" ariaLabel="Eliminar"
+                                                    (click)="removeLink(col.linksKey, $index)" />
+                                    }
                                 </div>
                             }
                             @if (links()[col.linksKey].length === 0) {
@@ -106,7 +119,7 @@ const COLUMNS: FooterColumn[] = [
                             <label class="input-label">{{ field.label }}</label>
                             <input class="input-field" type="text"
                                    [placeholder]="field.placeholder"
-                                   [(ngModel)]="titles()[field.key]">
+                                   [(ngModel)]="titles()[field.key]" [disabled]="!puedeGestionar">
                         </div>
                     }
                 </div>
@@ -120,7 +133,7 @@ const COLUMNS: FooterColumn[] = [
                             <label class="input-label">{{ field.label }}</label>
                             <input class="input-field" type="url"
                                    [placeholder]="field.placeholder"
-                                   [(ngModel)]="titles()[field.key]">
+                                   [(ngModel)]="titles()[field.key]" [disabled]="!puedeGestionar">
                         </div>
                     }
                 </div>
@@ -131,6 +144,8 @@ const COLUMNS: FooterColumn[] = [
 export class FooterManagerComponent implements OnInit {
     private readonly http        = inject(HttpClient);
     private readonly storeConfig = inject(StoreConfigService);
+    private readonly auth        = inject(AuthService);
+    protected readonly puedeGestionar = this.auth.puedeGestionarTienda();
 
     readonly columns     = COLUMNS;
     readonly textFields  = [

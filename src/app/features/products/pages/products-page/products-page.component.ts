@@ -16,7 +16,6 @@ import { CatalogSelectComponent } from '@shared/components';
 import { mapearProductoADsProduct } from '@shared/ui/ds';
 import {
     ChipDeFiltro,
-    OpcionDeEnvio,
     construirConsultaCatalogo,
     describirFiltrosActivos,
 } from './catalogo.params';
@@ -83,7 +82,6 @@ export class ProductsPageComponent implements OnInit {
     precioMin           = signal<number | null>(null);
     precioMax           = signal<number | null>(null);
     marcasSeleccionadas = signal<string[]>([]);
-    enviosSeleccionados = signal<OpcionDeEnvio['key'][]>([]);
     filtrosDisponibles  = signal<FiltrosDisponibles | null>(null);
     showFilterPanel     = signal<boolean>(false);
     viewMode            = signal<'grid' | 'list'>('grid');
@@ -96,11 +94,7 @@ export class ProductsPageComponent implements OnInit {
     totalElements = signal(0);
     loading       = signal(false);
 
-    readonly shippingOpts: OpcionDeEnvio[] = [
-        { key: 'free', label: 'Envío gratis' },
-        { key: 'fast', label: 'Llega mañana' },
-        { key: 'intl', label: 'Internacional' },
-    ];
+    // Filtros de envío (gratis/mañana/internacional) retirados: el backend no tiene ese filtro y el chip no filtraba nada.
 
     readonly ratingOpts = [5, 4, 3];
 
@@ -112,8 +106,6 @@ export class ProductsPageComponent implements OnInit {
             marcas: this.marcasSeleccionadas(),
             precioMin: this.precioMin(),
             precioMax: this.precioMax(),
-            envios: this.enviosSeleccionados(),
-            opcionesDeEnvio: this.shippingOpts,
             calificacionMinima: this.minRating(),
         },
         {
@@ -124,7 +116,6 @@ export class ProductsPageComponent implements OnInit {
                 this.precioMax.set(null);
                 this.goToPage(PAGINATION.defaultPage);
             },
-            alternarEnvio: (e) => this.toggleEnvio(e),
             limpiarCalificacion: () => { this.minRating.set(null); this.goToPage(1); },
         },
     ));
@@ -187,14 +178,6 @@ export class ProductsPageComponent implements OnInit {
         const current = this.marcasSeleccionadas();
         this.marcasSeleccionadas.set(
             current.includes(marca) ? current.filter(m => m !== marca) : [...current, marca]
-        );
-        this.goToPage(1);
-    }
-
-    toggleEnvio(key: OpcionDeEnvio['key']): void {
-        const current = this.enviosSeleccionados();
-        this.enviosSeleccionados.set(
-            current.includes(key) ? current.filter(k => k !== key) : [...current, key]
         );
         this.goToPage(1);
     }
@@ -326,7 +309,6 @@ export class ProductsPageComponent implements OnInit {
         this.precioMin.set(null);
         this.precioMax.set(null);
         this.marcasSeleccionadas.set([]);
-        this.enviosSeleccionados.set([]);
         this.router.navigate([], {
             relativeTo: this.route,
             queryParams: { page: PAGINATION.defaultPage },

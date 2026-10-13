@@ -20,7 +20,7 @@
     @if (error()) {
         <div class="card border-l-[3px] border-l-[var(--color-warning)] p-[var(--space-md)] mb-[var(--space-lg)]">
             <p class="text-[var(--color-text-muted)] text-sm">
-                Servicio POS no disponible. Verifique que microshopventas esté corriendo.
+                {{ error() === 'No disponible' ? 'Servicio POS no disponible. Verifique que microshopventas esté corriendo.' : error() }}
             </p>
         </div>
     }

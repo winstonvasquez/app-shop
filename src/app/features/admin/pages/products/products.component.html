@@ -5,7 +5,9 @@
         subtitle="Administra el catálogo de productos de tu tienda"
         [breadcrumbs]="breadcrumbs">
         <div actions>
-            <app-button label="Nuevo Producto" icon="plus" variant="primary" (click)="openCreateModal()" />
+            @if (puedeGestionar) {
+                <app-button label="Nuevo Producto" icon="plus" variant="primary" (click)="openCreateModal()" />
+            }
         </div>
     </app-page-header>
 

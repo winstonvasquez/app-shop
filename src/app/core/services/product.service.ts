@@ -77,7 +77,7 @@ export class ProductService extends BaseApiService<ProductRequest, ProductRespon
         search?: string,
         categoriaId?: number | null
     ): Observable<Page<ProductResponse>> {
-        const key = `${page}-${size}-${search ?? ''}-${categoriaId ?? ''}`;
+        const key = `${this.auth.currentUser()?.activeCompanyId ?? ''}-${page}-${size}-${search ?? ''}-${categoriaId ?? ''}`;
         if (this.cache.has(key)) {
             return this.cache.get(key)!;
         }

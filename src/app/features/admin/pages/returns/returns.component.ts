@@ -1,6 +1,6 @@
-import { Component, inject, signal, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, signal, computed, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { environment } from '@env/environment';
 import { PageResponse, pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
@@ -19,6 +19,8 @@ import { OrderService } from '@core/services/order.service';
 import { pedidoSelectSource } from '../../components/select-sources';
 import { mensajeDeErrorDeControl } from '@shared/utils/form-errors';
 import { toHttpParams } from '@core/utils/http-params.util';
+import { mensajeDeErrorHttp } from '@core/utils/http-error.util';
+import { AlertComponent } from '@shared/ui';
 
 type MotivoDevolucion = 'DEFECTO' | 'CAMBIO' | 'ERROR_PEDIDO' | 'NO_LLEGÓ' | 'OTRO';
 type TipoResolucion   = 'REEMBOLSO' | 'CAMBIO_PRODUCTO' | 'CREDITO_TIENDA';
@@ -36,6 +38,9 @@ interface Devolucion {
     estado: EstadoDevolucion;
     observaciones?: string;
 }
+
+/** Estados sin salida: la devolución ya no se edita (el backend rechaza cualquier cambio). */
+const ESTADOS_TERMINALES: readonly EstadoDevolucion[] = ['APROBADA', 'RECHAZADA'];
 
 interface DevolucionStats {
     total: number;
@@ -59,6 +64,7 @@ interface DevolucionStats {
         ButtonComponent,
         ServerSearchSelectComponent,
         RichTextEditorComponent,
+        AlertComponent,
     ],
     templateUrl: './returns.component.html',
 })
@@ -86,6 +92,16 @@ export class ReturnsComponent implements OnInit {
     editMode     = signal(false);
     selectedId   = signal<string | null>(null);
     submitError  = signal('');
+    listError    = signal<string | null>(null);
+    /** Estado de la devolución abierta en el drawer (null = alta). */
+    estadoAbierto = signal<EstadoDevolucion | null>(null);
+    protected readonly puedeGestionar = this.auth.puedeGestionarTienda();
+    /** Devolución ya APROBADA/RECHAZADA, o usuario sin permiso de gestión: formulario sólo lectura y sin guardar. */
+    cerrada      = computed(() => {
+        const e = this.estadoAbierto();
+        return e !== null && ESTADOS_TERMINALES.includes(e);
+    });
+    soloLectura  = computed(() => !this.puedeGestionar || this.cerrada());
 
     motivoOptions     = signal<SelectOption[]>([]);
     resolucionOptions = signal<SelectOption[]>([]);
@@ -161,18 +177,21 @@ export class ReturnsComponent implements OnInit {
         }),
     };
 
+    // «Revisar» abre el detalle (lectura, para todos); las transiciones de estado escriben.
     actions: TableAction<Devolucion>[] = [
         { label: 'Revisar', icon: '👁', class: 'btn-view',
           onClick: (row) => this.abrirDetalle(row) },
-        { label: 'Pasar a revisión', icon: '✏️', class: 'btn-view',
-          show: (row) => row.estado === 'SOLICITADA',
-          onClick: (row) => this.cambiarEstado(row.id, 'EN_REVISION') },
-        { label: 'Aprobar', icon: '✓', class: 'btn-view',
-          show: (row) => row.estado === 'EN_REVISION',
-          onClick: (row) => this.cambiarEstado(row.id, 'APROBADA') },
-        { label: 'Rechazar', icon: '✕', class: 'btn-view',
-          show: (row) => row.estado === 'EN_REVISION',
-          onClick: (row) => this.cambiarEstado(row.id, 'RECHAZADA') },
+        ...(this.puedeGestionar ? [
+            { label: 'Pasar a revisión', icon: '✏️', class: 'btn-view',
+              show: (row: Devolucion) => row.estado === 'SOLICITADA',
+              onClick: (row: Devolucion) => this.cambiarEstado(row.id, 'EN_REVISION') },
+            { label: 'Aprobar', icon: '✓', class: 'btn-view',
+              show: (row: Devolucion) => row.estado === 'EN_REVISION',
+              onClick: (row: Devolucion) => this.cambiarEstado(row.id, 'APROBADA') },
+            { label: 'Rechazar', icon: '✕', class: 'btn-view',
+              show: (row: Devolucion) => row.estado === 'EN_REVISION',
+              onClick: (row: Devolucion) => this.cambiarEstado(row.id, 'RECHAZADA') },
+        ] : []),
     ];
 
     ngOnInit(): void {
@@ -191,6 +210,7 @@ export class ReturnsComponent implements OnInit {
     /** Carga la página actual server-side (search + estado + 20/pág). */
     private loadPage(): void {
         this.loading.set(true);
+        this.listError.set(null);
         let params = toHttpParams({
             companyId: this.companyId(),
             page: this.currentPage(),
@@ -210,8 +230,9 @@ export class ReturnsComponent implements OnInit {
                 this.totalPages.set(pageTotalPages(res));
                 this.loading.set(false);
             },
-            error: () => {
+            error: (err: HttpErrorResponse) => {
                 this.devoluciones.set([]);
+                this.listError.set(mensajeDeErrorHttp(err));
                 this.loading.set(false);
             }
         });
@@ -220,7 +241,7 @@ export class ReturnsComponent implements OnInit {
     private loadStats(): void {
         this.http.get<DevolucionStats>(`${this.baseUrl}/stats`, { params: { companyId: this.companyId() } }).subscribe({
             next: (s) => this.stats.set(s),
-            error: () => { /* cards quedan en 0 */ }
+            error: (err: HttpErrorResponse) => this.listError.set(mensajeDeErrorHttp(err)),
         });
     }
 
@@ -272,7 +293,9 @@ export class ReturnsComponent implements OnInit {
     // ── Drawer / CRUD ─────────────────────────────────────────────────────────
     abrirNueva(): void {
         this.resetForm();
+        this.returnForm.enable({ emitEvent: false }); // puede venir deshabilitado por una devolución terminal
         bloquearEnEdicion(this.returnForm, ['pedidoId', 'numeroOrden', 'fechaSolicitud'], false);
+        this.estadoAbierto.set(null);
         this.editMode.set(false);
         this.selectedId.set(null);
         this.submitError.set('');
@@ -293,7 +316,10 @@ export class ReturnsComponent implements OnInit {
         this.returnForm.markAsPristine();
         // El pedido de origen y su número identifican la devolución: reapuntarla a
         // otro pedido descuadraría el stock y la nota de crédito ya emitida.
+        this.returnForm.enable({ emitEvent: false });
         bloquearEnEdicion(this.returnForm, ['pedidoId', 'numeroOrden', 'fechaSolicitud'], true);
+        this.estadoAbierto.set(row.estado);
+        if (this.soloLectura()) this.returnForm.disable({ emitEvent: false });
         this.editMode.set(true);
         this.selectedId.set(row.id);
         this.submitError.set('');
@@ -301,6 +327,7 @@ export class ReturnsComponent implements OnInit {
     }
 
     guardar(): void {
+        if (this.soloLectura()) return; // Enter dentro del formulario no debe poder editar una devolución cerrada
         if (this.returnForm.invalid) {
             this.returnForm.markAllAsTouched();
             return;
@@ -338,13 +365,14 @@ export class ReturnsComponent implements OnInit {
     }
 
     cambiarEstado(id: string, estado: EstadoDevolucion): void {
+        this.listError.set(null);
         this.http.patch<Devolucion>(`${this.baseUrl}/${id}/estado`, { estado },
             { params: { companyId: this.companyId() } }).subscribe({
             next: () => {
                 this.loadPage();
                 this.loadStats();
             },
-            error: () => { /* mantener estado actual si falla */ }
+            error: (err: HttpErrorResponse) => this.listError.set(mensajeDeErrorHttp(err)),
         });
     }
 

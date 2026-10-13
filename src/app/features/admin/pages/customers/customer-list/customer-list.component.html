@@ -29,12 +29,14 @@
                 <span class="text-on">{{ selectedIds().size }} seleccionados</span>
                 <app-button label="Asignar Segmento" variant="secondary" size="sm" (click)="showBulkSegment.set(!showBulkSegment())" />
                 @if (showBulkSegment()) {
-                    <app-catalog-select
-                        tabla="SEGMENTO_CLIENTE"
-                        placeholder="Seleccionar..."
-                        [ngModel]="bulkSegmentoId()"
-                        (ngModelChange)="onBulkSegmentoChange($event)">
-                    </app-catalog-select>
+                    <!-- Segmentos reales (tabla segmento de users), no el catálogo SEGMENTO_CLIENTE -->
+                    <select class="form-input" [value]="bulkSegmentoId()"
+                        (change)="onBulkSegmentoChange($any($event.target).value)">
+                        <option value="">Seleccionar segmento...</option>
+                        @for (s of segmentosFiltro(); track s.id) {
+                            <option [value]="s.id">{{ s.nombre }}</option>
+                        }
+                    </select>
                 }
             </div>
         </div>

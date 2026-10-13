@@ -50,8 +50,12 @@
                 <h3 class="text-lg font-bold text-on mb-sm">Información General</h3>
                 <p class="text-sm text-subtle mb-xs"><strong class="text-on">Fecha:</strong> {{
                     selectedOrder()?.fechaPedido | date:'medium' }}</p>
-                <p class="text-sm text-subtle mb-xs"><strong class="text-on">Cliente:</strong> User #{{
-                    selectedOrder()?.usuarioId }}</p>
+                <p class="text-sm text-subtle mb-xs"><strong class="text-on">Cliente:</strong> {{
+                    clienteDe(selectedOrder()!) }}</p>
+                <p class="text-sm text-subtle mb-xs"><strong class="text-on">Método de pago:</strong> {{
+                    etiquetaMetodoPago(selectedOrder()?.metodoPago) }}</p>
+                <p class="text-sm text-subtle mb-xs"><strong class="text-on">Estado del pago:</strong> {{
+                    etiquetaEstadoPago(selectedOrder()?.estadoPago) }}</p>
                 <p class="text-sm text-subtle"><strong class="text-on">Total:</strong> {{ selectedOrder()?.total |
                     currency }}</p>
             </div>
@@ -109,6 +113,22 @@
                     }
                 </tbody>
                 <tfoot>
+                    <tr>
+                        <td colspan="4" class="text-right px-lg text-on">Subtotal:</td>
+                        <td class="px-lg">{{ getDetailsTotal(selectedOrder()?.detalles) | currency }}</td>
+                    </tr>
+                    @if ((selectedOrder()?.descuentoTotal ?? 0) > 0) {
+                    <tr>
+                        <td colspan="4" class="text-right px-lg text-on">Descuento@if (selectedOrder()?.codigoCupon) { (cupón {{ selectedOrder()?.codigoCupon }}) }:</td>
+                        <td class="px-lg">- {{ selectedOrder()?.descuentoTotal | currency }}</td>
+                    </tr>
+                    }
+                    @if ((selectedOrder()?.costoEnvio ?? 0) > 0) {
+                    <tr>
+                        <td colspan="4" class="text-right px-lg text-on">Costo de envío:</td>
+                        <td class="px-lg">{{ selectedOrder()?.costoEnvio | currency }}</td>
+                    </tr>
+                    }
                     <tr>
                         <td colspan="4" class="text-right py-md px-lg text-on"><strong>Total:</strong></td>
                         <td class="py-md px-lg text-primary text-lg"><strong>{{ selectedOrder()?.total | currency

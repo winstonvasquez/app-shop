@@ -35,10 +35,20 @@
     </div>
     }
 
+    @if (errorBusqueda()) {
+    <div class="customer-not-found">
+        <span class="text-xs text-[var(--color-error)]">{{ errorBusqueda() }}</span>
+    </div>
+    }
+
     @if (notFound() && !buscando()) {
     <div class="customer-not-found">
         <span class="text-xs text-muted">Cliente no encontrado — {{ query() }}</span>
-        <button type="button" class="text-xs text-[var(--color-primary)] font-medium" (click)="crearRapido()">
+        <input type="text" class="input-field !h-8 !text-xs"
+            [placeholder]="query().length === 11 ? 'Razón social (obligatoria)' : 'Nombre completo (obligatorio)'"
+            [value]="nombreNuevo()" (input)="nombreNuevo.set($any($event.target).value)" autocomplete="off">
+        <button type="button" class="text-xs text-[var(--color-primary)] font-medium disabled:opacity-50"
+            [disabled]="!nombreNuevo().trim() || creando()" (click)="crearRapido()">
             Crear nuevo
         </button>
     </div>

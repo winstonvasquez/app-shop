@@ -12,8 +12,16 @@
         <div class="state"><span class="spinner"></span> Cargando…</div>
     }
 
+    @if (loadError() && !showForm()) {
+        <div class="alert err">
+            <lucide-icon name="alert-triangle" [size]="16"/>
+            {{ loadError() }}
+        </div>
+    }
+
     @if (!loading() && !showForm()) {
         @if (addresses().length === 0) {
+          @if (!loadError()) {
             <div class="empty">
                 <lucide-icon name="map-pin" [size]="48"/>
                 <h3>Sin direcciones registradas</h3>
@@ -22,20 +30,21 @@
                     Agregar dirección
                 </ds-button>
             </div>
+          }
         } @else {
             <div class="grid">
                 @for (a of addresses(); track a.id) {
                     <article class="addr">
                         <header class="addr-head">
                             <strong>{{ a.nombreDestinatario }}</strong>
-                            @if (a.predeterminada) {
+                            @if (a.esPrincipal) {
                                 <ds-badge tone="success" size="xs">Predeterminada</ds-badge>
                             }
                         </header>
                         <div class="addr-body">
                             <div class="line"><lucide-icon name="map-pin" [size]="14"/> {{ a.direccion }}</div>
-                            <div class="line muted">{{ a.ciudad }}@if (a.region) {, {{ a.region }}}@if (a.codigoPostal) { · {{ a.codigoPostal }}}</div>
-                            <div class="line muted"><lucide-icon name="phone" [size]="14"/> {{ a.telefono }}</div>
+                            <div class="line muted">{{ a.distrito }}, {{ a.provincia }}, {{ a.departamento }}</div>
+                            <div class="line muted"><lucide-icon name="phone" [size]="14"/> {{ a.telefonoDestinatario }}</div>
                         </div>
                         <footer class="addr-foot">
                             <ds-button variant="secondary" size="sm" icon="pencil" (click)="openEditForm(a)">
@@ -72,10 +81,10 @@
                 </div>
                 <div class="field">
                     <label class="lbl">Teléfono <span class="req">*</span></label>
-                    <input formControlName="telefono" type="tel" class="input"
-                        [class.is-error]="!!err('telefono')"
+                    <input formControlName="telefonoDestinatario" type="tel" class="input"
+                        [class.is-error]="!!err('telefonoDestinatario')"
                         placeholder="+51 999 999 999"/>
-                    @if (err('telefono')) { <span class="hint err">{{ err('telefono') }}</span> }
+                    @if (err('telefonoDestinatario')) { <span class="hint err">{{ err('telefonoDestinatario') }}</span> }
                 </div>
             </div>
 
@@ -89,21 +98,33 @@
 
             <div class="grid-3">
                 <div class="field">
-                    <label class="lbl">Ciudad / Distrito <span class="req">*</span></label>
-                    <input formControlName="ciudad" class="input"
-                        [class.is-error]="!!err('ciudad')"
-                        placeholder="San Borja"/>
-                    @if (err('ciudad')) { <span class="hint err">{{ err('ciudad') }}</span> }
+                    <label class="lbl">Departamento <span class="req">*</span></label>
+                    <input formControlName="departamento" class="input"
+                        [class.is-error]="!!err('departamento')" placeholder="Lima"/>
+                    @if (err('departamento')) { <span class="hint err">{{ err('departamento') }}</span> }
                 </div>
                 <div class="field">
-                    <label class="lbl">Región</label>
-                    <input formControlName="region" class="input" placeholder="Lima"/>
+                    <label class="lbl">Provincia <span class="req">*</span></label>
+                    <input formControlName="provincia" class="input"
+                        [class.is-error]="!!err('provincia')" placeholder="Lima"/>
+                    @if (err('provincia')) { <span class="hint err">{{ err('provincia') }}</span> }
                 </div>
                 <div class="field">
-                    <label class="lbl">Código postal</label>
-                    <input formControlName="codigoPostal" class="input" placeholder="15036"/>
+                    <label class="lbl">Distrito <span class="req">*</span></label>
+                    <input formControlName="distrito" class="input"
+                        [class.is-error]="!!err('distrito')" placeholder="San Borja"/>
+                    @if (err('distrito')) { <span class="hint err">{{ err('distrito') }}</span> }
                 </div>
             </div>
+
+            <div class="field">
+                <label class="lbl">Referencia</label>
+                <input formControlName="referencia" class="input" placeholder="Frente al parque"/>
+            </div>
+
+            <label class="check">
+                <input type="checkbox" formControlName="esPrincipal"/> Usar como dirección predeterminada
+            </label>
 
             <div class="actions">
                 <ds-button variant="ghost" size="md" (click)="cancelForm()">Cancelar</ds-button>
@@ -197,7 +218,7 @@
     }
 
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    .grid-3 { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 12px; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
     .field { display: flex; flex-direction: column; gap: 6px; }
     .lbl { font-size: 12px; font-weight: 600; color: var(--c-text); }
     .req { color: var(--c-danger); }
@@ -214,6 +235,7 @@
         box-shadow: 0 0 0 3px color-mix(in srgb, var(--c-brand) 25%, transparent);
     }
     .input.is-error { border-color: var(--c-danger); }
+    .check { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--c-text); }
     .hint { font-size: 12px; color: var(--c-muted); }
     .hint.err { color: var(--c-danger); }
     .actions {

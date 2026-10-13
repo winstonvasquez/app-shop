@@ -24,8 +24,14 @@
             ni devuelve el stock al inventario. Para revertir la venta —restaurar stock y anular el
             asiento contable— hay que <strong>cancelar el pedido</strong> desde su detalle.
         </p>
-        <app-button label="Nueva Devolución" variant="primary" icon="plus" (click)="abrirNueva()" />
+        @if (puedeGestionar) {
+            <app-button label="Nueva Devolución" variant="primary" icon="plus" (click)="abrirNueva()" />
+        }
     </div>
+
+    @if (listError()) {
+        <app-alert type="error" [message]="listError()!" [dismissible]="true" (dismiss)="listError.set(null)" />
+    }
 
     <!-- Tabla (server-side: search + estado + paginación 20/pág; toolbar integrado) -->
     <app-data-table
@@ -66,6 +72,12 @@
         <app-admin-form-layout
             [errorMessage]="submitError()"
             [stickyActions]="true">
+
+            @if (cerrada()) {
+                <p class="alert alert-info">Esta devolución ya está cerrada ({{ estadoAbierto() }}): no se puede modificar.</p>
+            } @else if (!puedeGestionar) {
+                <p class="alert alert-info">Sólo un administrador o gerente puede modificar devoluciones.</p>
+            }
 
             <!-- Sección: Datos de la devolución -->
             <app-admin-form-section title="Datos de la devolución" [columns]="2">
@@ -127,8 +139,8 @@
 
             <div slot="actions">
                 <app-button label="Cancelar" variant="secondary" icon="x" type="button" (click)="cerrarModal()" />
-                @if (!editMode()) {
-                    <app-button label="Registrar Devolución" variant="primary" icon="save" type="submit"
+                @if (!soloLectura()) {
+                    <app-button [label]="editMode() ? 'Guardar cambios' : 'Registrar Devolución'" variant="primary" icon="save" type="submit"
                                 [disabled]="returnForm.invalid"
                                 [loading]="guardando()" />
                 }

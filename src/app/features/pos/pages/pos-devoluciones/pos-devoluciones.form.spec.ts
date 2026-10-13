@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { LineaDevolucion, construirDevolucionRequest } from './pos-devoluciones.form';
+import { LineaDevolucion, construirDevolucionRequest, textoReembolso } from './pos-devoluciones.form';
 import { DetalleVentaPosResponse } from '../../models/venta-pos.model';
 
 function detalle(id: number): DetalleVentaPosResponse {
@@ -88,5 +88,23 @@ describe('construirDevolucionRequest — cuerpo emitido', () => {
             [SELECCIONADA],
         );
         expect(req?.observaciones).toBe('Caja abollada en el traslado');
+    });
+});
+
+describe('textoReembolso', () => {
+    it('efectivo: manda entregar efectivo, con el importe del backend', () => {
+        expect(textoReembolso('EFECTIVO', [], 90)).toBe('Entregue S/ 90.00 en efectivo al cliente.');
+    });
+
+    it('tarjeta: indica el medio y NO manda entregar efectivo', () => {
+        const t = textoReembolso('TARJETA', [], 90);
+        expect(t).toBe('Reembolso por TARJETA: S/ 90.00.');
+        expect(t).not.toContain('Entregue');
+    });
+
+    it('mixto: lista los medios y avisa que sólo el efectivo sale de caja', () => {
+        const t = textoReembolso('MIXTO', [{ metodo: 'EFECTIVO' }, { metodo: 'YAPE' }], 50);
+        expect(t).toContain('EFECTIVO + YAPE');
+        expect(t).toContain('Sólo la parte cobrada en efectivo');
     });
 });

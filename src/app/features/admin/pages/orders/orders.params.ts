@@ -48,3 +48,42 @@ export function filtrosDePedidos(c: FiltrosPedidoCrudos): FiltrosPedido {
         cpeFechaEmisionHasta: c.cpeFechaEmisionHasta,
     };
 }
+
+/**
+ * Valores EXACTOS de `PagoEntity.MetodoPago` (microshopventas): el backend compara
+ * `CAST(pg.metodoPago AS String) = :metodoPago`, así que el filtro y las etiquetas salen de aquí
+ * y no del catálogo `METODO_PAGO` (CHEQUE/EFECTIVO/TRANSFERENCIA), que no coincide con el enum.
+ */
+export const METODOS_PAGO_PEDIDO: readonly { value: string; label: string }[] = [
+    { value: 'EFECTIVO', label: 'Efectivo' },
+    { value: 'TARJETA_CREDITO', label: 'Tarjeta de crédito' },
+    { value: 'TARJETA_DEBITO', label: 'Tarjeta de débito' },
+    { value: 'TRANSFERENCIA_BANCARIA', label: 'Transferencia bancaria' },
+    { value: 'YAPE', label: 'Yape' },
+    { value: 'PLIN', label: 'Plin' },
+    { value: 'PAYPAL', label: 'PayPal' },
+    { value: 'BILLETERA_DIGITAL', label: 'Billetera digital' },
+];
+
+/** Valores exactos de `PagoEntity.EstadoPago`. */
+export const ESTADOS_PAGO_PEDIDO: readonly { value: string; label: string }[] = [
+    { value: 'PENDIENTE', label: 'Pendiente' },
+    { value: 'COMPLETADO', label: 'Completado' },
+    { value: 'FALLIDO', label: 'Fallido' },
+    { value: 'REEMBOLSADO', label: 'Reembolsado' },
+];
+
+/** Etiqueta en español de un código de enum; si es desconocido (o falta) devuelve el código / «—». */
+export function etiquetaDe(
+    catalogo: readonly { value: string; label: string }[],
+    codigo: string | null | undefined,
+): string {
+    if (!codigo) return '—';
+    return catalogo.find(o => o.value === codigo)?.label ?? codigo;
+}
+
+/** Cliente de un pedido: el pedido de invitado no tiene `usuarioId`, se muestra su correo. */
+export function clienteDePedido(p: { usuarioId?: number | null; guestEmail?: string | null }): string {
+    if (p.usuarioId != null) return `Usuario #${p.usuarioId}`;
+    return p.guestEmail ? `${p.guestEmail} (invitado)` : 'Invitado';
+}

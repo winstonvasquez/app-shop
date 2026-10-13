@@ -6,6 +6,7 @@ import { HttpClient } from '@angular/common/http';
 import { environment } from '@env/environment';
 import { APP_CONFIG } from '@shared/constants/app.constants';
 import { StoreConfigService } from '@core/services/store-config.service';
+import { AuthService } from '@core/auth/auth.service';
 
 interface ConfigSection {
     key:         string;
@@ -60,10 +61,18 @@ const PRODUCT_BADGE_FIELDS: ConfigSection[] = [
                 <h1 class="page-title">Apariencia</h1>
                 <p class="page-subtitle">Configura la identidad, redes sociales y etiquetas de tu tienda</p>
             </div>
-            <button class="btn btn-primary" [disabled]="saving()" (click)="saveAll()">
-                @if (saving()) { Guardando... } @else { Guardar cambios }
-            </button>
+            @if (puedeGestionar) {
+                <button class="btn btn-primary" [disabled]="saving()" (click)="saveAll()">
+                    @if (saving()) { Guardando... } @else { Guardar cambios }
+                </button>
+            }
         </div>
+
+        @if (!puedeGestionar) {
+            <p style="font-size:.875rem; color:var(--color-text-muted); margin-bottom:1rem">
+                Sólo un administrador o gerente puede modificar esta configuración.
+            </p>
+        }
 
         @if (successMsg()) {
             <div class="card mb-4" style="border-left:3px solid var(--color-success); padding: 12px 16px">
@@ -89,7 +98,7 @@ const PRODUCT_BADGE_FIELDS: ConfigSection[] = [
                             <label class="input-label">{{ field.label }}</label>
                             <input class="input-field" [type]="field.type"
                                    [placeholder]="field.placeholder"
-                                   [(ngModel)]="form()[field.key]">
+                                   [(ngModel)]="form()[field.key]" [disabled]="!puedeGestionar">
                         </div>
                     }
                 </div>
@@ -106,7 +115,7 @@ const PRODUCT_BADGE_FIELDS: ConfigSection[] = [
                             <label class="input-label">{{ field.label }}</label>
                             <input class="input-field" type="url"
                                    [placeholder]="field.placeholder"
-                                   [(ngModel)]="form()[field.key]">
+                                   [(ngModel)]="form()[field.key]" [disabled]="!puedeGestionar">
                         </div>
                     }
                 </div>
@@ -120,7 +129,7 @@ const PRODUCT_BADGE_FIELDS: ConfigSection[] = [
                             <label class="input-label">{{ field.label }}</label>
                             <input class="input-field" type="url"
                                    [placeholder]="field.placeholder"
-                                   [(ngModel)]="form()[field.key]">
+                                   [(ngModel)]="form()[field.key]" [disabled]="!puedeGestionar">
                         </div>
                     }
                 </div>
@@ -139,7 +148,7 @@ const PRODUCT_BADGE_FIELDS: ConfigSection[] = [
                             <label class="input-label">{{ field.label }}</label>
                             <input class="input-field" type="text"
                                    [placeholder]="field.placeholder"
-                                   [(ngModel)]="form()[field.key]">
+                                   [(ngModel)]="form()[field.key]" [disabled]="!puedeGestionar">
                         </div>
                     }
                 </div>
@@ -172,7 +181,7 @@ const PRODUCT_BADGE_FIELDS: ConfigSection[] = [
                             <label class="input-label">{{ field.label }}</label>
                             <input class="input-field" type="text"
                                    [placeholder]="field.placeholder"
-                                   [(ngModel)]="form()[field.key]">
+                                   [(ngModel)]="form()[field.key]" [disabled]="!puedeGestionar">
                         </div>
                     }
                 </div>
@@ -184,6 +193,8 @@ const PRODUCT_BADGE_FIELDS: ConfigSection[] = [
 export class AparienciaComponent implements OnInit {
     private readonly http          = inject(HttpClient);
     private readonly storeConfig   = inject(StoreConfigService);
+    private readonly auth          = inject(AuthService);
+    protected readonly puedeGestionar = this.auth.puedeGestionarTienda();
 
     readonly identityFields = IDENTITY_FIELDS;
     readonly socialFields   = SOCIAL_FIELDS;

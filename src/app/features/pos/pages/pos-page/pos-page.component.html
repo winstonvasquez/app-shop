@@ -5,7 +5,7 @@
     (skip)="onPinSkipped()" />
 }
 
-@if (pinAuthenticated()) {
+@if (pinAuthenticated() && sesion()) {
 <div class="pos-layout">
 
     <!-- ══ TOPBAR OSCURO ══ -->
@@ -23,11 +23,13 @@
             <path fill-rule="evenodd" d="M3.707 2.293a1 1 0 00-1.414 1.414l14 14a1 1 0 001.414-1.414l-1.473-1.473A10.014 10.014 0 0019.542 10a9.997 9.997 0 00-4.956-6.583l-1.378 1.378A8.003 8.003 0 0117.54 10a8.029 8.029 0 01-2.69 4.14l-1.417-1.417A5.994 5.994 0 0015.54 10a5.989 5.989 0 00-1.586-4.04L12.54 7.374A3.998 3.998 0 0114 10c0 .406-.061.801-.175 1.173l-1.451-1.451A1.993 1.993 0 0010 8c-.078 0-.155.005-.231.014L7.083 5.328A8.003 8.003 0 0110 2a7.976 7.976 0 015.372 2.066l1.414-1.414A9.972 9.972 0 0010 0C7.028 0 4.347 1.199 2.414 3.172L3.707 2.293z" clip-rule="evenodd" />
         </svg>
         <span>Modo offline</span>
-        } @else {
+        } @else if (offlineSync.syncing()) {
         <svg class="animate-spin" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
             <path d="M10 3a7 7 0 017 7" stroke-linecap="round" />
         </svg>
         <span>Sincronizando ventas...</span>
+        } @else {
+        <span>Ventas offline sin sincronizar{{ offlineSync.lastSyncResult() ? ' (' + offlineSync.lastSyncResult() + ')' : '' }}</span>
         }
         @if (offlineSync.pendingCount() > 0) {
         <span class="inline-flex items-center justify-center min-w-[18px] h-[18px] rounded-full px-1 text-[10px] font-bold bg-[var(--color-warning)] text-black">
@@ -35,6 +37,17 @@
         </span>
         <span>pendientes</span>
         }
+        @if (!offlineSync.isOffline() && !offlineSync.syncing()) {
+        <button type="button" class="ml-auto rounded px-2 py-0.5 text-[11px] font-semibold border border-current hover:bg-[var(--color-primary)]/10"
+            (click)="offlineSync.syncAll()">Reintentar sincronización</button>
+        }
+    </div>
+    }
+    @for (r of offlineSync.rechazadas(); track r.idempotencyKey) {
+    <div class="flex items-center gap-2 px-4 py-1.5 text-xs font-medium bg-[var(--color-error)]/10 text-[var(--color-error)]">
+        <span>Venta offline {{ r.numeroTicketTemp }} rechazada por el servidor: {{ r.ultimoError }}. Regístrela de nuevo o anótela para el arqueo.</span>
+        <button type="button" class="ml-auto rounded px-2 py-0.5 text-[11px] font-semibold border border-current"
+            (click)="offlineSync.descartarRechazada(r.idempotencyKey)">Descartar</button>
     </div>
     }
 
@@ -182,7 +195,7 @@
                         [companyId]="companyId"
                         (clientSelected)="onClientSelected($event)"
                         (clientCleared)="onClientCleared()" />
-                    <app-pos-order-panel [isProcessing]="isLoading()" (procesarVenta)="procesarVenta()" (irAlNumpad)="showScreen('pago')"
+                    <app-pos-order-panel [isProcessing]="isLoading()" [maxDescuentoSinAuth]="maxDescuentoSinAuth()" (procesarVenta)="procesarVenta()" (irAlNumpad)="showScreen('pago')"
                         (giftCardLookup)="lookupGiftCard($event)"
                         (requestSupervisorAuth)="requestSupervisorAuth($event)" />
                 </div>
@@ -214,9 +227,9 @@
             @if (activeScreen() === 'turno') {
             <app-pos-turno [turno]="turnoActivo()" (abrirTurno)="abrirTurno($event)" (cerrarTurno)="cerrarTurno()"
                 (volver)="showScreen('main')"
-                (reporteX)="loadReporteX()" (reporteZ)="loadReporteZ()"
+                (reporteX)="loadReporteX()"
                 (movimientoCaja)="showCashMovementDialog.set(true)"
-                (cierreArqueo)="showDenominationCounter.set(true)" />
+                (cierreArqueo)="abrirCierreArqueo()" />
             }
 
             <!-- PANTALLA 6: Devoluciones -->
@@ -229,7 +242,7 @@
             <!-- PANTALLA 7: Órdenes Retenidas -->
             @if (activeScreen() === 'ordenes-retenidas') {
             <div class="pos-panel-scroll">
-                <app-pos-held-orders-panel [ordenes]="ordenesRetenidas()"
+                <app-pos-held-orders-panel [ordenes]="ordenesRetenidas()" [recuperandoId]="recuperandoId()"
                     (restore)="restoreOrder($event)" (discard)="discardOrder($event)" />
             </div>
             }
@@ -271,14 +284,6 @@
     (close)="showCameraScanner.set(false)" />
 }
 
-<!-- Cross-Stock Dialog -->
-@if (showCrossStock()) {
-<app-pos-cross-stock-dialog
-    [varianteId]="crossStockVarianteId()"
-    [companyId]="companyId"
-    (close)="showCrossStock.set(false)" />
-}
-
 <!-- Manager PIN Dialog (discount authorization) -->
 @if (showManagerPin()) {
 <app-pos-manager-pin-dialog
@@ -293,7 +298,14 @@
 <app-pos-shortcuts-help (close)="keyboard.toggleShortcutsPanel()" />
 }
 
-} <!-- end @if (pinAuthenticated()) -->
+} <!-- end @if (pinAuthenticated() && sesion()) -->
+
+<!-- Sin usuario/empresa activa no se opera (nunca se asume la empresa 1) -->
+@if (pinAuthenticated() && !sesion()) {
+<div class="flex h-screen items-center justify-center p-6 text-center text-sm text-muted">
+    Sin sesión de usuario con empresa activa: inicia sesión para operar el POS.
+</div>
+}
 
 <!-- Toast global con tipo visual -->
 @if (toastVisible()) {

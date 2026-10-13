@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { construirProductRequest, ProductFormRaw } from './products.form';
+import { construirProductRequest, productoConActivo, ProductFormRaw } from './products.form';
+import { ProductResponse } from '@core/models/product.model';
 
 const COMPLETO: ProductFormRaw = {
     nombre: 'Polo algodón',
@@ -52,5 +53,15 @@ describe('construirProductRequest', () => {
 
     it('la empresa activa siempre viaja como companyId', () => {
         expect(construirProductRequest(MINIMO, 42, true).companyId).toBe(42);
+    });
+});
+
+describe('productoConActivo', () => {
+    const p = { id: 9, nombre: 'Polo', descripcion: '', precioBase: 10, stock: 0 } as ProductResponse;
+
+    it('reenvía el producto con activo y sin categoriaIds', () => {
+        const dto = productoConActivo(p, 4, false);
+        expect(dto).toEqual({ nombre: 'Polo', descripcion: null, precioBase: 10, marca: null, companyId: 4, activo: false });
+        expect(dto.categoriaIds).toBeUndefined();
     });
 });

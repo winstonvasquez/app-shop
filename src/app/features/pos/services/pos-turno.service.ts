@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
-import { Observable, catchError, of } from 'rxjs';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { Observable, catchError, of, throwError } from 'rxjs';
+import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
 import { TurnoCaja, TurnoCajaApertura } from '../models/turno-caja.model';
 import { ReporteXZ } from '../components/pos-report-viewer/pos-report-viewer.component';
 import { environment } from '@env/environment';
@@ -19,13 +19,15 @@ export class PosTurnoService {
     }
 
     /**
-     * Devuelve el turno activo o null si no existe (404 no lanza error).
-     * Esto permite que la app arranque sin turno sin mostrar toast de error.
+     * Devuelve el turno activo, o null si el cajero no tiene ninguno (SÓLO el 404 significa «sin turno»).
+     * Cualquier otro fallo (500, timeout, sin red) se propaga: tratarlo como «sin turno» llevaba al cajero
+     * a «Abrir turno» y a un 409 por turno ya abierto.
      */
     getTurnoActivo(cajeroId: number): Observable<TurnoCaja | null> {
         const params = new HttpParams().set('cajeroId', cajeroId.toString());
         return this.http.get<TurnoCaja>(`${this.baseUrl}/activo`, { params }).pipe(
-            catchError(() => of(null))
+            catchError((err: unknown) =>
+                err instanceof HttpErrorResponse && err.status === 404 ? of(null) : throwError(() => err))
         );
     }
 

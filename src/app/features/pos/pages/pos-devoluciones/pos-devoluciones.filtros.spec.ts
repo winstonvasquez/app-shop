@@ -78,7 +78,7 @@ describe('hayFiltrosDevolucionActivos', () => {
     it.each([
         ['search', { search: 'TICK' }],
         ['motivo', { motivo: 'DEFECTUOSO' }],
-        ['estado', { estado: 'ANULADA' }],
+        ['estado', { estado: 'PROCESADA' }],
         ['cajeroId', { cajeroId: '3' }],
         ['fechaDevDesde', { fechaDevDesde: '2026-01-01' }],
         ['fechaDevHasta', { fechaDevHasta: '2026-01-31' }],

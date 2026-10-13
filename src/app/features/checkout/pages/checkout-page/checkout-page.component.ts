@@ -5,6 +5,7 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { BreadcrumbComponent, BreadcrumbItem } from '@shared/components/breadcrumb/breadcrumb.component';
 import { DsButtonComponent } from '@shared/ui/ds';
 import { CartService } from '@features/cart/services/cart.service';
+import { lineasParaCupon } from '@features/cart/utils/carrito.util';
 import { OrderService } from '@core/services/order.service';
 import { SystemParameterService } from '@core/services/system-parameter.service';
 import { ConfigService, MedioPago, Certificacion } from '@core/services/config.service';
@@ -110,7 +111,8 @@ export class CheckoutPageComponent implements OnInit {
   couponError = signal<string | null>(null);
   couponApplying = signal(false);
   couponDiscount = signal(0);
-  appliedCouponCode = signal<string | null>(null);
+  /** Viene del carrito (CartService); se revalida en ngOnInit. */
+  appliedCouponCode = this.cartService.appliedCoupon;
 
   zonas = signal<ZonaEnvio[]>([]);
   selectedZona = signal<ZonaEnvio | null>(null);
@@ -163,6 +165,8 @@ export class CheckoutPageComponent implements OnInit {
     });
     this.configService.getCertificaciones().subscribe(data => this.certifications.set(data));
     this.analyticsService.trackBeginCheckout(this.cartTotal(), this.selectedItems().length);
+    const cuponDelCarrito = this.appliedCouponCode();
+    if (cuponDelCarrito) this.validarCupon(cuponDelCarrito);
     // F2.2: la resolución de zona/costo de envío se dispara cuando se conoce una dirección
     // real (loadAddresses/selectAddress/saveNewAddress) — antes se traía TODA la lista de
     // zonas sin filtrar y se autoseleccionaba zonas[0], sin relación con la dirección del
@@ -274,17 +278,25 @@ export class CheckoutPageComponent implements OnInit {
   applyCoupon(): void {
     const code = this.couponCode();
     if (!code.trim()) return;
+    this.validarCupon(code);
+  }
+
+  private validarCupon(code: string): void {
     this.couponError.set(null);
     this.couponApplying.set(true);
-    this.orderService.validateCoupon(code, this.cartTotal()).pipe(
+    this.orderService.validateCoupon(code, this.cartTotal(), lineasParaCupon(this.cartItems())).pipe(
       finalize(() => this.couponApplying.set(false))
     ).subscribe({
       next: (discount) => {
         this.couponDiscount.set(discount.amount);
         this.appliedCouponCode.set(code.trim().toUpperCase());
-        this.couponError.set(null);
       },
-      error: () => this.couponError.set('Cupón inválido o expirado')
+      error: () => {
+        // Un cupón que ya no vale NO debe viajar en el pedido: se retira y se avisa.
+        this.couponDiscount.set(0);
+        this.appliedCouponCode.set(null);
+        this.couponError.set('Cupón inválido o expirado');
+      },
     });
   }
 

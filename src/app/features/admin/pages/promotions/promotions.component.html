@@ -11,7 +11,9 @@
                 <span class="header-kpi header-kpi--error">Vencidas <b>{{ totalVencidas() }}</b></span>
             </div>
         </div>
-        <app-button label="Nueva Promoción" icon="plus" variant="primary" (click)="abrirNueva()" />
+        @if (puedeGestionar) {
+            <app-button label="Nueva Promoción" icon="plus" variant="primary" (click)="abrirNueva()" />
+        }
     </div>
 
     @if (listError()) {
@@ -88,7 +90,7 @@
                 </app-form-field>
                 <app-form-field [label]="valorLabel()" [required]="true" [error]="err('valor')">
                     <input formControlName="valor" type="number"
-                           class="form-input" min="0"
+                           class="form-input" min="0.01"
                            [step]="form.controls.tipo.value === 'PORCENTAJE' ? 1 : 0.01"
                            [max]="form.controls.tipo.value === 'PORCENTAJE' ? 100 : null"
                            placeholder="0" />
@@ -146,6 +148,9 @@
                     [required]="true"
                     [minDate]="form.controls.fechaInicio.value ?? ''">
                 </app-date-input>
+                @if (form.hasError('rangoFechas')) {
+                    <p class="alert alert-error">{{ mensajeRangoFechas }}</p>
+                }
             </app-admin-form-section>
 
             <!-- Sección: Otros -->
@@ -192,3 +197,18 @@
     </form>
 
 </app-drawer>
+
+<!-- Confirmar eliminación de promoción -->
+<app-modal
+    [isOpen]="promoAEliminar() !== null"
+    title="Eliminar promoción"
+    size="sm"
+    (close)="promoAEliminar.set(null)">
+    <p class="text-sm">
+        ¿Eliminar la promoción <strong>{{ promoAEliminar()?.nombre }}</strong>? Esta acción no se puede deshacer.
+    </p>
+    <div class="flex justify-end gap-3 pt-4">
+        <app-button label="Cancelar" variant="secondary" type="button" (click)="promoAEliminar.set(null)" />
+        <app-button label="Eliminar" variant="danger" type="button" (click)="confirmarEliminar()" />
+    </div>
+</app-modal>

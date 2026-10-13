@@ -96,27 +96,6 @@
                 </div>
             </section>
 
-            <!-- Envío -->
-            <section class="filter-card">
-                <h4 class="filter-title">Envío</h4>
-                <div class="filter-checks">
-                    @for (s of shippingOpts; track s.key) {
-                        <label class="check-row">
-                            <span class="check"
-                                [class.is-on]="enviosSeleccionados().includes(s.key)">
-                                @if (enviosSeleccionados().includes(s.key)) {
-                                    <lucide-icon name="check" [size]="10"/>
-                                }
-                            </span>
-                            <input type="checkbox" hidden
-                                [checked]="enviosSeleccionados().includes(s.key)"
-                                (change)="toggleEnvio(s.key)"/>
-                            {{ s.label }}
-                        </label>
-                    }
-                </div>
-            </section>
-
         </aside>
 
         <!-- ─── Main results ─── -->

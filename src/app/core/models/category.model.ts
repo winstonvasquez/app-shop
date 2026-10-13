@@ -4,7 +4,8 @@ export interface CategoryResponse {
     descripcion: string;
     imagenUrl?: string;
     nivel: number;
-    categoriaPadreId?: number;
+    /** El backend aún no lo devuelve en la respuesta; se usa si llega, para preseleccionar el padre al editar. */
+    padreId?: number;
     activo?: boolean;
     orden?: number;
     fechaCreacion?: string;
@@ -25,9 +26,9 @@ export interface CategoryRequest {
     descripcion: string;
     imagenUrl?: string;
     nivel: number;
-    categoriaPadreId?: number;
+    /** CategoriaRequestDto.padreId. Omitido o null = SIN padre: reenviar siempre el actual en un PUT. */
+    padreId?: number;
     activo?: boolean;
-    orden?: number;
 }
 
 export interface CategoryFilter {

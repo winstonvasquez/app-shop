@@ -10,6 +10,22 @@ export interface LineaDevolucion {
 }
 
 /**
+ * Texto de cierre tras una devolución, según CÓMO se cobró la venta (POSP-4). Sólo una venta en
+ * efectivo se reembolsa en efectivo: para tarjeta/Yape/Plin/gift card, «entregue efectivo» manda
+ * al cajero a sacar dinero de la caja que el backend no registra (faltante en el arqueo).
+ * `total` es el `totalDevuelto` del backend, ya prorrateado por lo realmente cobrado.
+ */
+export function textoReembolso(metodoPago: string, pagos: readonly { metodo: string }[], total: number): string {
+    const monto = `S/ ${total.toFixed(2)}`;
+    if (metodoPago === 'EFECTIVO') return `Entregue ${monto} en efectivo al cliente.`;
+    const medios = metodoPago === 'MIXTO' && pagos.length > 0
+        ? [...new Set(pagos.map(p => p.metodo))].join(' + ')
+        : metodoPago;
+    const aviso = medios.includes('EFECTIVO') ? ' Sólo la parte cobrada en efectivo se entrega en caja.' : '';
+    return `Reembolso por ${medios}: ${monto}.${aviso}`;
+}
+
+/**
  * Arma el cuerpo de `POST /api/pos/ventas/{id}/devolucion`, o `null` si la devolución no es
  * emitible todavía.
  *

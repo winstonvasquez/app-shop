@@ -27,6 +27,9 @@ export class CartService {
     cartItems = signal<CartItem[]>([]);
     isDrawerOpen = signal(false);
 
+    /** Código del cupón aplicado (se revalida en carrito y checkout). Vive aquí para sobrevivir a la navegación. */
+    appliedCoupon = signal<string | null>(null);
+
     cartTotal = computed(() => this.cartItems()
         .filter(item => item.selected)
         .reduce((acc, item) => acc + (item.price * item.quantity), 0));
@@ -87,6 +90,7 @@ export class CartService {
             this.empresaDelCarrito = empresaActual;
             if (!debeLimpiarPorCambioDeEmpresa(anterior, empresaActual)) return;
             this.cartItems.set([]);
+            this.appliedCoupon.set(null);
             this.isDrawerOpen.set(false);
             localStorage.removeItem(STORAGE_KEYS.cart);
         });
@@ -137,11 +141,14 @@ export class CartService {
         );
     }
 
+    /** Tras crear el pedido: lo pagado sale del carrito y el cupón ya se consumió. */
     removeSelected() {
         this.cartItems.update(items => items.filter(item => !item.selected));
+        this.appliedCoupon.set(null);
     }
 
     clearCart() {
         this.cartItems.set([]);
+        this.appliedCoupon.set(null);
     }
 }

@@ -37,6 +37,8 @@ export interface DetalleVentaPosResponse {
     descuentoTipo: string;
     descuentoValor: number;
     descuentoMonto: number;
+    /** Unidades ya devueltas; sólo viene en el recibo de una venta (no en los listados). */
+    cantidadDevuelta?: number | null;
 }
 
 export interface PagoMixtoResponse {

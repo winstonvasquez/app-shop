@@ -10,6 +10,13 @@ export interface OrderResponse {
     detalles?: OrderDetail[];
     direccionEnvio?: DireccionEnvio;
     metodoPago?: string;
+    /** Correo del comprador invitado (el pedido de invitado no trae usuarioId). */
+    guestEmail?: string;
+    descuentoTotal?: number;
+    costoEnvio?: number;
+    codigoCupon?: string;
+    /** Estado del pago (PagoEntity.EstadoPago). */
+    estadoPago?: string;
 }
 
 export interface OrderDetail {

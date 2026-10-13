@@ -5,13 +5,12 @@ export interface PosHistorialFiltro {
     metodoPago?: string;
     tipoCpe?: string;
     moneda?: string;
-    sucursalId?: number;
     fechaCreacionDesde?: string;
     fechaCreacionHasta?: string;
 }
 
 /**
- * Los ocho controles de filtro tal cual los devuelve el DOM: siempre cadenas, y `''` cuando el
+ * Los siete controles de filtro tal cual los devuelve el DOM: siempre cadenas, y `''` cuando el
  * usuario no eligió nada.
  */
 export interface FiltrosHistorialCrudos {
@@ -20,7 +19,6 @@ export interface FiltrosHistorialCrudos {
     metodoPago: string;
     tipoCpe: string;
     moneda: string;
-    sucursalId: string;
     fechaDesde: string;
     fechaHasta: string;
 }
@@ -30,8 +28,8 @@ export interface FiltrosHistorialCrudos {
  *
  * Regla única: **la cadena vacía significa «no filtrar», y eso se dice con `undefined`**. El
  * historial NUNCA filtra en memoria la página ya cargada, así que un `''` enviado al backend
- * devolvería cero ventas en vez de todas. La sucursal viaja como número: el backend la declara
- * `Long`, y una cadena provoca 400.
+ * devolvería cero ventas en vez de todas. No hay filtro de sucursal: un turno es de una sola
+ * sucursal y `venta.sucursal_id` no se rellena (POSP-11).
  */
 export function construirFiltroHistorial(crudos: FiltrosHistorialCrudos): PosHistorialFiltro {
     return {
@@ -40,7 +38,6 @@ export function construirFiltroHistorial(crudos: FiltrosHistorialCrudos): PosHis
         metodoPago: crudos.metodoPago || undefined,
         tipoCpe: crudos.tipoCpe || undefined,
         moneda: crudos.moneda || undefined,
-        sucursalId: crudos.sucursalId ? Number(crudos.sucursalId) : undefined,
         fechaCreacionDesde: crudos.fechaDesde || undefined,
         fechaCreacionHasta: crudos.fechaHasta || undefined,
     };

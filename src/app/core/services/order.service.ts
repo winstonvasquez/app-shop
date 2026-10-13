@@ -17,6 +17,12 @@ import { toHttpParams } from '@core/utils/http-params.util';
 import { mensajeDeErrorHttp } from '@core/utils/http-error.util';
 
 /** Filtros server-side del listado "Mis pedidos" del storefront. Todos opcionales. */
+/** Línea seleccionada del carrito para estimar un cupón: subtotal = precio × cantidad. */
+export interface CuponLinea {
+    productoId: number;
+    subtotal: number;
+}
+
 export interface MisPedidosFiltros {
     /** Busca por id del pedido o serie-número de CPE. */
     search?: string;
@@ -150,11 +156,13 @@ export class OrderService {
 
     /**
      * Valida un cupón de descuento contra POST /api/v1/cupones/validate.
+     * `items` (líneas SELECCIONADAS) permite que el backend estime con el mismo alcance que aplicará
+     * el pedido: un cupón de PRODUCTO/CATEGORÍA sólo descuenta las líneas que coinciden.
      */
-    validateCoupon(code: string, subtotal: number = 0): Observable<{ amount: number }> {
+    validateCoupon(code: string, subtotal: number = 0, items: CuponLinea[] = []): Observable<{ amount: number }> {
         const url = `${environment.apiUrls.sales}/api/v1/cupones/validate`;
         return this.http.post<{ valido: boolean; tipo: string; valor: number; mensaje: string }>(
-            url, { codigo: code, subtotal }
+            url, { codigo: code, subtotal, items }
         ).pipe(
             catchError(this.handleError),
             (source) => new Observable<{ amount: number }>(observer => {

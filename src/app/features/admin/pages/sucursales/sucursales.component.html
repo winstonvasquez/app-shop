@@ -5,7 +5,7 @@
         title="Sucursales"
         [subtitle]="'Gestión de sucursales de la empresa — ' + totalElements() + ' en total'">
         <div actions>
-            @if (!showForm()) {
+            @if (!showForm() && puedeGestionar) {
                 <button class="btn btn-primary" (click)="openCreate()">+ Nueva sucursal</button>
             }
         </div>

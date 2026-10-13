@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { construirPromocionRequest, PromocionFormRaw } from './promotions.form';
+import { FormControl, FormGroup } from '@angular/forms';
+import {
+    calcularEstadoPromocion, construirPromocionRequest, hoyLocalISO, parseFechaLocal,
+    PromocionFormRaw, validadoresValor, validarRangoFechas,
+} from './promotions.form';
 
 const BASE: PromocionFormRaw = {
     nombre: 'Verano',
@@ -82,5 +86,53 @@ describe('construirPromocionRequest', () => {
 
     it('un monto mínimo de 0 en CARRITO viaja tal cual', () => {
         expect(construirPromocionRequest({ ...BASE, alcance: 'CARRITO', montoMinimo: 0 }).montoMinimo).toBe(0);
+    });
+});
+
+describe('código de cupón', () => {
+    it('se normaliza a mayúsculas sin espacios (el backend busca en mayúsculas)', () => {
+        expect(construirPromocionRequest({ ...BASE, codigoCupon: '  verano25 ' }).codigoCupon).toBe('VERANO25');
+    });
+    it('un cupón de sólo espacios se omite', () => {
+        expect(construirPromocionRequest({ ...BASE, codigoCupon: '   ' }).codigoCupon).toBeUndefined();
+    });
+});
+
+describe('validadoresValor', () => {
+    const errores = (tipo: string, valor: number) => new FormControl(valor, validadoresValor(tipo)).errors;
+    it('rechaza 0 en cualquier tipo', () => {
+        expect(errores('MONTO_FIJO', 0)).toHaveProperty('min');
+        expect(errores('PORCENTAJE', 0)).toHaveProperty('min');
+    });
+    it('PORCENTAJE tiene tope 100; MONTO_FIJO no', () => {
+        expect(errores('PORCENTAJE', 150)).toHaveProperty('max');
+        expect(errores('PORCENTAJE', 100)).toBeNull();
+        expect(errores('MONTO_FIJO', 150)).toBeNull();
+    });
+});
+
+describe('validarRangoFechas', () => {
+    const grupo = (fechaInicio: string, fechaFin: string) =>
+        new FormGroup({ fechaInicio: new FormControl(fechaInicio), fechaFin: new FormControl(fechaFin) });
+    it('fin anterior a inicio es error; igual o posterior no', () => {
+        expect(validarRangoFechas(grupo('2026-03-10', '2026-03-01'))).toEqual({ rangoFechas: true });
+        expect(validarRangoFechas(grupo('2026-03-10', '2026-03-10'))).toBeNull();
+        expect(validarRangoFechas(grupo('2026-03-10', ''))).toBeNull();
+    });
+});
+
+describe('fechas locales', () => {
+    it('parseFechaLocal da el día pedido a medianoche local, no el anterior', () => {
+        const d = parseFechaLocal('2026-10-13');
+        expect([d.getFullYear(), d.getMonth(), d.getDate(), d.getHours()]).toEqual([2026, 9, 13, 0]);
+    });
+    it('hoyLocalISO usa el día local', () => {
+        expect(hoyLocalISO(new Date(2026, 9, 13, 23, 30))).toBe('2026-10-13');
+    });
+    it('una promoción que vence hoy sigue ACTIVA; ayer es VENCIDA; inactiva manda', () => {
+        const hoy = new Date(2026, 9, 13, 20, 0);
+        expect(calcularEstadoPromocion({ activo: true, fechaFin: '2026-10-13' }, hoy)).toBe('ACTIVA');
+        expect(calcularEstadoPromocion({ activo: true, fechaFin: '2026-10-12' }, hoy)).toBe('VENCIDA');
+        expect(calcularEstadoPromocion({ activo: false, fechaFin: '2026-10-12' }, hoy)).toBe('INACTIVA');
     });
 });

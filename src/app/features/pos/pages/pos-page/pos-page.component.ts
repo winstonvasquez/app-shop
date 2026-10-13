@@ -22,6 +22,7 @@ import { ProductoCatalogoPOS, DescuentoTipo } from '../../models/catalogo-pos.mo
 import { VentaPosResponse } from '../../models/venta-pos.model';
 import { TurnoCaja } from '../../models/turno-caja.model';
 import { construirVentaPosRequest, errorFacturaSinRuc, tipoDocSunat } from './pos-page.venta-request';
+import { itemsDeOrdenRetenida } from './pos-page.orden-retenida';
 
 // Sub-components
 import { PosTopbarComponent, PosScreen } from '../../components/pos-topbar/pos-topbar.component';
@@ -39,7 +40,6 @@ import { PosDenominationCounterComponent, CierreArqueoData } from '../../compone
 import { PosReportViewerComponent, ReporteXZ } from '../../components/pos-report-viewer/pos-report-viewer.component';
 import { PosCustomerLookupComponent } from '../../components/pos-customer-lookup/pos-customer-lookup.component';
 import { PosCameraScannerComponent } from '../../components/pos-camera-scanner/pos-camera-scanner.component';
-import { PosCrossStockDialogComponent } from '../../components/pos-cross-stock-dialog/pos-cross-stock-dialog.component';
 import { PosPinLoginComponent } from '../../components/pos-pin-login/pos-pin-login.component';
 import { PosManagerPinDialogComponent } from '../../components/pos-manager-pin-dialog/pos-manager-pin-dialog.component';
 
@@ -62,7 +62,6 @@ import { PosManagerPinDialogComponent } from '../../components/pos-manager-pin-d
         PosReportViewerComponent,
         PosCustomerLookupComponent,
         PosCameraScannerComponent,
-        PosCrossStockDialogComponent,
         PosPinLoginComponent,
         PosManagerPinDialogComponent,
     ],
@@ -115,6 +114,10 @@ export class PosPageComponent implements OnInit, OnDestroy {
     readonly showDenominationCounter = signal(false);
     readonly currentReporte = signal<ReporteXZ | null>(null);
     readonly showCameraScanner = signal(false);
+    /** Orden retenida en proceso de recuperación (una a la vez; evita recuperarla dos veces). */
+    readonly recuperandoId = signal<number | null>(null);
+    /** Tope (%) de descuento sin PIN de supervisor: lo da la config de la empresa; 10 sólo si la consulta falla. */
+    readonly maxDescuentoSinAuth = signal(10);
 
     /** Filtros avanzados del catálogo POS (marca/unidad/disponibilidad) — server-side, emitidos por pos-catalog. */
     private catalogoFiltros: PosCatalogoFiltros = {};
@@ -124,8 +127,6 @@ export class PosPageComponent implements OnInit, OnDestroy {
     private historialFiltros: PosHistorialFiltros = {};
 
     // Cross-stock dialog
-    readonly showCrossStock = signal(false);
-    readonly crossStockVarianteId = signal<number>(0);
 
     // PIN login guard
     readonly pinAuthenticated = signal(false);
@@ -143,6 +144,13 @@ export class PosPageComponent implements OnInit, OnDestroy {
 
     // ── Derivados ─────────────────────────────────────────────────
     readonly sinTurno = computed(() => this.turnoActivo() === null);
+    /** Empresa y cajero de la sesión. Sin ellos no se opera: nunca se asume la empresa/cajero 1. */
+    readonly sesion = computed(() => {
+        const u = this.auth.currentUser();
+        return u?.activeCompanyId != null && u.userId != null
+            ? { companyId: u.activeCompanyId, cajeroId: u.userId }
+            : null;
+    });
 
     // ── Reloj ─────────────────────────────────────────────────────
     readonly clockTime = signal('');
@@ -159,10 +167,14 @@ export class PosPageComponent implements OnInit, OnDestroy {
             this.pinAuthenticated.set(true);
         }
         this.startClock();
+        if (!this.sesion()) return; // la plantilla muestra el aviso «sin sesión»; nada se carga ni se opera
         this.loadCatalogo();
         this.loadFavoritos();
         this.loadTurnoActivo();
+        this.loadMaxDescuento();
         this.registerKeyboardShortcuts();
+        // Reintenta al cargar las ventas offline que quedaron pendientes/en error (antes sólo en el evento `online`).
+        void this.offlineSync.syncAll();
     }
 
     ngOnDestroy(): void {
@@ -173,12 +185,13 @@ export class PosPageComponent implements OnInit, OnDestroy {
     }
 
     // ── Helpers privados ──────────────────────────────────────────
+    // Sólo se leen con sesión: la plantilla del POS y ngOnInit están protegidos por `sesion()`.
     get companyId(): number {
-        return this.auth.currentUser()?.activeCompanyId ?? 1;
+        return this.sesion()!.companyId;
     }
 
     private get cajeroId(): number {
-        return this.auth.currentUser()?.userId ?? 1;
+        return this.sesion()!.cajeroId;
     }
 
     private startClock(): void {
@@ -222,6 +235,18 @@ export class PosPageComponent implements OnInit, OnDestroy {
                 // Pre-cargar el conteo de órdenes retenidas para el badge del sidenav
                 if (turno) this.loadOrdenesRetenidas();
             },
+            // Sólo el 404 es «sin turno» (lo resuelve el servicio): un 500/timeout se muestra, no se disfraza.
+            error: err => this.showToast(this.mensajeError(err, 'No se pudo consultar el turno activo'), 'error'),
+        });
+    }
+
+    private loadMaxDescuento(): void {
+        this.ventaService.getMaxDescuentoSinAutorizacion(this.companyId).subscribe({
+            next: max => {
+                const n = Number(max);
+                if (Number.isFinite(n)) this.maxDescuentoSinAuth.set(n);
+            },
+            error: () => this.showToast('No se pudo leer el tope de descuento de la empresa; se usa 10%', 'info'),
         });
     }
 
@@ -330,27 +355,32 @@ export class PosPageComponent implements OnInit, OnDestroy {
     }
 
     restoreOrder(orden: OrdenRetenida): void {
+        if (this.recuperandoId() !== null) return;
+        this.recuperandoId.set(orden.id);
         this.ordenesRetenidasService.recuperar(orden.id).subscribe({
             next: recovered => {
-                try {
-                    const items = JSON.parse(recovered.itemsJson);
-                    this.carrito.vaciarCarrito();
-                    for (const item of items) {
-                        if (item.variante) {
-                            this.carrito.agregarProducto(item.variante);
-                            if (item.cantidad > 1) {
-                                this.carrito.setCantidad(item.variante.varianteId, item.cantidad);
-                            }
-                        }
-                    }
-                    if (recovered.descuento) this.carrito.setDescuento(recovered.descuento);
-                    if (recovered.clienteNombre) this.carrito.setCliente(recovered.clienteId, recovered.clienteNombre);
-                } catch { /* ignore parse errors */ }
+                this.recuperandoId.set(null);
+                // Ya no es RETENIDA en el backend: sale de la lista pase lo que pase con el contenido.
+                this.ordenesRetenidas.update(list => list.filter(o => o.id !== orden.id));
+                const items = itemsDeOrdenRetenida(recovered.itemsJson);
+                if (!items) {
+                    this.showToast('La orden se recuperó pero su contenido no es legible', 'error');
+                    return;
+                }
+                this.carrito.vaciarCarrito();
+                // Las líneas guardadas ya traen descuento de línea, autorizador y bolsas: se restauran enteras.
+                this.carrito.items.set(items);
+                if (recovered.descuento) this.carrito.setDescuento(recovered.descuento);
+                // parcial: el backend sólo guarda clienteId/clienteNombre; tipo y n° de documento (y tipoCpe) se pierden.
+                if (recovered.clienteNombre) this.carrito.setCliente(recovered.clienteId, recovered.clienteNombre);
                 this.loadOrdenesRetenidas();
                 this.showScreen('main');
                 this.showToast('Orden recuperada', 'success');
             },
-            error: () => this.showToast('Error al recuperar orden', 'error'),
+            error: err => {
+                this.recuperandoId.set(null);
+                this.showToast(this.mensajeError(err, 'Error al recuperar orden'), 'error');
+            },
         });
     }
 
@@ -387,6 +417,31 @@ export class PosPageComponent implements OnInit, OnDestroy {
     }
 
     // ── Cierre con Arqueo ─────────────────────────────────────────
+    /**
+     * true (y avisa) si el turno tiene ventas offline sin sincronizar: cerrarlo las dejaría fallando
+     * para siempre con `turno.not.open` (venta cobrada sin registro, sin stock ni CPE).
+     */
+    private async cierreBloqueadoPorOffline(turnoId: number): Promise<boolean> {
+        try {
+            const n = await this.offlineSync.pendientesDeTurno(turnoId);
+            if (n === 0) return false;
+            this.showToast(
+                `Hay ${n} venta(s) offline de este turno sin sincronizar. Usa «Reintentar sincronización» antes de cerrarlo.`,
+                'error');
+        } catch {
+            this.showToast('No se pudo verificar la cola de ventas offline; reintenta.', 'error');
+        }
+        return true;
+    }
+
+    abrirCierreArqueo(): void {
+        const turno = this.turnoActivo();
+        if (!turno) return;
+        void this.cierreBloqueadoPorOffline(turno.id).then(bloqueado => {
+            if (!bloqueado) this.showDenominationCounter.set(true);
+        });
+    }
+
     cerrarTurnoConArqueo(data: CierreArqueoData): void {
         const turno = this.turnoActivo();
         if (!turno) return;
@@ -396,8 +451,9 @@ export class PosPageComponent implements OnInit, OnDestroy {
                 this.turnoActivo.set(t.estado === 'ABIERTO' ? t : null);
                 this.showDenominationCounter.set(false);
                 this.showToast('Turno cerrado con arqueo', 'success');
+                if (t.estado !== 'ABIERTO') this.mostrarReporteZ(turno.id);
             },
-            error: () => this.showToast('Error al cerrar turno', 'error'),
+            error: err => this.showToast(this.mensajeError(err, 'Error al cerrar turno'), 'error'),
         });
     }
 
@@ -414,15 +470,15 @@ export class PosPageComponent implements OnInit, OnDestroy {
         });
     }
 
-    loadReporteZ(): void {
-        const turno = this.turnoActivo();
-        if (!turno) return;
-        this.turnoService.getReporteZ(turno.id).subscribe({
+    /** El Z sólo existe para turnos CERRADOS (el backend da 400 con el turno abierto): se muestra al cerrar. */
+    private mostrarReporteZ(turnoId: number): void {
+        this.turnoService.getReporteZ(turnoId).subscribe({
             next: r => {
                 this.currentReporte.set(r);
                 this.showScreen('reporte');
             },
-            error: () => this.showToast('Error al generar reporte Z', 'error'),
+            error: err => this.showToast(
+                this.mensajeError(err, 'Turno cerrado, pero no se pudo generar el reporte Z'), 'error'),
         });
     }
 
@@ -437,10 +493,6 @@ export class PosPageComponent implements OnInit, OnDestroy {
     }
 
     // ── Cross-Stock Dialog ──────────────────────────────────────
-    openCrossStock(varianteId: number): void {
-        this.crossStockVarianteId.set(varianteId);
-        this.showCrossStock.set(true);
-    }
 
     // ── Manager PIN (discount authorization) ─────────────────────
     /** Un descuento de línea superó el umbral del cajero: solicitar PIN de supervisor. */
@@ -695,12 +747,16 @@ export class PosPageComponent implements OnInit, OnDestroy {
     cerrarTurno(): void {
         const turno = this.turnoActivo();
         if (!turno) return;
-        this.turnoService.cerrarTurno(turno.id).subscribe({
-            next: t => {
-                this.turnoActivo.set(t.estado === 'ABIERTO' ? t : null);
-                this.showToast('Turno cerrado', 'info');
-            },
-            error: err => this.showToast(this.mensajeError(err, 'Error al cerrar turno'), 'error'),
+        void this.cierreBloqueadoPorOffline(turno.id).then(bloqueado => {
+            if (bloqueado) return;
+            this.turnoService.cerrarTurno(turno.id).subscribe({
+                next: t => {
+                    this.turnoActivo.set(t.estado === 'ABIERTO' ? t : null);
+                    this.showToast('Turno cerrado', 'info');
+                    if (t.estado !== 'ABIERTO') this.mostrarReporteZ(turno.id);
+                },
+                error: err => this.showToast(this.mensajeError(err, 'Error al cerrar turno'), 'error'),
+            });
         });
     }
 

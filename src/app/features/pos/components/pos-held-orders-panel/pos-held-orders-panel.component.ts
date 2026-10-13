@@ -10,6 +10,8 @@ import { OrdenRetenida } from '../../services/pos-ordenes-retenidas.service';
 export class PosHeldOrdersPanelComponent {
 
     readonly ordenes = input.required<OrdenRetenida[]>();
+    /** Id de la orden que se está recuperando: mientras haya una, no se puede recuperar otra (ni la misma dos veces). */
+    readonly recuperandoId = input<number | null>(null);
 
     readonly restore = output<OrdenRetenida>();
     readonly discard = output<OrdenRetenida>();

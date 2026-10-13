@@ -33,13 +33,6 @@
             }
         </select>
 
-        <select class="historial-filter-select" [value]="filterSucursalId()" (change)="onSucursalChange($any($event.target).value)">
-            <option value="">Sucursal</option>
-            @for (s of sucursales(); track s.id) {
-            <option [value]="s.id">{{ s.nombre }}</option>
-            }
-        </select>
-
         <input class="historial-filter-date" type="date" [value]="filterFechaDesde()"
             (change)="onFechaDesdeChange($any($event.target).value)" title="Desde" />
         <input class="historial-filter-date" type="date" [value]="filterFechaHasta()"

@@ -29,6 +29,8 @@ export interface ProductResponse {
     descripcion: string;
     precioBase: number;
     marca?: string;
+    /** El backend aún no lo devuelve en la lista; ver `estaActivo`. */
+    activo?: boolean;
     stock: number;
     company?: ProductCompany;
     originalPrice?: number;

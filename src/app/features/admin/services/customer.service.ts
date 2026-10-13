@@ -111,7 +111,8 @@ export class CustomerService {
      * Asigna un segmento a múltiples clientes en lote
      */
     bulkAssignSegment(clienteIds: number[], segmentoId: number): Observable<void> {
-        let params = new HttpParams().set('segmentoId', segmentoId.toString());
+        // El back exige `companyId` (@RequestParam): sin él responde 400.
+        let params = this.tenantParams().set('segmentoId', segmentoId.toString());
         clienteIds.forEach(id => { params = params.append('clienteIds', id.toString()); });
         return this.http
             .put<void>(`${this.baseUrl}/bulk-segment`, null, { params })

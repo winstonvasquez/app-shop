@@ -13,7 +13,8 @@ import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.compo
 import { AdminFormSectionComponent } from '@shared/ui/forms/admin-form-section/admin-form-section.component';
 import { AdminFormLayoutComponent } from '@shared/ui/forms/admin-form-layout/admin-form-layout.component';
 import { ButtonComponent, RichTextEditorComponent, ServerSearchSelectComponent } from '@shared/components';
-import { AlertComponent } from '@shared/ui';
+import { AlertComponent, ModalComponent } from '@shared/ui';
+import { AuthService } from '@core/auth/auth.service';
 import { PromotionsService, Promocion } from '../../services/promotions.service';
 import { VentasParametrosService, SelectOption } from '../../services/ventas-parametros.service';
 import { CURRENCY_DISPLAY } from '@shared/constants/sunat.constants';
@@ -25,7 +26,10 @@ import { ProductService } from '@core/services/product.service';
 import { CategoryService } from '@core/services/category.service';
 import { productoSelectSource } from '@features/admin/components/select-sources';
 import { mensajeDeErrorDeControl } from '@shared/utils/form-errors';
-import { construirPromocionRequest, PromocionRequest } from './promotions.form';
+import {
+    calcularEstadoPromocion, construirPromocionRequest, hoyLocalISO, MENSAJE_RANGO_FECHAS,
+    parseFechaLocal, PromocionRequest, validadoresValor, validarRangoFechas,
+} from './promotions.form';
 
 type EstadoPromocion = 'ACTIVA' | 'INACTIVA' | 'VENCIDA';
 
@@ -42,14 +46,6 @@ const ESTADO_PROMOCION_OPTIONS = [
     { value: 'VENCIDA', label: 'Vencida' },
 ] as const;
 
-/** PromocionEntity.SubtipoPromocion — enum Java sin catálogo seedeado en erp_parameters. */
-const SUBTIPO_PROMOCION_OPTIONS = [
-    { value: 'FLASH_SALE', label: 'Flash Sale' },
-    { value: 'BUNDLE', label: 'Bundle' },
-    { value: 'TIERED', label: 'Por niveles' },
-    { value: 'BUY_X_GET_Y', label: 'Compra X lleva Y' },
-] as const;
-
 @Component({
     selector: 'app-promotions',
     standalone: true,
@@ -64,6 +60,7 @@ const SUBTIPO_PROMOCION_OPTIONS = [
         AdminFormLayoutComponent,
         ButtonComponent,
         AlertComponent,
+        ModalComponent,
         RichTextEditorComponent,
         ServerSearchSelectComponent,
     ],
@@ -76,6 +73,8 @@ export class PromotionsComponent implements OnInit {
     private readonly productService  = inject(ProductService);
     private readonly categoryService = inject(CategoryService);
     private readonly destroyRef      = inject(DestroyRef);
+    private readonly auth            = inject(AuthService);
+    protected readonly puedeGestionar = this.auth.puedeGestionarTienda();
 
     /** Fuente server-side para el selector de "Producto específico" (alcance PRODUCTO). */
     readonly productoSource = productoSelectSource(this.productService);
@@ -98,7 +97,6 @@ export class PromotionsComponent implements OnInit {
     filterEstado           = signal('');
     filterTipo             = signal('');
     filterAlcance          = signal('');
-    filterSubtipo          = signal('');
     filterActivo           = signal('');
     filterFechaInicioDesde = signal<string | undefined>(undefined);
     filterFechaInicioHasta = signal<string | undefined>(undefined);
@@ -125,7 +123,7 @@ export class PromotionsComponent implements OnInit {
         staticFilter('estado', 'Estado', ESTADO_PROMOCION_OPTIONS),
         observableFilter('tipo', 'Tipo de descuento', this.parametros.getTiposPromocion()),
         observableFilter('alcance', 'Alcance', this.parametros.getAlcancesPromocion()),
-        staticFilter('subtipo', 'Subtipo', SUBTIPO_PROMOCION_OPTIONS),
+        // Filtro «Subtipo» retirado: ningún endpoint escribe `subtipo` (ni tiers/bundles), nunca encontraba nada.
         staticFilter('activo', 'Activa/Inactiva', ACTIVO_OPTIONS),
     ];
 
@@ -140,7 +138,6 @@ export class PromotionsComponent implements OnInit {
             case 'estado':  this.filterEstado.set(valor); break;
             case 'tipo':    this.filterTipo.set(valor); break;
             case 'alcance': this.filterAlcance.set(valor); break;
-            case 'subtipo': this.filterSubtipo.set(valor); break;
             case 'activo':  this.filterActivo.set(valor); break;
             default: return;
         }
@@ -170,7 +167,6 @@ export class PromotionsComponent implements OnInit {
         this.filterEstado.set('');
         this.filterTipo.set('');
         this.filterAlcance.set('');
-        this.filterSubtipo.set('');
         this.filterActivo.set('');
         this.filterFechaInicioDesde.set(undefined);
         this.filterFechaInicioHasta.set(undefined);
@@ -211,7 +207,6 @@ export class PromotionsComponent implements OnInit {
             estado: this.filterEstado() || undefined,
             tipo: this.filterTipo() || undefined,
             alcance: this.filterAlcance() || undefined,
-            subtipo: this.filterSubtipo() || undefined,
             activo: this.filterActivo() || undefined,
             fechaInicioDesde: this.filterFechaInicioDesde(),
             fechaInicioHasta: this.filterFechaInicioHasta(),
@@ -224,7 +219,7 @@ export class PromotionsComponent implements OnInit {
         nombre:       ['', Validators.required],
         descripcion:  [''],
         tipo:         ['PORCENTAJE' as Promocion['tipo'], Validators.required],
-        valor:        [0, [Validators.required, Validators.min(0)]],
+        valor:        [0, validadoresValor('PORCENTAJE')],
         alcance:      ['CARRITO' as Promocion['alcance'], Validators.required],
         // Vinculación según alcance (V69) — mutuamente excluyentes, ver aplicarBloqueoAlcance().
         productoId:   [null as number | null, Validators.required],
@@ -232,14 +227,16 @@ export class PromotionsComponent implements OnInit {
         montoMinimo:  [null as number | null, [Validators.required, Validators.min(0.01)]],
         codigoCupon:  [''],
         limiteUsos:   [null as number | null],
-        fechaInicio:  [new Date().toISOString().split('T')[0], Validators.required],
+        fechaInicio:  [hoyLocalISO(), Validators.required],
         fechaFin:     ['', Validators.required],
         activo:       [true],
         // DERIVADOS (nunca se envían): usosActuales lo lleva el backend y estado se
         // calcula desde activo + fechaFin. Se muestran bloqueados para poder leerlos.
         usosActuales: [0],
         estado:       ['ACTIVA' as EstadoPromocion],
-    });
+    }, { validators: validarRangoFechas });
+
+    readonly mensajeRangoFechas = MENSAJE_RANGO_FECHAS;
 
     /** El código de cupón ya circula entre los clientes: cambiarlo invalida los repartidos. */
     private static readonly CAMPOS_BLOQUEADOS = ['codigoCupon'] as const;
@@ -256,7 +253,7 @@ export class PromotionsComponent implements OnInit {
             ? `${row.valor}%`
             : `${CURRENCY_DISPLAY.SYMBOL_PEN} ${row.valor.toFixed(2)}` },
         { key: 'fechaInicio', label: 'Vigencia',
-          render: (row) => `${new Date(row.fechaInicio).toLocaleDateString('es-PE')} — ${new Date(row.fechaFin).toLocaleDateString('es-PE')}` },
+          render: (row) => `${parseFechaLocal(row.fechaInicio).toLocaleDateString('es-PE')} — ${parseFechaLocal(row.fechaFin).toLocaleDateString('es-PE')}` },
         { key: 'usosActuales', label: 'Usos',
           render: (row) => row.limiteUsos
             ? `${row.usosActuales} / ${row.limiteUsos}`
@@ -265,13 +262,19 @@ export class PromotionsComponent implements OnInit {
           render: (row) => `<span class="badge ${this.parametros.getBadgeEstadoPromocion(row.estado)}">${row.estado}</span>` },
     ];
 
-    actions: TableAction<PromocionVM>[] = [
+    /** Todas las acciones de fila escriben: sin permiso de gestión no hay ninguna. */
+    actions: TableAction<PromocionVM>[] = this.puedeGestionar ? [
         { label: 'Editar',     icon: '✏️', class: 'btn-view',
           onClick: (row) => this.abrirEditar(row) },
         { label: 'Desactivar', icon: '⊘', class: 'btn-view',
           show: (row) => row.activo && row.estado !== 'VENCIDA',
           onClick: (row) => this.toggleActivo(row) },
-    ];
+        { label: 'Activar', icon: '✓', class: 'btn-view',
+          show: (row) => !row.activo,
+          onClick: (row) => this.toggleActivo(row) },
+        { label: 'Eliminar', icon: '🗑', class: 'btn-view',
+          onClick: (row) => this.promoAEliminar.set(row) },
+    ] : [];
 
     /**
      * KPIs de cabecera: se calculan sobre una muestra amplia SIN paginar (independiente de la
@@ -286,7 +289,7 @@ export class PromotionsComponent implements OnInit {
         const en7dias = new Date();
         en7dias.setDate(en7dias.getDate() + 7);
         return this.statsPromociones().filter(p => {
-            const fin = new Date(p.fechaFin);
+            const fin = parseFechaLocal(p.fechaFin);
             return p.estado === 'ACTIVA' && fin <= en7dias;
         }).length;
     });
@@ -323,6 +326,14 @@ export class PromotionsComponent implements OnInit {
         this.form.controls.alcance.valueChanges
             .pipe(takeUntilDestroyed(this.destroyRef))
             .subscribe(alcance => this.aplicarBloqueoAlcance(alcance));
+
+        // El tope de 100 sólo aplica a PORCENTAJE (el [max] del HTML no valida en reactive forms).
+        this.form.controls.tipo.valueChanges
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe(tipo => {
+                this.form.controls.valor.setValidators(validadoresValor(tipo));
+                this.form.controls.valor.updateValueAndValidity();
+            });
     }
 
     /** Habilita SOLO el control del alcance elegido y limpia+deshabilita los otros dos. */
@@ -341,6 +352,7 @@ export class PromotionsComponent implements OnInit {
 
     cargar(): void {
         this.cargando.set(true);
+        this.listError.set(null);
         this.service.getAll({
             page: this.currentPage(),
             size: this.pageSize(),
@@ -349,7 +361,6 @@ export class PromotionsComponent implements OnInit {
             search: this.searchQuery() || undefined,
             tipo: this.filterTipo() || undefined,
             alcance: this.filterAlcance() || undefined,
-            subtipo: this.filterSubtipo() || undefined,
             activo: this.filterActivo() === '' ? undefined : this.filterActivo() === 'true',
             estado: this.filterEstado() || undefined,
             fechaInicioDesde: this.filterFechaInicioDesde(),
@@ -363,8 +374,9 @@ export class PromotionsComponent implements OnInit {
                 this.totalPages.set(pageTotalPages(res));
                 this.cargando.set(false);
             },
-            error: () => {
+            error: (err: Error) => {
                 this.promociones.set([]);
+                this.listError.set(err.message);
                 this.cargando.set(false);
             }
         });
@@ -474,15 +486,34 @@ export class PromotionsComponent implements OnInit {
         });
     }
 
+    /** Promoción pendiente de confirmar para eliminar (null = diálogo cerrado). */
+    promoAEliminar = signal<PromocionVM | null>(null);
+
+    confirmarEliminar(): void {
+        const row = this.promoAEliminar();
+        if (!row?.id) return;
+        this.promoAEliminar.set(null);
+        this.listError.set(null);
+        this.service.delete(row.id).subscribe({
+            next: () => {
+                // Si era la única fila de una página > 0, la página quedaría vacía.
+                if (this.promociones().length === 1 && this.currentPage() > 0) {
+                    this.currentPage.update(p => p - 1);
+                }
+                this.cargar();
+                this.cargarStats();
+            },
+            error: (err: Error) => this.listError.set(err.message),
+        });
+    }
+
     cerrarModal(): void {
         this.showModal.set(false);
         this.resetForm();
     }
 
     private calcularEstado(p: Omit<Promocion, 'id'>): EstadoPromocion {
-        if (!p.activo) return 'INACTIVA';
-        if (p.fechaFin && new Date(p.fechaFin) < new Date()) return 'VENCIDA';
-        return 'ACTIVA';
+        return calcularEstadoPromocion(p);
     }
 
     private resetForm(): void {
@@ -497,7 +528,7 @@ export class PromotionsComponent implements OnInit {
             montoMinimo: null,
             codigoCupon: '',
             limiteUsos:  null,
-            fechaInicio: new Date().toISOString().split('T')[0],
+            fechaInicio: hoyLocalISO(),
             fechaFin:    '',
             activo:      true,
             usosActuales: 0,

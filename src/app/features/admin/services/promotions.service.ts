@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
-import { Observable, of, throwError } from 'rxjs';
+import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { environment } from '@env/environment';
 import { AuthService } from '@core/auth/auth.service';
@@ -40,7 +40,6 @@ export interface PromocionFiltros {
     search?: string;
     tipo?: string;
     alcance?: string;
-    subtipo?: string;
     activo?: boolean;
     /** Derivado en el backend: ACTIVA | INACTIVA | VENCIDA (ver PromocionQueryService). */
     estado?: string;
@@ -61,14 +60,13 @@ export class PromotionsService {
      * getAll() sin paginar (el backend ya devuelve Page<PromocionResponseDto>).
      */
     getAll(filtros: PromocionFiltros = {}): Observable<PageResponse<Promocion>> {
-        let params = toHttpParams({
+        const params = toHttpParams({
             page: filtros.page ?? 0,
             size: filtros.size ?? 20,
             sort: filtros.sortField ? `${filtros.sortField},${filtros.sortDirection ?? 'desc'}` : undefined,
             search: filtros.search,
             tipo: filtros.tipo,
             alcance: filtros.alcance,
-            subtipo: filtros.subtipo,
             activo: filtros.activo,
             estado: filtros.estado,
             fechaInicioDesde: filtros.fechaInicioDesde,
@@ -77,11 +75,9 @@ export class PromotionsService {
             fechaFinHasta: filtros.fechaFinHasta,
         });
 
+        // El error se propaga: tragarlo con una página vacía hacía pasar un 403/500 por «sin promociones».
         return this.http.get<PageResponse<Promocion>>(this.baseUrl, { params }).pipe(
-            catchError(() => of({
-                content: [], totalElements: 0, totalPages: 0, size: filtros.size ?? 20,
-                number: filtros.page ?? 0, first: true, last: true, empty: true
-            } as PageResponse<Promocion>))
+            catchError(this.handleError)
         );
     }
 

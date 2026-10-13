@@ -4,11 +4,15 @@ import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
 import { DatePipe, CurrencyPipe } from '@angular/common';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { OrderService } from '@core/services/order.service';
+import { AuthService } from '@core/auth/auth.service';
 import { OrderResponse } from '@core/models/order.model';
-import { OrderStatus, OrderDetail } from '@features/admin/models/order.model';
+import { OrderStatus } from '@features/admin/models/order.model';
 import { VentasParametrosService } from '../../services/ventas-parametros.service';
 import { PaginationConfig, pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
-import { filtrosDePedidos, FiltrosPedidoCrudos } from './orders.params';
+import {
+  filtrosDePedidos, FiltrosPedidoCrudos, clienteDePedido, etiquetaDe,
+  METODOS_PAGO_PEDIDO, ESTADOS_PAGO_PEDIDO
+} from './orders.params';
 import { DataTableComponent, TableColumn, TableAction, PaginationEvent, SortEvent, FilterConfig, FilterChangeEvent, DateRangeFilterConfig, DateRangeChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { catalogFilter, staticFilter } from '@shared/ui/tables/data-table/filter-helpers';
 import { CatalogService } from '@core/services/catalog.service';
@@ -41,6 +45,7 @@ import { mensajeDeErrorHttp } from '@core/utils/http-error.util';
 })
 export class OrdersComponent implements OnInit {
   private readonly orderService = inject(OrderService);
+  private readonly auth = inject(AuthService);
   private readonly translate = inject(TranslateService);
   private readonly parametros = inject(VentasParametrosService);
   readonly catalog = inject(CatalogService);
@@ -99,22 +104,10 @@ export class OrdersComponent implements OnInit {
     },
     catalogFilter(this.catalog, 'TIPO_CPE', 'cpeTipo', 'Tipo de comprobante'),
     catalogFilter(this.catalog, 'ESTADO_CPE_SUNAT', 'cpeEstado', 'Estado CPE (SUNAT)'),
-    // OJO (riesgo documentado): el catálogo METODO_PAGO en erp_parameters (TRANSFERENCIA/
-    // CHEQUE/EFECTIVO) no es 1:1 con PagoEntity.MetodoPago (TARJETA_CREDITO/TARJETA_DEBITO/
-    // PAYPAL/TRANSFERENCIA_BANCARIA/EFECTIVO/YAPE/PLIN/BILLETERA_DIGITAL) contra el que compara
-    // el backend (PedidoRepository: CAST(pg.metodoPago AS String) = :metodoPago). Solo
-    // "Efectivo" calzará; el resto de opciones del catálogo devolverá 0 filas hasta que se
-    // reconcilien los códigos (fuera de alcance de este cableado, que es 100% frontend).
-    catalogFilter(this.catalog, 'METODO_PAGO', 'metodoPago', 'Método de pago'),
-    // ESTADO_PAGO no existe como catálogo en erp_parameters (no confundir con
-    // ESTADO_INTENTO_PAGO, que es otro dominio) -> staticFilter con los valores EXACTOS
-    // de PagoEntity.EstadoPago.
-    staticFilter('estadoPago', 'Estado del pago', [
-      { value: 'PENDIENTE', label: 'Pendiente' },
-      { value: 'COMPLETADO', label: 'Completado' },
-      { value: 'FALLIDO', label: 'Fallido' },
-      { value: 'REEMBOLSADO', label: 'Reembolsado' }
-    ])
+    // Método y estado de pago: valores EXACTOS de PagoEntity.MetodoPago / EstadoPago (el back
+    // compara contra el enum; el catálogo METODO_PAGO de erp_parameters no coincide con él).
+    staticFilter('metodoPago', 'Método de pago', [...METODOS_PAGO_PEDIDO]),
+    staticFilter('estadoPago', 'Estado del pago', [...ESTADOS_PAGO_PEDIDO])
   ];
 
   readonly dateRangeFilters: DateRangeFilterConfig[] = [
@@ -129,7 +122,9 @@ export class OrdersComponent implements OnInit {
   readonly exportConfig: BackendExportConfig = {
     url: `${environment.apiUrls.sales}/api/pedidos/export`,
     filename: 'pedidos',
+    // El export exige companyId (sin él: 400).
     params: () => ({
+      companyId: this.auth.currentUser()?.activeCompanyId,
       search: this.searchQuery() || undefined,
       ...filtrosDePedidos(this.filtrosCrudos())
     }),
@@ -178,7 +173,7 @@ export class OrdersComponent implements OnInit {
       {
         key: 'usuarioId',
         label: this.translate.instant('admin.orders.colCliente'),
-        render: (row) => `Usuario #${row.usuarioId}`
+        render: (row) => clienteDePedido(row)
       },
       {
         key: 'total',
@@ -342,7 +337,8 @@ export class OrdersComponent implements OnInit {
         this.orders.update(current =>
           current.map(o => o.id === updatedOrder.id ? { ...o, estado: updatedOrder.estado } : o)
         );
-        this.selectedOrder.set(updatedOrder); // Actualizar modal
+        // La respuesta es un resumen con `detalles: []`: se conserva el pedido cargado y sólo cambia el estado.
+        this.selectedOrder.update(o => o && { ...o, estado: updatedOrder.estado });
         this.loadingDetails.set(false);
       },
       error: (err) => {
@@ -352,7 +348,11 @@ export class OrdersComponent implements OnInit {
     });
   }
 
-  getDetailsTotal(detalles: OrderDetail[] | undefined): number {
+  readonly clienteDe = clienteDePedido;
+  readonly etiquetaMetodoPago = (c: string | undefined) => etiquetaDe(METODOS_PAGO_PEDIDO, c);
+  readonly etiquetaEstadoPago = (c: string | undefined) => etiquetaDe(ESTADOS_PAGO_PEDIDO, c);
+
+  getDetailsTotal(detalles: readonly { subtotal: number }[] | undefined): number {
     return detalles?.reduce((acc, curr) => acc + curr.subtotal, 0) || 0;
   }
 }

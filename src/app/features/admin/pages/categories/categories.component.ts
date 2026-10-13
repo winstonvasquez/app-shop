@@ -1,8 +1,10 @@
-import { Component, OnInit, inject, signal, computed } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject, signal, computed } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { of } from 'rxjs';
 import { FormBuilder, ReactiveFormsModule, Validators, FormGroup, FormControl } from '@angular/forms';
 import { richTextMaxLength } from '@core/utils/rich-text.util';
 import { CategoryService } from '@core/services/category.service';
+import { AuthService } from '@core/auth/auth.service';
 import { bloquearEnEdicion } from '@shared/utils/form-lock';
 import {
   CategoryResponse,
@@ -21,6 +23,7 @@ import { ButtonComponent, CatalogSelectComponent, RichTextEditorComponent } from
 import { ImageUploadComponent } from '@shared/ui/forms/image-upload/image-upload.component';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
+import { categoriaConActivo, construirCategoryRequest, estaActivo } from './categories.form';
 
 @Component({
   selector: 'app-categories',
@@ -42,6 +45,10 @@ import { environment } from '@env/environment';
 })
 export class CategoriesComponent implements OnInit {
   private readonly categoryService = inject(CategoryService);
+  private readonly auth = inject(AuthService);
+  // El backend exige ADMIN/GERENTE para escribir; la sesión no cambia de rol sin recargar.
+  protected readonly puedeGestionar = this.auth.puedeGestionarTienda();
+  private readonly destroyRef = inject(DestroyRef);
 
   /** Archivo de imagen elegido en el drawer, pendiente de subir tras guardar. */
   readonly imagenSeleccionada = signal<File | null>(null);
@@ -114,6 +121,11 @@ export class CategoriesComponent implements OnInit {
       label: 'Imagen',
       render: (row) => row.imagenUrl ? '✓' : '-',
       align: 'center'
+    },
+    {
+      key: 'global',
+      label: 'Alcance',
+      render: (row) => row.global ? 'Global · solo lectura' : 'Propia'
     }
   ];
 
@@ -123,12 +135,27 @@ export class CategoriesComponent implements OnInit {
       label: 'Editar',
       icon: '✏️',
       onClick: (row) => this.openEditModal(row),
+      // Las globales son de solo lectura para la empresa: el backend responde 409 a cualquier escritura.
+      show: (row) => this.puedeGestionar && !row.global,
       class: 'btn-edit'
+    },
+    {
+      label: 'Desactivar',
+      icon: '⏸️',
+      onClick: (row) => this.cambiarActivo(row, false),
+      show: (row) => this.puedeGestionar && !row.global && this.estaActivo(row)
+    },
+    {
+      label: 'Activar',
+      icon: '▶️',
+      onClick: (row) => this.cambiarActivo(row, true),
+      show: (row) => this.puedeGestionar && !row.global && !this.estaActivo(row)
     },
     {
       label: 'Eliminar',
       icon: '🗑️',
       onClick: (row) => this.onDelete(row),
+      show: (row) => this.puedeGestionar && !row.global,
       class: 'btn-delete'
     }
   ];
@@ -195,10 +222,21 @@ export class CategoriesComponent implements OnInit {
         Validators.required,
         Validators.min(0),
         Validators.max(10)
-      ]]
+      ]],
+      padreId: [null as number | null]
     });
 
+    // Al elegir padre en un alta, el nivel sugerido es el del padre + 1 (sin padre: raíz).
+    this.categoryForm.get('padreId')!.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(v => {
+      if (this.editMode()) return;
+      const padre = this.categoriasPadre().find(c => c.id === Number(v));
+      this.categoryForm.patchValue({ nivel: padre ? padre.nivel + 1 : 0 });
+    });
   }
+
+  /** Opciones del select «Categoría padre»: las visibles, sin la propia. */
+  readonly opcionesPadre = computed(() =>
+    this.categoriasPadre().filter(c => c.id !== this.selectedCategoryId()));
 
   ngOnInit(): void {
     this.loadCategories();
@@ -342,7 +380,8 @@ export class CategoriesComponent implements OnInit {
     this.editMode.set(false);
     this.selectedCategoryId.set(null);
     this.categoryForm.reset({
-      nivel: 0
+      nivel: 0,
+      padreId: null
     });
     bloquearEnEdicion(this.categoryForm, ['nivel'], false);
     this.showModal.set(true);
@@ -360,7 +399,8 @@ export class CategoriesComponent implements OnInit {
       nombre: category.nombre,
       descripcion: category.descripcion,
       imagenUrl: category.imagenUrl,
-      nivel: category.nivel
+      nivel: category.nivel,
+      padreId: category.padreId ?? null
     });
     // Cambiar el nivel de una categoría ya usada rompe la jerarquía padre-hijo: se
     // muestra bloqueado en edición (onSubmit usa getRawValue(), así que no se pierde).
@@ -391,12 +431,7 @@ export class CategoriesComponent implements OnInit {
     this.submitError.set(null);
 
     const formValue = this.categoryForm.getRawValue();
-    const categoryRequest: CategoryRequest = {
-      nombre: formValue.nombre,
-      descripcion: formValue.descripcion || null,
-      imagenUrl: formValue.imagenUrl || null,
-      nivel: formValue.nivel
-    };
+    const categoryRequest: CategoryRequest = construirCategoryRequest(formValue);
 
     const operation = this.editMode()
       ? this.categoryService.update(this.selectedCategoryId()!, categoryRequest)
@@ -445,6 +480,22 @@ export class CategoriesComponent implements OnInit {
     });
   }
 
+  private estaActivo(row: CategoryResponse): boolean {
+    return estaActivo(row.activo, this.filterActivo());
+  }
+
+  /** Activa/desactiva con un PUT del cuerpo actual de la fila + `activo` invertido. */
+  cambiarActivo(row: CategoryResponse, activo: boolean): void {
+    this.loading.set(true);
+    this.categoryService.update(row.id, categoriaConActivo(row, activo)).subscribe({
+      next: () => this.loadCategories(),
+      error: (err: Error) => {
+        this.error.set(err.message);
+        this.loading.set(false);
+      }
+    });
+  }
+
   /**
    * Delete category
    */
@@ -467,19 +518,6 @@ export class CategoriesComponent implements OnInit {
 
   hasCategories = computed(() => this.categories().length > 0);
   isEmpty = computed(() => !this.loading() && !this.hasCategories());
-  pages = computed(() => {
-    const total = this.totalPages();
-    return Array.from({ length: total }, (_, i) => i);
-  });
-
-  /**
-   * Get level badge class
-   */
-  getLevelBadgeClass(nivel: number): string {
-    const classes = ['level-0', 'level-1', 'level-2', 'level-3'];
-    return classes[nivel] || 'level-default';
-  }
-
   /**
    * Get FormControl for FormFieldComponent
    */

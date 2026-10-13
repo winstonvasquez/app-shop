@@ -5,12 +5,14 @@
         subtitle="Organiza tu catálogo con categorías jerárquicas"
         [breadcrumbs]="breadcrumbs">
         <div actions>
-            <app-button
-                label="Nueva Categoría"
-                variant="primary"
-                icon="plus"
-                (click)="openCreateModal()">
-            </app-button>
+            @if (puedeGestionar) {
+                <app-button
+                    label="Nueva Categoría"
+                    variant="primary"
+                    icon="plus"
+                    (click)="openCreateModal()">
+                </app-button>
+            }
         </div>
     </app-page-header>
 
@@ -50,95 +52,6 @@
         (pageChange)="onPageChange($event)"
         (sortChange)="onSort($event)">
     </app-data-table>
-
-    <!-- Categories Grid (mantener para vista alternativa si se necesita) -->
-    @if (false) {
-    <div class="categories-grid">
-        @for (category of categories(); track category.id) {
-        <div class="category-card">
-            <!-- Category Image -->
-            <div class="category-image">
-                @if (category.imagenUrl) {
-                <img [src]="category.imagenUrl" [alt]="category.nombre" />
-                } @else {
-                <div class="image-placeholder">
-                    <svg width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                </div>
-                }
-                <span class="level-badge" [class]="getLevelBadgeClass(category.nivel)">
-                    Nivel {{ category.nivel }}
-                </span>
-            </div>
-
-            <!-- Category Info -->
-            <div class="category-info">
-                <h3 class="category-name">{{ category.nombre }}</h3>
-                @if (category.descripcion) {
-                <p class="category-description" [innerHTML]="category.descripcion"></p>
-                } @else {
-                <p class="category-description text-muted">Sin descripción</p>
-                }
-            </div>
-
-            <!-- Category Actions -->
-            <!-- La taxonomía global (category.global) se comparte entre las seis empresas y es de solo
-                 lectura: el backend responde 409 a cualquier escritura. Se muestra una etiqueta en vez
-                 de los botones, porque ofrecer editar/eliminar en esas filas es ofrecer acciones que
-                 sólo pueden fallar. -->
-            <div class="category-actions">
-                @if (category.global) {
-                <span class="category-global-badge" title="Categoría de la taxonomía compartida: se usa en todas las empresas y no puede editarse desde aquí">
-                    Global · solo lectura
-                </span>
-                } @else {
-                <button class="btn-icon btn-edit" (click)="openEditModal(category)" title="Editar">
-                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                    </svg>
-                </button>
-                <button class="btn-icon btn-delete" (click)="onDelete(category)" title="Eliminar">
-                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                </button>
-                }
-            </div>
-        </div>
-        }
-    </div>
-
-    <!-- Pagination -->
-    <div class="pagination">
-        <div class="pagination-info">
-            Mostrando {{ categories().length }} de {{ totalElements() }} categorías
-        </div>
-        <div class="pagination-controls">
-            <button class="btn-pagination" [disabled]="currentPage() === 0" (click)="onPageChange(currentPage() - 1)">
-                Anterior
-            </button>
-
-            @for (page of pages(); track page) {
-            @if (page < 5 || page===totalPages() - 1 || (page>= currentPage() - 1 && page <= currentPage() + 1)) {
-                    <button class="btn-pagination" [class.active]="page === currentPage()" (click)="onPageChange(page)">
-                    {{ page + 1 }}
-                    </button>
-                    } @else if (page === 5 || page === currentPage() - 2) {
-                    <span class="pagination-ellipsis">...</span>
-                    }
-                    }
-
-                    <button class="btn-pagination" [disabled]="currentPage() === totalPages() - 1"
-                        (click)="onPageChange(currentPage() + 1)">
-                        Siguiente
-                    </button>
-        </div>
-    </div>
-    }
 
     <!-- Drawer for Create/Edit Category -->
     <app-drawer
@@ -184,6 +97,17 @@
                     (fileSelected)="imagenSeleccionada.set($event)"
                     (cleared)="onQuitarImagen()">
                 </app-image-upload>
+            </div>
+
+            <div class="form-group">
+                <label for="padreId">Categoría padre</label>
+                <select id="padreId" formControlName="padreId" class="form-input">
+                    <option [ngValue]="null">Ninguna (categoría raíz)</option>
+                    @for (c of opcionesPadre(); track c.id) {
+                        <option [ngValue]="c.id">{{ c.nombre }}</option>
+                    }
+                </select>
+                <small class="form-hint">Opcional. Para crear una subcategoría, elige la categoría de la que depende.</small>
             </div>
 
             <div class="form-group">

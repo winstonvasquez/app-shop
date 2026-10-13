@@ -1,14 +1,6 @@
 import type { ProductFilter } from '@core/services/product.service';
 import { CURRENCY_DISPLAY } from '@shared/constants/sunat.constants';
 
-/** Filtros de envío del panel lateral. Son de UI: hoy ninguno viaja al backend. */
-export type ClaveDeEnvio = 'free' | 'fast' | 'intl';
-
-export interface OpcionDeEnvio {
-    key: ClaveDeEnvio;
-    label: string;
-}
-
 /** Estado del listado tal como lo guardan los signals de la pantalla. */
 export interface EstadoDelCatalogo {
     categoriaId: number | null;
@@ -87,8 +79,6 @@ export interface EstadoDeFiltros {
     marcas: readonly string[];
     precioMin: number | null;
     precioMax: number | null;
-    envios: readonly ClaveDeEnvio[];
-    opcionesDeEnvio: readonly OpcionDeEnvio[];
     calificacionMinima: number | null;
 }
 
@@ -97,7 +87,6 @@ export interface AccionesDeFiltro {
     quitarCategoria(): void;
     alternarMarca(marca: string): void;
     limpiarPrecio(): void;
-    alternarEnvio(envio: ClaveDeEnvio): void;
     limpiarCalificacion(): void;
 }
 
@@ -111,12 +100,12 @@ export interface ChipDeFiltro {
  * Describe los filtros activos como chips retirables, en el orden en que se pintan sobre el grid.
  *
  * Reglas de negocio que codifica:
- * - **Sólo se anuncia lo que el usuario puede reconocer:** una categoría o un envío cuyo catálogo
+ * - **Sólo se anuncia lo que el usuario puede reconocer:** una categoría cuyo catálogo
  *   todavía no llegó no genera chip, porque un chip sin etiqueta legible no se sabe qué quita.
  * - **El rango de precio es UN chip aunque tenga dos extremos**, y el extremo sin poner se pinta
  *   como `0` o `∞` en vez de omitirse: el usuario tiene que ver hasta dónde llega el rango.
- * - Marcas y envíos generan un chip cada uno; su «x» es un alternar, no un limpiar, para que
- *   quitar una marca no borre las demás.
+ * - Cada marca genera un chip; su «x» es un alternar, no un limpiar, para que quitar una marca
+ *   no borre las demás.
  */
 export function describirFiltrosActivos(e: EstadoDeFiltros, acciones: AccionesDeFiltro): ChipDeFiltro[] {
     const chips: ChipDeFiltro[] = [];
@@ -137,11 +126,6 @@ export function describirFiltrosActivos(e: EstadoDeFiltros, acciones: AccionesDe
             label: `${s} ${e.precioMin ?? 0}–${s} ${e.precioMax ?? '∞'}`,
             clear: () => acciones.limpiarPrecio(),
         });
-    }
-
-    for (const envio of e.envios) {
-        const opt = e.opcionesDeEnvio.find((s) => s.key === envio);
-        if (opt) chips.push({ key: 'envio-' + envio, label: opt.label, clear: () => acciones.alternarEnvio(envio) });
     }
 
     if (e.calificacionMinima !== null) {

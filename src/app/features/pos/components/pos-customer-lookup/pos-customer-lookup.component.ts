@@ -1,8 +1,9 @@
 import { Component, ChangeDetectionStrategy, inject, input, output, signal } from '@angular/core';
-import { Subject, debounceTime, distinctUntilChanged, switchMap } from 'rxjs';
+import { EMPTY, Observable, Subject, catchError, debounceTime, distinctUntilChanged, switchMap } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CustomerService } from '@features/admin/services/customer.service';
 import { CustomerResponse } from '@features/admin/models/customer.model';
+import { construirClienteRapido } from './pos-customer-lookup.form';
 
 export interface PosClient {
     id: number | null;
@@ -41,6 +42,9 @@ export class PosCustomerLookupComponent {
     readonly buscando = signal(false);
     readonly resultados = signal<CustomerResponse[]>([]);
     readonly notFound = signal(false);
+    readonly errorBusqueda = signal<string | null>(null);
+    readonly creando = signal(false);
+    readonly nombreNuevo = signal('');
 
     private readonly search$ = new Subject<string>();
 
@@ -51,11 +55,17 @@ export class PosCustomerLookupComponent {
             switchMap(q => {
                 this.buscando.set(true);
                 this.notFound.set(false);
+                this.errorBusqueda.set(null);
                 const soloDigitos = /^\d+$/.test(q);
-                if (soloDigitos && (q.length === 8 || q.length === 11)) {
-                    return this.customerService.findByDocumento(this.companyId(), q);
-                }
-                return this.customerService.getAll(this.companyId(), 0, 10, 'nombres,asc', q);
+                const consulta: Observable<unknown> = soloDigitos && (q.length === 8 || q.length === 11)
+                    ? this.customerService.findByDocumento(this.companyId(), q)
+                    : this.customerService.getAll(this.companyId(), 0, 10, 'nombres,asc', q);
+                // El catchError va DENTRO del switchMap: afuera, un error mataría el stream hasta recargar.
+                return consulta.pipe(catchError((e: unknown) => {
+                    this.buscando.set(false);
+                    this.errorBusqueda.set(e instanceof Error ? e.message : 'No se pudo buscar el cliente');
+                    return EMPTY;
+                }));
             }),
             takeUntilDestroyed(),
         ).subscribe(result => {
@@ -79,6 +89,7 @@ export class PosCustomerLookupComponent {
         this.query.set(value);
         this.resultados.set([]);
         this.notFound.set(false);
+        this.errorBusqueda.set(null);
         if (value.trim().length < 2) return;
         this.search$.next(value.trim());
     }
@@ -92,25 +103,30 @@ export class PosCustomerLookupComponent {
     }
 
     crearRapido(): void {
-        const q = this.query().trim();
-        const esRuc = q.length === 11;
-        this.customerService.create({
-            companyId: this.companyId(),
-            tipoCliente: esRuc ? 'PERSONA_JURIDICA' : 'PERSONA_NATURAL',
-            tipoDocumento: esRuc ? 'RUC' : 'DNI',
-            numeroDocumento: q,
-            nombres: esRuc ? 'Cliente' : 'Cliente',
-        }).subscribe({
-            next: (cliente) => this.seleccionar(cliente),
-            error: () => this.notFound.set(true),
+        const request = construirClienteRapido(this.companyId(), this.query().trim(), this.nombreNuevo());
+        if (!request) return;
+        this.creando.set(true);
+        this.errorBusqueda.set(null);
+        this.customerService.create(request).subscribe({
+            next: (cliente) => {
+                this.creando.set(false);
+                this.nombreNuevo.set('');
+                this.seleccionar(cliente);
+            },
+            error: (e: unknown) => {
+                this.creando.set(false);
+                this.errorBusqueda.set(e instanceof Error ? e.message : 'No se pudo crear el cliente');
+            },
         });
     }
 
     clear(): void {
         this.query.set('');
+        this.nombreNuevo.set('');
         this.selectedClient.set(null);
         this.resultados.set([]);
         this.notFound.set(false);
+        this.errorBusqueda.set(null);
         this.clientCleared.emit();
     }
 

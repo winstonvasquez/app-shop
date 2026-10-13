@@ -180,21 +180,6 @@
         </button>
     </div>
 
-    <!-- Enviar por email -->
-    <form [formGroup]="emailForm" class="flex gap-2 mt-3" (ngSubmit)="enviarEmail()">
-        <input class="input-field flex-1 !h-10 !text-sm" formControlName="email"
-               placeholder="cliente@email.com" type="email">
-        <button type="submit" class="btn-primary !h-10 !px-4 !text-sm gap-1.5"
-                [disabled]="emailSending() || !(emailForm.value.email ?? '').trim()"
-                (click)="enviarEmail()">
-            <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14">
-                <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
-                <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
-            </svg>
-            @if (emailSending()) { Enviando... } @else if (emailSent()) { Enviado } @else { Enviar }
-        </button>
-    </form>
-
     <!-- Anular venta (requiere PIN de supervisor en el padre) -->
     @if (v.estado === 'COMPLETADA') {
     <button class="receipt-anular-btn w-full mt-3 h-9 rounded-lg text-[13px] font-medium text-[var(--color-error)] border border-[var(--color-error)]/40 hover:bg-[var(--color-error)]/10 flex items-center justify-center gap-1.5"

@@ -29,8 +29,8 @@ export class PosOrderPanelComponent {
     /** Descuento de línea que excede el umbral del cajero → requiere PIN de supervisor. */
     readonly requestSupervisorAuth = output<{ varianteId: number; tipo: DescuentoTipo; valor: number }>();
 
-    /** Descuento máximo (%) que un cajero puede aplicar sin autorización de supervisor. */
-    readonly MAX_DESCUENTO_SIN_AUTH = 10;
+    /** Descuento máximo (%) que un cajero puede aplicar sin autorización de supervisor (lo da la config de la empresa). */
+    readonly maxDescuentoSinAuth = input(10);
 
     /** Icono e i18nKey por código no vienen del catálogo (solo lista válida + label ES) — se mantienen localmente. */
     private readonly PAYMENT_ICON: Partial<Record<MetodoPagoPos, string>> = {
@@ -90,7 +90,7 @@ export class PosOrderPanelComponent {
         const tipo = this.discountType();
         const valor = this.discountValue();
         if (valor > 0 && tipo !== 'NINGUNO') {
-            if (requiereAutorizacionSupervisor(tipo, valor, this.lineaDe(varianteId), this.MAX_DESCUENTO_SIN_AUTH)) {
+            if (requiereAutorizacionSupervisor(tipo, valor, this.lineaDe(varianteId), this.maxDescuentoSinAuth())) {
                 // Cerrar popover y delegar al padre la verificación del PIN de supervisor;
                 // el descuento se aplica solo si el backend autoriza.
                 this.discountPopoverFor.set(null);

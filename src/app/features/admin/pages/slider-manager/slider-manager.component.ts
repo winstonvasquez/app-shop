@@ -4,6 +4,7 @@ import {
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '@env/environment';
+import { AuthService } from '@core/auth/auth.service';
 import { BannerForm, cuerpoDeBanner, validarBanner } from './slider-manager.form';
 
 interface Banner extends BannerForm {
@@ -25,10 +26,13 @@ const EMPTY_FORM = (): BannerForm => ({
                 <h1 class="page-title">Gestor de Slider</h1>
                 <p class="page-subtitle">Administra los banners del carrusel principal de la tienda</p>
             </div>
-            <button class="btn btn-primary" (click)="openCreate()">+ Nuevo banner</button>
+            @if (puedeGestionar) {
+                <button class="btn btn-primary" (click)="openCreate()">+ Nuevo banner</button>
+            }
         </div>
 
         <!-- Barra de caché -->
+        @if (puedeGestionar) {
         <div class="card mb-4" style="padding:12px 16px; display:flex; align-items:center; justify-content:space-between; gap:1rem">
             <span style="font-size:.875rem; color:var(--color-text-subtle)">
                 Las imágenes se cachean 24 h en el navegador. Usa "Limpiar caché" si actualizaste una imagen y no se refleja.
@@ -37,6 +41,11 @@ const EMPTY_FORM = (): BannerForm => ({
                 @if (clearingCache()) { Limpiando... } @else { Limpiar todo el caché }
             </button>
         </div>
+        } @else {
+            <p class="mb-4" style="font-size:.875rem; color:var(--color-text-subtle)">
+                Sólo un administrador o gerente puede modificar los banners.
+            </p>
+        }
 
         @if (successMsg()) {
             <div class="card mb-4" style="border-left:3px solid var(--color-success); padding:12px 16px">
@@ -70,7 +79,7 @@ const EMPTY_FORM = (): BannerForm => ({
                                 <th class="table-header-cell">Título</th>
                                 <th class="table-header-cell">Link</th>
                                 <th class="table-header-cell">Estado</th>
-                                <th class="table-header-cell">Acciones</th>
+                                @if (puedeGestionar) { <th class="table-header-cell">Acciones</th> }
                             </tr>
                         </thead>
                         <tbody>
@@ -106,12 +115,20 @@ const EMPTY_FORM = (): BannerForm => ({
                                         {{ banner.link || '—' }}
                                     </td>
                                     <td class="table-cell">
-                                        <button (click)="toggle(banner)"
-                                                [class]="banner.activo ? 'badge badge-success' : 'badge badge-neutral'"
-                                                style="cursor:pointer; border:none; font-size:.75rem">
-                                            {{ banner.activo ? 'Activo' : 'Inactivo' }}
-                                        </button>
+                                        @if (puedeGestionar) {
+                                            <button (click)="toggle(banner)"
+                                                    [class]="banner.activo ? 'badge badge-success' : 'badge badge-neutral'"
+                                                    style="cursor:pointer; border:none; font-size:.75rem">
+                                                {{ banner.activo ? 'Activo' : 'Inactivo' }}
+                                            </button>
+                                        } @else {
+                                            <span [class]="banner.activo ? 'badge badge-success' : 'badge badge-neutral'"
+                                                  style="font-size:.75rem">
+                                                {{ banner.activo ? 'Activo' : 'Inactivo' }}
+                                            </span>
+                                        }
                                     </td>
+                                    @if (puedeGestionar) {
                                     <td class="table-cell">
                                         <div style="display:flex; gap:.375rem; flex-wrap:wrap">
                                             <button class="btn-icon btn-icon-edit" (click)="openEdit(banner)" title="Editar">
@@ -148,6 +165,7 @@ const EMPTY_FORM = (): BannerForm => ({
                                             </button>
                                         </div>
                                     </td>
+                                    }
                                 </tr>
                             }
                         </tbody>
@@ -330,6 +348,7 @@ const EMPTY_FORM = (): BannerForm => ({
 })
 export class SliderManagerComponent implements OnInit {
     private readonly http = inject(HttpClient);
+    protected readonly puedeGestionar = inject(AuthService).puedeGestionarTienda();
     private readonly baseUrl = `${environment.apiUrls.sales}/api/v1/banners`;
 
     banners       = signal<Banner[]>([]);

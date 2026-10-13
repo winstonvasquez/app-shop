@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { filtrosDePedidos, FiltrosPedidoCrudos } from './orders.params';
+import {
+    filtrosDePedidos, FiltrosPedidoCrudos, clienteDePedido, etiquetaDe,
+    METODOS_PAGO_PEDIDO, ESTADOS_PAGO_PEDIDO,
+} from './orders.params';
 
 /** Estado inicial de la pantalla: ningún filtro tocado. */
 const VACIO: FiltrosPedidoCrudos = {
@@ -51,5 +54,23 @@ describe('filtrosDePedidos', () => {
         expect(f.estadoPago).toBe('FALLIDO');
         expect(f.estado).toBeUndefined();
         expect(f.metodoPago).toBeUndefined();
+    });
+});
+
+describe('clienteDePedido', () => {
+    it('con usuario muestra su id', () => {
+        expect(clienteDePedido({ usuarioId: 7 })).toBe('Usuario #7');
+    });
+    it('de invitado muestra el correo, nunca «Usuario #null»', () => {
+        expect(clienteDePedido({ usuarioId: null, guestEmail: 'a@b.pe' })).toBe('a@b.pe (invitado)');
+        expect(clienteDePedido({ usuarioId: null })).toBe('Invitado');
+    });
+});
+
+describe('etiquetaDe', () => {
+    it('traduce un código del enum y deja pasar uno desconocido', () => {
+        expect(etiquetaDe(METODOS_PAGO_PEDIDO, 'TRANSFERENCIA_BANCARIA')).toBe('Transferencia bancaria');
+        expect(etiquetaDe(METODOS_PAGO_PEDIDO, 'OTRO')).toBe('OTRO');
+        expect(etiquetaDe(ESTADOS_PAGO_PEDIDO, undefined)).toBe('—');
     });
 });

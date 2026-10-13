@@ -18,7 +18,6 @@ export class PosTurnoComponent {
     readonly cerrarTurno = output<void>();
     readonly volver = output<void>();
     readonly reporteX = output<void>();
-    readonly reporteZ = output<void>();
     readonly movimientoCaja = output<void>();
     readonly cierreArqueo = output<void>();
 

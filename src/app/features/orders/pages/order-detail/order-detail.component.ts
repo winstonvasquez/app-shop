@@ -9,7 +9,6 @@ import { CartService } from '@features/cart/services/cart.service';
 const ESTADOS_TIMELINE = [
     { key: 'PENDIENTE', label: 'Pendiente' },
     { key: 'PAGADO', label: 'Pagado' },
-    { key: 'EN_PREPARACION', label: 'En preparación' },
     { key: 'ENVIADO', label: 'Enviado' },
     { key: 'ENTREGADO', label: 'Entregado' },
 ];
@@ -84,7 +83,6 @@ export class OrderDetailComponent implements OnInit {
         const map: Record<string, string> = {
             PENDIENTE: 'badge badge-warning',
             PAGADO: 'badge badge-accent',
-            EN_PREPARACION: 'badge badge-accent',
             ENVIADO: 'badge badge-accent',
             ENTREGADO: 'badge badge-success',
             CANCELADO: 'badge badge-error',

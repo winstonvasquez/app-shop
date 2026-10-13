@@ -81,8 +81,8 @@ export class SegmentsComponent implements OnInit {
         { key: 'tipoCliente', label: 'Tipo de Cliente', html: true,
           render: (s) => `<span class="badge badge-neutral">${s.tipoCliente}</span>` },
         { key: 'descripcion', label: 'Descripción', html: true, render: (s) => s.descripcion || '—' },
-        { key: 'totalClientes', label: 'Clientes', align: 'right',
-          render: (s) => String(s.totalClientes ?? 0) },
+        // Columna «Clientes» retirada: `total_clientes` (users) no lo mantiene nadie y los clientes viven
+        // en ventas, así que siempre marcaba 0. Volver a añadirla cuando el back calcule el conteo.
         { key: 'activo', label: 'Estado', html: true,
           render: (s) => `<span class="badge ${s.activo ? 'badge-success' : 'badge-neutral'}">${s.activo ? 'Activo' : 'Inactivo'}</span>` }
     ];

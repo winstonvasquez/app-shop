@@ -1,3 +1,4 @@
+import { AbstractControl, ValidationErrors, ValidatorFn, Validators } from '@angular/forms';
 import { Promocion } from '@features/admin/services/promotions.service';
 
 /**
@@ -46,10 +47,47 @@ export function construirPromocionRequest(v: PromocionFormRaw): PromocionRequest
         productoId: v.alcance === 'PRODUCTO' ? v.productoId : null,
         categoriaId: v.alcance === 'CATEGORIA' ? (v.categoriaId != null ? Number(v.categoriaId) : null) : null,
         montoMinimo: v.alcance === 'CARRITO' ? v.montoMinimo : null,
-        codigoCupon: v.codigoCupon || undefined,
+        // El backend busca el cupón en mayúsculas (PromocionApplicationService): se guarda igual.
+        codigoCupon: v.codigoCupon?.trim().toUpperCase() || undefined,
         limiteUsos: v.limiteUsos ?? undefined,
         fechaInicio: v.fechaInicio!,
         fechaFin: v.fechaFin!,
         activo: v.activo ?? true,
     };
+}
+
+/** Validadores del valor: > 0 siempre (el backend exige @DecimalMin 0.01) y <= 100 si es PORCENTAJE. */
+export function validadoresValor(tipo: string | null): ValidatorFn[] {
+    const base = [Validators.required, Validators.min(0.01)];
+    return tipo === 'PORCENTAJE' ? [...base, Validators.max(100)] : base;
+}
+
+/** Validador de grupo: la fecha de fin no puede ser anterior a la de inicio (ISO yyyy-MM-dd compara como texto). */
+export function validarRangoFechas(group: AbstractControl): ValidationErrors | null {
+    const inicio = group.get('fechaInicio')?.value as string | null;
+    const fin = group.get('fechaFin')?.value as string | null;
+    return inicio && fin && fin < inicio ? { rangoFechas: true } : null;
+}
+
+export const MENSAJE_RANGO_FECHAS = 'La fecha de fin no puede ser anterior a la de inicio.';
+
+/** `new Date('yyyy-MM-dd')` es UTC (en Lima, el día anterior a las 19:00): se parsea como fecha local. */
+export function parseFechaLocal(fecha: string): Date {
+    return new Date(fecha.slice(0, 10) + 'T00:00:00');
+}
+
+/** Hoy en la zona local como yyyy-MM-dd (`toISOString` daría el día siguiente por la noche en Lima). */
+export function hoyLocalISO(hoy: Date = new Date()): string {
+    const mm = String(hoy.getMonth() + 1).padStart(2, '0');
+    const dd = String(hoy.getDate()).padStart(2, '0');
+    return `${hoy.getFullYear()}-${mm}-${dd}`;
+}
+
+/** Misma regla que el backend: una promoción vence DESPUÉS de su fechaFin (vigente todo ese día). */
+export function calcularEstadoPromocion(
+    p: { activo: boolean; fechaFin?: string | null },
+    hoy: Date = new Date(),
+): 'ACTIVA' | 'INACTIVA' | 'VENCIDA' {
+    if (!p.activo) return 'INACTIVA';
+    return p.fechaFin && p.fechaFin.slice(0, 10) < hoyLocalISO(hoy) ? 'VENCIDA' : 'ACTIVA';
 }

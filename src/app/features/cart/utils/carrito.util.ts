@@ -1,6 +1,7 @@
 // `import type` a propósito: `cart.service` importa de aquí, así que es un ciclo. Al ser sólo
 // tipo, el import se borra al compilar y el ciclo no llega al bundle.
 import type { CartItem } from '../services/cart.service';
+import type { CuponLinea } from '@core/services/order.service';
 
 /** Producto tal como llega desde el catálogo al pulsar «Agregar al carrito». */
 export interface ProductoParaCarrito {
@@ -82,4 +83,11 @@ export function agregarItem(items: readonly CartItem[], product: ProductoParaCar
         image: product.image,
         selected: true,
     }];
+}
+
+/** Líneas SELECCIONADAS en la forma que espera `POST /cupones/validate` (`items`). */
+export function lineasParaCupon(items: readonly CartItem[]): CuponLinea[] {
+    return items
+        .filter(i => i.selected)
+        .map(i => ({ productoId: i.productId, subtotal: i.price * i.quantity }));
 }

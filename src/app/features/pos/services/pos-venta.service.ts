@@ -131,12 +131,11 @@ export class PosVentaService {
         return this.http.get<PageResponse<DevolucionPosResponse>>(`${this.baseUrl}/devoluciones`, { params });
     }
 
-    enviarRecibo(ventaId: number, email: string): Observable<{ status: string; email: string }> {
-        return this.http.post<{ status: string; email: string }>(
-            `${this.baseUrl}/ventas/${ventaId}/enviar-recibo`,
-            null,
-            { params: { email } }
-        );
+    /** Tope (%) de descuento que el cajero puede dar sin PIN de supervisor, configurado por empresa. */
+    getMaxDescuentoSinAutorizacion(companyId: number): Observable<number> {
+        return this.http.get<number>(`${this.baseUrl}/config/max-descuento`, {
+            params: { companyId: companyId.toString() }
+        });
     }
 
     getTipoCambioVigente(companyId: number, moneda = MONEDA.USD): Observable<TipoCambio> {

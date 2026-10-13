@@ -1,23 +1,14 @@
-import { Component, ChangeDetectionStrategy, input, output, signal, inject, OnInit, computed } from '@angular/core';
+import { Component, ChangeDetectionStrategy, input, output, signal, inject, computed } from '@angular/core';
 import { DatePipe } from '@angular/common';
-import { HttpClient } from '@angular/common/http';
 import { VentaPosResponse } from '../../models/venta-pos.model';
 import { TurnoCaja } from '../../models/turno-caja.model';
 import { CatalogService } from '@core/services/catalog.service';
-import { AuthService } from '@core/auth/auth.service';
-import { environment } from '@env/environment';
 import {
     FiltrosHistorialCrudos,
     PosHistorialFiltro,
     construirFiltroHistorial,
     hayFiltrosHistorialActivos,
 } from './pos-historial.filtros';
-
-/** Sucursal activa de la empresa (para el select de filtro). */
-interface SucursalOption {
-    id: number;
-    nombre: string;
-}
 
 export type { PosHistorialFiltro };
 
@@ -28,9 +19,7 @@ export type { PosHistorialFiltro };
     templateUrl: './pos-historial.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class PosHistorialComponent implements OnInit {
-    private readonly http = inject(HttpClient);
-    private readonly auth = inject(AuthService);
+export class PosHistorialComponent {
     readonly catalog = inject(CatalogService);
 
     readonly items = input.required<VentaPosResponse[]>();
@@ -48,7 +37,6 @@ export class PosHistorialComponent implements OnInit {
     readonly filterMetodoPago = signal('');
     readonly filterTipoCpe = signal('');
     readonly filterMoneda = signal('');
-    readonly filterSucursalId = signal('');
     readonly filterFechaDesde = signal('');
     readonly filterFechaHasta = signal('');
 
@@ -56,11 +44,10 @@ export class PosHistorialComponent implements OnInit {
     readonly metodosPago = this.catalog.options('METODO_PAGO_POS');
     readonly tiposCpe = this.catalog.options('TIPO_CPE');
     readonly monedas = this.catalog.options('MONEDA');
-    readonly sucursales = signal<SucursalOption[]>([]);
 
     readonly hasActiveFilters = computed(() => hayFiltrosHistorialActivos(this.filtrosCrudos()));
 
-    /** Lectura de los ocho controles de filtro. Leer las señales aquí mantiene la reactividad. */
+    /** Lectura de los siete controles de filtro. Leer las señales aquí mantiene la reactividad. */
     private filtrosCrudos(): FiltrosHistorialCrudos {
         return {
             search: this.searchQuery(),
@@ -68,21 +55,9 @@ export class PosHistorialComponent implements OnInit {
             metodoPago: this.filterMetodoPago(),
             tipoCpe: this.filterTipoCpe(),
             moneda: this.filterMoneda(),
-            sucursalId: this.filterSucursalId(),
             fechaDesde: this.filterFechaDesde(),
             fechaHasta: this.filterFechaHasta(),
         };
-    }
-
-    ngOnInit(): void {
-        const companyId = this.auth.currentUser()?.activeCompanyId;
-        if (!companyId) return;
-        this.http.get<SucursalOption[]>(`${environment.apiUrls.pos}/sucursales`, {
-            params: { companyId: companyId.toString() }
-        }).subscribe({
-            next: list => this.sucursales.set(list ?? []),
-            error: () => this.sucursales.set([]),
-        });
     }
 
     onSearch(value: string): void {
@@ -110,11 +85,6 @@ export class PosHistorialComponent implements OnInit {
         this.emitFilters();
     }
 
-    onSucursalChange(value: string): void {
-        this.filterSucursalId.set(value);
-        this.emitFilters();
-    }
-
     onFechaDesdeChange(value: string): void {
         this.filterFechaDesde.set(value);
         this.emitFilters();
@@ -132,7 +102,6 @@ export class PosHistorialComponent implements OnInit {
         this.filterMetodoPago.set('');
         this.filterTipoCpe.set('');
         this.filterMoneda.set('');
-        this.filterSucursalId.set('');
         this.filterFechaDesde.set('');
         this.filterFechaHasta.set('');
         this.emitFilters();

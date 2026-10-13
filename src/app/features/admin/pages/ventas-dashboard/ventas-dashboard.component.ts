@@ -10,6 +10,9 @@ import { VentasParametrosService } from '../../services/ventas-parametros.servic
 import { ChartDefaultsService, CHART_COLORS } from '@shared/services/chart-defaults.service';
 import { CURRENCY_DISPLAY } from '@shared/constants/sunat.constants';
 import { PageResponse } from '@core/models/pagination.model';
+import { toHttpParams } from '@core/utils/http-params.util';
+import { clienteDePedido } from '../orders/orders.params';
+import { rangoDelMes, ventasPorDia } from './ventas-dashboard.params';
 import {
     ApexAxisChartSeries, ApexChart, ApexDataLabels, ApexFill,
     ApexGrid, ApexStroke, ApexTooltip, ApexXAxis, ApexYAxis,
@@ -17,7 +20,7 @@ import {
 } from 'ng-apexcharts';
 
 interface OrderSummary {
-    id: number; usuarioId: number; fechaPedido: string; estado: string; total: number;
+    id: number; usuarioId: number | null; guestEmail?: string; fechaPedido: string; estado: string; total: number;
 }
 
 @Component({
@@ -52,17 +55,20 @@ export class VentasDashboardComponent implements OnInit {
 
     /* ── Chart: Ventas diarias (área) ─────────────────────────── */
     areaChart: ApexChart = this.chartDefaults.areaChart(220);
-    areaSeries: ApexAxisChartSeries = [{
+    /** Ventas por día del mes en curso, calculadas de pedidos reales (ver `cargarSerieDelMes`). */
+    private readonly ventasMes = signal<number[]>([]);
+    /** true si el mes tiene más pedidos que los traídos: la serie sería parcial. */
+    readonly serieParcial = signal(false);
+    readonly areaSeries = computed<ApexAxisChartSeries>(() => [{
         name: `Ventas (${CURRENCY_DISPLAY.SYMBOL_PEN})`,
-        data: [3200, 4100, 2800, 5600, 4900, 6800, 7200, 5500, 8100, 6700, 9200, 7800,
-               8500, 10200, 9100, 7400, 11500, 10800, 8900, 12400, 11200, 9700, 13500, 12100, 10500, 14800, 13200, 11600]
-    }];
-    areaXAxis: ApexXAxis = {
-        categories: Array.from({ length: 28 }, (_, i) => `${i + 1}`),
+        data: this.ventasMes()
+    }]);
+    readonly areaXAxis = computed<ApexXAxis>(() => ({
+        categories: this.ventasMes().map((_, i) => `${i + 1}`),
         labels: { style: { colors: this.chartDefaults.textColor, fontSize: '10px' },
                   hideOverlappingLabels: true },
         axisBorder: { show: false }, axisTicks: { show: false },
-    };
+    }));
     areaYAxis: ApexYAxis = this.chartDefaults.yAxis(`${CURRENCY_DISPLAY.SYMBOL_PEN} `);
     areaFill: ApexFill = this.chartDefaults.areaFill(CHART_COLORS[0]);
     areaStroke: ApexStroke = this.chartDefaults.areaStroke();
@@ -83,7 +89,7 @@ export class VentasDashboardComponent implements OnInit {
         { key: 'id', label: 'Pedido', width: '80px', render: (row) => `#${row.id}` },
         { key: 'fechaPedido', label: 'Fecha', render: (row) => row.fechaPedido
             ? new Date(row.fechaPedido).toLocaleDateString('es-PE') : '-' },
-        { key: 'usuarioId', label: 'Cliente', render: (row) => `Usuario #${row.usuarioId}` },
+        { key: 'usuarioId', label: 'Cliente', render: (row) => clienteDePedido(row) },
         { key: 'total', label: 'Total', align: 'right', render: (row) => `${CURRENCY_DISPLAY.SYMBOL_PEN} ${(row.total ?? 0).toFixed(2)}` },
         { key: 'estado', label: 'Estado', html: true, render: (row) =>
             `<span class="badge ${this.parametros.getBadgeEstadoPedido(row.estado)}">${this.parametros.getLabelEstadoPedido(row.estado)}</span>` },
@@ -96,11 +102,14 @@ export class VentasDashboardComponent implements OnInit {
     readonly exportConfig: BackendExportConfig = {
         url: `${environment.apiUrls.sales}/api/pedidos/export`,
         filename: 'ultimos-pedidos',
+        // El export exige companyId (sin él: 400).
+        params: () => ({ companyId: this.auth.currentUser()?.activeCompanyId }),
     };
 
     ngOnInit(): void { this.cargar(); }
 
     cargar(): void {
+        this.cargarSerieDelMes();
         this.cargando.set(true);
         // El listado exige companyId; sin él el backend responde 400 y el panel
         // se quedaba sin pedidos ni gráfico.
@@ -118,12 +127,33 @@ export class VentasDashboardComponent implements OnInit {
     }
 
     /**
+     * Serie «Ventas diarias del mes»: pide los pedidos del mes en curso (hasta 1000) y los suma
+     * por día en `ventasPorDia`. Antes eran 28 cifras inventadas.
+     * ponytail: tope de 1000 pedidos/mes sin agregación en backend; si se supera, `serieParcial`
+     * lo avisa en la tarjeta. Añadir un endpoint de agregación si una empresa lo rebasa.
+     */
+    private cargarSerieDelMes(): void {
+        const hoy = new Date();
+        const { desde, hasta } = rangoDelMes(hoy);
+        const params = toHttpParams({
+            companyId: this.auth.currentUser()?.activeCompanyId,
+            fechaPedidoDesde: desde, fechaPedidoHasta: hasta,
+            page: 0, size: 1000, sort: 'fechaPedido,desc',
+        });
+        this.http.get<PageResponse<OrderSummary>>(`${environment.apiUrls.sales}/api/pedidos`, { params }).subscribe({
+            next: (res) => {
+                const filas = res.content ?? [];
+                this.ventasMes.set(ventasPorDia(filas, hoy));
+                this.serieParcial.set((res.totalElements ?? res.page?.totalElements ?? filas.length) > filas.length);
+            },
+            error: () => { this.ventasMes.set([]); this.serieParcial.set(false); }
+        });
+    }
+
+    /**
      * F2.4: reemplaza el donut hardcodeado [45,25,20,10] por conteos reales derivados de
      * la muestra de pedidos ya cargada (limitada a los últimos 50 — el mismo límite que ya
-     * tiene el resto del dashboard). La tendencia diaria (areaSeries) requiere un endpoint
-     * de agregación en el backend que hoy no existe — queda como dependencia cross-stream
-     * documentada, no bloquea este quick-win.
-     */
+     * tiene el resto del dashboard).     */
     private _updateDonut(pedidos: OrderSummary[]): void {
         const counts: Record<string, number> = { PENDIENTE: 0, PAGADO: 0, ENVIADO: 0, ENTREGADO: 0, CANCELADO: 0 };
         for (const p of pedidos) {

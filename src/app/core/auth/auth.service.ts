@@ -53,6 +53,17 @@ export class AuthService {
         return role === ROLES.superadmin || role === 'ROLE_SUPERADMIN';
     }
 
+    /**
+     * Escrituras de gestión de la tienda: catálogo, promociones, banners, sucursales, devoluciones de
+     * pedido y apariencia. Es la regla del backend `GESTION_TIENDA` (ADMIN o GERENTE; SUPERADMIN entra
+     * por la jerarquía de roles): a cualquier otro rol esas escrituras le responden 403.
+     */
+    puedeGestionarTienda(): boolean {
+        const role = this.currentUser()?.role;
+        return role === 'ROLE_ADMIN' || role === 'ROLE_GERENTE' || role === 'ROLE_SUPERADMIN'
+            || role === ROLES.admin || role === ROLES.superadmin;
+    }
+
     login(request: LoginRequest): Observable<LoginResponse> {
         return this.http.post<LoginResponse>(
             `${environment.apiUrls.users}${API_ENDPOINTS.auth.login}`,

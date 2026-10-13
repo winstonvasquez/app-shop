@@ -9,19 +9,19 @@ import { AuthService } from '@core/auth/auth.service';
 import { UserService } from '@features/admin/services/user.service';
 import { UserResponse } from '@features/admin/models/user.model';
 import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
-import { detalleDelBackend } from '@core/utils/http-error.util';
+import { mensajeDeErrorHttp } from '@core/utils/http-error.util';
 import { HttpErrorResponse } from '@angular/common/http';
 import {
     FiltrosDevolucionCrudos,
     construirFiltrosDevolucion,
     hayFiltrosDevolucionActivos,
 } from './pos-devoluciones.filtros';
-import { LineaDevolucion, construirDevolucionRequest } from './pos-devoluciones.form';
+import { LineaDevolucion, construirDevolucionRequest, textoReembolso } from './pos-devoluciones.form';
 
 /** Estado propio de la devolución (no de la venta) — enum fijo del backend, sin catálogo. */
 const ESTADOS_DEVOLUCION: { value: string; label: string }[] = [
     { value: 'PROCESADA', label: 'Procesada' },
-    { value: 'ANULADA', label: 'Anulada' },
+    // ANULADA retirada (POSP-12): ningún flujo pone una devolución en ese estado; volver a ofrecerla cuando exista la acción.
 ];
 
 @Component({
@@ -182,7 +182,7 @@ const ESTADOS_DEVOLUCION: { value: string; label: string }[] = [
 
             <!-- Total devolucion -->
             <div class="flex justify-between items-center !py-2 bg-[var(--color-warning)]/10 !px-3 rounded-lg border border-[var(--color-warning)]/20">
-              <span class="text-xs font-semibold text-[var(--color-warning)] uppercase tracking-wider">Total Reembolso:</span>
+              <span class="text-xs font-semibold text-[var(--color-warning)] uppercase tracking-wider">Reembolso estimado:</span>
               <span class="text-xl font-bold text-[var(--color-warning)] font-mono">
                 S/ {{ totalDevolucion() | number:'1.2-2' }}
               </span>
@@ -207,7 +207,7 @@ const ESTADOS_DEVOLUCION: { value: string; label: string }[] = [
                 </svg>
                 <div class="text-sm">
                   <p class="font-bold text-[var(--color-success)]">Devolución procesada — NC: {{ ultimaNc() }}</p>
-                  <p class="text-subtle text-xs !mt-0.5">Entregue S/ {{ totalDevolucion() | number:'1.2-2' }} al cliente.</p>
+                  <p class="text-subtle text-xs !mt-0.5">{{ mensajeReembolso() }}</p>
                 </div>
               </div>
             }
@@ -400,6 +400,12 @@ export class PosDevolucionesComponent implements OnInit {
     ventaSeleccionada = signal<VentaPosResponse | null>(null);
     lineasDevolucion = signal<LineaDevolucion[]>([]);
     ultimaNc = signal('');
+    /** `totalDevuelto` que devolvió el backend (prorrateado por lo cobrado): es el importe real, no la vista previa. */
+    ultimoTotalDevuelto = signal(0);
+    readonly mensajeReembolso = computed(() => {
+        const venta = this.ventaSeleccionada();
+        return venta ? textoReembolso(venta.metodoPago, venta.pagos ?? [], this.ultimoTotalDevuelto()) : '';
+    });
 
     // ── Listado de devoluciones registradas (server-side) ──────────────
     readonly motivosCatalogo = this.catalog.options('MOTIVO_DEVOLUCION_POS');
@@ -445,14 +451,16 @@ export class PosDevolucionesComponent implements OnInit {
         this.loadDevoluciones();
     }
 
-    private get companyId(): number {
-        return this.auth.currentUser()?.activeCompanyId ?? 1;
+    private get companyId(): number | undefined {
+        return this.auth.currentUser()?.activeCompanyId;
     }
 
     loadDevoluciones(): void {
+        const companyId = this.companyId;
+        if (!companyId) return; // sin usuario/empresa no se consulta (nada de `?? 1`)
         this.devolucionesLoading.set(true);
         const filtros = construirFiltrosDevolucion(this.filtrosCrudos());
-        this.ventaService.getDevoluciones(this.companyId, filtros, this.devolucionesPage()).subscribe({
+        this.ventaService.getDevoluciones(companyId, filtros, this.devolucionesPage()).subscribe({
             next: page => {
                 this.devolucionesListado.set(page.content ?? []);
                 this.devolucionesTotal.set(pageTotalElements(page));
@@ -597,16 +605,14 @@ export class PosDevolucionesComponent implements OnInit {
     }
 
     private buildLineas(venta: VentaPosResponse): void {
-        const lineas: LineaDevolucion[] = venta.detalles.map(d => {
-            const precioUnitario = d.subtotalLinea / d.cantidad;
-            return {
-                detalle: d,
-                seleccionada: false,
-                cantidadDevuelta: 0,
-                maxDevolvible: d.cantidad,
-                montoDevuelto: 0,
-            };
-        });
+        // Lo ya devuelto en devoluciones anteriores no se puede volver a marcar (el backend lo rechazaba con 409).
+        const lineas: LineaDevolucion[] = venta.detalles.map(d => ({
+            detalle: d,
+            seleccionada: false,
+            cantidadDevuelta: 0,
+            maxDevolvible: Math.max(0, d.cantidad - (d.cantidadDevuelta ?? 0)),
+            montoDevuelto: 0,
+        }));
         this.lineasDevolucion.set(lineas);
     }
 
@@ -648,10 +654,12 @@ export class PosDevolucionesComponent implements OnInit {
         if (!venta || !request) return;
 
         this.procesando.set(true);
+        this.errorBusqueda.set(null);
 
         this.ventaService.procesarDevolucion(venta.id, request).subscribe({
             next: (resp) => {
                 this.ultimaNc.set(resp.numeroNc);
+                this.ultimoTotalDevuelto.set(resp.totalDevuelto);
                 // El listado real (server-side) reemplaza al viejo signal de sesión: recargar para reflejar la NC recién emitida.
                 this.devolucionesPage.set(0);
                 this.loadDevoluciones();
@@ -660,7 +668,8 @@ export class PosDevolucionesComponent implements OnInit {
             },
             error: (err: HttpErrorResponse) => {
                 this.procesando.set(false);
-                this.errorBusqueda.set(detalleDelBackend(err) ?? 'Error al procesar la devolucion.');
+                // 409 «excede lo disponible» (segunda devolución parcial): se muestra el texto del backend (POSP-5).
+                this.errorBusqueda.set(mensajeDeErrorHttp(err));
             }
         });
     }

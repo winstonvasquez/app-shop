@@ -1,10 +1,11 @@
-import { Component, inject, OnInit, signal, computed } from '@angular/core';
+import { Component, effect, inject, signal, computed, untracked } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 import { LucideAngularModule } from 'lucide-angular';
 import { toSignal } from '@angular/core/rxjs-interop';
 
 import { CartService, CartItem } from '@features/cart/services/cart.service';
+import { lineasParaCupon } from '@features/cart/utils/carrito.util';
 import { ConfigService, MedioPago, Certificacion } from '@core/services/config.service';
 import { OrderService } from '@core/services/order.service';
 import { WishlistService } from '@core/services/wishlist.service';
@@ -33,7 +34,7 @@ const FREE_SHIPPING_THRESHOLD = 99;
     ],
     templateUrl: './cart-page.component.html',
 })
-export class CartPageComponent implements OnInit {
+export class CartPageComponent {
     cartService   = inject(CartService);
     configService = inject(ConfigService);
     orderService  = inject(OrderService);
@@ -51,7 +52,8 @@ export class CartPageComponent implements OnInit {
     coupon           = signal<string>('');
     couponApplying   = signal(false);
     couponError      = signal<string | null>(null);
-    appliedCoupon    = signal<string | null>(null);
+    /** El cupón vive en CartService: el checkout lo precarga y lo revalida. */
+    appliedCoupon    = this.cartService.appliedCoupon;
     private _couponDiscount = signal<number>(0);
 
     /** Subtotal de los items seleccionados. */
@@ -75,8 +77,14 @@ export class CartPageComponent implements OnInit {
     /** 12 cuotas sin interés. */
     readonly installment = computed(() => +(this.total() / 12).toFixed(2));
 
-    ngOnInit(): void {
-        // No data fetching needed — cart vive en CartService (signal).
+    constructor() {
+        // Revalida el cupón ya aplicado al entrar y cada vez que cambia la selección/cantidades:
+        // la estimación depende de las líneas seleccionadas (alcance PRODUCTO/CATEGORÍA).
+        effect(() => {
+            this.cartItems();
+            const code = untracked(() => this.cartService.appliedCoupon());
+            if (code) untracked(() => this.validarCupon(code));
+        });
     }
 
     onQuantityChange(item: CartItem, delta: number): void {
@@ -113,17 +121,24 @@ export class CartPageComponent implements OnInit {
     applyCoupon(): void {
         const code = this.coupon().trim();
         if (!code) return;
+        this.validarCupon(code);
+    }
+
+    private validarCupon(code: string): void {
         this.couponError.set(null);
         this.couponApplying.set(true);
-        this.orderService.validateCoupon(code, this.subtotal()).pipe(
+        this.orderService.validateCoupon(code, this.subtotal(), lineasParaCupon(this.cartItems())).pipe(
             finalize(() => this.couponApplying.set(false)),
         ).subscribe({
             next: (discount) => {
                 this._couponDiscount.set(discount.amount);
-                this.appliedCoupon.set(code.toUpperCase());
-                this.couponError.set(null);
+                this.appliedCoupon.set(code.trim().toUpperCase());
             },
-            error: () => this.couponError.set('Cupón inválido o expirado'),
+            error: () => {
+                this._couponDiscount.set(0);
+                this.appliedCoupon.set(null);
+                this.couponError.set('Cupón inválido o expirado');
+            },
         });
     }
 

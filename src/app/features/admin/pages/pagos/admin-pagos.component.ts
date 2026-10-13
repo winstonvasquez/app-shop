@@ -1,7 +1,11 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { DatePipe, DecimalPipe } from '@angular/common';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { environment } from '@env/environment';
+import { AuthService } from '@core/auth/auth.service';
+import { adaptSpringPage } from '@core/models/pagination.model';
+import { toHttpParams } from '@core/utils/http-params.util';
+import { mensajeDeErrorHttp } from '@core/utils/http-error.util';
 import { APP_CONFIG } from '@shared/constants/app.constants';
 import { CURRENCY_DISPLAY } from '@shared/constants/sunat.constants';
 
@@ -17,9 +21,7 @@ export interface PaymentAttempt {
     paymentMethod: string;
     status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
     externalId: string | null;
-    gatewayResponse: string | null;
     createdAt: string;
-    updatedAt: string;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -56,10 +58,17 @@ export interface PaymentAttempt {
 
     <!-- Filtros / resumen -->
     <div class="filters-bar mb-4">
-        <div class="flex gap-4 text-sm">
-            <span class="badge badge-success">Aprobados: {{ countByStatus('APPROVED') }}</span>
-            <span class="badge badge-error">Rechazados: {{ countByStatus('REJECTED') }}</span>
-            <span class="badge badge-warning">Pendientes: {{ countByStatus('PENDING') }}</span>
+        <div class="flex gap-4 text-sm items-center">
+            <span class="badge badge-neutral">Total: {{ totalElements() }}</span>
+            <!-- Contadores por estado: sólo de la página cargada (el endpoint pagina). -->
+            <span class="badge badge-success">Aprobados (pág.): {{ countByStatus('APPROVED') }}</span>
+            <span class="badge badge-error">Rechazados (pág.): {{ countByStatus('REJECTED') }}</span>
+            <span class="badge badge-warning">Pendientes (pág.): {{ countByStatus('PENDING') }}</span>
+            <span class="ml-auto flex gap-2 items-center">
+                <button type="button" class="btn btn-secondary btn-sm" [disabled]="page() === 0" (click)="irAPagina(page() - 1)">Anterior</button>
+                <span>Página {{ page() + 1 }} de {{ totalPages() || 1 }}</span>
+                <button type="button" class="btn btn-secondary btn-sm" [disabled]="page() + 1 >= totalPages()" (click)="irAPagina(page() + 1)">Siguiente</button>
+            </span>
         </div>
     </div>
 
@@ -122,11 +131,16 @@ export interface PaymentAttempt {
 export class AdminPagosComponent implements OnInit {
 
     private readonly http = inject(HttpClient);
+    private readonly auth = inject(AuthService);
     private readonly apiBase = `${environment.apiUrls.sales}/api/pagos`;
 
     pagos = signal<PaymentAttempt[]>([]);
     isLoading = signal(true);
     errorMessage = signal('');
+    page = signal(0);
+    totalElements = signal(0);
+    totalPages = signal(0);
+    private readonly size = 50;
 
     ngOnInit(): void {
         this.loadHistorial();
@@ -136,16 +150,30 @@ export class AdminPagosComponent implements OnInit {
         this.isLoading.set(true);
         this.errorMessage.set('');
 
-        this.http.get<PaymentAttempt[]>(`${this.apiBase}/historial`).subscribe({
-            next: (data) => {
-                this.pagos.set(data);
+        // El endpoint exige companyId (sin él: 400) y devuelve Page<PagoHistorialDto>.
+        const params = toHttpParams({
+            companyId: this.auth.currentUser()?.activeCompanyId,
+            page: this.page(),
+            size: this.size
+        });
+        this.http.get<unknown>(`${this.apiBase}/historial`, { params }).subscribe({
+            next: (raw) => {
+                const res = adaptSpringPage<PaymentAttempt>(raw, this.page(), this.size);
+                this.pagos.set(res.content);
+                this.totalElements.set(res.totalElements);
+                this.totalPages.set(res.totalPages);
                 this.isLoading.set(false);
             },
-            error: (err: Error) => {
-                this.errorMessage.set('Error al cargar el historial de pagos: ' + err.message);
+            error: (err: HttpErrorResponse) => {
+                this.errorMessage.set('Error al cargar el historial de pagos: ' + mensajeDeErrorHttp(err));
                 this.isLoading.set(false);
             }
         });
+    }
+
+    irAPagina(p: number): void {
+        this.page.set(p);
+        this.loadHistorial();
     }
 
     countByStatus(status: string): number {

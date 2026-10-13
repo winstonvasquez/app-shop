@@ -11,7 +11,6 @@ const VACIOS: FiltrosHistorialCrudos = {
     metodoPago: '',
     tipoCpe: '',
     moneda: '',
-    sucursalId: '',
     fechaDesde: '',
     fechaHasta: '',
 };
@@ -25,7 +24,6 @@ describe('construirFiltroHistorial', () => {
             metodoPago: undefined,
             tipoCpe: undefined,
             moneda: undefined,
-            sucursalId: undefined,
             fechaCreacionDesde: undefined,
             fechaCreacionHasta: undefined,
         });
@@ -40,7 +38,6 @@ describe('construirFiltroHistorial', () => {
             metodoPago: 'YAPE',
             tipoCpe: 'BOLETA',
             moneda: 'PEN',
-            sucursalId: '4',
             fechaDesde: '2026-05-01',
             fechaHasta: '2026-05-31',
         })).toEqual({
@@ -49,16 +46,9 @@ describe('construirFiltroHistorial', () => {
             metodoPago: 'YAPE',
             tipoCpe: 'BOLETA',
             moneda: 'PEN',
-            sucursalId: 4,
             fechaCreacionDesde: '2026-05-01',
             fechaCreacionHasta: '2026-05-31',
         });
-    });
-
-    it('la sucursal viaja como número, no como cadena', () => {
-        const { sucursalId } = construirFiltroHistorial({ ...VACIOS, sucursalId: '4' });
-        expect(sucursalId).toBe(4);
-        expect(typeof sucursalId).toBe('number');
     });
 
     it('renombra las fechas a fechaCreacionDesde/Hasta sin cruzarlas', () => {
@@ -79,14 +69,9 @@ describe('hayFiltrosHistorialActivos', () => {
         ['metodoPago', { metodoPago: 'PLIN' }],
         ['tipoCpe', { tipoCpe: 'FACTURA' }],
         ['moneda', { moneda: 'USD' }],
-        ['sucursalId', { sucursalId: '2' }],
         ['fechaDesde', { fechaDesde: '2026-05-01' }],
         ['fechaHasta', { fechaHasta: '2026-05-31' }],
     ] as [string, Partial<FiltrosHistorialCrudos>][])('basta con %s para que sea true', (_campo, parcial) => {
         expect(hayFiltrosHistorialActivos({ ...VACIOS, ...parcial })).toBe(true);
-    });
-
-    it('la sucursal con id "0" cuenta como filtro activo', () => {
-        expect(hayFiltrosHistorialActivos({ ...VACIOS, sucursalId: '0' })).toBe(true);
     });
 });

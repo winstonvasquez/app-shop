@@ -27,7 +27,8 @@
             <p class="text-xs text-muted">{{ countItems(orden.itemsJson) }} items &middot;
                 S/{{ formatTotal(orden.itemsJson, orden.descuento) }}</p>
             <div class="held-card-actions">
-                <button class="btn-primary !text-xs !py-1 !px-3" (click)="onRestore(orden)">Recuperar</button>
+                <button class="btn-primary !text-xs !py-1 !px-3" [disabled]="recuperandoId() !== null"
+                    (click)="onRestore(orden)">{{ recuperandoId() === orden.id ? 'Recuperando...' : 'Recuperar' }}</button>
                 <button class="btn-secondary !text-xs !py-1 !px-3 !text-[var(--color-error)]"
                     (click)="onDiscard(orden)">Descartar</button>
             </div>

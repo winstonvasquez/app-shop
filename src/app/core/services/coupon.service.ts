@@ -20,14 +20,6 @@ export interface CuponResponse {
     usedAt: string | null;
 }
 
-export interface ValidateCouponResponse {
-    valid: boolean;
-    codigo: string;
-    tipo: string | null;
-    valor: number | null;
-    mensaje: string;
-}
-
 export interface PageResponse<T> {
     content: T[];
     totalElements: number;
@@ -77,11 +69,5 @@ export class CouponService {
         });
 
         return this.http.get<PageResponse<CuponResponse>>(`${this.base}/mine`, { params });
-    }
-
-    validate(code: string): Observable<ValidateCouponResponse> {
-        return this.http.get<ValidateCouponResponse>(
-            `${this.base}/validate`, { params: { code } }
-        );
     }
 }

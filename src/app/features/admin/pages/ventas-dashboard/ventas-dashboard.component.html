@@ -90,13 +90,13 @@
         <div class="chart-card">
             <div class="chart-card-header">
                 <span class="chart-card-title">Ventas Diarias del Mes</span>
-                <span style="font-size:0.75rem;color:var(--color-text-muted)">últimos 28 días</span>
+                <span style="font-size:0.75rem;color:var(--color-text-muted)">{{ serieParcial() ? 'mes en curso (parcial: primeros 1000 pedidos)' : 'mes en curso' }}</span>
             </div>
             <div class="chart-card-body">
                 <apx-chart
-                    [series]="areaSeries"
+                    [series]="areaSeries()"
                     [chart]="areaChart"
-                    [xaxis]="areaXAxis"
+                    [xaxis]="areaXAxis()"
                     [yaxis]="areaYAxis"
                     [fill]="areaFill"
                     [stroke]="areaStroke"

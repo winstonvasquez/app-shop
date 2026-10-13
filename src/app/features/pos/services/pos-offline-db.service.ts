@@ -13,7 +13,8 @@ export interface OfflineVenta {
     request: VentaPosRequest;
     /** Ticket temporal formato OFF-XXXXXX */
     numeroTicketTemp: string;
-    estado: 'PENDIENTE' | 'PROCESANDO' | 'COMPLETADA' | 'ERROR';
+    /** RECHAZADA: el servidor respondió y no la acepta (regla de negocio); reintentarla no cambia nada. */
+    estado: 'PENDIENTE' | 'PROCESANDO' | 'COMPLETADA' | 'ERROR' | 'RECHAZADA';
     intentos: number;
     ultimoError?: string;
     /** ID de la venta real una vez sincronizada */
@@ -43,15 +44,27 @@ export class PosOfflineDbService {
         await this.db.offlineVentas.put(venta);
     }
 
-    async getPendientes(): Promise<OfflineVenta[]> {
-        return this.db.offlineVentas
+    /**
+     * Ventas por sincronizar DE ESA EMPRESA (la base Dexie es del navegador, no de la empresa: sin este
+     * filtro una venta de la empresa 1 se enviaría con el JWT de la 2 y quedaría en ERROR para siempre).
+     * PROCESANDO cuenta: si se cerró la pestaña a mitad de sync la fila queda así y nada la reintentaba;
+     * el backend deduplica por idempotencyKey, así que reenviarla es seguro.
+     * `turnoCajaId` opcional: sólo las de ese turno.
+     */
+    async getPendientes(companyId: number, turnoCajaId?: number): Promise<OfflineVenta[]> {
+        const ventas = await this.db.offlineVentas
             .where('estado')
-            .anyOf('PENDIENTE', 'ERROR')
-            .sortBy('fechaCreacionOffline');
+            .anyOf('PENDIENTE', 'PROCESANDO', 'ERROR')
+            .filter(v => v.companyId === companyId && (turnoCajaId === undefined || v.turnoCajaId === turnoCajaId))
+            .toArray();
+        return ventas.sort((a, b) => +a.fechaCreacionOffline - +b.fechaCreacionOffline);
     }
 
-    async getAll(): Promise<OfflineVenta[]> {
-        return this.db.offlineVentas.orderBy('fechaCreacionOffline').reverse().toArray();
+    async getAll(companyId: number): Promise<OfflineVenta[]> {
+        return this.db.offlineVentas
+            .orderBy('fechaCreacionOffline').reverse()
+            .filter(v => v.companyId === companyId)
+            .toArray();
     }
 
     async getByKey(idempotencyKey: string): Promise<OfflineVenta | undefined> {
@@ -79,20 +92,34 @@ export class PosOfflineDbService {
         });
     }
 
-    async markError(idempotencyKey: string, error: string, intentos: number): Promise<void> {
+    async markError(idempotencyKey: string, error: string, intentos: number,
+                    estado: 'ERROR' | 'RECHAZADA' = 'ERROR'): Promise<void> {
         await this.db.offlineVentas.update(idempotencyKey, {
-            estado: 'ERROR',
+            estado,
             ultimoError: error,
             intentos,
         });
     }
 
-    async countPendientes(): Promise<number> {
-        return this.db.offlineVentas.where('estado').anyOf('PENDIENTE', 'ERROR').count();
+    /** Rechazadas por el servidor: ya no bloquean el cierre, pero el cajero tiene que verlas (cobró ese dinero). */
+    async getRechazadas(companyId: number): Promise<OfflineVenta[]> {
+        return this.db.offlineVentas.where('estado').equals('RECHAZADA')
+            .filter(v => v.companyId === companyId).toArray();
     }
 
-    async deleteCompletadas(): Promise<void> {
-        await this.db.offlineVentas.where('estado').equals('COMPLETADA').delete();
+    async eliminar(idempotencyKey: string): Promise<void> {
+        await this.db.offlineVentas.delete(idempotencyKey);
+    }
+
+    async countPendientes(companyId: number, turnoCajaId?: number): Promise<number> {
+        return (await this.getPendientes(companyId, turnoCajaId)).length;
+    }
+
+    async deleteCompletadas(companyId: number): Promise<void> {
+        await this.db.offlineVentas
+            .where('estado').equals('COMPLETADA')
+            .filter(v => v.companyId === companyId)
+            .delete();
     }
 
     /** Genera un ticket temporal: OFF-XXXXXX */

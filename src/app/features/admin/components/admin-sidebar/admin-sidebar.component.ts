@@ -30,6 +30,7 @@ const ALL_NAV_GROUPS: NavGroup[] = [
     items: [
       { label: 'Dashboard Ventas', route: '/admin/ventas/dashboard', icon: 'chart-line' },
       { label: 'Pedidos', route: '/admin/orders', icon: 'cart' },
+      { label: 'Pagos online', route: '/admin/pagos', icon: 'credit-card' },
       { label: 'Productos', route: '/admin/products', icon: 'box' },
       { label: 'Categorías', route: '/admin/categories', icon: 'tag' },
       { label: 'Devoluciones', route: '/admin/returns', icon: 'return' },
