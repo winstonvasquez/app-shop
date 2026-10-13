@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { FormControl, FormGroup } from '@angular/forms';
 import {
-    calcularEstadoPromocion, construirPromocionRequest, hoyLocalISO, parseFechaLocal,
+    calcularEstadoPromocion, construirAsignacionRequest, construirPromocionRequest, resumenAsignacion, hoyLocalISO, parseFechaLocal,
     PromocionFormRaw, validadoresValor, validarRangoFechas,
 } from './promotions.form';
 
@@ -134,5 +134,21 @@ describe('fechas locales', () => {
         expect(calcularEstadoPromocion({ activo: true, fechaFin: '2026-10-13' }, hoy)).toBe('ACTIVA');
         expect(calcularEstadoPromocion({ activo: true, fechaFin: '2026-10-12' }, hoy)).toBe('VENCIDA');
         expect(calcularEstadoPromocion({ activo: false, fechaFin: '2026-10-12' }, hoy)).toBe('INACTIVA');
+    });
+});
+
+describe('asignación de cupón', () => {
+    it('TODOS no manda segmento', () => {
+        expect(construirAsignacionRequest('TODOS', '7')).toEqual({});
+    });
+    it('SEGMENTO manda el id numérico', () => {
+        expect(construirAsignacionRequest('SEGMENTO', '7')).toEqual({ segmentoId: 7 });
+    });
+    it('SEGMENTO sin elegir no manda segmento', () => {
+        expect(construirAsignacionRequest('SEGMENTO', '')).toEqual({});
+    });
+    it('resume el resultado', () => {
+        expect(resumenAsignacion({ asignados: 3, yaAsignados: 1, sinCuenta: 2 }))
+            .toBe('3 asignados · 1 ya lo tenían · 2 sin cuenta en la tienda');
     });
 });

@@ -1,5 +1,5 @@
 import { DireccionEnvio, OrderRequest } from '@core/models/order.model';
-import { Address } from '@core/services/address/address.service';
+import { Address, AddressInput } from '@core/services/address/address.service';
 import { CartItem } from '@features/cart/services/cart.service';
 
 /**
@@ -68,5 +68,28 @@ function direccionDeEnvio(direccion: Address): DireccionEnvio {
         region: direccion.departamento,
         nombreDestinatario: direccion.nombreDestinatario ?? '',
         telefono: direccion.telefonoDestinatario ?? '',
+    };
+}
+
+/**
+ * Dirección del invitado: es un dato local del pedido, no se persiste (el endpoint de direcciones
+ * exige sesión). `id: 0` marca que no existe en el servidor; el pedido manda la dirección completa
+ * en `direccionEnvio`, nunca un id.
+ */
+export function direccionLocalDeInvitado(datos: AddressInput, ahora: Date = new Date()): Address {
+    return {
+        id: 0,
+        tipoDireccion: datos.tipoDireccion ?? 'ENVIO',
+        departamento: datos.departamento,
+        provincia: datos.provincia,
+        distrito: datos.distrito,
+        direccion: datos.direccion,
+        referencia: datos.referencia ?? '',
+        ubigeo: datos.ubigeo || null,
+        esPrincipal: true,
+        activo: true,
+        fechaCreacion: ahora.toISOString(),
+        nombreDestinatario: datos.nombreDestinatario,
+        telefonoDestinatario: datos.telefonoDestinatario,
     };
 }

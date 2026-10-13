@@ -34,6 +34,11 @@
                     <span>{{ 'pos.receipt.ticketTitle' | translate }}</span>
                     <strong class="receipt-meta-mono">{{ v.numeroTicket }}</strong>
                 </div>
+                @if (v.numeroNcAnulacion) {
+                <div class="receipt-meta-row text-[var(--color-error)]">
+                    <strong>Anulada — NC {{ v.numeroNcAnulacion }}</strong>
+                </div>
+                }
                 <div class="receipt-meta-row">
                     <span>{{ 'pos.receipt.dateTime' | translate }}</span>
                     <strong>{{ v.fechaCreacion | date:'dd/MM/yyyy HH:mm' }}</strong>

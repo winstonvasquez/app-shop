@@ -22,6 +22,8 @@ export interface CarritoParaVenta {
     giftCardCubreTodo: boolean;
     descuento: number;
     montoRecibido: number;
+    /** Token de supervisor a enviar; la página lo pasa sólo si el descuento de la venta lo exige. */
+    autorizacionToken?: string;
 }
 
 /**
@@ -40,7 +42,9 @@ export interface CarritoParaVenta {
  *   en el campo de efectivo; y sólo viajan los pagos con monto > 0 (las filas vacías del
  *   formulario de pago mixto no son pagos).
  * - **`autorizadoPor` conserva el 0 y descarta sólo el null**: el id del supervisor que autorizó
- *   un descuento es un dato, no un valor por defecto — por eso `??` y no `||`.
+ *   un descuento es un dato, no un valor por defecto — por eso `??` y no `||`. (El servidor ya lo
+ *   ignora y lo fija él a partir del token; se sigue enviando por compatibilidad.)
+ * - **`autorizacionToken`** viaja a nivel de venta, sólo si la página lo da.
  */
 export function construirVentaPosRequest(carrito: CarritoParaVenta): VentaPosRequest {
     const pagoDividido = carrito.pagoDividido;
@@ -71,6 +75,7 @@ export function construirVentaPosRequest(carrito: CarritoParaVenta): VentaPosReq
         descuento: carrito.descuento || undefined,
         montoRecibido: soloGiftCard ? undefined : (pagoDividido ? montoTotalPagos : (carrito.montoRecibido || undefined)),
         pagos: pagoDividido && !soloGiftCard ? carrito.pagos.filter(p => p.monto > 0) : undefined,
+        autorizacionToken: carrito.autorizacionToken || undefined,
     };
 }
 

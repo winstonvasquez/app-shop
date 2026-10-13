@@ -1,8 +1,18 @@
 import { describe, expect, it } from 'vitest';
-import { estadoInicialDescuento, requiereAutorizacionSupervisor } from './pos-order-panel.descuento';
-import { CartItem, ProductoCatalogoPOS } from '../../models/catalogo-pos.model';
+import {
+    estadoInicialDescuento, necesitaAutorizacion, porcentajeAAutorizar, porcentajeDescuentoTotal,
+    porcentajeDescuentoGlobal, porcentajeEquivalente, tokenCubre,
+} from './pos-order-panel.descuento';
+import { CartItem, DescuentoTipo, ProductoCatalogoPOS } from '../../models/catalogo-pos.model';
 
 const MAX = 10;
+
+/** Descuento de una línea sin token previo: lo que antes decidía `requiereAutorizacionSupervisor`. */
+function requiereAutorizacionSupervisor(
+    tipo: DescuentoTipo, valor: number, linea: CartItem | undefined, max: number,
+): boolean {
+    return necesitaAutorizacion(porcentajeEquivalente(tipo, valor, linea), max, null);
+}
 
 function producto(precioFinal: number): ProductoCatalogoPOS {
     return {
@@ -111,5 +121,65 @@ describe('requiereAutorizacionSupervisor — descuento en soles', () => {
         // Defensa heredada: sólo PORCENTAJE tiene atajo, todo lo demás se mide contra el bruto.
         expect(requiereAutorizacionSupervisor('NINGUNO', 1, item(), MAX)).toBe(false);
         expect(requiereAutorizacionSupervisor('NINGUNO', 99, item(), MAX)).toBe(true);
+    });
+});
+
+describe('porcentajeDescuentoGlobal', () => {
+    it('es el descuento sobre la suma de líneas ya con su descuento', () => {
+        // Línea de S/ 100 con S/ 20 de descuento propio → base 80; S/ 8 global = 10 %.
+        expect(porcentajeDescuentoGlobal(8, [item({ subtotal: 80 })])).toBeCloseTo(10);
+    });
+
+    it('sin descuento global es 0, aunque no haya líneas', () => {
+        expect(porcentajeDescuentoGlobal(0, [])).toBe(0);
+    });
+
+    it('sin base contra la que medir es 100 %', () => {
+        expect(porcentajeDescuentoGlobal(5, [])).toBe(100);
+        expect(porcentajeDescuentoGlobal(5, [item({ subtotal: 0 })])).toBe(100);
+    });
+});
+
+describe('porcentajeDescuentoTotal', () => {
+    it('sin descuentos es 0', () => {
+        expect(porcentajeDescuentoTotal([item()], 0)).toBe(0);
+    });
+
+    it('suma líneas (porcentaje y monto) y global sobre el bruto, como el servidor', () => {
+        const lineas = [
+            item({ descuentoTipo: 'PORCENTAJE', descuentoValor: 5, descuentoMonto: 5, subtotal: 95 }),
+            item({ descuentoTipo: 'MONTO', descuentoValor: 30, descuentoMonto: 30, subtotal: 70 }),
+        ];
+        // Bruto 200; líneas rebajan 35 y el global 10: 45/200 = 22,5 %.
+        expect(porcentajeDescuentoTotal(lineas, 10)).toBeCloseTo(22.5);
+        // 10 % por línea + 10 % global no es 10 %: es 19 % del bruto.
+        expect(porcentajeDescuentoTotal([item({ descuentoTipo: 'PORCENTAJE', descuentoValor: 10, descuentoMonto: 10, subtotal: 90 })], 9))
+            .toBeCloseTo(19);
+    });
+
+    it('ignora una línea NINGUNO con valor residual', () => {
+        expect(porcentajeDescuentoTotal([item({ descuentoTipo: 'NINGUNO', descuentoValor: 50 })], 0)).toBe(0);
+    });
+});
+
+describe('porcentajeAAutorizar', () => {
+    it('redondea hacia arriba a 2 decimales para que el token nunca quede corto', () => {
+        expect(porcentajeAAutorizar(33.3333)).toBe(33.34);
+        expect(porcentajeAAutorizar(10)).toBe(10);
+    });
+});
+
+describe('tokenCubre / necesitaAutorizacion', () => {
+    it('sin token no cubre; con token cubre hasta su porcentaje, inclusive', () => {
+        expect(tokenCubre(null, 1)).toBe(false);
+        expect(tokenCubre({ porcentaje: 20 }, 20)).toBe(true);
+        expect(tokenCubre({ porcentaje: 20 }, 20.01)).toBe(false);
+    });
+
+    it('un token vigente que cubre el descuento evita pedir otro PIN', () => {
+        expect(necesitaAutorizacion(15, MAX, null)).toBe(true);
+        expect(necesitaAutorizacion(15, MAX, { porcentaje: 20 })).toBe(false);
+        expect(necesitaAutorizacion(25, MAX, { porcentaje: 20 })).toBe(true);
+        expect(necesitaAutorizacion(MAX, MAX, null)).toBe(false);
     });
 });

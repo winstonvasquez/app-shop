@@ -19,7 +19,7 @@ import { Component, ChangeDetectionStrategy, output, signal, input, computed, ef
                 </div>
 
                 <p style="font-size: 13px; color: var(--color-text-subtle); margin-bottom: 16px;">
-                    Ingrese el PIN del supervisor para autorizar este descuento.
+                    {{ descripcion() }}
                 </p>
 
                 <!-- PIN display -->
@@ -47,7 +47,7 @@ import { Component, ChangeDetectionStrategy, output, signal, input, computed, ef
                     <button class="btn-secondary" style="height: 48px; font-size: 18px; font-weight: 600;"
                             [disabled]="loading()" (click)="addDigit('0')">0</button>
                     <button class="btn-primary" style="height: 48px; font-size: 14px; font-weight: 600;"
-                            [disabled]="loading()" (click)="submit()">{{ loading() ? '...' : 'OK' }}</button>
+                            [disabled]="loading() || blocked()" (click)="submit()">{{ loading() ? '...' : 'OK' }}</button>
                 </div>
             </div>
         </div>
@@ -62,6 +62,10 @@ export class PosManagerPinDialogComponent {
     readonly errorMessage = input<string>('');
     /** Mientras se valida contra el backend, bloquea el numpad. */
     readonly loading = input<boolean>(false);
+    /** Backend en 429 (demasiados PIN fallidos): el botón OK queda deshabilitado hasta cerrar el diálogo. */
+    readonly blocked = input<boolean>(false);
+    /** Qué se está autorizando (descuento, anulación…). */
+    readonly descripcion = input<string>('Ingrese el PIN del supervisor para autorizar esta operación.');
 
     readonly pin = signal('');
     readonly error = signal('');

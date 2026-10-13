@@ -90,6 +90,12 @@ export class MiPerfilComponent implements OnInit {
     );
 
     // --- Empresas / cambio de empresa activa ---
+    // PIN del punto de venta: lo genera el servidor y se muestra una sola vez.
+    generandoPin = signal(false);
+    errorPin = signal('');
+    pinGenerado = signal('');
+    pinForm = this.fb.nonNullable.group({ currentPassword: ['', Validators.required] });
+
     cargandoEmpresas = signal(false);
     empresas = signal<CompanyOption[]>([]);
     cambiandoEmpresa = signal<number | null>(null);
@@ -207,6 +213,27 @@ export class MiPerfilComponent implements OnInit {
             error: (err: { error?: { message?: string } }) => {
                 this.guardandoPassword.set(false);
                 this.errorPassword.set(err.error?.message ?? 'No se pudo cambiar la contraseña. Verifique la contraseña actual.');
+            },
+        });
+    }
+
+    onGenerarPin(): void {
+        if (this.pinForm.invalid) {
+            this.pinForm.markAllAsTouched();
+            return;
+        }
+        this.generandoPin.set(true);
+        this.errorPin.set('');
+        this.pinGenerado.set('');
+        this.http.put<{ pin: string }>(`${this.baseUrl}/me/pin`, this.pinForm.getRawValue()).subscribe({
+            next: ({ pin }) => {
+                this.generandoPin.set(false);
+                this.pinGenerado.set(pin);
+                this.pinForm.reset();
+            },
+            error: (err: { error?: { detail?: string } }) => {
+                this.generandoPin.set(false);
+                this.errorPin.set(err.error?.detail ?? 'No se pudo generar el PIN. Verifique la contraseña actual.');
             },
         });
     }

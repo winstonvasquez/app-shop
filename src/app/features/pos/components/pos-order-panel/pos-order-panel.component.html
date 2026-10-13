@@ -129,7 +129,7 @@
             Descuento (S/)
         </span>
         <input class="discount-input" type="number" min="0" step="0.50" [value]="carrito.descuento()"
-            (input)="onDescuentoChange($event)">
+            (input)="onDescuentoInput($event)" (change)="onDescuentoChange($event)">
     </div>
 
     <!-- Totales -->

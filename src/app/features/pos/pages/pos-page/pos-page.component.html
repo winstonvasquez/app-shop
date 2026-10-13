@@ -197,7 +197,8 @@
                         (clientCleared)="onClientCleared()" />
                     <app-pos-order-panel [isProcessing]="isLoading()" [maxDescuentoSinAuth]="maxDescuentoSinAuth()" (procesarVenta)="procesarVenta()" (irAlNumpad)="showScreen('pago')"
                         (giftCardLookup)="lookupGiftCard($event)"
-                        (requestSupervisorAuth)="requestSupervisorAuth($event)" />
+                        (requestSupervisorAuth)="requestSupervisorAuth($event)"
+                        (requestDescuentoGlobalAuth)="requestDescuentoGlobalAuth($event)" />
                 </div>
             </div>
             }
@@ -289,6 +290,8 @@
 <app-pos-manager-pin-dialog
     [errorMessage]="managerPinError()"
     [loading]="managerPinLoading()"
+    [blocked]="managerPinBloqueado()"
+    [descripcion]="managerPinDescripcion()"
     (confirmed)="onManagerPinConfirmed($event)"
     (cancel)="cancelManagerPin()" />
 }

@@ -23,7 +23,7 @@ import { finalize } from 'rxjs/operators';
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
 import { AdminFormSectionComponent } from '@shared/ui/forms/admin-form-section/admin-form-section.component';
 import { mensajeDeErrorDeControl } from '@shared/utils/form-errors';
-import { construirOrderRequest } from './checkout-page.order-request';
+import { construirOrderRequest, direccionLocalDeInvitado } from './checkout-page.order-request';
 
 @Component({
   selector: 'app-checkout-page',
@@ -255,7 +255,16 @@ export class CheckoutPageComponent implements OnInit {
     this.savingAddress.set(true);
     this.addressFormError.set(null);
 
-    const data = this.addressForm.value as AddressInput;
+    const data = this.addressForm.getRawValue() as AddressInput;
+    if (this.isGuest()) {
+      // Invitado: la dirección es local al pedido (el API de direcciones exige sesión).
+      const local = direccionLocalDeInvitado(data);
+      this.savingAddress.set(false);
+      this.selectedAddress.set(local);
+      this.resolverZonaPorDireccion(local);
+      this.closeAddressModal();
+      return;
+    }
     this.addressService.addAddress(data).subscribe({
       next: (newAddr) => {
         this.savingAddress.set(false);

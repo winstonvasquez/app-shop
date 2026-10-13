@@ -1,5 +1,5 @@
 import { AbstractControl, ValidationErrors, ValidatorFn, Validators } from '@angular/forms';
-import { Promocion } from '@features/admin/services/promotions.service';
+import { AsignacionResultado, Promocion } from '@features/admin/services/promotions.service';
 
 /**
  * Valores crudos del formulario de promoción (`form.getRawValue()`). Todo puede venir `null`
@@ -90,4 +90,16 @@ export function calcularEstadoPromocion(
 ): 'ACTIVA' | 'INACTIVA' | 'VENCIDA' {
     if (!p.activo) return 'INACTIVA';
     return p.fechaFin && p.fechaFin.slice(0, 10) < hoyLocalISO(hoy) ? 'VENCIDA' : 'ACTIVA';
+}
+
+/** Cuerpo de la asignación: sin segmento = todos los clientes con cuenta en la tienda. */
+export function construirAsignacionRequest(
+    modo: 'TODOS' | 'SEGMENTO', segmentoId: string | number | null,
+): { segmentoId?: number } {
+    return modo === 'SEGMENTO' && segmentoId !== null && segmentoId !== '' ? { segmentoId: Number(segmentoId) } : {};
+}
+
+/** Texto del toast tras asignar. */
+export function resumenAsignacion(r: AsignacionResultado): string {
+    return `${r.asignados} asignados · ${r.yaAsignados} ya lo tenían · ${r.sinCuenta} sin cuenta en la tienda`;
 }

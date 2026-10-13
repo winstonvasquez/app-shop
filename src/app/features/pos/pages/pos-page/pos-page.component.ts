@@ -12,7 +12,7 @@ import { PosOrdenesRetenidasService, OrdenRetenida } from '../../services/pos-or
 import { PosMovimientosCajaService, MovimientoCaja, MovimientoCajaRequest } from '../../services/pos-movimientos-caja.service';
 import { PosGiftCardService } from '../../services/pos-gift-card.service';
 import { PosOfflineSyncService } from '../../services/pos-offline-sync.service';
-import { PosManagerAuthService } from '../../services/pos-manager-auth.service';
+import { PosManagerAuthService, AutorizacionSupervisor } from '../../services/pos-manager-auth.service';
 import { ActivatedRoute } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { AuthService } from '@core/auth/auth.service';
@@ -23,6 +23,15 @@ import { VentaPosResponse } from '../../models/venta-pos.model';
 import { TurnoCaja } from '../../models/turno-caja.model';
 import { construirVentaPosRequest, errorFacturaSinRuc, tipoDocSunat } from './pos-page.venta-request';
 import { itemsDeOrdenRetenida } from './pos-page.orden-retenida';
+import { porcentajeAAutorizar, porcentajeDescuentoTotal, tokenCubre } from '../../components/pos-order-panel/pos-order-panel.descuento';
+
+/** Qué espera la autorización por PIN de supervisor. `porcentaje` ya va redondeado hacia arriba. */
+type AutorizacionPendiente =
+    | { tipo: 'LINEA'; varianteId: number; tipoDescuento: DescuentoTipo; valor: number; porcentaje: number }
+    | { tipo: 'GLOBAL'; valor: number; porcentaje: number }
+    /** Puerta final al cobrar: el descuento de la venta supera el tope y ningún token lo cubre. */
+    | { tipo: 'COBRO'; porcentaje: number }
+    | { tipo: 'ANULACION'; ventaId: number };
 
 // Sub-components
 import { PosTopbarComponent, PosScreen } from '../../components/pos-topbar/pos-topbar.component';
@@ -135,9 +144,15 @@ export class PosPageComponent implements OnInit, OnDestroy {
     readonly showManagerPin = signal(false);
     readonly managerPinError = signal('');
     readonly managerPinLoading = signal(false);
-    private readonly pendingDiscount = signal<{ varianteId: number; tipo: DescuentoTipo; valor: number } | null>(null);
-    /** Venta cuya anulación espera autorización por PIN de supervisor. */
-    private readonly pendingAnularVentaId = signal<number | null>(null);
+    /** 429 del backend (demasiados PIN fallidos): el diálogo no deja reintentar hasta cerrarlo. */
+    readonly managerPinBloqueado = signal(false);
+    private readonly pendiente = signal<AutorizacionPendiente | null>(null);
+    readonly managerPinDescripcion = computed(() => {
+        const p = this.pendiente();
+        if (p?.tipo === 'ANULACION') return 'Ingrese el PIN del supervisor para autorizar la anulación de esta venta.';
+        if (p) return `Ingrese el PIN del supervisor para autorizar un descuento de ${p.porcentaje} %.`;
+        return '';
+    });
 
     // Customer lookup visibility
     readonly showCustomerLookup = signal(true);
@@ -483,7 +498,7 @@ export class PosPageComponent implements OnInit, OnDestroy {
     }
 
     // ── PIN Login ──────────────────────────────────────────────────
-    onPinAuthenticated(data: { token: string; username: string; userId: number; companyId: number }): void {
+    onPinAuthenticated(data: { username: string; userId: number; companyId: number }): void {
         this.pinAuthenticated.set(true);
         this.showToast(`Bienvenido, ${data.username}`, 'success');
     }
@@ -495,63 +510,86 @@ export class PosPageComponent implements OnInit, OnDestroy {
     // ── Cross-Stock Dialog ──────────────────────────────────────
 
     // ── Manager PIN (discount authorization) ─────────────────────
-    /** Un descuento de línea superó el umbral del cajero: solicitar PIN de supervisor. */
-    requestSupervisorAuth(detail: { varianteId: number; tipo: DescuentoTipo; valor: number }): void {
-        this.pendingDiscount.set(detail);
+    private pedirAutorizacion(pendiente: AutorizacionPendiente): void {
+        this.pendiente.set(pendiente);
         this.managerPinError.set('');
+        this.managerPinBloqueado.set(false);
         this.showManagerPin.set(true);
     }
 
-    /** Una venta requiere anulación: solicitar PIN de supervisor antes de revertirla. */
+    /** Un descuento de línea superó el umbral del cajero: solicitar PIN de supervisor. */
+    requestSupervisorAuth(detail: { varianteId: number; tipo: DescuentoTipo; valor: number; porcentaje: number }): void {
+        this.pedirAutorizacion({
+            tipo: 'LINEA', varianteId: detail.varianteId, tipoDescuento: detail.tipo,
+            valor: detail.valor, porcentaje: detail.porcentaje,
+        });
+    }
+
+    /** El descuento global superó el umbral del cajero: solicitar PIN de supervisor. */
+    requestDescuentoGlobalAuth(detail: { valor: number; porcentaje: number }): void {
+        this.pedirAutorizacion({ tipo: 'GLOBAL', ...detail });
+    }
+
+    /** Una venta requiere anulación: ADMIN/GERENTE/SUPERADMIN anulan directo; el resto, con PIN de supervisor. */
     requestAnularVenta(ventaId: number): void {
-        this.pendingDiscount.set(null);
-        this.pendingAnularVentaId.set(ventaId);
-        this.managerPinError.set('');
-        this.showManagerPin.set(true);
+        if (this.auth.puedeGestionarTienda()) {
+            this.ejecutarAnularVenta(ventaId);
+            return;
+        }
+        this.pedirAutorizacion({ tipo: 'ANULACION', ventaId });
     }
 
     /**
-     * Valida el PIN contra microshopusers y, según la acción pendiente, aplica el
-     * descuento de línea o anula la venta. Solo procede si el backend confirma que el
-     * PIN pertenece a un supervisor autorizado de esta empresa.
+     * Pide al backend el token de supervisor (el PIN se valida en el servidor) y, según lo pendiente,
+     * aplica el descuento, anula la venta o reanuda el cobro. Sólo procede si el backend emite el token.
      */
     onManagerPinConfirmed(pin: string): void {
-        const anularId = this.pendingAnularVentaId();
-        const detail = this.pendingDiscount();
-        if (anularId == null && !detail) {
+        const pendiente = this.pendiente();
+        if (!pendiente) {
             this.cancelManagerPin();
             return;
         }
         this.managerPinLoading.set(true);
         this.managerPinError.set('');
-        this.managerAuth.verificarPinSupervisor(pin, this.companyId).subscribe({
-            next: resp => {
-                this.managerPinLoading.set(false);
-                if (!(resp.authorized && resp.userId != null)) {
-                    // PIN inexistente o sin rol autorizador: el diálogo limpia y permite reintento.
-                    this.managerPinError.set('PIN no válido o sin permiso de supervisor');
-                    return;
-                }
-                if (anularId != null) {
-                    this.ejecutarAnularVenta(anularId, resp.username ?? 'supervisor');
-                } else if (detail) {
-                    this.carrito.setLineDiscount(detail.varianteId, detail.tipo, detail.valor, resp.userId);
-                    this.showToast(`Descuento autorizado por ${resp.username ?? 'supervisor'}`, 'success');
-                }
+        const emision = pendiente.tipo === 'ANULACION'
+            ? this.managerAuth.autorizar('ANULACION', pin, { ventaId: pendiente.ventaId })
+            : this.managerAuth.autorizar('DESCUENTO', pin, { porcentaje: pendiente.porcentaje });
+        emision.subscribe({
+            next: aut => {
                 this.cancelManagerPin();
+                this.aplicarAutorizacion(pendiente, aut);
             },
-            error: () => {
+            error: err => {
                 this.managerPinLoading.set(false);
-                this.managerPinError.set('No se pudo validar el PIN. Reintenta.');
+                // 403 (PIN no válido) y 429 (demasiados intentos) traen el motivo en `message`.
+                this.managerPinError.set(this.mensajeError(err, 'No se pudo validar el PIN. Reintenta.'));
+                if (err instanceof HttpErrorResponse && err.status === 429) this.managerPinBloqueado.set(true);
             },
         });
     }
 
+    private aplicarAutorizacion(pendiente: AutorizacionPendiente, aut: AutorizacionSupervisor): void {
+        if (pendiente.tipo === 'ANULACION') {
+            this.ejecutarAnularVenta(pendiente.ventaId, aut.supervisorUsername, aut.token);
+            return;
+        }
+        this.carrito.registrarAutorizacion(aut.token, pendiente.porcentaje);
+        if (pendiente.tipo === 'LINEA') {
+            this.carrito.setLineDiscount(pendiente.varianteId, pendiente.tipoDescuento, pendiente.valor, aut.supervisorId);
+        } else if (pendiente.tipo === 'GLOBAL') {
+            this.carrito.setDescuento(pendiente.valor);
+        }
+        this.showToast(`Descuento autorizado por ${aut.supervisorUsername}`, 'success');
+        if (pendiente.tipo === 'COBRO') this.procesarVenta();
+    }
+
     /** Llama al backend para anular la venta y refresca historial + recibo mostrado. */
-    private ejecutarAnularVenta(ventaId: number, supervisor: string): void {
-        this.ventaService.anularVenta(ventaId).subscribe({
+    private ejecutarAnularVenta(ventaId: number, supervisor?: string, token?: string): void {
+        this.ventaService.anularVenta(ventaId, token).subscribe({
             next: venta => {
-                this.showToast(`Venta ${venta.numeroTicket} anulada por ${supervisor}`, 'success');
+                const nc = venta.numeroNcAnulacion ? ` — NC ${venta.numeroNcAnulacion}` : '';
+                this.showToast(
+                    `Venta ${venta.numeroTicket} anulada${supervisor ? ` por ${supervisor}` : ''}${nc}`, 'success');
                 if (this.lastVenta()?.id === venta.id) this.lastVenta.set(venta);
                 this.loadHistorial();
             },
@@ -561,10 +599,10 @@ export class PosPageComponent implements OnInit, OnDestroy {
 
     cancelManagerPin(): void {
         this.showManagerPin.set(false);
-        this.pendingDiscount.set(null);
-        this.pendingAnularVentaId.set(null);
+        this.pendiente.set(null);
         this.managerPinError.set('');
         this.managerPinLoading.set(false);
+        this.managerPinBloqueado.set(false);
     }
 
     /** Impresión real del recibo en pantalla (la hoja @media print da el formato 80mm). */
@@ -681,6 +719,17 @@ export class PosPageComponent implements OnInit, OnDestroy {
             return;
         }
 
+        // Puerta final: el servidor exige un token de supervisor si el descuento TOTAL (líneas + global) supera
+        // el tope. Cubre órdenes retenidas, la suma de descuentos que por separado pasaban y cualquier camino que
+        // se saltó el PIN al aplicarlo.
+        const pctDescuento = porcentajeDescuentoTotal(this.carrito.items(), this.carrito.descuento());
+        const exigeToken = pctDescuento > this.maxDescuentoSinAuth();
+        const autorizacion = this.carrito.autorizacion();
+        if (exigeToken && !this.auth.puedeGestionarTienda() && !tokenCubre(autorizacion, pctDescuento)) {
+            this.pedirAutorizacion({ tipo: 'COBRO', porcentaje: porcentajeAAutorizar(pctDescuento) });
+            return;
+        }
+
         const request = construirVentaPosRequest({
             turnoCajaId: turno.id,
             items: this.carrito.items(),
@@ -696,6 +745,8 @@ export class PosPageComponent implements OnInit, OnDestroy {
             giftCardCubreTodo: this.carrito.giftCardCubreTodo(),
             descuento: this.carrito.descuento(),
             montoRecibido: this.carrito.montoRecibido(),
+            // Siempre que haya uno: el servidor sólo lo gasta si el descuento supera el tope.
+            autorizacionToken: autorizacion?.token,
         });
 
         // Offline handling: save locally if browser is offline
@@ -724,6 +775,8 @@ export class PosPageComponent implements OnInit, OnDestroy {
             },
             error: err => {
                 this.isLoading.set(false);
+                // El token es de un solo uso: tras un 403 puede estar gastado o vencido, y el cobro volverá a pedir PIN.
+                if (err instanceof HttpErrorResponse && err.status === 403) this.carrito.limpiarAutorizacion();
                 this.showToast(this.mensajeError(err, 'Error al procesar la venta'), 'error');
             },
         });

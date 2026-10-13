@@ -26,9 +26,11 @@ import { ProductService } from '@core/services/product.service';
 import { CategoryService } from '@core/services/category.service';
 import { productoSelectSource } from '@features/admin/components/select-sources';
 import { mensajeDeErrorDeControl } from '@shared/utils/form-errors';
+import { SegmentService } from '@features/admin/services/segment.service';
+import { ToastService } from '@shared/services/toast.service';
 import {
-    calcularEstadoPromocion, construirPromocionRequest, hoyLocalISO, MENSAJE_RANGO_FECHAS,
-    parseFechaLocal, PromocionRequest, validadoresValor, validarRangoFechas,
+    calcularEstadoPromocion, construirAsignacionRequest, construirPromocionRequest, hoyLocalISO, MENSAJE_RANGO_FECHAS,
+    parseFechaLocal, PromocionRequest, resumenAsignacion, validadoresValor, validarRangoFechas,
 } from './promotions.form';
 
 type EstadoPromocion = 'ACTIVA' | 'INACTIVA' | 'VENCIDA';
@@ -74,6 +76,8 @@ export class PromotionsComponent implements OnInit {
     private readonly categoryService = inject(CategoryService);
     private readonly destroyRef      = inject(DestroyRef);
     private readonly auth            = inject(AuthService);
+    private readonly segmentService  = inject(SegmentService);
+    private readonly toast           = inject(ToastService);
     protected readonly puedeGestionar = this.auth.puedeGestionarTienda();
 
     /** Fuente server-side para el selector de "Producto específico" (alcance PRODUCTO). */
@@ -272,6 +276,10 @@ export class PromotionsComponent implements OnInit {
         { label: 'Activar', icon: '✓', class: 'btn-view',
           show: (row) => !row.activo,
           onClick: (row) => this.toggleActivo(row) },
+        // Sólo una promoción con código de cupón, activa y vigente se puede repartir (el backend responde 409 si no).
+        { label: 'Asignar a clientes', icon: '🎟', class: 'btn-view',
+          show: (row) => !!row.codigoCupon && row.estado === 'ACTIVA',
+          onClick: (row) => this.abrirAsignar(row) },
         { label: 'Eliminar', icon: '🗑', class: 'btn-view',
           onClick: (row) => this.promoAEliminar.set(row) },
     ] : [];
@@ -504,6 +512,43 @@ export class PromotionsComponent implements OnInit {
                 this.cargarStats();
             },
             error: (err: Error) => this.listError.set(err.message),
+        });
+    }
+
+    // ── Asignar cupón a clientes ─────────────────────────────────────
+    promoAAsignar     = signal<PromocionVM | null>(null);
+    asignarModo       = signal<'TODOS' | 'SEGMENTO'>('TODOS');
+    asignarSegmentoId = signal('');
+    asignando         = signal(false);
+    asignarError      = signal('');
+    segmentos         = signal<{ id: number; nombre: string }[]>([]);
+
+    abrirAsignar(row: PromocionVM): void {
+        this.asignarModo.set('TODOS');
+        this.asignarSegmentoId.set('');
+        this.asignarError.set('');
+        this.promoAAsignar.set(row);
+        this.segmentService.getAll({ page: 0, size: 100, activo: true }).subscribe({
+            next: (res) => this.segmentos.set((res.content ?? []).map(s => ({ id: s.id, nombre: s.nombre }))),
+            error: () => this.segmentos.set([]),
+        });
+    }
+
+    confirmarAsignar(): void {
+        const row = this.promoAAsignar();
+        if (!row?.id) return;
+        this.asignando.set(true);
+        this.asignarError.set('');
+        this.service.asignar(row.id, construirAsignacionRequest(this.asignarModo(), this.asignarSegmentoId())).subscribe({
+            next: (res) => {
+                this.asignando.set(false);
+                this.promoAAsignar.set(null);
+                this.toast.success('Cupón asignado', resumenAsignacion(res));
+            },
+            error: (err: Error) => {
+                this.asignando.set(false);
+                this.asignarError.set(err.message);
+            },
         });
     }
 

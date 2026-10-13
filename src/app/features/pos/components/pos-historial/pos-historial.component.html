@@ -89,7 +89,7 @@
                         <td>
                             <span class="status-badge" [class.status-badge--ok]="v.estado === 'COMPLETADA'"
                                 [class.status-badge--warn]="v.estado !== 'COMPLETADA'">
-                                {{ v.estado }}
+                                {{ v.numeroNcAnulacion ? 'Anulada — NC ' + v.numeroNcAnulacion : v.estado }}
                             </span>
                         </td>
                         <td>

@@ -9,6 +9,14 @@ import { PageResponse } from '@core/models/pagination.model';
 import { toHttpParams } from '@core/utils/http-params.util';
 import { mensajeDeErrorHttp, detalleDelBackend } from '@core/utils/http-error.util';
 
+/** Resultado de `POST /promociones/{id}/asignar`. */
+export interface AsignacionResultado {
+    asignados: number;
+    yaAsignados: number;
+    /** Clientes del filtro sin usuario en la tienda: no pueden ver cupones. */
+    sinCuenta: number;
+}
+
 export interface Promocion {
     id?: number;
     nombre: string;
@@ -95,6 +103,13 @@ export class PromotionsService {
 
     delete(id: number): Observable<void> {
         return this.http.delete<void>(`${this.baseUrl}/${id}`, { params: this.tenantParams() }).pipe(
+            catchError(this.handleError)
+        );
+    }
+
+    /** Emite la promoción (cupón) a los clientes con cuenta: todos, o los de un segmento. */
+    asignar(id: number, body: { segmentoId?: number | null; clienteIds?: number[] }): Observable<AsignacionResultado> {
+        return this.http.post<AsignacionResultado>(`${this.baseUrl}/${id}/asignar`, body).pipe(
             catchError(this.handleError)
         );
     }

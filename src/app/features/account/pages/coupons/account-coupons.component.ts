@@ -1,8 +1,10 @@
 import { Component, inject, OnInit, signal, computed, ChangeDetectionStrategy } from '@angular/core';
 import { DatePipe } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { LucideAngularModule } from 'lucide-angular';
 import { CouponService, CuponResponse, MisCuponesFiltros } from '@core/services/coupon.service';
+import { mensajeDeErrorHttp } from '@core/utils/http-error.util';
 import { AuthService } from '@core/auth/auth.service';
 import { CatalogService } from '@core/services/catalog.service';
 import { DsAccountShellComponent, DsButtonComponent, DsBadgeComponent, DsInputComponent } from '@shared/ui/ds';
@@ -38,6 +40,7 @@ export class AccountCouponsComponent implements OnInit {
      */
     cupones   = signal<CuponResponse[]>([]);
     loading   = signal(true);
+    loadError = signal<string | null>(null);
     activeTab = signal<CuponTab>('ACTIVE');
     copiedId  = signal<number | null>(null);
 
@@ -71,6 +74,7 @@ export class AccountCouponsComponent implements OnInit {
 
     private load(): void {
         this.loading.set(true);
+        this.loadError.set(null);
         // `getMyCupones` pasa los filtros por `toHttpParams`, que ya omite la cadena vacía igual
         // que omite `undefined`: coaccionar campo a campo con `|| undefined` era redundante.
         const filtros: MisCuponesFiltros = {
@@ -84,11 +88,16 @@ export class AccountCouponsComponent implements OnInit {
         };
         this.couponService.getMyCupones(this.currentPage(), 20, filtros).subscribe({
             next: (data) => {
-                this.cupones.set(data.content ?? []);
-                this.totalPages.set(data.totalPages ?? 0);
+                this.cupones.set(data.content);
+                this.totalPages.set(data.totalPages);
                 this.loading.set(false);
             },
-            error: () => this.loading.set(false),
+            error: (err: HttpErrorResponse) => {
+                this.cupones.set([]);
+                this.totalPages.set(0);
+                this.loadError.set(mensajeDeErrorHttp(err, {}));
+                this.loading.set(false);
+            },
         });
     }
 
@@ -151,10 +160,11 @@ export class AccountCouponsComponent implements OnInit {
 
     copyCode(coupon: CuponResponse): void {
         if (!coupon.codigo) return;
+        // clipboard exige contexto seguro y permiso: si falla, no se muestra «Copiado» en falso.
         navigator.clipboard.writeText(coupon.codigo).then(() => {
             this.copiedId.set(coupon.id);
             setTimeout(() => this.copiedId.set(null), 2000);
-        });
+        }).catch(() => this.copiedId.set(null));
     }
 
     formatDiscount(c: CuponResponse): string {

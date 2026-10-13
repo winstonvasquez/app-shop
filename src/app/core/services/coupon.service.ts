@@ -1,30 +1,21 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { environment } from '@env/environment';
+import { adaptSpringPage, Page } from '@core/models/pagination.model';
 import { toHttpParams } from '@core/utils/http-params.util';
 
 export interface CuponResponse {
     id: number;
     codigo: string | null;
     nombre: string;
-    /** Alias visual usado en templates */
-    titulo?: string;
     descripcion: string | null;
     tipo: string;
     valor: number;
     fechaFin: string;
-    /** Alias de fechaFin usado en templates */
-    fechaExpiracion?: string;
     status: 'ACTIVE' | 'USED' | 'EXPIRED';
     usedAt: string | null;
-}
-
-export interface PageResponse<T> {
-    content: T[];
-    totalElements: number;
-    totalPages: number;
-    number: number;
 }
 
 /**
@@ -55,7 +46,7 @@ export class CouponService {
      * Cupones del cliente autenticado (`GET /api/cupones/mine`). TODO el filtrado —
      * incluido `status`— ocurre en el backend; la vista nunca filtra la página cargada.
      */
-    getMyCupones(page = 0, size = 20, filtros: MisCuponesFiltros = {}): Observable<PageResponse<CuponResponse>> {
+    getMyCupones(page = 0, size = 20, filtros: MisCuponesFiltros = {}): Observable<Page<CuponResponse>> {
         let params = toHttpParams({
             page,
             size,
@@ -68,6 +59,9 @@ export class CouponService {
             assignedAtHasta: filtros.assignedAtHasta,
         });
 
-        return this.http.get<PageResponse<CuponResponse>>(`${this.base}/mine`, { params });
+        // Boot 3 puede anidar los metadatos bajo `page`: sin adaptar, totalPages quedaba undefined.
+        return this.http.get<unknown>(`${this.base}/mine`, { params }).pipe(
+            map(raw => adaptSpringPage<CuponResponse>(raw, page, size)),
+        );
     }
 }

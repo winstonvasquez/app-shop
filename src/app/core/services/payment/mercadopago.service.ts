@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { environment } from '@env/environment';
+import { GuestSessionService } from '@core/services/guest-session.service';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Interfaces
@@ -69,6 +70,7 @@ export interface YapeStatusResult {
 export class MercadoPagoService {
 
     private readonly http = inject(HttpClient);
+    private readonly guest = inject(GuestSessionService);
     private readonly usersApiBase = environment.apiUrls?.users ?? '/users';
     private readonly salesApiBase = environment.apiUrls?.sales ?? '/sales';
 
@@ -143,7 +145,7 @@ export class MercadoPagoService {
         return this.http.post<YapeIntentResult>(`${this.salesApiBase}/api/pagos/yape-intent`, {
             amount,
             orderId
-        });
+        }, this.guest.opcionesDe(orderId));
     }
 
     /**
@@ -178,6 +180,6 @@ export class MercadoPagoService {
             amount,
             orderId,
             paymentMethod
-        });
+        }, this.guest.opcionesDe(orderId));
     }
 }

@@ -72,6 +72,8 @@ export interface VentaPosResponse {
     moneda?: string;
     tipoCambio?: number;
     totalMonedaExtranjera?: number;
+    /** Nota de crédito emitida al anular una venta con BOLETA/FACTURA; null si no hubo (o no está anulada). */
+    numeroNcAnulacion?: string | null;
 }
 
 export interface VentaPosItemRequest {
@@ -101,6 +103,11 @@ export interface VentaPosRequest {
     giftCardCodigo?: string;
     moneda?: string;
     puntosACanjear?: number;
+    /**
+     * Token de supervisor (`POST /api/pos/autorizaciones`, acción DESCUENTO). El servidor lo exige
+     * cuando el mayor % de descuento de la venta supera el tope de la empresa; es de un solo uso.
+     */
+    autorizacionToken?: string;
 }
 
 // ── Tipo de Cambio ─────────────────────────────────────────────

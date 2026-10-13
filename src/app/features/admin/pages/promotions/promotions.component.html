@@ -212,3 +212,45 @@
         <app-button label="Eliminar" variant="danger" type="button" (click)="confirmarEliminar()" />
     </div>
 </app-modal>
+
+<!-- Asignar el cupón de una promoción a los clientes con cuenta en la tienda -->
+<app-modal
+    [isOpen]="promoAAsignar() !== null"
+    title="Asignar a clientes"
+    size="sm"
+    (close)="promoAAsignar.set(null)">
+    <p class="text-sm">
+        Cupón <strong>{{ promoAAsignar()?.codigoCupon }}</strong> de «{{ promoAAsignar()?.nombre }}».
+        Cada cliente lo verá en «Mis cupones».
+    </p>
+    <div class="flex flex-col gap-2 pt-3">
+        <label class="flex items-center gap-2 text-sm">
+            <input type="radio" name="asignarModo" [checked]="asignarModo() === 'TODOS'"
+                   (change)="asignarModo.set('TODOS')" />
+            Todos los clientes con cuenta
+        </label>
+        <label class="flex items-center gap-2 text-sm">
+            <input type="radio" name="asignarModo" [checked]="asignarModo() === 'SEGMENTO'"
+                   (change)="asignarModo.set('SEGMENTO')" />
+            Un segmento
+        </label>
+        @if (asignarModo() === 'SEGMENTO') {
+            <select class="form-input" [value]="asignarSegmentoId()"
+                    (change)="asignarSegmentoId.set($any($event.target).value)">
+                <option value="">Seleccionar segmento…</option>
+                @for (s of segmentos(); track s.id) {
+                    <option [value]="s.id">{{ s.nombre }}</option>
+                }
+            </select>
+        }
+    </div>
+    @if (asignarError()) {
+        <app-alert type="error" [message]="asignarError()" />
+    }
+    <div class="flex justify-end gap-3 pt-4">
+        <app-button label="Cancelar" variant="secondary" type="button" (click)="promoAAsignar.set(null)" />
+        <app-button label="Asignar" variant="primary" type="button"
+                    [disabled]="asignando() || (asignarModo() === 'SEGMENTO' && !asignarSegmentoId())"
+                    [loading]="asignando()" (click)="confirmarAsignar()" />
+    </div>
+</app-modal>

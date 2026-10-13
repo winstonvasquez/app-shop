@@ -39,30 +39,44 @@
 
     @if (loading()) {
         <div class="state"><span class="spinner"></span> Cargando…</div>
+    } @else if (loadError()) {
+        <div class="empty">
+            <lucide-icon name="ticket" [size]="48"/>
+            <h3>No pudimos cargar tus cupones</h3>
+            <p>{{ loadError() }}</p>
+            <ds-button variant="secondary" size="sm" (click)="onFiltersClear()">Reintentar</ds-button>
+        </div>
     } @else if (cupones().length === 0) {
         <div class="empty">
             <lucide-icon name="ticket" [size]="48"/>
-            <h3>Sin cupones {{ activeTab() === 'ACTIVE' ? 'disponibles' : (activeTab() === 'USED' ? 'usados' : 'vencidos') }}</h3>
-            <p>Vuelve pronto, siempre tenemos nuevas ofertas.</p>
+            @if (hasActiveFilters()) {
+                <h3>Sin resultados</h3>
+                <p>Ningún cupón coincide con esos filtros.</p>
+            } @else if (activeTab() === 'ACTIVE') {
+                <h3>Aún no tienes cupones</h3>
+                <p>Cuando la tienda te asigne uno, aparecerá aquí.</p>
+            } @else {
+                <h3>Sin cupones {{ activeTab() === 'USED' ? 'usados' : 'vencidos' }}</h3>
+            }
         </div>
     } @else {
         <div class="grid">
             @for (c of cupones(); track c.id) {
-                <article class="cupon" [class.is-disabled]="activeTab() !== 'ACTIVE'">
+                <article class="cupon" [class.is-disabled]="c.status !== 'ACTIVE'">
                     <div class="cupon-disc">
                         <strong>{{ formatDiscount(c) }}</strong>
                         <span class="cupon-tag">{{ c.tipo === 'PORCENTAJE' ? '%' : 'S/' }}</span>
                     </div>
                     <div class="cupon-body">
-                        <h4>{{ c.titulo ?? c.codigo }}</h4>
+                        <h4>{{ c.nombre }}</h4>
                         @if (c.descripcion) { <p>{{ c.descripcion }}</p> }
-                        @if (c.fechaExpiracion) {
+                        @if (c.fechaFin) {
                             <span class="exp">
                                 <lucide-icon name="clock" [size]="12"/>
-                                Vence {{ c.fechaExpiracion | date:'dd MMM yyyy' }}
+                                Vence {{ c.fechaFin | date:'dd MMM yyyy' }}
                             </span>
                         }
-                        @if (activeTab() === 'ACTIVE') {
+                        @if (c.status === 'ACTIVE') {
                             <div class="code-row">
                                 <code>{{ c.codigo }}</code>
                                 <ds-button variant="secondary" size="sm"
@@ -72,8 +86,8 @@
                                 </ds-button>
                             </div>
                         } @else {
-                            <ds-badge [tone]="activeTab() === 'USED' ? 'success' : 'neutral'" size="xs">
-                                {{ activeTab() === 'USED' ? 'Usado' : 'Vencido' }}
+                            <ds-badge [tone]="c.status === 'USED' ? 'success' : 'neutral'" size="xs">
+                                {{ c.status === 'USED' ? 'Usado' : 'Vencido' }}
                             </ds-badge>
                         }
                     </div>

@@ -3,10 +3,13 @@ import { FormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
 import { CatalogSelectComponent } from '@shared/components';
 import { CatalogService } from '@core/services/catalog.service';
+import { AuthService } from '@core/auth/auth.service';
 import { PosCarritoService } from '../../services/pos-carrito.service';
 import { CartItem, DescuentoTipo } from '../../models/catalogo-pos.model';
 import { MetodoPagoDividido, MetodoPagoPos, PagoMixto, TipoCpe } from '../../models/venta-pos.model';
-import { estadoInicialDescuento, requiereAutorizacionSupervisor } from './pos-order-panel.descuento';
+import {
+    estadoInicialDescuento, necesitaAutorizacion, porcentajeAAutorizar, porcentajeDescuentoGlobal, porcentajeEquivalente,
+} from './pos-order-panel.descuento';
 
 @Component({
     selector: 'app-pos-order-panel',
@@ -19,6 +22,7 @@ export class PosOrderPanelComponent {
 
     readonly carrito = inject(PosCarritoService);
     private readonly catalog = inject(CatalogService);
+    private readonly auth = inject(AuthService);
 
     /** True mientras la venta se está procesando — deshabilita Cobrar (anti doble-venta). */
     readonly isProcessing = input(false);
@@ -26,8 +30,10 @@ export class PosOrderPanelComponent {
     readonly procesarVenta = output<void>();
     readonly irAlNumpad = output<void>();
     readonly giftCardLookup = output<string>();
-    /** Descuento de línea que excede el umbral del cajero → requiere PIN de supervisor. */
-    readonly requestSupervisorAuth = output<{ varianteId: number; tipo: DescuentoTipo; valor: number }>();
+    /** Descuento de línea que excede el umbral del cajero → requiere PIN de supervisor. `porcentaje` ya va redondeado hacia arriba. */
+    readonly requestSupervisorAuth = output<{ varianteId: number; tipo: DescuentoTipo; valor: number; porcentaje: number }>();
+    /** Descuento GLOBAL (S/) que excede el umbral del cajero → requiere PIN de supervisor. */
+    readonly requestDescuentoGlobalAuth = output<{ valor: number; porcentaje: number }>();
 
     /** Descuento máximo (%) que un cajero puede aplicar sin autorización de supervisor (lo da la config de la empresa). */
     readonly maxDescuentoSinAuth = input(10);
@@ -90,11 +96,12 @@ export class PosOrderPanelComponent {
         const tipo = this.discountType();
         const valor = this.discountValue();
         if (valor > 0 && tipo !== 'NINGUNO') {
-            if (requiereAutorizacionSupervisor(tipo, valor, this.lineaDe(varianteId), this.maxDescuentoSinAuth())) {
-                // Cerrar popover y delegar al padre la verificación del PIN de supervisor;
-                // el descuento se aplica solo si el backend autoriza.
+            const porcentaje = porcentajeEquivalente(tipo, valor, this.lineaDe(varianteId));
+            if (this.requierePin(porcentaje)) {
+                // Cerrar popover y delegar al padre la autorización por PIN de supervisor;
+                // el descuento se aplica solo si el backend emite el token.
                 this.discountPopoverFor.set(null);
-                this.requestSupervisorAuth.emit({ varianteId, tipo, valor });
+                this.requestSupervisorAuth.emit({ varianteId, tipo, valor, porcentaje: porcentajeAAutorizar(porcentaje) });
                 return;
             }
             this.carrito.setLineDiscount(varianteId, tipo, valor);
@@ -117,9 +124,33 @@ export class PosOrderPanelComponent {
         this.carrito.setCliente(null, nombre);
     }
 
-    onDescuentoChange(event: Event): void {
+    /** ADMIN/GERENTE/SUPERADMIN nunca ven el diálogo de PIN; el resto, sólo si el % supera el tope y ningún token lo cubre. */
+    private requierePin(porcentaje: number): boolean {
+        return !this.auth.puedeGestionarTienda()
+            && necesitaAutorizacion(porcentaje, this.maxDescuentoSinAuth(), this.carrito.autorizacion());
+    }
+
+    private porcentajeGlobal(valor: number): number {
+        return porcentajeDescuentoGlobal(valor, this.carrito.items());
+    }
+
+    /** Mientras se teclea sólo se aplica lo que no pide PIN; lo que sí, espera al `change` (un solo diálogo, no uno por dígito). */
+    onDescuentoInput(event: Event): void {
         const val = parseFloat((event.target as HTMLInputElement).value) || 0;
-        this.carrito.setDescuento(val);
+        if (!this.requierePin(this.porcentajeGlobal(val))) this.carrito.setDescuento(val);
+    }
+
+    onDescuentoChange(event: Event): void {
+        const input = event.target as HTMLInputElement;
+        const val = parseFloat(input.value) || 0;
+        const porcentaje = this.porcentajeGlobal(val);
+        if (!this.requierePin(porcentaje)) {
+            this.carrito.setDescuento(val);
+            return;
+        }
+        // El valor tecleado no se aplica hasta que el backend emita el token: el campo vuelve al vigente.
+        input.value = String(this.carrito.descuento());
+        this.requestDescuentoGlobalAuth.emit({ valor: val, porcentaje: porcentajeAAutorizar(porcentaje) });
     }
 
     onMontoRecibidoChange(event: Event): void {

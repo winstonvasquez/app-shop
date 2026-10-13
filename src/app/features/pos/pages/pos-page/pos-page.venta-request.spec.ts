@@ -150,6 +150,17 @@ describe('construirVentaPosRequest — bordes de cada campo opcional', () => {
     });
 });
 
+describe('construirVentaPosRequest — autorizacionToken', () => {
+    it('viaja a nivel de venta cuando la página lo da', () => {
+        expect(construirVentaPosRequest(carrito({ autorizacionToken: 'tok-1' })).autorizacionToken).toBe('tok-1');
+    });
+
+    it('sin token (o vacío) no viaja', () => {
+        expect(construirVentaPosRequest(carrito()).autorizacionToken).toBeUndefined();
+        expect(construirVentaPosRequest(carrito({ autorizacionToken: '' })).autorizacionToken).toBeUndefined();
+    });
+});
+
 describe('construirVentaPosRequest — gift card', () => {
     it('gift card que cubre todo: GIFT_CARD, código presente y sin monto recibido ni pagos', () => {
         const req = construirVentaPosRequest(carrito({

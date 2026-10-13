@@ -50,14 +50,10 @@ const COLUMNS: FooterColumn[] = [
         }
 
         @if (successMsg()) {
-            <div class="card mb-4" style="border-left:3px solid var(--color-success); padding:12px 16px">
-                <p style="color:var(--color-success); font-size:.875rem; margin:0">✓ {{ successMsg() }}</p>
-            </div>
+            <div class="alert alert-success" role="status">✓ {{ successMsg() }}</div>
         }
         @if (errorMsg()) {
-            <div class="card mb-4" style="border-left:3px solid var(--color-error); padding:12px 16px">
-                <p style="color:var(--color-error); font-size:.875rem; margin:0">{{ errorMsg() }}</p>
-            </div>
+            <div class="alert alert-error" role="alert">{{ errorMsg() }}</div>
         }
 
         <!-- 3 columnas de links -->

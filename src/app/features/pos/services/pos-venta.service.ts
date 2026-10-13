@@ -54,8 +54,12 @@ export class PosVentaService {
         return this.http.post<VentaPosResponse>(`${this.baseUrl}/ventas`, request, { headers });
     }
 
-    anularVenta(ventaId: number): Observable<VentaPosResponse> {
-        return this.http.post<VentaPosResponse>(`${this.baseUrl}/ventas/${ventaId}/anular`, {});
+    /** `autorizacionToken` (ANULACION, emitido para este `ventaId`) va en la cabecera; ADMIN/GERENTE anulan sin él. */
+    anularVenta(ventaId: number, autorizacionToken?: string): Observable<VentaPosResponse> {
+        const headers = autorizacionToken
+            ? new HttpHeaders({ 'X-Autorizacion-Supervisor': autorizacionToken })
+            : undefined;
+        return this.http.post<VentaPosResponse>(`${this.baseUrl}/ventas/${ventaId}/anular`, {}, { headers });
     }
 
     getRecibo(ventaId: number): Observable<VentaPosResponse> {
@@ -97,9 +101,13 @@ export class PosVentaService {
         );
     }
 
-    procesarDevolucion(ventaId: number, request: DevolucionPosRequest): Observable<DevolucionPosResponse> {
+    /** `autorizacionToken` (DEVOLUCION, emitido para este `ventaId`) va en la cabecera; ADMIN/GERENTE devuelven sin él. */
+    procesarDevolucion(ventaId: number, request: DevolucionPosRequest, autorizacionToken?: string): Observable<DevolucionPosResponse> {
+        const headers = autorizacionToken
+            ? new HttpHeaders({ 'X-Autorizacion-Supervisor': autorizacionToken })
+            : undefined;
         return this.http.post<DevolucionPosResponse>(
-            `${this.baseUrl}/ventas/${ventaId}/devolucion`, request
+            `${this.baseUrl}/ventas/${ventaId}/devolucion`, request, { headers }
         );
     }
 

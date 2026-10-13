@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { AuthService } from '@core/auth/auth.service';
 import { HttpClient, HttpParams, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { catchError, tap } from 'rxjs/operators';
 import { environment } from '@env/environment';
 import {
     OrderResponse,
@@ -15,6 +15,10 @@ import { PageResponse, PaginationConfig } from '@core/models/pagination.model';
 import { HTTP_STATUS } from '@shared/constants/app.constants';
 import { toHttpParams } from '@core/utils/http-params.util';
 import { mensajeDeErrorHttp } from '@core/utils/http-error.util';
+import { GuestSessionService } from '@core/services/guest-session.service';
+
+/** Respuesta de `POST /api/pedidos`: `tokenInvitado` sólo viene en pedidos de invitado (UUID). */
+export type OrderCreadoResponse = OrderResponse & { tokenInvitado?: string | null };
 
 /** Filtros server-side del listado "Mis pedidos" del storefront. Todos opcionales. */
 /** Línea seleccionada del carrito para estimar un cupón: subtotal = precio × cantidad. */
@@ -42,6 +46,7 @@ export interface MisPedidosFiltros {
 export class OrderService {
     private readonly http = inject(HttpClient);
     private readonly auth = inject(AuthService);
+    private readonly guest = inject(GuestSessionService);
     private readonly baseUrl = `${environment.apiUrls.sales}/api/pedidos`;
 
     /**
@@ -105,7 +110,7 @@ export class OrderService {
 
     getById(id: number): Observable<OrderResponse> {
         return this.http
-            .get<OrderResponse>(`${this.baseUrl}/${id}`)
+            .get<OrderResponse>(`${this.baseUrl}/${id}`, this.guest.opcionesDe(id))
             .pipe(catchError(this.handleError));
     }
 
@@ -113,13 +118,17 @@ export class OrderService {
      * Crea un pedido. Envía un header `Idempotency-Key` (UUID por intento) para que el
      * backend deduplique ante reintento de red: el mismo key NO crea dos pedidos.
      */
-    createOrder(order: OrderRequest, idempotencyKey?: string): Observable<OrderResponse> {
+    createOrder(order: OrderRequest, idempotencyKey?: string): Observable<OrderCreadoResponse> {
         const headers = idempotencyKey
             ? new HttpHeaders({ 'Idempotency-Key': idempotencyKey })
             : undefined;
         return this.http
-            .post<OrderResponse>(this.baseUrl, order, { headers })
-            .pipe(catchError(this.handleError));
+            .post<OrderCreadoResponse>(this.baseUrl, order, { headers })
+            .pipe(
+                // El token del invitado se guarda aquí, una sola vez, para que lo usen pago, cancelación y confirmación.
+                tap(res => { if (res.id && res.tokenInvitado) this.guest.guardarToken(res.id, res.tokenInvitado); }),
+                catchError(this.handleError),
+            );
     }
 
     updateStatus(id: number, update: OrderStatusUpdate): Observable<OrderResponse> {
@@ -150,7 +159,7 @@ export class OrderService {
      */
     cancelOrder(orderId: number, motivo: string): Observable<OrderCancelResponse> {
         return this.http
-            .post<OrderCancelResponse>(`${this.baseUrl}/${orderId}/cancelar`, { motivo })
+            .post<OrderCancelResponse>(`${this.baseUrl}/${orderId}/cancelar`, { motivo }, this.guest.opcionesDe(orderId))
             .pipe(catchError(this.handleError));
     }
 

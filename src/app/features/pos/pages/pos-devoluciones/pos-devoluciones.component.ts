@@ -3,6 +3,8 @@ import { DecimalPipe, DatePipe } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { CatalogSelectComponent } from '@shared/components';
 import { PosVentaService } from '../../services/pos-venta.service';
+import { PosManagerAuthService } from '../../services/pos-manager-auth.service';
+import { PosManagerPinDialogComponent } from '../../components/pos-manager-pin-dialog/pos-manager-pin-dialog.component';
 import { VentaPosResponse, DevolucionPosResponse } from '../../models/venta-pos.model';
 import { CatalogService } from '@core/services/catalog.service';
 import { AuthService } from '@core/auth/auth.service';
@@ -27,7 +29,7 @@ const ESTADOS_DEVOLUCION: { value: string; label: string }[] = [
 @Component({
     selector: 'app-pos-devoluciones',
     standalone: true,
-    imports: [DecimalPipe, DatePipe, ReactiveFormsModule, CatalogSelectComponent],
+    imports: [DecimalPipe, DatePipe, ReactiveFormsModule, CatalogSelectComponent, PosManagerPinDialogComponent],
     changeDetection: ChangeDetectionStrategy.OnPush,
     template: `
     <!--
@@ -374,12 +376,23 @@ const ESTADOS_DEVOLUCION: { value: string; label: string }[] = [
         </div>
       }
     </div>
+
+    @if (showPin()) {
+      <app-pos-manager-pin-dialog
+        [errorMessage]="pinError()"
+        [loading]="pinLoading()"
+        [blocked]="pinBloqueado()"
+        descripcion="Ingrese el PIN del supervisor para autorizar esta devolución."
+        (confirmed)="onPinConfirmado($event)"
+        (cancel)="cerrarPin()" />
+    }
   `
 })
 export class PosDevolucionesComponent implements OnInit {
     private readonly ventaService = inject(PosVentaService);
     private readonly fb = inject(FormBuilder);
     private readonly auth = inject(AuthService);
+    private readonly managerAuth = inject(PosManagerAuthService);
     private readonly userService = inject(UserService);
     readonly catalog = inject(CatalogService);
 
@@ -395,6 +408,11 @@ export class PosDevolucionesComponent implements OnInit {
 
     buscando = signal(false);
     procesando = signal(false);
+    // Devolver saca efectivo del cajón: un cajero necesita el PIN de un supervisor (el servidor lo exige).
+    readonly showPin = signal(false);
+    readonly pinError = signal('');
+    readonly pinLoading = signal(false);
+    readonly pinBloqueado = signal(false);
     procesado = signal(false);
     errorBusqueda = signal<string | null>(null);
     ventaSeleccionada = signal<VentaPosResponse | null>(null);
@@ -649,6 +667,41 @@ export class PosDevolucionesComponent implements OnInit {
     }
 
     confirmarDevolucion(): void {
+        if (!this.ventaSeleccionada()) return;
+        if (this.auth.puedeGestionarTienda()) {
+            this.enviarDevolucion();
+            return;
+        }
+        this.pinError.set('');
+        this.pinBloqueado.set(false);
+        this.showPin.set(true);
+    }
+
+    onPinConfirmado(pin: string): void {
+        const venta = this.ventaSeleccionada();
+        if (!venta) return;
+        this.pinLoading.set(true);
+        this.pinError.set('');
+        this.managerAuth.autorizar('DEVOLUCION', pin, { ventaId: venta.id }).subscribe({
+            next: aut => {
+                this.pinLoading.set(false);
+                this.showPin.set(false);
+                this.enviarDevolucion(aut.token);
+            },
+            error: (err: HttpErrorResponse) => {
+                this.pinLoading.set(false);
+                this.pinError.set(mensajeDeErrorHttp(err));
+                if (err.status === 429) this.pinBloqueado.set(true);
+            },
+        });
+    }
+
+    cerrarPin(): void {
+        this.showPin.set(false);
+        this.pinLoading.set(false);
+    }
+
+    private enviarDevolucion(autorizacionToken?: string): void {
         const venta = this.ventaSeleccionada();
         const request = construirDevolucionRequest(this.formDevolucion.value, this.lineasDevolucion());
         if (!venta || !request) return;
@@ -656,7 +709,7 @@ export class PosDevolucionesComponent implements OnInit {
         this.procesando.set(true);
         this.errorBusqueda.set(null);
 
-        this.ventaService.procesarDevolucion(venta.id, request).subscribe({
+        this.ventaService.procesarDevolucion(venta.id, request, autorizacionToken).subscribe({
             next: (resp) => {
                 this.ultimaNc.set(resp.numeroNc);
                 this.ultimoTotalDevuelto.set(resp.totalDevuelto);

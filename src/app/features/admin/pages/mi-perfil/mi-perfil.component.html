@@ -90,6 +90,42 @@
         </div>
     </div>
 
+    <!-- PIN del punto de venta -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">PIN del punto de venta</h3>
+        </div>
+        <div class="card-body">
+            <p class="perfil-permisos-desc">
+                Con este PIN se desbloquea la caja y, si su rol es de supervisor, se autorizan descuentos y anulaciones.
+                Lo genera el sistema; al generar uno nuevo, el anterior deja de funcionar.
+            </p>
+            @if (pinGenerado()) {
+                <div class="alert alert-success" role="status">
+                    Su nuevo PIN es <strong class="pin-generado">{{ pinGenerado() }}</strong>. Anótelo: no se volverá a mostrar.
+                </div>
+            }
+            @if (errorPin()) {
+                <div class="alert alert-error">{{ errorPin() }}</div>
+            }
+            <form [formGroup]="pinForm" (ngSubmit)="onGenerarPin()">
+                <div class="form-group">
+                    <label for="pinPassword">Contraseña actual <span class="required">*</span></label>
+                    <input type="password" id="pinPassword" formControlName="currentPassword" class="form-input"
+                           [class.error]="pinForm.controls.currentPassword.touched && pinForm.invalid" autocomplete="current-password" />
+                    @if (pinForm.controls.currentPassword.touched && pinForm.invalid) {
+                        <span class="error-message">Ingrese su contraseña actual.</span>
+                    }
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary" [disabled]="generandoPin()">
+                        {{ generandoPin() ? 'Generando...' : 'Generar PIN' }}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Cambiar empresa activa -->
     @if (tieneVariasEmpresas()) {
         <div class="card">

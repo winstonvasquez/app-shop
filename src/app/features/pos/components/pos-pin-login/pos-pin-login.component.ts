@@ -1,7 +1,7 @@
 import {
     Component, ChangeDetectionStrategy, output, signal, inject,
 } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { environment } from '@env/environment';
 
 @Component({
@@ -65,7 +65,8 @@ import { environment } from '@env/environment';
 export class PosPinLoginComponent {
     private readonly http = inject(HttpClient);
 
-    readonly authenticated = output<{ token: string; username: string; userId: number; companyId: number }>();
+    /** Quién desbloqueó la caja. El backend no emite token: un PIN no abre sesión (sólo identifica). */
+    readonly authenticated = output<{ username: string; userId: number; companyId: number }>();
     readonly skip = output<void>();
 
     readonly pin = signal('');
@@ -99,23 +100,24 @@ export class PosPinLoginComponent {
         this.loading.set(true);
         this.error.set('');
 
-        this.http.post<{ token: string; username: string; userId: number; activeCompanyId: number }>(
-            `${environment.apiUrls.users}/auth/pin-login`,
-            null,
-            { params: { pin: p } }
+        // El PIN va en el cuerpo (no en la URL) y se busca sólo en la empresa de la sesión de la estación.
+        this.http.post<{ username: string; userId: number; activeCompanyId: number }>(
+            `${environment.apiUrls.users}/api/auth/pin-login`,
+            { pin: p },
         ).subscribe({
             next: (resp) => {
                 this.loading.set(false);
                 this.authenticated.emit({
-                    token: resp.token,
                     username: resp.username,
                     userId: resp.userId,
                     companyId: resp.activeCompanyId,
                 });
             },
-            error: () => {
+            error: (err: HttpErrorResponse) => {
                 this.loading.set(false);
-                this.error.set('PIN incorrecto');
+                this.error.set(err.status === 429
+                    ? 'Demasiados intentos. Espere unos minutos.'
+                    : 'PIN incorrecto');
                 this.pin.set('');
             },
         });

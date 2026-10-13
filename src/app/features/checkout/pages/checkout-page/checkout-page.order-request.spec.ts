@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { Address } from '@core/services/address/address.service';
 import { CartItem } from '@features/cart/services/cart.service';
-import { construirOrderRequest, DatosDelCheckout } from './checkout-page.order-request';
+import { construirOrderRequest, DatosDelCheckout, direccionLocalDeInvitado } from './checkout-page.order-request';
 
 function direccion(parcial: Partial<Address> = {}): Address {
     return {
@@ -134,5 +134,30 @@ describe('construirOrderRequest', () => {
 
     it('un carrito vacío produce detalles vacío, no undefined', () => {
         expect(construirOrderRequest(datos({ items: [] })).detalles).toEqual([]);
+    });
+});
+
+describe('direccionLocalDeInvitado', () => {
+    const form = {
+        departamento: 'Lima', provincia: 'Lima', distrito: 'Miraflores', direccion: 'Av. Larco 123',
+        referencia: '', ubigeo: '', esPrincipal: false,
+        nombreDestinatario: 'Ana Quispe', telefonoDestinatario: '987654321',
+    };
+
+    it('arma una dirección local sin id de servidor y con ubigeo nulo si viene vacío', () => {
+        const a = direccionLocalDeInvitado(form, new Date('2026-01-01T00:00:00Z'));
+        expect(a.id).toBe(0);
+        expect(a.ubigeo).toBeNull();
+        expect(a.distrito).toBe('Miraflores');
+        expect(a.nombreDestinatario).toBe('Ana Quispe');
+        expect(a.fechaCreacion).toBe('2026-01-01T00:00:00.000Z');
+    });
+
+    it('el pedido manda la dirección completa, no un id', () => {
+        const pedido = construirOrderRequest({
+            usuarioId: null, esInvitado: true, emailInvitado: 'a@b.pe', items: [],
+            direccion: direccionLocalDeInvitado(form), metodoPago: 'EFE', codigoCupon: null, zonaEnvioId: null,
+        });
+        expect(pedido.direccionEnvio).toMatchObject({ direccion: 'Av. Larco 123', ciudad: 'Miraflores', codigoPostal: '00000' });
     });
 });

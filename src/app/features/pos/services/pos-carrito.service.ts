@@ -29,6 +29,12 @@ export class PosCarritoService {
     readonly giftCardCodigo = signal<string>('');
     readonly giftCardMonto = signal<number>(0);
 
+    /**
+     * Autorización de supervisor de la venta en curso (token DESCUENTO de un solo uso + el % que cubre).
+     * Una por venta: se conserva la de mayor porcentaje y se descarta al vaciar el carrito.
+     */
+    readonly autorizacion = signal<{ token: string; porcentaje: number } | null>(null);
+
     /** Signal para feedback visual: ID de la última variante añadida. Se resetea a null tras 600ms. */
     readonly lastAddedId = signal<number | null>(null);
 
@@ -105,9 +111,9 @@ export class PosCarritoService {
             if (existing) {
                 return items.map(i => {
                     if (i.variante.varianteId !== variante.varianteId) return i;
-                    const newQty = i.cantidad + 1;
-                    const bruto = newQty * i.variante.precioFinal;
-                    return { ...i, cantidad: newQty, subtotal: bruto - i.descuentoMonto };
+                    // Re-escanear recalcula el descuento con la nueva cantidad (como cambiarCantidad): con el monto
+                    // viejo el % caía por debajo del tope, no se mandaba el token y el servidor rechazaba el cobro.
+                    return this.recalcSubtotal({ ...i, cantidad: i.cantidad + 1 });
                 });
             }
             return [...items, {
@@ -161,6 +167,16 @@ export class PosCarritoService {
         this.pagos.set([{ metodo: 'EFECTIVO', monto: 0 }, { metodo: 'YAPE', monto: 0 }]);
         this.giftCardCodigo.set('');
         this.giftCardMonto.set(0);
+        this.autorizacion.set(null);
+    }
+
+    /** Guarda el token de supervisor; si ya había uno, se queda el que cubre MÁS porcentaje. */
+    registrarAutorizacion(token: string, porcentaje: number): void {
+        this.autorizacion.update(actual => actual && actual.porcentaje >= porcentaje ? actual : { token, porcentaje });
+    }
+
+    limpiarAutorizacion(): void {
+        this.autorizacion.set(null);
     }
 
     togglePagoDividido(): void {
