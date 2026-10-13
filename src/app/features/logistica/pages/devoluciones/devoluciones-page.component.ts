@@ -2,7 +2,15 @@ import { Component, inject, signal, OnInit, ChangeDetectionStrategy } from '@ang
 import { DatePipe } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { DevolucionService } from '../../services/devolucion.service';
-import { Devolucion, DevolucionStatus } from '../../models/devolucion.model';
+import {
+    Devolucion, DevolucionStatus, InspeccionDevolucion, ITEM_CONDICIONES, ITEM_DISPOSICIONES
+} from '../../models/devolucion.model';
+import {
+    InspeccionItemDraft, armarInspeccionBody, nuevaFilaInspeccion, validarInspeccion
+} from './devoluciones.form';
+import { ProductLookupComponent } from '@features/inventory/components/product-lookup/product-lookup.component';
+import { ProductResponse } from '@core/models/product.model';
+import { longToSyntheticUuid } from '@core/utils/synthetic-uuid.util';
 import { AlmacenService } from '../../services/almacen.service';
 import { Almacen } from '../../models/almacen.model';
 import { EnvioService } from '../../services/envio.service';
@@ -36,7 +44,8 @@ import { CatalogService } from '@core/services/catalog.service';
         DrawerComponent,
         AlertComponent,
         PageHeaderComponent,
-        DatePipe
+        DatePipe,
+        ProductLookupComponent
     ],
     templateUrl: './devoluciones-page.component.html'
 })
@@ -88,10 +97,20 @@ export class DevolucionesPageComponent implements OnInit {
     filterReceivedAtDesde  = signal<string | undefined>(undefined);
     filterReceivedAtHasta  = signal<string | undefined>(undefined);
 
+    // Inspección estructurada: una fila por producto devuelto (la devolución no trae ítems propios,
+    // el inspector los registra), con condición y disposición por ítem.
+    readonly condiciones   = ITEM_CONDICIONES;
+    readonly disposiciones = ITEM_DISPOSICIONES;
+    inspItems      = signal<InspeccionItemDraft[]>([]);
+    inspLookupOpen = signal(false);
+    /** Inspección ya registrada de la devolución abierta (GET /returns/{id}/inspection). */
+    inspeccion     = signal<InspeccionDevolucion | null>(null);
+
     // Acción drawer — reactive
     actionForm = this.fb.group({
         motivoRechazo:   ['', [Validators.required]],
-        inspectionNotes: ['', [Validators.required]],
+        overallCondition: ['BUENO'],
+        inspectionNotes: [''],
         refundAmount:    [0, [Validators.required, Validators.min(0.01)]],
         refundNotas:     ['']
     });
@@ -336,8 +355,13 @@ export class DevolucionesPageComponent implements OnInit {
     openDetail(dev: Devolucion) {
         this.selected.set(dev);
         this.actionError.set(null);
+        this.inspItems.set([]);
+        this.inspLookupOpen.set(false);
+        this.inspeccion.set(null);
+        if (dev.status === 'INSPECTED' || dev.status === 'REFUNDED') this.cargarInspeccion(dev.id);
         this.actionForm.reset({
             motivoRechazo:   '',
+            overallCondition: 'BUENO',
             inspectionNotes: '',
             refundAmount:    dev.refundAmount ?? 0,
             refundNotas:     ''
@@ -388,20 +412,48 @@ export class DevolucionesPageComponent implements OnInit {
         });
     }
 
+    /** 404 = inspección simple heredada (sin ítems): se muestran sólo las notas de la devolución. */
+    private cargarInspeccion(id: string) {
+        this.service.getInspeccion(id).subscribe({
+            next: (insp) => { if (this.selected()?.id === id) this.inspeccion.set(insp); },
+            error: () => { /* sin inspección estructurada */ }
+        });
+    }
+
+    onInspProductSelected(p: ProductResponse) {
+        this.inspItems.update(rows => [...rows, nuevaFilaInspeccion(longToSyntheticUuid(p.id), p.nombre)]);
+        this.inspLookupOpen.set(false);
+    }
+
+    updateInspItem(index: number, patch: Partial<InspeccionItemDraft>) {
+        this.inspItems.update(rows => rows.map((r, i) => (i === index ? { ...r, ...patch } : r)));
+    }
+
+    removeInspItem(index: number) {
+        this.inspItems.update(rows => rows.filter((_, i) => i !== index));
+    }
+
     registrarInspeccion() {
         const dev = this.selected();
         if (!dev) return;
-        const notesControl = this.actionForm.controls.inspectionNotes;
-        notesControl.markAsTouched();
-        if (notesControl.invalid) {
-            this.actionError.set('Las notas de inspección son obligatorias.');
+        const v = this.actionForm.getRawValue();
+        const condicion = v.overallCondition ?? '';
+        const problema = validarInspeccion(this.inspItems(), condicion);
+        if (problema) {
+            this.actionError.set(problema);
             return;
         }
         this.actionLoading.set(true);
         this.actionError.set(null);
-        const notes = notesControl.value ?? '';
-        this.service.registrarInspeccion(dev.id, notes, this.companyId).subscribe({
-            next: (updated) => { this.selected.set(updated); this.actionLoading.set(false); this.loadDevoluciones(); },
+        this.service.registrarInspeccion(dev.id, armarInspeccionBody(dev.id, this.inspItems(), condicion, v.inspectionNotes ?? '')).subscribe({
+            next: (insp) => {
+                this.inspeccion.set(insp);
+                // El POST responde la inspección, no la devolución: se recarga para ver el nuevo estado.
+                this.service.getById(dev.id, this.companyId).subscribe({
+                    next: (updated) => { this.selected.set(updated); this.actionLoading.set(false); this.loadDevoluciones(); },
+                    error: (err: Error) => { this.actionError.set(err.message); this.actionLoading.set(false); this.loadDevoluciones(); }
+                });
+            },
             error: (err: Error) => { this.actionError.set(err.message); this.actionLoading.set(false); }
         });
     }

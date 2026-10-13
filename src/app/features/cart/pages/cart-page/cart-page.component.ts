@@ -79,33 +79,31 @@ export class CartPageComponent implements OnInit {
         // No data fetching needed — cart vive en CartService (signal).
     }
 
-    onQuantityChange(productId: number, delta: number): void {
-        const item = this.cartItems().find(i => i.productId === productId);
-        if (!item) return;
+    onQuantityChange(item: CartItem, delta: number): void {
         const next = Math.max(1, Math.min(item.stock ?? 99, item.quantity + delta));
-        this.cartService.updateQuantity(productId, next);
+        this.cartService.updateQuantity(item.productId, item.variantId, next);
     }
 
-    setQuantity(productId: number, value: number): void {
+    setQuantity(item: CartItem, value: number): void {
         if (Number.isFinite(value) && value > 0) {
-            this.cartService.updateQuantity(productId, value);
+            this.cartService.updateQuantity(item.productId, item.variantId, value);
         }
     }
 
-    toggleSelection(id: number): void { this.cartService.toggleSelection(id); }
+    toggleSelection(item: CartItem): void { this.cartService.toggleSelection(item.productId, item.variantId); }
 
     toggleAll(checked: boolean): void { this.cartService.toggleAll(checked); }
 
-    removeFromCart(id: number): void {
-        this.cartService.removeFromCart(id);
+    removeFromCart(item: CartItem): void {
+        this.cartService.removeFromCart(item.productId, item.variantId);
     }
 
     /** Mueve un ítem del carrito a la lista de deseos (persiste) y lo quita del carrito. */
     moverAFavoritos(item: CartItem): void {
         this.wishlistService.add(item.productId, item.variantId ?? undefined).subscribe({
-            next: () => this.cartService.removeFromCart(item.productId),
+            next: () => this.cartService.removeFromCart(item.productId, item.variantId),
             error: () => { /* si ya está en favoritos o falla, igual lo quitamos del carrito */
-                this.cartService.removeFromCart(item.productId);
+                this.cartService.removeFromCart(item.productId, item.variantId);
             },
         });
     }

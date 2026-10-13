@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
+    accionesOrdenCompra,
+    avisoTrasAprobar,
     claseBadgeEstadoOrden,
     construirPayloadOrdenCompra,
+    etiquetaEstadoOrden,
     itemsOrdenIncompletos,
     lineasEdicionOrdenCompra,
     OcItemForm,
@@ -273,5 +276,45 @@ describe('claseBadgeEstadoOrden', () => {
     it('cae a neutro ante un estado desconocido', () => {
         expect(claseBadgeEstadoOrden('LIQUIDADA')).toBe('neutral');
         expect(claseBadgeEstadoOrden('')).toBe('neutral');
+    });
+
+    it('pinta los estados de recepción', () => {
+        expect(claseBadgeEstadoOrden('RECIBIDA_PARCIALMENTE')).toBe('info');
+        expect(claseBadgeEstadoOrden('CONFIRMADA_PROVEEDOR')).toBe('accent');
+    });
+});
+
+describe('accionesOrdenCompra', () => {
+    it('cancelar sólo en los estados previos a la recepción', () => {
+        for (const e of ['BORRADOR', 'PENDIENTE', 'APROBADA', 'ENVIADA', 'CONFIRMADA_PROVEEDOR']) {
+            expect(accionesOrdenCompra(e).cancelar).toBe(true);
+        }
+        for (const e of ['RECIBIDA_PARCIALMENTE', 'RECIBIDA', 'CANCELADA', '', undefined]) {
+            expect(accionesOrdenCompra(e).cancelar).toBe(false);
+        }
+    });
+
+    it('cerrar saldo sólo desde RECIBIDA_PARCIALMENTE', () => {
+        expect(accionesOrdenCompra('RECIBIDA_PARCIALMENTE').cerrarSaldo).toBe(true);
+        expect(accionesOrdenCompra('RECIBIDA').cerrarSaldo).toBe(false);
+        expect(accionesOrdenCompra('APROBADA').cerrarSaldo).toBe(false);
+    });
+
+    it('aprobar en BORRADOR/PENDIENTE y enviar sólo en APROBADA', () => {
+        expect(accionesOrdenCompra('BORRADOR')).toMatchObject({ aprobar: true, enviar: false });
+        expect(accionesOrdenCompra('PENDIENTE').aprobar).toBe(true);
+        expect(accionesOrdenCompra('APROBADA')).toMatchObject({ aprobar: false, enviar: true });
+    });
+});
+
+describe('etiquetaEstadoOrden / avisoTrasAprobar', () => {
+    it('PENDIENTE se muestra «En aprobación»; el resto usa el catálogo', () => {
+        expect(etiquetaEstadoOrden('PENDIENTE', 'Pendiente')).toBe('En aprobación');
+        expect(etiquetaEstadoOrden('APROBADA', 'Aprobada')).toBe('Aprobada');
+    });
+
+    it('avisa «Enviada a aprobación» si la OC sigue PENDIENTE tras aprobar', () => {
+        expect(avisoTrasAprobar('PENDIENTE')).toBe('Enviada a aprobación');
+        expect(avisoTrasAprobar('APROBADA')).toBe('Orden de compra aprobada');
     });
 });

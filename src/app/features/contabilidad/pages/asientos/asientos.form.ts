@@ -1,3 +1,4 @@
+import { longToSyntheticUuid } from '@core/utils/synthetic-uuid.util';
 import { AsientoRequest, MovimientoRequest } from '../../models/asiento.model';
 
 /** Una fila de la tabla de movimientos del drawer «Nuevo Asiento». */
@@ -54,9 +55,9 @@ export function construirMovimientos(
  * demás orígenes (VENTA, COMPRA, TESORERÍA…) los genera el asiento automático.
  *
  * `companyId` y `tenantId` llevan el MISMO valor —la empresa activa del JWT— porque
- * en contabilidad el tenant es la empresa. Si no hay empresa activa se cae a 1, que
- * es la empresa por defecto del seed; ojo: un 0 legítimo se conserva (`??` sólo
- * atrapa null/undefined).
+ * en contabilidad el tenant es la empresa. El backend los declara `UUID`, así que el
+ * Long viaja como UUID sintético (un `"7"` crudo da 400). Sin empresa activa NO se
+ * puede guardar: lanza en vez de inventar la empresa 1 (grabaría en otro tenant).
  */
 export function construirAsientoRequest(
     form: CabeceraAsientoForm,
@@ -64,7 +65,11 @@ export function construirAsientoRequest(
     periodoId: string,
     activeCompanyId: number | string | null | undefined,
 ): AsientoRequest {
-    const companyId = String(activeCompanyId ?? 1);
+    const empresa = Number(activeCompanyId ?? NaN);
+    if (!Number.isFinite(empresa)) {
+        throw new Error('No hay una empresa activa: no se puede guardar el asiento.');
+    }
+    const companyId = longToSyntheticUuid(empresa);
     return {
         fecha: form.fecha,
         glosa: form.glosa,

@@ -21,6 +21,7 @@ interface Vista {
 const LOGISTICA: Vista[] = [
     { nombre: 'Dashboard Logístico', ruta: '/admin/logistica/dashboard' },
     { nombre: 'Envíos', ruta: '/admin/logistica/envios' },
+    { nombre: 'Packing', ruta: '/admin/logistica/packing' },
     { nombre: 'Tracking', ruta: '/admin/logistica/tracking' },
     { nombre: 'Rutas de Entrega', ruta: '/admin/logistica/rutas' },
     { nombre: 'Guías de Remisión', ruta: '/admin/logistica/guias' },
@@ -29,7 +30,6 @@ const LOGISTICA: Vista[] = [
     { nombre: 'Devoluciones', ruta: '/admin/logistica/devoluciones' },
     { nombre: 'Batch Picking', ruta: '/admin/logistica/batch-picking' },
     { nombre: 'Picking Móvil', ruta: '/admin/logistica/picking-mobile' },
-    { nombre: 'Reservas de Stock', ruta: '/admin/logistica/stock-reservations' },
     { nombre: 'KPI Logísticos', ruta: '/admin/logistica/kpi' },
     { nombre: 'Notificaciones', ruta: '/admin/logistica/notificaciones' },
     { nombre: 'Mapeo Contable', ruta: '/admin/logistica/mapeo-contable' },

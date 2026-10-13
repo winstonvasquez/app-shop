@@ -110,6 +110,10 @@ export class AsientoService {
         return this.http.get<Asiento>(`${this.baseUrl}/asientos/${id}`);
     }
 
+    contabilizarAsiento(id: string) {
+        return this.http.put<void>(`${this.baseUrl}/asientos/${id}/contabilizar`, {});
+    }
+
     cerrarAsiento(id: string) {
         return this.http.put<void>(`${this.baseUrl}/asientos/${id}/cerrar`, {});
     }

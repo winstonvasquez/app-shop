@@ -1,6 +1,7 @@
 import { Component, inject, signal, computed, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
+import { mensajeDeErrorHttp } from '@core/utils/http-error.util';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '@core/auth/auth.service';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
@@ -11,7 +12,7 @@ import { environment } from '@env/environment';
 import { AsientoService } from '../../services/asiento.service';
 import { CuentaService, CuentaContable } from '../../services/cuenta.service';
 import { PeriodoService, PeriodoContable } from '../../services/periodo.service';
-import { Asiento } from '../../models/asiento.model';
+import { Asiento, AsientoRequest } from '../../models/asiento.model';
 import { LineaAsientoForm as LineaForm, construirAsientoRequest } from './asientos.form';
 import { PAGINATION } from '@shared/constants/app.constants';
 import { CatalogSelectComponent } from '@shared/components';
@@ -67,7 +68,7 @@ import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model
                 el correlativo y el estado los asigna el backend / las acciones del asiento.
                 No se ocultan: se muestran bloqueados para que el usuario pueda leerlos.
             -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 <div>
                     <label class="input-label">Código (correlativo)</label>
                     <input type="text" class="form-input" value="Se asigna al guardar" readonly>
@@ -75,10 +76,6 @@ import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model
                 <div>
                     <label class="input-label">Origen</label>
                     <input type="text" class="form-input" value="MANUAL" readonly>
-                </div>
-                <div>
-                    <label class="input-label">Estado</label>
-                    <input type="text" class="form-input" [value]="estadoPrevisto()" readonly>
                 </div>
             </div>
 
@@ -193,11 +190,8 @@ import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model
                     </span>
                 } @else {
                     <button class="btn btn-secondary" (click)="cerrarForm()">Cancelar</button>
-                    <button class="btn btn-secondary" (click)="guardar('BORRADOR')"
-                            [disabled]="!formularioValido()">
-                        Guardar Borrador
-                    </button>
-                    <button class="btn btn-primary" (click)="guardar('DEFINITIVO')"
+                    <!-- Sin «Guardar Borrador»: el backend no recibe estado y todo asiento queda DEFINITIVO. -->
+                    <button class="btn btn-primary" (click)="guardar()"
                             [disabled]="!formularioValido() || !cuadra()">
                         Aprobar y Contabilizar
                     </button>
@@ -348,7 +342,7 @@ export class AsientosComponent implements OnInit {
     readonly sugerencias = signal<CuentaContable[][]>([]);
 
     form = {
-        fecha: new Date().toISOString().substring(0, 10),
+        fecha: this.fechaPorDefecto(),
         glosa: '',
         tipo: 'MANUAL',
     };
@@ -360,16 +354,6 @@ export class AsientosComponent implements OnInit {
     readonly formularioValido = computed(() =>
         !!this.form.fecha && !!this.form.glosa.trim() &&
         this.lineas().some(l => (Number(l.debe) || 0) > 0 || (Number(l.haber) || 0) > 0)
-    );
-
-    /**
-     * Estado que tendrá el asiento: no se elige en el formulario, lo define el
-     * botón con el que se guarda (Borrador vs. Aprobar y Contabilizar).
-     */
-    readonly estadoPrevisto = computed(() =>
-        this.cuadra()
-            ? 'BORRADOR o DEFINITIVO (según el botón de guardado)'
-            : 'BORRADOR (no cuadra para contabilizar)'
     );
 
     // ── Extorno / Anulación ────────────────────────────────────────────────
@@ -435,10 +419,19 @@ export class AsientosComponent implements OnInit {
     // ── Acciones DataTable ─────────────────────────────────────────────────
     readonly tableActions: TableAction<Asiento>[] = [
         {
+            // Los asientos automáticos nacen BORRADOR y el cierre de periodo no admite ninguno.
+            label: 'Contabilizar',
+            icon: 'check',
+            class: 'btn-icon',
+            show: (r) => r.estado === 'BORRADOR',
+            onClick: (r) => this.contabilizarAsiento(r)
+        },
+        {
             label: 'Cerrar',
             icon: 'check',
             class: 'btn-icon btn-icon-delete',
-            show: (r) => r.estado !== 'CERRADO' && r.estado !== 'DEFINITIVO',
+            // Sólo DEFINITIVO se puede cerrar; el backend responde 409 con cualquier otro estado.
+            show: (r) => r.estado === 'DEFINITIVO',
             onClick: (r) => this.cerrarAsiento(r)
         },
         {
@@ -573,13 +566,25 @@ export class AsientosComponent implements OnInit {
     }
 
     // ── Formulario helpers ─────────────────────────────────────────────────
+    /** Hoy en hora local; si cae fuera del periodo elegido (el backend lo rechaza con 400), la fechaFin del periodo. */
+    private fechaPorDefecto(): string {
+        const d = new Date();
+        const dos = (n: number) => String(n).padStart(2, '0');
+        const hoy = `${d.getFullYear()}-${dos(d.getMonth() + 1)}-${dos(d.getDate())}`;
+        const p = this.periodos().find(x => x.id === this.periodoSeleccionado());
+        if (!p) return hoy;
+        const ini = p.fechaInicio.substring(0, 10);
+        const fin = p.fechaFin.substring(0, 10);
+        return hoy < ini || hoy > fin ? fin : hoy;
+    }
+
     abrirForm() {
         this.lineas.set([
             this.lineaVacia(),
             this.lineaVacia(),
         ]);
         this.sugerencias.set([[], []]);
-        this.form = { fecha: new Date().toISOString().substring(0, 10), glosa: '', tipo: 'MANUAL' };
+        this.form = { fecha: this.fechaPorDefecto(), glosa: '', tipo: 'MANUAL' };
         this.errorForm.set(null);
         this.mostrarForm.set(true);
     }
@@ -666,19 +671,25 @@ export class AsientosComponent implements OnInit {
         this.sugerencias.set(sg);
     }
 
-    guardar(estado: 'BORRADOR' | 'DEFINITIVO') {
+    guardar() {
         if (!this.formularioValido()) return;
-        if (estado === 'DEFINITIVO' && !this.cuadra()) {
+        if (!this.cuadra()) {
             this.errorForm.set('El asiento no cuadra. DEBE debe ser igual a HABER.');
             return;
         }
 
-        const request = construirAsientoRequest(
-            this.form,
-            this.lineas(),
-            this.periodoSeleccionado(),
-            this.auth.currentUser()?.activeCompanyId,
-        );
+        let request: AsientoRequest;
+        try {
+            request = construirAsientoRequest(
+                this.form,
+                this.lineas(),
+                this.periodoSeleccionado(),
+                this.auth.currentUser()?.activeCompanyId,
+            );
+        } catch (e) {
+            this.errorForm.set(e instanceof Error ? e.message : 'No se pudo armar el asiento');
+            return;
+        }
 
         this.guardando.set(true);
         this.errorForm.set(null);
@@ -692,6 +703,13 @@ export class AsientosComponent implements OnInit {
                 this.guardando.set(false);
                 this.errorForm.set(err?.error?.detail ?? 'Error al guardar el asiento');
             }
+        });
+    }
+
+    contabilizarAsiento(asiento: Asiento) {
+        this.asientoService.contabilizarAsiento(asiento.id).subscribe({
+            next: () => this.cargarAsientos(),
+            error: (err: HttpErrorResponse) => this.error.set(mensajeDeErrorHttp(err))
         });
     }
 

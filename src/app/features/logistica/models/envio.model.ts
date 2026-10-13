@@ -24,8 +24,9 @@ export type EnvioStatus =
     | 'IN_TRANSIT'
     | 'OUT_FOR_DELIVERY'
     | 'DELIVERED'
-    | 'FAILED'
-    | 'RETURNED';
+    | 'FAILED_DELIVERY'
+    | 'RETURNED'
+    | 'CANCELLED';
 
 export interface TrackingEvent {
     id?: string;
@@ -44,6 +45,8 @@ export interface EnvioPage {
 }
 
 export interface CreateEnvioDto {
+    /** Obligatorio en el backend (CreateShipmentRequest): packing en READY_TO_SHIP. */
+    packingOrderId: string;
     orderId?: string;
     carrierId: string;
     shippingAddress: string;

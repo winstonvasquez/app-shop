@@ -50,6 +50,22 @@
   (closed)="closeForm()">
 
   <form [formGroup]="form">
+    <div class="form-field-wrapper">
+      <label class="input-label">Orden de packing (lista para despachar) *</label>
+      <select class="form-input" formControlName="packingOrderId">
+        <option value="">-- Seleccione orden de packing --</option>
+        @for (p of packingListos(); track p.id) {
+          <option [value]="p.id">{{ p.id.slice(0, 8) }} · {{ p.packageType || 'bulto' }}</option>
+        }
+      </select>
+      @if (form.get('packingOrderId')?.invalid && form.get('packingOrderId')?.touched) {
+        <span class="input-error-message">Seleccione una orden de packing lista para despachar</span>
+      }
+      @if (!packingListos().length) {
+        <span class="text-subtle text-xs">No hay órdenes de packing listas; márquelas en Logística → Packing.</span>
+      }
+    </div>
+
     <!-- Sección 1: Transportista -->
     <div class="form-field-wrapper">
       <label class="input-label">Transportista *</label>

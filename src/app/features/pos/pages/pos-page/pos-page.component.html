@@ -10,7 +10,7 @@
 
     <!-- ══ TOPBAR OSCURO ══ -->
     <app-pos-topbar [turno]="turnoActivo()" [clockTime]="clockTime()" [clockDate]="clockDate()"
-        (abrirTurno)="abrirTurno()" (cerrarTurno)="cerrarTurno()" (navigate)="showScreen($event)" />
+        (abrirTurno)="showScreen('turno')" (cerrarTurno)="cerrarTurno()" (navigate)="showScreen($event)" />
 
     <!-- Offline indicator -->
     @if (offlineSync.isOffline() || offlineSync.hasPending()) {
@@ -212,7 +212,7 @@
 
             <!-- PANTALLA 5: Mi Turno -->
             @if (activeScreen() === 'turno') {
-            <app-pos-turno [turno]="turnoActivo()" (abrirTurno)="abrirTurno()" (cerrarTurno)="cerrarTurno()"
+            <app-pos-turno [turno]="turnoActivo()" (abrirTurno)="abrirTurno($event)" (cerrarTurno)="cerrarTurno()"
                 (volver)="showScreen('main')"
                 (reporteX)="loadReporteX()" (reporteZ)="loadReporteZ()"
                 (movimientoCaja)="showCashMovementDialog.set(true)"

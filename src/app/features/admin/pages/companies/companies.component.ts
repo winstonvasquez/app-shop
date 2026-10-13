@@ -1,6 +1,7 @@
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule, Validators, FormGroup, FormControl } from '@angular/forms';
+import { AuthService } from '@core/auth/auth.service';
 import { CompanyService } from '@features/admin/services/company.service';
 import {
   CompanyResponse,
@@ -51,6 +52,8 @@ export class CompaniesComponent implements OnInit {
   readonly logoSeleccionado = signal<File | null>(null);
   private readonly fb = inject(FormBuilder);
   private readonly router = inject(Router);
+  /** «Nueva Empresa» y «Suspender/Reactivar» son SUPERADMIN en el backend. */
+  readonly auth = inject(AuthService);
 
   // Signals for reactive state — companies() es la página actual (server-side)
   companies = signal<CompanyResponse[]>([]);
@@ -161,6 +164,8 @@ export class CompaniesComponent implements OnInit {
       label: 'Suspender / Reactivar',
       icon: '⏸',
       onClick: (row) => this.confirmarCambioEstado(row),
+      // El backend (PATCH /{id}/estado) es SUPERADMIN: a un ADMIN de empresa sólo le daría 403.
+      show: () => this.auth.isSuperAdmin(),
       class: 'btn-icon'
     },
     {

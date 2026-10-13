@@ -87,16 +87,17 @@
                         </div>
                         <div class="grid grid-cols-2 gap-2">
                             <div class="col-span-2">
-                                <input class="form-input" formControlName="productoNombre" placeholder="Nombre del producto *" />
+                                <label class="input-label">Ítem de la OC *</label>
+                                <select class="form-input" formControlName="ordenItemId"
+                                    (change)="onOrdenItemSeleccionado($index, $any($event.target).value)">
+                                    <option value="" disabled>{{ itemsOrdenSeleccionada().length ? 'Seleccione un ítem de la OC…' : 'Primero elija la OC' }}</option>
+                                    @for (it of itemsOrdenSeleccionada(); track it.id) {
+                                        <option [value]="it.id">{{ it.productoNombre }}{{ it.sku ? ' (' + it.sku + ')' : '' }} — recibido: {{ it.cantidadAcumuladaRecibida ?? 0 }}</option>
+                                    }
+                                </select>
                             </div>
-                            <select class="form-input" formControlName="ordenItemId"
-                                (change)="onOrdenItemSeleccionado($index, $any($event.target).value)">
-                                <option value="">— Ítem no vinculado a OC —</option>
-                                @for (it of itemsOrdenSeleccionada(); track it.id) {
-                                    <option [value]="it.id">{{ it.productoNombre }}{{ it.sku ? ' (' + it.sku + ')' : '' }}</option>
-                                }
-                            </select>
-                            <input class="form-input" formControlName="sku" placeholder="SKU" />
+                            <input class="form-input" formControlName="productoNombre" placeholder="Producto" readonly />
+                            <input class="form-input" formControlName="sku" placeholder="SKU" readonly />
                             <input type="number" class="form-input" formControlName="cantidad" placeholder="Cantidad" min="1" />
                             <input class="form-input" formControlName="motivoItem" placeholder="Motivo específico" />
                         </div>

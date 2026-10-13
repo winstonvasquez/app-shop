@@ -7,13 +7,11 @@ import { DecimalPipe } from '@angular/common';
 import { of } from 'rxjs';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { DataTableComponent, TableColumn, FilterConfig, FilterChangeEvent, DateRangeFilterConfig, DateRangeChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
-import { catalogFilter } from '@shared/ui/tables/data-table/filter-helpers';
-import { CatalogService } from '@core/services/catalog.service';
 import { PageHeaderComponent } from '@shared/ui/layout/page-header/page-header.component';
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
 import { DatePickerComponent } from '@shared/ui/forms/date-picker/date-picker.component';
 import { ButtonComponent, CatalogSelectComponent } from '@shared/components';
-import { MovimientosFinancierosService, FinancialMovementRequest } from '../../services/movimientos-financieros.service';
+import { MovimientosFinancierosService, FinancialMovementRequest, FlujoCaja } from '../../services/movimientos-financieros.service';
 import { CajasService } from '../../services/cajas.service';
 import { CuentasBancariasService } from '../../services/cuentas-bancarias.service';
 import { AuthService } from '@core/auth/auth.service';
@@ -52,7 +50,6 @@ export class FlujoCajaComponent implements OnInit {
     private movService  = inject(MovimientosFinancierosService);
     private cajasService = inject(CajasService);
     private cuentasService = inject(CuentasBancariasService);
-    private readonly catalog = inject(CatalogService);
     private auth        = inject(AuthService);
     private fb          = inject(FormBuilder);
     private destroyRef  = inject(DestroyRef);
@@ -62,7 +59,8 @@ export class FlujoCajaComponent implements OnInit {
     guardando        = signal(false);
     errorMsg         = signal<string | null>(null);
     showCreateDrawer = signal(false);
-    flujoCajaNeto    = signal<number>(0);
+    /** Totales del rango completo en la moneda elegida (backend), no la suma de la página. */
+    flujo            = signal<FlujoCaja | null>(null);
 
     currentPage   = signal(0);
     pageSize      = signal<number>(PAGINATION.defaultPageSize);
@@ -73,11 +71,12 @@ export class FlujoCajaComponent implements OnInit {
     fechaFin    = signal<string>('');
     filterTipoMovimiento = signal('');
     filterOrigen         = signal('');
-    filterMoneda         = signal('');
+    /** Moneda del flujo y de la tabla: los KPIs no se pueden mezclar entre monedas. */
+    moneda               = signal<string>(MONEDA.PEN);
+    readonly monedas = [MONEDA.PEN, MONEDA.USD];
     searchQuery          = signal('');
 
     readonly filters: FilterConfig[] = [
-        catalogFilter(this.catalog, 'MONEDA', 'moneda', 'Moneda'),
         {
             field: 'tipoMovimiento',
             label: 'Tipo',
@@ -114,17 +113,11 @@ export class FlujoCajaComponent implements OnInit {
         origenId:       [null],
     });
 
-    ingresos = computed(() =>
-        this.movimientos()
-            .filter(m => m.tipoMovimiento === 'INGRESO')
-            .reduce((s, m) => s + (m.monto ?? 0), 0)
-    );
+    simbolo = computed(() => this.simboloDe(this.moneda()));
 
-    egresos = computed(() =>
-        this.movimientos()
-            .filter(m => m.tipoMovimiento === 'EGRESO')
-            .reduce((s, m) => s + (m.monto ?? 0), 0)
-    );
+    private simboloDe(moneda: string | undefined): string {
+        return moneda === MONEDA.USD ? 'US$' : CURRENCY_DISPLAY.SYMBOL_PEN;
+    }
 
     columns: TableColumn<FinancialMovement>[] = [
         { key: 'fecha', label: 'Fecha',
@@ -136,7 +129,7 @@ export class FlujoCajaComponent implements OnInit {
         { key: 'monto', label: 'Monto', align: 'right',
           render: r => {
               const sign = r.tipoMovimiento === 'INGRESO' ? '+' : r.tipoMovimiento === 'EGRESO' ? '-' : '';
-              return `${sign}${CURRENCY_DISPLAY.SYMBOL_PEN} ${(r.monto ?? 0).toFixed(2)}`;
+              return `${sign}${this.simboloDe(r.moneda)} ${(r.monto ?? 0).toFixed(2)}`;
           }
         },
         { key: 'moneda', label: 'Moneda', align: 'center', render: r => r.moneda ?? MONEDA.PEN },
@@ -157,7 +150,7 @@ export class FlujoCajaComponent implements OnInit {
             fechaHasta: this.fechaFin(),
             tipoMovimiento: this.filterTipoMovimiento() || undefined,
             origen: this.filterOrigen() || undefined,
-            moneda: this.filterMoneda() || undefined,
+            moneda: this.moneda(),
             q: this.searchQuery() || undefined,
         }),
     };
@@ -240,11 +233,11 @@ export class FlujoCajaComponent implements OnInit {
     loadData(): void {
         this.cargando.set(true);
 
-        this.movService.getFlujoCaja(this.fechaInicio(), this.fechaFin())
+        this.movService.getFlujoCaja(this.fechaInicio(), this.fechaFin(), this.moneda())
             .pipe(takeUntilDestroyed(this.destroyRef))
             .subscribe({
-                next: (val) => this.flujoCajaNeto.set(val),
-                error: () => this.cargando.set(false)
+                next: (val) => this.flujo.set(val),
+                error: () => { this.flujo.set(null); this.cargando.set(false); }
             });
 
         this.movService.getAll({
@@ -252,7 +245,7 @@ export class FlujoCajaComponent implements OnInit {
             fechaHasta: this.fechaFin() || undefined,
             tipoMovimiento: this.filterTipoMovimiento() || undefined,
             origen: this.filterOrigen() || undefined,
-            moneda: this.filterMoneda() || undefined,
+            moneda: this.moneda(),
             q: this.searchQuery() || undefined,
             page: this.currentPage(),
             size: this.pageSize(),
@@ -280,9 +273,14 @@ export class FlujoCajaComponent implements OnInit {
         switch (event.field) {
             case 'tipoMovimiento': this.filterTipoMovimiento.set(valor); break;
             case 'origen':         this.filterOrigen.set(valor); break;
-            case 'moneda':         this.filterMoneda.set(valor); break;
             default: return;
         }
+        this.currentPage.set(0);
+        this.loadData();
+    }
+
+    onMonedaChange(moneda: string): void {
+        this.moneda.set(moneda);
         this.currentPage.set(0);
         this.loadData();
     }
@@ -307,7 +305,7 @@ export class FlujoCajaComponent implements OnInit {
         this.searchQuery.set('');
         this.filterTipoMovimiento.set('');
         this.filterOrigen.set('');
-        this.filterMoneda.set('');
+        this.moneda.set(MONEDA.PEN);
         this.currentPage.set(0);
         this.loadData();
     }

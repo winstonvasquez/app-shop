@@ -11,7 +11,7 @@ describe('conteoCrearPayload', () => {
             warehouseId: 2, countDate: '2026-04-10', notes: 'conteo trimestral',
             details: [{ productId: 7, countedQuantity: 12, notes: 'caja abierta' }]
         })).toEqual({
-            warehouseId: 2, countDate: '2026-04-10', notes: 'conteo trimestral',
+            warehouseId: 2, countDate: '2026-04-10T00:00:00', notes: 'conteo trimestral',
             details: [{ productId: 7, countedQuantity: 12, notes: 'caja abierta' }]
         });
     });
@@ -42,8 +42,12 @@ describe('conteoCrearPayload', () => {
         expect(p.details[0].countedQuantity).toBe(3);
     });
 
-    it('la fecha de conteo viaja tal cual (obligatoria)', () => {
-        expect(conteoCrearPayload({ ...BASE, countDate: '2026-12-31' }).countDate).toBe('2026-12-31');
+    it('fecha vacía no se convierte (el backend la rechaza o aplica su default)', () => {
+        expect(conteoCrearPayload({ ...BASE, countDate: '' }).countDate).toBe('');
+    });
+
+    it('la fecha de conteo se convierte a LocalDateTime (yyyy-MM-dd a secas daba 400)', () => {
+        expect(conteoCrearPayload({ ...BASE, countDate: '2026-12-31' }).countDate).toBe('2026-12-31T00:00:00');
     });
 
     it('sin líneas devuelve details vacío, no undefined', () => {

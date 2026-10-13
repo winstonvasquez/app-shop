@@ -17,9 +17,12 @@ export interface GiftCard {
 }
 
 export interface PagoMixto {
-    metodo: Exclude<MetodoPagoPos, 'MIXTO'>;
+    // El backend rechaza GIFT_CARD y MIXTO dentro de pagos[] (400).
+    metodo: Exclude<MetodoPagoPos, 'MIXTO' | 'GIFT_CARD'>;
     monto: number;
 }
+/** Método de una línea de pago dividido (el backend no admite MIXTO ni GIFT_CARD ahí). */
+export type MetodoPagoDividido = PagoMixto['metodo'];
 export type TipoCpe = 'BOLETA' | 'FACTURA' | 'SIN_CPE';
 export type EstadoVentaPos = 'COMPLETADA' | 'ANULADA';
 
@@ -85,9 +88,15 @@ export interface VentaPosRequest {
     tipoCpe: TipoCpe;
     clienteId?: number;
     clienteNombre?: string;
+    /** Código SUNAT: '6' RUC, '1' DNI, '0' sin documento. FACTURA exige '6' + 11 dígitos. */
+    clienteTipoDoc?: string;
+    clienteNumeroDoc?: string;
     descuento?: number;
+    /** Con gift card, referido al RESTO que queda tras aplicarla. */
     montoRecibido?: number;
     pagos?: PagoMixto[];
+    /** La gift card es un pago: el backend consume min(saldo, total). */
+    giftCardCodigo?: string;
     moneda?: string;
     puntosACanjear?: number;
 }

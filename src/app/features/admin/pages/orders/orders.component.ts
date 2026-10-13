@@ -20,6 +20,7 @@ import { ButtonComponent } from '@shared/components';
 import { CURRENCY_DISPLAY } from '@shared/constants/sunat.constants';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
+import { mensajeDeErrorHttp } from '@core/utils/http-error.util';
 
 @Component({
   selector: 'app-orders',
@@ -326,6 +327,13 @@ export class OrdersComponent implements OnInit {
     const order = this.selectedOrder();
     if (!order) return;
 
+    // Cancelar un pedido ya PAGADO revierte stock, asiento contable, ingreso de tesorería y cupón.
+    if (newStatus === 'CANCELADO' && order.estado === 'PAGADO' && !confirm(
+      `Este pedido ya está pagado. Al cancelarlo se revertirán el stock, el asiento contable, ` +
+      `el ingreso en tesorería y el cupón usado. ¿Cancelar el pedido #${order.id}?`)) {
+      return;
+    }
+
     this.loadingDetails.set(true); // Reusamos flag de carga modal
 
     this.orderService.updateStatus(order.id, { estado: newStatus as OrderStatus }).subscribe({
@@ -338,7 +346,7 @@ export class OrdersComponent implements OnInit {
         this.loadingDetails.set(false);
       },
       error: (err) => {
-        this.error.set('No se pudo actualizar el estado: ' + err.message);
+        this.error.set('No se pudo actualizar el estado: ' + (err instanceof Error ? err.message : mensajeDeErrorHttp(err)));
         this.loadingDetails.set(false);
       }
     });

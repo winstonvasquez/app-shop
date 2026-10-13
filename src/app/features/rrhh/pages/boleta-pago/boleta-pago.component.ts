@@ -150,6 +150,9 @@ import { AuthService } from '@core/auth/auth.service';
               @if ((p.bonos || 0) > 0) {
                 <div class="concepto-fila"><span>Bonos</span><span class="monto monto-ingreso">{{ p.bonos | number:'1.2-2' }}</span></div>
               }
+              @if ((p.gratificacion || 0) > 0) {
+                <div class="concepto-fila"><span>Gratificación</span><span class="monto monto-ingreso">{{ p.gratificacion | number:'1.2-2' }}</span></div>
+              }
               <div class="concepto-fila subtotal"><span>TOTAL INGRESOS</span><span class="monto monto-ingreso">{{ totalIngresos(p) | number:'1.2-2' }}</span></div>
             </div>
             <!-- Descuentos -->
@@ -177,17 +180,12 @@ import { AuthService } from '@core/auth/auth.service';
             <div class="neto-monto">S/ {{ p.neto | number:'1.2-2' }}</div>
           </div>
 
-          <!-- Aportes del empleador y beneficios sociales del periodo (informativo, no afectan el neto) -->
-          @if ((p.gratificacion || 0) > 0 || (p.cts || 0) > 0) {
+          <!-- CTS del periodo (informativa: se deposita aparte, no entra al neto). La gratificación va en Ingresos. -->
+          @if ((p.cts || 0) > 0) {
             <div class="seccion">
               <div class="seccion-titulo">Beneficios Sociales del Periodo (pago aparte)</div>
               <div class="datos-grid">
-                @if ((p.gratificacion || 0) > 0) {
-                  <div class="dato-fila"><span class="dato-label">Gratificación:</span><span class="dato-valor">S/ {{ p.gratificacion | number:'1.2-2' }}</span></div>
-                }
-                @if ((p.cts || 0) > 0) {
-                  <div class="dato-fila"><span class="dato-label">CTS (semestral):</span><span class="dato-valor">S/ {{ p.cts | number:'1.2-2' }}</span></div>
-                }
+                <div class="dato-fila"><span class="dato-label">CTS (semestral):</span><span class="dato-valor">S/ {{ p.cts | number:'1.2-2' }}</span></div>
               </div>
             </div>
           }
@@ -261,7 +259,7 @@ export class BoletaPagoComponent implements OnInit {
     }
 
     totalIngresos(p: Payroll): number {
-        return (p.sueldoBase || 0) + (p.bonos || 0) + (p.montoHorasExtras || 0) + (p.asignacionFamiliar || 0);
+        return (p.sueldoBase || 0) + (p.bonos || 0) + (p.montoHorasExtras || 0) + (p.asignacionFamiliar || 0) + (p.gratificacion || 0);
     }
 
     totalDescuentos(p: Payroll): number {

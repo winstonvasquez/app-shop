@@ -2,8 +2,10 @@ import { Component, inject, signal, computed, OnInit, ChangeDetectionStrategy } 
 import { DecimalPipe, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { PeriodoService, PeriodoContable } from '../../services/periodo.service';
-import { DeclaracionIgvService, PDT621, HistorialDeclaracion } from '../../services/declaracion-igv.service';
+import { HttpErrorResponse } from '@angular/common/http';
+import { DeclaracionIgvService, PDT621 } from '../../services/declaracion-igv.service';
 import { ButtonComponent } from '@shared/components';
+import { mensajeDeErrorHttp } from '@core/utils/http-error.util';
 
 @Component({
     selector: 'app-declaracion-igv',
@@ -24,19 +26,49 @@ export class DeclaracionIgvComponent implements OnInit {
     readonly resumen = signal<PDT621 | null>(null);
     readonly guardando = signal(false);
     readonly cargando = signal(false);
-    readonly historial = signal<HistorialDeclaracion[]>([]);
+    readonly historial = signal<PDT621[]>([]);
+    readonly error = signal('');
     readonly regimenRenta = signal<'RMT' | 'MYPE' | 'GENERAL'>('RMT');
     readonly coeficiente = signal(0.015);
 
+    /** Vencimiento según el cronograma que calcula el backend (no se recalcula aquí). */
     readonly vencimientoPDT = computed(() => {
-        const p = this.periodoActivo();
-        if (!p) return '—';
-        const anno = p.anno;
-        const mes = p.mes;
-        const nextMes = mes === 12 ? 1 : mes + 1;
-        const nextAnno = mes === 12 ? anno + 1 : anno;
-        return `12/${String(nextMes).padStart(2, '0')}/${nextAnno}`;
+        const v = this.resumen()?.fechaVencimiento;
+        if (!v) return '—';
+        const [anno, mes, dia] = v.split('-');
+        return `${dia}/${mes}/${anno}`;
     });
+
+    /** IGV a pagar tras el saldo a favor: lo que el backend ya sumó a la renta en totalAPagar (sin recalcular la regla). */
+    readonly igvAPagar = computed(() => {
+        const r = this.resumen();
+        return r ? r.totalAPagar - r.rentaMensual : 0;
+    });
+
+    /**
+     * /calcular siempre responde BORRADOR, así que el estado real sale del historial:
+     * una declaración PRESENTADA/RECTIFICADA del periodo elegido no se puede volver a guardar (409).
+     */
+    readonly declaracionCerrada = computed(() => {
+        const id = this.periodoSeleccionado();
+        return this.historial().some(h => h.periodoId === id && h.estado !== 'BORRADOR');
+    });
+
+    /** Nombre del periodo de una declaración del historial (el DTO sólo trae el id). */
+    nombrePeriodo(periodoId: string): string {
+        return this.periodos().find(p => p.id === periodoId)?.nombre ?? '—';
+    }
+
+    private cargarHistorial() {
+        this.declaracionService.historial().subscribe({
+            next: page => this.historial.set(page.content),
+            error: (err: unknown) => this.error.set(this.mensaje(err, 'No se pudo cargar el historial')),
+        });
+    }
+
+    private mensaje(err: unknown, porDefecto: string): string {
+        return err instanceof HttpErrorResponse ? mensajeDeErrorHttp(err) : porDefecto;
+    }
 
     ngOnInit() {
         this.periodoService.listar().subscribe({
@@ -51,10 +83,7 @@ export class DeclaracionIgvComponent implements OnInit {
             },
             error: (err: unknown) => console.warn('[DeclaracionIGV] Error al cargar periodos:', err)
         });
-        this.declaracionService.historial().subscribe({
-            next: h => this.historial.set(h),
-            error: (err: unknown) => console.warn('[DeclaracionIGV] Error al cargar historial:', err)
-        });
+        this.cargarHistorial();
     }
 
     cambiarPeriodo(id: string) {
@@ -68,6 +97,7 @@ export class DeclaracionIgvComponent implements OnInit {
 
     calcularIGV(periodoId: string) {
         this.cargando.set(true);
+        this.error.set('');
         this.declaracionService.calcular({
             periodoId,
             regimenRenta: this.regimenRenta(),
@@ -78,7 +108,7 @@ export class DeclaracionIgvComponent implements OnInit {
                 this.cargando.set(false);
             },
             error: (err: unknown) => {
-                console.warn('[DeclaracionIGV] Error al calcular IGV:', err);
+                this.error.set(this.mensaje(err, 'No se pudo calcular el IGV'));
                 this.cargando.set(false);
             },
         });
@@ -88,6 +118,7 @@ export class DeclaracionIgvComponent implements OnInit {
         const periodoId = this.periodoSeleccionado();
         if (!periodoId) return;
         this.guardando.set(true);
+        this.error.set('');
         this.declaracionService.guardar({
             periodoId,
             regimenRenta: this.regimenRenta(),
@@ -96,9 +127,10 @@ export class DeclaracionIgvComponent implements OnInit {
             next: data => {
                 this.resumen.set(data);
                 this.guardando.set(false);
+                this.cargarHistorial();
             },
             error: (err: unknown) => {
-                console.warn('[DeclaracionIGV] Error al guardar declaración:', err);
+                this.error.set(this.mensaje(err, 'No se pudo guardar la declaración'));
                 this.guardando.set(false);
             },
         });

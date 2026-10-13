@@ -133,8 +133,8 @@ export class UsersComponent implements OnInit {
       email: ['', [Validators.required, Validators.email, Validators.maxLength(100)]],
       password: ['', [Validators.required, Validators.minLength(8), Validators.maxLength(100)]],
       rolId: [null, [Validators.required]],
-      // Estado activo/inactivo: permite reactivar a un usuario dado de baja lógica
-      // desde el propio formulario (el DELETE solo desactiva).
+      // Estado activo/inactivo de la cuenta. «Eliminar» ya no la desactiva: sólo quita
+      // la membresía en la empresa actual (ADM-5).
       activo: [true],
       nombres: ['', [Validators.required, Validators.maxLength(100)]],
       apellidos: ['', [Validators.required, Validators.maxLength(100)]],
@@ -344,7 +344,9 @@ export class UsersComponent implements OnInit {
   }
 
   onDelete(user: UserResponse): void {
-    if (!confirm(`¿Está seguro de eliminar el usuario "${user.username}"?`)) {
+    // Baja lógica (ADM-5): el backend quita la membresía en la empresa actual y revoca sus sesiones;
+    // la cuenta del usuario no se borra.
+    if (!confirm(`Se quitará el acceso del usuario "${user.username}" a esta empresa y se cerrarán sus sesiones. ¿Continuar?`)) {
       return;
     }
 

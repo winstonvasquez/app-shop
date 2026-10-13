@@ -26,7 +26,7 @@ export interface CardData {
  * Resultado de un intento de pago procesado por el backend.
  */
 export interface PaymentResult {
-    status: 'approved' | 'rejected' | 'pending';
+    status: 'APPROVED' | 'REJECTED' | 'PENDING';
     paymentId: string;
     orderId: number;
     message?: string;

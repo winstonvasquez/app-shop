@@ -1,3 +1,4 @@
+import { fechaALocalDateTime } from '@core/utils/local-datetime.util';
 import { InventoryMovementRequest, InventoryMovementType } from '../../models/inventory.models';
 
 /** Valores crudos del formulario de alta de movimiento (`form.getRawValue()`). */
@@ -30,7 +31,8 @@ export function movimientoCrearPayload(v: MovimientoFormValue): InventoryMovemen
         movementType: v.movementType as InventoryMovementType,
         quantity: Number(v.quantity),
         unitCost: v.unitCost != null ? Number(v.unitCost) : undefined,
-        movementDate: v.movementDate,
+        // El backend declara LocalDateTime: `yyyy-MM-dd` solo daría 400. Hora actual para ordenar el kardex.
+        movementDate: fechaALocalDateTime(v.movementDate, true),
         reason: v.reason || undefined,
         referenceType: v.referenceType || undefined,
         referenceNumber: v.referenceNumber || undefined,

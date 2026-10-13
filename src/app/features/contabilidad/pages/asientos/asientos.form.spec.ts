@@ -78,7 +78,7 @@ describe('construirMovimientos', () => {
 });
 
 describe('construirAsientoRequest', () => {
-    it('arma el asiento con origen MANUAL y la empresa activa en companyId y tenantId', () => {
+    it('arma el asiento con origen MANUAL y la empresa activa como UUID en companyId y tenantId', () => {
         const req = construirAsientoRequest(cabecera, [linea()], 'per-2026-03', 7);
 
         expect(req).toEqual({
@@ -87,8 +87,8 @@ describe('construirAsientoRequest', () => {
             tipo: 'MANUAL',
             origen: 'MANUAL',
             periodoId: 'per-2026-03',
-            companyId: '7',
-            tenantId: '7',
+            companyId: '00000000-0000-0000-0000-000000000007',
+            tenantId: '00000000-0000-0000-0000-000000000007',
             movimientos: [{
                 cuentaId: 'cta-1',
                 codigoCuenta: '1041',
@@ -99,16 +99,13 @@ describe('construirAsientoRequest', () => {
         });
     });
 
-    it('cae a la empresa 1 cuando no hay empresa activa', () => {
-        expect(construirAsientoRequest(cabecera, [], '', undefined).companyId).toBe('1');
-        expect(construirAsientoRequest(cabecera, [], '', null).tenantId).toBe('1');
+    it('lanza si no hay empresa activa: no se inventa la empresa 1', () => {
+        expect(() => construirAsientoRequest(cabecera, [], '', undefined)).toThrow(/empresa activa/);
+        expect(() => construirAsientoRequest(cabecera, [], '', null)).toThrow(/empresa activa/);
+        expect(() => construirAsientoRequest(cabecera, [], '', 'abc')).toThrow(/empresa activa/);
     });
 
-    it('conserva el 0 como empresa: sólo null/undefined caen al default', () => {
-        expect(construirAsientoRequest(cabecera, [], '', 0).companyId).toBe('0');
-    });
-
-    it('acepta la empresa ya en texto sin volverla a envolver', () => {
-        expect(construirAsientoRequest(cabecera, [], '', '12').companyId).toBe('12');
+    it('acepta la empresa en texto y la convierte a UUID sintético', () => {
+        expect(construirAsientoRequest(cabecera, [], '', '12').companyId).toBe('00000000-0000-0000-0000-00000000000c');
     });
 });

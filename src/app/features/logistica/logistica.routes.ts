@@ -50,6 +50,11 @@ export const logisticaRoutes: Routes = [
           .then(m => m.EnviosPageComponent)
       },
       {
+        path: 'packing',
+        loadComponent: () => import('./pages/packing/packing-page.component')
+          .then(m => m.PackingPageComponent)
+      },
+      {
         path: 'devoluciones',
         loadComponent: () => import('./pages/devoluciones/devoluciones-page.component')
           .then(m => m.DevolucionesPageComponent)
@@ -68,11 +73,6 @@ export const logisticaRoutes: Routes = [
         path: 'picking-mobile',
         loadComponent: () => import('./pages/picking-mobile/picking-mobile.component')
           .then(m => m.PickingMobileComponent)
-      },
-      {
-        path: 'stock-reservations',
-        loadComponent: () => import('./pages/stock-reservations/stock-reservations.component')
-          .then(m => m.StockReservationsComponent)
       },
       {
         path: 'notificaciones',

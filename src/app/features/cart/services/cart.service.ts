@@ -60,7 +60,10 @@ export class CartService {
         // Load initial state from local storage
         const savedCart = localStorage.getItem(STORAGE_KEYS.cart);
         if (savedCart) {
-            this.cartItems.set(JSON.parse(savedCart));
+            // Un ítem guardado sin `selected` cuenta como seleccionado: el checkout sólo cobra y
+            // envía los seleccionados, y un `undefined` lo dejaba fuera en silencio.
+            this.cartItems.set((JSON.parse(savedCart) as CartItem[])
+                .map(item => ({ ...item, selected: item.selected ?? true })));
         }
 
         // Save state to local storage whenever it changes
@@ -94,29 +97,34 @@ export class CartService {
         this.analyticsService.trackAddToCart(product.id, product.name, product.price, product.quantity ?? 1);
     }
 
-    removeFromCart(productId: number) {
-        this.cartItems.update(items => items.filter(item => item.productId !== productId));
+    /** La línea se identifica por producto + variante: el carrito admite varias variantes del mismo producto. */
+    private esLinea(item: CartItem, productId: number, variantId?: number): boolean {
+        return item.productId === productId && (item.variantId ?? null) === (variantId ?? null);
     }
 
-    updateQuantity(productId: number, quantity: number) {
+    removeFromCart(productId: number, variantId?: number) {
+        this.cartItems.update(items => items.filter(item => !this.esLinea(item, productId, variantId)));
+    }
+
+    updateQuantity(productId: number, variantId: number | undefined, quantity: number) {
         if (quantity <= 0) {
-            this.removeFromCart(productId);
+            this.removeFromCart(productId, variantId);
             return;
         }
 
         this.cartItems.update(items =>
             items.map(item =>
-                item.productId === productId
+                this.esLinea(item, productId, variantId)
                     ? { ...item, quantity }
                     : item
             )
         );
     }
 
-    toggleSelection(productId: number) {
+    toggleSelection(productId: number, variantId?: number) {
         this.cartItems.update(items =>
             items.map(item =>
-                item.productId === productId
+                this.esLinea(item, productId, variantId)
                     ? { ...item, selected: !item.selected }
                     : item
             )

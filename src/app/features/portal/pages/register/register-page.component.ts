@@ -573,8 +573,10 @@ export class RegisterPageComponent implements OnInit {
 
         this.portalService.register(payload).subscribe({
             next: (res: unknown) => {
-                const response = res as LoginResponse;
-                if (response?.token) {
+                // SaasRegisterResponse manda `companyId`, no activeCompanyId/availableCompanyIds.
+                const r = res as Partial<LoginResponse> & { companyId?: number };
+                const response = { ...r, activeCompanyId: r.companyId, availableCompanyIds: r.companyId != null ? [r.companyId] : [] } as LoginResponse;
+                if (response.token) {
                     // Evita que un carrito/datos de invitado de OTRA empresa (misma pestaña)
                     // se cuelen en la tienda de la empresa recién registrada.
                     this.authService.clearTenantScopedLocalState();

@@ -33,6 +33,7 @@ import { catalogFilter, signalFilter, staticFilter } from '@shared/ui/tables/dat
 import {
     CotizacionResumen,
     ComparativaDto,
+    TotalProveedorDto,
     CrearCotizacionRequest,
     ActualizarCotizacionRequest,
     CotizacionDetalleDto,
@@ -109,6 +110,9 @@ export class CotizacionesComponent implements OnInit {
     submitError = signal<string | null>(null);
     actionError = signal<string | null>(null);
     showAdjudicarModal = signal(false);
+    /** Proveedores invitados que RESPONDIERON: los únicos adjudicables (el backend rechaza al resto). */
+    proveedoresAdjudicables = signal<TotalProveedorDto[]>([]);
+    cargandoAdjudicables = signal(false);
 
     /** id de la cotización en edición (null = el drawer/form está en modo "crear"). */
     editingCotizacionId = signal<string | null>(null);
@@ -628,7 +632,21 @@ export class CotizacionesComponent implements OnInit {
         this.selectedCotizacion.set(cotizacion);
         this.adjudicarForm.reset();
         this.actionError.set(null);
+        this.proveedoresAdjudicables.set([]);
+        this.cargandoAdjudicables.set(true);
         this.showAdjudicarModal.set(true);
+        this.cotizacionService.getComparativa(cotizacion.id).subscribe({
+            next: (data) => {
+                this.proveedoresAdjudicables.set(data.totales.filter((t) => t.estado === 'RESPONDIO'));
+                this.cargandoAdjudicables.set(false);
+                this.cdr.markForCheck();
+            },
+            error: () => {
+                this.cargandoAdjudicables.set(false);
+                this.actionError.set('No se pudo cargar los proveedores que respondieron');
+                this.cdr.markForCheck();
+            },
+        });
     }
 
     closeAdjudicarModal(): void {

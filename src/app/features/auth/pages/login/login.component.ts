@@ -6,7 +6,8 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { LucideAngularModule } from 'lucide-angular';
 import { AuthService } from '@core/auth/auth.service';
 import { DsButtonComponent, DsWordmarkComponent } from '@shared/ui/ds';
-import { HTTP_STATUS, STORAGE_KEYS } from '@shared/constants/app.constants';
+import { detalleDelBackend } from '@core/utils/http-error.util';
+import { HTTP_STATUS, STORAGE_KEYS }from '@shared/constants/app.constants';
 
 @Component({
     selector: 'app-login',
@@ -44,6 +45,8 @@ export class LoginComponent {
 
     loading      = signal<boolean>(false);
     errorMessage = signal<string | null>(null);
+    /** Texto del backend que sustituye al de la clave i18n (usuario desactivado). */
+    errorLiteral = signal<string | null>(null);
     showPassword = signal<boolean>(false);
     rememberMe   = signal<boolean>(true);
 
@@ -55,6 +58,8 @@ export class LoginComponent {
     }
 
     errorBanner(): string {
+        const literal = this.errorLiteral();
+        if (literal) return literal;
         const key = this.errorMessage();
         return key ? this.translate.instant(key) : '';
     }
@@ -77,6 +82,10 @@ export class LoginComponent {
             },
             error: (error) => {
                 this.loading.set(false);
+                // ADM-2: el backend responde 401 «Usuario desactivado» (distinto de «Credenciales
+                // incorrectas», que conserva su texto traducido): mostrarlo tal cual.
+                const detalle = detalleDelBackend(error);
+                this.errorLiteral.set(error.status === HTTP_STATUS.unauthorized && detalle && /desactivado/i.test(detalle) ? detalle : null);
                 this.errorMessage.set(error.status === HTTP_STATUS.unauthorized
                     ? 'auth.errorInvalidCredentials'
                     : 'auth.errorConnection',

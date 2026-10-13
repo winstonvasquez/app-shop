@@ -40,6 +40,22 @@
 
   <!-- Lista de ordenes -->
   @if (!loading()) {
+    @if (disponibles().length > 0) {
+      <h3 class="text-sm font-semibold text-gray-700 mb-2">Órdenes disponibles</h3>
+      @for (order of disponibles(); track order.id) {
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 mb-3 p-4 flex items-center justify-between">
+          <div>
+            <p class="text-sm font-semibold text-gray-800">Orden #{{ order.orderId }}</p>
+            <p class="text-xs text-gray-400">{{ order.items.length }} items sin operario asignado</p>
+          </div>
+          <app-button variant="primary" size="sm" label="Tomar orden"
+            [loading]="busyOrderId() === order.id"
+            [disabled]="busyOrderId() !== null"
+            (click)="tomarOrden(order)" />
+        </div>
+      }
+      <h3 class="text-sm font-semibold text-gray-700 mt-4 mb-2">Mis órdenes</h3>
+    }
     @for (order of orders(); track order.id) {
       <div class="bg-white rounded-xl shadow-sm border border-gray-100 mb-4 overflow-hidden">
         <!-- Header de la orden -->
@@ -78,8 +94,9 @@
               <div class="flex-1 min-w-0">
                 <p class="text-sm font-medium text-gray-800 truncate">{{ item.productoNombre }}</p>
                 <p class="text-xs text-gray-500">SKU: {{ item.sku }} &bull; Ubicación: {{ item.ubicacion || '—' }}</p>
-                <p class="text-xs text-gray-400">Solicitado: {{ item.cantidadSolicitada }}</p>
+                <p class="text-xs text-gray-400">Solicitado: {{ item.cantidadSolicitada }} &bull; Recogido: {{ item.cantidadRecogida }}</p>
               </div>
+              @if (order.status === 'PICKING') {
               <app-button
                 variant="primary"
                 size="sm"
@@ -88,19 +105,30 @@
                 [disabled]="pickingItemId() === item.id"
                 (click)="pickItem(order.id, item)"
                 class="shrink-0" />
+              }
             </div>
           }
 
+          @if (order.status === 'PENDING_PICKING') {
+            <div class="text-center py-2">
+              <app-button variant="primary" size="sm" label="Iniciar"
+                [loading]="busyOrderId() === order.id"
+                [disabled]="busyOrderId() !== null"
+                (click)="iniciarOrden(order)" />
+            </div>
+          }
+
+          <!-- El backend completa la orden (PICKED) al recoger el último ítem: no hace falta botón «Completar». -->
           @if (pendingItems(order).length === 0) {
             <div class="text-center py-3 text-gray-400 text-sm">
-              Todos los items recogidos
+              Todos los items recogidos — orden completada
             </div>
           }
         </div>
       </div>
     }
 
-    @if (orders().length === 0 && !error()) {
+    @if (orders().length === 0 && disponibles().length === 0 && !error()) {
       <div class="text-center py-12 text-gray-400">
         <p class="text-lg">No tienes ordenes asignadas</p>
       </div>

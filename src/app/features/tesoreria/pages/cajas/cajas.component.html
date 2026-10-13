@@ -139,12 +139,30 @@
       </app-form-field>
     </form>
   } @else {
-    <p style="color:var(--color-text-muted)">¿Confirmar cierre de esta caja? Se registrará el saldo actual como saldo de cierre.</p>
+    <!-- Arqueo: el efectivo contado es el saldo de cierre; la diferencia contra el sistema queda registrada. -->
+    <app-form-field
+      label="Efectivo contado (S/)"
+      [control]="efectivoContado"
+      type="number"
+      placeholder="0.00"
+      hint="Cuente el efectivo físico de la caja"
+      [required]="true">
+    </app-form-field>
+    @if (diferenciaCierre() !== null) {
+      <p class="mt-3" style="font-size:0.9rem"
+         [style.color]="diferenciaCierre() === 0 ? 'var(--color-success)' : 'var(--color-error)'">
+        Diferencia (contado − sistema):
+        <strong>{{ diferenciaCierre() | number:'1.2-2' }}</strong>
+        @if (diferenciaCierre() === 0) { — la caja cuadra. }
+        @else if ((diferenciaCierre() ?? 0) > 0) { — sobrante. }
+        @else { — faltante. }
+      </p>
+    }
   }
 
   <div slot="footer">
     <app-button icon="x" label="Cancelar" variant="secondary" [disabled]="guardando()" (click)="showActionDrawer.set(false)" />
-    <app-button [icon]="actionType() === 'abrir' ? 'door-open' : 'door-closed'" [label]="actionType() === 'abrir' ? 'Abrir Caja' : 'Confirmar Cierre'" [variant]="actionType() === 'abrir' ? 'primary' : 'secondary'" [loading]="guardando()" [disabled]="guardando()" (click)="ejecutarAccion()" />
+    <app-button [icon]="actionType() === 'abrir' ? 'door-open' : 'door-closed'" [label]="actionType() === 'abrir' ? 'Abrir Caja' : 'Confirmar Cierre'" [variant]="actionType() === 'abrir' ? 'primary' : 'secondary'" [loading]="guardando()" [disabled]="guardando() || (actionType() === 'cerrar' && efectivoContado.invalid)" (click)="ejecutarAccion()" />
   </div>
 </app-drawer>
 

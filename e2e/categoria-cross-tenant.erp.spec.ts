@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './helpers/api-test';
 
 /**
  * Vincular categorías a un producto estaba usando el `findAllById` heredado de JpaRepository,
@@ -14,14 +14,15 @@ const API = '/sales/api/v1';
 
 test.describe.configure({ mode: 'serial' });
 
-// El interceptor de Angular inyecta X-Tenant-ID en cada peticion del navegador; el contexto
-// `request` de Playwright no pasa por el, y varios POST/PUT resuelven el tenant desde esa
-// cabecera (no del query param), asi que sin ella responden 403.
-test.use({ extraHTTPHeaders: { 'X-Tenant-ID': '1' } });
-
 let categoriaAjenaId = 0;
 let categoriaGlobalId = 0;
 let productoId = 0;
+/** La API ya no crea en otra empresa: con D4 el tenant sale del JWT antes que de `companyId`. */
+let categoriaEsAjena = false;
+/** El PUT REEMPLAZA las categorías del producto: se restauran al final para no dañar datos. */
+let categoriasOriginales: number[] = [];
+
+const idsDe = (p: { categorias?: Array<{ id: number }> }) => (p.categorias ?? []).map(c => c.id);
 
 test('prepara: categoría privada de otra empresa y producto propio', async ({ request }) => {
     // Categoría privada de la empresa 2 (el superadmin puede crear en cualquier empresa).
@@ -43,15 +44,21 @@ test('prepara: categoría privada de otra empresa y producto propio', async ({ r
     const pl = await prods.json();
     productoId = (pl.content ?? pl)[0].id;
 
-    console.log(`[PREP] categoriaAjena=${categoriaAjenaId} categoriaGlobal=${categoriaGlobalId} producto=${productoId}`);
+    categoriaEsAjena = !items.some(c => c.id === categoriaAjenaId);
+    categoriasOriginales = idsDe(await (await request.get(`${API}/productos/${productoId}?companyId=1`)).json());
+
+    console.log(`[PREP] categoriaAjena=${categoriaAjenaId} (ajena=${categoriaEsAjena}) categoriaGlobal=${categoriaGlobalId} producto=${productoId}`);
     expect(categoriaAjenaId).toBeGreaterThan(0);
     expect(productoId).toBeGreaterThan(0);
 });
 
 test('rechaza vincular una categoría privada de otra empresa', async ({ request }) => {
+    // Sin categoría de OTRA empresa no hay nada que probar, y el PUT la vincularía de verdad.
+    test.fixme(!categoriaEsAjena, 'la categoría de apoyo quedó en la propia empresa (D4: el tenant sale del JWT)');
     const actual = await (await request.get(`${API}/productos/${productoId}?companyId=1`)).json();
     const res = await request.put(`${API}/productos/${productoId}?companyId=1`, {
-        data: { ...actual, categoriaIds: [categoriaAjenaId] },
+        // companyId: el GET no lo devuelve y el PUT lo exige; sin él el 400 era de validación, no del control cross-tenant.
+        data: { ...actual, companyId: 1, categoriaIds: [categoriaAjenaId] },
     });
     console.log(`[XT] PUT con categoría ajena -> ${res.status()}`);
     expect(res.status(), 'no debe aceptarse una categoría de otra empresa').toBeGreaterThanOrEqual(400);
@@ -65,7 +72,7 @@ test('rechaza vincular una categoría privada de otra empresa', async ({ request
 test('sigue aceptando una categoría global (no rompe el caso normal)', async ({ request }) => {
     const actual = await (await request.get(`${API}/productos/${productoId}?companyId=1`)).json();
     const res = await request.put(`${API}/productos/${productoId}?companyId=1`, {
-        data: { ...actual, categoriaIds: [categoriaGlobalId] },
+        data: { ...actual, companyId: 1, categoriaIds: [categoriaGlobalId] },
     });
     console.log(`[GLOBAL] PUT con categoría global -> ${res.status()}`);
     expect(res.status(), `la taxonomía compartida debe seguir vinculable (${await res.text()})`).toBeLessThan(400);
@@ -73,6 +80,11 @@ test('sigue aceptando una categoría global (no rompe el caso normal)', async ({
     const despues = await (await request.get(`${API}/productos/${productoId}?companyId=1`)).json();
     const ids: number[] = (despues.categorias ?? []).map((c: { id: number }) => c.id);
     expect(ids, 'la categoría global debe quedar vinculada').toContain(categoriaGlobalId);
+
+    const restaurar = await request.put(`${API}/productos/${productoId}?companyId=1`, {
+        data: { ...despues, companyId: 1, categoriaIds: categoriasOriginales },
+    });
+    expect(restaurar.status(), 'el producto debe recuperar sus categorías').toBeLessThan(400);
 });
 
 /**
@@ -137,7 +149,8 @@ test('un contacto de otro cliente no se puede editar ni desactivar', async ({ re
 });
 
 test('limpia: borra la categoría de apoyo', async ({ request }) => {
-    const res = await request.delete(`${API}/categorias/${categoriaAjenaId}?companyId=2`);
+    // Se crea en la empresa del JWT (ver categoriaEsAjena), así que se borra desde ahí.
+    const res = await request.delete(`${API}/categorias/${categoriaAjenaId}?companyId=${categoriaEsAjena ? 2 : 1}`);
     console.log(`[CLEAN] DELETE categoría de apoyo -> ${res.status()}`);
     expect(res.status(), 'la categoría temporal debe quedar borrada').toBeLessThan(400);
 });

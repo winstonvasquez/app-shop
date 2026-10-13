@@ -1,7 +1,7 @@
 import { Component, OnInit, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators, FormGroup, FormControl } from '@angular/forms';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
 import { CatalogService } from '@core/services/catalog.service';
 import { AuthService } from '@core/auth/auth.service';
 import { OrdenCompraService } from '../../services/orden-compra.service';
@@ -27,9 +27,10 @@ import { almacenSelectSource } from '../../../logistica/components/select-source
 import { ProductLookupComponent } from '../../../inventory/components/product-lookup/product-lookup.component';
 import { ProductResponse } from '@core/models/product.model';
 import { productIdToUuid } from '../../../inventory/utils/synthetic-uuid.util';
+import { mensajeDeErrorHttp } from '@core/utils/http-error.util';
 import {
-    claseBadgeEstadoOrden, construirPayloadOrdenCompra, itemsOrdenIncompletos, lineasEdicionOrdenCompra,
-    OcItemForm, valoresEdicionOrdenCompra
+    accionesOrdenCompra, avisoTrasAprobar, claseBadgeEstadoOrden, construirPayloadOrdenCompra, etiquetaEstadoOrden,
+    itemsOrdenIncompletos, lineasEdicionOrdenCompra, OcItemForm, valoresEdicionOrdenCompra
 } from './ordenes-compra.form';
 
 export type { OcItemForm } from './ordenes-compra.form';
@@ -94,6 +95,12 @@ export class OrdenesCompraComponent implements OnInit {
     editMode = signal(false);
     submitting = signal(false);
     submitError = signal<string | null>(null);
+    /** Aviso informativo de la última acción (p. ej. «Enviada a aprobación»). */
+    aviso = signal<string | null>(null);
+    /** Error de la última acción del drawer de detalle (el 400 de negocio del backend). */
+    avisoError = signal<string | null>(null);
+    /** Acciones del drawer de detalle según el estado de la OC abierta. */
+    acciones = computed(() => accionesOrdenCompra(this.selectedOrden()?.estado));
 
     // Items para el formulario
     formItems = signal<OcItemForm[]>([]);
@@ -186,7 +193,7 @@ export class OrdenesCompraComponent implements OnInit {
         },
         {
             key: 'estado', label: 'Estado', html: true,
-            render: (r) => `<span class="badge badge-${this.badgeEstado(r.estado)}">${this.catalog.label('ESTADO_ORDEN_COMPRA', r.estado)}</span>`
+            render: (r) => `<span class="badge badge-${this.badgeEstado(r.estado)}">${this.etiquetaEstado(r.estado)}</span>`
         }
     ];
 
@@ -347,6 +354,8 @@ export class OrdenesCompraComponent implements OnInit {
     openDetail(id: string): void {
         this.loadingDetail.set(true);
         this.showDetail.set(true);
+        this.aviso.set(null);
+        this.avisoError.set(null);
         this.selectedOrden.set(null);
         this.ordenService.getOrdenById(id).subscribe({
             next: (orden) => {
@@ -366,14 +375,23 @@ export class OrdenesCompraComponent implements OnInit {
         this.selectedOrden.set(null);
     }
 
-    updateEstado(newEstado: string): void {
+    updateEstado(accion: 'APROBADA' | 'ENVIADA' | 'CANCELADA' | 'CERRAR_SALDO'): void {
         const orden = this.selectedOrden();
         if (!orden) return;
+        if (accion === 'CANCELADA' && !confirm('¿Cancelar esta orden de compra? Se libera el presupuesto comprometido.')) return;
+        if (accion === 'CERRAR_SALDO' && !confirm(
+            'Se da por recibida la OC y se libera el presupuesto no recibido. ¿Cerrar el saldo?')) return;
         this.loadingDetail.set(true);
+        this.aviso.set(null);
+        this.avisoError.set(null);
 
-        const op = newEstado === 'CANCELADA'
+        const op = accion === 'CANCELADA'
             ? this.ordenService.cancelarOrden(orden.id!)
-            : this.ordenService.aprobarOrden(orden.id!);
+            : accion === 'CERRAR_SALDO'
+                ? this.ordenService.cerrarSaldo(orden.id!)
+                : accion === 'ENVIADA'
+                    ? this.ordenService.enviarAlProveedor(orden.id!)
+                    : this.ordenService.aprobarOrden(orden.id!);
 
         op.subscribe({
             next: (updated) => {
@@ -381,13 +399,20 @@ export class OrdenesCompraComponent implements OnInit {
                 this.ordenes.update(list =>
                     list.map(o => o.id === updated.id ? { ...o, estado: updated.estado } : o)
                 );
+                if (accion === 'APROBADA') this.aviso.set(avisoTrasAprobar(updated.estado));
                 this.loadingDetail.set(false);
             },
-            error: (err: Error) => {
-                this.error.set(err.message);
+            error: (err: HttpErrorResponse) => {
+                // En el propio drawer: el alert de página queda tapado por el overlay.
+                this.avisoError.set(mensajeDeErrorHttp(err));
                 this.loadingDetail.set(false);
             }
         });
+    }
+
+    /** Etiqueta visible del estado (PENDIENTE = «En aprobación»). */
+    etiquetaEstado(estado: string | null | undefined): string {
+        return etiquetaEstadoOrden(estado, this.catalog.label('ESTADO_ORDEN_COMPRA', estado));
     }
 
     // ── Form drawer ────────────────────────────────

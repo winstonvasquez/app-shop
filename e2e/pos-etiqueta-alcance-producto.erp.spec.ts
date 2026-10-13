@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './helpers/api-test';
 
 /**
  * El catálogo del POS sólo pintaba la etiqueta de promociones de alcance CATEGORIA: su DTO no
@@ -12,11 +12,6 @@ import { test, expect } from '@playwright/test';
 const API = '/sales/api';
 
 test.describe.configure({ mode: 'serial' });
-
-// El interceptor de Angular inyecta X-Tenant-ID en cada peticion del navegador; el contexto
-// `request` de Playwright no pasa por el, y varios POST/PUT resuelven el tenant desde esa
-// cabecera (no del query param), asi que sin ella responden 403.
-test.use({ extraHTTPHeaders: { 'X-Tenant-ID': '1' } });
 
 let promocionId = 0;
 let productoId = 0;
@@ -36,7 +31,8 @@ test('crea una promoción de alcance PRODUCTO', async ({ request }) => {
 
     const hoy = new Date();
     const fin = new Date(hoy.getTime() + 30 * 24 * 3600 * 1000);
-    const iso = (d: Date) => d.toISOString().slice(0, 10);
+    // Fecha LOCAL: con toISOString (UTC) desde las 19:00 de Lima la vigencia empezaba «mañana».
+    const iso = (d: Date) => d.toLocaleDateString('sv-SE');
     const res = await request.post(`${API}/v1/promociones?companyId=1`, {
         data: {
             nombre: 'XT-PROMO-PRODUCTO-TMP', tipo: 'PORCENTAJE', valor: 15,

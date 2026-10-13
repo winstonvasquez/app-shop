@@ -3,6 +3,7 @@ import {
     ChangeDetectionStrategy
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { HttpErrorResponse } from '@angular/common/http';
 import { merge } from 'rxjs';
 import { FormBuilder, FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { VacationService, VacationRequest } from '../../services/vacation.service';
@@ -10,6 +11,7 @@ import { EmployeeService } from '../../services/employee.service';
 import { DepartmentService } from '../../services/department.service';
 import { Department } from '../../models/department.model';
 import { LeaveBalance } from '../../models/leave-balance.model';
+import { AuthService } from '@core/auth/auth.service';
 import { CatalogService } from '@core/services/catalog.service';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import {
@@ -19,6 +21,7 @@ import {
 import { catalogFilter, signalFilter } from '@shared/ui/tables/data-table/filter-helpers';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
+import { mensajeDeErrorHttp } from '@core/utils/http-error.util';
 import { PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
@@ -55,6 +58,7 @@ export class VacationListComponent implements OnInit {
     private readonly departmentService = inject(DepartmentService);
     readonly catalog = inject(CatalogService);
     private readonly fb = inject(FormBuilder);
+    private readonly auth = inject(AuthService);
 
     // ── Data ─────────────────────────────────────────────────────────────────
     readonly loading   = this.vacationService.loading;
@@ -197,16 +201,27 @@ export class VacationListComponent implements OnInit {
         { key: 'diasVencidos', label: 'Días Vencidos', align: 'center', render: r => `${r.diasVencidos}` },
     ];
 
+    /** El backend exige ADMIN o RRHH (SUPERADMIN por jerarquía) en aprobar/rechazar/cancelar; al resto le daría 403. */
+    private puedeGestionar(): boolean {
+        const rol = (this.auth.currentUser()?.role ?? '').replace(/^ROLE_/, '');
+        return ['ADMIN', 'RRHH', 'SUPERADMIN'].includes(rol);
+    }
+
     actions: TableAction<VacationRequest>[] = [
         {
             label: 'Aprobar', icon: '✓', class: 'btn-view',
-            show: row => row.estado === 'SOLICITADO',
+            show: row => this.puedeGestionar() && row.estado === 'SOLICITADO',
             onClick: row => this.onApprove(row),
         },
         {
             label: 'Rechazar', icon: '✗', class: 'btn-delete',
-            show: row => row.estado === 'SOLICITADO',
+            show: row => this.puedeGestionar() && row.estado === 'SOLICITADO',
             onClick: row => this.openRejectModal(row),
+        },
+        {
+            label: 'Cancelar', icon: '⊘', class: 'btn-delete',
+            show: row => this.puedeGestionar() && (row.estado === 'SOLICITADO' || row.estado === 'APROBADO'),
+            onClick: row => this.onCancel(row),
         },
     ];
 
@@ -440,7 +455,7 @@ export class VacationListComponent implements OnInit {
             this.closeModal();
             this.loadPage();
         } catch (err) {
-            this.submitError.set((err as Error).message ?? 'Error al crear solicitud');
+            this.submitError.set(this.mensajeDe(err, 'Error al crear solicitud'));
         } finally {
             this.submitting.set(false);
         }
@@ -452,8 +467,26 @@ export class VacationListComponent implements OnInit {
             await this.vacationService.approveOrReject(vacation.id, { approved: true, comentarios: 'Aprobado' });
             this.loadPage();
         } catch (err) {
-            this.error.set((err as Error).message ?? 'Error al aprobar');
+            this.error.set(this.mensajeDe(err, 'Error al aprobar'));
         }
+    }
+
+    async onCancel(vacation: VacationRequest): Promise<void> {
+        const devuelve = vacation.estado === 'APROBADO' ? ' Se devolverán los días al saldo.' : '';
+        if (!confirm(`¿Cancelar la solicitud de "${this.getEmployeeName(vacation.employeeId)}"?${devuelve}`)) return;
+        this.error.set(null);
+        try {
+            await this.vacationService.cancel(vacation.id);
+            this.loadPage();
+            this.loadBalances();
+        } catch (err) {
+            this.error.set(this.mensajeDe(err, 'Error al cancelar'));
+        }
+    }
+
+    /** Errores 4xx del backend (solapamiento, aprobar la propia, estado inválido) con su mensaje real. */
+    private mensajeDe(err: unknown, porDefecto: string): string {
+        return err instanceof HttpErrorResponse ? mensajeDeErrorHttp(err) : porDefecto;
     }
 
     async onRejectSubmit(): Promise<void> {
@@ -470,7 +503,7 @@ export class VacationListComponent implements OnInit {
             this.closeRejectModal();
             this.loadPage();
         } catch (err) {
-            this.error.set((err as Error).message ?? 'Error al rechazar');
+            this.error.set(this.mensajeDe(err, 'Error al rechazar'));
         } finally {
             this.submitting.set(false);
         }

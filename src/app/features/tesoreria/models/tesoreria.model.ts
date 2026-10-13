@@ -1,6 +1,6 @@
 export interface Payment {
     id?: number;
-    tipoPago: 'PROVEEDOR' | 'NÓMINA' | 'IMPUESTO' | 'OTRO';
+    tipoPago: 'PROVEEDOR' | 'PLANILLA' | 'SERVICIO' | 'IMPUESTO' | 'OTRO';
     beneficiarioNombre: string;
     monto: number;
     moneda: string;

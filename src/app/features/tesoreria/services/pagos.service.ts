@@ -36,22 +36,28 @@ export class PagosService {
     }
 
     getById(id: number): Observable<Payment> {
-        return this.http.get<Payment>(`${this.apiUrl}/${id}`);
+        return this.http.get<Payment>(`${this.apiUrl}/${id}`, { params: this.tenantParams() });
     }
 
     create(payment: PaymentRequest): Observable<Payment> {
         return this.http.post<Payment>(this.apiUrl, payment);
     }
 
+    // Rutas y tenantId del backend (PaymentController: /aprobar, /rechazar, /pagar con @RequestParam tenantId).
     approve(id: number): Observable<Payment> {
-        return this.http.post<Payment>(`${this.apiUrl}/${id}/approve`, {});
+        return this.http.post<Payment>(`${this.apiUrl}/${id}/aprobar`, {}, { params: this.tenantParams() });
     }
 
-    reject(id: number): Observable<Payment> {
-        return this.http.post<Payment>(`${this.apiUrl}/${id}/reject`, {});
+    /** `motivo` viaja en el body: el backend lo lee de `Map<String,String>`. */
+    reject(id: number, motivo: string): Observable<Payment> {
+        return this.http.post<Payment>(`${this.apiUrl}/${id}/rechazar`, { motivo }, { params: this.tenantParams() });
     }
 
     markAsPaid(id: number): Observable<Payment> {
-        return this.http.post<Payment>(`${this.apiUrl}/${id}/pay`, {});
+        return this.http.post<Payment>(`${this.apiUrl}/${id}/pagar`, {}, { params: this.tenantParams() });
+    }
+
+    private tenantParams() {
+        return toHttpParams({ tenantId: this.tenantId });
     }
 }

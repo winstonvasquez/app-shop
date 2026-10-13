@@ -22,9 +22,13 @@ import { Title, Meta } from '@angular/platform-browser';
         <h1 class="upgrade-title">Módulo No Disponible</h1>
         <p class="upgrade-desc">Este módulo no está incluido en tu plan actual. Actualiza tu suscripción para desbloquear toda la potencia del ERP.</p>
         <div class="upgrade-actions">
-          <a routerLink="/portal/pricing" class="cta-upgrade" id="btn-upgrade-plans">
-            Ver planes y actualizar
-          </a>
+          <!-- /portal/pricing acaba en /portal/register, que falla para un cliente existente. Sin
+               autoservicio de cambio de plan ni canal de ventas publicado en el repo, se retira el
+               CTA engañoso y se indica el camino real (ADM-4: lo cambia un SUPERADMIN). -->
+          <p class="upgrade-note" id="upgrade-solicitar-cambio">
+            <strong>Solicitar cambio de plan:</strong> comunícate con el soporte de AppShop o con
+            tu administrador de plataforma; al aplicarlo tendrás que volver a iniciar sesión.
+          </p>
           <a routerLink="/admin" class="cta-back" id="btn-upgrade-back">
             Volver al panel de control
           </a>
@@ -96,24 +100,15 @@ import { Title, Meta } from '@angular/platform-browser';
         gap: 16px;
       }
 
-      .cta-upgrade {
-        display: block;
-        background: linear-gradient(135deg, var(--neon-pink) 0%, var(--neon-purple) 100%);
-        color: #ffffff;
-        padding: 14px 28px;
+      .upgrade-note {
+        margin: 0;
+        padding: 14px 20px;
         border-radius: 12px;
-        text-decoration: none;
-        font-weight: 700;
-        font-size: 0.95rem;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        box-shadow: 0 4px 15px rgba(244, 63, 94, 0.25);
-        transition: all 0.25s ease;
-
-        &:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 6px 20px rgba(244, 63, 94, 0.45);
-          filter: brightness(1.1);
-        }
+        background: rgba(244, 63, 94, 0.08);
+        border: 1px solid rgba(244, 63, 94, 0.2);
+        color: #ffffff;
+        font-size: 0.9rem;
+        line-height: 1.5;
       }
 
       .cta-back {

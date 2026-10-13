@@ -2,9 +2,16 @@ import { Component, OnInit, inject, signal, computed, ChangeDetectionStrategy } 
 import { DatePipe } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule, Validators, FormGroup, FormControl } from '@angular/forms';
+import { AuthService } from '@core/auth/auth.service';
 import { CompanyService } from '@features/admin/services/company.service';
 import { UserService } from '@features/admin/services/user.service';
 import { RolService } from '@features/admin/services/rol.service';
+import {
+    AdminSubscription,
+    SaasSubscriptionService,
+    SUBSCRIPTION_STATUSES
+} from '@features/admin/services/saas-subscription.service';
+import { SaasPlanAdmin, SaasPlanAdminService } from '@features/admin/services/saas-plan-admin.service';
 import { userSelectSource } from '@features/admin/components/select-sources';
 import {
     CompanyResponse,
@@ -50,7 +57,10 @@ export class CompanyDetailComponent implements OnInit {
     private readonly companyService = inject(CompanyService);
     private readonly userService = inject(UserService);
     private readonly rolService = inject(RolService);
+    private readonly subscriptionAdminService = inject(SaasSubscriptionService);
+    private readonly planAdminService = inject(SaasPlanAdminService);
     private readonly fb = inject(FormBuilder);
+    readonly auth = inject(AuthService);
 
     // State
     readonly company = signal<CompanyResponse | null>(null);
@@ -63,6 +73,21 @@ export class CompanyDetailComponent implements OnInit {
     readonly error = signal<string | null>(null);
     readonly successMsg = signal<string | null>(null);
     readonly editingProfile = signal(false);
+
+    // Plan / suscripción editable (ADM-4) — sólo SUPERADMIN
+    readonly statusOptions = SUBSCRIPTION_STATUSES;
+    readonly adminSub = signal<AdminSubscription | null>(null);
+    readonly plans = signal<SaasPlanAdmin[]>([]);
+    readonly selectedPlanCode = signal('');
+    readonly selectedStatus = signal('');
+    readonly savingSub = signal(false);
+    readonly subError = signal<string | null>(null);
+    readonly subChanged = computed(() => {
+        const s = this.adminSub();
+        // Sin suscripción (404) los dos selects arrancan vacíos: guardar con uno vacío daba 400.
+        return !!s && !!this.selectedPlanCode() && !!this.selectedStatus()
+            && (this.selectedPlanCode() !== s.planCode || this.selectedStatus() !== s.status);
+    });
 
     // Asignar usuario a la empresa (drawer del tab Usuarios)
     readonly roles = signal<RolDto[]>([]);
@@ -134,6 +159,35 @@ export class CompanyDetailComponent implements OnInit {
         if (tab === 'suscripcion' && !this.subscription()) {
             this.loadSubscription(company.id);
         }
+        if (tab === 'suscripcion' && this.auth.isSuperAdmin() && !this.adminSub()) {
+            this.loadAdminSubscription(company.id);
+        }
+    }
+
+    /** Cambia plan y estado (SUPERADMIN). El backend revoca las sesiones de la empresa. */
+    saveSubscription(): void {
+        const c = this.company();
+        if (!c || !this.auth.isSuperAdmin() || !this.subChanged()) return;
+        if (!confirm('Los usuarios de la empresa tendrán que volver a iniciar sesión. ¿Cambiar el plan/estado de la suscripción?')) {
+            return;
+        }
+        this.savingSub.set(true);
+        this.subError.set(null);
+        this.subscriptionAdminService
+            .update(c.id, { planCode: this.selectedPlanCode(), status: this.selectedStatus() })
+            .subscribe({
+                next: (sub) => {
+                    this.savingSub.set(false);
+                    this.applyAdminSubscription(sub);
+                    this.loadSubscription(c.id);
+                    this.loadModules(c.id);
+                    this.showSuccess('Suscripción actualizada. Los usuarios de la empresa deberán volver a iniciar sesión.');
+                },
+                error: (err: Error) => {
+                    this.savingSub.set(false);
+                    this.subError.set(err.message);
+                }
+            });
     }
 
     startEditing(): void {
@@ -201,7 +255,7 @@ export class CompanyDetailComponent implements OnInit {
 
     toggleModule(mod: CompanyModuleResponse): void {
         const c = this.company();
-        if (!c) return;
+        if (!c || !this.auth.isSuperAdmin()) return;
         this.companyService.toggleModule(c.id, mod.id, !mod.enabled).subscribe({
             next: () => this.loadModules(c.id),
             error: (err: Error) => this.error.set(err.message)
@@ -304,6 +358,25 @@ export class CompanyDetailComponent implements OnInit {
             next: (sub) => this.subscription.set(sub),
             error: (err: Error) => this.error.set(err.message)
         });
+    }
+
+    private loadAdminSubscription(companyId: number): void {
+        this.subscriptionAdminService.get(companyId).subscribe({
+            next: (sub) => this.applyAdminSubscription(sub),
+            error: (err: Error) => this.subError.set(err.message)
+        });
+        if (this.plans().length === 0) {
+            this.planAdminService.getAll().subscribe({
+                next: (plans) => this.plans.set(plans),
+                error: (err: Error) => this.subError.set(err.message)
+            });
+        }
+    }
+
+    private applyAdminSubscription(sub: AdminSubscription): void {
+        this.adminSub.set(sub);
+        this.selectedPlanCode.set(sub.planCode);
+        this.selectedStatus.set(sub.status);
     }
 
     private showSuccess(msg: string): void {

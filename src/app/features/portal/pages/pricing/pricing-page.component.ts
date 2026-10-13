@@ -3,6 +3,7 @@ import { RouterLink } from '@angular/router';
 import { DecimalPipe } from '@angular/common';
 import { Title, Meta } from '@angular/platform-browser';
 import { forkJoin } from 'rxjs';
+import { AuthService } from '@core/auth/auth.service';
 import { PortalService } from '../../services/portal.service';
 import { SaasModuleInfo, SaasPlanInfo } from '../../../../core/models/saas.model';
 import { PLAN_CONTENT, SECURITY_BASELINE, SECURITY_PARITY_NOTE, UNLIMITED_ACROSS_PLANS, COMPLIANCE_BY_PLAN, MODULE_CONTENT, MODULE_DOMAINS, DOMAIN_ACCENT_COLORS, ModuleDomainKey, PlanContentMeta } from '../../../../shared/constants';
@@ -133,10 +134,18 @@ interface ComparisonRow {
                 }
               </div>
 
-              <a [routerLink]="['/portal/register']" [queryParams]="{plan: plan.code}" class="plan-cta" [class.cta-highlight]="plan.content.recommended" [id]="'btn-pricing-cta-' + plan.code">
-                <span>Comenzar prueba gratis</span>
-                <svg class="cta-arrow" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-              </a>
+              @if (auth.isAuthenticated()) {
+                <!-- /portal/register crea una empresa NUEVA y falla para un cliente existente; el cambio
+                     de plan de una empresa ya registrada lo aplica un SUPERADMIN (no hay autoservicio). -->
+                <p class="plan-support-extra" [id]="'btn-pricing-cta-' + plan.code">
+                  <strong>Solicitar cambio de plan:</strong> contacta al soporte de AppShop.
+                </p>
+              } @else {
+                <a [routerLink]="['/portal/register']" [queryParams]="{plan: plan.code}" class="plan-cta" [class.cta-highlight]="plan.content.recommended" [id]="'btn-pricing-cta-' + plan.code">
+                  <span>Comenzar prueba gratis</span>
+                  <svg class="cta-arrow" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                </a>
+              }
             </div>
           }
         </div>
@@ -1038,6 +1047,7 @@ export class PricingPageComponent implements OnInit {
     private readonly titleService = inject(Title);
     private readonly metaService = inject(Meta);
     private readonly portalService = inject(PortalService);
+    readonly auth = inject(AuthService);
 
     annual = signal(false);
     plans = signal<SaasPlanInfo[]>([]);

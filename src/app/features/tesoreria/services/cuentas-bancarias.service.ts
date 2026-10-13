@@ -57,14 +57,18 @@ export class CuentasBancariasService {
     }
 
     update(id: number, req: BankAccountRequest): Observable<BankAccount> {
-        return this.http.put<BankAccount>(`${this.apiUrl}/${id}`, req);
+        return this.http.put<BankAccount>(`${this.apiUrl}/${id}`, req, { params: this.tenantParams() });
     }
 
     delete(id: number): Observable<void> {
-        return this.http.delete<void>(`${this.apiUrl}/${id}`);
+        return this.http.delete<void>(`${this.apiUrl}/${id}`, { params: this.tenantParams() });
     }
 
     changeStatus(id: number, estado: string): Observable<BankAccount> {
-        return this.http.post<BankAccount>(`${this.apiUrl}/${id}/estado`, { estado });
+        return this.http.post<BankAccount>(`${this.apiUrl}/${id}/estado`, { estado }, { params: this.tenantParams() });
+    }
+
+    private tenantParams() {
+        return toHttpParams({ tenantId: this.tenantId });
     }
 }

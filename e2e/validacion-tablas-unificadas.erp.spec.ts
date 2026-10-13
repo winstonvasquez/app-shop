@@ -12,9 +12,13 @@ import { test, expect, Page } from '@playwright/test';
 
 interface EstiloTabla { thead: Record<string, string>; th: Record<string, string>; td: Record<string, string>; }
 
-async function medirTabla(page: Page, ruta: string, sel: string): Promise<EstiloTabla | null> {
+async function medirTabla(page: Page, ruta: string, sel: string, pestana?: RegExp): Promise<EstiloTabla | null> {
     await page.goto(ruta, { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(4000);
+    if (pestana) {
+        await page.getByRole('button', { name: pestana }).first().click();
+        await page.waitForTimeout(2500);
+    }
     return page.evaluate(s => {
         const t = document.querySelector(s) as HTMLElement | null;
         if (!t) return null;
@@ -36,7 +40,9 @@ async function medirTabla(page: Page, ruta: string, sel: string): Promise<Estilo
 test('la tabla del componente y la escrita a mano se ven igual', async ({ page }) => {
     test.setTimeout(180_000);
     const componente = await medirTabla(page, '/admin/products', 'table.data-table');
-    const aMano = await medirTabla(page, '/admin/dashboard', 'table.table');
+    // El dashboard ya no tiene tabla a mano: su «Pedidos Recientes» eran datos fijos y se retiró (ADM-8).
+    // La de usuarios del detalle de empresa usa el mismo marcado (primera celda font-medium).
+    const aMano = await medirTabla(page, '/admin/companies/1', 'table.table', /Usuarios/);
 
     console.log('[TABLA] componente:', JSON.stringify(componente));
     console.log('[TABLA] a mano:    ', JSON.stringify(aMano));

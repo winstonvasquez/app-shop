@@ -5,7 +5,7 @@ import { CatalogSelectComponent } from '@shared/components';
 import { CatalogService } from '@core/services/catalog.service';
 import { PosCarritoService } from '../../services/pos-carrito.service';
 import { CartItem, DescuentoTipo } from '../../models/catalogo-pos.model';
-import { MetodoPagoPos, PagoMixto, TipoCpe } from '../../models/venta-pos.model';
+import { MetodoPagoDividido, MetodoPagoPos, PagoMixto, TipoCpe } from '../../models/venta-pos.model';
 import { estadoInicialDescuento, requiereAutorizacionSupervisor } from './pos-order-panel.descuento';
 
 @Component({
@@ -56,7 +56,7 @@ export class PosOrderPanelComponent {
 
     /** Métodos seleccionables por línea en pago dividido (mismo universo que paymentMethods). */
     readonly splitMethods = computed(() =>
-        this.paymentMethods().map(m => ({ id: m.id as Exclude<MetodoPagoPos, 'MIXTO'>, i18nKey: m.i18nKey }))
+        this.paymentMethods().map(m => ({ id: m.id as MetodoPagoDividido, i18nKey: m.i18nKey }))
     );
 
     readonly cpeOptions = computed(() =>
@@ -133,7 +133,7 @@ export class PosOrderPanelComponent {
     }
 
     onPagoMetodoChange(index: number, event: Event): void {
-        const metodo = (event.target as HTMLSelectElement).value as Exclude<MetodoPagoPos, 'MIXTO'>;
+        const metodo = (event.target as HTMLSelectElement).value as MetodoPagoDividido;
         this.carrito.setPagoMetodo(index, metodo);
     }
 

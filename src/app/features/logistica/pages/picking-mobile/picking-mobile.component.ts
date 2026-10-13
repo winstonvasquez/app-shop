@@ -1,5 +1,8 @@
 import { Component, inject, signal, computed, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
+import { mensajeDeErrorHttp } from '@core/utils/http-error.util';
 import { PickingService } from '../../services/picking.service';
+import { Observable } from 'rxjs';
 import { PickingOrder, PickingItem } from '../../models/picking.model';
 import { ButtonComponent } from '@shared/components';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
@@ -26,6 +29,10 @@ export class PickingMobileComponent implements OnInit {
     loading = signal(false);
     error = signal<string | null>(null);
     pickingItemId = signal<string | null>(null);
+    /** Órdenes pendientes sin operario: se pueden tomar (assign) y luego aparecen en «mis órdenes». */
+    disponibles = signal<PickingOrder[]>([]);
+    /** Orden con una acción (tomar/iniciar) en vuelo. */
+    busyOrderId = signal<string | null>(null);
 
     /** Un ítem se considera recogido cuando la cantidad recogida cubre la solicitada. */
     private isPicked(i: PickingItem): boolean {
@@ -63,6 +70,34 @@ export class PickingMobileComponent implements OnInit {
                 this.loading.set(false);
             }
         });
+        // Sin esta lista no hay forma de tomar una orden: my-orders sólo trae las ya asignadas al operario.
+        this.pickingService.getPendientes().subscribe({
+            next: (list) => this.disponibles.set(list.filter(o => !o.assignedTo)),
+            error: () => this.disponibles.set([])
+        });
+    }
+
+    /** `PUT /{id}/assign`: la orden pasa a «mis órdenes» (sigue PENDING_PICKING hasta iniciarla). */
+    tomarOrden(order: PickingOrder): void {
+        this.accionOrden(order.id, this.pickingService.assignOrder(order.id), () => {
+            this.loadOrders();
+        });
+    }
+
+    /** `PUT /{id}/start-mobile`: PENDING_PICKING → PICKING; recién ahí se pueden recoger ítems. */
+    iniciarOrden(order: PickingOrder): void {
+        this.accionOrden(order.id, this.pickingService.startOrder(order.id), (updated) =>
+            this.orders.update(list => list.map(o => o.id === order.id ? updated : o)));
+    }
+
+    private accionOrden(id: string, call: Observable<PickingOrder>, onOk: (updated: PickingOrder) => void): void {
+        if (this.busyOrderId()) return;
+        this.busyOrderId.set(id);
+        this.error.set(null);
+        call.subscribe({
+            next: (updated) => { onOk(updated); this.busyOrderId.set(null); },
+            error: (err: HttpErrorResponse) => { this.error.set(mensajeDeErrorHttp(err)); this.busyOrderId.set(null); }
+        });
     }
 
     pickItem(orderId: string, item: PickingItem): void {
@@ -77,7 +112,8 @@ export class PickingMobileComponent implements OnInit {
                 );
                 this.pickingItemId.set(null);
             },
-            error: () => {
+            error: (err: HttpErrorResponse) => {
+                this.error.set(mensajeDeErrorHttp(err));
                 this.pickingItemId.set(null);
             }
         });

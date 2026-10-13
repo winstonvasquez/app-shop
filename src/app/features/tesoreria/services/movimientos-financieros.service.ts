@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, map } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { AuthService } from '../../../core/auth/auth.service';
 import { FinancialMovement } from '../models/tesoreria.model';
@@ -17,6 +17,18 @@ export interface FinancialMovementRequest {
     descripcion: string;
     /** Nombre EXACTO del campo en FinancialMovementRequestDto (backend): origenId, no cajaId. */
     origenId?: number;
+}
+
+/** Respuesta de GET .../movimientos/flujo-caja (montos serializados como número JSON). */
+export interface FlujoCaja {
+    tenantId: number;
+    moneda: string;
+    desde: string;
+    hasta: string;
+    flujoNeto: number;
+    signo: 'POSITIVO' | 'NEGATIVO';
+    totalIngresos: number;
+    totalEgresos: number;
 }
 
 @Injectable({
@@ -70,14 +82,18 @@ export class MovimientosFinancierosService {
         return this.http.get<PageResponse<FinancialMovement>>(this.apiUrl, { params: httpParams });
     }
 
-    getFlujoCaja(fechaInicio: string, fechaFin: string): Observable<number> {
-        let params = new HttpParams()
-            .set('tenantId', this.tenantId)
-            .set('desde', fechaInicio)
-            .set('hasta', fechaFin);
-        // El backend retorna { flujoNeto, desde, hasta, signo, tenantId }; extraemos el número.
-        return this.http.get<{ flujoNeto: number }>(`${this.apiUrl}/flujo-caja`, { params })
-            .pipe(map(r => Number(r?.flujoNeto ?? 0)));
+    /**
+     * Totales del RANGO COMPLETO en UNA moneda (las transferencias no cuentan).
+     * GET .../movimientos/flujo-caja?tenantId&desde&hasta&moneda
+     */
+    getFlujoCaja(fechaInicio: string, fechaFin: string, moneda: string): Observable<FlujoCaja> {
+        const params = toHttpParams({
+            tenantId: this.tenantId,
+            desde: fechaInicio,
+            hasta: fechaFin,
+            moneda,
+        });
+        return this.http.get<FlujoCaja>(`${this.apiUrl}/flujo-caja`, { params });
     }
 
     registerMovement(movement: FinancialMovementRequest): Observable<FinancialMovement> {

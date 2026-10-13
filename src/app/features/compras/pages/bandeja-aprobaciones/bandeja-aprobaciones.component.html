@@ -7,6 +7,10 @@
     <app-button label="Actualizar" variant="secondary" icon="refresh-cw" (click)="cargarPendientes()" />
   </div>
 
+  @if (errorAccion() && !showAprobarModal() && !showRechazarModal()) {
+    <app-alert type="error" [message]="errorAccion()!" [dismissible]="true" (dismiss)="errorAccion.set(null)" />
+  }
+
   @if (loading()) {
     <div class="loading-container">
       <div class="spinner"></div>
@@ -78,10 +82,13 @@
           [ngModel]="comentario()"
           (ngModelChange)="comentario.set($event)"
           placeholder="Ingresa un comentario..." />
+        @if (errorAccion()) {
+          <app-alert type="error" [message]="errorAccion()!" />
+        }
       </div>
       <div class="modal-footer">
         <app-button label="Cancelar" variant="secondary" icon="x" (click)="cerrarModales()" />
-        <app-button label="Aprobar" variant="primary" icon="check-circle" (click)="confirmarAprobacion()" />
+        <app-button label="Aprobar" variant="primary" icon="check-circle" [loading]="guardando()" [disabled]="guardando()" (click)="confirmarAprobacion()" />
       </div>
     </div>
   </div>
@@ -101,10 +108,13 @@
           [ngModel]="motivo()"
           (ngModelChange)="motivo.set($event)"
           placeholder="Indica el motivo..." />
+        @if (errorAccion()) {
+          <app-alert type="error" [message]="errorAccion()!" />
+        }
       </div>
       <div class="modal-footer">
         <app-button label="Cancelar" variant="secondary" icon="x" (click)="cerrarModales()" />
-        <app-button label="Rechazar" variant="danger" icon="x-circle" [disabled]="!motivo()" (click)="confirmarRechazo()" />
+        <app-button label="Rechazar" variant="danger" icon="x-circle" [loading]="guardando()" [disabled]="!motivo() || guardando()" (click)="confirmarRechazo()" />
       </div>
     </div>
   </div>

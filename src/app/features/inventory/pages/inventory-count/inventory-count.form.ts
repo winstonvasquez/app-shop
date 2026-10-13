@@ -1,3 +1,4 @@
+import { fechaALocalDateTime } from '@core/utils/local-datetime.util';
 import { InventoryCountRequest } from '../../models/inventory.models';
 
 /** Una fila del FormArray de detalle (`form.getRawValue().details`). */
@@ -26,7 +27,8 @@ export type ConteoFormValue = {
 export function conteoCrearPayload(v: ConteoFormValue): InventoryCountRequest {
     return {
         warehouseId: Number(v.warehouseId),
-        countDate: v.countDate,
+        // El backend declara LocalDateTime: `yyyy-MM-dd` solo daría 400.
+        countDate: fechaALocalDateTime(v.countDate),
         notes: v.notes || undefined,
         details: v.details.map((d) => ({
             productId: Number(d.productId),

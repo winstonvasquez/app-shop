@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
     claseBadgeEstadoRecepcion,
     construirCreateRecepcionRequest,
+    lineasPendientesDeRecepcion,
     RecepcionItemForm,
 } from './recepcion.form';
 
@@ -124,5 +125,27 @@ describe('claseBadgeEstadoRecepcion', () => {
     it('cae a neutro ante un estado desconocido', () => {
         expect(claseBadgeEstadoRecepcion('ANULADA')).toBe('neutral');
         expect(claseBadgeEstadoRecepcion('')).toBe('neutral');
+    });
+});
+
+describe('lineasPendientesDeRecepcion', () => {
+    const it0 = { id: 'oi-1', productoNombre: 'Cemento', cantidad: 10, precioUnitario: 1 };
+
+    it('precarga el pendiente (pedido − acumulado) y conserva lo pedido como contexto', () => {
+        expect(lineasPendientesDeRecepcion([{ ...it0, cantidadAcumuladaRecibida: 4 }])).toEqual([
+            { ordenItemId: 'oi-1', productoNombre: 'Cemento', cantidadPedida: 10, cantidadRecibida: 6 },
+        ]);
+    });
+
+    it('sin acumulado propone todo y omite las líneas ya completas', () => {
+        const r = lineasPendientesDeRecepcion([
+            it0,
+            { ...it0, id: 'oi-2', cantidadAcumuladaRecibida: 10 },
+        ]);
+        expect(r.map((l) => [l.ordenItemId, l.cantidadRecibida])).toEqual([['oi-1', 10]]);
+    });
+
+    it('OC totalmente recibida devuelve vacío', () => {
+        expect(lineasPendientesDeRecepcion([{ ...it0, cantidadAcumuladaRecibida: 10 }])).toEqual([]);
     });
 });

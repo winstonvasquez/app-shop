@@ -37,16 +37,13 @@ export interface DatosDelCheckout {
  * - **Cupón y zona de envío se omiten en vez de viajar nulos**: el backend distingue «no
  *   informado» de «informado en nulo», y un nulo explícito activa validaciones que no
  *   corresponden.
- *
- * OJO (comportamiento preexistente, conservado a propósito): viajan TODOS los ítems del
- * carrito, incluidos los que el usuario deseleccionó, mientras que el total cobrado
- * (`cartTotal`) sólo suma los seleccionados. Ver `observaciones` de la ola.
  */
 export function construirOrderRequest(datos: DatosDelCheckout): OrderRequest {
     return {
         usuarioId: datos.usuarioId,
         guestEmail: datos.esInvitado ? (datos.emailInvitado ?? undefined) : undefined,
-        detalles: datos.items.map(item => ({
+        // Sólo lo seleccionado: el total cobrado (`cartTotal`) también suma únicamente esas líneas.
+        detalles: datos.items.filter(item => item.selected).map(item => ({
             productoId: item.productId,
             varianteId: item.variantId ?? 0,
             cantidad: item.quantity,

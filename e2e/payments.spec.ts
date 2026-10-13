@@ -85,6 +85,7 @@ async function setupCart(
         price: 1500.00,
         quantity: 1,
         image: 'https://via.placeholder.com/150',
+        selected: true,
     }
 ): Promise<void> {
     await page.evaluate((p) => {
@@ -191,8 +192,8 @@ test.describe('Pagos — UI y Flujo', () => {
     });
 
     test('P1.1 — Sección de pago con tarjeta visible en checkout', async ({ page }) => {
-        // El formulario de tarjeta se muestra cuando VIS (Visa) está seleccionado por defecto
-        // Según el component: selectedPaymentMethod = signal<string>('VIS')
+        // El formulario de tarjeta se muestra porque el mock lista VIS (Visa) primero y el checkout
+        // preselecciona el primer medio de pago disponible
         await expect(page.locator('input[placeholder="Número de la tarjeta"]')).toBeVisible();
         await expect(page.locator('input[placeholder="Nombre del titular"]')).toBeVisible();
         await expect(page.locator('input[placeholder="Fecha exp. MM/AA"]')).toBeVisible();
@@ -233,7 +234,7 @@ test.describe('Pagos — UI y Flujo', () => {
                 status: 200,
                 contentType: 'application/json',
                 body: JSON.stringify({
-                    status: 'approved',
+                    status: 'APPROVED',
                     paymentId: 'MP_TEST_001',
                     orderId: 999,
                 }),
@@ -282,7 +283,7 @@ test.describe('Pagos — Flujo Tarjeta Aprobado (mock)', () => {
                 status: 200,
                 contentType: 'application/json',
                 body: JSON.stringify({
-                    status: 'approved',
+                    status: 'APPROVED',
                     paymentId: 'MP_123',
                     orderId: 456,
                 }),
@@ -348,7 +349,7 @@ test.describe('Pagos — Flujo Tarjeta Rechazado (mock)', () => {
                 contentType: 'application/json',
                 body: JSON.stringify({
                     message: 'Tarjeta rechazada',
-                    status: 'rejected',
+                    status: 'REJECTED',
                 }),
             });
         });

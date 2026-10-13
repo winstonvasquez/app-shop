@@ -85,6 +85,11 @@ export class OrdenCompraService {
         return this.http.post<OrdenCompra>(`${this.baseUrl}/${id}/cancelar`, {});
     }
 
+    /** Sólo desde RECIBIDA_PARCIALMENTE: la deja RECIBIDA y libera el presupuesto no recibido. X-Company-Id lo pone tenant.interceptor. */
+    cerrarSaldo(id: string, motivo?: string): Observable<OrdenCompra> {
+        return this.http.post<OrdenCompra>(`${this.baseUrl}/${id}/cerrar-saldo`, { motivo });
+    }
+
     enviarAlProveedor(id: string): Observable<OrdenCompra> {
         return this.http.post<OrdenCompra>(`${this.baseUrl}/${id}/enviar`, {});
     }

@@ -120,11 +120,16 @@ describe('construirOrderRequest', () => {
         expect(r.detalles[0].varianteId).toBe(0);
     });
 
-    it('conserva TODOS los ítems, incluidos los deseleccionados (bug preexistente)', () => {
+    it('sólo viajan los ítems seleccionados: lo deseleccionado ni se pide ni se cobra', () => {
         const r = construirOrderRequest(datos({
             items: [item({ productId: 1, selected: true }), item({ productId: 2, selected: false })],
         }));
-        expect(r.detalles.map(d => d.productoId)).toEqual([1, 2]);
+        expect(r.detalles.map(d => d.productoId)).toEqual([1]);
+    });
+
+    it('sin ningún ítem seleccionado, detalles queda vacío', () => {
+        const r = construirOrderRequest(datos({ items: [item({ selected: false })] }));
+        expect(r.detalles).toEqual([]);
     });
 
     it('un carrito vacío produce detalles vacío, no undefined', () => {

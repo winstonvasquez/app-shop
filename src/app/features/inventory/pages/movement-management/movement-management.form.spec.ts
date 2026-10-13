@@ -16,7 +16,7 @@ describe('movimientoCrearPayload', () => {
             locationId: 9
         })).toEqual({
             productId: 5, warehouseId: 3, movementType: 'SALIDA_VENTA',
-            quantity: 4, unitCost: 12.5, movementDate: '2026-04-10',
+            quantity: 4, unitCost: 12.5, movementDate: expect.stringMatching(/^2026-04-10T\d{2}:\d{2}:\d{2}$/),
             reason: 'venta mostrador', referenceType: 'VENTA', referenceNumber: 'B001-1',
             locationId: 9
         });
@@ -52,9 +52,10 @@ describe('movimientoCrearPayload', () => {
         expect(p.locationId).toBe(11);
     });
 
-    it('el tipo y la fecha viajan tal cual (obligatorios)', () => {
+    it('el tipo viaja tal cual y la fecha se convierte a LocalDateTime con hora local', () => {
         const p = movimientoCrearPayload({ ...BASE, movementType: 'ENTRADA_AJUSTE', movementDate: '2026-12-31' });
         expect(p.movementType).toBe('ENTRADA_AJUSTE');
-        expect(p.movementDate).toBe('2026-12-31');
+        // `yyyy-MM-dd` a secas daba 400 en el backend (LocalDateTime).
+        expect(p.movementDate).toMatch(/^2026-12-31T\d{2}:\d{2}:\d{2}$/);
     });
 });

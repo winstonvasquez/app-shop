@@ -245,15 +245,24 @@ export class DevolucionesComponent implements OnInit {
         }
     }
 
-    /** Mismo mecanismo que `syncRecepcionIdControl`, pero para `ordenItemId` de cada ítem del array. */
+    /**
+     * El ítem de OC es obligatorio y NO se deshabilita (un control deshabilitado no se valida ni viaja):
+     * al cambiar de OC las líneas ya elegidas apuntaban a ítems de la anterior, así que se vacían.
+     */
     private syncOrdenItemIdControls(): void {
-        const disabled = this.itemsOrdenSeleccionada().length === 0;
         this.itemsArray.controls.forEach((c) => {
-            const ctrl = (c as FormGroup).get('ordenItemId');
-            if (!ctrl) return;
-            if (disabled && ctrl.enabled) ctrl.disable({ emitEvent: false });
-            else if (!disabled && ctrl.disabled) ctrl.enable({ emitEvent: false });
+            (c as FormGroup).patchValue({ ordenItemId: '', productoNombre: '', sku: '' }, { emitEvent: false });
+            this.limitarCantidad(c as FormGroup, undefined);
         });
+    }
+
+    /** Tope de la cantidad: no se devuelve más de lo recibido (el backend descuenta además lo ya devuelto). */
+    private limitarCantidad(group: FormGroup, recibido: number | undefined): void {
+        const cantidad = group.get('cantidad')!;
+        cantidad.setValidators(recibido === undefined
+            ? [Validators.required, Validators.min(1)]
+            : [Validators.required, Validators.min(1), Validators.max(recibido)]);
+        cantidad.updateValueAndValidity({ emitEvent: false });
     }
 
     /** Al elegir un ítem de la OC en el ítem `index` del form, precarga producto/SKU. */
@@ -262,9 +271,10 @@ export class DevolucionesComponent implements OnInit {
         const group = this.itemsArray.at(index) as FormGroup;
         group.patchValue({
             ordenItemId,
-            productoNombre: item?.productoNombre ?? group.value.productoNombre,
-            sku: item?.sku ?? group.value.sku,
+            productoNombre: item?.productoNombre ?? '',
+            sku: item?.sku ?? '',
         });
+        this.limitarCantidad(group, item ? (item.cantidadAcumuladaRecibida ?? 0) : undefined);
     }
 
     /** Proveedores activos para el select de filtro del toolbar. */
@@ -447,14 +457,12 @@ export class DevolucionesComponent implements OnInit {
 
     private createItemGroup(): FormGroup {
         const group = this.fb.group({
-            ordenItemId: [''],
+            ordenItemId: ['', Validators.required],
             productoNombre: ['', Validators.required],
             sku: [''],
             cantidad: [1, [Validators.required, Validators.min(1)]],
             motivoItem: [''],
         });
-        // Sin OC elegida (o sin ítems) el selector de ítem-OC arranca deshabilitado.
-        if (this.itemsOrdenSeleccionada().length === 0) group.get('ordenItemId')!.disable({ emitEvent: false });
         return group;
     }
 }

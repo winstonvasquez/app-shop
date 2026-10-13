@@ -71,7 +71,7 @@
                         <span class="muted">App Shop · vendedor verificado</span>
                     </header>
 
-                    @for (item of cartItems(); track item.productId; let i = $index) {
+                    @for (item of cartItems(); track item.productId + '-' + (item.variantId ?? 0); let i = $index) {
                         <div class="row" [class.is-first]="i === 0">
                             <label class="check-col">
                                 <span class="check" [class.is-on]="item.selected">
@@ -79,7 +79,7 @@
                                 </span>
                                 <input type="checkbox" hidden
                                     [checked]="item.selected"
-                                    (change)="toggleSelection(item.productId)"/>
+                                    (change)="toggleSelection(item)"/>
                             </label>
 
                             <div class="thumb-col">
@@ -100,12 +100,12 @@
                                 }
                                 <div class="row-controls">
                                     <div class="qty-mini">
-                                        <button (click)="onQuantityChange(item.productId, -1)"
+                                        <button (click)="onQuantityChange(item, -1)"
                                             [disabled]="item.quantity <= 1" type="button" aria-label="Disminuir">
                                             <lucide-icon name="minus" [size]="12"/>
                                         </button>
                                         <span class="qty-val">{{ item.quantity }}</span>
-                                        <button (click)="onQuantityChange(item.productId, 1)"
+                                        <button (click)="onQuantityChange(item, 1)"
                                             [disabled]="item.stock !== undefined && item.quantity >= item.stock"
                                             type="button" aria-label="Aumentar">
                                             <lucide-icon name="plus" [size]="12"/>
@@ -114,7 +114,7 @@
                                     <button class="link-btn" type="button" (click)="moverAFavoritos(item)">
                                         <lucide-icon name="heart" [size]="12"/> Mover a favoritos
                                     </button>
-                                    <button class="link-btn danger" (click)="removeFromCart(item.productId)" type="button">
+                                    <button class="link-btn danger" (click)="removeFromCart(item)" type="button">
                                         Eliminar
                                     </button>
                                 </div>

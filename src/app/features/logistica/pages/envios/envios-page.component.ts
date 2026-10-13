@@ -3,6 +3,11 @@ import { DatePipe } from '@angular/common';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators, FormGroup } from '@angular/forms';
 import { EnvioService } from '../../services/envio.service';
 import { TransportistaService } from '../../services/transportista.service';
+import { PackingService } from '../../services/packing.service';
+import { PackingOrder } from '../../models/packing.model';
+import { HttpErrorResponse } from '@angular/common/http';
+import { fechaALocalDateTime } from '@core/utils/local-datetime.util';
+import { mensajeDeErrorHttp } from '@core/utils/http-error.util';
 import { DeliveryService } from '../../services/delivery.service';
 import { Envio, EnvioStatus, TrackingEvent } from '../../models/envio.model';
 import { Transportista } from '../../models/transportista.model';
@@ -45,6 +50,7 @@ export class EnviosPageComponent implements OnInit {
     private readonly envioService        = inject(EnvioService);
     private readonly transportistaService = inject(TransportistaService);
     private readonly deliveryService     = inject(DeliveryService);
+    private readonly packingService      = inject(PackingService);
     private readonly authService         = inject(AuthService);
     private readonly fb                  = inject(FormBuilder);
     private readonly catalog             = inject(CatalogService);
@@ -52,6 +58,7 @@ export class EnviosPageComponent implements OnInit {
     // Data
     envios         = signal<Envio[]>([]);
     transportistas = signal<Transportista[]>([]);
+    packingListos  = signal<PackingOrder[]>([]);
     selected       = signal<Envio | null>(null);
 
     // UI state
@@ -191,6 +198,7 @@ export class EnviosPageComponent implements OnInit {
 
     constructor() {
         this.form = this.fb.group({
+            packingOrderId:        ['', Validators.required],
             carrierId:             ['', Validators.required],
             shippingAddress:       ['', Validators.required],
             recipientName:         ['', Validators.required],
@@ -349,6 +357,10 @@ export class EnviosPageComponent implements OnInit {
     openCreateForm() {
         this.form.reset();
         this.submitError.set(null);
+        this.packingService.getByStatus('READY_TO_SHIP').subscribe({
+            next: (res) => this.packingListos.set(res),
+            error: (e: HttpErrorResponse) => { this.packingListos.set([]); this.submitError.set(mensajeDeErrorHttp(e)); }
+        });
         this.showForm.set(true);
     }
 
@@ -362,8 +374,11 @@ export class EnviosPageComponent implements OnInit {
         this.submitting.set(true);
         this.submitError.set(null);
 
+        const raw = this.form.getRawValue();
         this.envioService.create({
-            ...this.form.value,
+            ...raw,
+            // LocalDateTime en el backend: la fecha sola da 400; vacía va null, no ''.
+            estimatedDeliveryDate: raw.estimatedDeliveryDate ? fechaALocalDateTime(raw.estimatedDeliveryDate) : null,
             tenantId:  this.companyId,
             companyId: this.companyId
         }).subscribe({
@@ -499,8 +514,9 @@ export class EnviosPageComponent implements OnInit {
             IN_TRANSIT:       'badge-warning',
             OUT_FOR_DELIVERY: 'badge-warning',
             DELIVERED:        'badge-success',
-            FAILED:           'badge-error',
-            RETURNED:         'badge-neutral'
+            FAILED_DELIVERY:  'badge-error',
+            RETURNED:         'badge-neutral',
+            CANCELLED:        'badge-neutral'
         };
         return map[status] ?? 'badge-neutral';
     }

@@ -42,11 +42,11 @@
 
         <!-- Items list (vertical, compact) -->
         <ul class="cart-list">
-            @for (item of cartItems(); track item.productId) {
+            @for (item of cartItems(); track item.productId + '-' + (item.variantId ?? 0)) {
                 <li class="cart-item" [class.is-unselected]="!item.selected">
                     <label class="item-check">
                         <input type="checkbox" [checked]="item.selected"
-                               (change)="toggleSelection(item.productId)"/>
+                               (change)="toggleSelection(item)"/>
                         <span class="check-mark"><lucide-icon name="check" [size]="12"/></span>
                     </label>
 
@@ -68,14 +68,14 @@
                             <div class="qty-stepper" role="group" aria-label="Cantidad">
                                 <button type="button" class="qty-btn"
                                         [disabled]="item.quantity <= 1"
-                                        (click)="decQty(item.productId, item.quantity)"
+                                        (click)="decQty(item)"
                                         aria-label="Disminuir cantidad">
                                     <lucide-icon name="minus" [size]="12"/>
                                 </button>
                                 <span class="qty-num">{{ item.quantity }}</span>
                                 <button type="button" class="qty-btn"
                                         [disabled]="item.stock !== undefined && item.quantity >= item.stock"
-                                        (click)="incQty(item.productId, item.quantity, item.stock)"
+                                        (click)="incQty(item)"
                                         aria-label="Aumentar cantidad">
                                     <lucide-icon name="plus" [size]="12"/>
                                 </button>
@@ -91,7 +91,7 @@
                     </div>
 
                     <button type="button" class="remove-btn"
-                            (click)="removeItem(item.productId)"
+                            (click)="removeItem(item)"
                             aria-label="Eliminar producto">
                         <lucide-icon name="trash-2" [size]="16"/>
                     </button>

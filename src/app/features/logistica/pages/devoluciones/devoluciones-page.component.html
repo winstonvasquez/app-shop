@@ -189,19 +189,108 @@
             <div class="card">
               <div class="card-body">
                 <p class="card-title" style="margin-bottom:var(--space-md)">Inspección de mercadería</p>
-                <div class="form-field-wrapper" style="margin-bottom:var(--space-md)">
-                  <label class="input-label">Notas de inspección</label>
-                  <app-rich-text-editor [rows]="3" formControlName="inspectionNotes"
-                            placeholder="Estado del producto, daños encontrados..." />
-                  @if (actionForm.controls.inspectionNotes.invalid && actionForm.controls.inspectionNotes.touched) {
-                    <p class="text-error" style="font-size:0.85em;margin-top:4px">Las notas de inspección son obligatorias.</p>
+                <p class="text-subtle" style="font-size:0.85em;margin-bottom:var(--space-md)">
+                  Agregue cada producto devuelto con su condición y destino. Los marcados «Reingresar a stock» vuelven al inventario.
+                </p>
+
+                @for (it of inspItems(); track $index; let i = $index) {
+                  <div class="card" style="margin-bottom:var(--space-sm)">
+                    <div class="card-body" style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-sm)">
+                      <div style="grid-column:1/-1;display:flex;justify-content:space-between;align-items:center">
+                        <strong>{{ it.productoNombre }}</strong>
+                        <app-button variant="secondary" size="sm" label="Quitar" (click)="removeInspItem(i)" />
+                      </div>
+                      <div>
+                        <label class="input-label">SKU *</label>
+                        <input class="form-input" type="text" [value]="it.sku"
+                               (input)="updateInspItem(i, { sku: $any($event.target).value })">
+                      </div>
+                      <div>
+                        <label class="input-label">Cantidad *</label>
+                        <input class="form-input" type="number" min="1" step="1" [value]="it.cantidad"
+                               (input)="updateInspItem(i, { cantidad: $any($event.target).valueAsNumber })">
+                      </div>
+                      <div>
+                        <label class="input-label">Condición</label>
+                        <select class="form-input" (change)="updateInspItem(i, { condition: $any($event.target).value })">
+                          @for (c of condiciones; track c.value) {
+                            <option [value]="c.value" [selected]="c.value === it.condition">{{ c.label }}</option>
+                          }
+                        </select>
+                      </div>
+                      <div>
+                        <label class="input-label">Disposición</label>
+                        <select class="form-input" (change)="updateInspItem(i, { disposition: $any($event.target).value })">
+                          @for (d of disposiciones; track d.value) {
+                            <option [value]="d.value" [selected]="d.value === it.disposition">{{ d.label }}</option>
+                          }
+                        </select>
+                      </div>
+                      <div style="grid-column:1/-1">
+                        <label class="input-label">Notas</label>
+                        <input class="form-input" type="text" [value]="it.notes"
+                               (input)="updateInspItem(i, { notes: $any($event.target).value })">
+                      </div>
+                    </div>
+                  </div>
+                }
+
+                <div style="margin-bottom:var(--space-md)">
+                  @if (inspLookupOpen()) {
+                    <app-product-lookup placeholder="Buscar producto por nombre o SKU"
+                      (selected)="onInspProductSelected($event)" />
+                  } @else {
+                    <app-button variant="secondary" size="sm" icon="plus" label="Agregar producto"
+                      (click)="inspLookupOpen.set(true)" />
                   }
+                </div>
+
+                <div class="form-field-wrapper" style="margin-bottom:var(--space-md)">
+                  <label class="input-label">Condición general</label>
+                  <select class="form-input" formControlName="overallCondition">
+                    @for (c of condiciones; track c.value) {
+                      <option [value]="c.value">{{ c.label }}</option>
+                    }
+                  </select>
+                </div>
+                <div class="form-field-wrapper" style="margin-bottom:var(--space-md)">
+                  <label class="input-label">Notas generales (opcional)</label>
+                  <app-rich-text-editor [rows]="3" formControlName="inspectionNotes"
+                            placeholder="Estado general del paquete, observaciones..." />
                 </div>
                 <app-button label="Registrar inspección" variant="primary" icon="eye"
                   [loading]="actionLoading()" (click)="registrarInspeccion()" />
               </div>
             </div>
           </form>
+        }
+
+        @if (selected()!.status === 'INSPECTED' || selected()!.status === 'REFUNDED') {
+          <div class="card">
+            <div class="card-body">
+              <p class="card-title" style="margin-bottom:var(--space-md)">Inspección registrada</p>
+              @if (inspeccion(); as insp) {
+                <p class="input-label">Condición general</p>
+                <p>{{ insp.overallCondition }} · {{ insp.inspectionDate | date:'dd/MM/yyyy HH:mm':'':'es-PE' }}</p>
+                @if (insp.overallNotes) {
+                  <p class="input-label">Notas</p>
+                  <p [innerHTML]="insp.overallNotes"></p>
+                }
+                @for (it of insp.items; track it.id) {
+                  <p style="margin-top:var(--space-sm)">
+                    <strong>{{ it.productoNombre }}</strong> ({{ it.sku }}) × {{ it.cantidad }}
+                    — {{ it.condition }} → {{ it.disposition }}
+                    @if (it.notes) { <span class="text-subtle"> · {{ it.notes }}</span> }
+                  </p>
+                }
+              } @else if (selected()!.inspectionNotes) {
+                <p class="input-label">Notas de inspección</p>
+                <p [innerHTML]="selected()!.inspectionNotes"></p>
+              } @else {
+                <p class="text-muted">Sin detalle de inspección.</p>
+              }
+            </div>
+          </div>
         }
 
         @if (selected()!.status === 'INSPECTED') {

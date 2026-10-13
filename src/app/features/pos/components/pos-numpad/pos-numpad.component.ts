@@ -27,7 +27,7 @@ export class PosNumpadComponent {
     });
 
     readonly vueltoNumpad = computed(() => {
-        const total = this.carrito.totalConDescuento();
+        const total = this.carrito.totalFinal();
         const entered = parseFloat(this.numpadValue()) / 100 || 0;
         return Math.max(0, entered - total);
     });

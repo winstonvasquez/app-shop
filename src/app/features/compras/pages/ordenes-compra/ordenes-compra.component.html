@@ -79,18 +79,30 @@
                 <div class="p-md bg-surface/5 border border-[var(--color-border)] rounded-md">
                     <h3 class="text-lg font-bold text-on mb-sm">Estado</h3>
                     <span class="badge badge-{{ badgeEstado(selectedOrden()?.estado ?? '') }}">
-                        {{ catalog.label('ESTADO_ORDEN_COMPRA', selectedOrden()?.estado) }}
+                        {{ etiquetaEstado(selectedOrden()?.estado) }}
                     </span>
+                    @if (avisoError()) {
+                        <app-alert type="error" [message]="avisoError()!" [dismissible]="true" (dismiss)="avisoError.set(null)"></app-alert>
+                    }
+                    @if (aviso()) {
+                        <app-alert type="success" [message]="aviso()!" [dismissible]="true" (dismiss)="aviso.set(null)"></app-alert>
+                    }
                     <div class="flex gap-sm mt-md flex-wrap">
-                        @if (selectedOrden()?.estado === 'BORRADOR' || selectedOrden()?.estado === 'PENDIENTE') {
+                        @if (acciones().aprobar) {
                             <app-button label="Aprobar" icon="check-circle" variant="success" size="sm"
                                 (click)="updateEstado('APROBADA')"></app-button>
-                            <app-button label="Cancelar" icon="x-circle" variant="danger" size="sm"
-                                (click)="updateEstado('CANCELADA')"></app-button>
                         }
-                        @if (selectedOrden()?.estado === 'APROBADA') {
+                        @if (acciones().enviar) {
                             <app-button label="Marcar Enviada" icon="send" variant="primary" size="sm"
                                 (click)="updateEstado('ENVIADA')"></app-button>
+                        }
+                        @if (acciones().cerrarSaldo) {
+                            <app-button label="Cerrar saldo" icon="check-circle" variant="primary" size="sm"
+                                (click)="updateEstado('CERRAR_SALDO')"></app-button>
+                        }
+                        @if (acciones().cancelar) {
+                            <app-button label="Cancelar" icon="x-circle" variant="danger" size="sm"
+                                (click)="updateEstado('CANCELADA')"></app-button>
                         }
                     </div>
                     @if (selectedOrden()?.observaciones) {

@@ -74,6 +74,7 @@ export class MovementManagementComponent {
     showDrawer = signal(false);
     submitting = signal(false);
     submitError = signal<string | null>(null);
+    submitNotice = signal<string | null>(null);
 
     /** Nombre del producto elegido vía buscador (el form solo guarda el productId). */
     selectedProductName = signal<string | null>(null);
@@ -282,11 +283,13 @@ export class MovementManagementComponent {
     }
 
     openCreate(): void {
-        this.form.reset({ movementDate: new Date().toISOString().split('T')[0] });
+        // Fecha LOCAL (en-CA = yyyy-MM-dd): toISOString() es UTC y en Perú, tras las 19:00, daría mañana.
+        this.form.reset({ movementDate: new Date().toLocaleDateString('en-CA') });
         this.selectedProductName.set(null);
         this.movementTypeValue.set('');
         this.resetPutaway();
         this.submitError.set(null);
+        this.submitNotice.set(null);
         this.showDrawer.set(true);
     }
 
@@ -350,7 +353,17 @@ export class MovementManagementComponent {
         if (this.form.invalid) { this.form.markAllAsTouched(); return; }
         this.submitting.set(true);
         this.api.createMovement(movimientoCrearPayload(this.form.getRawValue())).subscribe({
-            next: () => { this.submitting.set(false); this.closeDrawer(); this.loadMovements(); },
+            next: (creado) => {
+                this.submitting.set(false);
+                this.loadMovements();
+                // 200 sin cuerpo = descartado por idempotencia (InventoryMovementController): no es un alta.
+                // `creado` llega null en runtime aunque el servicio lo tipe como InventoryMovement.
+                if (!creado) {
+                    this.submitNotice.set('Este movimiento ya estaba registrado con esa referencia; no se aplicó de nuevo.');
+                    return;
+                }
+                this.closeDrawer();
+            },
             error: (err: Error) => { this.submitting.set(false); this.submitError.set(err.message); }
         });
     }

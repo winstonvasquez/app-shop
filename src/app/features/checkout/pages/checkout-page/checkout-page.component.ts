@@ -11,7 +11,6 @@ import { ConfigService, MedioPago, Certificacion } from '@core/services/config.s
 import { AuthService } from '@core/auth/auth.service';
 import { AddressService, Address, AddressInput } from '@core/services/address/address.service';
 import { MercadoPagoService, CardData, YapeIntentResult } from '@core/services/payment/mercadopago.service';
-import { CreditService } from '@core/services/credit.service';
 import { AnalyticsService } from '@core/services/analytics.service';
 import { ZonaEnvioService, ZonaEnvio } from '@core/services/zona-envio.service';
 import { GuestSessionService } from '@core/services/guest-session.service';
@@ -54,7 +53,6 @@ export class CheckoutPageComponent implements OnInit {
   systemParams = inject(SystemParameterService);
   addressService = inject(AddressService);
   mercadopagoService = inject(MercadoPagoService);
-  creditService = inject(CreditService);
   analyticsService = inject(AnalyticsService);
   zonaEnvioService = inject(ZonaEnvioService);
   fb = inject(FormBuilder);
@@ -68,6 +66,8 @@ export class CheckoutPageComponent implements OnInit {
   });
 
   cartItems = this.cartService.cartItems;
+  /** Sólo lo seleccionado se pide y se cobra: el total (`cartTotal`) ya suma únicamente esas líneas. */
+  selectedItems = computed(() => this.cartItems().filter(i => i.selected));
   cartTotal = this.cartService.cartTotal;
 
   readonly breadcrumbItems: BreadcrumbItem[] = [
@@ -104,7 +104,8 @@ export class CheckoutPageComponent implements OnInit {
     esPrincipal: [false],
   });
 
-  selectedPaymentMethod = signal<string>('VIS');
+  /** Vacío hasta que el backend informe qué medios de pago tiene habilitados la tienda. */
+  selectedPaymentMethod = signal<string>('');
   couponCode = signal('');
   couponError = signal<string | null>(null);
   couponApplying = signal(false);
@@ -115,16 +116,8 @@ export class CheckoutPageComponent implements OnInit {
   selectedZona = signal<ZonaEnvio | null>(null);
   shippingCost = computed(() => this.selectedZona()?.costoEnvio ?? 0);
 
-  useCredit = signal(false);
-  creditToApply = signal(0);
-
-  finalTotal = computed(() => {
-    let total = this.cartTotal() - this.couponDiscount() + this.shippingCost();
-    if (this.useCredit()) {
-      total = Math.max(0, total - this.creditToApply());
-    }
-    return total;
-  });
+  // El crédito de tienda se retiró del checkout: no viajaba al backend ni se consumía (se reutilizaba sin fin).
+  finalTotal = computed(() => this.cartTotal() - this.couponDiscount() + this.shippingCost());
 
   userId = computed(() => this.authService.currentUser()?.userId ?? null);
 
@@ -132,6 +125,7 @@ export class CheckoutPageComponent implements OnInit {
   errorMessage = signal('');
 
   paymentMethods = signal<MedioPago[]>([]);
+  paymentMethodsLoaded = signal(false);
   certifications = signal<Certificacion[]>([]);
 
   // ── Formulario de tarjeta (MP Brick simulado) ──────────────────────────────
@@ -159,9 +153,16 @@ export class CheckoutPageComponent implements OnInit {
   });
 
   ngOnInit() {
-    this.configService.getMediosPago().subscribe(data => this.paymentMethods.set(data));
+    this.configService.getMediosPago().subscribe({
+      next: data => {
+        this.paymentMethods.set(data);
+        this.selectedPaymentMethod.set(data[0]?.codigo ?? '');
+        this.paymentMethodsLoaded.set(true);
+      },
+      error: () => this.paymentMethodsLoaded.set(true),
+    });
     this.configService.getCertificaciones().subscribe(data => this.certifications.set(data));
-    this.analyticsService.trackBeginCheckout(this.cartTotal(), this.cartItems().length);
+    this.analyticsService.trackBeginCheckout(this.cartTotal(), this.selectedItems().length);
     // F2.2: la resolución de zona/costo de envío se dispara cuando se conoce una dirección
     // real (loadAddresses/selectAddress/saveNewAddress) — antes se traía TODA la lista de
     // zonas sin filtrar y se autoseleccionaba zonas[0], sin relación con la dirección del
@@ -178,15 +179,7 @@ export class CheckoutPageComponent implements OnInit {
       this.showAddressForm.set(true);
     } else {
       this.loadAddresses();
-      this.creditService.loadBalance();
     }
-  }
-
-  toggleCredit(checked: boolean): void {
-    this.useCredit.set(checked);
-    const balance = this.creditService.balance()?.balance ?? 0;
-    const subtotal = this.cartTotal() - this.couponDiscount();
-    this.creditToApply.set(Math.min(balance, subtotal));
   }
 
   loadAddresses(): void {
@@ -313,7 +306,7 @@ export class CheckoutPageComponent implements OnInit {
       usuarioId: this.userId(),
       esInvitado: this.isGuest(),
       emailInvitado: invitado.guestEmail,
-      items: this.cartItems(),
+      items: this.selectedItems(),
       direccion: this.selectedAddress()!,
       metodoPago: this.selectedPaymentMethod(),
       codigoCupon: this.appliedCouponCode(),
@@ -326,8 +319,12 @@ export class CheckoutPageComponent implements OnInit {
    * Retorna true si la validación pasa, false si hay error (y setea errorMessage).
    */
   private validarPrecondicionesPago(): boolean {
-    if (this.cartItems().length === 0) {
-      this.errorMessage.set('El carrito está vacío');
+    if (this.selectedItems().length === 0) {
+      this.errorMessage.set('Selecciona al menos un artículo del carrito para pagar');
+      return false;
+    }
+    if (!this.selectedPaymentMethod()) {
+      this.errorMessage.set('No hay medios de pago habilitados para esta tienda');
       return false;
     }
     if (this.isGuest() && this.guestForm.invalid) {
@@ -346,24 +343,27 @@ export class CheckoutPageComponent implements OnInit {
    * Debe llamarse ANTES de invocar cualquier gateway de pago.
    * Si falla, lanza excepción — el llamador debe capturarla y NO proceder con el pago.
    */
-  private async crearPedidoPendiente(): Promise<number> {
+  private async crearPedidoPendiente(): Promise<{ orderId: number; total: number }> {
     const orderRequest = this.buildOrderRequest();
     const response = await firstValueFrom(this.orderService.createOrder(orderRequest, crypto.randomUUID()));
     const orderId = response.id ?? (response as unknown as { orderId?: number }).orderId;
     if (!orderId) {
       throw new Error('El servidor no retornó un ID de pedido válido');
     }
-    return orderId;
+    // El monto a cobrar es el total del pedido en el servidor: el del carrito local puede estar con precios viejos.
+    return { orderId, total: response.total ?? this.finalTotal() };
   }
 
   /**
-   * Limpia el carrito y los datos de sesión de invitado tras un pago exitoso.
+   * Quita del carrito sólo lo pagado y limpia los datos de sesión de invitado tras un pago exitoso.
    */
   private limpiarTrasExito(orderId: number): void {
-    this.cartService.clearCart();
+    // Antes de vaciar: finalTotal() sale del carrito, y tras removeSelected() ya no incluye lo pagado.
+    const total = this.finalTotal();
+    this.cartService.removeSelected();
     this.cartSync.markRecovered();
     if (this.isGuest()) this.guestSession.clear();
-    this.analyticsService.trackPurchase(String(orderId), this.finalTotal());
+    this.analyticsService.trackPurchase(String(orderId), total);
   }
 
   /**
@@ -390,7 +390,7 @@ export class CheckoutPageComponent implements OnInit {
    * 2. Crear pedido en estado PENDIENTE_PAGO → obtener orderId real
    * 3. Tokenizar tarjeta con MP Brick simulado
    * 4. Enviar token al backend con el orderId real
-   * 5a. Pago APROBADO → confirmar pago en backend → limpiar carrito → navegar a confirmación
+   * 5a. Pago APROBADO (el backend ya confirma el pedido) → limpiar carrito → navegar a confirmación
    * 5b. Pago RECHAZADO → cancelar pedido (restaura stock) → mostrar error al usuario
    */
   async payWithCard() {
@@ -405,9 +405,10 @@ export class CheckoutPageComponent implements OnInit {
     this.errorMessage.set('');
 
     let orderId: number;
+    let total: number;
     try {
       // Paso 1: crear pedido ANTES del pago para obtener un orderId real
-      orderId = await this.crearPedidoPendiente();
+      ({ orderId, total } = await this.crearPedidoPendiente());
     } catch (err: unknown) {
       this.isLoading.set(false);
       const mensaje = err instanceof Error ? err.message : 'Error al crear el pedido';
@@ -432,27 +433,16 @@ export class CheckoutPageComponent implements OnInit {
         // Paso 3: procesar pago en el backend con token + orderId real
         this.mercadopagoService.processCardPayment(
           token,
-          this.finalTotal(),
+          total,
           orderId,
           this.selectedPaymentMethod()
         ).subscribe({
           next: (result) => {
-            if (result.status === 'approved') {
-              // Paso 4a: confirmar pago en backend → navegar a confirmación
-              this.orderService.confirmPayment(orderId, result.paymentId).subscribe({
-                next: () => {
-                  this.isLoading.set(false);
-                  this.limpiarTrasExito(orderId);
-                  this.router.navigate(['/orders/confirmation', orderId]);
-                },
-                error: () => {
-                  // El pago fue aprobado por el gateway pero el backend no pudo confirmar.
-                  // Navegar igualmente — el backend tiene reconciliación batch.
-                  this.isLoading.set(false);
-                  this.limpiarTrasExito(orderId);
-                  this.router.navigate(['/orders/confirmation', orderId]);
-                }
-              });
+            if (result.status?.toUpperCase() === 'APPROVED') {
+              // Paso 4a: el backend ya confirmó el pedido al aprobar el pago → ir a confirmación
+              this.isLoading.set(false);
+              this.limpiarTrasExito(orderId);
+              this.router.navigate(['/orders/confirmation', orderId]);
             } else {
               // Paso 4b: pago rechazado → cancelar pedido para restaurar stock
               this.cancelarPedido(orderId, 'PAGO_FALLIDO');
@@ -485,7 +475,7 @@ export class CheckoutPageComponent implements OnInit {
    * 2. Crear pedido en estado PENDIENTE_PAGO → obtener orderId real
    * 3. Crear intent Yape en el backend con el orderId real → retorna QR dinámico
    * 4. Mostrar QR + iniciar polling cada 3 segundos
-   * 5a. APPROVED → confirmar pago en backend → navegar a confirmación/{orderId}
+   * 5a. APPROVED (el backend ya confirma el pedido) → navegar a confirmación/{orderId}
    * 5b. REJECTED/EXPIRED → cancelar pedido (restaura stock) → mostrar error
    */
   async initiateYapePayment() {
@@ -502,9 +492,10 @@ export class CheckoutPageComponent implements OnInit {
     this.yapeIntent.set(null);
 
     let orderId: number;
+    let total: number;
     try {
       // Paso 1: crear pedido ANTES de obtener el QR Yape
-      orderId = await this.crearPedidoPendiente();
+      ({ orderId, total } = await this.crearPedidoPendiente());
     } catch (err: unknown) {
       this.yapeLoading.set(false);
       const mensaje = err instanceof Error ? err.message : 'Error al crear el pedido';
@@ -513,7 +504,7 @@ export class CheckoutPageComponent implements OnInit {
     }
 
     // Paso 2: crear intent Yape con el orderId real
-    this.mercadopagoService.processYapePayment(this.finalTotal(), orderId).subscribe({
+    this.mercadopagoService.processYapePayment(total, orderId).subscribe({
       next: (intent) => {
         this.yapeLoading.set(false);
         this.yapeIntent.set(intent);
@@ -542,19 +533,9 @@ export class CheckoutPageComponent implements OnInit {
         next: (status) => {
           if (status.status === 'APPROVED') {
             this.stopYapePolling();
-            // Confirmar pago en backend → navegar a confirmación con orderId real
-            this.orderService.confirmPayment(orderId, transactionId).subscribe({
-              next: () => {
-                this.limpiarTrasExito(orderId);
-                this.router.navigate(['/orders/confirmation', orderId]);
-              },
-              error: () => {
-                // Pago aprobado por Yape pero el backend no confirmó.
-                // Navegar igualmente — reconciliación batch del backend.
-                this.limpiarTrasExito(orderId);
-                this.router.navigate(['/orders/confirmation', orderId]);
-              }
-            });
+            // El backend ya confirma el pedido al aprobar el pago (webhook) → ir a confirmación
+            this.limpiarTrasExito(orderId);
+            this.router.navigate(['/orders/confirmation', orderId]);
           } else if (status.status === 'REJECTED' || status.status === 'EXPIRED') {
             this.stopYapePolling();
             // Cancelar pedido para restaurar stock

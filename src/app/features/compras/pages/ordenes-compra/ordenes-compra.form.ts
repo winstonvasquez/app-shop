@@ -150,8 +150,42 @@ export function claseBadgeEstadoOrden(estado: string): string {
         PENDIENTE: 'warning',
         APROBADA: 'success',
         ENVIADA: 'accent',
+        CONFIRMADA_PROVEEDOR: 'accent',
+        RECIBIDA_PARCIALMENTE: 'info',
         RECIBIDA: 'success',
         CANCELADA: 'error'
     };
     return mapa[estado] ?? 'neutral';
+}
+
+/**
+ * Acciones disponibles de una OC según su estado (espejo de las reglas del backend).
+ * - cancelar: BORRADOR/PENDIENTE y, sin recepciones confirmadas, APROBADA/ENVIADA/CONFIRMADA_PROVEEDOR
+ *   (si hay recepciones el backend responde 400 y remite a cerrar saldo).
+ * - cerrarSaldo: sólo RECIBIDA_PARCIALMENTE (RECIBIDA/CANCELADA son terminales).
+ */
+export interface AccionesOrdenCompra {
+    aprobar: boolean;
+    cancelar: boolean;
+    enviar: boolean;
+    cerrarSaldo: boolean;
+}
+
+export function accionesOrdenCompra(estado: string | null | undefined): AccionesOrdenCompra {
+    return {
+        aprobar: estado === 'BORRADOR' || estado === 'PENDIENTE',
+        cancelar: ['BORRADOR', 'PENDIENTE', 'APROBADA', 'ENVIADA', 'CONFIRMADA_PROVEEDOR'].includes(estado ?? ''),
+        enviar: estado === 'APROBADA',
+        cerrarSaldo: estado === 'RECIBIDA_PARCIALMENTE'
+    };
+}
+
+/** PENDIENTE significa «flujo de aprobación en curso»; el catálogo lo llama «Pendiente». */
+export function etiquetaEstadoOrden(estado: string | null | undefined, etiquetaCatalogo: string): string {
+    return estado === 'PENDIENTE' ? 'En aprobación' : etiquetaCatalogo;
+}
+
+/** Aviso tras «Aprobar»: con niveles de aprobación la OC queda PENDIENTE, no APROBADA. */
+export function avisoTrasAprobar(estadoResultante: string): string {
+    return estadoResultante === 'PENDIENTE' ? 'Enviada a aprobación' : 'Orden de compra aprobada';
 }

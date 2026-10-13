@@ -4,7 +4,9 @@
         subtitle="Administra las empresas del sistema"
         [breadcrumbs]="breadcrumbs">
         <div actions>
-            <app-button label="Nueva Empresa" icon="plus" variant="primary" (click)="openCreateModal()" />
+            @if (auth.isSuperAdmin()) {
+                <app-button label="Nueva Empresa" icon="plus" variant="primary" (click)="openCreateModal()" />
+            }
         </div>
     </app-page-header>
 

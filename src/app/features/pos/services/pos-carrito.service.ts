@@ -1,6 +1,6 @@
 import { Injectable, signal, computed } from '@angular/core';
 import { CartItem, DescuentoTipo, ProductoCatalogoPOS } from '../models/catalogo-pos.model';
-import { MetodoPagoPos, PagoMixto, TipoCpe } from '../models/venta-pos.model';
+import { MetodoPagoDividido, MetodoPagoPos, PagoMixto, TipoCpe } from '../models/venta-pos.model';
 import { SUNAT_RATES } from '@shared/constants/sunat.constants';
 
 @Injectable({ providedIn: 'root' })
@@ -14,6 +14,9 @@ export class PosCarritoService {
     readonly montoRecibido = signal<number>(0);
     readonly clienteNombre = signal<string>('');
     readonly clienteId = signal<number | null>(null);
+    /** Documento del cliente en códigos SUNAT: '6' RUC, '1' DNI, '0' sin documento. */
+    readonly clienteTipoDoc = signal<string>('0');
+    readonly clienteNumeroDoc = signal<string>('');
 
     /** Pago dividido: activar para registrar múltiples métodos con monto parcial */
     readonly pagoDividido = signal<boolean>(false);
@@ -49,16 +52,16 @@ export class PosCarritoService {
     readonly vuelto = computed(() => {
         if (this.pagoDividido()) {
             const totalPagado = this.pagos().reduce((s, p) => s + (p.monto || 0), 0);
-            return Math.max(0, totalPagado - this.totalConDescuento());
+            return Math.max(0, totalPagado - this.totalFinal());
         }
-        return Math.max(0, this.montoRecibido() - this.totalConDescuento());
+        return Math.max(0, this.montoRecibido() - this.totalFinal());
     });
 
     /** Cuánto falta por cubrir en modo pago dividido */
     readonly faltaPorCubrir = computed(() => {
         if (!this.pagoDividido()) return 0;
         const totalPagado = this.pagos().reduce((s, p) => s + (p.monto || 0), 0);
-        return Math.max(0, this.totalConDescuento() - totalPagado);
+        return Math.max(0, this.totalFinal() - totalPagado);
     });
 
     /** Método principal (el de mayor monto) cuando hay pago dividido */
@@ -77,7 +80,15 @@ export class PosCarritoService {
 
     /** Total final incluyendo ICBPER y descontando gift card */
     readonly totalFinal = computed(() =>
-        Math.max(0, this.totalConDescuento() + this.totalIcbper() - this.giftCardMonto())
+        Math.max(0, this.totalAntesDeGiftCard() - this.giftCardMonto())
+    );
+
+    /** Total de la venta (con ICBPER) antes de aplicar la gift card: es lo que el backend llama `total`. */
+    readonly totalAntesDeGiftCard = computed(() => this.totalConDescuento() + this.totalIcbper());
+
+    /** La gift card aplicada paga la venta entera: no queda resto que cobrar con otro método. */
+    readonly giftCardCubreTodo = computed(() =>
+        this.giftCardCodigo() !== '' && this.totalFinal() < 0.005
     );
 
     readonly itemCount = computed(() =>
@@ -144,6 +155,8 @@ export class PosCarritoService {
         this.tipoCpe.set('BOLETA');
         this.clienteNombre.set('');
         this.clienteId.set(null);
+        this.clienteTipoDoc.set('0');
+        this.clienteNumeroDoc.set('');
         this.pagoDividido.set(false);
         this.pagos.set([{ metodo: 'EFECTIVO', monto: 0 }, { metodo: 'YAPE', monto: 0 }]);
         this.giftCardCodigo.set('');
@@ -156,7 +169,7 @@ export class PosCarritoService {
         if (on) {
             // Pre-llenar primer método con el total
             this.pagos.set([
-                { metodo: this.metodoPago() === 'MIXTO' ? 'EFECTIVO' : (this.metodoPago() as Exclude<MetodoPagoPos,'MIXTO'>), monto: this.totalConDescuento() },
+                { metodo: this.metodoPago() === 'MIXTO' ? 'EFECTIVO' : (this.metodoPago() as MetodoPagoDividido), monto: this.totalFinal() },
                 { metodo: 'YAPE', monto: 0 },
             ]);
         }
@@ -166,7 +179,7 @@ export class PosCarritoService {
         this.pagos.update(list => list.map((p, i) => i === index ? { ...p, monto: Math.max(0, monto) } : p));
     }
 
-    setPagoMetodo(index: number, metodo: Exclude<MetodoPagoPos, 'MIXTO'>): void {
+    setPagoMetodo(index: number, metodo: MetodoPagoDividido): void {
         this.pagos.update(list => list.map((p, i) => i === index ? { ...p, metodo } : p));
     }
 
@@ -227,8 +240,10 @@ export class PosCarritoService {
     setMetodoPago(metodo: MetodoPagoPos): void { this.metodoPago.set(metodo); }
     setTipoCpe(tipo: TipoCpe): void { this.tipoCpe.set(tipo); }
     setMontoRecibido(monto: number): void { this.montoRecibido.set(monto); }
-    setCliente(id: number | null, nombre: string): void {
+    setCliente(id: number | null, nombre: string, tipoDoc = '0', numeroDoc = ''): void {
         this.clienteId.set(id);
         this.clienteNombre.set(nombre);
+        this.clienteTipoDoc.set(tipoDoc);
+        this.clienteNumeroDoc.set(numeroDoc);
     }
 }

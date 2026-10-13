@@ -18,6 +18,11 @@ export class PickingService {
         return this.http.get<PickingOrder[]>(`${this.baseUrl}/my-orders`);
     }
 
+    /** Órdenes pendientes del tenant (GET /picking/status/PENDING_PICKING); la vista descarta las ya asignadas. */
+    getPendientes(): Observable<PickingOrder[]> {
+        return this.http.get<PickingOrder[]>(`${this.baseUrl}/status/PENDING_PICKING`);
+    }
+
     // El backend expone estas mutaciones como PUT (no POST).
     assignOrder(id: string): Observable<PickingOrder> {
         return this.http.put<PickingOrder>(`${this.baseUrl}/${id}/assign`, {});

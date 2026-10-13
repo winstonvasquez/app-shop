@@ -31,6 +31,8 @@ export interface OrdenCompraItem {
     productoNombre: string;
     sku?: string;
     cantidad: number;
+    /** Total ya recibido en recepciones previas (backend: nunca null). Pendiente = cantidad − este valor. */
+    cantidadAcumuladaRecibida?: number;
     precioUnitario: number;
     igv?: number;
     subtotal?: number;

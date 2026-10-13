@@ -14,12 +14,14 @@ import { PosGiftCardService } from '../../services/pos-gift-card.service';
 import { PosOfflineSyncService } from '../../services/pos-offline-sync.service';
 import { PosManagerAuthService } from '../../services/pos-manager-auth.service';
 import { ActivatedRoute } from '@angular/router';
+import { HttpErrorResponse } from '@angular/common/http';
 import { AuthService } from '@core/auth/auth.service';
+import { mensajeDeErrorHttp } from '@core/utils/http-error.util';
 import { ThemeService } from '@core/services/theme/theme';
 import { ProductoCatalogoPOS, DescuentoTipo } from '../../models/catalogo-pos.model';
 import { VentaPosResponse } from '../../models/venta-pos.model';
 import { TurnoCaja } from '../../models/turno-caja.model';
-import { construirVentaPosRequest } from './pos-page.venta-request';
+import { construirVentaPosRequest, errorFacturaSinRuc, tipoDocSunat } from './pos-page.venta-request';
 
 // Sub-components
 import { PosTopbarComponent, PosScreen } from '../../components/pos-topbar/pos-topbar.component';
@@ -390,7 +392,8 @@ export class PosPageComponent implements OnInit, OnDestroy {
         if (!turno) return;
         this.turnoService.cerrarTurnoConArqueo(turno.id, data).subscribe({
             next: t => {
-                this.turnoActivo.set(t);
+                // El turno devuelto ya está CERRADO: sin null, `sinTurno` nunca se activa.
+                this.turnoActivo.set(t.estado === 'ABIERTO' ? t : null);
                 this.showDenominationCounter.set(false);
                 this.showToast('Turno cerrado con arqueo', 'success');
             },
@@ -500,7 +503,7 @@ export class PosPageComponent implements OnInit, OnDestroy {
                 if (this.lastVenta()?.id === venta.id) this.lastVenta.set(venta);
                 this.loadHistorial();
             },
-            error: err => this.showToast(err.message ?? 'No se pudo anular la venta', 'error'),
+            error: err => this.showToast(this.mensajeError(err, 'No se pudo anular la venta'), 'error'),
         });
     }
 
@@ -541,7 +544,7 @@ export class PosPageComponent implements OnInit, OnDestroy {
                     this.showToast('Gift card sin saldo', 'error');
                     return;
                 }
-                const montoAplicar = Math.min(card.saldoActual, this.carrito.totalConDescuento());
+                const montoAplicar = Math.min(card.saldoActual, this.carrito.totalAntesDeGiftCard());
                 this.carrito.setGiftCard(codigo, montoAplicar);
                 this.showToast(`Gift card aplicada: -S/${montoAplicar.toFixed(2)}`, 'success');
             },
@@ -550,8 +553,10 @@ export class PosPageComponent implements OnInit, OnDestroy {
     }
 
     // ── Customer Lookup ──────────────────────────────────────────
-    onClientSelected(client: { id: number | null; nombre: string; numDoc: string }): void {
-        this.carrito.setCliente(client.id, client.nombre || client.numDoc);
+    onClientSelected(client: { id: number | null; nombre: string; tipoDoc: string; numDoc: string }): void {
+        const tipoDoc = tipoDocSunat(client.tipoDoc);
+        // Sin tipo de documento reconocido no hay número que declarar: viaja '0' sin número.
+        this.carrito.setCliente(client.id, client.nombre || client.numDoc, tipoDoc, tipoDoc === '0' ? '' : client.numDoc);
     }
 
     onClientCleared(): void {
@@ -610,7 +615,15 @@ export class PosPageComponent implements OnInit, OnDestroy {
             return;
         }
 
-        // En pago dividido: validar que los montos cubran el total
+        // FACTURA exige cliente con RUC: avisar aquí en vez de esperar el 400 del backend.
+        const errorFactura = errorFacturaSinRuc(
+            this.carrito.tipoCpe(), this.carrito.clienteTipoDoc(), this.carrito.clienteNumeroDoc());
+        if (errorFactura) {
+            this.showToast(errorFactura, 'error');
+            return;
+        }
+
+        // En pago dividido: validar que los montos cubran el RESTO (total menos gift card)
         if (this.carrito.pagoDividido() && this.carrito.faltaPorCubrir() > 0.01) {
             this.showToast(`Faltan S/${this.carrito.faltaPorCubrir().toFixed(2)} por cubrir`, 'error');
             return;
@@ -626,6 +639,9 @@ export class PosPageComponent implements OnInit, OnDestroy {
             tipoCpe: this.carrito.tipoCpe(),
             clienteId: this.carrito.clienteId(),
             clienteNombre: this.carrito.clienteNombre(),
+            clienteTipoDoc: this.carrito.clienteTipoDoc(),
+            clienteNumeroDoc: this.carrito.clienteNumeroDoc(),
+            giftCardCubreTodo: this.carrito.giftCardCubreTodo(),
             descuento: this.carrito.descuento(),
             montoRecibido: this.carrito.montoRecibido(),
         });
@@ -656,15 +672,15 @@ export class PosPageComponent implements OnInit, OnDestroy {
             },
             error: err => {
                 this.isLoading.set(false);
-                this.showToast(err.message ?? 'Error al procesar la venta', 'error');
+                this.showToast(this.mensajeError(err, 'Error al procesar la venta'), 'error');
             },
         });
     }
 
     // ── Turno ─────────────────────────────────────────────────────
-    abrirTurno(): void {
+    abrirTurno(montoApertura: number): void {
         this.turnoService
-            .abrirTurno({ cajeroId: this.cajeroId, companyId: this.companyId, montoApertura: 500 })
+            .abrirTurno({ cajeroId: this.cajeroId, companyId: this.companyId, montoApertura })
             .subscribe({
                 next: turno => {
                     this.turnoActivo.set(turno);
@@ -672,7 +688,7 @@ export class PosPageComponent implements OnInit, OnDestroy {
                     // Volver a la pantalla principal tras abrir turno
                     this.showScreen('main');
                 },
-                error: err => this.showToast(err.message ?? 'Error al abrir turno', 'error'),
+                error: err => this.showToast(this.mensajeError(err, 'Error al abrir turno'), 'error'),
             });
     }
 
@@ -681,11 +697,21 @@ export class PosPageComponent implements OnInit, OnDestroy {
         if (!turno) return;
         this.turnoService.cerrarTurno(turno.id).subscribe({
             next: t => {
-                this.turnoActivo.set(t);
+                this.turnoActivo.set(t.estado === 'ABIERTO' ? t : null);
                 this.showToast('Turno cerrado', 'info');
             },
-            error: err => this.showToast(err.message ?? 'Error al cerrar turno', 'error'),
+            error: err => this.showToast(this.mensajeError(err, 'Error al cerrar turno'), 'error'),
         });
+    }
+
+    /**
+     * El POS no está bajo main-layout, así que el toast del interceptor no se ve aquí: este es el único
+     * mensaje que lee el cajero. Con `err.message` veía «Http failure response… 409 Conflict» en vez
+     * del motivo que manda el backend.
+     */
+    private mensajeError(err: unknown, porDefecto: string): string {
+        if (err instanceof HttpErrorResponse) return mensajeDeErrorHttp(err);
+        return (err as Error | undefined)?.message ?? porDefecto;
     }
 
     // ── Keyboard Shortcuts ─────────────────────────────────────────

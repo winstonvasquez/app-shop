@@ -10,6 +10,7 @@ import {
     CierreRequest,
 } from '../../services/cierre-contable.service';
 import { ButtonComponent, CatalogSelectComponent } from '@shared/components';
+import { mensajeDeErrorHttp } from '@core/utils/http-error.util';
 
 type Paso = 'seleccion' | 'validacion' | 'reapertura' | 'resultado';
 
@@ -55,13 +56,18 @@ export class CierreContableComponent implements OnInit {
         this.error.set('');
         this.cierreService.validar(id).subscribe({
             next: res => {
-                this.validacion.set(res);
-                this.paso.set('validacion');
                 this.cargando.set(false);
+                // Respuesta vacía: se queda en «seleccion» (que ya permite reintentar) con el error visible.
+                if (!res) {
+                    this.error.set('No se pudo validar el periodo');
+                    return;
+                }
+                this.validacion.set({ ...res, errores: res.errores ?? [], advertencias: res.advertencias ?? [] });
+                this.paso.set('validacion');
             },
             error: (err: unknown) => {
                 const msg = err instanceof HttpErrorResponse
-                    ? (err.error?.message ?? err.message)
+                    ? mensajeDeErrorHttp(err)
                     : 'Error al validar el período';
                 this.error.set(msg);
                 this.cargando.set(false);
@@ -92,7 +98,7 @@ export class CierreContableComponent implements OnInit {
             },
             error: (err: unknown) => {
                 const msg = err instanceof HttpErrorResponse
-                    ? (err.error?.message ?? err.message)
+                    ? mensajeDeErrorHttp(err)
                     : 'Error al ejecutar el cierre';
                 this.error.set(msg);
                 this.cargando.set(false);
@@ -120,7 +126,7 @@ export class CierreContableComponent implements OnInit {
             },
             error: (err: unknown) => {
                 const msg = err instanceof HttpErrorResponse
-                    ? (err.error?.message ?? err.message)
+                    ? mensajeDeErrorHttp(err)
                     : 'Error al reabrir el período';
                 this.error.set(msg);
                 this.cargando.set(false);

@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Devolucion, CreateDevolucionDto } from '../models/devolucion.model';
+import { Devolucion, CreateDevolucionDto, CreateInspeccionDto, InspeccionDevolucion } from '../models/devolucion.model';
 import { PageResponse } from '@core/models/pagination.model';
 import { toHttpParams } from '@core/utils/http-params.util';
 
@@ -85,12 +85,17 @@ export class DevolucionService {
         );
     }
 
-    registrarInspeccion(id: string, notes: string, companyId: string): Observable<Devolucion> {
-        return this.http.put<Devolucion>(
-            `${this.baseUrl}/${id}/inspect`,
-            { inspectionNotes: notes },
-            { params: { companyId } }
-        );
+    /**
+     * Inspección estructurada (`ReturnController.createInspection`): pasa la devolución a INSPECTED y
+     * reingresa stock por cada ítem con disposición RESTOCK. Responde 201 con la inspección, no con la devolución.
+     */
+    registrarInspeccion(id: string, dto: CreateInspeccionDto): Observable<InspeccionDevolucion> {
+        return this.http.post<InspeccionDevolucion>(`${this.baseUrl}/${id}/inspection`, dto);
+    }
+
+    /** 404 si la devolución no tiene inspección estructurada. */
+    getInspeccion(id: string): Observable<InspeccionDevolucion> {
+        return this.http.get<InspeccionDevolucion>(`${this.baseUrl}/${id}/inspection`);
     }
 
     registrarReembolso(id: string, amount: number, notas: string, companyId: string): Observable<Devolucion> {

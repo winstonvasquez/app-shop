@@ -135,6 +135,17 @@ export class VacationService {
         return vacation;
     }
 
+    /** SOLICITADO/APROBADO → CANCELADO (si estaba APROBADO el backend devuelve los días al saldo). */
+    async cancel(id: number): Promise<VacationRequest> {
+        const vacation = await firstValueFrom(
+            this.http.patch<VacationRequest>(`${this.baseUrl}/${id}/cancel`, null)
+        );
+        this._vacations.update(list =>
+            list.map(v => v.id === id ? vacation : v)
+        );
+        return vacation;
+    }
+
     // ── Leave Balance ──────────────────────────────────────────────────────
 
     /** Balance de vacaciones de un empleado. Si no existe balance para ese año, retorna null (404). */

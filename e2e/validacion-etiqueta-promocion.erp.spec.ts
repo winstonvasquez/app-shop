@@ -28,16 +28,18 @@ test('crea una promoción de categoría vigente', async ({ page }) => {
     // Primera categoría real del backend.
     const selCat = page.locator('select[formcontrolname="categoriaId"]');
     const valores = await selCat.locator('option').evaluateAll(os =>
-        os.map(o => (o as HTMLOptionElement).value).filter(v => v && v !== 'null'));
+        // Con [ngValue] el atributo es «0: null» / «1: 3»: el placeholder no es 'null' a secas.
+        os.map(o => (o as HTMLOptionElement).value).filter(v => v && !/(^|: )null$/.test(v)));
     expect(valores.length, 'debe haber categorías para vincular').toBeGreaterThan(0);
     await selCat.selectOption({ value: valores[0] });
 
     // Vigencia: desde hoy hasta dentro de un mes.
     const hoy = new Date();
     const fin = new Date(hoy.getTime() + 30 * 24 * 3600 * 1000);
-    const iso = (d: Date) => d.toISOString().slice(0, 10);
-    await page.locator('input[formcontrolname="fechaInicio"]').fill(iso(hoy));
-    await page.locator('input[formcontrolname="fechaFin"]').fill(iso(fin));
+    // Fecha LOCAL: con toISOString (UTC) desde las 19:00 de Lima la vigencia empezaba «mañana».
+    const iso = (d: Date) => d.toLocaleDateString('sv-SE');
+    await page.locator('app-date-input[formcontrolname="fechaInicio"] input[type="date"]').fill(iso(hoy));
+    await page.locator('app-date-input[formcontrolname="fechaFin"] input[type="date"]').fill(iso(fin));
 
     const respuesta = page.waitForResponse(r =>
         r.url().includes('/promociones') && r.request().method() === 'POST');

@@ -23,7 +23,7 @@ import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
 import {
-    claseBadgeEstadoRecepcion, construirCreateRecepcionRequest, RecepcionItemForm
+    claseBadgeEstadoRecepcion, construirCreateRecepcionRequest, lineasPendientesDeRecepcion, RecepcionItemForm
 } from './recepcion.form';
 
 /** Ítem del form de alta de recepción: precargado desde la OC, `cantidadRecibida` editable por línea. */
@@ -377,12 +377,11 @@ export class RecepcionComponent implements OnInit {
         this.loadingOrdenItems.set(true);
         this.ordenCompraService.getOrdenById(ordenCompraId).subscribe({
             next: (orden) => {
-                this.formItems.set((orden.items ?? []).map(i => ({
-                    ordenItemId: i.id!,
-                    productoNombre: i.productoNombre,
-                    cantidadPedida: i.cantidad,
-                    cantidadRecibida: i.cantidad
-                })));
+                const lineas = lineasPendientesDeRecepcion(orden.items ?? []);
+                this.formItems.set(lineas);
+                if (lineas.length === 0) {
+                    this.createError.set('Esta OC no tiene cantidades pendientes de recibir.');
+                }
                 // Sugiere el almacén destino de la OC si el usuario aún no eligió uno.
                 if (!this.recepcionForm.get('almacenDestino')?.value) {
                     this.recepcionForm.patchValue({ almacenDestino: orden.almacenDestino }, { emitEvent: false });

@@ -157,7 +157,21 @@
             <p class="turno-empty-title">Sin turno activo</p>
             <p class="turno-empty-sub">Abre un turno para comenzar a registrar ventas</p>
         </div>
-        <button class="btn-primary w-full gap-2 !h-12 !rounded-xl mt-6" (click)="abrirTurno.emit()">
+        <div class="amount-group mt-6">
+            <label class="amount-label" for="turno-monto-apertura">Monto de apertura (efectivo en caja)</label>
+            <div class="amount-input-wrap">
+                <span class="amount-currency">S/</span>
+                <input id="turno-monto-apertura" class="amount-input" type="number" min="0" step="0.50"
+                    placeholder="0.00" [value]="montoAperturaTxt()"
+                    (input)="montoAperturaTxt.set($any($event.target).value)"
+                    (keydown.enter)="confirmarApertura()">
+            </div>
+            @if (montoAperturaTxt() !== '' && montoApertura() === null) {
+            <p class="text-xs mt-1" style="color:var(--color-error)">Ingresa un monto válido (0 o mayor)</p>
+            }
+        </div>
+        <button class="btn-primary w-full gap-2 !h-12 !rounded-xl mt-4" [disabled]="montoApertura() === null"
+            (click)="confirmarApertura()">
             <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
                 <path fill-rule="evenodd"
                     d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z"

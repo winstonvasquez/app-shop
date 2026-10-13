@@ -15,6 +15,12 @@
     </div>
   </app-page-header>
 
+  @if (accionErrorMsg() && !showRejectDrawer()) {
+    <div class="bg-[var(--color-error-subtle,color-mix(in_oklch,var(--color-primary)_10%,transparent))] border border-[var(--color-error)] rounded-lg p-[var(--space-sm)] mb-[var(--space-md)] text-[var(--color-error)] text-sm">
+      {{ accionErrorMsg() }}
+    </div>
+  }
+
   <!-- Tabla -->
   <app-data-table
     [data]="pagos()"
@@ -141,5 +147,39 @@
         [disabled]="guardando()" (click)="showCreateDrawer.set(false)" />
     <app-button icon="save" label="Registrar Pago" variant="primary"
         [loading]="guardando()" [disabled]="guardando() || pagoForm.invalid" (click)="registrarPago()" />
+  </div>
+</app-drawer>
+
+<!-- Drawer: Motivo de rechazo -->
+<app-drawer
+  [isOpen]="showRejectDrawer()"
+  title="Rechazar Pago"
+  size="sm"
+  side="right"
+  [hasFooter]="true"
+  (closed)="showRejectDrawer.set(false)">
+
+  @if (accionErrorMsg()) {
+    <div class="bg-[var(--color-error-subtle,color-mix(in_oklch,var(--color-primary)_10%,transparent))] border border-[var(--color-error)] rounded-lg p-[var(--space-sm)] mb-[var(--space-md)] text-[var(--color-error)] text-sm">
+      {{ accionErrorMsg() }}
+    </div>
+  }
+
+  <form [formGroup]="rejectForm">
+    <p class="text-sm mb-3">
+      Pago a <strong>{{ pagoARechazar()?.beneficiarioNombre }}</strong>: indique el motivo del rechazo.
+    </p>
+    <label class="input-label">Motivo del rechazo <span class="text-[var(--color-error)]">*</span></label>
+    <textarea class="form-input" rows="4" maxlength="500" formControlName="motivo"
+              placeholder="Explique el motivo del rechazo..."></textarea>
+    @if (rejectForm.controls['motivo'].invalid && rejectForm.controls['motivo'].touched) {
+      <span class="input-error-message">El motivo es obligatorio (mínimo 3 caracteres)</span>
+    }
+  </form>
+
+  <div slot="footer">
+    <app-button icon="x" label="Cancelar" variant="secondary" [disabled]="cargando()" (click)="showRejectDrawer.set(false)" />
+    <app-button icon="x-circle" label="Rechazar Pago" variant="danger"
+        [loading]="cargando()" [disabled]="cargando()" (click)="confirmarRechazo()" />
   </div>
 </app-drawer>

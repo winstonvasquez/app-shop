@@ -280,9 +280,18 @@
                 </p>
                 <form [formGroup]="adjudicarForm">
                     <label class="input-label">Proveedor *</label>
-                    <app-server-search-select [dataSource]="proveedorSource"
-                        formControlName="proveedorId"
-                        placeholder="Buscar proveedor por nombre o RUC…" />
+                    @if (cargandoAdjudicables()) {
+                        <p class="text-muted text-sm">Cargando proveedores…</p>
+                    } @else if (proveedoresAdjudicables().length === 0) {
+                        <p class="text-muted text-sm">Ningún proveedor ha respondido todavía: no hay a quién adjudicar.</p>
+                    } @else {
+                        <select class="form-input" formControlName="proveedorId">
+                            <option value="" disabled>Seleccione…</option>
+                            @for (p of proveedoresAdjudicables(); track p.proveedorId) {
+                                <option [value]="p.proveedorId">{{ p.proveedorNombre }} — S/ {{ p.total.toFixed(2) }}</option>
+                            }
+                        </select>
+                    }
                 </form>
             </div>
             <div class="modal-footer">

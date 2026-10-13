@@ -14,7 +14,7 @@ describe('transferCrearPayload', () => {
             details: [{ productId: 5, requestedQuantity: 3, notes: 'urgente' }]
         })).toEqual({
             sourceWarehouseId: 1, destinationWarehouseId: 2,
-            requestDate: '2026-04-01', notes: 'reposición',
+            requestDate: '2026-04-01T00:00:00', notes: 'reposición',
             details: [{ productId: 5, requestedQuantity: 3, notes: 'urgente' }]
         });
     });
@@ -39,8 +39,8 @@ describe('transferCrearPayload', () => {
         expect(p.details[0].requestedQuantity).toBe(4);
     });
 
-    it('la fecha de solicitud viaja tal cual (obligatoria, no se normaliza)', () => {
-        expect(transferCrearPayload({ ...BASE, requestDate: '2026-12-31' }).requestDate).toBe('2026-12-31');
+    it('la fecha de solicitud se convierte a LocalDateTime (yyyy-MM-dd a secas daba 400)', () => {
+        expect(transferCrearPayload({ ...BASE, requestDate: '2026-12-31' }).requestDate).toBe('2026-12-31T00:00:00');
     });
 
     it('sin líneas devuelve details vacío, no undefined', () => {

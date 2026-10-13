@@ -1,7 +1,7 @@
 import {
     Component, DestroyRef, OnInit, inject, signal, computed, ChangeDetectionStrategy
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, FormControl } from '@angular/forms';
 import { DecimalPipe } from '@angular/common';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
@@ -89,6 +89,16 @@ export class CajasComponent implements OnInit {
 
     actionForm: FormGroup = this.fb.group({
         saldoInicial: [0, [Validators.required, Validators.min(0)]]
+    });
+
+    /** Arqueo: efectivo realmente contado al cerrar. Viaja como `saldoFinal`; el backend deriva la diferencia. */
+    efectivoContado = new FormControl<number | null>(null, [Validators.required, Validators.min(0)]);
+    private efectivoContadoValor = toSignal(this.efectivoContado.valueChanges, { initialValue: null });
+    /** Contado − saldo del sistema (null mientras no se digite). Redondeo a centavos para no pintar 0.1+0.2. */
+    diferenciaCierre = computed(() => {
+        const contado = this.efectivoContadoValor();
+        const saldo = this.selectedCaja()?.saldoActual ?? 0;
+        return contado == null ? null : Math.round((contado - saldo) * 100) / 100;
     });
 
     /** Solo editable mientras la caja esté CERRADA — ver CashRegisterService.update. */
@@ -249,6 +259,7 @@ export class CajasComponent implements OnInit {
         this.selectedCaja.set(caja);
         this.actionType.set(tipo);
         this.actionForm.reset({ saldoInicial: 0 });
+        this.efectivoContado.reset(null);
         this.actionErrorMsg.set(null);
         this.showActionDrawer.set(true);
     }
@@ -304,10 +315,12 @@ export class CajasComponent implements OnInit {
     ejecutarAccion(): void {
         const caja = this.selectedCaja();
         if (!caja?.id) return;
+        const cerrando = this.actionType() === 'cerrar';
+        if (cerrando && this.efectivoContado.invalid) { this.efectivoContado.markAsTouched(); return; }
         this.guardando.set(true);
-        const op = this.actionType() === 'abrir'
-            ? this.cajasService.open(caja.id, this.actionForm.value.saldoInicial ?? 0)
-            : this.cajasService.close(caja.id, caja.saldoActual ?? 0);
+        const op = cerrando
+            ? this.cajasService.close(caja.id, this.efectivoContado.value ?? 0)
+            : this.cajasService.open(caja.id, this.actionForm.value.saldoInicial ?? 0);
         op.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
             next: () => { this.showActionDrawer.set(false); this.guardando.set(false); this.load(); },
             error: (err: { error?: { detail?: string } }) => {

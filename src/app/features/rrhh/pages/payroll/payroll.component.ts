@@ -118,7 +118,9 @@ export class PayrollComponent implements OnInit {
         const afps = this.catalog.options('AFP')();
         return [
             { value: 'ONP', label: 'ONP' },
-            ...afps.map(a => ({ value: `AFP - ${a.valor}`, label: `AFP - ${a.valor}` })),
+            // El valor va con el CÓDIGO: el empleado guarda `afpNombre` desde un catalog-select
+            // (que enlaza `codigo`) y el backend arma «AFP - <afpNombre>»; con la etiqueta no casaba nunca.
+            ...afps.map(a => ({ value: `AFP - ${a.codigo}`, label: `AFP - ${a.valor}` })),
         ];
     });
 

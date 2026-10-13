@@ -1,3 +1,4 @@
+import { fechaALocalDateTime } from '@core/utils/local-datetime.util';
 import { InventoryTransferRequest } from '../../models/inventory.models';
 
 /** Una fila del FormArray de detalle (`form.getRawValue().details`). */
@@ -28,7 +29,8 @@ export function transferCrearPayload(v: TransferFormValue): InventoryTransferReq
     return {
         sourceWarehouseId: Number(v.sourceWarehouseId),
         destinationWarehouseId: Number(v.destinationWarehouseId),
-        requestDate: v.requestDate,
+        // El backend declara LocalDateTime: `yyyy-MM-dd` solo daría 400.
+        requestDate: fechaALocalDateTime(v.requestDate),
         notes: v.notes || undefined,
         details: v.details.map((d) => ({
             productId: Number(d.productId),

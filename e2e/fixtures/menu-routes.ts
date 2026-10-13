@@ -74,6 +74,7 @@ export const MENU_GROUPS: MenuGroup[] = [
         items: [
             { label: "Dashboard Logístico", route: "/admin/logistica/dashboard" },
             { label: "Envíos", route: "/admin/logistica/envios" },
+            { label: "Packing", route: "/admin/logistica/packing" },
             { label: "Tracking", route: "/admin/logistica/tracking" },
             { label: "Rutas de Entrega", route: "/admin/logistica/rutas" },
             { label: "Guías de Remisión", route: "/admin/logistica/guias" },
@@ -82,7 +83,6 @@ export const MENU_GROUPS: MenuGroup[] = [
             { label: "Devoluciones", route: "/admin/logistica/devoluciones" },
             { label: "Batch Picking", route: "/admin/logistica/batch-picking" },
             { label: "Picking Móvil", route: "/admin/logistica/picking-mobile" },
-            { label: "Reservas de Stock", route: "/admin/logistica/stock-reservations" },
             { label: "KPI Logísticos", route: "/admin/logistica/kpi" },
             { label: "Notificaciones", route: "/admin/logistica/notificaciones" },
             { label: "Mapeo Contable", route: "/admin/logistica/mapeo-contable" },

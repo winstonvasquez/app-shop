@@ -4,9 +4,15 @@
     title="Flujo de Caja"
     subtitle="Movimientos financieros del periodo">
     <div meta class="header-kpis">
-      <span class="header-kpi header-kpi--success">Ingresos del periodo <b>S/ {{ ingresos() | number:'1.2-2' }}</b></span>
-      <span class="header-kpi header-kpi--error">Egresos del periodo <b>S/ {{ egresos() | number:'1.2-2' }}</b></span>
-      <span class="header-kpi">Flujo de Caja Neto <b>S/ {{ flujoCajaNeto() | number:'1.2-2' }}</b></span>
+      <select class="form-input" aria-label="Moneda del flujo"
+              [value]="moneda()" (change)="onMonedaChange($any($event.target).value)">
+        @for (m of monedas; track m) {
+          <option [value]="m">{{ m }}</option>
+        }
+      </select>
+      <span class="header-kpi header-kpi--success">Ingresos del periodo <b>{{ simbolo() }} {{ (flujo()?.totalIngresos ?? 0) | number:'1.2-2' }}</b></span>
+      <span class="header-kpi header-kpi--error">Egresos del periodo <b>{{ simbolo() }} {{ (flujo()?.totalEgresos ?? 0) | number:'1.2-2' }}</b></span>
+      <span class="header-kpi">Flujo de Caja Neto <b>{{ simbolo() }} {{ (flujo()?.flujoNeto ?? 0) | number:'1.2-2' }}</b></span>
     </div>
     <div actions>
       <app-button icon="plus" label="Nuevo Movimiento" variant="primary" (click)="openCreateDrawer()" />

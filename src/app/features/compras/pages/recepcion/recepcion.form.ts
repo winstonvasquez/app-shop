@@ -1,3 +1,4 @@
+import { OrdenCompraItem } from '../../models/orden-compra.model';
 import { CreateRecepcionRequest } from '../../services/recepcion.service';
 
 /** Línea del formulario de recepción (estado local del componente, no del backend). */
@@ -6,6 +7,22 @@ export interface RecepcionItemForm {
     productoNombre: string;
     cantidadPedida: number;
     cantidadRecibida: number;
+}
+
+/**
+ * Líneas de la OC con saldo por recibir: precarga el PENDIENTE (cantidad − acumulado
+ * recibido) y omite las ya completas. El backend rechaza (400) recibir más que lo pendiente.
+ */
+export function lineasPendientesDeRecepcion(items: OrdenCompraItem[]): RecepcionItemForm[] {
+    return items
+        .map((i) => ({ i, pendiente: i.cantidad - (i.cantidadAcumuladaRecibida ?? 0) }))
+        .filter(({ pendiente }) => pendiente > 0)
+        .map(({ i, pendiente }) => ({
+            ordenItemId: i.id!,
+            productoNombre: i.productoNombre,
+            cantidadPedida: i.cantidad,
+            cantidadRecibida: pendiente,
+        }));
 }
 
 /**

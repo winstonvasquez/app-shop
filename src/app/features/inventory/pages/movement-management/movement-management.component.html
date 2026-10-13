@@ -67,6 +67,11 @@
                  (dismiss)="submitError.set(null)" />
     }
 
+    @if (submitNotice()) {
+      <app-alert type="warning" [message]="submitNotice()!" [dismissible]="true"
+                 (dismiss)="submitNotice.set(null)" />
+    }
+
     <div class="drawer-form-grid">
       <div class="col-span-2">
         <label class="input-label">Tipo de Movimiento <span class="text-error">*</span></label>

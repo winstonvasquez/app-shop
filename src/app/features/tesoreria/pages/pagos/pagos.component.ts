@@ -2,7 +2,9 @@ import {
     Component, DestroyRef, OnInit, inject, signal, computed, ChangeDetectionStrategy
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import { map, of } from 'rxjs';
+import { map, of, Observable } from 'rxjs';
+import { HttpErrorResponse } from '@angular/common/http';
+import { mensajeDeErrorHttp } from '@core/utils/http-error.util';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, FormControl } from '@angular/forms';
 import { DecimalPipe } from '@angular/common';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
@@ -49,6 +51,13 @@ export class PagosComponent implements OnInit {
     guardando     = signal(false);
     errorMsg      = signal<string | null>(null);
     showCreateDrawer = signal(false);
+    /** Error de aprobar/rechazar/pagar (el `errorMsg` de arriba sólo se ve dentro del drawer de alta). */
+    accionErrorMsg = signal<string | null>(null);
+    showRejectDrawer = signal(false);
+    pagoARechazar = signal<Payment | null>(null);
+    rejectForm: FormGroup = this.fb.group({
+        motivo: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(500)]],
+    });
 
     currentPage   = signal(0);
     pageSize      = signal<number>(PAGINATION.defaultPageSize);
@@ -304,48 +313,41 @@ export class PagosComponent implements OnInit {
     }
 
     approve(p: Payment): void {
-        if (p.id) {
-            this.cargando.set(true);
-            this.pagosService.approve(p.id)
-                .pipe(takeUntilDestroyed(this.destroyRef))
-                .subscribe({
-                    next: () => this.load(),
-                    error: (err: { error?: { detail?: string } }) => {
-                        this.errorMsg.set(err?.error?.detail ?? 'Error al procesar operación');
-                        this.cargando.set(false);
-                    }
-                });
-        }
+        this.ejecutarAccion(p, id => this.pagosService.approve(id));
     }
 
+    /** El backend guarda el motivo como observación del pago: se pide antes de rechazar. */
     reject(p: Payment): void {
-        if (p.id) {
-            this.cargando.set(true);
-            this.pagosService.reject(p.id)
-                .pipe(takeUntilDestroyed(this.destroyRef))
-                .subscribe({
-                    next: () => this.load(),
-                    error: (err: { error?: { detail?: string } }) => {
-                        this.errorMsg.set(err?.error?.detail ?? 'Error al procesar operación');
-                        this.cargando.set(false);
-                    }
-                });
-        }
+        this.rejectForm.reset({ motivo: '' });
+        this.accionErrorMsg.set(null);
+        this.pagoARechazar.set(p);
+        this.showRejectDrawer.set(true);
+    }
+
+    confirmarRechazo(): void {
+        const p = this.pagoARechazar();
+        if (!p?.id || this.rejectForm.invalid) { this.rejectForm.markAllAsTouched(); return; }
+        const motivo = String(this.rejectForm.value.motivo).trim();
+        this.ejecutarAccion(p, id => this.pagosService.reject(id, motivo), () => this.showRejectDrawer.set(false));
     }
 
     pay(p: Payment): void {
-        if (p.id) {
-            this.cargando.set(true);
-            this.pagosService.markAsPaid(p.id)
-                .pipe(takeUntilDestroyed(this.destroyRef))
-                .subscribe({
-                    next: () => this.load(),
-                    error: (err: { error?: { detail?: string } }) => {
-                        this.errorMsg.set(err?.error?.detail ?? 'Error al procesar operación');
-                        this.cargando.set(false);
-                    }
-                });
-        }
+        this.ejecutarAccion(p, id => this.pagosService.markAsPaid(id));
+    }
+
+    private ejecutarAccion(p: Payment, op: (id: number) => Observable<Payment>, alExito?: () => void): void {
+        if (!p.id) return;
+        this.cargando.set(true);
+        this.accionErrorMsg.set(null);
+        op(p.id)
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe({
+                next: () => { alExito?.(); this.load(); },
+                error: (err: HttpErrorResponse) => {
+                    this.accionErrorMsg.set(mensajeDeErrorHttp(err));
+                    this.cargando.set(false);
+                }
+            });
     }
 
     badgePago(estado: string): string {

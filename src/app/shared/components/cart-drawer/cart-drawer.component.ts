@@ -2,7 +2,7 @@ import { Component, inject, computed } from '@angular/core';
 import { TranslateModule } from '@ngx-translate/core';
 import { Router } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
-import { CartService } from '@features/cart/services/cart.service';
+import { CartItem, CartService } from '@features/cart/services/cart.service';
 
 @Component({
     selector: 'app-cart-drawer',
@@ -38,7 +38,7 @@ export class CartDrawerComponent {
             .reduce((acc, i) => acc + i.quantity, 0)
     );
 
-    toggleSelection(id: number) { this.cartService.toggleSelection(id); }
+    toggleSelection(item: CartItem) { this.cartService.toggleSelection(item.productId, item.variantId); }
     toggleAll(checked: boolean) { this.cartService.toggleAll(checked); }
     close() { this.cartService.closeDrawer(); }
 
@@ -52,19 +52,18 @@ export class CartDrawerComponent {
         this.router.navigate(['/cart']);
     }
 
-    incQty(productId: number, current: number, stock?: number) {
-        const max = stock ?? 99;
-        if (current >= max) return;
-        this.cartService.updateQuantity(productId, current + 1);
+    incQty(item: CartItem) {
+        if (item.quantity >= (item.stock ?? 99)) return;
+        this.cartService.updateQuantity(item.productId, item.variantId, item.quantity + 1);
     }
 
-    decQty(productId: number, current: number) {
-        if (current <= 1) return;
-        this.cartService.updateQuantity(productId, current - 1);
+    decQty(item: CartItem) {
+        if (item.quantity <= 1) return;
+        this.cartService.updateQuantity(item.productId, item.variantId, item.quantity - 1);
     }
 
-    removeItem(productId: number) {
-        this.cartService.removeFromCart(productId);
+    removeItem(item: CartItem) {
+        this.cartService.removeFromCart(item.productId, item.variantId);
     }
 
     /** Total de una línea (precio × cantidad) */

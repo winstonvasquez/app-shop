@@ -75,6 +75,7 @@ const ALL_NAV_GROUPS: NavGroup[] = [
     items: [
       { label: 'Dashboard Logístico',  route: '/admin/logistica/dashboard',      icon: 'chart' },
       { label: 'Envíos',               route: '/admin/logistica/envios',         icon: 'truck' },
+      { label: 'Packing',              route: '/admin/logistica/packing',        icon: 'box' },
       { label: 'Tracking',             route: '/admin/logistica/tracking',       icon: 'location' },
       { label: 'Rutas de Entrega',     route: '/admin/logistica/rutas',          icon: 'clipboard' },
       { label: 'Guías de Remisión',    route: '/admin/logistica/guias',          icon: 'document-text' },
@@ -83,7 +84,6 @@ const ALL_NAV_GROUPS: NavGroup[] = [
       { label: 'Devoluciones',         route: '/admin/logistica/devoluciones',   icon: 'return' },
       { label: 'Batch Picking',        route: '/admin/logistica/batch-picking',  icon: 'box' },
       { label: 'Picking Móvil',        route: '/admin/logistica/picking-mobile', icon: 'clipboard' },
-      { label: 'Reservas de Stock',    route: '/admin/logistica/stock-reservations', icon: 'warehouse' },
       { label: 'KPI Logísticos',       route: '/admin/logistica/kpi',            icon: 'chart-bar' },
       { label: 'Notificaciones',       route: '/admin/logistica/notificaciones', icon: 'file' },
       { label: 'Mapeo Contable',       route: '/admin/logistica/mapeo-contable', icon: 'calculator' }

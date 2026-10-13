@@ -197,11 +197,16 @@
                                     <div class="flex-1 min-w-0">
                                         <div class="flex items-center justify-between gap-2">
                                             <p class="text-sm font-semibold text-on truncate">{{ mod.name }}</p>
+                                            @if (auth.isSuperAdmin()) {
                                             <label class="relative inline-flex items-center cursor-pointer shrink-0">
                                                 <input type="checkbox" class="sr-only peer" [checked]="mod.enabled"
                                                     (change)="toggleModule(mod)">
                                                 <div class="w-9 h-5 bg-[var(--color-border)] peer-focus:outline-none rounded-full peer peer-checked:bg-[var(--color-primary)] transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full"></div>
                                             </label>
+                                            } @else {
+                                            <!-- Sólo lectura: activar módulos es del SUPERADMIN (si no, el ADMIN se saltaría su plan) -->
+                                            <span class="text-xs text-muted shrink-0">{{ mod.enabled ? 'Activo' : 'Inactivo' }}</span>
+                                            }
                                         </div>
                                         <p class="text-xs text-muted mt-0.5">{{ mod.code }}</p>
                                         @if (mod.description) {
@@ -236,8 +241,8 @@
                         <div class="p-8 text-center text-muted text-sm">No hay usuarios asignados a esta empresa</div>
                     } @else {
                         <table class="table">
-                            <thead>
-                                <tr class="table-header">
+                            <thead class="table-header">
+                                <tr>
                                     <th class="table-header-cell">Usuario</th>
                                     <th class="table-header-cell">Email</th>
                                     <th class="table-header-cell">Roles</th>
@@ -343,6 +348,56 @@
                     }
                 </div>
             </div>
+
+            <!-- Cambio de plan/estado: sólo SUPERADMIN (ADM-4) -->
+            @if (auth.isSuperAdmin()) {
+                <div class="card mt-6">
+                    <div class="card-header">
+                        <h3 class="card-title">Cambiar plan / estado</h3>
+                    </div>
+                    <div class="card-body">
+                        @if (subError()) {
+                            <app-alert type="error" [message]="subError()!" [dismissible]="true" (dismiss)="subError.set(null)" />
+                        }
+                        @if (adminSub(); as s) {
+                            <p class="text-sm text-subtle mb-4">
+                                Actual: <strong class="text-on">{{ s.planName }}</strong> · {{ s.status }}
+                                @if (s.trialEndsAt) { · fin de prueba {{ s.trialEndsAt | date:'mediumDate' }} }
+                            </p>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="text-xs text-muted uppercase tracking-wide mb-1 block" for="sub-plan">Plan</label>
+                                    <select id="sub-plan" class="form-input" [value]="selectedPlanCode()"
+                                        (change)="selectedPlanCode.set($any($event.target).value)">
+                                        <option value="" disabled [selected]="!selectedPlanCode()">Seleccione un plan</option>
+                                        @for (p of plans(); track p.code) {
+                                            <option [value]="p.code" [selected]="p.code === selectedPlanCode()">{{ p.name }}{{ p.isActive ? '' : ' (inactivo)' }}</option>
+                                        }
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="text-xs text-muted uppercase tracking-wide mb-1 block" for="sub-status">Estado</label>
+                                    <select id="sub-status" class="form-input" [value]="selectedStatus()"
+                                        (change)="selectedStatus.set($any($event.target).value)">
+                                        <option value="" disabled [selected]="!selectedStatus()">Seleccione un estado</option>
+                                        @for (st of statusOptions; track st) {
+                                            <option [value]="st" [selected]="st === selectedStatus()">{{ st }}</option>
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+                            <p class="text-xs text-muted mt-3">Al guardar, los usuarios de la empresa tendrán que volver a iniciar sesión.</p>
+                            <div class="mt-4">
+                                <app-button label="Guardar cambio" variant="primary" icon="save"
+                                    [loading]="savingSub()" [disabled]="savingSub() || !subChanged()"
+                                    (click)="saveSubscription()" />
+                            </div>
+                        } @else if (!subError()) {
+                            <div class="loading-container"><div class="spinner"></div></div>
+                        }
+                    </div>
+                </div>
+            }
         }
     }
 </div>

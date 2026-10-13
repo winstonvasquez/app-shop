@@ -10,7 +10,7 @@
                 variant="secondary"
                 icon="save"
                 [loading]="guardando()"
-                [disabled]="!periodoSeleccionado() || guardando()"
+                [disabled]="!periodoSeleccionado() || guardando() || declaracionCerrada()"
                 (click)="guardarDeclaracion()">
             </app-button>
         </div>
@@ -35,6 +35,10 @@
             (click)="calcularIGV(periodoSeleccionado())">
         </app-button>
     </div>
+
+    @if (error()) {
+        <div class="badge badge-error mb-4 block">{{ error() }}</div>
+    }
 
     @if (cargando()) {
         <div class="loading-container">
@@ -70,13 +74,28 @@
                             <span>IGV Crédito Fiscal (18%)</span>
                             <span class="money text-success">S/ {{ resumen()?.igvCompras ?? 0 | number:'1.2-2' }}</span>
                         </div>
+                        <div class="decl-row decl-subtotal">
+                            <span>IGV neto del periodo (débito − crédito)</span>
+                            <span class="money">S/ {{ resumen()?.igvNeto ?? 0 | number:'1.2-2' }}</span>
+                        </div>
+                        @if ((resumen()?.saldoFavorAnterior ?? 0) > 0) {
+                            <div class="decl-row">
+                                <span>Saldo a favor del periodo anterior</span>
+                                <span class="money text-success">− S/ {{ resumen()?.saldoFavorAnterior ?? 0 | number:'1.2-2' }}</span>
+                            </div>
+                        }
                         <div class="decl-row decl-total">
-                            <span>IGV NETO A PAGAR</span>
-                            <span class="money"
-                                  [style.color]="(resumen()?.igvNeto ?? 0) > 0 ? 'var(--color-primary)' : 'var(--color-success)'">
-                                S/ {{ resumen()?.igvNeto ?? 0 | number:'1.2-2' }}
+                            <span>IGV A PAGAR</span>
+                            <span class="money" style="color:var(--color-primary)">
+                                S/ {{ igvAPagar() | number:'1.2-2' }}
                             </span>
                         </div>
+                        @if ((resumen()?.saldoFavorSiguiente ?? 0) > 0) {
+                            <div class="decl-row">
+                                <span>Saldo a favor que se arrastra al siguiente periodo</span>
+                                <span class="money text-success">S/ {{ resumen()?.saldoFavorSiguiente ?? 0 | number:'1.2-2' }}</span>
+                            </div>
+                        }
                     </div>
                 </div>
             </div>
@@ -91,7 +110,7 @@
                         <div class="decl-section-title">PAGO A CUENTA MENSUAL (1.5%)</div>
                         <div class="decl-row">
                             <span>Ingresos netos del mes</span>
-                            <span class="money">S/ {{ resumen()?.rentaBase ?? 0 | number:'1.2-2' }}</span>
+                            <span class="money">S/ {{ resumen()?.ingresosNetos ?? 0 | number:'1.2-2' }}</span>
                         </div>
                         <div class="decl-row decl-subtotal">
                             <span>Tasa aplicable (RMT)</span>
@@ -129,13 +148,13 @@
                                 <td class="table-cell font-bold">IGV (PDT 621)</td>
                                 <td class="table-cell font-mono">S/ {{ resumen()?.ventasGravadas ?? 0 | number:'1.2-2' }}</td>
                                 <td class="table-cell">18%</td>
-                                <td class="table-cell text-right font-mono font-bold">S/ {{ resumen()?.igvNeto ?? 0 | number:'1.2-2' }}</td>
+                                <td class="table-cell text-right font-mono font-bold">S/ {{ igvAPagar() | number:'1.2-2' }}</td>
                                 <td class="table-cell text-warning">{{ vencimientoPDT() }}</td>
                                 <td class="table-cell"><span class="badge badge-warning">Pendiente</span></td>
                             </tr>
                             <tr class="table-row">
                                 <td class="table-cell font-bold">Renta — RMT (1.5%)</td>
-                                <td class="table-cell font-mono">S/ {{ resumen()?.rentaBase ?? 0 | number:'1.2-2' }}</td>
+                                <td class="table-cell font-mono">S/ {{ resumen()?.ingresosNetos ?? 0 | number:'1.2-2' }}</td>
                                 <td class="table-cell">1.5%</td>
                                 <td class="table-cell text-right font-mono font-bold">S/ {{ resumen()?.rentaMensual ?? 0 | number:'1.2-2' }}</td>
                                 <td class="table-cell text-warning">{{ vencimientoPDT() }}</td>
@@ -144,7 +163,7 @@
                             <tr style="background:var(--color-surface-raised);font-weight:bold">
                                 <td class="table-cell" colspan="3">TOTAL A PAGAR</td>
                                 <td class="table-cell text-right font-mono" style="color:var(--color-primary)">
-                                    S/ {{ resumen()?.totalAPagar ?? ((resumen()?.igvNeto ?? 0) + (resumen()?.rentaMensual ?? 0)) | number:'1.2-2' }}
+                                    S/ {{ resumen()?.totalAPagar ?? 0 | number:'1.2-2' }}
                                 </td>
                                 <td class="table-cell" colspan="2"></td>
                             </tr>
@@ -178,19 +197,19 @@
                             <th class="table-header-cell">IGV Compras</th>
                             <th class="table-header-cell">IGV Neto</th>
                             <th class="table-header-cell">Total a Pagar</th>
-                            <th class="table-header-cell">Fecha</th>
+                            <th class="table-header-cell">Vencimiento</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @for (h of historial(); track h.id) {
+                        @for (h of historial(); track h.declaracionId) {
                             <tr class="table-row">
-                                <td class="table-cell">{{ h.periodoNombre }}</td>
+                                <td class="table-cell">{{ nombrePeriodo(h.periodoId) }}</td>
                                 <td class="table-cell">S/ {{ h.ventasGravadas | number:'1.2-2' }}</td>
                                 <td class="table-cell">S/ {{ h.igvVentas | number:'1.2-2' }}</td>
                                 <td class="table-cell">S/ {{ h.igvCompras | number:'1.2-2' }}</td>
                                 <td class="table-cell">S/ {{ h.igvNeto | number:'1.2-2' }}</td>
                                 <td class="table-cell font-semibold">S/ {{ h.totalAPagar | number:'1.2-2' }}</td>
-                                <td class="table-cell">{{ h.fechaDeclaracion | date:'dd/MM/yyyy' }}</td>
+                                <td class="table-cell">{{ h.fechaVencimiento | date:'dd/MM/yyyy' }}</td>
                             </tr>
                         }
                     </tbody>
