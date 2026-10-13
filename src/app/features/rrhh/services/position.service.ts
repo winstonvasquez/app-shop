@@ -4,6 +4,7 @@ import { environment } from '@env/environment';
 import { firstValueFrom } from 'rxjs';
 import { PageResponse, pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 import { Position, PositionRequest } from '../models/position.model';
+import { toHttpParams } from '@core/utils/http-params.util';
 
 /** Filtros server-side del listado paginado de puestos. Todos opcionales. */
 export interface PositionFiltros {
@@ -41,14 +42,14 @@ export class PositionService {
         this._loading.set(true);
         this._error.set(null);
         try {
-            const params: Record<string, string> = {
-                page: String(filtros.page ?? 0),
-                size: String(filtros.size ?? 20),
-            };
-            if (filtros.search) params['search'] = filtros.search;
-            if (filtros.departmentId) params['departmentId'] = filtros.departmentId;
-            if (filtros.activo) params['activo'] = filtros.activo;
-            if (filtros.nivel) params['nivel'] = filtros.nivel;
+            let params = toHttpParams({
+                page: filtros.page ?? 0,
+                size: filtros.size ?? 20,
+                search: filtros.search,
+                departmentId: filtros.departmentId,
+                activo: filtros.activo,
+                nivel: filtros.nivel,
+            });
             const res = await firstValueFrom(
                 this.http.get<PageResponse<Position>>(`${this.baseUrl}/paged`, { params })
             );
@@ -70,10 +71,13 @@ export class PositionService {
      */
     async searchPage(page: number, size: number, search?: string, sort?: string, departmentId?: number):
         Promise<PageResponse<Position>> {
-        const params: Record<string, string> = { page: String(page), size: String(size) };
-        if (search) params['search'] = search;
-        if (sort) params['sort'] = sort;
-        if (departmentId != null) params['departmentId'] = String(departmentId);
+        let params = toHttpParams({
+            page,
+            size,
+            search,
+            sort,
+            departmentId,
+        });
         return firstValueFrom(
             this.http.get<PageResponse<Position>>(`${this.baseUrl}/paged`, { params })
         );

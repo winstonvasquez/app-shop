@@ -1,9 +1,10 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '@env/environment';
 import { PageResponse } from '@core/models/pagination.model';
 import { StockReservation, ReserveBody, StockReservationFiltros } from '../models/stock-reservation.model';
+import { toHttpParams } from '@core/utils/http-params.util';
 
 @Injectable({ providedIn: 'root' })
 export class StockReservationService {
@@ -16,19 +17,20 @@ export class StockReservationService {
      * fecha de expiración/liberación/consumo. Ver `StockReservationController.listar`.
      */
     listar(filtros: StockReservationFiltros = {}): Observable<PageResponse<StockReservation>> {
-        let params = new HttpParams()
-            .set('page', String(filtros.page ?? 0))
-            .set('size', String(filtros.size ?? 20));
-        if (filtros.status) params = params.set('status', filtros.status);
-        if (filtros.productoId) params = params.set('productoId', filtros.productoId);
-        if (filtros.inventarioId) params = params.set('inventarioId', filtros.inventarioId);
-        if (filtros.q) params = params.set('q', filtros.q);
-        if (filtros.expiresAtDesde) params = params.set('expiresAtDesde', filtros.expiresAtDesde);
-        if (filtros.expiresAtHasta) params = params.set('expiresAtHasta', filtros.expiresAtHasta);
-        if (filtros.releasedAtDesde) params = params.set('releasedAtDesde', filtros.releasedAtDesde);
-        if (filtros.releasedAtHasta) params = params.set('releasedAtHasta', filtros.releasedAtHasta);
-        if (filtros.consumedAtDesde) params = params.set('consumedAtDesde', filtros.consumedAtDesde);
-        if (filtros.consumedAtHasta) params = params.set('consumedAtHasta', filtros.consumedAtHasta);
+        let params = toHttpParams({
+            page: filtros.page ?? 0,
+            size: filtros.size ?? 20,
+            status: filtros.status,
+            productoId: filtros.productoId,
+            inventarioId: filtros.inventarioId,
+            q: filtros.q,
+            expiresAtDesde: filtros.expiresAtDesde,
+            expiresAtHasta: filtros.expiresAtHasta,
+            releasedAtDesde: filtros.releasedAtDesde,
+            releasedAtHasta: filtros.releasedAtHasta,
+            consumedAtDesde: filtros.consumedAtDesde,
+            consumedAtHasta: filtros.consumedAtHasta,
+        });
         return this.http.get<PageResponse<StockReservation>>(this.baseUrl, { params });
     }
 

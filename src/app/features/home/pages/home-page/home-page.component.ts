@@ -15,6 +15,7 @@ import { RecommendationsService } from '@core/services/recommendations.service';
 import { AuthService } from '@core/auth/auth.service';
 import { CartService } from '@features/cart/services/cart.service';
 import { ProductResponse } from '@core/models/product.model';
+import { mapearProductoADsProduct } from '@shared/ui/ds';
 
 const HERO_AUTO_ROTATE_MS = 6000;     // intervalo entre slides automáticos
 
@@ -197,19 +198,7 @@ export class HomePageComponent implements OnInit, OnDestroy {
         this.recommendationsService.getParaTi(usuarioId)
             .pipe(catchError(() => of<ProductResponse[]>([])))
             .subscribe((productos: ProductResponse[]) => {
-                this.paraTi.set(productos.map(p => ({
-                    id: p.id,
-                    name: p.nombre,
-                    now: p.precioBase,
-                    was: p.originalPrice,
-                    rating: p.rating,
-                    sold: p.salesCount,
-                    badge: p.badge ?? (p.discount ? p.discount
-                               : (p.stock !== undefined && p.stock <= 5 ? 'POCAS' : undefined)),
-                    shipFree: (p.precioBase ?? 0) >= 99,
-                    image: p.imagenes?.find(img => img.esPrincipal)?.url
-                        || p.imagenes?.[0]?.url,
-                })));
+                this.paraTi.set(productos.map(p => mapearProductoADsProduct(p)));
             });
     }
 }

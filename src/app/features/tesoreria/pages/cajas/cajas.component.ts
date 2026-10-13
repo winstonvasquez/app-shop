@@ -176,11 +176,10 @@ export class CajasComponent implements OnInit {
         })
             .pipe(takeUntilDestroyed(this.destroyRef))
             .subscribe({
-                next: (res: Page<CashRegister> | CashRegister[]) => {
-                    const data = Array.isArray(res) ? res : (res as Page<CashRegister>).content;
-                    this.cajas.set(data);
-                    this.totalElements.set(Array.isArray(res) ? data.length : (res as Page<CashRegister>).totalElements);
-                    this.totalPages.set(Array.isArray(res) ? 1 : (res as Page<CashRegister>).totalPages);
+                next: (res: Page<CashRegister>) => {
+                    this.cajas.set(res.content);
+                    this.totalElements.set(res.totalElements);
+                    this.totalPages.set(res.totalPages);
                     this.cargando.set(false);
                 },
                 error: () => this.cargando.set(false)

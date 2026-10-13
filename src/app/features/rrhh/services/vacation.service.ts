@@ -4,6 +4,7 @@ import { environment } from '@env/environment';
 import { firstValueFrom } from 'rxjs';
 import { PageResponse, pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 import { LeaveBalance } from '../models/leave-balance.model';
+import { toHttpParams } from '@core/utils/http-params.util';
 
 export type TipoVacacion = 'ANUAL' | 'TRUNCAS' | 'COMPENSATORIAS' | 'SIN_GOCE';
 
@@ -78,22 +79,22 @@ export class VacationService {
         Promise<{ totalElements: number; totalPages: number }> {
         this._loading.set(true);
         try {
-            const params: Record<string, string> = {
-                page: String(filtros.page ?? 0),
-                size: String(filtros.size ?? 20),
-            };
-            if (filtros.search) params['search'] = filtros.search;
-            if (filtros.estado) params['estado'] = filtros.estado;
-            if (filtros.tipoVacacion) params['tipoVacacion'] = filtros.tipoVacacion;
-            if (filtros.employeeId != null) params['employeeId'] = String(filtros.employeeId);
-            if (filtros.departmentId != null) params['departmentId'] = String(filtros.departmentId);
-            if (filtros.aprobadoPorId != null) params['aprobadoPorId'] = String(filtros.aprobadoPorId);
-            if (filtros.fechaInicioDesde) params['fechaInicioDesde'] = filtros.fechaInicioDesde;
-            if (filtros.fechaInicioHasta) params['fechaInicioHasta'] = filtros.fechaInicioHasta;
-            if (filtros.fechaFinDesde) params['fechaFinDesde'] = filtros.fechaFinDesde;
-            if (filtros.fechaFinHasta) params['fechaFinHasta'] = filtros.fechaFinHasta;
-            if (filtros.fechaAprobacionDesde) params['fechaAprobacionDesde'] = filtros.fechaAprobacionDesde;
-            if (filtros.fechaAprobacionHasta) params['fechaAprobacionHasta'] = filtros.fechaAprobacionHasta;
+            let params = toHttpParams({
+                page: filtros.page ?? 0,
+                size: filtros.size ?? 20,
+                search: filtros.search,
+                estado: filtros.estado,
+                tipoVacacion: filtros.tipoVacacion,
+                employeeId: filtros.employeeId,
+                departmentId: filtros.departmentId,
+                aprobadoPorId: filtros.aprobadoPorId,
+                fechaInicioDesde: filtros.fechaInicioDesde,
+                fechaInicioHasta: filtros.fechaInicioHasta,
+                fechaFinDesde: filtros.fechaFinDesde,
+                fechaFinHasta: filtros.fechaFinHasta,
+                fechaAprobacionDesde: filtros.fechaAprobacionDesde,
+                fechaAprobacionHasta: filtros.fechaAprobacionHasta,
+            });
             const res = await firstValueFrom(
                 this.http.get<PageResponse<VacationRequest>>(`${this.baseUrl}/paged`, { params })
             );
@@ -138,8 +139,9 @@ export class VacationService {
 
     /** Balance de vacaciones de un empleado. Si no existe balance para ese año, retorna null (404). */
     async getBalance(employeeId: number, year?: number): Promise<LeaveBalance | null> {
-        const params: Record<string, string> = {};
-        if (year != null) params['year'] = String(year);
+        let params = toHttpParams({
+            year,
+        });
         try {
             return await firstValueFrom(
                 this.http.get<LeaveBalance>(`${this.baseUrl}/balance/${employeeId}`, { params })
@@ -153,8 +155,9 @@ export class VacationService {
     async getBalancesByYear(year?: number): Promise<LeaveBalance[]> {
         this._balancesLoading.set(true);
         try {
-            const params: Record<string, string> = {};
-            if (year != null) params['year'] = String(year);
+            let params = toHttpParams({
+                year,
+            });
             const balances = await firstValueFrom(
                 this.http.get<LeaveBalance[]>(`${this.baseUrl}/balance`, { params })
             );
@@ -167,8 +170,9 @@ export class VacationService {
 
     /** Genera el balance anual para todos los empleados activos. Retorna la cantidad de balances generados. */
     async generateAnnualBalance(year?: number): Promise<number> {
-        const params: Record<string, string> = {};
-        if (year != null) params['year'] = String(year);
+        let params = toHttpParams({
+            year,
+        });
         const res = await firstValueFrom(
             this.http.post<{ generated: number }>(`${this.baseUrl}/balance/generate`, null, { params })
         );

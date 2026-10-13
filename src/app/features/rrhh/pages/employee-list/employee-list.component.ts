@@ -28,6 +28,7 @@ import { DateInputComponent } from '@shared/ui/forms/date-input/date-input.compo
 import { Router } from '@angular/router';
 import { CatalogService } from '@core/services/catalog.service';
 import { bloquearEnEdicion } from '@shared/utils/form-lock';
+import { filtrosDeEmpleado, formularioDesdeEmpleado, payloadDeEmpleado } from './employee-list.form';
 
 @Component({
     selector: 'app-employee-list',
@@ -285,28 +286,33 @@ export class EmployeeListComponent implements OnInit {
             .catch(() => this.supervisoresFiltro.set([]));
     }
 
-    /** Carga la página actual server-side (search + TODOS los filtros avanzados + 20/pág). */
-    private loadPage(): void {
-        this.employeeService.loadEmployeesPaged({
-            page: this.currentPage(),
-            size: this.pageSize(),
-            search: this.searchQuery() || undefined,
-            status: this.filterEstado() || undefined,
+    /** Estado actual del toolbar, sin traducir. La normalización a query vive en `filtrosDeEmpleado`. */
+    private estadoDeFiltros() {
+        return {
+            search: this.searchQuery(),
+            estado: this.filterEstado(),
             departmentId: this.filterDepartmentId(),
             positionId: this.filterPositionId(),
             supervisorId: this.filterSupervisorId(),
-            tipoDocumento: this.filterTipoDocumento() || undefined,
-            sistemaPrevisional: this.filterSistemaPrevisional() || undefined,
-            afpNombre: this.filterAfpNombre() || undefined,
-            genero: this.filterGenero() || undefined,
-            estadoCivil: this.filterEstadoCivil() || undefined,
+            tipoDocumento: this.filterTipoDocumento(),
+            sistemaPrevisional: this.filterSistemaPrevisional(),
+            afpNombre: this.filterAfpNombre(),
+            genero: this.filterGenero(),
+            estadoCivil: this.filterEstadoCivil(),
             fechaIngresoDesde: this.filterFechaIngresoDesde(),
             fechaIngresoHasta: this.filterFechaIngresoHasta(),
             fechaSalidaDesde: this.filterFechaSalidaDesde(),
             fechaSalidaHasta: this.filterFechaSalidaHasta(),
             fechaNacimientoDesde: this.filterFechaNacimientoDesde(),
             fechaNacimientoHasta: this.filterFechaNacimientoHasta(),
-        }).then(res => {
+        };
+    }
+
+    /** Carga la página actual server-side (search + TODOS los filtros avanzados + 20/pág). */
+    private loadPage(): void {
+        this.employeeService.loadEmployeesPaged(
+            filtrosDeEmpleado(this.estadoDeFiltros(), this.currentPage(), this.pageSize()),
+        ).then(res => {
             this.totalElements.set(res.totalElements);
             this.totalPages.set(res.totalPages);
         }).catch(err => {
@@ -408,30 +414,7 @@ export class EmployeeListComponent implements OnInit {
     openEditModal(employee: Employee): void {
         this.editMode.set(true);
         this.selectedEmployee.set(employee);
-        this.employeeForm.patchValue({
-            codigoEmpleado:     employee.codigoEmpleado,
-            nombres:            employee.nombres,
-            apellidos:          employee.apellidos,
-            documentoIdentidad: employee.documentoIdentidad,
-            tipoDocumento:      employee.tipoDocumento   ?? 'DNI',
-            fechaNacimiento:    employee.fechaNacimiento ?? '',
-            genero:             employee.genero          ?? '',
-            estadoCivil:        employee.estadoCivil     ?? '',
-            fechaIngreso:       employee.fechaIngreso,
-            cargo:              employee.cargo     ?? '',
-            area:               employee.area      ?? '',
-            email:              employee.email     ?? '',
-            telefono:           employee.telefono  ?? '',
-            estado:             employee.estado,
-            departmentId:       employee.departmentId ?? null,
-            positionId:         employee.positionId   ?? null,
-            supervisorId:       employee.supervisorId ?? null,
-            userId:             employee.userId ?? null,
-            sistemaPrevisional: employee.sistemaPrevisional ?? 'ONP',
-            afpNombre:          employee.afpNombre ?? '',
-            fechaSalida:        employee.fechaSalida ?? '',
-            motivoSalida:       employee.motivoSalida ?? '',
-        });
+        this.employeeForm.patchValue(formularioDesdeEmpleado(employee));
         bloquearEnEdicion(this.employeeForm, EmployeeListComponent.CAMPOS_BLOQUEADOS, true);
         this.submitError.set(null);
         this.showModal.set(true);
@@ -453,23 +436,16 @@ export class EmployeeListComponent implements OnInit {
             // getRawValue(): los controles bloqueados (código/documento) NO salen en
             // .value y se enviarían como null, borrando datos en el PUT.
             const val = this.employeeForm.getRawValue() as Record<string, unknown>;
-            // genero/estadoCivil son enums del backend (Employee.Gender/MaritalStatus): '' es
-            // el valor por defecto del control sin elegir, pero Jackson NO lo coacciona a null
-            // en un campo enum → 400 InvalidFormatException. Mismo patrón que
-            // employee-detail.component.ts (`v.genero || undefined`).
-            if (val['genero'] === '') val['genero'] = undefined;
-            if (val['estadoCivil'] === '') val['estadoCivil'] = undefined;
             const original = this.selectedEmployee();
+            const editando = this.editMode() && original !== null;
+            // Normalización de enums y merge con el original: ver payloadDeEmpleado.
+            const request = payloadDeEmpleado(val, editando ? original : null);
             let empleadoId: number | undefined;
-            if (this.editMode() && original) {
-                // PUT = reemplazo completo: mergeamos los campos del empleado original
-                // (género, dirección, educación, AFP, departamento/puesto/supervisor, etc.)
-                // con los editados en el form, para que el backend NO los sobrescriba a null.
-                const request = { ...original, ...val } as unknown as EmployeeRequest;
+            if (editando) {
                 await this.employeeService.updateEmployee(original.id, request);
                 empleadoId = original.id;
             } else {
-                const creado = await this.employeeService.createEmployee(val as never);
+                const creado = await this.employeeService.createEmployee(request as never);
                 empleadoId = (creado as Employee | undefined)?.id;
             }
 

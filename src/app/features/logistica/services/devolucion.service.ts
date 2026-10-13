@@ -1,8 +1,9 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Devolucion, CreateDevolucionDto } from '../models/devolucion.model';
 import { PageResponse } from '@core/models/pagination.model';
+import { toHttpParams } from '@core/utils/http-params.util';
 
 /** Filtros server-side del listado de devoluciones (`GET /logistics/api/returns`). Todos opcionales. */
 export interface DevolucionFiltros {
@@ -34,20 +35,21 @@ export class DevolucionService {
      * la vista nunca filtra la página cargada.
      */
     getDevoluciones(companyId: string, filtros: DevolucionFiltros = {}): Observable<PageResponse<Devolucion>> {
-        let params = new HttpParams()
-            .set('companyId', companyId)
-            .set('page', String(filtros.page ?? 0))
-            .set('size', String(filtros.size ?? 10));
-        if (filtros.q) params = params.set('q', filtros.q);
-        if (filtros.status) params = params.set('status', filtros.status);
-        if (filtros.reason) params = params.set('reason', filtros.reason);
-        if (filtros.warehouseId) params = params.set('warehouseId', filtros.warehouseId);
-        if (filtros.requestedAtDesde) params = params.set('requestedAtDesde', filtros.requestedAtDesde);
-        if (filtros.requestedAtHasta) params = params.set('requestedAtHasta', filtros.requestedAtHasta);
-        if (filtros.refundedAtDesde) params = params.set('refundedAtDesde', filtros.refundedAtDesde);
-        if (filtros.refundedAtHasta) params = params.set('refundedAtHasta', filtros.refundedAtHasta);
-        if (filtros.receivedAtDesde) params = params.set('receivedAtDesde', filtros.receivedAtDesde);
-        if (filtros.receivedAtHasta) params = params.set('receivedAtHasta', filtros.receivedAtHasta);
+        let params = toHttpParams({
+            companyId,
+            page: filtros.page ?? 0,
+            size: filtros.size ?? 10,
+            q: filtros.q,
+            status: filtros.status,
+            reason: filtros.reason,
+            warehouseId: filtros.warehouseId,
+            requestedAtDesde: filtros.requestedAtDesde,
+            requestedAtHasta: filtros.requestedAtHasta,
+            refundedAtDesde: filtros.refundedAtDesde,
+            refundedAtHasta: filtros.refundedAtHasta,
+            receivedAtDesde: filtros.receivedAtDesde,
+            receivedAtHasta: filtros.receivedAtHasta,
+        });
         return this.http.get<PageResponse<Devolucion>>(this.baseUrl, { params });
     }
 

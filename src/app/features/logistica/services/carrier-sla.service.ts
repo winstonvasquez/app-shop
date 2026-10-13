@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '@env/environment';
 import {
@@ -10,6 +10,7 @@ import {
     CarrierRecommendation,
     RecommendationParams
 } from '../models/carrier-sla.model';
+import { toHttpParams } from '@core/utils/http-params.util';
 
 /**
  * Servicio de SLA/performance/recomendación de transportistas.
@@ -57,11 +58,12 @@ export class CarrierSlaService {
      * TenantContext (JWT) — ver CarrierController.recommend().
      */
     recommend(params: RecommendationParams): Observable<CarrierRecommendation[]> {
-        let httpParams = new HttpParams()
-            .set('departamento', params.departamento)
-            .set('weight', String(params.weight));
-        if (params.provincia) httpParams = httpParams.set('provincia', params.provincia);
-        if (params.serviceType) httpParams = httpParams.set('serviceType', params.serviceType);
+        let httpParams = toHttpParams({
+            departamento: params.departamento,
+            weight: params.weight,
+            provincia: params.provincia,
+            serviceType: params.serviceType,
+        });
         return this.http.get<CarrierRecommendation[]>(`${this.baseUrl}/recommend`, { params: httpParams });
     }
 }

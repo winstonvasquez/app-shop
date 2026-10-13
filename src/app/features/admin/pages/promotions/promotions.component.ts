@@ -24,6 +24,8 @@ import { bloquearEnEdicion, bloquearSiempre } from '@shared/utils/form-lock';
 import { ProductService } from '@core/services/product.service';
 import { CategoryService } from '@core/services/category.service';
 import { productoSelectSource } from '@features/admin/components/select-sources';
+import { mensajeDeErrorDeControl } from '@shared/utils/form-errors';
+import { construirPromocionRequest, PromocionRequest } from './promotions.form';
 
 type EstadoPromocion = 'ACTIVA' | 'INACTIVA' | 'VENCIDA';
 
@@ -417,10 +419,7 @@ export class PromotionsComponent implements OnInit {
 
     err(field: string): string {
         const c = this.form.get(field);
-        if (!c || c.pristine || c.valid) return '';
-        if (c.hasError('required')) return 'Campo requerido';
-        if (c.hasError('min'))      return `Valor mínimo: ${c.getError('min').min}`;
-        return 'Campo inválido';
+        return !c || c.pristine || c.valid ? '' : mensajeDeErrorDeControl(c);
     }
 
     onSubmit(): void {
@@ -429,23 +428,7 @@ export class PromotionsComponent implements OnInit {
             return;
         }
 
-        const v = this.form.getRawValue();
-
-        const dto: Omit<Promocion, 'id' | 'usosActuales'> = {
-            nombre:      v.nombre!,
-            descripcion: v.descripcion || undefined,
-            tipo:        v.tipo as Promocion['tipo'],
-            valor:       v.valor!,
-            alcance:     v.alcance as Promocion['alcance'],
-            productoId:  v.alcance === 'PRODUCTO' ? v.productoId : null,
-            categoriaId: v.alcance === 'CATEGORIA' ? (v.categoriaId != null ? Number(v.categoriaId) : null) : null,
-            montoMinimo: v.alcance === 'CARRITO' ? v.montoMinimo : null,
-            codigoCupon: v.codigoCupon || undefined,
-            limiteUsos:  v.limiteUsos ?? undefined,
-            fechaInicio: v.fechaInicio!,
-            fechaFin:    v.fechaFin!,
-            activo:      v.activo ?? true,
-        };
+        const dto: PromocionRequest = construirPromocionRequest(this.form.getRawValue());
 
         this.guardando.set(true);
         this.submitError.set('');

@@ -1,6 +1,6 @@
 import { Component, OnInit, ChangeDetectionStrategy, signal, inject } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
-import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { map } from 'rxjs';
 import { environment } from '@env/environment';
 import { AuthService } from '@core/auth/auth.service';
@@ -17,6 +17,8 @@ import { ProveedorService, ProveedorFiltroOption, toProveedorOptions } from '../
 import { proveedorSelectSource } from '../../components/select-sources';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { bloquearEnEdicion } from '@shared/utils/form-lock';
+import { toHttpParams } from '@core/utils/http-params.util';
+import { adaptSpringPage } from '@core/models/pagination.model';
 
 interface ContratoDto {
     id: string;
@@ -194,29 +196,22 @@ export class ContratosComponent implements OnInit {
 
     cargar(): void {
         this.cargando.set(true);
-        let params = new HttpParams()
-            .set('page', this.currentPage().toString())
-            .set('size', this.pageSize().toString());
-        if (this.filtroEstado()) params = params.set('estado', this.filtroEstado());
-        if (this.searchQuery()) params = params.set('search', this.searchQuery());
-        if (this.filterMoneda()) params = params.set('moneda', this.filterMoneda());
-        if (this.filterProveedorId()) params = params.set('proveedorId', this.filterProveedorId());
-        if (this.filterRenovacionAutomatica()) params = params.set('renovacionAutomatica', this.filterRenovacionAutomatica());
-        if (this.filterFechaInicioDesde()) params = params.set('fechaInicioDesde', this.filterFechaInicioDesde()!);
-        if (this.filterFechaInicioHasta()) params = params.set('fechaInicioHasta', this.filterFechaInicioHasta()!);
-        if (this.filterFechaFinDesde()) params = params.set('fechaFinDesde', this.filterFechaFinDesde()!);
-        if (this.filterFechaFinHasta()) params = params.set('fechaFinHasta', this.filterFechaFinHasta()!);
+        let params = toHttpParams({
+            page: this.currentPage(),
+            size: this.pageSize(),
+            estado: this.filtroEstado(),
+            search: this.searchQuery(),
+            moneda: this.filterMoneda(),
+            proveedorId: this.filterProveedorId(),
+            renovacionAutomatica: this.filterRenovacionAutomatica(),
+            fechaInicioDesde: this.filterFechaInicioDesde() ? this.filterFechaInicioDesde()! : undefined,
+            fechaInicioHasta: this.filterFechaInicioHasta() ? this.filterFechaInicioHasta()! : undefined,
+            fechaFinDesde: this.filterFechaFinDesde() ? this.filterFechaFinDesde()! : undefined,
+            fechaFinHasta: this.filterFechaFinHasta() ? this.filterFechaFinHasta()! : undefined,
+        });
 
         this.http.get<unknown>(this.baseUrl, { params, headers: this.getHeaders() }).pipe(
-            map((raw: unknown) => {
-                const r = raw as Record<string, unknown>;
-                const nested = r['page'] as Record<string, unknown> | undefined;
-                return {
-                    content: (r['content'] as ContratoDto[]) ?? [],
-                    totalElements: (r['totalElements'] as number) ?? (nested?.['totalElements'] as number) ?? 0,
-                    totalPages: (r['totalPages'] as number) ?? (nested?.['totalPages'] as number) ?? 0,
-                };
-            })
+            map((raw: unknown) => adaptSpringPage<ContratoDto>(raw, this.currentPage(), this.pageSize()))
         ).subscribe({
             next: (page) => {
                 this.contratos.set(page.content);

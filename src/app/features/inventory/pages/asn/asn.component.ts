@@ -1,8 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators, FormGroup, FormControl } from '@angular/forms';
-import {
-    InventoryApiService, Asn, CreateAsnLineRequest, ReceiveAsnLine
-} from '../../services/inventory-api.service';
+import { InventoryApiService, Asn } from '../../services/inventory-api.service';
 import { Warehouse } from '../../models/inventory.models';
 import {
     DataTableComponent, TableColumn, TableAction, PaginationEvent, FilterConfig, FilterChangeEvent,
@@ -24,15 +22,8 @@ import { environment } from '@env/environment';
 import { CatalogService } from '@core/services/catalog.service';
 import { warehouseSelectSource } from '../../components/select-sources';
 import { ProveedorService, toProveedorOptions } from '@features/compras/services/proveedor.service';
-
-/** Línea en construcción dentro del drawer de creación. */
-interface AsnLineDraft {
-    productId: number;
-    productName: string;
-    sku?: string;
-    expectedQuantity: number;
-    unitCost?: number;
-}
+import { asnFiltrosParams } from './asn.params';
+import { AsnLineDraft, asnCrearPayload, asnRecibirLineas } from './asn.form';
 
 type AsnRow = Asn & { warehouseName: string };
 
@@ -248,19 +239,24 @@ export class AsnComponent {
     readonly exportConfig: BackendExportConfig = {
         url: `${environment.apiUrls.inventory}/api/inventory/asn/export`,
         filename: 'asn',
-        params: () => ({
-            q: this.searchQuery() || undefined,
-            status: this.filterStatus() || undefined,
-            warehouseId: this.filterWarehouseId() || undefined,
-            supplierName: this.filterSupplierName() || undefined,
-            expectedDesde: this.filterExpectedDesde() ?? undefined,
-            expectedHasta: this.filterExpectedHasta() ?? undefined,
-            receivedDesde: this.filterReceivedDesde() ?? undefined,
-            receivedHasta: this.filterReceivedHasta() ?? undefined,
-            createdDesde: this.filterCreatedDesde() ?? undefined,
-            createdHasta: this.filterCreatedHasta() ?? undefined
-        })
+        params: () => asnFiltrosParams(this.filtrosUI())
     };
+
+    /** Los filtros del toolbar en un objeto plano — misma fuente para el listado y la exportación. */
+    private filtrosUI() {
+        return {
+            q: this.searchQuery(),
+            status: this.filterStatus(),
+            warehouseId: this.filterWarehouseId(),
+            supplierName: this.filterSupplierName(),
+            expectedDesde: this.filterExpectedDesde(),
+            expectedHasta: this.filterExpectedHasta(),
+            receivedDesde: this.filterReceivedDesde(),
+            receivedHasta: this.filterReceivedHasta(),
+            createdDesde: this.filterCreatedDesde(),
+            createdHasta: this.filterCreatedHasta()
+        };
+    }
 
     // create
     showCreate = signal(false);
@@ -350,16 +346,7 @@ export class AsnComponent {
         this.api.getAsnList({
             page: this.currentPage(),
             size: this.pageSize(),
-            q: this.searchQuery() || undefined,
-            status: this.filterStatus() || undefined,
-            warehouseId: this.filterWarehouseId() ? Number(this.filterWarehouseId()) : undefined,
-            supplierName: this.filterSupplierName() || undefined,
-            expectedDesde: this.filterExpectedDesde() || undefined,
-            expectedHasta: this.filterExpectedHasta() || undefined,
-            receivedDesde: this.filterReceivedDesde() || undefined,
-            receivedHasta: this.filterReceivedHasta() || undefined,
-            createdDesde: this.filterCreatedDesde() || undefined,
-            createdHasta: this.filterCreatedHasta() || undefined
+            ...asnFiltrosParams(this.filtrosUI())
         }).subscribe({
             next: (res) => {
                 this.asns.set(res.content);
@@ -465,21 +452,8 @@ export class AsnComponent {
         if (this.submittingCreate()) return;
         if (this.form.invalid || this.createLines().length === 0) { this.form.markAllAsTouched(); return; }
         const v = this.form.getRawValue();
-        const lines: CreateAsnLineRequest[] = this.createLines().map(l => ({
-            productId: l.productId,
-            productName: l.productName,
-            expectedQuantity: Number(l.expectedQuantity),
-            unitCost: l.unitCost != null ? Number(l.unitCost) : undefined
-        }));
         this.submittingCreate.set(true);
-        this.api.createAsn({
-            supplierName: v.supplierName || undefined,
-            referenceDocument: v.referenceDocument || undefined,
-            warehouseId: Number(v.warehouseId),
-            expectedDate: v.expectedDate || undefined,
-            notes: v.notes || undefined,
-            lines
-        }).subscribe({
+        this.api.createAsn(asnCrearPayload(v, this.createLines())).subscribe({
             next: (asn) => {
                 this.submittingCreate.set(false);
                 this.closeCreate();
@@ -509,11 +483,7 @@ export class AsnComponent {
     submitReceive(): void {
         const asn = this.receiveTarget();
         if (!asn) return;
-        const q = this.receiveQty();
-        const lines: ReceiveAsnLine[] = asn.lines.map(l => ({
-            lineId: l.id,
-            receivedQuantity: q[l.id] ?? l.expectedQuantity
-        }));
+        const lines = asnRecibirLineas(asn.lines, this.receiveQty());
         this.submittingReceive.set(true);
         this.api.receiveAsn(asn.id, { lines }).subscribe({
             next: (updated) => {

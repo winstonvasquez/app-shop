@@ -1,5 +1,6 @@
 import { Component, input, computed, ChangeDetectionStrategy } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { mensajeDeErrorDeControl } from '@shared/utils/form-errors';
 
 /**
  * Campo de formulario canónico — label + input (proyectado o propio) + mensaje de error.
@@ -50,24 +51,7 @@ export class FormFieldComponent {
         // Error externo (string) tiene precedencia
         if (this.hasExternalError()) return this.error();
 
-        const ctrl = this.control();
-        if (!ctrl || !this.hasControlError()) return '';
-
-        const errors = ctrl.errors;
-        if (!errors) return '';
-
-        if (errors['required']) return 'Este campo es requerido';
-        if (errors['email']) return 'Email inválido';
-        if (errors['minlength']) {
-            return `Mínimo ${errors['minlength'].requiredLength} caracteres`;
-        }
-        if (errors['maxlength']) {
-            return `Máximo ${errors['maxlength'].requiredLength} caracteres`;
-        }
-        if (errors['min']) return `Valor mínimo: ${errors['min'].min}`;
-        if (errors['max']) return `Valor máximo: ${errors['max'].max}`;
-        if (errors['pattern']) return 'Formato inválido';
-
-        return 'Campo inválido';
+        if (!this.hasControlError()) return '';
+        return mensajeDeErrorDeControl(this.control());
     });
 }

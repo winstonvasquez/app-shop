@@ -54,6 +54,7 @@ import {
 import { ProductLookupComponent } from '../../../inventory/components/product-lookup/product-lookup.component';
 import { ProductResponse } from '@core/models/product.model';
 import { productIdToUuid } from '../../../inventory/utils/synthetic-uuid.util';
+import { claseBadgeEstadoCotizacion, construirCotizacionRequest } from './cotizaciones.form';
 
 /** Al menos un proveedor seleccionado — `Validators.required` no alcanza para arrays (`[]` no es "vacío" para Angular). */
 function proveedoresRequeridosValidator(control: AbstractControl): ValidationErrors | null {
@@ -452,20 +453,7 @@ export class CotizacionesComponent implements OnInit {
         // getRawValue(): el form tiene campos bloqueados (`codigo`) que no aparecen en `.value`.
         const formValue = this.cotizacionForm.getRawValue();
 
-        const request: CrearCotizacionRequest = {
-            titulo: formValue.titulo ?? '',
-            descripcion: formValue.descripcion ?? undefined,
-            fechaVencimiento: formValue.fechaVencimiento ?? '',
-            proveedorIds: (formValue.proveedorIds ?? []).filter((id): id is string => !!id),
-            items: (formValue.items ?? []).map((i: Record<string, unknown>) => ({
-                productoId: (i['productoId'] as string) || undefined,
-                productoNombre: i['productoNombre'] as string,
-                sku: (i['sku'] as string) || undefined,
-                cantidad: Number(i['cantidad']),
-                unidadMedida: (i['unidadMedida'] as string) || 'UNIDAD',
-                especificaciones: (i['especificaciones'] as string) || undefined,
-            })),
-        };
+        const request: CrearCotizacionRequest = construirCotizacionRequest(formValue);
 
         this.submitting.set(true);
         this.submitError.set(null);
@@ -492,20 +480,9 @@ export class CotizacionesComponent implements OnInit {
         // getRawValue(): `codigo` está deshabilitado en edición y no aparecería en `.value`.
         const formValue = this.cotizacionForm.getRawValue();
 
-        const request: ActualizarCotizacionRequest = {
-            titulo: formValue.titulo ?? '',
-            descripcion: formValue.descripcion ?? undefined,
-            fechaVencimiento: formValue.fechaVencimiento ?? '',
-            items: (formValue.items ?? []).map((i: Record<string, unknown>) => ({
-                productoId: (i['productoId'] as string) || undefined,
-                productoNombre: i['productoNombre'] as string,
-                sku: (i['sku'] as string) || undefined,
-                cantidad: Number(i['cantidad']),
-                unidadMedida: (i['unidadMedida'] as string) || 'UNIDAD',
-                especificaciones: (i['especificaciones'] as string) || undefined,
-            })),
-            proveedorIds: (formValue.proveedorIds ?? []).filter((id): id is string => !!id),
-        };
+        // Mismo builder que el alta: ActualizarCotizacionRequest tiene la misma forma
+        // que CrearCotizacionRequest, y en ambos `items`/`proveedorIds` reemplazan la lista.
+        const request: ActualizarCotizacionRequest = construirCotizacionRequest(formValue);
 
         this.submitting.set(true);
         this.submitError.set(null);
@@ -695,15 +672,7 @@ export class CotizacionesComponent implements OnInit {
     }
 
     getBadgeClass(estado: string): string {
-        switch (estado) {
-            case 'CREADA': return 'badge badge-neutral';
-            case 'ENVIADA': return 'badge badge-accent';
-            case 'EN_RESPUESTA': return 'badge badge-warning';
-            case 'ADJUDICADA': return 'badge badge-success';
-            case 'CONVERTIDA_OC': return 'badge badge-success';
-            case 'CANCELADA': return 'badge badge-error';
-            default: return 'badge badge-neutral';
-        }
+        return claseBadgeEstadoCotizacion(estado);
     }
 
     isMinPrecio(precio: number | null, precios: (number | null)[]): boolean {

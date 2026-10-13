@@ -4,18 +4,11 @@ import {
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '@env/environment';
+import { BannerForm, cuerpoDeBanner, validarBanner } from './slider-manager.form';
 
-interface Banner {
-    id:        number;
-    titulo:    string;
-    subtitulo: string;
-    imagenUrl: string;
-    link:      string;
-    orden:     number;
-    activo:    boolean;
+interface Banner extends BannerForm {
+    id: number;
 }
-
-type BannerForm = Omit<Banner, 'id'>;
 
 const EMPTY_FORM = (): BannerForm => ({
     titulo: '', subtitulo: '', imagenUrl: '', link: '', orden: 0, activo: true,
@@ -432,32 +425,31 @@ export class SliderManagerComponent implements OnInit {
     save(): void {
         const f = this.form();
         const file = this.pendingFile();
-        if (!f.titulo.trim()) { this.errorMsg.set('El título es obligatorio.'); return; }
-        if (!file && !f.imagenUrl.trim()) { this.errorMsg.set('Seleccioná una imagen o ingresá una URL.'); return; }
+        const error = validarBanner(f, !!file);
+        if (error) { this.errorMsg.set(error); return; }
 
         this.saving.set(true);
         this.clearMessages();
         const id = this.editingId();
-        const body = { ...f, imagenUrl: f.imagenUrl || null };
+        const body = cuerpoDeBanner(f);
 
         const req$ = id
             ? this.http.put<Banner>(`${this.baseUrl}/${id}`, body)
             : this.http.post<Banner>(this.baseUrl, body);
 
+        const finalizar = (): void => {
+            this.saving.set(false);
+            this.showModal.set(false);
+            this.successMsg.set(id ? 'Banner actualizado.' : 'Banner creado.');
+            this.loadBanners();
+        };
+
         req$.subscribe({
             next: (saved) => {
                 if (file && saved.id) {
-                    this.uploadImageToBanner(saved.id, file, () => {
-                        this.saving.set(false);
-                        this.showModal.set(false);
-                        this.successMsg.set(id ? 'Banner actualizado.' : 'Banner creado.');
-                        this.loadBanners();
-                    });
+                    this.uploadImageToBanner(saved.id, file, finalizar);
                 } else {
-                    this.saving.set(false);
-                    this.showModal.set(false);
-                    this.successMsg.set(id ? 'Banner actualizado.' : 'Banner creado.');
-                    this.loadBanners();
+                    finalizar();
                 }
             },
             error: () => { this.saving.set(false); this.errorMsg.set('Error al guardar el banner.'); },

@@ -22,6 +22,7 @@ import { AdminFormSectionComponent } from '@shared/ui/forms/admin-form-section/a
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { ButtonComponent, DrawerComponent, ServerSearchSelectComponent } from '@shared/components';
+import { mensajeDeErrorDeControl } from '@shared/utils/form-errors';
 
 type DetailTab = 'perfil' | 'modulos' | 'usuarios' | 'suscripcion';
 
@@ -258,9 +259,7 @@ export class CompanyDetailComponent implements OnInit {
     /** Helper canónico de errores para assignForm. */
     assignErr(field: string): string {
         const c = this.assignForm.get(field);
-        if (!c || c.pristine || c.valid) return '';
-        if (c.hasError('required')) return 'Campo requerido';
-        return 'Campo inválido';
+        return !c || c.pristine || c.valid ? '' : mensajeDeErrorDeControl(c);
     }
 
     // ── Private ─────────────────────────────────────────────────

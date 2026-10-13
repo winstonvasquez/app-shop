@@ -18,6 +18,7 @@ import {
     CustomerDireccionRequest,
     CustomerContactoRequest,
 } from '@features/admin/models/customer.model';
+import { mensajeDeErrorDeControl } from '@shared/utils/form-errors';
 
 @Component({
     selector: 'app-customer-detail',
@@ -197,17 +198,12 @@ export class CustomerDetailComponent implements OnInit {
     // ── Error helpers ───────────────────────────────────────────────────────
     errDir(field: string): string {
         const c = this.dirForm.get(field);
-        if (!c || c.pristine || c.valid) return '';
-        if (c.hasError('required')) return 'Campo requerido';
-        return 'Campo inválido';
+        return !c || c.pristine || c.valid ? '' : mensajeDeErrorDeControl(c);
     }
 
     errCt(field: string): string {
         const c = this.ctForm.get(field);
-        if (!c || c.pristine || c.valid) return '';
-        if (c.hasError('required')) return 'Campo requerido';
-        if (c.hasError('email')) return 'Email inválido';
-        return 'Campo inválido';
+        return !c || c.pristine || c.valid ? '' : mensajeDeErrorDeControl(c);
     }
 
     // ── CRUD direcciones ────────────────────────────────────────────────────

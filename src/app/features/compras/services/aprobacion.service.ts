@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { environment } from '@env/environment';
 import { AuthService } from '@core/auth/auth.service';
 import { AprobacionPendiente, ConfigAprobacionRequest, NivelAprobacion } from '../models/aprobacion.model';
+import { toHttpParams } from '@core/utils/http-params.util';
 
 @Injectable({ providedIn: 'root' })
 export class AprobacionService {
@@ -54,10 +55,9 @@ export class AprobacionService {
 
     /** `activo` undefined = sin filtrar (activos + inactivos, necesario para reactivar). */
     getNiveles(activo?: boolean): Observable<NivelAprobacion[]> {
-        let params = new HttpParams();
-        if (activo !== undefined) {
-            params = params.set('activo', String(activo));
-        }
+        let params = toHttpParams({
+            activo,
+        });
         return this.http.get<NivelAprobacion[]>(`${this.baseUrl}/config/niveles-aprobacion`, {
             headers: this.getHeaders(),
             params,

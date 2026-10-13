@@ -21,6 +21,7 @@ import {
     SegmentRequest,
     SEGMENT_COLOR_OPTIONS
 } from '@features/admin/models/segment.model';
+import { mensajeDeErrorDeControl } from '@shared/utils/form-errors';
 
 @Component({
     selector: 'app-segments',
@@ -270,9 +271,6 @@ export class SegmentsComponent implements OnInit {
 
     getErrorMessage(controlName: string): string {
         const control = this.segmentForm.get(controlName);
-        if (!control || !control.errors || !control.touched) return '';
-        if (control.errors['required'])  return 'Este campo es obligatorio';
-        if (control.errors['maxlength']) return `Máximo ${control.errors['maxlength'].requiredLength} caracteres`;
-        return 'Campo inválido';
+        return !control?.touched ? '' : mensajeDeErrorDeControl(control);
     }
 }

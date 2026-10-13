@@ -5,6 +5,7 @@ import { environment } from '../../../../environments/environment';
 import { AuthService } from '../../../core/auth/auth.service';
 import { FinancialMovement } from '../models/tesoreria.model';
 import { PageResponse } from '@core/models/pagination.model';
+import { toHttpParams } from '@core/utils/http-params.util';
 
 export interface FinancialMovementRequest {
     tenantId: number;
@@ -52,20 +53,19 @@ export class MovimientosFinancierosService {
         page?: number;
         size?: number;
     }): Observable<PageResponse<FinancialMovement>> {
-        let httpParams = new HttpParams().set('tenantId', this.tenantId);
-
-        httpParams = httpParams
-            .set('page', (params?.page ?? 0).toString())
-            .set('size', (params?.size ?? 20).toString());
-
-        if (params?.fechaDesde) httpParams = httpParams.set('fechaDesde', params.fechaDesde);
-        if (params?.fechaHasta) httpParams = httpParams.set('fechaHasta', params.fechaHasta);
-        if (params?.tipoMovimiento) httpParams = httpParams.set('tipoMovimiento', params.tipoMovimiento);
-        if (params?.origen) httpParams = httpParams.set('origen', params.origen);
-        if (params?.moneda) httpParams = httpParams.set('moneda', params.moneda);
-        if (params?.origenId) httpParams = httpParams.set('origenId', params.origenId);
-        if (params?.usuarioId) httpParams = httpParams.set('usuarioId', params.usuarioId);
-        if (params?.q) httpParams = httpParams.set('q', params.q);
+        let httpParams = toHttpParams({
+            tenantId: this.tenantId,
+            page: params?.page ?? 0,
+            size: params?.size ?? 20,
+            fechaDesde: params?.fechaDesde,
+            fechaHasta: params?.fechaHasta,
+            tipoMovimiento: params?.tipoMovimiento,
+            origen: params?.origen,
+            moneda: params?.moneda,
+            origenId: params?.origenId,
+            usuarioId: params?.usuarioId,
+            q: params?.q,
+        });
 
         return this.http.get<PageResponse<FinancialMovement>>(this.apiUrl, { params: httpParams });
     }

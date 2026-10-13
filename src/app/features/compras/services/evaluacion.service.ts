@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { environment } from '@env/environment';
@@ -9,6 +9,8 @@ import {
     CrearEvaluacionRequest, EvaluacionProveedor,
     HistorialPrecio, PresupuestoCompras, PuntoReorden
 } from '../models/evaluacion.model';
+import { toHttpParams } from '@core/utils/http-params.util';
+import { adaptSpringPage } from '@core/models/pagination.model';
 
 /** Filtros server-side del listado general de evaluaciones. Todos opcionales. */
 export interface EvaluacionFiltros {
@@ -90,20 +92,6 @@ export class EvaluacionService {
     }
 
     /** Adapta la respuesta cruda de Spring Page (shape flat o nested bajo `page`) a `Page<T>`. */
-    private static adaptPage<T>(raw: unknown, page: number, size: number): Page<T> {
-        const r = raw as Record<string, unknown>;
-        const nested = r['page'] as Record<string, unknown> | undefined;
-        return {
-            content: (r['content'] as T[]) ?? [],
-            totalElements: (r['totalElements'] as number) ?? (nested?.['totalElements'] as number) ?? 0,
-            totalPages: (r['totalPages'] as number) ?? (nested?.['totalPages'] as number) ?? 0,
-            size: (r['size'] as number) ?? (nested?.['size'] as number) ?? size,
-            number: (r['number'] as number) ?? (nested?.['number'] as number) ?? page,
-            first: !!(r['first'] as boolean),
-            last: !!(r['last'] as boolean),
-            empty: !!(r['empty'] as boolean),
-        } as Page<T>;
-    }
 
     // ── Evaluaciones ──────────────────────────────────────────────────────────
 
@@ -122,23 +110,21 @@ export class EvaluacionService {
         const page = filtros.page ?? 0;
         const size = filtros.size ?? 10;
 
-        let params = new HttpParams()
-            .set('page', page.toString())
-            .set('size', size.toString());
-
-        if (filtros.q) params = params.set('q', filtros.q);
-        if (filtros.proveedorId) params = params.set('proveedorId', filtros.proveedorId);
-        if (filtros.nivel) params = params.set('nivel', filtros.nivel);
-        if (filtros.periodo) params = params.set('periodo', filtros.periodo);
-        if (filtros.evaluadoPor) params = params.set('evaluadoPor', filtros.evaluadoPor);
-        if (filtros.createdAtDesde) params = params.set('createdAtDesde', filtros.createdAtDesde);
-        if (filtros.createdAtHasta) params = params.set('createdAtHasta', filtros.createdAtHasta);
-        if (filtros.sortField) {
-            params = params.set('sort', `${filtros.sortField},${filtros.sortDirection ?? 'desc'}`);
-        }
+        let params = toHttpParams({
+            page,
+            size,
+            q: filtros.q,
+            proveedorId: filtros.proveedorId,
+            nivel: filtros.nivel,
+            periodo: filtros.periodo,
+            evaluadoPor: filtros.evaluadoPor,
+            createdAtDesde: filtros.createdAtDesde,
+            createdAtHasta: filtros.createdAtHasta,
+            sort: filtros.sortField ? `${filtros.sortField},${filtros.sortDirection ?? 'desc'}` : undefined,
+        });
 
         return this.http.get<unknown>(`${this.baseUrl}/api/evaluaciones`, { headers: this.getHeaders(), params }).pipe(
-            map((raw: unknown) => EvaluacionService.adaptPage<EvaluacionProveedor>(raw, page, size))
+            map((raw: unknown) => adaptSpringPage<EvaluacionProveedor>(raw, page, size))
         );
     }
 
@@ -146,12 +132,13 @@ export class EvaluacionService {
 
     /** El endpoint NO pagina (devuelve List<> completa filtrada). */
     listarPresupuestos(filtros: PresupuestoFiltros = {}): Observable<PresupuestoCompras[]> {
-        let params = new HttpParams();
-        if (filtros.categoria) params = params.set('categoria', filtros.categoria);
-        if (filtros.estado) params = params.set('estado', filtros.estado);
-        if (filtros.periodo) params = params.set('periodo', filtros.periodo);
-        if (filtros.periodoDesde) params = params.set('periodoDesde', filtros.periodoDesde);
-        if (filtros.periodoHasta) params = params.set('periodoHasta', filtros.periodoHasta);
+        let params = toHttpParams({
+            categoria: filtros.categoria,
+            estado: filtros.estado,
+            periodo: filtros.periodo,
+            periodoDesde: filtros.periodoDesde,
+            periodoHasta: filtros.periodoHasta,
+        });
         return this.http.get<PresupuestoCompras[]>(
             `${this.baseUrl}/api/presupuestos`,
             { headers: this.getHeaders(), params });
@@ -188,23 +175,23 @@ export class EvaluacionService {
         const page = filtros.page ?? 0;
         const size = filtros.size ?? 10;
 
-        let params = new HttpParams()
-            .set('page', page.toString())
-            .set('size', size.toString());
-
-        if (filtros.q) params = params.set('q', filtros.q);
-        if (filtros.proveedorId) params = params.set('proveedorId', filtros.proveedorId);
-        if (filtros.activo !== undefined && filtros.activo !== null) params = params.set('activo', String(filtros.activo));
-        if (filtros.soloAlerta) params = params.set('soloAlerta', String(filtros.soloAlerta));
-        if (filtros.situacionStock) params = params.set('situacionStock', filtros.situacionStock);
-        if (filtros.updatedAtDesde) params = params.set('updatedAtDesde', filtros.updatedAtDesde);
-        if (filtros.updatedAtHasta) params = params.set('updatedAtHasta', filtros.updatedAtHasta);
-        if (filtros.sortField) {
-            params = params.set('sort', `${filtros.sortField},${filtros.sortDirection ?? 'desc'}`);
-        }
+        let params = toHttpParams({
+            page,
+            size,
+            q: filtros.q,
+            proveedorId: filtros.proveedorId,
+            activo: filtros.activo,
+            // `soloAlerta` es booleano y `false` significa «no filtrar», no «filtrar por false»:
+            // sin este `|| undefined` viajaría `soloAlerta=false` y el backend acotaría de más.
+            soloAlerta: filtros.soloAlerta || undefined,
+            situacionStock: filtros.situacionStock,
+            updatedAtDesde: filtros.updatedAtDesde,
+            updatedAtHasta: filtros.updatedAtHasta,
+            sort: filtros.sortField ? `${filtros.sortField},${filtros.sortDirection ?? 'desc'}` : undefined,
+        });
 
         return this.http.get<unknown>(`${this.baseUrl}/api/puntos-reorden`, { headers: this.getHeaders(), params }).pipe(
-            map((raw: unknown) => EvaluacionService.adaptPage<PuntoReorden>(raw, page, size))
+            map((raw: unknown) => adaptSpringPage<PuntoReorden>(raw, page, size))
         );
     }
 
@@ -257,23 +244,21 @@ export class EvaluacionService {
         const page = filtros.page ?? 0;
         const size = filtros.size ?? 10;
 
-        let params = new HttpParams()
-            .set('page', page.toString())
-            .set('size', size.toString());
-
-        if (filtros.q) params = params.set('q', filtros.q);
-        if (filtros.sku) params = params.set('sku', filtros.sku);
-        if (filtros.productoId) params = params.set('productoId', filtros.productoId);
-        if (filtros.proveedorId) params = params.set('proveedorId', filtros.proveedorId);
-        if (filtros.moneda) params = params.set('moneda', filtros.moneda);
-        if (filtros.fechaReferenciaDesde) params = params.set('fechaReferenciaDesde', filtros.fechaReferenciaDesde);
-        if (filtros.fechaReferenciaHasta) params = params.set('fechaReferenciaHasta', filtros.fechaReferenciaHasta);
-        if (filtros.sortField) {
-            params = params.set('sort', `${filtros.sortField},${filtros.sortDirection ?? 'desc'}`);
-        }
+        let params = toHttpParams({
+            page,
+            size,
+            q: filtros.q,
+            sku: filtros.sku,
+            productoId: filtros.productoId,
+            proveedorId: filtros.proveedorId,
+            moneda: filtros.moneda,
+            fechaReferenciaDesde: filtros.fechaReferenciaDesde,
+            fechaReferenciaHasta: filtros.fechaReferenciaHasta,
+            sort: filtros.sortField ? `${filtros.sortField},${filtros.sortDirection ?? 'desc'}` : undefined,
+        });
 
         return this.http.get<unknown>(`${this.baseUrl}/api/historial-precios`, { headers: this.getHeaders(), params }).pipe(
-            map((raw: unknown) => EvaluacionService.adaptPage<HistorialPrecio>(raw, page, size))
+            map((raw: unknown) => adaptSpringPage<HistorialPrecio>(raw, page, size))
         );
     }
 

@@ -13,6 +13,8 @@ import {
     CompanySubscriptionResponse,
     CompanyModuleResponse
 } from '@features/admin/models/company.model';
+import { mensajeDeErrorHttp, detalleDelBackend } from '@core/utils/http-error.util';
+import { toHttpParams } from '@core/utils/http-params.util';
 
 @Injectable({
     providedIn: 'root'
@@ -40,11 +42,14 @@ export class CompanyService {
         fechaCreacionDesde?: string | null,
         fechaCreacionHasta?: string | null
     ): Observable<PageResponse<CompanyResponse>> {
-        let params: Record<string, string> = { page: String(page), size: String(size) };
-        if (search) params['search'] = search;
-        if (active !== null && active !== undefined) params['active'] = String(active);
-        if (fechaCreacionDesde) params['fechaCreacionDesde'] = fechaCreacionDesde;
-        if (fechaCreacionHasta) params['fechaCreacionHasta'] = fechaCreacionHasta;
+        let params = toHttpParams({
+            page,
+            size,
+            search,
+            active: active !== null && active !== undefined ? active : undefined,
+            fechaCreacionDesde,
+            fechaCreacionHasta,
+        });
         return this.http
             .get<PageResponse<CompanyResponse>>(`${this.baseUrl}/paged`, { params })
             .pipe(catchError(this.handleError));
@@ -164,30 +169,13 @@ export class CompanyService {
      * Handle HTTP errors
      */
     private handleError(error: HttpErrorResponse): Observable<never> {
-        let errorMessage = 'Ocurrió un error desconocido';
-
-        if (error.error instanceof ErrorEvent) {
-            // Client-side error
-            errorMessage = `Error: ${error.error.message}`;
-        } else {
-            // Server-side error
-            if (error.status === 0) {
-                errorMessage = 'No se pudo conectar con el servidor';
-            } else if (error.status === HTTP_STATUS.badRequest) {
-                errorMessage = error.error?.message || 'Datos inválidos';
-            } else if (error.status === HTTP_STATUS.notFound) {
-                errorMessage = 'Empresa no encontrada';
-            } else if (error.status === HTTP_STATUS.conflict) {
-                errorMessage = error.error?.detail || error.error?.message || 'La empresa ya existe o el RUC está duplicado';
-            } else if (error.status === HTTP_STATUS.internalServerError) {
-                errorMessage = 'Error interno del servidor';
-            } else {
-                errorMessage = `Error ${error.status}: ${error.error?.message || error.statusText}`;
-            }
-        }
-
         console.error('CompanyService Error:', error);
-        return throwError(() => new Error(errorMessage));
+        return throwError(() => new Error(mensajeDeErrorHttp(error, {
+            [HTTP_STATUS.notFound]: 'Empresa no encontrada',
+            // Aquí el detalle del backend va PRIMERO (a diferencia del resto): suele nombrar el RUC
+            // concreto que choca, que es mas útil que la frase genérica.
+            [HTTP_STATUS.conflict]: detalleDelBackend(error) ?? 'La empresa ya existe o el RUC está duplicado',
+        })));
     }
 
     /**

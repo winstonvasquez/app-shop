@@ -22,6 +22,7 @@ import { bloquearEnEdicion } from '@shared/utils/form-lock';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
 import { warehouseSelectSource } from '../../components/select-sources';
+import { ubicacionesFiltrosParams } from './location-management.params';
 
 @Component({
     selector: 'app-location-management',
@@ -112,15 +113,20 @@ export class LocationManagementComponent implements OnInit {
     readonly exportConfig: BackendExportConfig = {
         url: `${environment.apiUrls.inventory}/api/locations/export`,
         filename: 'ubicaciones',
-        params: () => ({
-            warehouseId: this.filterWarehouseId() ?? undefined,
-            locationType: this.filterLocationType() || undefined,
-            active: this.filterActive() ?? undefined,
-            q: this.searchQuery() || undefined,
-            createdAtDesde: this.filterCreatedAtDesde() ?? undefined,
-            createdAtHasta: this.filterCreatedAtHasta() ?? undefined
-        })
+        params: () => ubicacionesFiltrosParams(this.filtrosUI())
     };
+
+    /** Los filtros del toolbar en un objeto plano — misma fuente para el listado y la exportación. */
+    private filtrosUI() {
+        return {
+            q: this.searchQuery(),
+            warehouseId: this.filterWarehouseId(),
+            locationType: this.filterLocationType(),
+            active: this.filterActive(),
+            createdAtDesde: this.filterCreatedAtDesde(),
+            createdAtHasta: this.filterCreatedAtHasta()
+        };
+    }
 
     form: FormGroup = this.fb.nonNullable.group({
         warehouseId:  [null as number | null, Validators.required],
@@ -155,12 +161,7 @@ export class LocationManagementComponent implements OnInit {
         this.api.searchLocationsPaged({
             page: this.currentPage(),
             size: this.pageSize(),
-            warehouseId: this.filterWarehouseId() ?? undefined,
-            locationType: this.filterLocationType() || undefined,
-            active: this.filterActive() ?? undefined,
-            q: this.searchQuery() || undefined,
-            createdAtDesde: this.filterCreatedAtDesde() ?? undefined,
-            createdAtHasta: this.filterCreatedAtHasta() ?? undefined
+            ...ubicacionesFiltrosParams(this.filtrosUI())
         }).subscribe({
             next: (res) => {
                 this.locations.set(res.content ?? []);

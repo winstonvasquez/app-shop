@@ -20,6 +20,7 @@ import { environment } from '@env/environment';
 import { AuthService } from '@core/auth/auth.service';
 import { CategoryService } from '@core/services/category.service';
 import { CategoryResponse } from '@core/models/category.model';
+import { construirProductRequest } from './products.form';
 
 /** Bucket de precio para el select del toolbar -> se traduce a precioMin/precioMax al filtrar. */
 const PRECIO_RANGO_OPTIONS = [
@@ -548,16 +549,9 @@ export class ProductsComponent implements OnInit, OnDestroy {
     this.submitting.set(true);
     this.submitError.set(null);
 
-    const formValue = this.productForm.value;
-    const productRequest: ProductRequest = {
-      nombre: formValue.nombre,
-      descripcion: formValue.descripcion || null,
-      precioBase: formValue.precioBase,
-      marca: formValue.marca || null,
-      companyId,
-      // `undefined` = «no toques las categorías» (el backend distingue null de []).
-      categoriaIds: this.categoriasCargadas() ? (formValue.categoriaIds || []) : undefined
-    };
+    // `categoriaIds: undefined` = «no toques las categorías» (el backend distingue null de []).
+    const productRequest: ProductRequest = construirProductRequest(
+      this.productForm.value, companyId, this.categoriasCargadas());
 
     const operation = this.editMode()
       ? this.productService.update(this.selectedProductId()!, productRequest)

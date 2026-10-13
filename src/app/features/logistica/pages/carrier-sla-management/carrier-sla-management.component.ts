@@ -150,15 +150,12 @@ export class CarrierSlaManagementComponent implements OnInit {
 
     loadCarriers(): void {
         this.carriersLoading.set(true);
-        // NOTA (ronda 2, hallazgo verificado): CarrierController.getAllCarriers()
-        // (backend) devuelve un array plano List<CarrierResponse> — NO un objeto
-        // paginado {content,...} como asume TransportistaService/TransportistaPage
-        // (mismatch pre-existente, fuera del scope de esta página). Se normaliza
-        // defensivamente para no heredar el bug en este selector nuevo.
+        // El array plano que devuelve CarrierController.getAllCarriers() ya lo normaliza
+        // `TransportistaService.normalizarPagina` (ronda 3), así que aquí siempre llega un
+        // `TransportistaPage` con `content` garantizado.
         this.transportistaService.getTransportistas(this.companyId, 0, 100).subscribe({
             next: (res) => {
-                const list = Array.isArray(res) ? res : (res?.content ?? []);
-                this.carriers.set(list);
+                this.carriers.set(res.content);
                 this.carriersLoading.set(false);
             },
             error: (err: Error) => { this.error.set(err.message); this.carriersLoading.set(false); }

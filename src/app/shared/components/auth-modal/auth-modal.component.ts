@@ -5,6 +5,7 @@ import { GoogleLoginProvider, FacebookLoginProvider } from '@abacritt/angularx-s
 import { RouterLink } from '@angular/router';
 import { RegisterFormComponent, RegisterData } from './register-form.component';
 import { DsButtonComponent } from '@shared/ui/ds';
+import { mensajeDeErrorDeFacebook } from './facebook-error.util';
 import { environment } from '../../../../environments/environment';
 
 type AuthStep = 'select' | 'email' | 'otp' | 'register';
@@ -185,16 +186,7 @@ export class AuthModal {
       await this.socialAuthService.signIn(FacebookLoginProvider.PROVIDER_ID);
     } catch (err: unknown) {
       this.loading.set(false);
-      const msg: string = (err as { message?: string })?.message ?? '';
-      if (msg.includes('FB.init') || msg.includes('before') || msg.includes('initialized')) {
-        this.errorMsg.set('El SDK de Facebook no está listo todavía. Intenta de nuevo en unos segundos.');
-      } else if (msg.includes('Facebook App Id') || msg.includes('App Id')) {
-        this.errorMsg.set('El App ID de Facebook no está configurado. Revisa environment.ts.');
-      } else if (msg.includes('http')) {
-        this.errorMsg.set('Facebook requiere HTTPS. Activa SSL en tu servidor de desarrollo.');
-      } else {
-        this.errorMsg.set(msg || 'Error al abrir el inicio de sesión con Facebook.');
-      }
+      this.errorMsg.set(mensajeDeErrorDeFacebook((err as { message?: string })?.message ?? ''));
     } finally {
       this.loading.set(false);
     }

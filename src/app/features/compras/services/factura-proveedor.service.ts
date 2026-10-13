@@ -1,11 +1,12 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { environment } from '@env/environment';
 import { AuthService } from '@core/auth/auth.service';
 import { FacturaProveedor, RegistrarFacturaRequest, CpeParsedInvoice } from '../models/factura-proveedor.model';
-import { Page } from '@core/models/pagination.model';
+import { Page, adaptSpringPage } from '@core/models/pagination.model';
+import { toHttpParams } from '@core/utils/http-params.util';
 
 /** Filtros server-side del listado de facturas de proveedor. Todos opcionales. */
 export interface FacturaProveedorFiltros {
@@ -48,37 +49,25 @@ export class FacturaProveedorService {
         const page = filtros.page ?? 0;
         const size = filtros.size ?? 10;
 
-        let params = new HttpParams()
-            .set('page', page.toString())
-            .set('size', size.toString());
-        if (filtros.q) params = params.set('q', filtros.q);
-        if (filtros.estado) params = params.set('estado', filtros.estado);
-        if (filtros.tipoDocumento) params = params.set('tipoDocumento', filtros.tipoDocumento);
-        if (filtros.resultadoMatch) params = params.set('resultadoMatch', filtros.resultadoMatch);
-        if (filtros.estadoSunat) params = params.set('estadoSunat', filtros.estadoSunat);
-        if (filtros.moneda) params = params.set('moneda', filtros.moneda);
-        if (filtros.proveedorId) params = params.set('proveedorId', filtros.proveedorId);
-        if (filtros.conDetraccion) params = params.set('conDetraccion', filtros.conDetraccion);
-        if (filtros.fechaEmisionDesde) params = params.set('fechaEmisionDesde', filtros.fechaEmisionDesde);
-        if (filtros.fechaEmisionHasta) params = params.set('fechaEmisionHasta', filtros.fechaEmisionHasta);
-        if (filtros.fechaVencimientoDesde) params = params.set('fechaVencimientoDesde', filtros.fechaVencimientoDesde);
-        if (filtros.fechaVencimientoHasta) params = params.set('fechaVencimientoHasta', filtros.fechaVencimientoHasta);
+        let params = toHttpParams({
+            page,
+            size,
+            q: filtros.q,
+            estado: filtros.estado,
+            tipoDocumento: filtros.tipoDocumento,
+            resultadoMatch: filtros.resultadoMatch,
+            estadoSunat: filtros.estadoSunat,
+            moneda: filtros.moneda,
+            proveedorId: filtros.proveedorId,
+            conDetraccion: filtros.conDetraccion,
+            fechaEmisionDesde: filtros.fechaEmisionDesde,
+            fechaEmisionHasta: filtros.fechaEmisionHasta,
+            fechaVencimientoDesde: filtros.fechaVencimientoDesde,
+            fechaVencimientoHasta: filtros.fechaVencimientoHasta,
+        });
 
         return this.http.get<unknown>(this.baseUrl, { params, headers: this.getHeaders() }).pipe(
-            map((raw: unknown) => {
-                const r = raw as Record<string, unknown>;
-                const nested = r['page'] as Record<string, unknown> | undefined;
-                return {
-                    content: (r['content'] as FacturaProveedor[]) ?? [],
-                    totalElements: (r['totalElements'] as number) ?? (nested?.['totalElements'] as number) ?? 0,
-                    totalPages: (r['totalPages'] as number) ?? (nested?.['totalPages'] as number) ?? 0,
-                    size: (r['size'] as number) ?? size,
-                    number: (r['number'] as number) ?? page,
-                    first: !!(r['first'] as boolean),
-                    last: !!(r['last'] as boolean),
-                    empty: !!(r['empty'] as boolean),
-                } as Page<FacturaProveedor>;
-            })
+            map((raw: unknown) => adaptSpringPage<FacturaProveedor>(raw, page, size))
         );
     }
 

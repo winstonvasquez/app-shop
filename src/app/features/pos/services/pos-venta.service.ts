@@ -1,10 +1,11 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
-import { HttpClient, HttpParams, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { VentaPosRequest, VentaPosResponse, DevolucionPosRequest, DevolucionPosResponse, TipoCambio } from '../models/venta-pos.model';
 import { PageResponse } from '@core/models/pagination.model';
 import { environment } from '@env/environment';
 import { MONEDA } from '@shared/constants/sunat.constants';
+import { toHttpParams } from '@core/utils/http-params.util';
 
 /** Filtros server-side del historial de ventas del turno. Todos opcionales. */
 export interface PosHistorialFiltros {
@@ -77,18 +78,18 @@ export class PosVentaService {
         page = 0,
         size = 20
     ): Observable<PageResponse<VentaPosResponse>> {
-        let params = new HttpParams()
-            .set('page', page.toString())
-            .set('size', size.toString());
-
-        if (filtros.search) params = params.set('search', filtros.search);
-        if (filtros.estado) params = params.set('estado', filtros.estado);
-        if (filtros.metodoPago) params = params.set('metodoPago', filtros.metodoPago);
-        if (filtros.tipoCpe) params = params.set('tipoCpe', filtros.tipoCpe);
-        if (filtros.moneda) params = params.set('moneda', filtros.moneda);
-        if (filtros.sucursalId != null) params = params.set('sucursalId', filtros.sucursalId.toString());
-        if (filtros.fechaCreacionDesde) params = params.set('fechaCreacionDesde', filtros.fechaCreacionDesde);
-        if (filtros.fechaCreacionHasta) params = params.set('fechaCreacionHasta', filtros.fechaCreacionHasta);
+        let params = toHttpParams({
+            page,
+            size,
+            search: filtros.search,
+            estado: filtros.estado,
+            metodoPago: filtros.metodoPago,
+            tipoCpe: filtros.tipoCpe,
+            moneda: filtros.moneda,
+            sucursalId: filtros.sucursalId,
+            fechaCreacionDesde: filtros.fechaCreacionDesde,
+            fechaCreacionHasta: filtros.fechaCreacionHasta,
+        });
 
         return this.http.get<PageResponse<VentaPosResponse>>(
             `${this.baseUrl}/turno/${turnoId}/historial`,
@@ -112,20 +113,20 @@ export class PosVentaService {
         page = 0,
         size = 10
     ): Observable<PageResponse<DevolucionPosResponse>> {
-        let params = new HttpParams()
-            .set('companyId', companyId.toString())
-            .set('page', page.toString())
-            .set('size', size.toString());
-
-        if (filtros.turnoId != null) params = params.set('turnoId', filtros.turnoId.toString());
-        if (filtros.search) params = params.set('search', filtros.search);
-        if (filtros.motivo) params = params.set('motivo', filtros.motivo);
-        if (filtros.estado) params = params.set('estado', filtros.estado);
-        if (filtros.cajeroId != null) params = params.set('cajeroId', filtros.cajeroId.toString());
-        if (filtros.fechaDevolucionDesde) params = params.set('fechaDevolucionDesde', filtros.fechaDevolucionDesde);
-        if (filtros.fechaDevolucionHasta) params = params.set('fechaDevolucionHasta', filtros.fechaDevolucionHasta);
-        if (filtros.fechaCreacionDesde) params = params.set('fechaCreacionDesde', filtros.fechaCreacionDesde);
-        if (filtros.fechaCreacionHasta) params = params.set('fechaCreacionHasta', filtros.fechaCreacionHasta);
+        let params = toHttpParams({
+            companyId,
+            page,
+            size,
+            turnoId: filtros.turnoId,
+            search: filtros.search,
+            motivo: filtros.motivo,
+            estado: filtros.estado,
+            cajeroId: filtros.cajeroId,
+            fechaDevolucionDesde: filtros.fechaDevolucionDesde,
+            fechaDevolucionHasta: filtros.fechaDevolucionHasta,
+            fechaCreacionDesde: filtros.fechaCreacionDesde,
+            fechaCreacionHasta: filtros.fechaCreacionHasta,
+        });
 
         return this.http.get<PageResponse<DevolucionPosResponse>>(`${this.baseUrl}/devoluciones`, { params });
     }

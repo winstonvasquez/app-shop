@@ -1,7 +1,7 @@
 import { Component, OnInit, ChangeDetectionStrategy, signal, inject } from '@angular/core';
 import { ReactiveFormsModule, FormsModule, FormBuilder, FormArray, FormGroup, Validators } from '@angular/forms';
 import { DecimalPipe } from '@angular/common';
-import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { environment } from '@env/environment';
 import { AuthService } from '@core/auth/auth.service';
 import { CatalogService } from '@core/services/catalog.service';
@@ -15,6 +15,7 @@ import { SucursalService, Sucursal } from '../../../admin/services/sucursal.serv
 import { ProductLookupComponent } from '../../../inventory/components/product-lookup/product-lookup.component';
 import { ProductResponse } from '@core/models/product.model';
 import { productIdToUuid } from '../../../inventory/utils/synthetic-uuid.util';
+import { toHttpParams } from '@core/utils/http-params.util';
 
 interface TiendaReq { storeId: string; storeNombre: string; cantidad: number; }
 interface LineaReq { productoId: string; sku?: string; productoNombre: string; unidadMedida?: string; tiendas: TiendaReq[]; }
@@ -125,14 +126,15 @@ export class ConsolidacionesComponent implements OnInit {
 
     cargar(): void {
         this.cargando.set(true);
-        let params = new HttpParams()
-            .set('page', this.currentPage().toString())
-            .set('size', this.pageSize().toString());
-        if (this.searchQuery()) params = params.set('q', this.searchQuery());
-        if (this.filterEstado()) params = params.set('estado', this.filterEstado());
-        if (this.filterProveedorId()) params = params.set('proveedorId', this.filterProveedorId());
-        if (this.filterCreatedAtDesde()) params = params.set('createdAtDesde', this.filterCreatedAtDesde());
-        if (this.filterCreatedAtHasta()) params = params.set('createdAtHasta', this.filterCreatedAtHasta());
+        let params = toHttpParams({
+            page: this.currentPage(),
+            size: this.pageSize(),
+            q: this.searchQuery(),
+            estado: this.filterEstado(),
+            proveedorId: this.filterProveedorId(),
+            createdAtDesde: this.filterCreatedAtDesde(),
+            createdAtHasta: this.filterCreatedAtHasta(),
+        });
 
         this.http.get<unknown>(this.baseUrl, { headers: this.getHeaders(), params }).subscribe({
             next: (raw) => {

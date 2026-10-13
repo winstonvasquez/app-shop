@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '@env/environment';
 import {
@@ -16,6 +16,7 @@ import {
     PageResponse,
     StockThresholdsRequest
 } from '../models/inventory.models';
+import { toHttpParams } from '@core/utils/http-params.util';
 
 /**
  * KPIs del dashboard de inventario. Refleja el contrato real del backend
@@ -185,15 +186,6 @@ export class InventoryApiService {
     private readonly http = inject(HttpClient);
     private readonly baseUrl = `${environment.apiUrls.inventory}/api`;
 
-    private buildParams(params: Record<string, string | number | boolean | null | undefined>): HttpParams {
-        let httpParams = new HttpParams();
-        for (const [key, value] of Object.entries(params)) {
-            if (value !== null && value !== undefined && value !== '') {
-                httpParams = httpParams.set(key, String(value));
-            }
-        }
-        return httpParams;
-    }
 
     getWarehouses(): Observable<Warehouse[]> {
         return this.http.get<Warehouse[]>(`${this.baseUrl}/warehouses`);
@@ -211,7 +203,7 @@ export class InventoryApiService {
         isPrincipal?: boolean, city?: string, createdAtDesde?: string, createdAtHasta?: string
     ): Observable<PageResponse<Warehouse>> {
         return this.http.get<PageResponse<Warehouse>>(`${this.baseUrl}/warehouses/paged`, {
-            params: this.buildParams({ page, size, search, active, isPrincipal, city, createdAtDesde, createdAtHasta })
+            params: toHttpParams({ page, size, search, active, isPrincipal, city, createdAtDesde, createdAtHasta })
         });
     }
 
@@ -248,7 +240,7 @@ export class InventoryApiService {
         createdAtHasta?: string;
     } = {}): Observable<PageResponse<Location>> {
         return this.http.get<PageResponse<Location>>(`${this.baseUrl}/locations/paged`, {
-            params: this.buildParams({ ...params })
+            params: toHttpParams({ ...params })
         });
     }
 
@@ -276,7 +268,7 @@ export class InventoryApiService {
      */
     getStockPaged(filtros: StockFiltros = {}): Observable<PageResponse<InventoryStock>> {
         return this.http.get<PageResponse<InventoryStock>>(`${this.baseUrl}/inventory/stock/paged`, {
-            params: this.buildParams({
+            params: toHttpParams({
                 page: filtros.page ?? 0,
                 size: filtros.size ?? 20,
                 warehouseId: filtros.warehouseId,
@@ -323,7 +315,7 @@ export class InventoryApiService {
         movementDateHasta?: string;
         q?: string;
     }): Observable<PageResponse<InventoryMovement>> {
-        const httpParams = this.buildParams({
+        const httpParams = toHttpParams({
             page: params?.page,
             size: params?.size,
             movementType: params?.movementType,
@@ -379,20 +371,7 @@ export class InventoryApiService {
         receivedDateDesde?: string;
         receivedDateHasta?: string;
     }): Observable<PageResponse<InventoryTransfer>> {
-        const httpParams = this.buildParams({
-            page: params?.page,
-            size: params?.size,
-            q: params?.q,
-            status: params?.status,
-            sourceWarehouseId: params?.sourceWarehouseId,
-            destinationWarehouseId: params?.destinationWarehouseId,
-            requestDateDesde: params?.requestDateDesde,
-            requestDateHasta: params?.requestDateHasta,
-            sentDateDesde: params?.sentDateDesde,
-            sentDateHasta: params?.sentDateHasta,
-            receivedDateDesde: params?.receivedDateDesde,
-            receivedDateHasta: params?.receivedDateHasta
-        });
+        const httpParams = toHttpParams(params);
         return this.http.get<PageResponse<InventoryTransfer>>(`${this.baseUrl}/transfers`, { params: httpParams });
     }
 
@@ -419,17 +398,7 @@ export class InventoryApiService {
         adjustedDateDesde?: string;
         adjustedDateHasta?: string;
     }): Observable<PageResponse<InventoryCount>> {
-        const httpParams = this.buildParams({
-            page: params?.page,
-            size: params?.size,
-            q: params?.q,
-            status: params?.status,
-            warehouseId: params?.warehouseId,
-            countDateDesde: params?.countDateDesde,
-            countDateHasta: params?.countDateHasta,
-            adjustedDateDesde: params?.adjustedDateDesde,
-            adjustedDateHasta: params?.adjustedDateHasta
-        });
+        const httpParams = toHttpParams(params);
         return this.http.get<PageResponse<InventoryCount>>(`${this.baseUrl}/inventory/counts`, { params: httpParams });
     }
 
@@ -454,7 +423,7 @@ export class InventoryApiService {
      */
     getKardexByProduct(productId: number, filtros: KardexFiltros = {}): Observable<PageResponse<KardexEntry>> {
         return this.http.get<PageResponse<KardexEntry>>(`${this.baseUrl}/kardex/product/${productId}`, {
-            params: this.buildParams({
+            params: toHttpParams({
                 page: filtros.page ?? 0,
                 size: filtros.size ?? 20,
                 warehouseId: filtros.warehouseId,
@@ -486,7 +455,7 @@ export class InventoryApiService {
         size?: number;
     }): Observable<AbcAnalysis> {
         return this.http.get<AbcAnalysis>(`${this.baseUrl}/inventory/abc-analysis`, {
-            params: this.buildParams({
+            params: toHttpParams({
                 dias: params?.dias ?? 365,
                 warehouseId: params?.warehouseId,
                 clase: params?.clase,
@@ -501,7 +470,7 @@ export class InventoryApiService {
     /** Sugerencias de putaway (ubicación de almacenamiento) para una recepción. */
     getPutawaySuggestions(warehouseId: number, productId: number, quantity?: number): Observable<PutawayResponse> {
         return this.http.get<PutawayResponse>(`${this.baseUrl}/inventory/putaway/suggest`, {
-            params: this.buildParams({ warehouseId, productId, quantity })
+            params: toHttpParams({ warehouseId, productId, quantity })
         });
     }
 
@@ -525,20 +494,7 @@ export class InventoryApiService {
         size?: number;
     }): Observable<PageResponse<Asn>> {
         return this.http.get<PageResponse<Asn>>(`${this.baseUrl}/inventory/asn`, {
-            params: this.buildParams({
-                status: params?.status,
-                warehouseId: params?.warehouseId,
-                supplierName: params?.supplierName,
-                expectedDesde: params?.expectedDesde,
-                expectedHasta: params?.expectedHasta,
-                receivedDesde: params?.receivedDesde,
-                receivedHasta: params?.receivedHasta,
-                createdDesde: params?.createdDesde,
-                createdHasta: params?.createdHasta,
-                q: params?.q,
-                page: params?.page,
-                size: params?.size
-            })
+            params: toHttpParams(params)
         });
     }
 
@@ -563,7 +519,7 @@ export class InventoryApiService {
         dateFrom?: string;
         dateTo?: string;
     }): Observable<Blob> {
-        const httpParams = this.buildParams({
+        const httpParams = toHttpParams({
             reportType: params.type,
             warehouseId: params.warehouseId,
             status: params.status,

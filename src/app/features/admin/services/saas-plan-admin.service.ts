@@ -3,6 +3,7 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { environment } from '@env/environment';
+import { mensajeDeErrorHttp } from '@core/utils/http-error.util';
 
 export interface SaasPlanAdmin {
     id: number;
@@ -58,15 +59,7 @@ export class SaasPlanAdminService {
     }
 
     private handleError(error: HttpErrorResponse): Observable<never> {
-        let errorMessage = 'Ocurrió un error desconocido';
-        if (error.error instanceof ErrorEvent) {
-            errorMessage = `Error: ${error.error.message}`;
-        } else if (error.status === 0) {
-            errorMessage = 'No se pudo conectar con el servidor';
-        } else {
-            errorMessage = error.error?.message || error.error?.detail || `Error ${error.status}`;
-        }
         console.error('SaasPlanAdminService Error:', error);
-        return throwError(() => new Error(errorMessage));
+        return throwError(() => new Error(mensajeDeErrorHttp(error)));
     }
 }

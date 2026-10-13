@@ -22,14 +22,12 @@ import { ButtonComponent, ServerSearchSelectComponent, RichTextEditorComponent }
 import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
+import {
+    claseBadgeEstadoRecepcion, construirCreateRecepcionRequest, RecepcionItemForm
+} from './recepcion.form';
 
 /** Ítem del form de alta de recepción: precargado desde la OC, `cantidadRecibida` editable por línea. */
-export interface RecepcionItemForm {
-    ordenItemId: string;
-    productoNombre: string;
-    cantidadPedida: number;
-    cantidadRecibida: number;
-}
+export type { RecepcionItemForm } from './recepcion.form';
 
 @Component({
     selector: 'app-recepcion',
@@ -345,14 +343,7 @@ export class RecepcionComponent implements OnInit {
     }
 
     badgeEstado(estado: string): string {
-        const map: Record<string, string> = {
-            PENDIENTE: 'warning',
-            CONFORME: 'success',
-            CON_DIFERENCIAS: 'error',
-            DIFERENCIA: 'error',
-            COMPLETADA: 'success'
-        };
-        return map[estado] ?? 'neutral';
+        return claseBadgeEstadoRecepcion(estado);
     }
 
     // ── Drawer: alta de recepción ──────────────────
@@ -422,17 +413,10 @@ export class RecepcionComponent implements OnInit {
         this.creating.set(true);
         this.createError.set(null);
 
-        const fv = this.recepcionForm.value;
-        const payload: CreateRecepcionRequest = {
-            ordenCompraId: fv.ordenCompraId ?? '',
-            numeroGuia: fv.numeroGuia || undefined,
-            transportista: fv.transportista || undefined,
-            fechaRecepcion: fv.fechaRecepcion || undefined,
-            responsable: fv.responsable || undefined,
-            almacenDestino: fv.almacenDestino || undefined,
-            observaciones: fv.observaciones || undefined,
-            items: this.formItems().map(i => ({ ordenItemId: i.ordenItemId, cantidadRecibida: i.cantidadRecibida }))
-        };
+        const payload: CreateRecepcionRequest = construirCreateRecepcionRequest(
+            this.recepcionForm.value,
+            this.formItems()
+        );
 
         this.recepcionService.createRecepcion(payload).subscribe({
             next: () => {

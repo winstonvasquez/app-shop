@@ -21,6 +21,7 @@ import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.compo
 import { AdminFormSectionComponent } from '@shared/ui/forms/admin-form-section/admin-form-section.component';
 import { ServerSearchSelectComponent } from '@shared/components';
 import { employeeSelectSource } from '../../components/select-sources';
+import { boletaRequestDesdeForm, formularioDesdeBoleta } from './payroll.form';
 
 /**
  * Planilla del periodo — orquesta el motor de nómina del backend (microshopusers).
@@ -228,16 +229,7 @@ export class PayrollComponent implements OnInit {
     openCorregirBoleta(p: Payroll): void {
         this.boletaCorrigiendo.set(p);
         this.boletaSubmitError.set(null);
-        this.boletaForm.reset({
-            employeeId: p.employeeId,
-            periodo: p.periodo,
-            sueldoBase: p.sueldoBase,
-            bonos: p.bonos ?? null,
-            descuentos: p.descuentos ?? null,
-            asignacionFamiliar: p.asignacionFamiliar ?? null,
-            montoHorasExtras: p.montoHorasExtras ?? null,
-            diasTrabajados: p.diasTrabajados ?? 30,
-        });
+        this.boletaForm.reset(formularioDesdeBoleta(p));
         this.showBoletaDrawer.set(true);
     }
 
@@ -255,17 +247,7 @@ export class PayrollComponent implements OnInit {
         this.boletaSubmitting.set(true);
         this.boletaSubmitError.set(null);
         try {
-            const val = this.boletaForm.getRawValue();
-            const request: PayrollRequest = {
-                employeeId: val.employeeId!,
-                periodo: val.periodo!,
-                sueldoBase: val.sueldoBase!,
-                bonos: val.bonos ?? undefined,
-                descuentos: val.descuentos ?? undefined,
-                asignacionFamiliar: val.asignacionFamiliar ?? undefined,
-                montoHorasExtras: val.montoHorasExtras ?? undefined,
-                diasTrabajados: val.diasTrabajados ?? undefined,
-            };
+            const request: PayrollRequest = boletaRequestDesdeForm(this.boletaForm.getRawValue());
             const boletaOrigen = this.boletaCorrigiendo();
             if (boletaOrigen) {
                 await this.payrollService.updatePayroll(boletaOrigen.id, request);

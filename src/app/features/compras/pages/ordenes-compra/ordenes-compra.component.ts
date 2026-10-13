@@ -6,7 +6,7 @@ import { CatalogService } from '@core/services/catalog.service';
 import { AuthService } from '@core/auth/auth.service';
 import { OrdenCompraService } from '../../services/orden-compra.service';
 import { ProveedorService, ProveedorFiltroOption, toProveedorOptions } from '../../services/proveedor.service';
-import { OrdenCompra, OrdenCompraItem } from '../../models/orden-compra.model';
+import { OrdenCompra } from '../../models/orden-compra.model';
 import { DataTableComponent, TableColumn, TableAction, SortEvent, FilterConfig, FilterChangeEvent, PaginationEvent, DateRangeFilterConfig, DateRangeChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { catalogFilter, signalFilter } from '@shared/ui/tables/data-table/filter-helpers';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
@@ -27,14 +27,12 @@ import { almacenSelectSource } from '../../../logistica/components/select-source
 import { ProductLookupComponent } from '../../../inventory/components/product-lookup/product-lookup.component';
 import { ProductResponse } from '@core/models/product.model';
 import { productIdToUuid } from '../../../inventory/utils/synthetic-uuid.util';
+import {
+    claseBadgeEstadoOrden, construirPayloadOrdenCompra, itemsOrdenIncompletos, lineasEdicionOrdenCompra,
+    OcItemForm, valoresEdicionOrdenCompra
+} from './ordenes-compra.form';
 
-export interface OcItemForm {
-    productoId?: string;
-    productoNombre: string;
-    sku: string;
-    cantidad: number;
-    precioUnitario: number;
-}
+export type { OcItemForm } from './ordenes-compra.form';
 
 /** Opción de Contrato Marco para el select del formulario de OC (GET /api/contratos?estado=ACTIVO). */
 export interface ContratoActivoOption {
@@ -414,26 +412,9 @@ export class OrdenesCompraComponent implements OnInit {
     openEditForm(orden: OrdenCompra): void {
         this.editMode.set(true);
         this.selectedOrden.set(orden);
-        this.ocForm.patchValue({
-            codigo: orden.codigo,
-            proveedorId: orden.proveedorId,
-            fechaEmision: orden.fechaEmision,
-            fechaEntregaEstimada: orden.fechaEntregaEstimada ?? '',
-            condicionPago: orden.condicionPago,
-            almacenDestino: orden.almacenDestino,
-            observaciones: orden.observaciones ?? '',
-            contratoId: orden.contratoId ?? '',
-            moneda: orden.moneda ?? MONEDA.PEN,
-            tipoCambio: orden.tipoCambio ?? null
-        });
+        this.ocForm.patchValue(valoresEdicionOrdenCompra(orden));
         bloquearEnEdicion(this.ocForm, ['codigo'], true);
-        this.formItems.set((orden.items ?? []).map(i => ({
-            productoId: i.productoId,
-            productoNombre: i.productoNombre,
-            sku: i.sku ?? '',
-            cantidad: i.cantidad,
-            precioUnitario: i.precioUnitario
-        })));
+        this.formItems.set(lineasEdicionOrdenCompra(orden));
         this.lookupOpenIndex.set(null);
         this.submitError.set(null);
         this.showForm.set(true);
@@ -493,8 +474,7 @@ export class OrdenesCompraComponent implements OnInit {
             this.submitError.set('Debe agregar al menos un producto.');
             return;
         }
-        const invalid = this.formItems().some(i => !i.productoNombre.trim() || i.cantidad < 1 || i.precioUnitario <= 0);
-        if (invalid) {
+        if (itemsOrdenIncompletos(this.formItems())) {
             this.submitError.set('Verifique que todos los productos tengan nombre, cantidad y precio.');
             return;
         }
@@ -502,28 +482,13 @@ export class OrdenesCompraComponent implements OnInit {
         this.submitting.set(true);
         this.submitError.set(null);
 
-        const { subtotal, igv, total } = this.totales();
         // getRawValue(): `codigo` está deshabilitado en edición y no aparecería en `.value`.
-        // Se descarta del payload: el correlativo lo emite el backend.
-        const { codigo: _codigo, ...formValue } = this.ocForm.getRawValue();
-        const moneda: string = formValue.moneda || MONEDA.PEN;
-        const payload: Partial<OrdenCompra> = {
-            ...formValue,
-            contratoId: formValue.contratoId || undefined,
-            moneda,
-            tipoCambio: moneda !== MONEDA.PEN ? (formValue.tipoCambio ?? undefined) : undefined,
-            subtotal,
-            igv,
-            total,
-            items: this.formItems().map(i => ({
-                productoId: i.productoId || undefined,
-                productoNombre: i.productoNombre,
-                sku: i.sku || undefined,
-                cantidad: i.cantidad,
-                precioUnitario: i.precioUnitario,
-                subtotal: i.cantidad * i.precioUnitario
-            } as OrdenCompraItem))
-        };
+        // Se descarta dentro de `construirPayloadOrdenCompra`: el correlativo lo emite el backend.
+        const payload: Partial<OrdenCompra> = construirPayloadOrdenCompra(
+            this.ocForm.getRawValue(),
+            this.formItems(),
+            this.totales()
+        );
 
         const op = this.editMode()
             ? this.ordenService.updateOrden(this.selectedOrden()!.id!, payload)
@@ -543,15 +508,7 @@ export class OrdenesCompraComponent implements OnInit {
     }
 
     badgeEstado(estado: string): string {
-        const map: Record<string, string> = {
-            BORRADOR: 'neutral',
-            PENDIENTE: 'warning',
-            APROBADA: 'success',
-            ENVIADA: 'accent',
-            RECIBIDA: 'success',
-            CANCELADA: 'error'
-        };
-        return map[estado] ?? 'neutral';
+        return claseBadgeEstadoOrden(estado);
     }
 
     getControl(name: string): FormControl {

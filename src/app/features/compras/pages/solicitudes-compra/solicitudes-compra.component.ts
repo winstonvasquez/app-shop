@@ -13,7 +13,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { SolicitudCompraService } from '../../services/solicitud-compra.service';
 import { AuthService } from '@core/auth/auth.service';
 import { CatalogService } from '@core/services/catalog.service';
-import { SolicitudCompra, SolicitudCompraItem } from '../../models/solicitud-compra.model';
+import { SolicitudCompra } from '../../models/solicitud-compra.model';
 import { ButtonComponent, CatalogSelectComponent, ServerSearchSelectComponent, RichTextEditorComponent } from '@shared/components';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { bloquearEnEdicion } from '@shared/utils/form-lock';
@@ -31,6 +31,10 @@ import {
 import { catalogFilter } from '@shared/ui/tables/data-table/filter-helpers';
 import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 import { PAGINATION } from '@shared/constants/app.constants';
+import {
+    claseBadgeEstadoSolicitud, construirPayloadAltaSolicitud, construirPayloadEdicionSolicitud,
+    valoresCabeceraSolicitud, valoresLineaSolicitud
+} from './solicitudes-compra.form';
 
 @Component({
     selector: 'app-solicitudes-compra',
@@ -287,12 +291,7 @@ export class SolicitudesCompraComponent implements OnInit {
     openEditForm(solicitud: SolicitudCompra): void {
         this.editMode.set(true);
         this.selectedSolicitud.set(solicitud);
-        this.solicitudForm.patchValue({
-            justificacion: solicitud.justificacion ?? '',
-            departamento: solicitud.departamento ?? '',
-            prioridad: solicitud.prioridad ?? 'NORMAL',
-            fechaRequerida: solicitud.fechaRequerida ?? '',
-        });
+        this.solicitudForm.patchValue(valoresCabeceraSolicitud(solicitud));
 
         while (this.itemsArray.length > 0) this.itemsArray.removeAt(0);
         const items = solicitud.items ?? [];
@@ -301,16 +300,7 @@ export class SolicitudesCompraComponent implements OnInit {
         } else {
             for (const item of items) {
                 const group = this.createItemFormGroup();
-                group.patchValue({
-                    productoId: item.productoId ?? '',
-                    proveedorSugeridoId: item.proveedorSugeridoId ?? '',
-                    productoNombre: item.productoNombre ?? '',
-                    sku: item.sku ?? '',
-                    cantidad: item.cantidad ?? 1,
-                    unidadMedida: item.unidadMedida ?? 'UNIDAD',
-                    precioEstimado: item.precioEstimado ?? null,
-                    observaciones: item.observaciones ?? '',
-                });
+                group.patchValue(valoresLineaSolicitud(item));
                 this.itemsArray.push(group);
             }
         }
@@ -366,17 +356,10 @@ export class SolicitudesCompraComponent implements OnInit {
         const user = this.authService.currentUser();
         if (!user) return;
 
-        const formValue = this.solicitudForm.value;
-        const items = this.buildItemsPayload(formValue.items ?? []);
-
-        const payload: Partial<SolicitudCompra> = {
-            solicitanteNombre: user.username,
-            departamento: formValue.departamento ?? undefined,
-            justificacion: formValue.justificacion ?? '',
-            prioridad: formValue.prioridad ?? 'NORMAL',
-            fechaRequerida: formValue.fechaRequerida ?? undefined,
-            items,
-        };
+        const payload: Partial<SolicitudCompra> = construirPayloadAltaSolicitud(
+            this.solicitudForm.value,
+            user.username
+        );
 
         this.submitting.set(true);
         this.submitError.set(null);
@@ -402,15 +385,9 @@ export class SolicitudesCompraComponent implements OnInit {
         // getRawValue(): 'departamento' está deshabilitado en edición (ActualizarSolicitudRequest
         // no lo acepta) y no aparecería en `.value` — con `.value` se perdería el resto del payload
         // por desincronía de índices de FormArray, así que se usa getRawValue de forma consistente.
-        const formValue = this.solicitudForm.getRawValue();
-        const items = this.buildItemsPayload(formValue.items ?? []);
-
-        const payload: Partial<SolicitudCompra> = {
-            justificacion: formValue.justificacion ?? '',
-            prioridad: formValue.prioridad ?? 'NORMAL',
-            fechaRequerida: formValue.fechaRequerida ?? undefined,
-            items,
-        };
+        const payload: Partial<SolicitudCompra> = construirPayloadEdicionSolicitud(
+            this.solicitudForm.getRawValue()
+        );
 
         this.submitting.set(true);
         this.submitError.set(null);
@@ -427,19 +404,6 @@ export class SolicitudesCompraComponent implements OnInit {
                 this.cdr.markForCheck();
             },
         });
-    }
-
-    private buildItemsPayload(items: Record<string, unknown>[]): SolicitudCompraItem[] {
-        return items.map((i) => ({
-            productoId: (i['productoId'] as string) || undefined,
-            proveedorSugeridoId: (i['proveedorSugeridoId'] as string) || undefined,
-            productoNombre: i['productoNombre'] as string,
-            sku: i['sku'] as string | undefined,
-            cantidad: Number(i['cantidad']),
-            unidadMedida: (i['unidadMedida'] as string) || 'UNIDAD',
-            precioEstimado: i['precioEstimado'] ? Number(i['precioEstimado']) : undefined,
-            observaciones: i['observaciones'] as string | undefined,
-        }));
     }
 
     /** ProblemDetail RFC 7807 del backend de compras: el detalle viaja en `detail`. */
@@ -560,22 +524,7 @@ export class SolicitudesCompraComponent implements OnInit {
     }
 
     getBadgeClass(estado: string | undefined): string {
-        switch (estado) {
-            case 'BORRADOR':
-                return 'badge badge-neutral';
-            case 'PENDIENTE_APROBACION':
-                return 'badge badge-warning';
-            case 'APROBADA':
-                return 'badge badge-success';
-            case 'RECHAZADA':
-                return 'badge badge-error';
-            case 'CONVERTIDA_OC':
-                return 'badge badge-accent';
-            case 'CANCELADA':
-                return 'badge badge-neutral';
-            default:
-                return 'badge badge-neutral';
-        }
+        return claseBadgeEstadoSolicitud(estado);
     }
 
     getEstadoLabel(estado: string | undefined): string {

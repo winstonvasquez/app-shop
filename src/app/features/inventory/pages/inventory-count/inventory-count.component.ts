@@ -3,7 +3,7 @@ import {
     FormBuilder, ReactiveFormsModule, Validators, FormGroup, FormArray, FormControl
 } from '@angular/forms';
 import { InventoryApiService } from '../../services/inventory-api.service';
-import { InventoryCount, InventoryCountDetail, InventoryCountRequest, InventoryCountStatus, Warehouse } from '../../models/inventory.models';
+import { InventoryCount, InventoryCountDetail, InventoryCountStatus, Warehouse } from '../../models/inventory.models';
 import {
     DataTableComponent, TableColumn, TableAction, PaginationEvent, FilterConfig, FilterChangeEvent,
     DateRangeFilterConfig, DateRangeChangeEvent
@@ -23,6 +23,8 @@ import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model
 import { ROUTES } from '@shared/constants/app.constants';
 import { CatalogService } from '@core/services/catalog.service';
 import { warehouseSelectSource } from '../../components/select-sources';
+import { conteosFiltrosParams } from './inventory-count.params';
+import { conteoCrearPayload } from './inventory-count.form';
 
 @Component({
     selector: 'app-inventory-count',
@@ -151,16 +153,21 @@ export class InventoryCountComponent {
     readonly exportConfig: BackendExportConfig = {
         url: `${environment.apiUrls.inventory}/api/inventory/counts/export`,
         filename: 'inventarios-fisicos',
-        params: () => ({
-            q: this.searchQuery() || undefined,
-            status: this.filterStatus() || undefined,
-            warehouseId: this.filterWarehouseId() || undefined,
-            countDateDesde: this.filterCountDateDesde() ?? undefined,
-            countDateHasta: this.filterCountDateHasta() ?? undefined,
-            adjustedDateDesde: this.filterAdjustedDateDesde() ?? undefined,
-            adjustedDateHasta: this.filterAdjustedDateHasta() ?? undefined
-        })
+        params: () => conteosFiltrosParams(this.filtrosUI())
     };
+
+    /** Los filtros del toolbar en un objeto plano — misma fuente para el listado y la exportación. */
+    private filtrosUI() {
+        return {
+            q: this.searchQuery(),
+            status: this.filterStatus(),
+            warehouseId: this.filterWarehouseId(),
+            countDateDesde: this.filterCountDateDesde(),
+            countDateHasta: this.filterCountDateHasta(),
+            adjustedDateDesde: this.filterAdjustedDateDesde(),
+            adjustedDateHasta: this.filterAdjustedDateHasta()
+        };
+    }
 
     actions: TableAction<InventoryCount>[] = [
         {
@@ -224,13 +231,7 @@ export class InventoryCountComponent {
         this.api.getInventoryCounts({
             page: this.currentPage(),
             size: this.pageSize(),
-            q: this.searchQuery() || undefined,
-            status: this.filterStatus() || undefined,
-            warehouseId: this.filterWarehouseId() ? Number(this.filterWarehouseId()) : undefined,
-            countDateDesde: this.filterCountDateDesde() || undefined,
-            countDateHasta: this.filterCountDateHasta() || undefined,
-            adjustedDateDesde: this.filterAdjustedDateDesde() || undefined,
-            adjustedDateHasta: this.filterAdjustedDateHasta() || undefined
+            ...conteosFiltrosParams(this.filtrosUI())
         }).subscribe({
             next: (res) => {
                 this.counts.set(res.content);
@@ -352,18 +353,7 @@ export class InventoryCountComponent {
         if (this.details.length === 0) { this.submitError.set('Agregá al menos un producto al conteo.'); return; }
         if (this.form.invalid) { this.form.markAllAsTouched(); return; }
         this.submitting.set(true);
-        const v = this.form.getRawValue();
-        const payload: InventoryCountRequest = {
-            warehouseId: Number(v.warehouseId),
-            countDate:   v.countDate,
-            notes:       v.notes || undefined,
-            details:     v.details.map((d: { productId: number; countedQuantity: number; notes: string }) => ({
-                productId:       Number(d.productId),
-                countedQuantity: Number(d.countedQuantity),
-                notes:           d.notes || undefined
-            }))
-        };
-        this.api.createInventoryCount(payload).subscribe({
+        this.api.createInventoryCount(conteoCrearPayload(this.form.getRawValue())).subscribe({
             next: (c) => {
                 this.submitting.set(false);
                 this.closeDrawer();

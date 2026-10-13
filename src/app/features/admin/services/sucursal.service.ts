@@ -3,6 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '@env/environment';
 import { PageResponse } from '@core/models/pagination.model';
+import { toHttpParams } from '@core/utils/http-params.util';
 
 export interface Sucursal {
     id: number;
@@ -65,18 +66,18 @@ export class SucursalService {
      * (`GET /pos/sucursales/paged`); la vista nunca filtra la página cargada.
      */
     listPaged(companyId: number, filtros: SucursalFiltros = {}): Observable<PageResponse<Sucursal>> {
-        let params = new HttpParams()
-            .set('companyId', companyId.toString())
-            .set('page', String(filtros.page ?? 0))
-            .set('size', String(filtros.size ?? 20));
-
-        if (filtros.q) params = params.set('search', filtros.q);
-        if (filtros.activo) params = params.set('activo', filtros.activo);
-        if (filtros.almacenId) params = params.set('almacenId', filtros.almacenId);
-        if (filtros.listaPreciosId) params = params.set('listaPreciosId', filtros.listaPreciosId);
-        if (filtros.ubigeo) params = params.set('ubigeo', filtros.ubigeo);
-        if (filtros.fechaCreacionDesde) params = params.set('fechaCreacionDesde', filtros.fechaCreacionDesde);
-        if (filtros.fechaCreacionHasta) params = params.set('fechaCreacionHasta', filtros.fechaCreacionHasta);
+        let params = toHttpParams({
+            companyId,
+            page: filtros.page ?? 0,
+            size: filtros.size ?? 20,
+            search: filtros.q,
+            activo: filtros.activo,
+            almacenId: filtros.almacenId,
+            listaPreciosId: filtros.listaPreciosId,
+            ubigeo: filtros.ubigeo,
+            fechaCreacionDesde: filtros.fechaCreacionDesde,
+            fechaCreacionHasta: filtros.fechaCreacionHasta,
+        });
 
         return this.http.get<PageResponse<Sucursal>>(`${this.base}/paged`, { params });
     }

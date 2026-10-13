@@ -3,6 +3,7 @@ import { ReactiveFormsModule, FormGroup } from '@angular/forms';
 import { DrawerComponent } from '../../../../../../shared/components/drawer/drawer.component';
 import { ButtonComponent, CatalogSelectComponent } from '@shared/components';
 import { RolDto } from '@features/admin/models/user.model';
+import { mensajeDeErrorDeControl } from '@shared/utils/form-errors';
 
 @Component({
     selector: 'app-user-form',
@@ -28,14 +29,7 @@ export class UserFormComponent {
 
     getErrorMessage(controlName: string): string {
         const control = this.formGroup().get(controlName);
-        if (!control || !control.errors || !control.touched) return '';
-
-        if (control.errors['required']) return 'Este campo es obligatorio';
-        if (control.errors['email']) return 'Email inválido';
-        if (control.errors['minlength']) return `Mínimo ${control.errors['minlength'].requiredLength} caracteres`;
-        if (control.errors['maxlength']) return `Máximo ${control.errors['maxlength'].requiredLength} caracteres`;
-
-        return 'Campo inválido';
+        return !control?.touched ? '' : mensajeDeErrorDeControl(control);
     }
 
     hasError(controlName: string): boolean {

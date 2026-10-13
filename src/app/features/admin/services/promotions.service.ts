@@ -6,6 +6,8 @@ import { environment } from '@env/environment';
 import { AuthService } from '@core/auth/auth.service';
 import { HTTP_STATUS } from '@shared/constants/app.constants';
 import { PageResponse } from '@core/models/pagination.model';
+import { toHttpParams } from '@core/utils/http-params.util';
+import { mensajeDeErrorHttp, detalleDelBackend } from '@core/utils/http-error.util';
 
 export interface Promocion {
     id?: number;
@@ -59,23 +61,21 @@ export class PromotionsService {
      * getAll() sin paginar (el backend ya devuelve Page<PromocionResponseDto>).
      */
     getAll(filtros: PromocionFiltros = {}): Observable<PageResponse<Promocion>> {
-        let params = new HttpParams()
-            .set('page', String(filtros.page ?? 0))
-            .set('size', String(filtros.size ?? 20));
-
-        if (filtros.sortField) {
-            params = params.set('sort', `${filtros.sortField},${filtros.sortDirection ?? 'desc'}`);
-        }
-        if (filtros.search) params = params.set('search', filtros.search);
-        if (filtros.tipo) params = params.set('tipo', filtros.tipo);
-        if (filtros.alcance) params = params.set('alcance', filtros.alcance);
-        if (filtros.subtipo) params = params.set('subtipo', filtros.subtipo);
-        if (filtros.activo !== undefined) params = params.set('activo', String(filtros.activo));
-        if (filtros.estado) params = params.set('estado', filtros.estado);
-        if (filtros.fechaInicioDesde) params = params.set('fechaInicioDesde', filtros.fechaInicioDesde);
-        if (filtros.fechaInicioHasta) params = params.set('fechaInicioHasta', filtros.fechaInicioHasta);
-        if (filtros.fechaFinDesde) params = params.set('fechaFinDesde', filtros.fechaFinDesde);
-        if (filtros.fechaFinHasta) params = params.set('fechaFinHasta', filtros.fechaFinHasta);
+        let params = toHttpParams({
+            page: filtros.page ?? 0,
+            size: filtros.size ?? 20,
+            sort: filtros.sortField ? `${filtros.sortField},${filtros.sortDirection ?? 'desc'}` : undefined,
+            search: filtros.search,
+            tipo: filtros.tipo,
+            alcance: filtros.alcance,
+            subtipo: filtros.subtipo,
+            activo: filtros.activo,
+            estado: filtros.estado,
+            fechaInicioDesde: filtros.fechaInicioDesde,
+            fechaInicioHasta: filtros.fechaInicioHasta,
+            fechaFinDesde: filtros.fechaFinDesde,
+            fechaFinHasta: filtros.fechaFinHasta,
+        });
 
         return this.http.get<PageResponse<Promocion>>(this.baseUrl, { params }).pipe(
             catchError(() => of({
@@ -109,28 +109,11 @@ export class PromotionsService {
     }
 
     private handleError(error: HttpErrorResponse): Observable<never> {
-        let errorMessage = 'Ocurrió un error desconocido';
-
-        if (error.error instanceof ErrorEvent) {
-            errorMessage = `Error: ${error.error.message}`;
-        } else {
-            const backendDetail = error.error?.detail || error.error?.message;
-            if (error.status === 0) {
-                errorMessage = 'No se pudo conectar con el servidor';
-            } else if (error.status === HTTP_STATUS.badRequest) {
-                errorMessage = backendDetail || 'Datos de la promoción inválidos';
-            } else if (error.status === HTTP_STATUS.notFound) {
-                errorMessage = 'Promoción no encontrada';
-            } else if (error.status === HTTP_STATUS.conflict) {
-                errorMessage = backendDetail || 'La promoción ya existe o el código de cupón está en uso';
-            } else if (error.status === HTTP_STATUS.internalServerError) {
-                errorMessage = 'Error interno del servidor';
-            } else {
-                errorMessage = backendDetail || `Error ${error.status}: ${error.statusText}`;
-            }
-        }
-
         console.error('PromotionsService Error:', error);
-        return throwError(() => new Error(errorMessage));
+        return throwError(() => new Error(mensajeDeErrorHttp(error, {
+            [HTTP_STATUS.notFound]: 'Promoción no encontrada',
+            // Igual que en empresas: el detalle del backend nombra el cupón en conflicto.
+            [HTTP_STATUS.conflict]: detalleDelBackend(error) ?? 'La promoción ya existe o el código de cupón esta en uso',
+        })));
     }
 }

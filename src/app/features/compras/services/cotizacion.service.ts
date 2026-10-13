@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { environment } from '@env/environment';
@@ -13,6 +13,8 @@ import {
     CrearCotizacionRequest,
     RegistrarRespuestaRequest,
 } from '../models/cotizacion.model';
+import { toHttpParams } from '@core/utils/http-params.util';
+import { adaptSpringPage } from '@core/models/pagination.model';
 
 /** Filtros server-side del listado de cotizaciones. Todos opcionales. */
 export interface CotizacionFiltros {
@@ -53,33 +55,21 @@ export class CotizacionService {
         const page = filtros.page ?? 0;
         const size = filtros.size ?? 10;
 
-        let params = new HttpParams()
-            .set('page', page.toString())
-            .set('size', size.toString());
-        if (filtros.q) params = params.set('q', filtros.q);
-        if (filtros.estado) params = params.set('estado', filtros.estado);
-        if (filtros.proveedorAdjudicadoId) params = params.set('proveedorAdjudicadoId', filtros.proveedorAdjudicadoId);
-        if (filtros.vigencia) params = params.set('vigencia', filtros.vigencia);
-        if (filtros.fechaEmisionDesde) params = params.set('fechaEmisionDesde', filtros.fechaEmisionDesde);
-        if (filtros.fechaEmisionHasta) params = params.set('fechaEmisionHasta', filtros.fechaEmisionHasta);
-        if (filtros.fechaVencimientoDesde) params = params.set('fechaVencimientoDesde', filtros.fechaVencimientoDesde);
-        if (filtros.fechaVencimientoHasta) params = params.set('fechaVencimientoHasta', filtros.fechaVencimientoHasta);
+        let params = toHttpParams({
+            page,
+            size,
+            q: filtros.q,
+            estado: filtros.estado,
+            proveedorAdjudicadoId: filtros.proveedorAdjudicadoId,
+            vigencia: filtros.vigencia,
+            fechaEmisionDesde: filtros.fechaEmisionDesde,
+            fechaEmisionHasta: filtros.fechaEmisionHasta,
+            fechaVencimientoDesde: filtros.fechaVencimientoDesde,
+            fechaVencimientoHasta: filtros.fechaVencimientoHasta,
+        });
 
         return this.http.get<unknown>(this.baseUrl, { params, headers: this.getHeaders() }).pipe(
-            map((raw: unknown) => {
-                const r = raw as Record<string, unknown>;
-                const nested = r['page'] as Record<string, unknown> | undefined;
-                return {
-                    content: (r['content'] as CotizacionResumen[]) ?? [],
-                    totalElements: (r['totalElements'] as number) ?? (nested?.['totalElements'] as number) ?? 0,
-                    totalPages: (r['totalPages'] as number) ?? (nested?.['totalPages'] as number) ?? 0,
-                    size: (r['size'] as number) ?? size,
-                    number: (r['number'] as number) ?? page,
-                    first: !!(r['first'] as boolean),
-                    last: !!(r['last'] as boolean),
-                    empty: !!(r['empty'] as boolean),
-                } as CotizacionesPage;
-            })
+            map((raw: unknown) => adaptSpringPage<CotizacionResumen>(raw, page, size) as CotizacionesPage)
         );
     }
 

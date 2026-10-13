@@ -1,5 +1,7 @@
 import { Injectable, inject, signal, DestroyRef } from '@angular/core';
-import { PosScreen } from '../components/pos-topbar/pos-topbar.component';
+import { PosKeyAction, debeIgnorarTecla, mapearTeclaPos } from './pos-keyboard.keymap';
+
+export type { PosKeyAction };
 
 export interface PosShortcut {
     key: string;
@@ -21,10 +23,6 @@ export const POS_SHORTCUTS: PosShortcut[] = [
     { key: '?', label: '?', action: 'Mostrar atajos' },
 ];
 
-export type PosKeyAction =
-    | { type: 'navigate'; screen: PosScreen }
-    | { type: 'action'; name: 'nuevaVenta' | 'cobrar' | 'holdOrder' | 'recallOrder' | 'customerSearch' | 'toggleFullscreen' | 'toggleShortcuts' };
-
 @Injectable({ providedIn: 'root' })
 export class PosKeyboardService {
 
@@ -42,14 +40,9 @@ export class PosKeyboardService {
         this.handler = onAction;
 
         this.listener = (e: KeyboardEvent) => {
-            // Skip if user is typing in an input/textarea
-            const tag = (e.target as HTMLElement)?.tagName;
-            if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') {
-                // Only handle Escape and F-keys in inputs
-                if (!e.key.startsWith('F') && e.key !== 'Escape') return;
-            }
+            if (debeIgnorarTecla((e.target as HTMLElement)?.tagName, e.key)) return;
 
-            const action = this.mapKey(e);
+            const action = mapearTeclaPos(e.key);
             if (action) {
                 e.preventDefault();
                 this.handler?.(action);
@@ -74,20 +67,4 @@ export class PosKeyboardService {
         this.showShortcuts.update(v => !v);
     }
 
-    private mapKey(e: KeyboardEvent): PosKeyAction | null {
-        switch (e.key) {
-            case 'F1': return { type: 'action', name: 'nuevaVenta' };
-            case 'F2': return { type: 'action', name: 'holdOrder' };
-            case 'F3': return { type: 'action', name: 'recallOrder' };
-            case 'F4': return { type: 'action', name: 'customerSearch' };
-            case 'F5': return { type: 'action', name: 'cobrar' };
-            case 'F7': return { type: 'navigate', screen: 'historial' };
-            case 'F8': return { type: 'navigate', screen: 'devoluciones' };
-            case 'F9': return { type: 'navigate', screen: 'turno' };
-            case 'F10': return { type: 'action', name: 'toggleFullscreen' };
-            case 'Escape': return { type: 'navigate', screen: 'main' };
-            case '?': return { type: 'action', name: 'toggleShortcuts' };
-            default: return null;
-        }
-    }
 }

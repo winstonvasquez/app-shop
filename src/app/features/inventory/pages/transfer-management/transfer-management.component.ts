@@ -3,7 +3,7 @@ import {
     FormBuilder, ReactiveFormsModule, Validators, FormGroup, FormArray, FormControl
 } from '@angular/forms';
 import { InventoryApiService } from '../../services/inventory-api.service';
-import { InventoryTransfer, InventoryTransferRequest, InventoryTransferStatus, Warehouse } from '../../models/inventory.models';
+import { InventoryTransfer, InventoryTransferStatus, Warehouse } from '../../models/inventory.models';
 import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 import { ROUTES } from '@shared/constants/app.constants';
 import {
@@ -23,6 +23,8 @@ import { CatalogService } from '@core/services/catalog.service';
 import { warehouseSelectSource } from '../../components/select-sources';
 import { ProductLookupComponent } from '../../components/product-lookup/product-lookup.component';
 import { ProductResponse } from '@core/models/product.model';
+import { transferFiltrosParams } from './transfer-management.params';
+import { transferCrearPayload } from './transfer-management.form';
 
 @Component({
     selector: 'app-transfer-management',
@@ -122,19 +124,24 @@ export class TransferManagementComponent {
     readonly exportConfig: BackendExportConfig = {
         url: `${environment.apiUrls.inventory}/api/transfers/export`,
         filename: 'transferencias',
-        params: () => ({
-            q: this.searchQuery() || undefined,
-            status: this.filterStatus() || undefined,
-            sourceWarehouseId: this.filterSourceWarehouseId() || undefined,
-            destinationWarehouseId: this.filterDestinationWarehouseId() || undefined,
-            requestDateDesde: this.filterRequestDateDesde() ?? undefined,
-            requestDateHasta: this.filterRequestDateHasta() ?? undefined,
-            sentDateDesde: this.filterSentDateDesde() ?? undefined,
-            sentDateHasta: this.filterSentDateHasta() ?? undefined,
-            receivedDateDesde: this.filterReceivedDateDesde() ?? undefined,
-            receivedDateHasta: this.filterReceivedDateHasta() ?? undefined
-        })
+        params: () => transferFiltrosParams(this.filtrosUI())
     };
+
+    /** Los filtros del toolbar en un objeto plano — misma fuente para el listado y la exportación. */
+    private filtrosUI() {
+        return {
+            q: this.searchQuery(),
+            status: this.filterStatus(),
+            sourceWarehouseId: this.filterSourceWarehouseId(),
+            destinationWarehouseId: this.filterDestinationWarehouseId(),
+            requestDateDesde: this.filterRequestDateDesde(),
+            requestDateHasta: this.filterRequestDateHasta(),
+            sentDateDesde: this.filterSentDateDesde(),
+            sentDateHasta: this.filterSentDateHasta(),
+            receivedDateDesde: this.filterReceivedDateDesde(),
+            receivedDateHasta: this.filterReceivedDateHasta()
+        };
+    }
 
     actions: TableAction<InventoryTransfer>[] = [
         {
@@ -200,16 +207,7 @@ export class TransferManagementComponent {
         this.api.getTransfers({
             page: this.currentPage(),
             size: this.pageSize(),
-            q: this.searchQuery() || undefined,
-            status: this.filterStatus() || undefined,
-            sourceWarehouseId: this.filterSourceWarehouseId() ? Number(this.filterSourceWarehouseId()) : undefined,
-            destinationWarehouseId: this.filterDestinationWarehouseId() ? Number(this.filterDestinationWarehouseId()) : undefined,
-            requestDateDesde: this.filterRequestDateDesde() || undefined,
-            requestDateHasta: this.filterRequestDateHasta() || undefined,
-            sentDateDesde: this.filterSentDateDesde() || undefined,
-            sentDateHasta: this.filterSentDateHasta() || undefined,
-            receivedDateDesde: this.filterReceivedDateDesde() || undefined,
-            receivedDateHasta: this.filterReceivedDateHasta() || undefined
+            ...transferFiltrosParams(this.filtrosUI())
         }).subscribe({
             next: (res) => {
                 this.transfers.set(res.content);
@@ -291,19 +289,7 @@ export class TransferManagementComponent {
         if (this.details.length === 0) { this.submitError.set('Agregá al menos un producto a la transferencia.'); return; }
         if (this.form.invalid) { this.form.markAllAsTouched(); return; }
         this.submitting.set(true);
-        const v = this.form.getRawValue();
-        const payload: InventoryTransferRequest = {
-            sourceWarehouseId:      Number(v.sourceWarehouseId),
-            destinationWarehouseId: Number(v.destinationWarehouseId),
-            requestDate:            v.requestDate,
-            notes:                  v.notes || undefined,
-            details:                v.details.map((d: { productId: number; requestedQuantity: number; notes: string }) => ({
-                productId:         Number(d.productId),
-                requestedQuantity: Number(d.requestedQuantity),
-                notes:             d.notes || undefined
-            }))
-        };
-        this.api.createTransfer(payload).subscribe({
+        this.api.createTransfer(transferCrearPayload(this.form.getRawValue())).subscribe({
             next: () => { this.submitting.set(false); this.closeDrawer(); this.loadTransfers(); },
             error: (err: Error) => { this.submitting.set(false); this.submitError.set(err.message); }
         });

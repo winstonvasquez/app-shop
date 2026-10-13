@@ -11,8 +11,12 @@ import { ProductService } from '@core/services/product.service';
 import { SearchService } from '@shared/services/search.service';
 import { CartService } from '@features/cart/services/cart.service';
 import { DsProductCardComponent, DsProduct } from '@shared/ui/ds';
+import { mapearProductoADsProduct } from '@shared/ui/ds';
 
 const FEATURED_COUNT = 10;
+/** Tarjetas por página que se anuncian como oferta relámpago, y horas que dice el contador. */
+const FLASH_COUNT = 3;
+const FLASH_HORAS = 18;
 
 @Component({
     selector: 'app-flash-deals-section',
@@ -81,19 +85,10 @@ export class FlashDealsSectionComponent {
             this.currentPage(), this.pageSize(), query || undefined, catId,
         ).subscribe({
             next: (page) => {
+                // Las 3 primeras tarjetas de cada página llevan el contador de oferta relámpago.
                 const newProducts: DsProduct[] = page.content.map((p, i) => ({
-                    id: p.id,
-                    name: p.nombre,
-                    now: p.precioBase,
-                    was: p.originalPrice,
-                    rating: p.rating,
-                    sold: p.salesCount,
-                    stock: p.stock,
-                    badge: p.badge ?? (p.discount ?? (p.stock !== undefined && p.stock <= 5 ? 'POCAS' : undefined)),
-                    shipFree: (p.precioBase ?? 0) >= 99,
-                    flash: i < 3 ? 18 : undefined,
-                    image: p.imagenes?.find(img => img.esPrincipal)?.url
-                        || p.imagenes?.[0]?.url,
+                    ...mapearProductoADsProduct(p),
+                    flash: i < FLASH_COUNT ? FLASH_HORAS : undefined,
                 }));
                 this.products.update(current => [...current, ...newProducts]);
                 this.hasMore.set(!page.last);

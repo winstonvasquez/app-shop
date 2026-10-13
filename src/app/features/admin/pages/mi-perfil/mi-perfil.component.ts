@@ -4,6 +4,7 @@ import { HttpClient } from '@angular/common/http';
 import { environment } from '@env/environment';
 import { AuthService } from '@core/auth/auth.service';
 import { LoginResponse } from '@core/auth/auth.model';
+import { mensajeDeErrorDeControl } from '@shared/utils/form-errors';
 
 interface PersonaDto {
     id: number;
@@ -184,10 +185,7 @@ export class MiPerfilComponent implements OnInit {
         if (field === 'confirmPassword' && c?.touched && this.passwordForm.hasError('mismatch')) {
             return 'Las contraseñas no coinciden.';
         }
-        if (!c || c.pristine || c.valid) return '';
-        if (c.hasError('required')) return 'Campo obligatorio.';
-        if (c.hasError('minlength')) return `Mínimo ${c.getError('minlength').requiredLength} caracteres.`;
-        return 'Campo inválido.';
+        return !c || c.pristine || c.valid ? '' : mensajeDeErrorDeControl(c);
     }
 
     onSubmitPassword(): void {

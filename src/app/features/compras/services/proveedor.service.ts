@@ -1,9 +1,11 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Observable, firstValueFrom } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { environment } from '@env/environment';
 import { Proveedor, ProveedorPage } from '../models/proveedor.model';
+import { toHttpParams } from '@core/utils/http-params.util';
+import { adaptSpringPage } from '@core/models/pagination.model';
 
 /**
  * Opción mínima de proveedor para poblar un `<select>` de filtro
@@ -61,33 +63,23 @@ export class ProveedorService {
         const page = filtros.page ?? 0;
         const size = filtros.size ?? 10;
 
-        let params = new HttpParams()
-            .set('page', page.toString())
-            .set('size', size.toString());
-
-        if (filtros.search) params = params.set('search', filtros.search);
-        if (filtros.estado) params = params.set('estado', filtros.estado);
-        if (filtros.condicionSunat) params = params.set('condicionSunat', filtros.condicionSunat);
-        if (filtros.condicionPago) params = params.set('condicionPago', filtros.condicionPago);
-        if (filtros.monedaPreferida) params = params.set('monedaPreferida', filtros.monedaPreferida);
-        if (filtros.nivelProveedor) params = params.set('nivelProveedor', filtros.nivelProveedor);
-        if (filtros.agenteRetencion) params = params.set('agenteRetencion', filtros.agenteRetencion);
-        if (filtros.banco) params = params.set('banco', filtros.banco);
-        if (filtros.createdAtDesde) params = params.set('createdAtDesde', filtros.createdAtDesde);
-        if (filtros.createdAtHasta) params = params.set('createdAtHasta', filtros.createdAtHasta);
+        let params = toHttpParams({
+            page,
+            size,
+            search: filtros.search,
+            estado: filtros.estado,
+            condicionSunat: filtros.condicionSunat,
+            condicionPago: filtros.condicionPago,
+            monedaPreferida: filtros.monedaPreferida,
+            nivelProveedor: filtros.nivelProveedor,
+            agenteRetencion: filtros.agenteRetencion,
+            banco: filtros.banco,
+            createdAtDesde: filtros.createdAtDesde,
+            createdAtHasta: filtros.createdAtHasta,
+        });
 
         return this.http.get<unknown>(this.baseUrl, { params }).pipe(
-            map((raw: unknown) => {
-                const r = raw as Record<string, unknown>;
-                const nested = r['page'] as Record<string, unknown> | undefined;
-                return {
-                    content: (r['content'] as Proveedor[]) ?? [],
-                    totalElements: (r['totalElements'] as number) ?? (nested?.['totalElements'] as number) ?? 0,
-                    totalPages: (r['totalPages'] as number) ?? (nested?.['totalPages'] as number) ?? 0,
-                    size: (r['size'] as number) ?? size,
-                    number: (r['number'] as number) ?? page,
-                } as ProveedorPage;
-            })
+            map((raw: unknown) => adaptSpringPage<Proveedor>(raw, page, size) as ProveedorPage)
         );
     }
 

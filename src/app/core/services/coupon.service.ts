@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '@env/environment';
+import { toHttpParams } from '@core/utils/http-params.util';
 
 export interface CuponResponse {
     id: number;
@@ -63,14 +64,17 @@ export class CouponService {
      * incluido `status`— ocurre en el backend; la vista nunca filtra la página cargada.
      */
     getMyCupones(page = 0, size = 20, filtros: MisCuponesFiltros = {}): Observable<PageResponse<CuponResponse>> {
-        const params: Record<string, string | number> = { page, size };
-        if (filtros.search) params['search'] = filtros.search;
-        if (filtros.tipo) params['tipo'] = filtros.tipo;
-        if (filtros.status) params['status'] = filtros.status;
-        if (filtros.fechaFinDesde) params['fechaFinDesde'] = filtros.fechaFinDesde;
-        if (filtros.fechaFinHasta) params['fechaFinHasta'] = filtros.fechaFinHasta;
-        if (filtros.assignedAtDesde) params['assignedAtDesde'] = filtros.assignedAtDesde;
-        if (filtros.assignedAtHasta) params['assignedAtHasta'] = filtros.assignedAtHasta;
+        let params = toHttpParams({
+            page,
+            size,
+            search: filtros.search,
+            tipo: filtros.tipo,
+            status: filtros.status,
+            fechaFinDesde: filtros.fechaFinDesde,
+            fechaFinHasta: filtros.fechaFinHasta,
+            assignedAtDesde: filtros.assignedAtDesde,
+            assignedAtHasta: filtros.assignedAtHasta,
+        });
 
         return this.http.get<PageResponse<CuponResponse>>(`${this.base}/mine`, { params });
     }

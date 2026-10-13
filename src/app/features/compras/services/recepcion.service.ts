@@ -1,10 +1,12 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { environment } from '@env/environment';
 import { AuthService } from '@core/auth/auth.service';
 import { ItemRecepcionRequest, Recepcion } from '../models/orden-compra.model';
+import { toHttpParams } from '@core/utils/http-params.util';
+import { adaptSpringPage } from '@core/models/pagination.model';
 
 export interface RecepcionPage {
     content: Recepcion[];
@@ -61,30 +63,21 @@ export class RecepcionService {
         const page = filtros.page ?? 0;
         const size = filtros.size ?? 10;
 
-        let params = new HttpParams()
-            .set('page', page.toString())
-            .set('size', size.toString());
-        if (filtros.q) params = params.set('q', filtros.q);
-        if (filtros.estado) params = params.set('estado', filtros.estado);
-        if (filtros.almacenDestino) params = params.set('almacenDestino', filtros.almacenDestino);
-        if (filtros.proveedorId) params = params.set('proveedorId', filtros.proveedorId);
-        if (filtros.transportista) params = params.set('transportista', filtros.transportista);
-        if (filtros.responsable) params = params.set('responsable', filtros.responsable);
-        if (filtros.fechaRecepcionDesde) params = params.set('fechaRecepcionDesde', filtros.fechaRecepcionDesde);
-        if (filtros.fechaRecepcionHasta) params = params.set('fechaRecepcionHasta', filtros.fechaRecepcionHasta);
+        let params = toHttpParams({
+            page,
+            size,
+            q: filtros.q,
+            estado: filtros.estado,
+            almacenDestino: filtros.almacenDestino,
+            proveedorId: filtros.proveedorId,
+            transportista: filtros.transportista,
+            responsable: filtros.responsable,
+            fechaRecepcionDesde: filtros.fechaRecepcionDesde,
+            fechaRecepcionHasta: filtros.fechaRecepcionHasta,
+        });
 
         return this.http.get<unknown>(this.baseUrl, { params, headers: this.getHeaders() }).pipe(
-            map((raw: unknown) => {
-                const r = raw as Record<string, unknown>;
-                const nested = r['page'] as Record<string, unknown> | undefined;
-                return {
-                    content: (r['content'] as Recepcion[]) ?? [],
-                    totalElements: (r['totalElements'] as number) ?? (nested?.['totalElements'] as number) ?? 0,
-                    totalPages: (r['totalPages'] as number) ?? (nested?.['totalPages'] as number) ?? 0,
-                    size: (r['size'] as number) ?? size,
-                    number: (r['number'] as number) ?? page,
-                } as RecepcionPage;
-            })
+            map((raw: unknown) => adaptSpringPage<Recepcion>(raw, page, size) as RecepcionPage)
         );
     }
 

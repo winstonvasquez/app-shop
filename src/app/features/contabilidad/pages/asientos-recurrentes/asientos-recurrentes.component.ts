@@ -30,12 +30,12 @@ import { CatalogService } from '@core/services/catalog.service';
 import {
     AsientoRecurrenteService,
     AsientoRecurrente,
-    AsientoRecurrenteRequest,
-    RecurringLineItem,
 } from '../../services/asiento-recurrente.service';
+import { construirAsientoRecurrenteRequest } from './asientos-recurrentes.form';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 import { environment } from '@env/environment';
+import { mensajeDeErrorDeControl } from '@shared/utils/form-errors';
 
 @Component({
     selector: 'app-asientos-recurrentes',
@@ -349,24 +349,14 @@ export class AsientosRecurrentesComponent implements OnInit {
             return;
         }
 
-        const v = this.form.getRawValue();
-
-        const templateLines: RecurringLineItem[] = this.lineasArray.controls.map(ctrl => ({
-            accountCode: ctrl.get('accountCode')!.value as string,
-            movementType: ctrl.get('movementType')!.value as 'DEBE' | 'HABER',
-            amount: Number(ctrl.get('amount')!.value),
-        }));
-
-        const request: AsientoRecurrenteRequest = {
-            name: v.nombre ?? '',
-            description: v.descripcion ?? '',
-            frequency: v.frecuencia ?? 'MENSUAL',
-            executionDay: Number(v.diaEjecucion ?? 1),
-            startDate: v.fechaInicio ?? '',
-            endDate: v.fechaFin || null,
-            templateGloss: v.glosa ?? '',
-            templateLines,
-        };
+        const request = construirAsientoRecurrenteRequest(
+            this.form.getRawValue(),
+            this.lineasArray.controls.map(ctrl => ({
+                accountCode: ctrl.get('accountCode')!.value,
+                movementType: ctrl.get('movementType')!.value,
+                amount: ctrl.get('amount')!.value,
+            })),
+        );
 
         const id = this.editandoId();
         this.guardando.set(true);
@@ -413,22 +403,12 @@ export class AsientosRecurrentesComponent implements OnInit {
     // ── Helpers de error ─────────────────────────────────────────────────────
     err(field: string): string {
         const c = this.form.get(field);
-        if (!c || c.pristine || c.valid) return '';
-        if (c.hasError('required')) return 'Campo requerido';
-        if (c.hasError('minlength')) {
-            return `Mínimo ${(c.getError('minlength') as { requiredLength: number }).requiredLength} caracteres`;
-        }
-        if (c.hasError('min')) return `Valor mínimo: ${(c.getError('min') as { min: number }).min}`;
-        if (c.hasError('max')) return `Valor máximo: ${(c.getError('max') as { max: number }).max}`;
-        return 'Campo inválido';
+        return !c || c.pristine || c.valid ? '' : mensajeDeErrorDeControl(c);
     }
 
     errLinea(i: number, field: string): string {
         const ctrl = this.lineasArray.at(i)?.get(field);
-        if (!ctrl || ctrl.pristine || ctrl.valid) return '';
-        if (ctrl.hasError('required')) return 'Campo requerido';
-        if (ctrl.hasError('min')) return 'Monto mínimo: 0.01';
-        return 'Campo inválido';
+        return !ctrl || ctrl.pristine || ctrl.valid ? '' : mensajeDeErrorDeControl(ctrl, { min: 'Monto mínimo: 0.01' });
     }
 
     // ── Validador de balance ─────────────────────────────────────────────────

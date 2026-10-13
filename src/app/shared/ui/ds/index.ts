@@ -43,3 +43,5 @@ export { DsCategoryTileComponent } from './ds-category-tile/ds-category-tile.com
 export type { DsCategoryTile } from './ds-category-tile/ds-category-tile.component';
 
 export { DsAccountShellComponent } from './ds-account-shell/ds-account-shell.component';
+export { mapearProductoADsProduct } from './producto-a-ds.util';
+export type { OpcionesDeMapeo } from './producto-a-ds.util';

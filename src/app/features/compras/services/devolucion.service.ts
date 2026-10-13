@@ -1,11 +1,12 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { environment } from '@env/environment';
 import { AuthService } from '@core/auth/auth.service';
 import { CrearDevolucionRequest, Devolucion } from '../models/devolucion.model';
-import { Page } from '@core/models/pagination.model';
+import { Page, adaptSpringPage } from '@core/models/pagination.model';
+import { toHttpParams } from '@core/utils/http-params.util';
 
 /** Filtros server-side del listado de devoluciones a proveedor. Todos opcionales. */
 export interface DevolucionFiltros {
@@ -42,32 +43,20 @@ export class DevolucionService {
         const page = filtros.page ?? 0;
         const size = filtros.size ?? 10;
 
-        let params = new HttpParams()
-            .set('page', page.toString())
-            .set('size', size.toString());
-        if (filtros.q) params = params.set('q', filtros.q);
-        if (filtros.estado) params = params.set('estado', filtros.estado);
-        if (filtros.tipo) params = params.set('tipo', filtros.tipo);
-        if (filtros.motivo) params = params.set('motivo', filtros.motivo);
-        if (filtros.proveedorId) params = params.set('proveedorId', filtros.proveedorId);
-        if (filtros.createdAtDesde) params = params.set('createdAtDesde', filtros.createdAtDesde);
-        if (filtros.createdAtHasta) params = params.set('createdAtHasta', filtros.createdAtHasta);
+        let params = toHttpParams({
+            page,
+            size,
+            q: filtros.q,
+            estado: filtros.estado,
+            tipo: filtros.tipo,
+            motivo: filtros.motivo,
+            proveedorId: filtros.proveedorId,
+            createdAtDesde: filtros.createdAtDesde,
+            createdAtHasta: filtros.createdAtHasta,
+        });
 
         return this.http.get<unknown>(this.baseUrl, { params, headers: this.getHeaders() }).pipe(
-            map((raw: unknown) => {
-                const r = raw as Record<string, unknown>;
-                const nested = r['page'] as Record<string, unknown> | undefined;
-                return {
-                    content: (r['content'] as Devolucion[]) ?? [],
-                    totalElements: (r['totalElements'] as number) ?? (nested?.['totalElements'] as number) ?? 0,
-                    totalPages: (r['totalPages'] as number) ?? (nested?.['totalPages'] as number) ?? 0,
-                    size: (r['size'] as number) ?? size,
-                    number: (r['number'] as number) ?? page,
-                    first: !!(r['first'] as boolean),
-                    last: !!(r['last'] as boolean),
-                    empty: !!(r['empty'] as boolean),
-                } as Page<Devolucion>;
-            })
+            map((raw: unknown) => adaptSpringPage<Devolucion>(raw, page, size))
         );
     }
 

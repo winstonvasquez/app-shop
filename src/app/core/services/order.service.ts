@@ -13,6 +13,8 @@ import {
 } from '@core/models/order.model';
 import { PageResponse, PaginationConfig } from '@core/models/pagination.model';
 import { HTTP_STATUS } from '@shared/constants/app.constants';
+import { toHttpParams } from '@core/utils/http-params.util';
+import { mensajeDeErrorHttp } from '@core/utils/http-error.util';
 
 /** Filtros server-side del listado "Mis pedidos" del storefront. Todos opcionales. */
 export interface MisPedidosFiltros {
@@ -45,18 +47,18 @@ export class OrderService {
         size: number,
         filtros: MisPedidosFiltros = {}
     ): Observable<PageResponse<OrderResponse>> {
-        let params = new HttpParams()
-            .set('page', page.toString())
-            .set('size', size.toString())
-            .set('sort', 'fechaPedido,desc');
-
-        if (filtros.search) params = params.set('search', filtros.search);
-        if (filtros.estado) params = params.set('estado', filtros.estado);
-        if (filtros.cpeTipo) params = params.set('cpeTipo', filtros.cpeTipo);
-        if (filtros.cpeEstado) params = params.set('cpeEstado', filtros.cpeEstado);
-        if (filtros.metodoPago) params = params.set('metodoPago', filtros.metodoPago);
-        if (filtros.fechaPedidoDesde) params = params.set('fechaPedidoDesde', filtros.fechaPedidoDesde);
-        if (filtros.fechaPedidoHasta) params = params.set('fechaPedidoHasta', filtros.fechaPedidoHasta);
+        let params = toHttpParams({
+            page,
+            size,
+            sort: 'fechaPedido,desc',
+            search: filtros.search,
+            estado: filtros.estado,
+            cpeTipo: filtros.cpeTipo,
+            cpeEstado: filtros.cpeEstado,
+            metodoPago: filtros.metodoPago,
+            fechaPedidoDesde: filtros.fechaPedidoDesde,
+            fechaPedidoHasta: filtros.fechaPedidoHasta,
+        });
 
         return this.http
             .get<PageResponse<OrderResponse>>(`${this.baseUrl}/mis-pedidos`, { params })
@@ -78,63 +80,17 @@ export class OrderService {
             cpeFechaEmisionHasta?: string;
         }
     ): Observable<PageResponse<OrderResponse>> {
-        // El listado de pedidos del admin exige companyId: sin él el backend
-        // responde 400 y la tabla queda vacía sin explicación.
-        let params = new HttpParams()
-            .set('page', pagination.page.toString())
-            .set('size', pagination.size.toString());
-
-        const companyId = this.auth.currentUser()?.activeCompanyId;
-        if (companyId != null) {
-            params = params.set('companyId', String(companyId));
-        }
-
-        if (pagination.sort) {
-            params = params.set(
-                'sort',
-                `${pagination.sort.field},${pagination.sort.direction}`
-            );
-        }
-
-        if (search) {
-            params = params.set('search', search);
-        }
-
-        if (filters?.estado) {
-            params = params.set('estado', filters.estado);
-        }
-
-        if (filters?.cpeTipo) {
-            params = params.set('cpeTipo', filters.cpeTipo);
-        }
-
-        if (filters?.cpeEstado) {
-            params = params.set('cpeEstado', filters.cpeEstado);
-        }
-
-        if (filters?.metodoPago) {
-            params = params.set('metodoPago', filters.metodoPago);
-        }
-
-        if (filters?.estadoPago) {
-            params = params.set('estadoPago', filters.estadoPago);
-        }
-
-        if (filters?.fechaPedidoDesde) {
-            params = params.set('fechaPedidoDesde', filters.fechaPedidoDesde);
-        }
-
-        if (filters?.fechaPedidoHasta) {
-            params = params.set('fechaPedidoHasta', filters.fechaPedidoHasta);
-        }
-
-        if (filters?.cpeFechaEmisionDesde) {
-            params = params.set('cpeFechaEmisionDesde', filters.cpeFechaEmisionDesde);
-        }
-
-        if (filters?.cpeFechaEmisionHasta) {
-            params = params.set('cpeFechaEmisionHasta', filters.cpeFechaEmisionHasta);
-        }
+        // El listado de pedidos del admin exige companyId: sin él el backend responde 400 y la
+        // tabla queda vacía sin explicación. Los filtros van por spread porque su tipo declara
+        // exactamente los parámetros que acepta el endpoint.
+        const params = toHttpParams({
+            page: pagination.page,
+            size: pagination.size,
+            companyId: this.auth.currentUser()?.activeCompanyId,
+            sort: pagination.sort ? `${pagination.sort.field},${pagination.sort.direction}` : undefined,
+            search,
+            ...filters,
+        });
 
         return this.http
             .get<PageResponse<OrderResponse>>(this.baseUrl, { params })
@@ -219,23 +175,7 @@ export class OrderService {
     }
 
     private handleError(error: HttpErrorResponse): Observable<never> {
-        let errorMessage = 'Ocurrió un error desconocido';
-
-        if (error.error instanceof ErrorEvent) {
-            errorMessage = `Error: ${error.error.message}`;
-        } else {
-            if (error.status === 0) {
-                errorMessage = 'No se pudo conectar con el servidor';
-            } else if (error.status === HTTP_STATUS.badRequest) {
-                errorMessage = error.error?.message || 'Datos inválidos';
-            } else if (error.status === HTTP_STATUS.notFound) {
-                errorMessage = 'Pedido no encontrado';
-            } else if (error.status === HTTP_STATUS.internalServerError) {
-                errorMessage = 'Error interno del servidor';
-            }
-        }
-
         console.error('OrderService Error:', error);
-        return throwError(() => new Error(errorMessage));
+        return throwError(() => new Error(mensajeDeErrorHttp(error, { [HTTP_STATUS.notFound]: 'Pedido no encontrado' })));
     }
 }

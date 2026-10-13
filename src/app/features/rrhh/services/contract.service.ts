@@ -4,6 +4,7 @@ import { environment } from '@env/environment';
 import { firstValueFrom } from 'rxjs';
 import { PageResponse, pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 import { Contract, ContractRequest, ContractStatus } from '../models/contract.model';
+import { toHttpParams } from '@core/utils/http-params.util';
 
 /** Filtros server-side del listado paginado de contratos. Todos opcionales. */
 export interface ContractFiltros {
@@ -54,21 +55,21 @@ export class ContractService {
         this._loading.set(true);
         this._error.set(null);
         try {
-            const params: Record<string, string> = {
-                page: String(filtros.page ?? 0),
-                size: String(filtros.size ?? 20),
-            };
-            if (filtros.search) params['search'] = filtros.search;
-            if (filtros.status) params['status'] = filtros.status;
-            if (filtros.type) params['type'] = filtros.type;
-            if (filtros.jornadaLaboral) params['jornadaLaboral'] = filtros.jornadaLaboral;
-            if (filtros.moneda) params['moneda'] = filtros.moneda;
-            if (filtros.employeeId != null) params['employeeId'] = String(filtros.employeeId);
-            if (filtros.departmentId != null) params['departmentId'] = String(filtros.departmentId);
-            if (filtros.fechaInicioDesde) params['fechaInicioDesde'] = filtros.fechaInicioDesde;
-            if (filtros.fechaInicioHasta) params['fechaInicioHasta'] = filtros.fechaInicioHasta;
-            if (filtros.fechaFinDesde) params['fechaFinDesde'] = filtros.fechaFinDesde;
-            if (filtros.fechaFinHasta) params['fechaFinHasta'] = filtros.fechaFinHasta;
+            let params = toHttpParams({
+                page: filtros.page ?? 0,
+                size: filtros.size ?? 20,
+                search: filtros.search,
+                status: filtros.status,
+                type: filtros.type,
+                jornadaLaboral: filtros.jornadaLaboral,
+                moneda: filtros.moneda,
+                employeeId: filtros.employeeId,
+                departmentId: filtros.departmentId,
+                fechaInicioDesde: filtros.fechaInicioDesde,
+                fechaInicioHasta: filtros.fechaInicioHasta,
+                fechaFinDesde: filtros.fechaFinDesde,
+                fechaFinHasta: filtros.fechaFinHasta,
+            });
             const res = await firstValueFrom(
                 this.http.get<PageResponse<Contract>>(`${this.baseUrl}/paged`, { params })
             );

@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpParams, HttpErrorResponse } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { environment } from '@env/environment';
@@ -10,6 +10,8 @@ import {
 } from '@features/admin/models/user.model';
 import { PageResponse, PaginationConfig } from '@core/models/pagination.model';
 import { HTTP_STATUS } from '@shared/constants/app.constants';
+import { toHttpParams } from '@core/utils/http-params.util';
+import { mensajeDeErrorHttp } from '@core/utils/http-error.util';
 
 @Injectable({
     providedIn: 'root'
@@ -25,36 +27,17 @@ export class UserService {
         pagination: PaginationConfig,
         filter?: UserFilter
     ): Observable<PageResponse<UserResponse>> {
-        let params = new HttpParams()
-            .set('page', pagination.page.toString())
-            .set('size', pagination.size.toString());
-
-        // Add sorting
-        if (pagination.sort) {
-            params = params.set(
-                'sort',
-                `${pagination.sort.field},${pagination.sort.direction}`
-            );
-        }
-
-        if (filter?.search) {
-            params = params.set('search', filter.search);
-        }
-        if (filter?.rolId != null) {
-            params = params.set('rolId', filter.rolId.toString());
-        }
-        if (filter?.activo != null) {
-            params = params.set('activo', filter.activo.toString());
-        }
-        if (filter?.tipoDocumento) {
-            params = params.set('tipoDocumento', filter.tipoDocumento);
-        }
-        if (filter?.fechaCreacionDesde) {
-            params = params.set('fechaCreacionDesde', filter.fechaCreacionDesde);
-        }
-        if (filter?.fechaCreacionHasta) {
-            params = params.set('fechaCreacionHasta', filter.fechaCreacionHasta);
-        }
+        let params = toHttpParams({
+            page: pagination.page,
+            size: pagination.size,
+            sort: pagination.sort ? `${pagination.sort.field},${pagination.sort.direction}` : undefined,
+            search: filter?.search,
+            rolId: filter?.rolId,
+            activo: filter?.activo,
+            tipoDocumento: filter?.tipoDocumento,
+            fechaCreacionDesde: filter?.fechaCreacionDesde,
+            fechaCreacionHasta: filter?.fechaCreacionHasta,
+        });
 
         return this.http
             .get<PageResponse<UserResponse>>(this.baseUrl, { params })
@@ -128,29 +111,10 @@ export class UserService {
      * Handle HTTP errors
      */
     private handleError(error: HttpErrorResponse): Observable<never> {
-        let errorMessage = 'Ocurrió un error desconocido';
-
-        if (error.error instanceof ErrorEvent) {
-            // Client-side error
-            errorMessage = `Error: ${error.error.message}`;
-        } else {
-            // Server-side error
-            if (error.status === 0) {
-                errorMessage = 'No se pudo conectar con el servidor';
-            } else if (error.status === HTTP_STATUS.badRequest) {
-                errorMessage = error.error?.message || 'Datos inválidos';
-            } else if (error.status === HTTP_STATUS.notFound) {
-                errorMessage = 'Usuario no encontrado';
-            } else if (error.status === HTTP_STATUS.conflict) {
-                errorMessage = 'El usuario ya existe (username, email o documento duplicado)';
-            } else if (error.status === HTTP_STATUS.internalServerError) {
-                errorMessage = 'Error interno del servidor';
-            } else {
-                errorMessage = `Error ${error.status}: ${error.error?.message || error.statusText}`;
-            }
-        }
-
         console.error('UserService Error:', error);
-        return throwError(() => new Error(errorMessage));
+        return throwError(() => new Error(mensajeDeErrorHttp(error, {
+            [HTTP_STATUS.notFound]: 'Usuario no encontrado',
+            [HTTP_STATUS.conflict]: 'El usuario ya existe (username, email o documento duplicado)',
+        })));
     }
 }

@@ -22,6 +22,8 @@ import { firstValueFrom } from 'rxjs';
 import { finalize } from 'rxjs/operators';
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
 import { AdminFormSectionComponent } from '@shared/ui/forms/admin-form-section/admin-form-section.component';
+import { mensajeDeErrorDeControl } from '@shared/utils/form-errors';
+import { construirOrderRequest } from './checkout-page.order-request';
 
 @Component({
   selector: 'app-checkout-page',
@@ -298,37 +300,25 @@ export class CheckoutPageComponent implements OnInit {
    * Centraliza la creación del DTO para que todos los métodos de pago usen el mismo.
    */
   private buildOrderRequest(): OrderRequest {
-    const addr = this.selectedAddress()!;
-    const guestEmail = this.isGuest() ? (this.guestForm.value.guestEmail ?? undefined) : undefined;
+    const invitado = this.guestForm.value;
 
     // Guardar datos de invitado en sesión para reutilizar en próximas visitas
-    if (this.isGuest() && guestEmail) {
-      this.guestSession.setEmail(this.guestForm.value.guestEmail ?? '');
-      this.guestSession.setName(this.guestForm.value.guestName ?? '');
-      this.guestSession.setPhone(this.guestForm.value.guestPhone ?? '');
+    if (this.isGuest() && invitado.guestEmail) {
+      this.guestSession.setEmail(invitado.guestEmail);
+      this.guestSession.setName(invitado.guestName ?? '');
+      this.guestSession.setPhone(invitado.guestPhone ?? '');
     }
 
-    return {
+    return construirOrderRequest({
       usuarioId: this.userId(),
-      guestEmail,
-      detalles: this.cartItems().map(item => ({
-        productoId: item.productId,
-        varianteId: item.variantId ?? 0,
-        cantidad: item.quantity
-      })),
-      direccionEnvio: {
-        direccion: addr.direccion,
-        ciudad: addr.distrito,
-        codigoPostal: addr.ubigeo ?? '00000',
-        pais: 'Perú',
-        region: addr.departamento,
-        nombreDestinatario: addr.nombreDestinatario ?? '',
-        telefono: addr.telefonoDestinatario ?? ''
-      },
+      esInvitado: this.isGuest(),
+      emailInvitado: invitado.guestEmail,
+      items: this.cartItems(),
+      direccion: this.selectedAddress()!,
       metodoPago: this.selectedPaymentMethod(),
-      codigoCupon: this.appliedCouponCode() ?? undefined,
-      zonaEnvioId: this.selectedZona()?.id ?? undefined
-    };
+      codigoCupon: this.appliedCouponCode(),
+      zonaEnvioId: this.selectedZona()?.id,
+    });
   }
 
   /**
@@ -600,18 +590,13 @@ export class CheckoutPageComponent implements OnInit {
   /** Helper de validación para el formulario de dirección — usado en template con [error]. */
   errAddress(field: string): string {
     const c = this.addressForm.get(field);
-    if (!c || c.pristine || c.valid) return '';
-    if (c.hasError('required')) return 'Campo requerido';
-    return 'Campo inválido';
+    return !c || c.pristine || c.valid ? '' : mensajeDeErrorDeControl(c);
   }
 
   /** Helper de validación para el formulario de invitado — usado en template con [error]. */
   errGuest(field: string): string {
     const c = this.guestForm.get(field);
-    if (!c || c.pristine || c.valid) return '';
-    if (c.hasError('required')) return 'Campo requerido';
-    if (c.hasError('email')) return 'Email inválido';
-    return 'Campo inválido';
+    return !c || c.pristine || c.valid ? '' : mensajeDeErrorDeControl(c);
   }
 
   /**

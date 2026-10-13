@@ -1,9 +1,11 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Observable, firstValueFrom } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { environment } from '@env/environment';
 import { OrdenCompra, OrdenCompraPage } from '../models/orden-compra.model';
+import { toHttpParams } from '@core/utils/http-params.util';
+import { adaptSpringPage } from '@core/models/pagination.model';
 
 /** Filtros server-side del listado de órdenes de compra. Todos opcionales. */
 export interface OrdenCompraFiltros {
@@ -36,33 +38,21 @@ export class OrdenCompraService {
         const page = filtros.page ?? 0;
         const size = filtros.size ?? 10;
 
-        let params = new HttpParams()
-            .set('page', page.toString())
-            .set('size', size.toString());
-
-        if (filtros.q) params = params.set('q', filtros.q);
-        if (filtros.estado) params = params.set('estado', filtros.estado);
-        if (filtros.condicionPago) params = params.set('condicionPago', filtros.condicionPago);
-        if (filtros.proveedorId) params = params.set('proveedorId', filtros.proveedorId);
-        if (filtros.moneda) params = params.set('moneda', filtros.moneda);
-        if (filtros.fechaEmisionDesde) params = params.set('fechaEmisionDesde', filtros.fechaEmisionDesde);
-        if (filtros.fechaEmisionHasta) params = params.set('fechaEmisionHasta', filtros.fechaEmisionHasta);
-        if (filtros.sortField) {
-            params = params.set('sort', `${filtros.sortField},${filtros.sortDirection ?? 'desc'}`);
-        }
+        let params = toHttpParams({
+            page,
+            size,
+            q: filtros.q,
+            estado: filtros.estado,
+            condicionPago: filtros.condicionPago,
+            proveedorId: filtros.proveedorId,
+            moneda: filtros.moneda,
+            fechaEmisionDesde: filtros.fechaEmisionDesde,
+            fechaEmisionHasta: filtros.fechaEmisionHasta,
+            sort: filtros.sortField ? `${filtros.sortField},${filtros.sortDirection ?? 'desc'}` : undefined,
+        });
 
         return this.http.get<unknown>(this.baseUrl, { params }).pipe(
-            map((raw: unknown) => {
-                const r = raw as Record<string, unknown>;
-                const nested = r['page'] as Record<string, unknown> | undefined;
-                return {
-                    content: (r['content'] as OrdenCompra[]) ?? [],
-                    totalElements: (r['totalElements'] as number) ?? (nested?.['totalElements'] as number) ?? 0,
-                    totalPages: (r['totalPages'] as number) ?? (nested?.['totalPages'] as number) ?? 0,
-                    size: (r['size'] as number) ?? size,
-                    number: (r['number'] as number) ?? page,
-                } as OrdenCompraPage;
-            })
+            map((raw: unknown) => adaptSpringPage<OrdenCompra>(raw, page, size) as OrdenCompraPage)
         );
     }
 

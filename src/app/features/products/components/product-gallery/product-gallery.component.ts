@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, input, signal } from '@an
 import { LucideAngularModule } from 'lucide-angular';
 import { ProductDetail } from '@features/products/models/product-detail.model';
 import { Image as ProductImage } from '@features/products/models/image.model';
+import { indiceDeTeclaGaleria } from './galeria-teclado.util';
 
 export interface GalleryMediaItem {
   id: number;
@@ -149,20 +150,9 @@ export class ProductGalleryComponent {
 
   /** Flechas, Inicio y Fin sobre la tira de miniaturas. */
   onGalleryKeydown(event: KeyboardEvent): void {
-    switch (event.key) {
-      case 'ArrowRight':
-      case 'ArrowDown':
-        this.step(1); break;
-      case 'ArrowLeft':
-      case 'ArrowUp':
-        this.step(-1); break;
-      case 'Home':
-        this.selectItem(0); break;
-      case 'End':
-        this.selectItem(this.mediaItems().length - 1); break;
-      default:
-        return;
-    }
+    const destino = indiceDeTeclaGaleria(event.key, this.safeIndex(), this.mediaItems().length);
+    if (destino === null) return;
+    this.selectItem(destino);
     event.preventDefault();
   }
 

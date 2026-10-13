@@ -38,6 +38,7 @@ import { catalogFilter, signalFilter } from '@shared/ui/tables/data-table/filter
 import { ProveedorService, ProveedorFiltroOption, toProveedorOptions } from '../../services/proveedor.service';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
+import { claseBadgeEstadoDevolucion, construirCrearDevolucionRequest } from './devoluciones.form';
 
 @Component({
     selector: 'app-devoluciones',
@@ -374,22 +375,7 @@ export class DevolucionesComponent implements OnInit {
 
     crearDevolucion(): void {
         if (this.devolucionForm.invalid) return;
-        const fv = this.devolucionForm.value;
-
-        const request: CrearDevolucionRequest = {
-            ordenCompraId: fv.ordenCompraId ?? '',
-            recepcionId: fv.recepcionId || undefined,
-            motivo: fv.motivo ?? '',
-            tipo: fv.tipo ?? 'DEVOLUCION',
-            observaciones: fv.observaciones || undefined,
-            items: (fv.items ?? []).map((i: Record<string, unknown>) => ({
-                ordenItemId: (i['ordenItemId'] as string) || undefined,
-                productoNombre: i['productoNombre'] as string,
-                sku: (i['sku'] as string) || undefined,
-                cantidad: Number(i['cantidad']),
-                motivoItem: (i['motivoItem'] as string) || undefined,
-            })),
-        };
+        const request: CrearDevolucionRequest = construirCrearDevolucionRequest(this.devolucionForm.value);
 
         this.submitting.set(true);
         this.submitError.set(null);
@@ -456,14 +442,7 @@ export class DevolucionesComponent implements OnInit {
     }
 
     getBadge(estado: string | undefined): string {
-        switch (estado) {
-            case 'BORRADOR': return 'badge badge-neutral';
-            case 'ENVIADA': return 'badge badge-accent';
-            case 'ACEPTADA': return 'badge badge-warning';
-            case 'COMPLETADA': return 'badge badge-success';
-            case 'RECHAZADA': return 'badge badge-error';
-            default: return 'badge badge-neutral';
-        }
+        return claseBadgeEstadoDevolucion(estado);
     }
 
     private createItemGroup(): FormGroup {

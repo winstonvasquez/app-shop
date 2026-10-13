@@ -5,6 +5,7 @@ import { LucideAngularModule } from 'lucide-angular';
 import { environment } from '@env/environment';
 import { AuthService } from '@core/auth/auth.service';
 import { DsAccountShellComponent, DsButtonComponent } from '@shared/ui/ds';
+import { mensajeDeErrorDeSeguridad } from './account-security.errores';
 
 @Component({
     selector: 'app-account-security',
@@ -42,14 +43,11 @@ export class AccountSecurityComponent {
     );
 
     err(field: 'currentPassword' | 'newPassword' | 'confirmPassword'): string {
-        const c = this.passwordForm.get(field);
-        if (field === 'confirmPassword' && c?.touched && this.passwordForm.hasError('mismatch')) {
-            return 'Las contraseñas no coinciden.';
-        }
-        if (!c || c.pristine || c.valid) return '';
-        if (c.hasError('required')) return 'Campo requerido.';
-        if (c.hasError('minlength')) return `Mínimo ${c.getError('minlength').requiredLength} caracteres.`;
-        return 'Campo inválido.';
+        return mensajeDeErrorDeSeguridad(
+            this.passwordForm.get(field),
+            field === 'confirmPassword',
+            this.passwordForm.hasError('mismatch'),
+        );
     }
 
     onSubmit(): void {

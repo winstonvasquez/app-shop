@@ -12,6 +12,9 @@ import {
 import { PageResponse, PaginationConfig } from '@core/models/pagination.model';
 import { AuthService } from '@core/auth/auth.service';
 import { HTTP_STATUS } from '@shared/constants/app.constants';
+import { toHttpParams } from '@core/utils/http-params.util';
+import { mensajeDeErrorHttp } from '@core/utils/http-error.util';
+import { paramsDeCategorias } from './listados.params';
 
 @Injectable({
     providedIn: 'root'
@@ -25,38 +28,7 @@ export class CategoryService {
         pagination: PaginationConfig,
         filter?: CategoryFilter
     ): Observable<PageResponse<CategoryResponse>> {
-        let params = new HttpParams()
-            .set('page', pagination.page.toString())
-            .set('size', pagination.size.toString());
-
-        if (pagination.sort) {
-            params = params.set(
-                'sort',
-                `${pagination.sort.field},${pagination.sort.direction}`
-            );
-        }
-
-        if (filter?.search) {
-            params = params.set('search', filter.search);
-        }
-        if (filter?.nivel !== undefined) {
-            params = params.set('nivel', filter.nivel.toString());
-        }
-        if (filter?.conImagen !== undefined) {
-            params = params.set('conImagen', filter.conImagen.toString());
-        }
-        if (filter?.activo !== undefined) {
-            params = params.set('activo', filter.activo.toString());
-        }
-        if (filter?.padreId !== undefined) {
-            params = params.set('padreId', filter.padreId.toString());
-        }
-        if (filter?.fechaCreacionDesde) {
-            params = params.set('fechaCreacionDesde', filter.fechaCreacionDesde);
-        }
-        if (filter?.fechaCreacionHasta) {
-            params = params.set('fechaCreacionHasta', filter.fechaCreacionHasta);
-        }
+        const params = toHttpParams(paramsDeCategorias(pagination, filter));
 
         return this.http
             .get<PageResponse<CategoryResponse>>(this.baseUrl, { params })
@@ -147,27 +119,10 @@ export class CategoryService {
     }
 
     private handleError(error: HttpErrorResponse): Observable<never> {
-        let errorMessage = 'Ocurrió un error desconocido';
-
-        if (error.error instanceof ErrorEvent) {
-            errorMessage = `Error: ${error.error.message}`;
-        } else {
-            if (error.status === 0) {
-                errorMessage = 'No se pudo conectar con el servidor';
-            } else if (error.status === HTTP_STATUS.badRequest) {
-                errorMessage = error.error?.message || 'Datos inválidos';
-            } else if (error.status === HTTP_STATUS.notFound) {
-                errorMessage = 'Categoría no encontrada';
-            } else if (error.status === HTTP_STATUS.conflict) {
-                errorMessage = 'La categoría ya existe';
-            } else if (error.status === HTTP_STATUS.internalServerError) {
-                errorMessage = 'Error interno del servidor';
-            } else {
-                errorMessage = `Error ${error.status}: ${error.error?.message || error.statusText}`;
-            }
-        }
-
         console.error('CategoryService Error:', error);
-        return throwError(() => new Error(errorMessage));
+        return throwError(() => new Error(mensajeDeErrorHttp(error, {
+            [HTTP_STATUS.notFound]: 'Categoría no encontrada',
+            [HTTP_STATUS.conflict]: 'La categoría ya existe',
+        })));
     }
 }

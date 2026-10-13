@@ -71,14 +71,16 @@ export class AccountCouponsComponent implements OnInit {
 
     private load(): void {
         this.loading.set(true);
+        // `getMyCupones` pasa los filtros por `toHttpParams`, que ya omite la cadena vacía igual
+        // que omite `undefined`: coaccionar campo a campo con `|| undefined` era redundante.
         const filtros: MisCuponesFiltros = {
-            search: this.searchQuery() || undefined,
-            tipo: this.filterTipo() || undefined,
+            search: this.searchQuery(),
+            tipo: this.filterTipo(),
             status: this.activeTab(),
-            fechaFinDesde: this.filterFechaFinDesde() || undefined,
-            fechaFinHasta: this.filterFechaFinHasta() || undefined,
-            assignedAtDesde: this.filterAssignedDesde() || undefined,
-            assignedAtHasta: this.filterAssignedHasta() || undefined,
+            fechaFinDesde: this.filterFechaFinDesde(),
+            fechaFinHasta: this.filterFechaFinHasta(),
+            assignedAtDesde: this.filterAssignedDesde(),
+            assignedAtHasta: this.filterAssignedHasta(),
         };
         this.couponService.getMyCupones(this.currentPage(), 20, filtros).subscribe({
             next: (data) => {

@@ -1,9 +1,10 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable, Subject, debounceTime, distinctUntilChanged, switchMap } from 'rxjs';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { ProductoCatalogoPOS } from '../models/catalogo-pos.model';
 import { PageResponse } from '@core/models/pagination.model';
 import { environment } from '@env/environment';
+import { toHttpParams } from '@core/utils/http-params.util';
 
 /** Filtros server-side del catálogo POS. Todos opcionales — ver GET /api/pos/catalogo. */
 export interface PosCatalogoFiltros {
@@ -30,16 +31,16 @@ export class PosCatalogoService {
         page = 0,
         size = 200
     ): Observable<PageResponse<ProductoCatalogoPOS>> {
-        let params = new HttpParams()
-            .set('companyId', companyId.toString())
-            .set('page', page.toString())
-            .set('size', size.toString());
-
-        if (filtros.q) params = params.set('q', filtros.q);
-        if (filtros.categoriaId != null) params = params.set('categoriaId', filtros.categoriaId.toString());
-        if (filtros.marca) params = params.set('marca', filtros.marca);
-        if (filtros.unidadMedida) params = params.set('unidadMedida', filtros.unidadMedida);
-        if (filtros.disponibilidad) params = params.set('disponibilidad', filtros.disponibilidad);
+        let params = toHttpParams({
+            companyId,
+            page,
+            size,
+            q: filtros.q,
+            categoriaId: filtros.categoriaId,
+            marca: filtros.marca,
+            unidadMedida: filtros.unidadMedida,
+            disponibilidad: filtros.disponibilidad,
+        });
 
         return this.http.get<PageResponse<ProductoCatalogoPOS>>(this.baseUrl, { params });
     }

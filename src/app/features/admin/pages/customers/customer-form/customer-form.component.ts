@@ -14,7 +14,9 @@ import {
     CustomerResponse,
     CustomerRequest,
 } from '@features/admin/models/customer.model';
+import { construirCustomerRequest } from './customer-form.form';
 import { bloquearEnEdicion, bloquearSiempre } from '@shared/utils/form-lock';
+import { mensajeDeErrorDeControl } from '@shared/utils/form-errors';
 
 @Component({
     selector: 'app-customer-form',
@@ -145,27 +147,8 @@ export class CustomerFormComponent {
         }
 
         // getRawValue(): tipoDocumento/numeroDocumento quedan deshabilitados en edición y
-        // no saldrían en form.value (se enviarían nulls). `saldoCredito` se omite a
-        // propósito del DTO: lo calcula el backend.
-        const v = this.form.getRawValue();
-        const dto: CustomerRequest = {
-            companyId,
-            tipoCliente: v.tipoCliente,
-            tipoDocumento: v.tipoDocumento,
-            numeroDocumento: v.numeroDocumento,
-            nombres: v.nombres,
-            apellidos: v.apellidos || null,
-            razonSocial: v.razonSocial || null,
-            nombreComercial: v.nombreComercial || null,
-            email: v.email || null,
-            telefono: v.telefono || null,
-            celular: v.celular || null,
-            condicionPago: v.condicionPago || 'CONTADO',
-            limiteCredito: v.limiteCredito || 0,
-            notas: v.notas || null,
-            // Estado explícito: el backend solo respeta el actual si llega null/ausente.
-            activo: v.activo !== false,
-        };
+        // no saldrían en form.value (se enviarían nulls).
+        const dto: CustomerRequest = construirCustomerRequest(this.form.getRawValue(), companyId);
 
         const op = this.customer()
             ? this.customerService.update(this.customer()!.id, dto)
@@ -185,13 +168,6 @@ export class CustomerFormComponent {
 
     err(field: string): string {
         const c = this.form.get(field);
-        if (!c || c.pristine || c.valid) return '';
-        if (c.hasError('required')) return 'Campo requerido';
-        if (c.hasError('email')) return 'Email inválido';
-        if (c.hasError('minlength')) return `Mínimo ${c.getError('minlength').requiredLength} caracteres`;
-        if (c.hasError('maxlength')) return `Máximo ${c.getError('maxlength').requiredLength} caracteres`;
-        if (c.hasError('pattern')) return 'Formato inválido';
-        if (c.hasError('min')) return 'El valor no puede ser negativo';
-        return 'Campo inválido';
+        return !c || c.pristine || c.valid ? '' : mensajeDeErrorDeControl(c, { min: 'El valor no puede ser negativo' });
     }
 }

@@ -1,5 +1,5 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { environment } from '@env/environment';
 import { firstValueFrom } from 'rxjs';
 import { PageResponse, pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
@@ -11,6 +11,7 @@ import {
     Goal,
     GoalRequest,
 } from '../models/evaluation.model';
+import { toHttpParams } from '@core/utils/http-params.util';
 
 export interface EvaluationListParams {
     page?: number;
@@ -107,20 +108,21 @@ export class EvaluationService {
     async loadEvaluations(params?: EvaluationListParams): Promise<void> {
         this._loading.set(true);
         this._error.set(null);
-        let httpParams = new HttpParams();
-        if (params?.page !== undefined) httpParams = httpParams.set('page', params.page.toString());
-        if (params?.size !== undefined) httpParams = httpParams.set('size', params.size.toString());
-        if (params?.search) httpParams = httpParams.set('search', params.search);
-        if (params?.estado) httpParams = httpParams.set('estado', params.estado);
-        if (params?.tipo) httpParams = httpParams.set('tipo', params.tipo);
-        if (params?.employeeId != null) httpParams = httpParams.set('employeeId', String(params.employeeId));
-        if (params?.evaluadorId != null) httpParams = httpParams.set('evaluadorId', String(params.evaluadorId));
-        if (params?.departmentId != null) httpParams = httpParams.set('departmentId', String(params.departmentId));
-        if (params?.periodo) httpParams = httpParams.set('periodo', params.periodo);
-        if (params?.fechaEvaluacionDesde) httpParams = httpParams.set('fechaEvaluacionDesde', params.fechaEvaluacionDesde);
-        if (params?.fechaEvaluacionHasta) httpParams = httpParams.set('fechaEvaluacionHasta', params.fechaEvaluacionHasta);
-        if (params?.proximaRevisionDesde) httpParams = httpParams.set('proximaRevisionDesde', params.proximaRevisionDesde);
-        if (params?.proximaRevisionHasta) httpParams = httpParams.set('proximaRevisionHasta', params.proximaRevisionHasta);
+        let httpParams = toHttpParams({
+            page: params?.page,
+            size: params?.size,
+            search: params?.search,
+            estado: params?.estado,
+            tipo: params?.tipo,
+            employeeId: params?.employeeId,
+            evaluadorId: params?.evaluadorId,
+            departmentId: params?.departmentId,
+            periodo: params?.periodo,
+            fechaEvaluacionDesde: params?.fechaEvaluacionDesde,
+            fechaEvaluacionHasta: params?.fechaEvaluacionHasta,
+            proximaRevisionDesde: params?.proximaRevisionDesde,
+            proximaRevisionHasta: params?.proximaRevisionHasta,
+        });
         try {
             const res = await firstValueFrom(
                 this.http.get<PageResponse<Evaluation>>(this.evalUrl, { params: httpParams })
@@ -216,12 +218,12 @@ export class EvaluationService {
     async loadCriteriaPaged(filtros: CriteriaFiltros = {}): Promise<void> {
         this._loading.set(true);
         try {
-            const params: Record<string, string> = {
-                page: String(filtros.page ?? 0),
-                size: String(filtros.size ?? 20),
-            };
-            if (filtros.search) params['search'] = filtros.search;
-            if (filtros.activo) params['activo'] = filtros.activo;
+            let params = toHttpParams({
+                page: filtros.page ?? 0,
+                size: filtros.size ?? 20,
+                search: filtros.search,
+                activo: filtros.activo,
+            });
             const res = await firstValueFrom(
                 this.http.get<PageResponse<EvaluationCriteria>>(`${this.evalUrl}/criteria/paged`, { params })
             );
@@ -283,20 +285,20 @@ export class EvaluationService {
         this._loading.set(true);
         this._error.set(null);
         try {
-            const params: Record<string, string> = {
-                page: String(filtros.page ?? 0),
-                size: String(filtros.size ?? 10),
-            };
-            if (filtros.search) params['search'] = filtros.search;
-            if (filtros.estado) params['estado'] = filtros.estado;
-            if (filtros.prioridad) params['prioridad'] = filtros.prioridad;
-            if (filtros.employeeId != null) params['employeeId'] = String(filtros.employeeId);
-            if (filtros.asignadoPorId != null) params['asignadoPorId'] = String(filtros.asignadoPorId);
-            if (filtros.departmentId != null) params['departmentId'] = String(filtros.departmentId);
-            if (filtros.fechaInicioDesde) params['fechaInicioDesde'] = filtros.fechaInicioDesde;
-            if (filtros.fechaInicioHasta) params['fechaInicioHasta'] = filtros.fechaInicioHasta;
-            if (filtros.fechaFinDesde) params['fechaFinDesde'] = filtros.fechaFinDesde;
-            if (filtros.fechaFinHasta) params['fechaFinHasta'] = filtros.fechaFinHasta;
+            let params = toHttpParams({
+                page: filtros.page ?? 0,
+                size: filtros.size ?? 10,
+                search: filtros.search,
+                estado: filtros.estado,
+                prioridad: filtros.prioridad,
+                employeeId: filtros.employeeId,
+                asignadoPorId: filtros.asignadoPorId,
+                departmentId: filtros.departmentId,
+                fechaInicioDesde: filtros.fechaInicioDesde,
+                fechaInicioHasta: filtros.fechaInicioHasta,
+                fechaFinDesde: filtros.fechaFinDesde,
+                fechaFinHasta: filtros.fechaFinHasta,
+            });
             const res = await firstValueFrom(
                 this.http.get<PageResponse<Goal>>(`${this.goalUrl}/paged`, { params })
             );

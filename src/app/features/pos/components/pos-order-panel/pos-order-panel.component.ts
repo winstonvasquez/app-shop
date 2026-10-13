@@ -4,8 +4,9 @@ import { TranslateModule } from '@ngx-translate/core';
 import { CatalogSelectComponent } from '@shared/components';
 import { CatalogService } from '@core/services/catalog.service';
 import { PosCarritoService } from '../../services/pos-carrito.service';
-import { DescuentoTipo } from '../../models/catalogo-pos.model';
+import { CartItem, DescuentoTipo } from '../../models/catalogo-pos.model';
 import { MetodoPagoPos, PagoMixto, TipoCpe } from '../../models/venta-pos.model';
+import { estadoInicialDescuento, requiereAutorizacionSupervisor } from './pos-order-panel.descuento';
 
 @Component({
     selector: 'app-pos-order-panel',
@@ -73,19 +74,23 @@ export class PosOrderPanelComponent {
     toggleDiscountPopover(varianteId: number): void {
         if (this.discountPopoverFor() === varianteId) {
             this.discountPopoverFor.set(null);
-        } else {
-            const item = this.carrito.items().find(i => i.variante.varianteId === varianteId);
-            this.discountType.set(item?.descuentoTipo === 'NINGUNO' ? 'PORCENTAJE' : item?.descuentoTipo ?? 'PORCENTAJE');
-            this.discountValue.set(item?.descuentoValor ?? 0);
-            this.discountPopoverFor.set(varianteId);
+            return;
         }
+        const inicial = estadoInicialDescuento(this.lineaDe(varianteId));
+        this.discountType.set(inicial.tipo);
+        this.discountValue.set(inicial.valor);
+        this.discountPopoverFor.set(varianteId);
+    }
+
+    private lineaDe(varianteId: number): CartItem | undefined {
+        return this.carrito.items().find(i => i.variante.varianteId === varianteId);
     }
 
     applyLineDiscount(varianteId: number): void {
         const tipo = this.discountType();
         const valor = this.discountValue();
         if (valor > 0 && tipo !== 'NINGUNO') {
-            if (this.requiereAutorizacion(varianteId, tipo, valor)) {
+            if (requiereAutorizacionSupervisor(tipo, valor, this.lineaDe(varianteId), this.MAX_DESCUENTO_SIN_AUTH)) {
                 // Cerrar popover y delegar al padre la verificación del PIN de supervisor;
                 // el descuento se aplica solo si el backend autoriza.
                 this.discountPopoverFor.set(null);
@@ -97,18 +102,6 @@ export class PosOrderPanelComponent {
             this.carrito.clearLineDiscount(varianteId);
         }
         this.discountPopoverFor.set(null);
-    }
-
-    /** Un descuento requiere autorización si supera MAX_DESCUENTO_SIN_AUTH (% directo o equivalente del bruto). */
-    private requiereAutorizacion(varianteId: number, tipo: DescuentoTipo, valor: number): boolean {
-        if (tipo === 'PORCENTAJE') {
-            return valor > this.MAX_DESCUENTO_SIN_AUTH;
-        }
-        const item = this.carrito.items().find(i => i.variante.varianteId === varianteId);
-        if (!item) return true;
-        const bruto = item.cantidad * item.variante.precioFinal;
-        const pct = bruto > 0 ? (valor / bruto) * 100 : 100;
-        return pct > this.MAX_DESCUENTO_SIN_AUTH;
     }
 
     removeLineDiscount(varianteId: number): void {

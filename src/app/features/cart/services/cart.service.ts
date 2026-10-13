@@ -3,6 +3,7 @@ import { Injectable, computed, effect, signal, inject } from '@angular/core';
 import { AuthService } from '@core/auth/auth.service';
 import { AnalyticsService } from '@core/services/analytics.service';
 import { STORAGE_KEYS } from '@shared/constants/app.constants';
+import { agregarItem, debeLimpiarPorCambioDeEmpresa, ProductoParaCarrito } from '../utils/carrito.util';
 
 export interface CartItem {
     productId: number;
@@ -72,68 +73,24 @@ export class CartService {
         // de arriba la reescribía en la siguiente mutación, así que el carrito de una empresa
         // reaparecía en la sesión de otra sin recargar la página. El estado es de este servicio,
         // así que la limpieza va aquí y no en AuthService (que además no puede inyectar a
-        // CartService sin crear un ciclo).
+        // CartService sin crear un ciclo). Qué transición limpia y cuál no está en
+        // `debeLimpiarPorCambioDeEmpresa`, con sus casos cubiertos.
         //
-        // Transiciones y por qué:
-        //   null -> X  (invitado que inicia sesión): NO se limpia. El invitado estaba comprando en
-        //              ESE storefront; borrarle el carrito al loguearse sería una regresión de UX.
-        //   X -> Y     (cambio de empresa activa): se limpia. Los productIds de X no existen en Y.
-        //   X -> null  (logout): se limpia, para que el siguiente usuario del navegador no herede
-        //              el carrito del anterior.
         // currentUser() es una señal de verdad, así que leerla en un effect es correcto (a
         // diferencia de AbstractControl.value, que no lo es y solo se evaluaría una vez).
         effect(() => {
             const empresaActual = this.authService.currentUser()?.activeCompanyId ?? null;
             const anterior = this.empresaDelCarrito;
             this.empresaDelCarrito = empresaActual;
-            if (anterior === undefined || anterior === empresaActual) return;
-            if (anterior === null) return; // invitado -> sesión: se conserva
+            if (!debeLimpiarPorCambioDeEmpresa(anterior, empresaActual)) return;
             this.cartItems.set([]);
             this.isDrawerOpen.set(false);
             localStorage.removeItem(STORAGE_KEYS.cart);
         });
     }
 
-    addToCart(product: {
-        id: number;
-        variantId?: number;
-        sku?: string;
-        variantName?: string;
-        name: string;
-        description?: string;
-        price: number;
-        quantity?: number;
-        stock?: number;
-        image: string;
-    }) {
-        this.cartItems.update(items => {
-            const isSameItem = (item: CartItem) =>
-                product.variantId !== undefined
-                    ? item.variantId === product.variantId
-                    : item.productId === product.id && item.variantId === undefined;
-
-            const existingItem = items.find(isSameItem);
-            if (existingItem) {
-                return items.map(item =>
-                    isSameItem(item)
-                        ? { ...item, quantity: item.quantity + (product.quantity ?? 1), selected: true }
-                        : item
-                );
-            }
-            return [...items, {
-                productId: product.id,
-                variantId: product.variantId,
-                sku: product.sku,
-                variantName: product.variantName,
-                name: product.name,
-                description: product.description,
-                price: product.price,
-                quantity: product.quantity ?? 1,
-                stock: product.stock,
-                image: product.image,
-                selected: true
-            }];
-        });
+    addToCart(product: ProductoParaCarrito) {
+        this.cartItems.update(items => agregarItem(items, product));
         this.analyticsService.trackAddToCart(product.id, product.name, product.price, product.quantity ?? 1);
     }
 

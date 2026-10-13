@@ -2,27 +2,27 @@ import { Component, OnInit, inject, signal, computed, ChangeDetectionStrategy } 
 import { DecimalPipe, DatePipe } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { CatalogSelectComponent } from '@shared/components';
-import { PosVentaService, PosDevolucionFiltros } from '../../services/pos-venta.service';
-import { VentaPosResponse, DetalleVentaPosResponse, DevolucionPosResponse } from '../../models/venta-pos.model';
+import { PosVentaService } from '../../services/pos-venta.service';
+import { VentaPosResponse, DevolucionPosResponse } from '../../models/venta-pos.model';
 import { CatalogService } from '@core/services/catalog.service';
 import { AuthService } from '@core/auth/auth.service';
 import { UserService } from '@features/admin/services/user.service';
 import { UserResponse } from '@features/admin/models/user.model';
 import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
+import { detalleDelBackend } from '@core/utils/http-error.util';
+import { HttpErrorResponse } from '@angular/common/http';
+import {
+    FiltrosDevolucionCrudos,
+    construirFiltrosDevolucion,
+    hayFiltrosDevolucionActivos,
+} from './pos-devoluciones.filtros';
+import { LineaDevolucion, construirDevolucionRequest } from './pos-devoluciones.form';
 
 /** Estado propio de la devolución (no de la venta) — enum fijo del backend, sin catálogo. */
 const ESTADOS_DEVOLUCION: { value: string; label: string }[] = [
     { value: 'PROCESADA', label: 'Procesada' },
     { value: 'ANULADA', label: 'Anulada' },
 ];
-
-interface LineaDevolucion {
-    detalle: DetalleVentaPosResponse;
-    seleccionada: boolean;
-    cantidadDevuelta: number;
-    maxDevolvible: number;
-    montoDevuelto: number;
-}
 
 @Component({
     selector: 'app-pos-devoluciones',
@@ -421,11 +421,21 @@ export class PosDevolucionesComponent implements OnInit {
     readonly dFilterFechaVentaDesde = signal('');
     readonly dFilterFechaVentaHasta = signal('');
 
-    readonly hasDevFiltrosActivos = computed(() =>
-        !!(this.dFilterSearch() || this.dFilterMotivo() || this.dFilterEstado() || this.dFilterCajeroId()
-            || this.dFilterFechaDevDesde() || this.dFilterFechaDevHasta()
-            || this.dFilterFechaVentaDesde() || this.dFilterFechaVentaHasta())
-    );
+    readonly hasDevFiltrosActivos = computed(() => hayFiltrosDevolucionActivos(this.filtrosCrudos()));
+
+    /** Lectura de los ocho controles de filtro. Leer las señales aquí mantiene la reactividad. */
+    private filtrosCrudos(): FiltrosDevolucionCrudos {
+        return {
+            search: this.dFilterSearch(),
+            motivo: this.dFilterMotivo(),
+            estado: this.dFilterEstado(),
+            cajeroId: this.dFilterCajeroId(),
+            fechaDevDesde: this.dFilterFechaDevDesde(),
+            fechaDevHasta: this.dFilterFechaDevHasta(),
+            fechaVentaDesde: this.dFilterFechaVentaDesde(),
+            fechaVentaHasta: this.dFilterFechaVentaHasta(),
+        };
+    }
 
     ngOnInit(): void {
         this.userService.getAllSimple().subscribe({
@@ -441,16 +451,7 @@ export class PosDevolucionesComponent implements OnInit {
 
     loadDevoluciones(): void {
         this.devolucionesLoading.set(true);
-        const filtros: PosDevolucionFiltros = {
-            search: this.dFilterSearch() || undefined,
-            motivo: this.dFilterMotivo() || undefined,
-            estado: this.dFilterEstado() || undefined,
-            cajeroId: this.dFilterCajeroId() ? Number(this.dFilterCajeroId()) : undefined,
-            fechaDevolucionDesde: this.dFilterFechaDevDesde() || undefined,
-            fechaDevolucionHasta: this.dFilterFechaDevHasta() || undefined,
-            fechaCreacionDesde: this.dFilterFechaVentaDesde() || undefined,
-            fechaCreacionHasta: this.dFilterFechaVentaHasta() || undefined,
-        };
+        const filtros = construirFiltrosDevolucion(this.filtrosCrudos());
         this.ventaService.getDevoluciones(this.companyId, filtros, this.devolucionesPage()).subscribe({
             next: page => {
                 this.devolucionesListado.set(page.content ?? []);
@@ -643,25 +644,12 @@ export class PosDevolucionesComponent implements OnInit {
 
     confirmarDevolucion(): void {
         const venta = this.ventaSeleccionada();
-        const motivo = String(this.formDevolucion.value.motivo ?? '');
-        const observaciones = String(this.formDevolucion.value.observaciones ?? '');
-        if (!venta || !motivo) return;
+        const request = construirDevolucionRequest(this.formDevolucion.value, this.lineasDevolucion());
+        if (!venta || !request) return;
 
-        const lineas = this.lineasDevolucion()
-            .filter(l => l.seleccionada && l.cantidadDevuelta > 0)
-            .map(l => ({
-                detalleVentaPosId: l.detalle.id,
-                cantidadDevuelta: l.cantidadDevuelta,
-            }));
-
-        if (lineas.length === 0) return;
         this.procesando.set(true);
 
-        this.ventaService.procesarDevolucion(venta.id, {
-            motivo,
-            observaciones: observaciones || undefined,
-            lineas,
-        }).subscribe({
+        this.ventaService.procesarDevolucion(venta.id, request).subscribe({
             next: (resp) => {
                 this.ultimaNc.set(resp.numeroNc);
                 // El listado real (server-side) reemplaza al viejo signal de sesión: recargar para reflejar la NC recién emitida.
@@ -670,10 +658,9 @@ export class PosDevolucionesComponent implements OnInit {
                 this.procesado.set(true);
                 this.procesando.set(false);
             },
-            error: (err) => {
+            error: (err: HttpErrorResponse) => {
                 this.procesando.set(false);
-                const msg = err?.error?.detail ?? err?.error?.message ?? 'Error al procesar la devolucion.';
-                this.errorBusqueda.set(msg);
+                this.errorBusqueda.set(detalleDelBackend(err) ?? 'Error al procesar la devolucion.');
             }
         });
     }

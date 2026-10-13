@@ -3,6 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '@env/environment';
 import { PageResponse } from '@core/models/pagination.model';
+import { toHttpParams } from '@core/utils/http-params.util';
 
 export interface CuentaContable {
     id: string;
@@ -55,15 +56,7 @@ export class CuentaService {
         busqueda?: string; tipo?: string; estado?: string;
         aceptaMovimiento?: boolean; esAnalitica?: boolean;
     }): Observable<PageResponse<CuentaContable>> {
-        let params = new HttpParams();
-        if (options?.page !== undefined) params = params.set('page', options.page.toString());
-        if (options?.size !== undefined) params = params.set('size', options.size.toString());
-        if (options?.nivel !== undefined) params = params.set('nivel', options.nivel.toString());
-        if (options?.busqueda) params = params.set('busqueda', options.busqueda);
-        if (options?.tipo) params = params.set('tipo', options.tipo);
-        if (options?.estado) params = params.set('estado', options.estado);
-        if (options?.aceptaMovimiento !== undefined) params = params.set('aceptaMovimiento', String(options.aceptaMovimiento));
-        if (options?.esAnalitica !== undefined) params = params.set('esAnalitica', String(options.esAnalitica));
+        let params = toHttpParams(options);
         return this.http.get<PageResponse<CuentaContable>>(this.baseUrl, { params });
     }
 

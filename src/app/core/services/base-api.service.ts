@@ -2,7 +2,7 @@ import { inject } from '@angular/core';
 import { HttpClient, HttpParams, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
-import { HTTP_STATUS } from '@shared/constants/app.constants';
+import { mensajeDeErrorHttp } from '@core/utils/http-error.util';
 
 export abstract class BaseApiService<TCreate, TResponse = TCreate> {
     protected readonly http = inject(HttpClient);
@@ -38,32 +38,14 @@ export abstract class BaseApiService<TCreate, TResponse = TCreate> {
             .pipe(catchError(this.handleError.bind(this)));
     }
 
+    /**
+     * Mensajes propios del dominio, para las subclases que quieran matizar un estado
+     * (`{ 404: 'Cliente no encontrado' }`). Vacío = se usan los textos generales.
+     */
+    protected readonly mensajesDeError: Readonly<Record<number, string>> = {};
+
     protected handleError(error: HttpErrorResponse): Observable<never> {
-        let errorMessage = 'Ocurrió un error desconocido';
-
-        if (error.error instanceof ErrorEvent) {
-            errorMessage = `Error: ${error.error.message}`;
-        } else {
-            if (error.status === 0) {
-                errorMessage = 'No se pudo conectar con el servidor';
-            } else if (error.status === HTTP_STATUS.badRequest) {
-                errorMessage = error.error?.message || 'Datos inválidos';
-            } else if (error.status === HTTP_STATUS.unauthorized) {
-                errorMessage = 'No autorizado';
-            } else if (error.status === HTTP_STATUS.forbidden) {
-                errorMessage = 'Acceso denegado';
-            } else if (error.status === HTTP_STATUS.notFound) {
-                errorMessage = 'Recurso no encontrado';
-            } else if (error.status === HTTP_STATUS.conflict) {
-                errorMessage = 'Conflicto: el registro ya existe o está en uso';
-            } else if (error.status === HTTP_STATUS.internalServerError) {
-                errorMessage = 'Error interno del servidor';
-            } else {
-                errorMessage = `Error ${error.status}: ${error.error?.message || error.statusText}`;
-            }
-        }
-
         console.error(`[API Error] ${this.constructor.name}:`, error);
-        return throwError(() => new Error(errorMessage));
+        return throwError(() => new Error(mensajeDeErrorHttp(error, this.mensajesDeError)));
     }
 }

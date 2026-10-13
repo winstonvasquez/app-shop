@@ -6,28 +6,9 @@ import { environment } from '@env/environment';
 import { CheckEmailResponse, LoginRequest, LoginResponse, User, UserRole, VerifyOtpRequest, SocialLoginRequest, RegisterWithOtpRequest } from './auth.model';
 import { STORAGE_KEYS, ROLES } from '@shared/constants/app.constants';
 import { API_ENDPOINTS } from '@shared/constants/api.constants';
+import { extractRoleFromJwtPayload, modulosDesdeClaim, payloadDeJwt, usuarioDesdeJwt } from './jwt.util';
 
 const TOKEN_KEY = STORAGE_KEYS.token;
-
-/**
- * Extrae el rol del payload JWT decodificado.
- * El backend puede enviarlo como: role (string), roles (array) o authorities (Spring Security).
- * Función standalone para poder usarla en inicializadores de campo de clase.
- */
-function extractRoleFromJwtPayload(payload: Record<string, unknown>): UserRole | undefined {
-    if (typeof payload['role'] === 'string') {
-        return payload['role'] as UserRole;
-    }
-    if (Array.isArray(payload['roles']) && payload['roles'].length > 0) {
-        return String(payload['roles'][0]) as UserRole;
-    }
-    if (Array.isArray(payload['authorities']) && payload['authorities'].length > 0) {
-        const first = payload['authorities'][0];
-        const authority = typeof first === 'string' ? first : (first as Record<string, string>)['authority'] ?? '';
-        return authority as UserRole;
-    }
-    return undefined;
-}
 
 @Injectable({
     providedIn: 'root'
@@ -181,17 +162,17 @@ export class AuthService {
         }
 
         localStorage.setItem(TOKEN_KEY, response.token);
-        // Extract modules and role from response or decode from JWT
+        // Los módulos y el rol vienen en la respuesta o, si no, se leen del propio token.
+        // Ojo: un token ilegible descarta también los módulos que trajera la respuesta — es el
+        // comportamiento que ya había, y es el conservador (los feature flags fallan cerrados).
         let modules: string[] = response.enabledModules ?? [];
         let role: UserRole | undefined;
-        try {
-            const payload = JSON.parse(atob(response.token.split('.')[1]));
-            if (modules.length === 0 && payload.modules && typeof payload.modules === 'string') {
-                modules = payload.modules.split(',').map((m: string) => m.trim()).filter(Boolean);
-            }
-            role = extractRoleFromJwtPayload(payload);
-        } catch {
+        const payload = payloadDeJwt(response.token);
+        if (!payload) {
             modules = [];
+        } else {
+            if (modules.length === 0) modules = modulosDesdeClaim(payload['modules']);
+            role = extractRoleFromJwtPayload(payload);
         }
         this.currentUserSignal.set({
             userId: response.userId,
@@ -204,41 +185,20 @@ export class AuthService {
     }
 
 
+    /**
+     * Restaura la sesión desde el token guardado. Un token que no da usuario (corrupto o
+     * caducado) se BORRA: dejarlo puesto haría que cada petición saliera con un token muerto
+     * y el usuario viera 401 en vez de la pantalla de login.
+     */
     private loadUserFromStorage(): User | null {
         const token = localStorage.getItem(TOKEN_KEY);
         if (!token) {
             return null;
         }
-
-        try {
-            // Decode JWT payload (simple base64 decode)
-            const payload = JSON.parse(atob(token.split('.')[1]));
-
-            // Check if token is expired
-            if (payload.exp && payload.exp * 1000 < Date.now()) {
-                localStorage.removeItem(TOKEN_KEY);
-                return null;
-            }
-
-            // Extract modules from JWT claim
-            let enabledModules: string[] = [];
-            if (payload.modules && typeof payload.modules === 'string') {
-                enabledModules = payload.modules.split(',').map((m: string) => m.trim()).filter(Boolean);
-            }
-
-            const role = extractRoleFromJwtPayload(payload);
-
-            return {
-                userId: payload.userId,
-                username: payload.sub,
-                activeCompanyId: payload.companyId,
-                availableCompanyIds: [], // Will be populated on next login
-                enabledModules,
-                role
-            };
-        } catch {
+        const usuario = usuarioDesdeJwt(token);
+        if (!usuario) {
             localStorage.removeItem(TOKEN_KEY);
-            return null;
         }
+        return usuario;
     }
 }

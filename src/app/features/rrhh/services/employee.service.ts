@@ -10,6 +10,7 @@ import {
     EmployeeDocument, DocumentRequest,
     SalaryRecord, SalaryRequest,
 } from '../models/employee.model';
+import { toHttpParams } from '@core/utils/http-params.util';
 
 /** Filtros server-side del listado paginado de empleados. Todos opcionales. */
 export interface EmployeeFiltros {
@@ -82,27 +83,27 @@ export class EmployeeService {
         this._loading.set(true);
         this._error.set(null);
         try {
-            const params: Record<string, string> = {
-                page: String(filtros.page ?? 0),
-                size: String(filtros.size ?? 20),
-            };
-            if (filtros.search) params['search'] = filtros.search;
-            if (filtros.status) params['status'] = filtros.status;
-            if (filtros.departmentId != null) params['departmentId'] = String(filtros.departmentId);
-            if (filtros.positionId != null) params['positionId'] = String(filtros.positionId);
-            if (filtros.supervisorId != null) params['supervisorId'] = String(filtros.supervisorId);
-            if (filtros.tipoDocumento) params['tipoDocumento'] = filtros.tipoDocumento;
-            if (filtros.sistemaPrevisional) params['sistemaPrevisional'] = filtros.sistemaPrevisional;
-            if (filtros.afpNombre) params['AFP'] = filtros.afpNombre;
-            if (filtros.genero) params['genero'] = filtros.genero;
-            if (filtros.estadoCivil) params['estadoCivil'] = filtros.estadoCivil;
-            if (filtros.tipoContrato) params['tipoContrato'] = filtros.tipoContrato;
-            if (filtros.fechaIngresoDesde) params['fechaIngresoDesde'] = filtros.fechaIngresoDesde;
-            if (filtros.fechaIngresoHasta) params['fechaIngresoHasta'] = filtros.fechaIngresoHasta;
-            if (filtros.fechaSalidaDesde) params['fechaSalidaDesde'] = filtros.fechaSalidaDesde;
-            if (filtros.fechaSalidaHasta) params['fechaSalidaHasta'] = filtros.fechaSalidaHasta;
-            if (filtros.fechaNacimientoDesde) params['fechaNacimientoDesde'] = filtros.fechaNacimientoDesde;
-            if (filtros.fechaNacimientoHasta) params['fechaNacimientoHasta'] = filtros.fechaNacimientoHasta;
+            let params = toHttpParams({
+                page: filtros.page ?? 0,
+                size: filtros.size ?? 20,
+                search: filtros.search,
+                status: filtros.status,
+                departmentId: filtros.departmentId,
+                positionId: filtros.positionId,
+                supervisorId: filtros.supervisorId,
+                tipoDocumento: filtros.tipoDocumento,
+                sistemaPrevisional: filtros.sistemaPrevisional,
+                AFP: filtros.afpNombre,
+                genero: filtros.genero,
+                estadoCivil: filtros.estadoCivil,
+                tipoContrato: filtros.tipoContrato,
+                fechaIngresoDesde: filtros.fechaIngresoDesde,
+                fechaIngresoHasta: filtros.fechaIngresoHasta,
+                fechaSalidaDesde: filtros.fechaSalidaDesde,
+                fechaSalidaHasta: filtros.fechaSalidaHasta,
+                fechaNacimientoDesde: filtros.fechaNacimientoDesde,
+                fechaNacimientoHasta: filtros.fechaNacimientoHasta,
+            });
             const res = await firstValueFrom(
                 this.http.get<PageResponse<Employee>>(`${this.baseUrl}/paged`, { params })
             );
@@ -122,9 +123,12 @@ export class EmployeeService {
      */
     async searchPage(page: number, size: number, search?: string, sort?: string):
         Promise<PageResponse<Employee>> {
-        const params: Record<string, string> = { page: String(page), size: String(size) };
-        if (search) params['search'] = search;
-        if (sort) params['sort'] = sort;
+        let params = toHttpParams({
+            page,
+            size,
+            search,
+            sort,
+        });
         return firstValueFrom(
             this.http.get<PageResponse<Employee>>(`${this.baseUrl}/paged`, { params })
         );

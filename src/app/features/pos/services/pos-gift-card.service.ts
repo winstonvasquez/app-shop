@@ -3,6 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '@env/environment';
 import { GiftCard } from '../models/venta-pos.model';
+import { toHttpParams } from '@core/utils/http-params.util';
 
 export interface GiftCardCreateDto {
     companyId: number;
@@ -40,10 +41,10 @@ export class PosGiftCardService {
     }
 
     consumir(codigo: string, monto: number, referencia?: string): Observable<GiftCardConsumoResponse> {
-        let params = new HttpParams().set('monto', monto.toString());
-        if (referencia) {
-            params = params.set('referencia', referencia);
-        }
+        let params = toHttpParams({
+            monto,
+            referencia,
+        });
         return this.http.post<GiftCardConsumoResponse>(
             `${this.baseUrl}/gift-cards/${codigo}/consumir`,
             null,

@@ -3,6 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 import { Transportista, TransportistaPage, CreateTransportistaDto, TransportistaFiltros } from '../models/transportista.model';
 import { PAGINATION } from '@shared/constants/app.constants';
+import { toHttpParams } from '@core/utils/http-params.util';
 
 @Injectable({ providedIn: 'root' })
 export class TransportistaService {
@@ -54,15 +55,16 @@ export class TransportistaService {
      * lo siguen usando para poblar selects.
      */
     getCarriersPaged(filtros: TransportistaFiltros = {}): Observable<TransportistaPage> {
-        let params = new HttpParams()
-            .set('page', String(filtros.page ?? 0))
-            .set('size', String(filtros.size ?? PAGINATION.defaultPageSize));
-        if (filtros.serviceType) params = params.set('serviceType', filtros.serviceType);
-        if (filtros.active !== undefined && filtros.active !== null) params = params.set('active', String(filtros.active));
-        if (filtros.apiEnabled !== undefined && filtros.apiEnabled !== null) params = params.set('apiEnabled', String(filtros.apiEnabled));
-        if (filtros.fechaCreacionDesde) params = params.set('fechaCreacionDesde', filtros.fechaCreacionDesde);
-        if (filtros.fechaCreacionHasta) params = params.set('fechaCreacionHasta', filtros.fechaCreacionHasta);
-        if (filtros.q) params = params.set('q', filtros.q);
+        let params = toHttpParams({
+            page: filtros.page ?? 0,
+            size: filtros.size ?? PAGINATION.defaultPageSize,
+            serviceType: filtros.serviceType,
+            active: filtros.active,
+            apiEnabled: filtros.apiEnabled,
+            fechaCreacionDesde: filtros.fechaCreacionDesde,
+            fechaCreacionHasta: filtros.fechaCreacionHasta,
+            q: filtros.q,
+        });
         return this.http.get<TransportistaPage>(`${this.baseUrl}/paged`, { params });
     }
 

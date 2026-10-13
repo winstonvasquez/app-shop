@@ -15,6 +15,8 @@ import {
     CustomerContactoRequest,
     CustomerDashboard,
 } from '@features/admin/models/customer.model';
+import { toHttpParams } from '@core/utils/http-params.util';
+import { mensajeDeErrorHttp } from '@core/utils/http-error.util';
 
 @Injectable({ providedIn: 'root' })
 export class CustomerService {
@@ -42,39 +44,9 @@ export class CustomerService {
             fechaCreacionHasta?: string;
         }
     ): Observable<PageResponse<CustomerResponse>> {
-        let params = new HttpParams()
-            .set('companyId', companyId.toString())
-            .set('page', page.toString())
-            .set('size', size.toString())
-            .set('sort', sort);
-
-        if (search) {
-            params = params.set('search', search);
-        }
-        if (filters?.tipoCliente) {
-            params = params.set('tipoCliente', filters.tipoCliente);
-        }
-        if (filters?.condicionPago) {
-            params = params.set('condicionPago', filters.condicionPago);
-        }
-        if (filters?.tipoDocumento) {
-            params = params.set('tipoDocumento', filters.tipoDocumento);
-        }
-        if (filters?.segmentoId) {
-            params = params.set('segmentoId', filters.segmentoId);
-        }
-        if (filters?.activo) {
-            params = params.set('activo', filters.activo);
-        }
-        if (filters?.conCredito) {
-            params = params.set('conCredito', filters.conCredito);
-        }
-        if (filters?.fechaCreacionDesde) {
-            params = params.set('fechaCreacionDesde', filters.fechaCreacionDesde);
-        }
-        if (filters?.fechaCreacionHasta) {
-            params = params.set('fechaCreacionHasta', filters.fechaCreacionHasta);
-        }
+        // Los filtros van por spread porque su tipo declara exactamente los parámetros que
+        // acepta el endpoint; `toHttpParams` ya omite los que llegan undefined.
+        const params = toHttpParams({ companyId, page, size, sort, search, ...filters });
 
         return this.http
             .get<PageResponse<CustomerResponse>>(this.baseUrl, { params })
@@ -230,20 +202,10 @@ export class CustomerService {
     }
 
     private handleError(error: HttpErrorResponse): Observable<never> {
-        let errorMessage = 'Error desconocido';
-        if (error.status === 0) {
-            errorMessage = 'No se pudo conectar con el servidor';
-        } else if (error.status === HTTP_STATUS.badRequest) {
-            errorMessage = error.error?.message || 'Datos inválidos';
-        } else if (error.status === HTTP_STATUS.notFound) {
-            errorMessage = 'Cliente no encontrado';
-        } else if (error.status === HTTP_STATUS.conflict) {
-            errorMessage = 'Ya existe un cliente con ese documento';
-        } else {
-            errorMessage = `Error ${error.status}: ${error.error?.message || error.statusText}`;
-        }
-
         console.error('CustomerService Error:', error);
-        return throwError(() => new Error(errorMessage));
+        return throwError(() => new Error(mensajeDeErrorHttp(error, {
+            [HTTP_STATUS.notFound]: 'Cliente no encontrado',
+            [HTTP_STATUS.conflict]: 'Ya existe un cliente con ese documento',
+        })));
     }
 }

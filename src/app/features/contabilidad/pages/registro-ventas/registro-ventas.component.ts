@@ -1,6 +1,6 @@
 import { Component, inject, signal, computed, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { PeriodoService, PeriodoContable } from '../../services/periodo.service';
 import { ExportService } from '@shared/services/export.service';
 import { BackendExportService, BackendExportConfig } from '@shared/services/backend-export.service';
@@ -14,21 +14,9 @@ import {
 } from '@shared/ui/tables/data-table/data-table.component';
 import { catalogFilter, signalFilter } from '@shared/ui/tables/data-table/filter-helpers';
 import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
-import { CPE_TIPO } from '@shared/constants/sunat.constants';
-
-interface VentaPLE {
-    id: string | number;
-    fecha: string;
-    tipoComprobante: string;
-    serie: string;
-    numero: string;
-    rucCliente: string;
-    razonSocial: string;
-    baseImponible: number;
-    igv: number;
-    total: number;
-    estado: string;
-}
+import { toHttpParams } from '@core/utils/http-params.util';
+import { VentaPLE, generarPLE14 } from '../../utils/ple-libro14.util';
+import { formatPeriodoPLE } from '../../utils/ple-formato.util';
 
 @Component({
     selector: 'app-registro-ventas',
@@ -177,23 +165,8 @@ export class RegistroVentasComponent implements OnInit {
     // PLE Libro 14 — formato SUNAT pipe-delimited (generación local)
     exportarPLE() {
         const periodo = this.periodos().find(p => p.id === this.periodoSeleccionado());
-        const periodoStr = periodo ? this.formatPeriodoPLE(periodo.nombre) : '20260300';
-        const lines = this.ventas().map((v, i) => {
-            const cuo = String(i + 1).padStart(6, '0');
-            const correlativo = 'M' + String(i + 1).padStart(3, '0');
-            const tipoCpe = v.tipoComprobante === 'FACTURA' ? CPE_TIPO.FACTURA : v.tipoComprobante === 'BOLETA' ? CPE_TIPO.BOLETA : '00';
-            const fechaFmt = this.formatFechaPLE(v.fecha);
-            const tipoDocliente = (v.rucCliente ?? '').length === 11 ? '6' : '1';
-            const base = (v.baseImponible ?? 0).toFixed(2);
-            const igv = (v.igv ?? 0).toFixed(2);
-            const total = (v.total ?? 0).toFixed(2);
-            const estado = v.estado === 'ANULADO' ? '8' : '1';
-            return [periodoStr, cuo, correlativo, tipoCpe, v.serie ?? '', v.numero ?? '',
-                    fechaFmt, '', tipoDocliente, v.rucCliente ?? '', v.razonSocial ?? '',
-                    '0.00', base, '0.00', igv, '0.00', '0.00', '0.00', '0.00', '0.00', '0.00',
-                    total, '1.000', '', '', '', '', estado, ''].join('|');
-        });
-        this.exportService.descargarTxt(lines.join('\r\n'), `LE${periodoStr}140100001100_1_1`);
+        const periodoStr = periodo ? formatPeriodoPLE(periodo.nombre) : '20260300';
+        this.exportService.descargarTxt(generarPLE14(this.ventas(), periodoStr), `LE${periodoStr}140100001100_1_1`);
     }
 
     exportarCSV() {
@@ -255,16 +228,17 @@ export class RegistroVentasComponent implements OnInit {
         if (!this.periodoSeleccionado()) return;
         this.cargando.set(true);
         this.error.set(null);
-        let params = new HttpParams()
-            .set('periodoId', this.periodoSeleccionado())
-            .set('page', this.currentPage().toString())
-            .set('size', this.pageSize().toString());
-        if (this.filterTipoComprobante()) params = params.set('voucherTipo', this.filterTipoComprobante());
-        if (this.filterEstadoSunat()) params = params.set('estadoSunat', this.filterEstadoSunat());
-        if (this.filterClienteTipoDoc()) params = params.set('clienteTipoDoc', this.filterClienteTipoDoc());
-        if (this.fechaDesde()) params = params.set('fechaDesde', this.fechaDesde()!);
-        if (this.fechaHasta()) params = params.set('fechaHasta', this.fechaHasta()!);
-        if (this.searchQuery()) params = params.set('q', this.searchQuery());
+        let params = toHttpParams({
+            periodoId: this.periodoSeleccionado(),
+            page: this.currentPage(),
+            size: this.pageSize(),
+            voucherTipo: this.filterTipoComprobante(),
+            estadoSunat: this.filterEstadoSunat(),
+            clienteTipoDoc: this.filterClienteTipoDoc(),
+            fechaDesde: this.fechaDesde() ? this.fechaDesde()! : undefined,
+            fechaHasta: this.fechaHasta() ? this.fechaHasta()! : undefined,
+            q: this.searchQuery(),
+        });
         this.http.get<unknown>(`${environment.apiUrls.accounting}/api/v1/contabilidad/registro-ventas`, { params }).subscribe({
             next: (res) => {
                 const r = res as { content?: VentaPLE[] };
@@ -279,27 +253,5 @@ export class RegistroVentasComponent implements OnInit {
                 this.cargando.set(false);
             }
         });
-    }
-
-    private formatPeriodoPLE(nombre: string): string {
-        const meses: Record<string, string> = {
-            enero: '01', febrero: '02', marzo: '03', abril: '04',
-            mayo: '05', junio: '06', julio: '07', agosto: '08',
-            septiembre: '09', octubre: '10', noviembre: '11', diciembre: '12'
-        };
-        const parts = nombre.toLowerCase().split(' ');
-        const mes = meses[parts[0]] ?? '01';
-        const anio = parts[1] ?? '2026';
-        return `${anio}${mes}00`;
-    }
-
-    private formatFechaPLE(fecha: string): string {
-        if (!fecha) return '';
-        try {
-            const d = new Date(fecha);
-            const dd = String(d.getDate()).padStart(2, '0');
-            const mm = String(d.getMonth() + 1).padStart(2, '0');
-            return `${dd}/${mm}/${d.getFullYear()}`;
-        } catch { return fecha; }
     }
 }

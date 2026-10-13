@@ -1,7 +1,7 @@
 import { Component, ChangeDetectionStrategy, signal, inject, OnInit } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { environment } from '@env/environment';
 import { AuthService } from '@core/auth/auth.service';
 import { MONEDA } from '@shared/constants/sunat.constants';
@@ -10,6 +10,7 @@ import { ButtonComponent, CatalogSelectComponent, ServerSearchSelectComponent, R
 import { ImageUploadComponent } from '@shared/ui/forms/image-upload/image-upload.component';
 import { bloquearEnEdicion } from '@shared/utils/form-lock';
 import { proveedorSelectSource } from '../../components/select-sources';
+import { toHttpParams } from '@core/utils/http-params.util';
 
 interface ProveedorHomologado {
     id: string;
@@ -120,11 +121,13 @@ export class CatalogoComponent implements OnInit {
 
     cargar(page = 0): void {
         this.loading.set(true);
-        let params = new HttpParams().set('page', page).set('size', 20);
-        if (this.filtroCategoria()) params = params.set('categoria', this.filtroCategoria());
-        if (this.busqueda().trim()) params = params.set('q', this.busqueda().trim());
-        // Siempre explícito: permite listar los inactivos para volver a activarlos.
-        params = params.set('activo', this.filtroActivo());
+        let params = toHttpParams({
+            page,
+            size: 20,
+            categoria: this.filtroCategoria(),
+            q: this.busqueda().trim(),
+            activo: this.filtroActivo(),
+        });
 
         this.http.get<CatalogoPage>(this.baseUrl, { headers: this.getHeaders(), params })
             .subscribe({

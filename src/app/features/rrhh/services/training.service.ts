@@ -9,6 +9,7 @@ import {
     TrainingParticipation,
     TrainingParticipationRequest,
 } from '../models/training.model';
+import { toHttpParams } from '@core/utils/http-params.util';
 
 /** Filtros server-side del listado paginado de capacitaciones. Todos opcionales. */
 export interface TrainingFiltros {
@@ -64,17 +65,17 @@ export class TrainingService {
         this._loading.set(true);
         this._error.set(null);
         try {
-            const params: Record<string, string> = {
-                page: String(filtros.page ?? 0),
-                size: String(filtros.size ?? 20),
-            };
-            if (filtros.search) params['search'] = filtros.search;
-            if (filtros.estado) params['estado'] = filtros.estado;
-            if (filtros.instructor) params['instructor'] = filtros.instructor;
-            if (filtros.fechaInicioDesde) params['fechaInicioDesde'] = filtros.fechaInicioDesde;
-            if (filtros.fechaInicioHasta) params['fechaInicioHasta'] = filtros.fechaInicioHasta;
-            if (filtros.fechaFinDesde) params['fechaFinDesde'] = filtros.fechaFinDesde;
-            if (filtros.fechaFinHasta) params['fechaFinHasta'] = filtros.fechaFinHasta;
+            let params = toHttpParams({
+                page: filtros.page ?? 0,
+                size: filtros.size ?? 20,
+                search: filtros.search,
+                estado: filtros.estado,
+                instructor: filtros.instructor,
+                fechaInicioDesde: filtros.fechaInicioDesde,
+                fechaInicioHasta: filtros.fechaInicioHasta,
+                fechaFinDesde: filtros.fechaFinDesde,
+                fechaFinHasta: filtros.fechaFinHasta,
+            });
             const res = await firstValueFrom(
                 this.http.get<PageResponse<Training>>(this.baseUrl, { params })
             );

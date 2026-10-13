@@ -1,8 +1,9 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '@env/environment';
 import { PageResponse } from '@core/models/pagination.model';
+import { toHttpParams } from '@core/utils/http-params.util';
 
 export interface RecurringLineItem {
     accountCode: string;
@@ -70,19 +71,19 @@ export class AsientoRecurrenteService {
      * nunca filtra la página cargada — todo el filtrado ocurre en el backend.
      */
     buscarPaginado(filtros: AsientoRecurrenteFiltros = {}): Observable<PageResponse<AsientoRecurrente>> {
-        let params = new HttpParams()
-            .set('page', String(filtros.page ?? 0))
-            .set('size', String(filtros.size ?? 20));
-
-        if (filtros.frecuencia) params = params.set('frecuencia', filtros.frecuencia);
-        if (filtros.activo !== undefined && filtros.activo !== null) params = params.set('activo', String(filtros.activo));
-        if (filtros.nextExecutionDesde) params = params.set('nextExecutionDesde', filtros.nextExecutionDesde);
-        if (filtros.nextExecutionHasta) params = params.set('nextExecutionHasta', filtros.nextExecutionHasta);
-        if (filtros.lastExecutionDesde) params = params.set('lastExecutionDesde', filtros.lastExecutionDesde);
-        if (filtros.lastExecutionHasta) params = params.set('lastExecutionHasta', filtros.lastExecutionHasta);
-        if (filtros.vigenciaDesde) params = params.set('vigenciaDesde', filtros.vigenciaDesde);
-        if (filtros.vigenciaHasta) params = params.set('vigenciaHasta', filtros.vigenciaHasta);
-        if (filtros.q) params = params.set('q', filtros.q);
+        let params = toHttpParams({
+            page: filtros.page ?? 0,
+            size: filtros.size ?? 20,
+            frecuencia: filtros.frecuencia,
+            activo: filtros.activo,
+            nextExecutionDesde: filtros.nextExecutionDesde,
+            nextExecutionHasta: filtros.nextExecutionHasta,
+            lastExecutionDesde: filtros.lastExecutionDesde,
+            lastExecutionHasta: filtros.lastExecutionHasta,
+            vigenciaDesde: filtros.vigenciaDesde,
+            vigenciaHasta: filtros.vigenciaHasta,
+            q: filtros.q,
+        });
 
         return this.http.get<PageResponse<AsientoRecurrente>>(this.baseUrl, { params });
     }

@@ -27,6 +27,7 @@ import {
 } from '../../models/evaluation.model';
 import { PAGINATION } from '@shared/constants/app.constants';
 import { bloquearEnEdicion } from '@shared/utils/form-lock';
+import { evaluacionRequestDesdeForm, ValoresDetalleEvaluacion } from './evaluation-list.form';
 
 @Component({
     selector: 'app-evaluation-list',
@@ -380,26 +381,10 @@ export class EvaluationListComponent implements OnInit {
             // getRawValue(): empleado y periodo quedan bloqueados en edición y no
             // aparecerían en .value (se enviarían como null).
             const val = this.evaluationForm.getRawValue();
-            const details = (this.detailsArray.value as Array<{ criteriaId: number | null; puntaje: number; comentarios: string }>)
-                .filter(d => d.criteriaId != null)
-                .map(d => ({
-                    criteriaId: d.criteriaId!,
-                    puntaje: d.puntaje,
-                    comentarios: d.comentarios || undefined,
-                }));
-            const request = {
-                employeeId: val.employeeId!,
-                evaluadorId: val.evaluadorId!,
-                periodo: val.periodo!,
-                tipoEvaluacion: val.tipoEvaluacion || 'ANUAL',
-                puntaje: val.puntaje!,
-                fechaEvaluacion: val.fechaEvaluacion!,
-                comentarios: val.comentarios || undefined,
-                fortalezas: val.fortalezas || undefined,
-                areasMejora: val.areasMejora || undefined,
-                planMejora: val.planMejora || undefined,
-                details: details.length > 0 ? details : undefined,
-            };
+            const request = evaluacionRequestDesdeForm(
+                val,
+                this.detailsArray.value as ValoresDetalleEvaluacion[],
+            );
             if (this.editMode() && this.selectedId()) {
                 await this.evaluationService.updateEvaluation(this.selectedId()!, request);
             } else {

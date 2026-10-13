@@ -15,8 +15,9 @@ import { environment } from '@env/environment';
 import { DataTableComponent, TableColumn, FilterConfig, FilterChangeEvent, PaginationEvent, DateRangeFilterConfig, DateRangeChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { catalogFilter, signalFilter } from '@shared/ui/tables/data-table/filter-helpers';
 import { ButtonComponent } from '@shared/components';
-import { CPE_TIPO, MONEDA } from '@shared/constants/sunat.constants';
 import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
+import { generarPLE08 } from '../../utils/ple-libro08.util';
+import { formatPeriodoPLE } from '../../utils/ple-formato.util';
 import { PAGINATION } from '@shared/constants/app.constants';
 
 @Component({
@@ -273,51 +274,12 @@ export class RegistroComprasComponent implements OnInit {
     // PLE Libro 8 — formato SUNAT pipe-delimited (generación local)
     exportarPLE() {
         const periodo = this.periodos().find(p => p.id === this.periodoSeleccionado());
-        const periodoStr = periodo ? this.formatPeriodoPLE(periodo.nombre) : '20260300';
-        const lines = this.ordenes().map((o, i) => {
-            const cuo = String(i + 1).padStart(6, '0');
-            const fechaFmt = this.formatFechaPLE(o.fechaEmision);
-            const tipoCpe = CPE_TIPO.FACTURA;
-            const serie = o.codigo?.split('-')[0] ?? 'F001';
-            const numero = o.codigo?.split('-').slice(1).join('') ?? String(i + 1).padStart(8, '0');
-            const base = (o.subtotal ?? 0).toFixed(2);
-            const igv = (o.igv ?? 0).toFixed(2);
-            const total = (o.total ?? 0).toFixed(2);
-            const proveedor = o.proveedorNombre ?? String(o.proveedorId ?? '');
-            const estado = o.estado === 'CANCELADA' ? '8' : '1';
-            return [periodoStr, cuo, fechaFmt, '', tipoCpe, serie, numero,
-                    '6', '', proveedor,
-                    base, igv, '0.00', '0.00', '0.00', '0.00', '0.00', '0.00', '0.00',
-                    total, MONEDA.PEN, '1.000', '', '', '', '0', '0.00', '0.00',
-                    estado, '0', '0'].join('|');
-        });
-        this.exportService.descargarTxt(lines.join('\r\n'), `LE${periodoStr}080100001100_1_1`);
+        const periodoStr = periodo ? formatPeriodoPLE(periodo.nombre) : '20260300';
+        this.exportService.descargarTxt(generarPLE08(this.ordenes(), periodoStr), `LE${periodoStr}080100001100_1_1`);
     }
 
     exportarCSV() {
         // Exportación SERVER-SIDE (mismo endpoint /export que exportConfig, formato csv).
         this.backendExportService.download(this.exportConfig, 'csv');
-    }
-
-    private formatPeriodoPLE(nombre: string): string {
-        const meses: Record<string, string> = {
-            enero: '01', febrero: '02', marzo: '03', abril: '04',
-            mayo: '05', junio: '06', julio: '07', agosto: '08',
-            septiembre: '09', octubre: '10', noviembre: '11', diciembre: '12'
-        };
-        const parts = nombre.toLowerCase().split(' ');
-        const mes = meses[parts[0]] ?? '01';
-        const anio = parts[1] ?? '2026';
-        return `${anio}${mes}00`;
-    }
-
-    private formatFechaPLE(fecha: string): string {
-        if (!fecha) return '';
-        try {
-            const d = new Date(fecha);
-            const dd = String(d.getDate()).padStart(2, '0');
-            const mm = String(d.getMonth() + 1).padStart(2, '0');
-            return `${dd}/${mm}/${d.getFullYear()}`;
-        } catch { return fecha; }
     }
 }

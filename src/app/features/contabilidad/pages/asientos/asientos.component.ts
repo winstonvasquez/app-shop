@@ -11,20 +11,12 @@ import { environment } from '@env/environment';
 import { AsientoService } from '../../services/asiento.service';
 import { CuentaService, CuentaContable } from '../../services/cuenta.service';
 import { PeriodoService, PeriodoContable } from '../../services/periodo.service';
-import { Asiento, AsientoRequest, MovimientoRequest } from '../../models/asiento.model';
+import { Asiento } from '../../models/asiento.model';
+import { LineaAsientoForm as LineaForm, construirAsientoRequest } from './asientos.form';
 import { PAGINATION } from '@shared/constants/app.constants';
 import { CatalogSelectComponent } from '@shared/components';
 import { CatalogService } from '@core/services/catalog.service';
 import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
-
-interface LineaForm {
-    cuentaId: string;
-    codigoCuenta: string;
-    nombreCuenta: string;
-    debe: number;
-    haber: number;
-    glosa: string;
-}
 
 @Component({
     selector: 'app-asientos',
@@ -681,30 +673,12 @@ export class AsientosComponent implements OnInit {
             return;
         }
 
-        const user = this.auth.currentUser();
-        const companyId = String(user?.activeCompanyId ?? 1);
-        const periodoId = this.periodoSeleccionado();
-
-        const movimientos: MovimientoRequest[] = this.lineas()
-            .filter(l => l.cuentaId && ((Number(l.debe) || 0) > 0 || (Number(l.haber) || 0) > 0))
-            .map(l => ({
-                cuentaId: l.cuentaId,
-                codigoCuenta: l.codigoCuenta,
-                debe: Number(l.debe) || 0,
-                haber: Number(l.haber) || 0,
-                glosa: l.glosa || this.form.glosa,
-            }));
-
-        const request: AsientoRequest = {
-            fecha: this.form.fecha,
-            glosa: this.form.glosa,
-            tipo: this.form.tipo,
-            origen: 'MANUAL',
-            periodoId,
-            companyId,
-            tenantId: companyId,
-            movimientos,
-        };
+        const request = construirAsientoRequest(
+            this.form,
+            this.lineas(),
+            this.periodoSeleccionado(),
+            this.auth.currentUser()?.activeCompanyId,
+        );
 
         this.guardando.set(true);
         this.errorForm.set(null);

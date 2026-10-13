@@ -19,6 +19,7 @@ import { ThemeService } from '@core/services/theme/theme';
 import { ProductoCatalogoPOS, DescuentoTipo } from '../../models/catalogo-pos.model';
 import { VentaPosResponse } from '../../models/venta-pos.model';
 import { TurnoCaja } from '../../models/turno-caja.model';
+import { construirVentaPosRequest } from './pos-page.venta-request';
 
 // Sub-components
 import { PosTopbarComponent, PosScreen } from '../../components/pos-topbar/pos-topbar.component';
@@ -615,31 +616,19 @@ export class PosPageComponent implements OnInit, OnDestroy {
             return;
         }
 
-        const pagoDividido = this.carrito.pagoDividido();
-        const montoTotalPagos = pagoDividido
-            ? this.carrito.pagos().reduce((s, p) => s + p.monto, 0)
-            : undefined;
-
-        const giftCardCodigo = this.carrito.giftCardCodigo() || undefined;
-
-        const request = {
+        const request = construirVentaPosRequest({
             turnoCajaId: turno.id,
-            items: this.carrito.items().map(i => ({
-                varianteId: i.variante.varianteId,
-                cantidad: i.cantidad,
-                descuentoTipo: i.descuentoTipo !== 'NINGUNO' ? i.descuentoTipo : undefined,
-                descuentoValor: i.descuentoValor > 0 ? i.descuentoValor : undefined,
-                autorizadoPor: i.autorizadoPor ?? undefined,
-                bolsas: i.bolsas > 0 ? i.bolsas : undefined,
-            })),
-            metodoPago: giftCardCodigo ? 'GIFT_CARD' as const : this.carrito.metodoPagoPrimario(),
+            items: this.carrito.items(),
+            pagoDividido: this.carrito.pagoDividido(),
+            pagos: this.carrito.pagos(),
+            giftCardCodigo: this.carrito.giftCardCodigo(),
+            metodoPagoPrimario: this.carrito.metodoPagoPrimario(),
             tipoCpe: this.carrito.tipoCpe(),
-            clienteId: this.carrito.clienteId() ?? undefined,
-            clienteNombre: this.carrito.clienteNombre() || undefined,
-            descuento: this.carrito.descuento() || undefined,
-            montoRecibido: pagoDividido ? montoTotalPagos : (this.carrito.montoRecibido() || undefined),
-            pagos: pagoDividido ? this.carrito.pagos().filter(p => p.monto > 0) : undefined,
-        };
+            clienteId: this.carrito.clienteId(),
+            clienteNombre: this.carrito.clienteNombre(),
+            descuento: this.carrito.descuento(),
+            montoRecibido: this.carrito.montoRecibido(),
+        });
 
         // Offline handling: save locally if browser is offline
         if (this.offlineSync.isOffline()) {

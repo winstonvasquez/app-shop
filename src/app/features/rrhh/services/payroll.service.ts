@@ -4,6 +4,7 @@ import { environment } from '@env/environment';
 import { firstValueFrom } from 'rxjs';
 import { PageResponse, pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 import { Payroll, PayrollRequest, PayrollStatus } from '../models/payroll.model';
+import { toHttpParams } from '@core/utils/http-params.util';
 
 /** Filtros server-side del listado paginado de boletas (GET /paged). Todos opcionales. */
 export interface PayrollFiltros {
@@ -53,18 +54,18 @@ export class PayrollService {
         Promise<{ totalElements: number; totalPages: number }> {
         this._pagedLoading.set(true);
         try {
-            const params: Record<string, string> = {
-                page: String(filtros.page ?? 0),
-                size: String(filtros.size ?? 20),
-            };
-            if (filtros.periodo) params['periodo'] = filtros.periodo;
-            if (filtros.search) params['search'] = filtros.search;
-            if (filtros.estado) params['estado'] = filtros.estado;
-            if (filtros.employeeId != null) params['employeeId'] = String(filtros.employeeId);
-            if (filtros.departmentId != null) params['departmentId'] = String(filtros.departmentId);
-            if (filtros.afpOnp) params['afpOnp'] = filtros.afpOnp;
-            if (filtros.fechaPagoDesde) params['fechaPagoDesde'] = filtros.fechaPagoDesde;
-            if (filtros.fechaPagoHasta) params['fechaPagoHasta'] = filtros.fechaPagoHasta;
+            let params = toHttpParams({
+                page: filtros.page ?? 0,
+                size: filtros.size ?? 20,
+                periodo: filtros.periodo,
+                search: filtros.search,
+                estado: filtros.estado,
+                employeeId: filtros.employeeId,
+                departmentId: filtros.departmentId,
+                afpOnp: filtros.afpOnp,
+                fechaPagoDesde: filtros.fechaPagoDesde,
+                fechaPagoHasta: filtros.fechaPagoHasta,
+            });
             const res = await firstValueFrom(
                 this.http.get<PageResponse<Payroll>>(`${this.baseUrl}/paged`, { params })
             );

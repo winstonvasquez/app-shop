@@ -14,6 +14,7 @@ import { ROUTES } from '@shared/constants/app.constants';
 import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
+import { stockFiltrosParams } from './stock-view.params';
 
 @Component({
     selector: 'app-stock-view',
@@ -83,13 +84,18 @@ export class StockViewComponent {
     readonly exportConfig: BackendExportConfig = {
         url: `${environment.apiUrls.inventory}/api/inventory/stock/export`,
         filename: 'stock',
-        params: () => ({
-            warehouseId: this.filterWarehouseId(),
-            estadoStock: this.filterEstadoStock() || undefined,
-            updatedAtDesde: this.filterUpdatedAtDesde() ?? undefined,
-            updatedAtHasta: this.filterUpdatedAtHasta() ?? undefined
-        }),
+        params: () => stockFiltrosParams(this.filtrosUI()),
     };
+
+    /** Los filtros del toolbar en un objeto plano — misma fuente para el listado y la exportación. */
+    private filtrosUI() {
+        return {
+            warehouseId: this.filterWarehouseId(),
+            estadoStock: this.filterEstadoStock(),
+            updatedAtDesde: this.filterUpdatedAtDesde(),
+            updatedAtHasta: this.filterUpdatedAtHasta()
+        };
+    }
 
     columns: TableColumn<InventoryStock>[] = [
         { key: 'productId',         label: 'Producto',     sortable: true,
@@ -175,10 +181,7 @@ export class StockViewComponent {
         const filtros: StockFiltros = {
             page: this.currentPage(),
             size: this.pageSize(),
-            warehouseId: this.filterWarehouseId(),
-            estadoStock: this.filterEstadoStock() || undefined,
-            updatedAtDesde: this.filterUpdatedAtDesde() ?? undefined,
-            updatedAtHasta: this.filterUpdatedAtHasta() ?? undefined
+            ...stockFiltrosParams(this.filtrosUI())
         };
         this.api.getStockPaged(filtros).subscribe({
             next: (res) => {

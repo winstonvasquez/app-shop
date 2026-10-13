@@ -26,6 +26,7 @@ import { CURRENCY_DISPLAY } from '@shared/constants/sunat.constants';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
 import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
+import { filtrosDeClientes, FiltrosClienteCrudos } from './customer-list.params';
 
 @Component({
     selector: 'app-customer-list',
@@ -114,16 +115,23 @@ export class CustomerListComponent implements OnInit {
         params: () => ({
             companyId: this.authService.currentUser()?.activeCompanyId ?? undefined,
             search: this.searchQuery() || undefined,
-            tipoCliente: this.filterTipoCliente() || undefined,
-            condicionPago: this.filterCondicionPago() || undefined,
-            tipoDocumento: this.filterTipoDocumento() || undefined,
-            segmentoId: this.filterSegmentoId() || undefined,
-            activo: this.filterActivo() || undefined,
-            conCredito: this.filterConCredito() || undefined,
-            fechaCreacionDesde: this.filterFechaCreacionDesde(),
-            fechaCreacionHasta: this.filterFechaCreacionHasta(),
+            ...filtrosDeClientes(this.filtrosCrudos()),
         }),
     };
+
+    /** Lee los signals de filtro sin normalizar nada: la normalización va en `filtrosDeClientes`. */
+    private filtrosCrudos(): FiltrosClienteCrudos {
+        return {
+            tipoCliente: this.filterTipoCliente(),
+            condicionPago: this.filterCondicionPago(),
+            tipoDocumento: this.filterTipoDocumento(),
+            segmentoId: this.filterSegmentoId(),
+            activo: this.filterActivo(),
+            conCredito: this.filterConCredito(),
+            fechaCreacionDesde: this.filterFechaCreacionDesde(),
+            fechaCreacionHasta: this.filterFechaCreacionHasta(),
+        };
+    }
 
     actions: TableAction<CustomerResponse>[] = [
         { label: 'Ver detalle', icon: 'view', class: 'btn-view',
@@ -173,16 +181,8 @@ export class CustomerListComponent implements OnInit {
 
         const sort = `${this.sortField()},${this.sortDirection()}`;
         this.customerService
-            .getAll(companyId, this.currentPage(), this.pageSize(), sort, this.searchQuery() || undefined, {
-                tipoCliente: this.filterTipoCliente() || undefined,
-                condicionPago: this.filterCondicionPago() || undefined,
-                tipoDocumento: this.filterTipoDocumento() || undefined,
-                segmentoId: this.filterSegmentoId() || undefined,
-                activo: this.filterActivo() || undefined,
-                conCredito: this.filterConCredito() || undefined,
-                fechaCreacionDesde: this.filterFechaCreacionDesde(),
-                fechaCreacionHasta: this.filterFechaCreacionHasta(),
-            })
+            .getAll(companyId, this.currentPage(), this.pageSize(), sort, this.searchQuery() || undefined,
+                filtrosDeClientes(this.filtrosCrudos()))
             .subscribe({
                 next: (res) => {
                     this.customers.set(res.content);

@@ -23,6 +23,8 @@ import { ImageUploadComponent } from '@shared/ui/forms/image-upload/image-upload
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { ButtonComponent } from '@shared/components';
 import { bloquearEnEdicion } from '@shared/utils/form-lock';
+import { mensajeDeErrorDeControl } from '@shared/utils/form-errors';
+import { construirCompanyRequest } from './companies.form';
 
 @Component({
   selector: 'app-companies',
@@ -335,18 +337,7 @@ export class CompaniesComponent implements OnInit {
 
     // getRawValue(): ruc y domain quedan deshabilitados en edición y no saldrían en
     // form.value — se enviarían nulls y se borrarían del tenant.
-    const formValue = this.companyForm.getRawValue();
-    const companyRequest: CompanyRequest = {
-      name: formValue.name,
-      ruc: formValue.ruc,
-      active: formValue.active,
-      legalName: formValue.legalName || undefined,
-      address: formValue.address || undefined,
-      phone: formValue.phone || undefined,
-      email: formValue.email || undefined,
-      logoUrl: formValue.logoUrl || undefined,
-      domain: formValue.domain || undefined
-    };
+    const companyRequest: CompanyRequest = construirCompanyRequest(this.companyForm.getRawValue());
 
     const operation = this.editMode()
       ? this.companyService.update(this.selectedCompanyId()!, companyRequest)
@@ -459,12 +450,6 @@ export class CompaniesComponent implements OnInit {
    */
   err(field: string): string {
     const c = this.companyForm.get(field);
-    if (!c || c.pristine || c.valid) return '';
-    if (c.hasError('required')) return 'Campo requerido';
-    if (c.hasError('email')) return 'Email inválido';
-    if (c.hasError('minlength')) return `Mínimo ${c.getError('minlength').requiredLength} caracteres`;
-    if (c.hasError('maxlength')) return `Máximo ${c.getError('maxlength').requiredLength} caracteres`;
-    if (c.hasError('pattern')) return 'Formato inválido';
-    return 'Campo inválido';
+    return !c || c.pristine || c.valid ? '' : mensajeDeErrorDeControl(c);
   }
 }

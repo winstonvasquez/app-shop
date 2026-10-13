@@ -6,6 +6,12 @@ import { TurnoCaja } from '../../models/turno-caja.model';
 import { CatalogService } from '@core/services/catalog.service';
 import { AuthService } from '@core/auth/auth.service';
 import { environment } from '@env/environment';
+import {
+    FiltrosHistorialCrudos,
+    PosHistorialFiltro,
+    construirFiltroHistorial,
+    hayFiltrosHistorialActivos,
+} from './pos-historial.filtros';
 
 /** Sucursal activa de la empresa (para el select de filtro). */
 interface SucursalOption {
@@ -13,17 +19,7 @@ interface SucursalOption {
     nombre: string;
 }
 
-/** Filtros server-side del historial de ventas del turno — ver GET /api/pos/turno/{id}/historial. */
-export interface PosHistorialFiltro {
-    search?: string;
-    estado?: string;
-    metodoPago?: string;
-    tipoCpe?: string;
-    moneda?: string;
-    sucursalId?: number;
-    fechaCreacionDesde?: string;
-    fechaCreacionHasta?: string;
-}
+export type { PosHistorialFiltro };
 
 @Component({
     selector: 'app-pos-historial',
@@ -62,10 +58,21 @@ export class PosHistorialComponent implements OnInit {
     readonly monedas = this.catalog.options('MONEDA');
     readonly sucursales = signal<SucursalOption[]>([]);
 
-    readonly hasActiveFilters = computed(() =>
-        !!(this.searchQuery() || this.filterEstado() || this.filterMetodoPago() || this.filterTipoCpe()
-            || this.filterMoneda() || this.filterSucursalId() || this.filterFechaDesde() || this.filterFechaHasta())
-    );
+    readonly hasActiveFilters = computed(() => hayFiltrosHistorialActivos(this.filtrosCrudos()));
+
+    /** Lectura de los ocho controles de filtro. Leer las señales aquí mantiene la reactividad. */
+    private filtrosCrudos(): FiltrosHistorialCrudos {
+        return {
+            search: this.searchQuery(),
+            estado: this.filterEstado(),
+            metodoPago: this.filterMetodoPago(),
+            tipoCpe: this.filterTipoCpe(),
+            moneda: this.filterMoneda(),
+            sucursalId: this.filterSucursalId(),
+            fechaDesde: this.filterFechaDesde(),
+            fechaHasta: this.filterFechaHasta(),
+        };
+    }
 
     ngOnInit(): void {
         const companyId = this.auth.currentUser()?.activeCompanyId;
@@ -132,16 +139,7 @@ export class PosHistorialComponent implements OnInit {
     }
 
     private emitFilters(): void {
-        this.filtersChanged.emit({
-            search: this.searchQuery() || undefined,
-            estado: this.filterEstado() || undefined,
-            metodoPago: this.filterMetodoPago() || undefined,
-            tipoCpe: this.filterTipoCpe() || undefined,
-            moneda: this.filterMoneda() || undefined,
-            sucursalId: this.filterSucursalId() ? Number(this.filterSucursalId()) : undefined,
-            fechaCreacionDesde: this.filterFechaDesde() || undefined,
-            fechaCreacionHasta: this.filterFechaHasta() || undefined,
-        });
+        this.filtersChanged.emit(construirFiltroHistorial(this.filtrosCrudos()));
     }
 
     fmt(val: number | undefined | null): string {

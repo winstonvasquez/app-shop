@@ -20,6 +20,7 @@ import { PAGINATION, ROUTES } from '@shared/constants/app.constants';
 import { bloquearEnEdicion } from '@shared/utils/form-lock';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
+import { almacenesFiltrosParams } from './warehouse-management.params';
 
 @Component({
     selector: 'app-warehouse-management',
@@ -110,14 +111,19 @@ export class WarehouseManagementComponent implements OnInit {
     readonly exportConfig: BackendExportConfig = {
         url: `${environment.apiUrls.inventory}/api/warehouses/export`,
         filename: 'almacenes',
-        params: () => ({
-            search: this.searchQuery(),
-            active: this.filterActive() ?? undefined,
-            isPrincipal: this.filterIsPrincipal() ?? undefined,
-            createdAtDesde: this.filterCreatedAtDesde() ?? undefined,
-            createdAtHasta: this.filterCreatedAtHasta() ?? undefined
-        })
+        params: () => almacenesFiltrosParams(this.filtrosUI())
     };
+
+    /** Los filtros del toolbar en un objeto plano — misma fuente para el listado y la exportación. */
+    private filtrosUI() {
+        return {
+            search: this.searchQuery(),
+            active: this.filterActive(),
+            isPrincipal: this.filterIsPrincipal(),
+            createdAtDesde: this.filterCreatedAtDesde(),
+            createdAtHasta: this.filterCreatedAtHasta()
+        };
+    }
 
     actions: TableAction<Warehouse>[] = [
         {
@@ -153,15 +159,16 @@ export class WarehouseManagementComponent implements OnInit {
 
     loadWarehouses(): void {
         this.loading.set(true);
+        const f = almacenesFiltrosParams(this.filtrosUI());
         this.api.searchWarehousesPaged(
             this.currentPage(),
             this.pageSize(),
-            this.searchQuery() || undefined,
-            this.filterActive() ?? undefined,
-            this.filterIsPrincipal() ?? undefined,
+            f.search,
+            f.active,
+            f.isPrincipal,
             undefined, // city: sin endpoint de valores distintos disponible aún, no se ofrece como select
-            this.filterCreatedAtDesde() ?? undefined,
-            this.filterCreatedAtHasta() ?? undefined
+            f.createdAtDesde,
+            f.createdAtHasta
         ).subscribe({
             next: (page) => {
                 this.warehouses.set(page.content);

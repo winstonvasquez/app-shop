@@ -2,9 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators, FormGroup, FormControl } from '@angular/forms';
 import { InventoryApiService, PutawaySuggestion } from '../../services/inventory-api.service';
-import {
-    InventoryMovement, InventoryMovementRequest, InventoryMovementType, Location, Warehouse
-} from '../../models/inventory.models';
+import { InventoryMovement, Location, Warehouse } from '../../models/inventory.models';
 import { map } from 'rxjs';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { CatalogService } from '@core/services/catalog.service';
@@ -23,6 +21,8 @@ import { ROUTES } from '@shared/constants/app.constants';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
 import { warehouseSelectSource } from '../../components/select-sources';
+import { movimientosFiltrosParams } from './movement-management.params';
+import { movimientoCrearPayload } from './movement-management.form';
 
 @Component({
     selector: 'app-movement-management',
@@ -123,17 +123,22 @@ export class MovementManagementComponent {
     readonly exportConfig: BackendExportConfig = {
         url: `${environment.apiUrls.inventory}/api/inventory/movements/export`,
         filename: 'movimientos-inventario',
-        params: () => ({
+        params: () => movimientosFiltrosParams(this.filtrosUI()),
+    };
+
+    /** Los filtros del toolbar en un objeto plano — misma fuente para el listado y la exportación. */
+    private filtrosUI() {
+        return {
+            q: this.searchQuery(),
             warehouseId: this.filterWarehouseId(),
-            movementType: this.filterType() || undefined,
-            referenceType: this.filterReferenceType() || undefined,
+            movementType: this.filterType(),
+            referenceType: this.filterReferenceType(),
             locationId: this.filterLocationId(),
             productId: this.filterProductId(),
             movementDateDesde: this.filterMovementDateDesde(),
-            movementDateHasta: this.filterMovementDateHasta(),
-            q: this.searchQuery() || undefined
-        }),
-    };
+            movementDateHasta: this.filterMovementDateHasta()
+        };
+    }
 
     form: FormGroup = this.fb.nonNullable.group({
         productId:       [null as number | null, Validators.required],
@@ -178,14 +183,7 @@ export class MovementManagementComponent {
         this.api.getMovements({
             page: this.currentPage(),
             size: this.pageSize(),
-            warehouseId:  this.filterWarehouseId(),
-            movementType: this.filterType() || undefined,
-            referenceType: this.filterReferenceType() || undefined,
-            locationId: this.filterLocationId(),
-            productId: this.filterProductId(),
-            movementDateDesde: this.filterMovementDateDesde(),
-            movementDateHasta: this.filterMovementDateHasta(),
-            q: this.searchQuery() || undefined
+            ...movimientosFiltrosParams(this.filtrosUI())
         }).subscribe({
             next: (res) => {
                 this.movements.set(res.content);
@@ -351,20 +349,7 @@ export class MovementManagementComponent {
     onSubmit(): void {
         if (this.form.invalid) { this.form.markAllAsTouched(); return; }
         this.submitting.set(true);
-        const v = this.form.getRawValue();
-        const payload: InventoryMovementRequest = {
-            productId:       Number(v.productId),
-            warehouseId:     Number(v.warehouseId),
-            movementType:    v.movementType as InventoryMovementType,
-            quantity:        Number(v.quantity),
-            unitCost:        v.unitCost != null ? Number(v.unitCost) : undefined,
-            movementDate:    v.movementDate,
-            reason:          v.reason || undefined,
-            referenceType:   v.referenceType || undefined,
-            referenceNumber: v.referenceNumber || undefined,
-            locationId:      v.locationId != null ? Number(v.locationId) : undefined
-        };
-        this.api.createMovement(payload).subscribe({
+        this.api.createMovement(movimientoCrearPayload(this.form.getRawValue())).subscribe({
             next: () => { this.submitting.set(false); this.closeDrawer(); this.loadMovements(); },
             error: (err: Error) => { this.submitting.set(false); this.submitError.set(err.message); }
         });

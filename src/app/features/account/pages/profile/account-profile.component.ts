@@ -11,6 +11,7 @@ import {
     DsButtonComponent,
 } from '@shared/ui/ds';
 import { CatalogSelectComponent } from '@shared/components';
+import { mensajeDeErrorDeControl } from '@shared/utils/form-errors';
 
 interface UserProfile {
     id: number;
@@ -65,12 +66,7 @@ export class AccountProfileComponent implements OnInit {
 
     err(field: string): string {
         const c = this.profileForm.get(field);
-        if (!c || c.pristine || c.valid) return '';
-        if (c.hasError('required'))  return 'Campo requerido';
-        if (c.hasError('email'))     return 'Email inválido';
-        if (c.hasError('minlength')) return `Mínimo ${c.getError('minlength').requiredLength} caracteres`;
-        if (c.hasError('pattern'))   return 'Formato inválido';
-        return 'Campo inválido';
+        return !c || c.pristine || c.valid ? '' : mensajeDeErrorDeControl(c);
     }
 
     loadProfile(): void {

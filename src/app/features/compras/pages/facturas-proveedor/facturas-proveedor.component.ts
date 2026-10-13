@@ -38,6 +38,10 @@ import { environment } from '@env/environment';
 import { MONEDA } from '@shared/constants/sunat.constants';
 import { PAGINATION } from '@shared/constants/app.constants';
 import { CatalogService } from '@core/services/catalog.service';
+import {
+    claseBadgeEstadoFactura, claseBadgeMatch, claseBadgeSunat, construirRegistrarFacturaRequest
+} from './facturas-proveedor.form';
+import { construirFiltrosFactura } from './facturas-proveedor.filtros';
 
 @Component({
     selector: 'app-facturas-proveedor',
@@ -173,20 +177,20 @@ export class FacturasProveedorComponent implements OnInit {
     readonly exportConfig: BackendExportConfig = {
         url: `${environment.apiUrls.purchases}/api/facturas-proveedor/export`,
         filename: 'facturas-proveedor',
-        params: () => ({
-            q: this.searchQuery() || undefined,
-            estado: this.filterEstado() || undefined,
-            tipoDocumento: this.filterTipoDocumento() || undefined,
-            resultadoMatch: this.filterResultadoMatch() || undefined,
-            estadoSunat: this.filterEstadoSunat() || undefined,
-            moneda: this.filterMoneda() || undefined,
-            proveedorId: this.filterProveedorId() || undefined,
-            conDetraccion: this.filterConDetraccion() || undefined,
-            fechaEmisionDesde: this.filterFechaEmisionDesde() ?? undefined,
-            fechaEmisionHasta: this.filterFechaEmisionHasta() ?? undefined,
-            fechaVencimientoDesde: this.filterFechaVencimientoDesde() ?? undefined,
-            fechaVencimientoHasta: this.filterFechaVencimientoHasta() ?? undefined
-        }),
+        params: () => ({ ...construirFiltrosFactura({
+            q: this.searchQuery(),
+            estado: this.filterEstado(),
+            tipoDocumento: this.filterTipoDocumento(),
+            resultadoMatch: this.filterResultadoMatch(),
+            estadoSunat: this.filterEstadoSunat(),
+            moneda: this.filterMoneda(),
+            proveedorId: this.filterProveedorId(),
+            conDetraccion: this.filterConDetraccion(),
+            fechaEmisionDesde: this.filterFechaEmisionDesde(),
+            fechaEmisionHasta: this.filterFechaEmisionHasta(),
+            fechaVencimientoDesde: this.filterFechaVencimientoDesde(),
+            fechaVencimientoHasta: this.filterFechaVencimientoHasta(),
+        }) }),
     };
 
     facturaForm = this.fb.group({
@@ -288,18 +292,20 @@ export class FacturasProveedorComponent implements OnInit {
         this.facturaService.listar({
             page: this.currentPage(),
             size: this.pageSize(),
-            q: this.searchQuery() || undefined,
-            estado: this.filterEstado() || undefined,
-            tipoDocumento: this.filterTipoDocumento() || undefined,
-            resultadoMatch: this.filterResultadoMatch() || undefined,
-            estadoSunat: this.filterEstadoSunat() || undefined,
-            moneda: this.filterMoneda() || undefined,
-            proveedorId: this.filterProveedorId() || undefined,
-            conDetraccion: this.filterConDetraccion() || undefined,
-            fechaEmisionDesde: this.filterFechaEmisionDesde() || undefined,
-            fechaEmisionHasta: this.filterFechaEmisionHasta() || undefined,
-            fechaVencimientoDesde: this.filterFechaVencimientoDesde() || undefined,
-            fechaVencimientoHasta: this.filterFechaVencimientoHasta() || undefined
+            ...construirFiltrosFactura({
+            q: this.searchQuery(),
+            estado: this.filterEstado(),
+            tipoDocumento: this.filterTipoDocumento(),
+            resultadoMatch: this.filterResultadoMatch(),
+            estadoSunat: this.filterEstadoSunat(),
+            moneda: this.filterMoneda(),
+            proveedorId: this.filterProveedorId(),
+            conDetraccion: this.filterConDetraccion(),
+            fechaEmisionDesde: this.filterFechaEmisionDesde(),
+            fechaEmisionHasta: this.filterFechaEmisionHasta(),
+            fechaVencimientoDesde: this.filterFechaVencimientoDesde(),
+            fechaVencimientoHasta: this.filterFechaVencimientoHasta(),
+        }),
         }).subscribe({
             next: (page) => {
                 this.facturas.set(page.content);
@@ -475,25 +481,7 @@ export class FacturasProveedorComponent implements OnInit {
 
     registrarFactura(): void {
         if (this.facturaForm.invalid) return;
-        const fv = this.facturaForm.value;
-
-        const request: RegistrarFacturaRequest = {
-            ordenCompraId: fv.ordenCompraId ?? '',
-            serie: fv.serie ?? '',
-            numero: fv.numero ?? '',
-            tipoDocumento: fv.tipoDocumento ?? 'FACTURA',
-            fechaEmision: fv.fechaEmision ?? '',
-            fechaVencimiento: fv.fechaVencimiento || undefined,
-            moneda: fv.moneda ?? MONEDA.PEN,
-            observaciones: fv.observaciones || undefined,
-            items: (fv.items ?? []).map((i: Record<string, unknown>) => ({
-                ordenItemId: (i['ordenItemId'] as string) || undefined,
-                productoNombre: i['productoNombre'] as string,
-                sku: (i['sku'] as string) || undefined,
-                cantidad: Number(i['cantidad']),
-                precioUnitario: Number(i['precioUnitario']),
-            })),
-        };
+        const request: RegistrarFacturaRequest = construirRegistrarFacturaRequest(this.facturaForm.value);
 
         this.submitting.set(true);
         this.submitError.set(null);
@@ -555,26 +543,15 @@ export class FacturasProveedorComponent implements OnInit {
     }
 
     getEstadoBadge(estado: string): string {
-        switch (estado) {
-            case 'PENDIENTE': return 'badge badge-warning';
-            case 'APROBADA': return 'badge badge-success';
-            case 'RECHAZADA': return 'badge badge-error';
-            default: return 'badge badge-neutral';
-        }
+        return claseBadgeEstadoFactura(estado);
     }
 
     getMatchBadge(match: string | undefined): string {
-        if (!match) return 'badge badge-neutral';
-        return match === 'OK_TOTAL' ? 'badge badge-success'
-            : match === 'OK_PARCIAL' ? 'badge badge-warning'
-            : 'badge badge-error';
+        return claseBadgeMatch(match);
     }
 
     getSunatBadge(estadoSunat: string | undefined): string {
-        if (!estadoSunat) return 'badge badge-neutral';
-        return estadoSunat === 'ACEPTADA' ? 'badge badge-success'
-            : estadoSunat === 'RECHAZADA' ? 'badge badge-error'
-            : 'badge badge-warning';
+        return claseBadgeSunat(estadoSunat);
     }
 
     validarSunat(id: string): void {

@@ -4,7 +4,7 @@ import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { environment } from '@env/environment';
 import { RolDto } from '@features/admin/models/user.model';
-import { HTTP_STATUS } from '@shared/constants/app.constants';
+import { mensajeDeErrorHttp } from '@core/utils/http-error.util';
 
 @Injectable({
     providedIn: 'root'
@@ -26,21 +26,7 @@ export class RolService {
      * Handle HTTP errors
      */
     private handleError(error: HttpErrorResponse): Observable<never> {
-        let errorMessage = 'Ocurrió un error desconocido';
-
-        if (error.error instanceof ErrorEvent) {
-            errorMessage = `Error: ${error.error.message}`;
-        } else {
-            if (error.status === 0) {
-                errorMessage = 'No se pudo conectar con el servidor';
-            } else if (error.status === HTTP_STATUS.internalServerError) {
-                errorMessage = 'Error interno del servidor';
-            } else {
-                errorMessage = `Error ${error.status}: ${error.error?.message || error.statusText}`;
-            }
-        }
-
         console.error('RolService Error:', error);
-        return throwError(() => new Error(errorMessage));
+        return throwError(() => new Error(mensajeDeErrorHttp(error)));
     }
 }

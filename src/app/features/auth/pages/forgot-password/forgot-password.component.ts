@@ -7,6 +7,7 @@ import { LucideAngularModule } from 'lucide-angular';
 import { environment } from '@env/environment';
 
 import { DsButtonComponent, DsWordmarkComponent } from '@shared/ui/ds';
+import { mensajeDeErrorDeControl } from '@shared/utils/form-errors';
 
 @Component({
     selector: 'app-forgot-password',
@@ -203,10 +204,8 @@ export class ForgotPasswordComponent {
 
     emailError(): string {
         const c = this.form.get('email');
-        if (!c || c.pristine || c.valid) return '';
-        if (c.hasError('required')) return 'Correo electrónico requerido.';
-        if (c.hasError('email'))    return 'Ingresa un correo electrónico válido.';
-        return 'Campo inválido.';
+        return !c || c.pristine || c.valid ? ''
+            : mensajeDeErrorDeControl(c, { required: 'Correo electrónico requerido.', email: 'Ingresa un correo electrónico válido.' });
     }
 
     onSubmit(): void {

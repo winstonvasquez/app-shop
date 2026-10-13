@@ -7,7 +7,8 @@ import { OrderService } from '@core/services/order.service';
 import { OrderResponse } from '@core/models/order.model';
 import { OrderStatus, OrderDetail } from '@features/admin/models/order.model';
 import { VentasParametrosService } from '../../services/ventas-parametros.service';
-import { PaginationConfig } from '@core/models/pagination.model';
+import { PaginationConfig, pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
+import { filtrosDePedidos, FiltrosPedidoCrudos } from './orders.params';
 import { DataTableComponent, TableColumn, TableAction, PaginationEvent, SortEvent, FilterConfig, FilterChangeEvent, DateRangeFilterConfig, DateRangeChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { catalogFilter, staticFilter } from '@shared/ui/tables/data-table/filter-helpers';
 import { CatalogService } from '@core/services/catalog.service';
@@ -129,17 +130,24 @@ export class OrdersComponent implements OnInit {
     filename: 'pedidos',
     params: () => ({
       search: this.searchQuery() || undefined,
-      estado: this.filterEstado() || undefined,
-      cpeTipo: this.filterCpeTipo() || undefined,
-      cpeEstado: this.filterCpeEstado() || undefined,
-      metodoPago: this.filterMetodoPago() || undefined,
-      estadoPago: this.filterEstadoPago() || undefined,
+      ...filtrosDePedidos(this.filtrosCrudos())
+    }),
+  };
+
+  /** Lee los signals de filtro sin normalizar nada: la normalización va en `filtrosDePedidos`. */
+  private filtrosCrudos(): FiltrosPedidoCrudos {
+    return {
+      estado: this.filterEstado(),
+      cpeTipo: this.filterCpeTipo(),
+      cpeEstado: this.filterCpeEstado(),
+      metodoPago: this.filterMetodoPago(),
+      estadoPago: this.filterEstadoPago(),
       fechaPedidoDesde: this.filterFechaPedidoDesde(),
       fechaPedidoHasta: this.filterFechaPedidoHasta(),
       cpeFechaEmisionDesde: this.filterCpeFechaEmisionDesde(),
       cpeFechaEmisionHasta: this.filterCpeFechaEmisionHasta()
-    }),
-  };
+    };
+  }
 
   // Computed properties
   hasOrders = computed(() => this.orders().length > 0);
@@ -211,23 +219,12 @@ export class OrdersComponent implements OnInit {
       sort: { field: this.sortField() || 'fechaPedido', direction: this.sortDirection() }
     };
 
-    this.orderService.getAll(pagination, this.searchQuery() || undefined, {
-      estado: this.filterEstado() || undefined,
-      cpeTipo: this.filterCpeTipo() || undefined,
-      cpeEstado: this.filterCpeEstado() || undefined,
-      metodoPago: this.filterMetodoPago() || undefined,
-      estadoPago: this.filterEstadoPago() || undefined,
-      fechaPedidoDesde: this.filterFechaPedidoDesde(),
-      fechaPedidoHasta: this.filterFechaPedidoHasta(),
-      cpeFechaEmisionDesde: this.filterCpeFechaEmisionDesde(),
-      cpeFechaEmisionHasta: this.filterCpeFechaEmisionHasta()
-    }).subscribe({
+    this.orderService.getAll(pagination, this.searchQuery() || undefined, filtrosDePedidos(this.filtrosCrudos())).subscribe({
       next: (response) => {
         this.orders.set(response.content);
         // Spring Boot 3.3+ puede anidar metadatos en "page": { totalElements, totalPages }
-        const raw = response as { page?: { totalElements?: number; totalPages?: number } };
-        this.totalElements.set(response.totalElements ?? raw.page?.totalElements ?? 0);
-        this.totalPages.set(response.totalPages ?? raw.page?.totalPages ?? 0);
+        this.totalElements.set(pageTotalElements(response));
+        this.totalPages.set(pageTotalPages(response));
         this.loading.set(false);
       },
       error: (err) => {

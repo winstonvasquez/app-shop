@@ -4,6 +4,7 @@ import { environment } from '@env/environment';
 import { firstValueFrom } from 'rxjs';
 import { PageResponse, pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 import { Department, DepartmentRequest } from '../models/department.model';
+import { toHttpParams } from '@core/utils/http-params.util';
 
 /** Filtros server-side del listado paginado de departamentos. Todos opcionales. */
 export interface DepartmentFiltros {
@@ -51,16 +52,16 @@ export class DepartmentService {
         this._loading.set(true);
         this._error.set(null);
         try {
-            const params: Record<string, string> = {
-                page: String(filtros.page ?? 0),
-                size: String(filtros.size ?? 20),
-            };
-            if (filtros.search) params['search'] = filtros.search;
-            if (filtros.activo) params['activo'] = filtros.activo;
-            if (filtros.managerId != null) params['managerId'] = String(filtros.managerId);
-            if (filtros.parentId != null) params['parentId'] = String(filtros.parentId);
-            if (filtros.createdAtDesde) params['createdAtDesde'] = filtros.createdAtDesde;
-            if (filtros.createdAtHasta) params['createdAtHasta'] = filtros.createdAtHasta;
+            let params = toHttpParams({
+                page: filtros.page ?? 0,
+                size: filtros.size ?? 20,
+                search: filtros.search,
+                activo: filtros.activo,
+                managerId: filtros.managerId,
+                parentId: filtros.parentId,
+                createdAtDesde: filtros.createdAtDesde,
+                createdAtHasta: filtros.createdAtHasta,
+            });
             const res = await firstValueFrom(
                 this.http.get<PageResponse<Department>>(`${this.baseUrl}/paged`, { params })
             );
@@ -80,10 +81,13 @@ export class DepartmentService {
      */
     async searchPage(page: number, size: number, search?: string, sort?: string, activo?: string):
         Promise<PageResponse<Department>> {
-        const params: Record<string, string> = { page: String(page), size: String(size) };
-        if (search) params['search'] = search;
-        if (sort) params['sort'] = sort;
-        if (activo) params['activo'] = activo;
+        let params = toHttpParams({
+            page,
+            size,
+            search,
+            sort,
+            activo,
+        });
         return firstValueFrom(
             this.http.get<PageResponse<Department>>(`${this.baseUrl}/paged`, { params })
         );

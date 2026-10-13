@@ -18,7 +18,8 @@ import { CatalogService } from '@core/services/catalog.service';
 import { PagosService } from '../../services/pagos.service';
 import { CuentasBancariasService } from '../../services/cuentas-bancarias.service';
 import { AuthService } from '@core/auth/auth.service';
-import { Payment, PaymentRequest, Page, BankAccount } from '../../models/tesoreria.model';
+import { Payment, Page, BankAccount } from '../../models/tesoreria.model';
+import { construirPaymentRequest } from './pagos.form';
 import { MONEDA, CURRENCY_DISPLAY } from '@shared/constants/sunat.constants';
 import { PAGINATION } from '@shared/constants/app.constants';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
@@ -287,19 +288,10 @@ export class PagosComponent implements OnInit {
     registrarPago(): void {
         if (this.pagoForm.invalid) { this.pagoForm.markAllAsTouched(); return; }
         this.guardando.set(true);
-        const v = this.pagoForm.value;
-        const req: PaymentRequest = {
-            tenantId:              this.auth.currentUser()?.activeCompanyId ?? 1,
-            tipoPago:              v.tipoPago,
-            monto:                 v.monto,
-            moneda:                v.moneda ?? MONEDA.PEN,
-            metodoPago:            v.metodoPago,
-            fechaSolicitud:        v.fechaSolicitud,
-            beneficiarioNombre:    v.beneficiarioNombre,
-            beneficiarioDocumento: v.beneficiarioDocumento ?? '',
-            concepto:              v.concepto,
-            bankAccountId:         v.bankAccountId ?? undefined
-        };
+        const req = construirPaymentRequest(
+            this.pagoForm.value,
+            this.auth.currentUser()?.activeCompanyId ?? 1
+        );
         this.pagosService.create(req)
             .pipe(takeUntilDestroyed(this.destroyRef))
             .subscribe({

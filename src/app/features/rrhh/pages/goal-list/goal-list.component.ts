@@ -27,6 +27,7 @@ import {
 } from '../../models/evaluation.model';
 import { PAGINATION } from '@shared/constants/app.constants';
 import { bloquearEnEdicion } from '@shared/utils/form-lock';
+import { metaRequestDesdeForm } from './goal-list.form';
 
 @Component({
     selector: 'app-goal-list',
@@ -331,16 +332,7 @@ export class GoalListComponent implements OnInit {
         this.submitError.set(null);
         try {
             // getRawValue(): 'employeeId' queda bloqueado en edición y no saldría en .value.
-            const val = this.goalForm.getRawValue();
-            const request = {
-                employeeId: val.employeeId!,
-                titulo: val.titulo!,
-                descripcion: val.descripcion || undefined,
-                fechaInicio: val.fechaInicio!,
-                fechaFin: val.fechaFin!,
-                prioridad: val.prioridad || 'MEDIA',
-                porcentajeAvance: val.porcentajeAvance ?? 0,
-            };
+            const request = metaRequestDesdeForm(this.goalForm.getRawValue());
             if (this.editMode() && this.selectedId()) {
                 await this.evaluationService.updateGoal(this.selectedId()!, request);
             } else {

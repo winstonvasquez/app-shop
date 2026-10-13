@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators, FormGroup, FormControl } from '@angular/forms';
 import { WmsApiService } from '../../services/wms-api.service';
-import { CreateReplenishmentRuleRequest, ReplenishmentRule } from '../../models/wms-zone.models';
+import { ReplenishmentRule } from '../../models/wms-zone.models';
 import { productIdToUuid } from '../../utils/synthetic-uuid.util';
 import { ProductLookupComponent } from '../../components/product-lookup/product-lookup.component';
 import { ProductResponse } from '@core/models/product.model';
@@ -25,6 +25,8 @@ import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.compo
 import { ButtonComponent, CatalogSelectComponent, ServerSearchSelectComponent } from '@shared/components';
 import { ROUTES } from '@shared/constants/app.constants';
 import { bloquearEnEdicion } from '@shared/utils/form-lock';
+import { reglasFiltrosParams } from './replenishment-rules.params';
+import { debeAplicarCambioDeStatus, reglaReposicionPayload } from './replenishment-rules.form';
 
 @Component({
     selector: 'app-replenishment-rules',
@@ -192,14 +194,16 @@ export class ReplenishmentRulesComponent {
         this.api.getReplenishmentRules({
             page: this.currentPage(),
             size: this.pageSize(),
-            q: this.searchQuery() || undefined,
-            status: this.filterStatus() || undefined,
-            almacenId: this.filterAlmacenId() || undefined,
-            autoCreatePo: this.filterAutoCreatePo() === '' ? undefined : this.filterAutoCreatePo() === 'true',
-            lastTriggeredAtDesde: this.filterLastTriggeredAtDesde() || undefined,
-            lastTriggeredAtHasta: this.filterLastTriggeredAtHasta() || undefined,
-            lastPoCreatedAtDesde: this.filterLastPoCreatedAtDesde() || undefined,
-            lastPoCreatedAtHasta: this.filterLastPoCreatedAtHasta() || undefined
+            ...reglasFiltrosParams({
+                q: this.searchQuery(),
+                status: this.filterStatus(),
+                almacenId: this.filterAlmacenId(),
+                autoCreatePo: this.filterAutoCreatePo(),
+                lastTriggeredAtDesde: this.filterLastTriggeredAtDesde(),
+                lastTriggeredAtHasta: this.filterLastTriggeredAtHasta(),
+                lastPoCreatedAtDesde: this.filterLastPoCreatedAtDesde(),
+                lastPoCreatedAtHasta: this.filterLastPoCreatedAtHasta()
+            })
         }).subscribe({
             next: (res) => {
                 this.rules.set(res.content);
@@ -346,27 +350,16 @@ export class ReplenishmentRulesComponent {
         const v = this.form.getRawValue();
         // `status` NO viaja acá: `CreateReplenishmentRuleRequest` no lo declara.
         // Se aplica aparte por PATCH /{id}/status (ver más abajo).
-        const payload: CreateReplenishmentRuleRequest = {
-            almacenId: v.almacenId ?? undefined,
-            sku: v.sku,
-            productoNombre: v.productoNombre || undefined,
-            reorderPoint: v.reorderPoint,
-            reorderQuantity: v.reorderQuantity,
-            preferredSupplierName: v.preferredSupplierName || undefined,
-            maxUnitCost: v.maxUnitCost ?? undefined,
-            autoCreatePo: v.autoCreatePo,
-            productoId
-        };
+        const payload = reglaReposicionPayload(v, productoId);
         const op = this.editMode()
             ? this.api.updateReplenishmentRule(this.selectedId()!, payload)
             : this.api.createReplenishmentRule(payload);
         op.subscribe({
             next: () => {
-                const nuevoStatus = String(v.status ?? '');
                 // El PUT ignora el estado; si el usuario lo cambió en el drawer, se aplica
                 // con el MISMO endpoint que las acciones "Pausar"/"Reactivar" de la fila.
-                if (this.editMode() && nuevoStatus && nuevoStatus !== this.statusOriginal()) {
-                    this.api.cambiarStatusReplenishmentRule(this.selectedId()!, nuevoStatus).subscribe({
+                if (debeAplicarCambioDeStatus(this.editMode(), v.status, this.statusOriginal())) {
+                    this.api.cambiarStatusReplenishmentRule(this.selectedId()!, String(v.status)).subscribe({
                         next: () => { this.submitting.set(false); this.closeDrawer(); this.loadRules(); },
                         error: (err: Error) => { this.submitting.set(false); this.submitError.set(err.message); }
                     });

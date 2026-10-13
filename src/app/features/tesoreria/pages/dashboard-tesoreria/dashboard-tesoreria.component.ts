@@ -94,7 +94,9 @@ export class DashboardTesoreriaComponent implements OnInit {
             movimientos: this.movimientosService.getAll({ page: 0, size: 20 })
         }).subscribe({
             next: ({ cajas, pagos, movimientos }) => {
-                this.cajas.set(Array.isArray(cajas) ? cajas : (cajas?.content ?? []));
+                // `CajasService.getAll` declara `Page<CashRegister>`; pagos y movimientos sí
+                // pueden llegar como array plano, y por eso solo esos dos se normalizan.
+                this.cajas.set(cajas.content);
                 this.pagosRecientes.set(Array.isArray(pagos) ? pagos : (pagos?.content ?? []));
                 this.movimientos.set(Array.isArray(movimientos) ? movimientos : (movimientos?.content ?? []));
                 this.cargando.set(false);

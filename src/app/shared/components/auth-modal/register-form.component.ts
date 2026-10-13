@@ -5,6 +5,7 @@ import {
   AdminFormSectionComponent,
   AdminFormLayoutComponent,
 } from '@shared/ui';
+import { mensajeDeErrorDeControl } from '@shared/utils/form-errors';
 
 export interface RegisterData {
   nombres: string;
@@ -60,10 +61,7 @@ export class RegisterFormComponent {
 
   err(field: string): string {
     const c = this.form.get(field);
-    if (!c || c.pristine || c.valid) return '';
-    if (c.hasError('required')) return 'Campo requerido';
-    if (c.hasError('minlength')) return `Mínimo ${c.getError('minlength').requiredLength} caracteres`;
-    return 'Campo inválido';
+    return !c || c.pristine || c.valid ? '' : mensajeDeErrorDeControl(c);
   }
 
   onSubmit(): void {

@@ -17,6 +17,8 @@ import { VentasParametrosService, SelectOption } from '../../services/ventas-par
 import { CURRENCY_DISPLAY } from '@shared/constants/sunat.constants';
 import { OrderService } from '@core/services/order.service';
 import { pedidoSelectSource } from '../../components/select-sources';
+import { mensajeDeErrorDeControl } from '@shared/utils/form-errors';
+import { toHttpParams } from '@core/utils/http-params.util';
 
 type MotivoDevolucion = 'DEFECTO' | 'CAMBIO' | 'ERROR_PEDIDO' | 'NO_LLEGÓ' | 'OTRO';
 type TipoResolucion   = 'REEMBOLSO' | 'CAMBIO_PRODUCTO' | 'CREDITO_TIENDA';
@@ -189,17 +191,17 @@ export class ReturnsComponent implements OnInit {
     /** Carga la página actual server-side (search + estado + 20/pág). */
     private loadPage(): void {
         this.loading.set(true);
-        const params: Record<string, string> = {
+        let params = toHttpParams({
             companyId: this.companyId(),
-            page: String(this.currentPage()),
-            size: String(this.pageSize()),
-        };
-        if (this.searchQuery()) params['search'] = this.searchQuery();
-        if (this.filtroEstado()) params['estado'] = this.filtroEstado();
-        if (this.filtroMotivo()) params['motivo'] = this.filtroMotivo();
-        if (this.filtroTipoResolucion()) params['tipoResolucion'] = this.filtroTipoResolucion();
-        if (this.filtroFechaSolicitudDesde()) params['fechaSolicitudDesde'] = this.filtroFechaSolicitudDesde()!;
-        if (this.filtroFechaSolicitudHasta()) params['fechaSolicitudHasta'] = this.filtroFechaSolicitudHasta()!;
+            page: this.currentPage(),
+            size: this.pageSize(),
+            search: this.searchQuery(),
+            estado: this.filtroEstado(),
+            motivo: this.filtroMotivo(),
+            tipoResolucion: this.filtroTipoResolucion(),
+            fechaSolicitudDesde: this.filtroFechaSolicitudDesde() ? this.filtroFechaSolicitudDesde()! : undefined,
+            fechaSolicitudHasta: this.filtroFechaSolicitudHasta() ? this.filtroFechaSolicitudHasta()! : undefined,
+        });
 
         this.http.get<PageResponse<Devolucion>>(`${this.baseUrl}/paged`, { params }).subscribe({
             next: (res) => {
@@ -354,10 +356,7 @@ export class ReturnsComponent implements OnInit {
     /** Helper canónico de errores para returnForm */
     err(field: string): string {
         const c = this.returnForm.get(field);
-        if (!c || c.pristine || c.valid) return '';
-        if (c.hasError('required')) return 'Campo requerido';
-        if (c.hasError('min')) return `Valor mínimo: ${c.getError('min').min}`;
-        return 'Campo inválido';
+        return !c || c.pristine || c.valid ? '' : mensajeDeErrorDeControl(c);
     }
 
     private resetForm(): void {

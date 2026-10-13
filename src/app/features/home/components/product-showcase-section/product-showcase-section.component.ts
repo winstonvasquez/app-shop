@@ -9,8 +9,10 @@ import { LucideAngularModule } from 'lucide-angular';
 import { ProductService } from '@core/services/product.service';
 import { CartService } from '@features/cart/services/cart.service';
 import { DsProductCardComponent, DsProduct } from '@shared/ui/ds';
+import { mapearProductoADsProduct } from '@shared/ui/ds';
+import { consultaDeShowcase, ShowcaseType } from '@features/home/utils/showcase.util';
 
-export type ShowcaseType = 'best-sellers' | 'top-rated' | 'new-arrivals';
+export type { ShowcaseType };
 
 @Component({
     selector: 'app-product-showcase-section',
@@ -57,35 +59,14 @@ export class ProductShowcaseSectionComponent implements OnInit {
 
     private loadProducts() {
         this.loading.set(true);
-        const type = this.type();
-
-        const sort = type === 'best-sellers'
-            ? { field: 'salesCount', direction: 'desc' as const }
-            : type === 'top-rated'
-                ? { field: 'rating', direction: 'desc' as const }
-                : { field: 'fechaCreacion', direction: 'desc' as const };
-
-        const filter = type === 'top-rated' ? { minRating: 4 } : {};
+        const { sort, filter, badgeDeSeccion } = consultaDeShowcase(this.type());
 
         this.productService.getAllProductsFiltered(
             { page: 0, size: 12, sort },
             filter,
         ).subscribe({
             next: (page) => {
-                this.products.set(page.content.map(p => ({
-                    id: p.id,
-                    name: p.nombre,
-                    now: p.precioBase,
-                    was: p.originalPrice,
-                    rating: p.rating,
-                    sold: p.salesCount,
-                    badge: p.badge ?? (type === 'new-arrivals' ? 'NUEVO'
-                                  : p.discount ? p.discount
-                                  : (p.stock !== undefined && p.stock <= 5 ? 'POCAS' : undefined)),
-                    shipFree: (p.precioBase ?? 0) >= 99,
-                    image: p.imagenes?.find(img => img.esPrincipal)?.url
-                        || p.imagenes?.[0]?.url,
-                })));
+                this.products.set(page.content.map(p => mapearProductoADsProduct(p, { badgeDeSeccion })));
                 this.loading.set(false);
             },
             error: () => this.loading.set(false),

@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { AuthService } from '@core/auth/auth.service';
 import { CashRegister, Page } from '../models/tesoreria.model';
+import { toHttpParams } from '@core/utils/http-params.util';
 
 export interface CajaRequest {
     tenantId: number;
@@ -55,17 +56,18 @@ export class CajasService {
      * (`GET /treasury/api/tesoreria/cajas`); la vista nunca filtra la página cargada.
      */
     getAll(filtros: CajaFiltros = {}): Observable<Page<CashRegister>> {
-        let params = new HttpParams()
-            .set('tenantId', this.tenantId.toString())
-            .set('page', (filtros.page ?? 0).toString())
-            .set('size', (filtros.size ?? 20).toString());
-        if (filtros.estado) params = params.set('estado', filtros.estado);
-        if (filtros.moneda) params = params.set('moneda', filtros.moneda);
-        if (filtros.fechaAperturaDesde) params = params.set('fechaAperturaDesde', filtros.fechaAperturaDesde);
-        if (filtros.fechaAperturaHasta) params = params.set('fechaAperturaHasta', filtros.fechaAperturaHasta);
-        if (filtros.fechaCierreDesde) params = params.set('fechaCierreDesde', filtros.fechaCierreDesde);
-        if (filtros.fechaCierreHasta) params = params.set('fechaCierreHasta', filtros.fechaCierreHasta);
-        if (filtros.q) params = params.set('q', filtros.q);
+        let params = toHttpParams({
+            tenantId: this.tenantId,
+            page: filtros.page ?? 0,
+            size: filtros.size ?? 20,
+            estado: filtros.estado,
+            moneda: filtros.moneda,
+            fechaAperturaDesde: filtros.fechaAperturaDesde,
+            fechaAperturaHasta: filtros.fechaAperturaHasta,
+            fechaCierreDesde: filtros.fechaCierreDesde,
+            fechaCierreHasta: filtros.fechaCierreHasta,
+            q: filtros.q,
+        });
         return this.http.get<Page<CashRegister>>(this.apiUrl, { params });
     }
 

@@ -26,6 +26,7 @@ import {
 } from '@features/admin/models/user.model';
 import { PaginationConfig, PageResponse, pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 import { bloquearEnEdicion } from '@shared/utils/form-lock';
+import { filtroDeUsuarios } from './users.params';
 
 @Component({
   selector: 'app-users',
@@ -168,14 +169,14 @@ export class UsersComponent implements OnInit {
       }
     };
 
-    const filter: UserFilter = {
-      search: this.searchQuery() || undefined,
-      rolId: this.filterRolId() ? Number(this.filterRolId()) : undefined,
-      activo: this.filterActivo() ? this.filterActivo() === 'true' : undefined,
-      tipoDocumento: this.filterTipoDocumento() || undefined,
-      fechaCreacionDesde: this.filterFechaCreacionDesde() ?? undefined,
-      fechaCreacionHasta: this.filterFechaCreacionHasta() ?? undefined
-    };
+    const filter: UserFilter = filtroDeUsuarios({
+      search: this.searchQuery(),
+      rolId: this.filterRolId(),
+      activo: this.filterActivo(),
+      tipoDocumento: this.filterTipoDocumento(),
+      fechaCreacionDesde: this.filterFechaCreacionDesde(),
+      fechaCreacionHasta: this.filterFechaCreacionHasta()
+    });
 
     this.userService.getAll(pagination, filter).subscribe({
       next: (response: PageResponse<UserResponse>) => {
@@ -357,20 +358,4 @@ export class UsersComponent implements OnInit {
     });
   }
 
-  getErrorMessage(controlName: string): string {
-    const control = this.userForm.get(controlName);
-    if (!control || !control.errors || !control.touched) return '';
-
-    if (control.errors['required']) return 'Este campo es obligatorio';
-    if (control.errors['email']) return 'Email inválido';
-    if (control.errors['minlength']) return `Mínimo ${control.errors['minlength'].requiredLength} caracteres`;
-    if (control.errors['maxlength']) return `Máximo ${control.errors['maxlength'].requiredLength} caracteres`;
-
-    return 'Campo inválido';
-  }
-
-  hasError(controlName: string): boolean {
-    const control = this.userForm.get(controlName);
-    return !!(control && control.invalid && control.touched);
-  }
 }

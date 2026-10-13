@@ -3,6 +3,7 @@ import {
 } from '@angular/core';
 import { LucideAngularModule } from 'lucide-angular';
 import { TableColumn } from '../data-table/data-table.component';
+import { aplanarArbol, FilaVisible, idsDeRamas } from './tree-walk.util';
 
 /**
  * Tabla jerárquica (tree view) para los catálogos del ERP que SON un árbol de verdad: el plan
@@ -29,15 +30,6 @@ export interface TreeNode<T = unknown> {
     /** La fila original, que es lo que reciben los `render()` de las columnas. */
     data: T;
     children?: TreeNode<T>[];
-}
-
-/** Fila ya aplanada para pintar: el árbol se recorre una vez y se emite lo visible. */
-interface FilaVisible<T> {
-    node: TreeNode<T>;
-    depth: number;
-    hasChildren: boolean;
-    expanded: boolean;
-    descendientes: number;
 }
 
 @Component({
@@ -211,34 +203,8 @@ export class TreeTableComponent<T> {
     private readonly expandidosManualmente = signal<ReadonlySet<string>>(new Set());
 
     /** Filas visibles, aplanadas en un solo recorrido. */
-    readonly filasVisibles = computed<FilaVisible<T>[]>(() => {
-        const contraidos = this.contraidos();
-        const expandidos = this.expandidosManualmente();
-        const profundidadPorDefecto = this.defaultExpandedDepth();
-        const salida: FilaVisible<T>[] = [];
-
-        const estaExpandido = (id: string, depth: number): boolean => {
-            if (contraidos.has(id)) return false;
-            if (expandidos.has(id)) return true;
-            return depth + 1 < profundidadPorDefecto;
-        };
-
-        const recorrer = (nodos: TreeNode<T>[], depth: number): void => {
-            for (const node of nodos) {
-                const hijos = node.children ?? [];
-                const hasChildren = hijos.length > 0;
-                const expanded = hasChildren && estaExpandido(node.id, depth);
-                salida.push({
-                    node, depth, hasChildren, expanded,
-                    descendientes: hasChildren ? this.contarDescendientes(node) : 0,
-                });
-                if (expanded) recorrer(hijos, depth + 1);
-            }
-        };
-
-        recorrer(this.nodes(), 0);
-        return salida;
-    });
+    readonly filasVisibles = computed<FilaVisible<T>[]>(() => aplanarArbol(
+        this.nodes(), this.contraidos(), this.expandidosManualmente(), this.defaultExpandedDepth()));
 
     readonly totalNodos = computed(() => {
         let n = 0;
@@ -276,29 +242,15 @@ export class TreeTableComponent<T> {
     }
 
     alternarTodo(): void {
+        // Las dos ramas escriben el MISMO conjunto (todas las ramas del árbol) en un signal
+        // distinto: contraer = marcarlas todas contraídas; expandir = marcarlas todas expandidas.
+        const ramas = idsDeRamas(this.nodes());
         if (this.todoExpandido()) {
-            // Contraer todo: se marcan todas las ramas como contraídas.
-            const todas = new Set<string>();
-            const recorrer = (nodos: TreeNode<T>[]) => {
-                for (const nodo of nodos) {
-                    if ((nodo.children?.length ?? 0) > 0) todas.add(nodo.id);
-                    recorrer(nodo.children ?? []);
-                }
-            };
-            recorrer(this.nodes());
-            this.contraidos.set(todas);
+            this.contraidos.set(ramas);
             this.expandidosManualmente.set(new Set());
         } else {
-            const todas = new Set<string>();
-            const recorrer = (nodos: TreeNode<T>[]) => {
-                for (const nodo of nodos) {
-                    if ((nodo.children?.length ?? 0) > 0) todas.add(nodo.id);
-                    recorrer(nodo.children ?? []);
-                }
-            };
-            recorrer(this.nodes());
             this.contraidos.set(new Set());
-            this.expandidosManualmente.set(todas);
+            this.expandidosManualmente.set(ramas);
         }
     }
 
@@ -307,14 +259,5 @@ export class TreeTableComponent<T> {
         if (col.render) return col.render(node.data);
         const valor = (node.data as Record<string, unknown>)?.[col.key];
         return valor === null || valor === undefined ? '' : String(valor);
-    }
-
-    private contarDescendientes(node: TreeNode<T>): number {
-        let n = 0;
-        const recorrer = (nodos: TreeNode<T>[]) => {
-            for (const hijo of nodos) { n++; recorrer(hijo.children ?? []); }
-        };
-        recorrer(node.children ?? []);
-        return n;
     }
 }

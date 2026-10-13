@@ -10,6 +10,7 @@ import { ButtonComponent } from '@shared/components';
 import { DateInputComponent } from '@shared/ui/forms/date-input/date-input.component';
 import { PAGINATION } from '@shared/constants/app.constants';
 import { SORT_DIRECTIONS } from '@shared/constants/ui.constants';
+import { claseDeBotonDeAccion, tipoDeIcono, TipoDeIcono } from './action-icon.util';
 
 export interface TableColumn<T = any> {
     key: string;
@@ -219,36 +220,14 @@ export class DataTableComponent<T = any> {
         return this.sortDirection() === 'asc' ? '↑' : '↓';
     }
 
-    /** Maps action icon string to a canonical type for SVG rendering */
-    getIconType(icon: string): 'edit' | 'delete' | 'view' | 'check' | 'x' | 'pin' | 'text' {
-        const norm = icon.trim();
-        if (['✏️', '✏', 'edit'].includes(norm))             return 'edit';
-        if (['🗑️', '🗑', 'trash', 'delete'].includes(norm)) return 'delete';
-        if (['👁️', '👁', 'view'].includes(norm))            return 'view';
-        if (['✓', '✔️', '✔', 'check', 'approve'].includes(norm)) return 'check';
-        if (['✗', '✕', 'x', 'close', '🚫', 'ban', 'reject'].includes(norm)) return 'x';
-        if (['📍', 'pin', 'location'].includes(norm))        return 'pin';
-        return 'text';
+    /** Tipo canónico del icono. La tabla vive en `action-icon.util` para poder cubrirla sin TestBed. */
+    getIconType(icon: string): TipoDeIcono {
+        return tipoDeIcono(icon);
     }
 
-    /** Returns the CSS class(es) for an action button */
+    /** Clase CSS del botón de acción. Misma tabla que el icono, mismo archivo. */
     getButtonClass(action: TableAction<T>): string {
-        const cls = action.class || '';
-        // Explicit class overrides take priority
-        if (cls.includes('btn-icon-edit'))   return 'btn-icon btn-icon-edit';
-        if (cls.includes('btn-icon-delete')) return 'btn-icon btn-icon-delete';
-        if (cls.includes('btn-view'))        return 'btn-icon btn-view';
-        if (cls.includes('btn-delete'))      return 'btn-icon btn-icon-delete';
-        if (cls.includes('btn-edit'))        return 'btn-icon btn-icon-edit';
-        // Fall back to icon type detection
-        const type = this.getIconType(action.icon || '');
-        if (type === 'edit')   return 'btn-icon btn-icon-edit';
-        if (type === 'delete') return 'btn-icon btn-icon-delete';
-        if (type === 'view')   return 'btn-icon btn-view';
-        if (type === 'check')  return 'btn-icon btn-icon-edit';
-        if (type === 'x')      return 'btn-icon btn-icon-delete';
-        if (type === 'pin')    return 'btn-icon btn-view';
-        return `btn-icon ${cls}`.trim();
+        return claseDeBotonDeAccion(action.class, action.icon);
     }
 
     onSearchInput(event: Event): void {

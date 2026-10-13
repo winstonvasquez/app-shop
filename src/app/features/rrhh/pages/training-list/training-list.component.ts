@@ -16,6 +16,7 @@ import { environment } from '@env/environment';
 import { CatalogService } from '@core/services/catalog.service';
 import { EmployeeService } from '../../services/employee.service';
 import { employeeSelectSource } from '../../components/select-sources';
+import { capacitacionRequestDesdeForm, formularioDesdeCapacitacion } from './training-list.form';
 
 /** Edits locales (no persistidos) de asistencia/nota/comentarios por participationId. */
 interface ParticipantEdit {
@@ -272,14 +273,7 @@ export class TrainingListComponent implements OnInit {
     }
 
     openEdit(t: Training): void {
-        this.form.patchValue({
-            nombre: t.nombre,
-            descripcion: t.descripcion || '',
-            instructor: t.instructor || '',
-            fechaInicio: t.fechaInicio,
-            fechaFin: t.fechaFin,
-            duracionHoras: t.duracionHoras || 0,
-        });
+        this.form.patchValue(formularioDesdeCapacitacion(t));
         this.editMode.set(true);
         this.selectedId.set(t.id);
         this.submitError.set(null);
@@ -299,15 +293,7 @@ export class TrainingListComponent implements OnInit {
         this.submitting.set(true);
         this.submitError.set(null);
         try {
-            const val = this.form.value;
-            const request = {
-                nombre: val.nombre!,
-                descripcion: val.descripcion || undefined,
-                instructor: val.instructor || undefined,
-                fechaInicio: val.fechaInicio!,
-                fechaFin: val.fechaFin || val.fechaInicio!,
-                duracionHoras: val.duracionHoras || undefined,
-            };
+            const request = capacitacionRequestDesdeForm(this.form.value);
             if (this.editMode() && this.selectedId()) {
                 await this.trainingService.updateTraining(this.selectedId()!, request);
             } else {

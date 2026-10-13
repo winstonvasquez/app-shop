@@ -6,7 +6,8 @@ import { GuiaRemisionService } from '../../../services/guia-remision.service';
 import { AlmacenService } from '../../../services/almacen.service';
 import { Almacen } from '../../../models/almacen.model';
 import { almacenSelectSource } from '../../../components/select-sources';
-import { GuiaRemision, EstadoGuia, CreateGuiaRemisionDto, GuiaRemisionItemDto } from '../../../models/guia-remision.model';
+import { GuiaRemision, EstadoGuia } from '../../../models/guia-remision.model';
+import { construirDtoGuiaRemision, ItemFormularioGuia } from '../../../models/guia-remision.mapper';
 import { AuthService } from '../../../../../core/auth/auth.service';
 import { CatalogService } from '@core/services/catalog.service';
 import { DataTableComponent, TableColumn, TableAction, PaginationEvent, FilterConfig, FilterChangeEvent, DateRangeFilterConfig, DateRangeChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
@@ -18,14 +19,6 @@ import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model
 import { PAGINATION } from '@shared/constants/app.constants';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
-
-interface ItemForm {
-    productoNombre: string;
-    sku: string;
-    cantidad: number;
-    unidad: string;
-    descripcion: string;
-}
 
 @Component({
     selector: 'app-guias-page',
@@ -53,7 +46,7 @@ export class GuiasPageComponent implements OnInit {
     readonly loading         = signal(false);
     readonly guardando       = signal(false);
     readonly errorMsg        = signal<string | null>(null);
-    readonly itemForms       = signal<ItemForm[]>([]);
+    readonly itemForms       = signal<ItemFormularioGuia[]>([]);
 
     /** Almacenes de la empresa, para el select de filtro "Almacén de origen" del toolbar. */
     readonly almacenesFiltro = signal<Almacen[]>([]);
@@ -315,42 +308,7 @@ export class GuiasPageComponent implements OnInit {
         this.errorMsg.set(null);
         this.guardando.set(true);
 
-        const f = this.greForm.value;
-
-        const items: GuiaRemisionItemDto[] = this.itemForms().map(it => ({
-            productoNombre: it.productoNombre,
-            sku:            it.sku || undefined,
-            cantidad:       it.cantidad,
-            unidad:         it.unidad || 'NIU',
-            descripcion:    it.descripcion || undefined
-        }));
-
-        const dto: CreateGuiaRemisionDto = {
-            serie:              f.serie ?? '',
-            numeroDocumento:    f.numeroDocumento ?? '',
-            fechaEmision:       f.fechaEmision       || undefined,
-            fechaInicioTraslado:f.fechaInicioTraslado || undefined,
-            almacenOrigenId:    f.almacenOrigenId ?? '',
-            direccionOrigen:    f.direccionOrigen ?? '',
-            ubigeoOrigen:       f.ubigeoOrigen       || undefined,
-            destinatarioRuc:    f.destinatarioRuc    || undefined,
-            destinatarioRazonSocial: f.destinatarioRazonSocial || undefined,
-            destinatarioDireccion:   f.destinatarioDireccion   || undefined,
-            ubigeoDestino:      f.ubigeoDestino      || undefined,
-            puntoLlegada:       f.puntoLlegada        || undefined,
-            motivoTraslado:     f.motivoTraslado      ?? '',
-            descripcionTraslado:f.descripcionTraslado || undefined,
-            modalidadTraslado:  (f.modalidadTraslado ?? '02') as '01' | '02',
-            pesoBrutoTotal:     f.pesoBrutoTotal      ?? undefined,
-            transportistaRuc:   f.transportistaRuc    || undefined,
-            transportistaRazonSocial: f.transportistaRazonSocial || undefined,
-            transportistaMtc:   f.transportistaMtc    || undefined,
-            vehiculoPlaca:      f.vehiculoPlaca        || undefined,
-            conductorDocumento: f.conductorDocumento   || undefined,
-            conductorNombre:    f.conductorNombre      || undefined,
-            conductorLicencia:  f.conductorLicencia    || undefined,
-            items
-        };
+        const dto = construirDtoGuiaRemision(this.greForm.value, this.itemForms());
 
         this.guiaService.createGuia(dto, this.companyId, this.companyId).subscribe({
             next: () => {
@@ -390,7 +348,7 @@ export class GuiasPageComponent implements OnInit {
         this.itemForms.update(items => items.filter((_, i) => i !== index));
     }
 
-    updateItemField(index: number, field: keyof ItemForm, value: string | number) {
+    updateItemField(index: number, field: keyof ItemFormularioGuia, value: string | number) {
         this.itemForms.update(items =>
             items.map((item, i) => i === index ? { ...item, [field]: value } : item)
         );

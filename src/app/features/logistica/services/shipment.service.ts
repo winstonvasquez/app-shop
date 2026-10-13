@@ -1,7 +1,8 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { PageResponse } from '@core/models/pagination.model';
+import { toHttpParams } from '@core/utils/http-params.util';
 
 export interface ShipmentResponse {
     id: string;
@@ -63,21 +64,22 @@ export class ShipmentService {
      * TODO el filtrado ocurre en el backend; la vista nunca filtra la página cargada.
      */
     getShipments(filtros: ShipmentFiltros = {}): Observable<PageResponse<ShipmentResponse>> {
-        let params = new HttpParams()
-            .set('page', String(filtros.page ?? 0))
-            .set('size', String(filtros.size ?? 20));
-        if (filtros.q) params = params.set('q', filtros.q);
-        if (filtros.status) params = params.set('status', filtros.status);
-        if (filtros.carrierId) params = params.set('carrierId', filtros.carrierId);
-        if (filtros.fulfillmentType) params = params.set('fulfillmentType', filtros.fulfillmentType);
-        if (filtros.dispatchedAtDesde) params = params.set('dispatchedAtDesde', filtros.dispatchedAtDesde);
-        if (filtros.dispatchedAtHasta) params = params.set('dispatchedAtHasta', filtros.dispatchedAtHasta);
-        if (filtros.estimatedDeliveryDesde) params = params.set('estimatedDeliveryDesde', filtros.estimatedDeliveryDesde);
-        if (filtros.estimatedDeliveryHasta) params = params.set('estimatedDeliveryHasta', filtros.estimatedDeliveryHasta);
-        if (filtros.actualDeliveryDesde) params = params.set('actualDeliveryDesde', filtros.actualDeliveryDesde);
-        if (filtros.actualDeliveryHasta) params = params.set('actualDeliveryHasta', filtros.actualDeliveryHasta);
-        if (filtros.registradoDesde) params = params.set('registradoDesde', filtros.registradoDesde);
-        if (filtros.registradoHasta) params = params.set('registradoHasta', filtros.registradoHasta);
+        let params = toHttpParams({
+            page: filtros.page ?? 0,
+            size: filtros.size ?? 20,
+            q: filtros.q,
+            status: filtros.status,
+            carrierId: filtros.carrierId,
+            fulfillmentType: filtros.fulfillmentType,
+            dispatchedAtDesde: filtros.dispatchedAtDesde,
+            dispatchedAtHasta: filtros.dispatchedAtHasta,
+            estimatedDeliveryDesde: filtros.estimatedDeliveryDesde,
+            estimatedDeliveryHasta: filtros.estimatedDeliveryHasta,
+            actualDeliveryDesde: filtros.actualDeliveryDesde,
+            actualDeliveryHasta: filtros.actualDeliveryHasta,
+            registradoDesde: filtros.registradoDesde,
+            registradoHasta: filtros.registradoHasta,
+        });
         return this.http.get<PageResponse<ShipmentResponse>>(this.baseUrl, { params });
     }
 

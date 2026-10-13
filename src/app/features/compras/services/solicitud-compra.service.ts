@@ -6,6 +6,8 @@ import { environment } from '@env/environment';
 import { AuthService } from '@core/auth/auth.service';
 import { longToSyntheticUuid } from '@core/utils/synthetic-uuid.util';
 import { SolicitudCompra, SolicitudCompraPage } from '../models/solicitud-compra.model';
+import { toHttpParams } from '@core/utils/http-params.util';
+import { adaptSpringPage } from '@core/models/pagination.model';
 
 /**
  * Filtros server-side del listado de solicitudes de compra. Todos opcionales.
@@ -45,31 +47,24 @@ export class SolicitudCompraService {
     }
 
     private buildFiltrosParams(filtros: SolicitudCompraFiltros, page: number, size: number): HttpParams {
-        let params = new HttpParams()
-            .set('page', page.toString())
-            .set('size', size.toString());
-        if (filtros.q) params = params.set('q', filtros.q);
-        if (filtros.estado) params = params.set('estado', filtros.estado);
-        if (filtros.prioridad) params = params.set('prioridad', filtros.prioridad);
-        if (filtros.departamento) params = params.set('departamento', filtros.departamento);
-        if (filtros.fechaRequeridaDesde) params = params.set('fechaRequeridaDesde', filtros.fechaRequeridaDesde);
-        if (filtros.fechaRequeridaHasta) params = params.set('fechaRequeridaHasta', filtros.fechaRequeridaHasta);
-        if (filtros.createdAtDesde) params = params.set('createdAtDesde', filtros.createdAtDesde);
-        if (filtros.createdAtHasta) params = params.set('createdAtHasta', filtros.createdAtHasta);
-        if (filtros.sortField) params = params.set('sort', `${filtros.sortField},${filtros.sortDirection ?? 'desc'}`);
+        let params = toHttpParams({
+            page,
+            size,
+            q: filtros.q,
+            estado: filtros.estado,
+            prioridad: filtros.prioridad,
+            departamento: filtros.departamento,
+            fechaRequeridaDesde: filtros.fechaRequeridaDesde,
+            fechaRequeridaHasta: filtros.fechaRequeridaHasta,
+            createdAtDesde: filtros.createdAtDesde,
+            createdAtHasta: filtros.createdAtHasta,
+            sort: filtros.sortField ? `${filtros.sortField},${filtros.sortDirection ?? 'desc'}` : undefined,
+        });
         return params;
     }
 
     private toPage(raw: unknown, page: number, size: number): SolicitudCompraPage {
-        const r = raw as Record<string, unknown>;
-        const nested = r['page'] as Record<string, unknown> | undefined;
-        return {
-            content: (r['content'] as SolicitudCompra[]) ?? [],
-            totalElements: (r['totalElements'] as number) ?? (nested?.['totalElements'] as number) ?? 0,
-            totalPages: (r['totalPages'] as number) ?? (nested?.['totalPages'] as number) ?? 0,
-            size: (r['size'] as number) ?? size,
-            number: (r['number'] as number) ?? page,
-        };
+        return adaptSpringPage<SolicitudCompra>(raw, page, size);
     }
 
     /**

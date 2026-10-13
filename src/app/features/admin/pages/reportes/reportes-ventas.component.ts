@@ -9,6 +9,7 @@ import { ButtonComponent } from '@shared/components';
 import { DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent, DateRangeFilterConfig, DateRangeChangeEvent, PaginationEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { catalogFilter } from '@shared/ui/tables/data-table/filter-helpers';
 import { CURRENCY_DISPLAY } from '@shared/constants/sunat.constants';
+import { toHttpParams } from '@core/utils/http-params.util';
 
 interface VentaPos {
     id: number;
@@ -110,16 +111,16 @@ export class ReportesVentasComponent implements OnInit {
         this.cargando.set(true);
         this.error.set(null);
         const companyId = this.auth.currentUser()?.activeCompanyId ?? 1;
-        const params: Record<string, string> = {
-            companyId: String(companyId),
-            page: String(this.pagina()),
-            size: String(this.pageSize()),
-        };
-        if (this.searchQuery()) params['search'] = this.searchQuery();
-        if (this.filtroEstado()) params['estado'] = this.filtroEstado();
-        if (this.filtroMetodoPago()) params['metodoPago'] = this.filtroMetodoPago();
-        if (this.filtroFechaCreacionDesde()) params['fechaCreacionDesde'] = this.filtroFechaCreacionDesde()!;
-        if (this.filtroFechaCreacionHasta()) params['fechaCreacionHasta'] = this.filtroFechaCreacionHasta()!;
+        let params = toHttpParams({
+            companyId,
+            page: this.pagina(),
+            size: this.pageSize(),
+            search: this.searchQuery(),
+            estado: this.filtroEstado(),
+            metodoPago: this.filtroMetodoPago(),
+            fechaCreacionDesde: this.filtroFechaCreacionDesde() ? this.filtroFechaCreacionDesde()! : undefined,
+            fechaCreacionHasta: this.filtroFechaCreacionHasta() ? this.filtroFechaCreacionHasta()! : undefined,
+        });
         this.http.get<PageResponse<VentaPos>>(`${environment.apiUrls.sales}/api/pos/ventas`, { params }).subscribe({
             next: (page) => {
                 this.ventas.set(page.content);

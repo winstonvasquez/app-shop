@@ -6,6 +6,8 @@ import { ProductResponse } from '@core/models/product.model';
 import { PageResponse, PaginationConfig, Page } from '@core/models/pagination.model';
 import { BaseApiService } from './base-api.service';
 import { AuthService } from '@core/auth/auth.service';
+import { toHttpParams } from '@core/utils/http-params.util';
+import { paramsDeProductos } from './listados.params';
 
 /** Imagen de producto guardada como binario en la base de datos. */
 export interface ProductoImagen {
@@ -61,49 +63,8 @@ export class ProductService extends BaseApiService<ProductRequest, ProductRespon
         pagination: PaginationConfig,
         filter?: ProductFilter
     ): Observable<PageResponse<ProductResponse>> {
-        let params = new HttpParams()
-            .set('page', pagination.page.toString())
-            .set('size', pagination.size.toString());
-
-        if (pagination.sort) {
-            params = params.set(
-                'sort',
-                `${pagination.sort.field},${pagination.sort.direction}`
-            );
-        }
-
-        if (filter?.search) {
-            params = params.set('search', filter.search);
-        }
-        if (filter?.companyId) {
-            params = params.set('companyId', filter.companyId.toString());
-        }
-        if (filter?.categoriaId) {
-            params = params.set('categoriaId', filter.categoriaId.toString());
-        }
-        if (filter?.precioMin !== undefined) {
-            params = params.set('precioMin', filter.precioMin.toString());
-        }
-        if (filter?.precioMax !== undefined) {
-            params = params.set('precioMax', filter.precioMax.toString());
-        }
-        if (filter?.marcas?.length) {
-            filter.marcas.forEach(m => { params = params.append('marca', m); });
-        }
-        if (filter?.minRating !== undefined) {
-            params = params.set('minRating', filter.minRating.toString());
-        }
-        if (filter?.fechaCreacionDesde) {
-            params = params.set('fechaCreacionDesde', filter.fechaCreacionDesde);
-        }
-        if (filter?.fechaCreacionHasta) {
-            params = params.set('fechaCreacionHasta', filter.fechaCreacionHasta);
-        }
-        if (filter?.activo !== undefined) {
-            params = params.set('activo', filter.activo.toString());
-        }
-
-        return this.getPaginated<PageResponse<ProductResponse>>(params);
+        return this.getPaginated<PageResponse<ProductResponse>>(
+            toHttpParams(paramsDeProductos(pagination, filter)));
     }
 
     getAllCached(page: number, size: number, search?: string): Observable<Page<ProductResponse>> {
@@ -202,8 +163,9 @@ export class ProductService extends BaseApiService<ProductRequest, ProductRespon
     }
 
     getFiltrosDisponibles(categoriaId?: number): Observable<FiltrosDisponibles> {
-        let params = new HttpParams();
-        if (categoriaId) params = params.set('categoriaId', categoriaId.toString());
+        let params = toHttpParams({
+            categoriaId,
+        });
         return this.http.get<FiltrosDisponibles>(`${this.baseUrl}/filtros-disponibles`, { params });
     }
 

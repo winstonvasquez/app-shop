@@ -3,6 +3,7 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { environment } from '@env/environment';
+import { mensajeDeErrorHttp } from '@core/utils/http-error.util';
 
 export interface Address {
     id: number;
@@ -82,12 +83,7 @@ export class AddressService {
     }
 
     private handleError(error: HttpErrorResponse): Observable<never> {
-        const message =
-            error.error?.message ??
-            error.error?.detail ??
-            (error.status === 0
-                ? 'No se pudo conectar con el servidor'
-                : `Error ${error.status}: ${error.statusText}`);
-        return throwError(() => new Error(message));
+        console.error('AddressService Error:', error);
+        return throwError(() => new Error(mensajeDeErrorHttp(error)));
     }
 }

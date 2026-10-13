@@ -10,11 +10,16 @@ import { CategoryResponse } from '@core/models/category.model';
 import { SearchService } from '@shared/services/search.service';
 import { AnalyticsService } from '@core/services/analytics.service';
 import { ProductService, FiltrosDisponibles } from '@core/services/product.service';
-import { ProductResponse } from '@core/models/product.model';
 import { CartService } from '@features/cart/services/cart.service';
 import { PAGINATION } from '@shared/constants/app.constants';
-import { CURRENCY_DISPLAY } from '@shared/constants/sunat.constants';
 import { CatalogSelectComponent } from '@shared/components';
+import { mapearProductoADsProduct } from '@shared/ui/ds';
+import {
+    ChipDeFiltro,
+    OpcionDeEnvio,
+    construirConsultaCatalogo,
+    describirFiltrosActivos,
+} from './catalogo.params';
 
 import {
     DsProductCardComponent,
@@ -29,11 +34,6 @@ const PAGE_SIZE = 20;
 interface ListingCrumb {
     label: string;
     route?: string[];
-}
-
-interface ShippingFilter {
-    key: 'free' | 'fast' | 'intl';
-    label: string;
 }
 
 @Component({
@@ -83,7 +83,7 @@ export class ProductsPageComponent implements OnInit {
     precioMin           = signal<number | null>(null);
     precioMax           = signal<number | null>(null);
     marcasSeleccionadas = signal<string[]>([]);
-    enviosSeleccionados = signal<ShippingFilter['key'][]>([]);
+    enviosSeleccionados = signal<OpcionDeEnvio['key'][]>([]);
     filtrosDisponibles  = signal<FiltrosDisponibles | null>(null);
     showFilterPanel     = signal<boolean>(false);
     viewMode            = signal<'grid' | 'list'>('grid');
@@ -96,7 +96,7 @@ export class ProductsPageComponent implements OnInit {
     totalElements = signal(0);
     loading       = signal(false);
 
-    readonly shippingOpts: ShippingFilter[] = [
+    readonly shippingOpts: OpcionDeEnvio[] = [
         { key: 'free', label: 'Envío gratis' },
         { key: 'fast', label: 'Llega mañana' },
         { key: 'intl', label: 'Internacional' },
@@ -105,37 +105,29 @@ export class ProductsPageComponent implements OnInit {
     readonly ratingOpts = [5, 4, 3];
 
     /** Chips de filtros activos para mostrar arriba del grid. */
-    readonly activeChips = computed<{ key: string; label: string; clear: () => void }[]>(() => {
-        const chips: { key: string; label: string; clear: () => void }[] = [];
-        const catId = this.searchService.categoryId();
-        if (catId !== null) {
-            const c = this.categories().find(x => x.id === catId);
-            if (c) chips.push({ key: 'cat', label: c.nombre, clear: () => this.clearCategory() });
-        }
-        for (const m of this.marcasSeleccionadas()) {
-            chips.push({ key: 'marca-' + m, label: m, clear: () => this.toggleMarca(m) });
-        }
-        const pMin = this.precioMin(), pMax = this.precioMax();
-        if (pMin !== null || pMax !== null) {
-            chips.push({
-                key: 'price',
-                label: `${CURRENCY_DISPLAY.SYMBOL_PEN} ${pMin ?? 0}–${CURRENCY_DISPLAY.SYMBOL_PEN} ${pMax ?? '∞'}`,
-                clear: () => { this.precioMin.set(null); this.precioMax.set(null); this.goToPage(PAGINATION.defaultPage); },
-            });
-        }
-        for (const e of this.enviosSeleccionados()) {
-            const opt = this.shippingOpts.find(s => s.key === e);
-            if (opt) chips.push({ key: 'envio-' + e, label: opt.label, clear: () => this.toggleEnvio(e) });
-        }
-        if (this.minRating() !== null) {
-            chips.push({
-                key: 'rating',
-                label: `${this.minRating()}★ y más`,
-                clear: () => { this.minRating.set(null); this.goToPage(1); },
-            });
-        }
-        return chips;
-    });
+    readonly activeChips = computed<ChipDeFiltro[]>(() => describirFiltrosActivos(
+        {
+            categoriaId: this.searchService.categoryId(),
+            categorias: this.categories(),
+            marcas: this.marcasSeleccionadas(),
+            precioMin: this.precioMin(),
+            precioMax: this.precioMax(),
+            envios: this.enviosSeleccionados(),
+            opcionesDeEnvio: this.shippingOpts,
+            calificacionMinima: this.minRating(),
+        },
+        {
+            quitarCategoria: () => this.clearCategory(),
+            alternarMarca: (m) => this.toggleMarca(m),
+            limpiarPrecio: () => {
+                this.precioMin.set(null);
+                this.precioMax.set(null);
+                this.goToPage(PAGINATION.defaultPage);
+            },
+            alternarEnvio: (e) => this.toggleEnvio(e),
+            limpiarCalificacion: () => { this.minRating.set(null); this.goToPage(1); },
+        },
+    ));
 
     readonly resultsLabel = computed(() => {
         const total = this.totalElements();
@@ -199,7 +191,7 @@ export class ProductsPageComponent implements OnInit {
         this.goToPage(1);
     }
 
-    toggleEnvio(key: ShippingFilter['key']): void {
+    toggleEnvio(key: OpcionDeEnvio['key']): void {
         const current = this.enviosSeleccionados();
         this.enviosSeleccionados.set(
             current.includes(key) ? current.filter(k => k !== key) : [...current, key]
@@ -242,37 +234,25 @@ export class ProductsPageComponent implements OnInit {
     loadProducts(page: number = this.currentPage()) {
         this.loading.set(true);
         const catId = this.searchService.categoryId();
-        const query = this.searchService.searchQuery();
-        const marcas = this.marcasSeleccionadas();
-        const pMin = this.precioMin();
-        const pMax = this.precioMax();
-        const sort = this.sortBy();
-        const rating = this.minRating();
-        const isNew = this.showNew();
+        const { usarFiltrado, sort, filter } = construirConsultaCatalogo({
+            categoriaId: catId,
+            busqueda: this.searchService.searchQuery(),
+            marcas: this.marcasSeleccionadas(),
+            precioMin: this.precioMin(),
+            precioMax: this.precioMax(),
+            orden: this.sortBy(),
+            calificacionMinima: this.minRating(),
+            soloNuevos: this.showNew(),
+        });
+        const busqueda = filter.search;
 
-        const sortConfig =
-            sort === 'sales'      ? { field: 'salesCount',     direction: 'desc' as const } :
-            sort === 'rating'     ? { field: 'rating',         direction: 'desc' as const } :
-            sort === 'price-asc'  ? { field: 'precioBase',     direction: 'asc'  as const } :
-            sort === 'price-desc' ? { field: 'precioBase',     direction: 'desc' as const } :
-            isNew                 ? { field: 'fechaCreacion',  direction: 'desc' as const } :
-            undefined;
-
-        const hasAdvanced = marcas.length || pMin != null || pMax != null || sort || rating || isNew;
-        if (hasAdvanced) {
+        if (usarFiltrado) {
             this.productService.getAllProductsFiltered(
-                { page: page - 1, size: this.pageSize, sort: sortConfig },
-                {
-                    search: query || undefined,
-                    categoriaId: catId ?? undefined,
-                    marcas,
-                    precioMin: pMin ?? undefined,
-                    precioMax: pMax ?? undefined,
-                    minRating: rating ?? undefined,
-                }
+                { page: page - 1, size: this.pageSize, sort },
+                filter,
             ).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
                 next: (data) => {
-                    this.products.set(data.content.map(p => this.mapProduct(p)));
+                    this.products.set(data.content.map(p => mapearProductoADsProduct(p)));
                     this.totalPages.set(data.totalPages ?? 1);
                     this.totalElements.set(data.totalElements ?? 0);
                     this.loading.set(false);
@@ -282,39 +262,18 @@ export class ProductsPageComponent implements OnInit {
             return;
         }
 
-        this.productService.getAllCachedFiltered(page - 1, this.pageSize, query || undefined, catId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+        this.productService.getAllCachedFiltered(page - 1, this.pageSize, busqueda, catId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
             next: (data) => {
-                this.products.set(data.content.map(p => this.mapProduct(p)));
+                this.products.set(data.content.map(p => mapearProductoADsProduct(p)));
                 this.totalPages.set(data.totalPages ?? 1);
                 this.totalElements.set(data.totalElements ?? 0);
                 this.loading.set(false);
-                if (query) {
-                    this.analyticsService.trackSearch(query, data.totalElements ?? 0);
+                if (busqueda) {
+                    this.analyticsService.trackSearch(busqueda, data.totalElements ?? 0);
                 }
             },
             error: () => this.loading.set(false),
         });
-    }
-
-    private mapProduct(p: ProductResponse): DsProduct {
-        const principal = p.imagenes?.find((img: { esPrincipal?: boolean }) => !!img.esPrincipal);
-        const image = principal?.url || p.imagenes?.[0]?.url;
-        return {
-            id: p.id,
-            name: p.nombre,
-            now: p.precioBase,
-            was: p.originalPrice,
-            rating: p.rating,
-            sold: p.salesCount,
-            stock: p.stock,
-            // La etiqueta de promoción (V69) tiene prioridad: es la única con vínculo real a un
-            // descuento vigente; `badge`/`discount` son heurísticas de stock/precio sin relación
-            // con Promocion (ver ProductoMapper.resolverEtiquetaPromocion en el backend).
-            badge: p.promocionEtiqueta ?? p.badge ?? (p.discount ? p.discount : (p.stock !== undefined && p.stock <= 5 ? 'POCAS' : undefined)),
-            tag: p.starSeller ? 'Recomendado' : undefined,
-            shipFree: (p.precioBase ?? 0) >= 99,
-            image,
-        };
     }
 
     onCardClick(p: DsProduct): void {

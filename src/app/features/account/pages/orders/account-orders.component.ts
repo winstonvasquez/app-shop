@@ -72,14 +72,16 @@ export class AccountOrdersComponent implements OnInit {
         this.loading.set(true);
         this.error.set(null);
 
+        // `getMisPedidos` pasa los filtros por `toHttpParams`, que ya omite la cadena vacía igual
+        // que omite `undefined`: coaccionar campo a campo con `|| undefined` era redundante.
         const filtros: MisPedidosFiltros = {
-            search: this.searchQuery() || undefined,
-            estado: this.filterEstado() || undefined,
-            cpeTipo: this.filterCpeTipo() || undefined,
-            cpeEstado: this.filterCpeEstado() || undefined,
-            metodoPago: this.filterMetodoPago() || undefined,
-            fechaPedidoDesde: this.filterFechaDesde() || undefined,
-            fechaPedidoHasta: this.filterFechaHasta() || undefined,
+            search: this.searchQuery(),
+            estado: this.filterEstado(),
+            cpeTipo: this.filterCpeTipo(),
+            cpeEstado: this.filterCpeEstado(),
+            metodoPago: this.filterMetodoPago(),
+            fechaPedidoDesde: this.filterFechaDesde(),
+            fechaPedidoHasta: this.filterFechaHasta(),
         };
 
         this.orderService.getMisPedidos(page, PAGINATION.defaultPageSize, filtros).subscribe({

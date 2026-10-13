@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '@env/environment';
 import { PageResponse } from '@core/models/pagination.model';
@@ -11,6 +11,7 @@ import {
     ReplenishmentRule, CreateReplenishmentRuleRequest,
     KardexLogisticoEntry, LotSelectionStrategy
 } from '../models/wms-zone.models';
+import { toHttpParams } from '@core/utils/http-params.util';
 
 /**
  * API del dominio WMS "logística" (Almacén = UUID, `com.microshop.logistica`):
@@ -23,15 +24,6 @@ export class WmsApiService {
     private readonly http = inject(HttpClient);
     private readonly baseUrl = `${environment.apiUrls.logistics}/api`;
 
-    private buildParams(params: Record<string, string | number | boolean | null | undefined>): HttpParams {
-        let httpParams = new HttpParams();
-        for (const [key, value] of Object.entries(params)) {
-            if (value !== null && value !== undefined && value !== '') {
-                httpParams = httpParams.set(key, String(value));
-            }
-        }
-        return httpParams;
-    }
 
     // ── Zonas ──────────────────────────────────────────────────────────
     /**
@@ -51,7 +43,7 @@ export class WmsApiService {
         size?: number;
     } = {}): Observable<PageResponse<WarehouseZone>> {
         return this.http.get<PageResponse<WarehouseZone>>(`${this.baseUrl}/zonas`, {
-            params: this.buildParams({ page: 0, size: 20, ...params })
+            params: toHttpParams({ page: 0, size: 20, ...params })
         });
     }
 
@@ -74,7 +66,7 @@ export class WmsApiService {
     // ── Ubicaciones (dentro de una zona) ────────────────────────────────
     getZoneLocations(zoneId?: string, page = 0, size = 20): Observable<PageResponse<ZoneLocation>> {
         return this.http.get<PageResponse<ZoneLocation>>(`${this.baseUrl}/ubicaciones`, {
-            params: this.buildParams({ zoneId, page, size })
+            params: toHttpParams({ zoneId, page, size })
         });
     }
 
@@ -93,7 +85,7 @@ export class WmsApiService {
     // ── Lotes ────────────────────────────────────────────────────────
     getLotsByProducto(productoId: string, fefo = false): Observable<Lot[]> {
         return this.http.get<Lot[]>(`${this.baseUrl}/lotes`, {
-            params: this.buildParams({ productoId, fefo })
+            params: toHttpParams({ productoId, fefo })
         });
     }
 
@@ -118,7 +110,7 @@ export class WmsApiService {
         size?: number;
     } = {}): Observable<PageResponse<Lot>> {
         return this.http.get<PageResponse<Lot>>(`${this.baseUrl}/lotes/paged`, {
-            params: this.buildParams({ ...params })
+            params: toHttpParams({ ...params })
         });
     }
 
@@ -136,7 +128,7 @@ export class WmsApiService {
 
     getLotsExpiringSoon(dias = 30): Observable<LotExpirationAlert[]> {
         return this.http.get<LotExpirationAlert[]>(`${this.baseUrl}/lotes/vencimiento-proximo`, {
-            params: this.buildParams({ dias })
+            params: toHttpParams({ dias })
         });
     }
 
@@ -151,13 +143,13 @@ export class WmsApiService {
 
     cambiarStatusSerial(id: string, status: SerialStatusWms): Observable<SerialNumberWms> {
         return this.http.patch<SerialNumberWms>(`${this.baseUrl}/numeros-serie/${id}/status`, null, {
-            params: this.buildParams({ status })
+            params: toHttpParams({ status })
         });
     }
 
     buscarSerial(serial: string): Observable<SerialNumberWms> {
         return this.http.get<SerialNumberWms>(`${this.baseUrl}/numeros-serie/buscar`, {
-            params: this.buildParams({ serial })
+            params: toHttpParams({ serial })
         });
     }
 
@@ -179,7 +171,7 @@ export class WmsApiService {
         size?: number;
     } = {}): Observable<PageResponse<SerialNumberWms>> {
         return this.http.get<PageResponse<SerialNumberWms>>(`${this.baseUrl}/numeros-serie`, {
-            params: this.buildParams({ ...params })
+            params: toHttpParams({ ...params })
         });
     }
 
@@ -202,7 +194,7 @@ export class WmsApiService {
         lastPoCreatedAtHasta?: string;
     }): Observable<PageResponse<ReplenishmentRule>> {
         return this.http.get<PageResponse<ReplenishmentRule>>(`${this.baseUrl}/reglas-reposicion`, {
-            params: this.buildParams({
+            params: toHttpParams({
                 page: params?.page ?? 0,
                 size: params?.size ?? 20,
                 q: params?.q,
@@ -227,7 +219,7 @@ export class WmsApiService {
 
     cambiarStatusReplenishmentRule(id: string, status: string): Observable<ReplenishmentRule> {
         return this.http.patch<ReplenishmentRule>(`${this.baseUrl}/reglas-reposicion/${id}/status`, null, {
-            params: this.buildParams({ status })
+            params: toHttpParams({ status })
         });
     }
 
@@ -257,7 +249,7 @@ export class WmsApiService {
         size?: number;
     } = {}): Observable<PageResponse<KardexLogisticoEntry>> {
         return this.http.get<PageResponse<KardexLogisticoEntry>>(`${this.baseUrl}/kardex/almacen/${almacenId}`, {
-            params: this.buildParams({
+            params: toHttpParams({
                 from: filtros.from,
                 to: filtros.to,
                 tipoMovimiento: filtros.tipoMovimiento,

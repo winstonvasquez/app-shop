@@ -1,5 +1,6 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
+import { toHttpParams } from '@core/utils/http-params.util';
 
 /**
  * Configuración de exportación SERVER-SIDE para el data-table (o cualquier vista).
@@ -29,13 +30,7 @@ export class BackendExportService {
    * maneja el http-error interceptor.
    */
   download(config: BackendExportConfig, format: 'csv' | 'xlsx'): void {
-    let params = new HttpParams().set('format', format);
-    const raw = config.params?.() ?? {};
-    for (const [k, v] of Object.entries(raw)) {
-      if (v !== null && v !== undefined && v !== '') {
-        params = params.set(k, String(v));
-      }
-    }
+    const params = toHttpParams({ format, ...(config.params?.() ?? {}) });
 
     this.http
       .get(config.url, { params, responseType: 'blob', observe: 'response' })

@@ -2,7 +2,9 @@ import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@ang
 import { FormBuilder, ReactiveFormsModule, Validators, FormGroup, FormControl } from '@angular/forms';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { WmsApiService } from '../../services/wms-api.service';
-import { CreateLotRequest, Lot, LotExpirationAlert } from '../../models/wms-zone.models';
+import { Lot, LotExpirationAlert } from '../../models/wms-zone.models';
+import { lotesFiltrosParams } from './lot-management.params';
+import { lotePayload } from './lot-management.form';
 import { bloquearEnEdicion, bloquearSiempre } from '@shared/utils/form-lock';
 import { productIdToUuid } from '../../utils/synthetic-uuid.util';
 import { ProductLookupComponent } from '../../components/product-lookup/product-lookup.component';
@@ -196,19 +198,20 @@ export class LotManagementComponent implements OnInit {
     loadLots(): void {
         this.loading.set(true);
         this.error.set(null);
-        const productId = this.currentProductId();
         this.api.getLotsPaged({
             page: this.currentPage(),
             size: this.pageSize(),
-            productoId: productId != null ? productIdToUuid(productId) : undefined,
-            activo: this.filterActivo() ?? undefined,
-            proveedorNombre: this.filterProveedorNombre() || undefined,
-            estadoVencimiento: this.filterEstadoVencimiento() || undefined,
-            vencimientoDesde: this.filterVencimientoDesde() ?? undefined,
-            vencimientoHasta: this.filterVencimientoHasta() ?? undefined,
-            fabricacionDesde: this.filterFabricacionDesde() ?? undefined,
-            fabricacionHasta: this.filterFabricacionHasta() ?? undefined,
-            q: this.searchQuery() || undefined
+            ...lotesFiltrosParams({
+                q: this.searchQuery(),
+                productId: this.currentProductId(),
+                activo: this.filterActivo(),
+                proveedorNombre: this.filterProveedorNombre(),
+                estadoVencimiento: this.filterEstadoVencimiento(),
+                vencimientoDesde: this.filterVencimientoDesde(),
+                vencimientoHasta: this.filterVencimientoHasta(),
+                fabricacionDesde: this.filterFabricacionDesde(),
+                fabricacionHasta: this.filterFabricacionHasta()
+            })
         }).subscribe({
             next: (res) => {
                 this.lots.set(res.content ?? []);
@@ -317,20 +320,8 @@ export class LotManagementComponent implements OnInit {
         // getRawValue() y NO .value: `sku`/`loteNumero`/`cantidadInicial` van deshabilitados en
         // edición y .value los omitiría (se enviarían nulls y el backend rechazaría el request).
         const v = this.form.getRawValue();
-        // `cantidadActual` queda FUERA del payload: es de solo lectura, la deriva el backend.
-        const payload: CreateLotRequest = {
-            productoId,
-            sku: v.sku,
-            loteNumero: v.loteNumero,
-            fechaFabricacion: v.fechaFabricacion || undefined,
-            fechaVencimiento: v.fechaVencimiento || undefined,
-            cantidadInicial: Number(v.cantidadInicial),
-            proveedorNombre: v.proveedorNombre || undefined,
-            notas: v.notas || undefined,
-            // Solo el PUT lo interpreta (permite reactivar); al crear el backend lo ignora
-            // y el lote nace activo — no lo enviamos para no sugerir lo contrario.
-            ...(this.editMode() ? { activo: v.activo } : {})
-        };
+        // `cantidadActual` queda FUERA del payload y `activo` sólo viaja en edición: ver `lotePayload`.
+        const payload = lotePayload(v, productoId, this.editMode());
         const op = this.editMode()
             ? this.api.updateLot(this.selectedId()!, payload)
             : this.api.createLot(payload);

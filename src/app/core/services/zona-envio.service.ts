@@ -1,7 +1,8 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '@env/environment';
+import { toHttpParams } from '@core/utils/http-params.util';
 
 export interface ZonaEnvio {
     id: number;
@@ -19,8 +20,9 @@ export class ZonaEnvioService {
     private readonly baseUrl = `${environment.apiUrls.sales}/api/v1/envio/zonas`;
 
     getZonas(distrito?: string): Observable<ZonaEnvio[]> {
-        let params = new HttpParams();
-        if (distrito) params = params.set('distrito', distrito);
+        let params = toHttpParams({
+            distrito,
+        });
         return this.http.get<ZonaEnvio[]>(this.baseUrl, { params });
     }
 }

@@ -49,9 +49,9 @@ export class LoginComponent {
 
     err(field: 'username' | 'password'): string {
         const c = this.loginForm.get(field);
+        // Login es la única pantalla traducida: sus textos salen de i18n, no de la tabla común.
         if (!c || c.pristine || c.valid) return '';
-        if (c.hasError('required')) return this.translate.instant('auth.fieldRequired');
-        return this.translate.instant('auth.fieldInvalid');
+        return this.translate.instant(c.hasError('required') ? 'auth.fieldRequired' : 'auth.fieldInvalid');
     }
 
     errorBanner(): string {

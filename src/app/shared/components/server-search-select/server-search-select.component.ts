@@ -3,6 +3,7 @@ import {
     effect, forwardRef, inject, input, signal,
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { accionDeTecla } from './server-search-keys.util';
 
 /** Valor del `id` de una opción: `number` (la mayoría de entidades) o `string` (ej. UUID de Proveedor). */
 export type ServerSelectId = number | string;
@@ -154,27 +155,18 @@ export class ServerSearchSelectComponent implements ControlValueAccessor {
     onKeydown(ev: KeyboardEvent): void {
         if (this.disabled()) return;
         const opts = this.options();
-        switch (ev.key) {
-            case 'ArrowDown':
-                ev.preventDefault();
-                if (!this.open()) { this.onFocus(); return; }
-                this.activeIndex.set(Math.min(this.activeIndex() + 1, opts.length - 1));
-                break;
-            case 'ArrowUp':
-                ev.preventDefault();
-                this.activeIndex.set(Math.max(this.activeIndex() - 1, 0));
-                break;
-            case 'Enter': {
-                const active = opts[this.activeIndex()];
-                if (this.open() && active) {
-                    ev.preventDefault();
-                    this.select(active);
-                }
-                break;
-            }
-            case 'Escape':
-                this.close();
-                break;
+        const decision = accionDeTecla(ev.key, {
+            abierto: this.open(),
+            indiceActivo: this.activeIndex(),
+            totalOpciones: opts.length,
+        });
+        if (!decision) return;
+        if (decision.prevenir) ev.preventDefault();
+        switch (decision.accion) {
+            case 'abrir': this.onFocus(); break;
+            case 'mover': this.activeIndex.set(decision.indice); break;
+            case 'seleccionar': this.select(opts[decision.indice]); break;
+            case 'cerrar': this.close(); break;
         }
     }
 

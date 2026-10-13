@@ -18,6 +18,7 @@ import { RecommendationsService } from '@core/services/recommendations.service';
 import { WishlistService } from '@core/services/wishlist.service';
 import { StoreConfigService } from '@core/services/store-config.service';
 import { STORAGE_KEYS } from '@shared/constants/app.constants';
+import { ItemDeHistorial, agregarAHistorial, itemDeHistorial } from './historial-navegacion.util';
 
 import {
     DsButtonComponent,
@@ -242,16 +243,9 @@ export class ProductDetailPageComponent implements OnInit {
 
     private saveToBrowseHistory(product: ProductDetail): void {
         try {
-            const history = JSON.parse(localStorage.getItem(STORAGE_KEYS.browseHistory) ?? '[]');
-            const item = {
-                id: product.id,
-                name: product.nombre,
-                image: product.images?.[0]?.url ?? '',
-                price: product.precioBase,
-                slug: (product as unknown as Record<string, unknown>)['slug'] ?? product.id,
-            };
-            const filtered = history.filter((h: Record<string, unknown>) => h['id'] !== item.id);
-            localStorage.setItem(STORAGE_KEYS.browseHistory, JSON.stringify([item, ...filtered].slice(0, 20)));
+            const previo = JSON.parse(localStorage.getItem(STORAGE_KEYS.browseHistory) ?? '[]') as ItemDeHistorial[];
+            const actualizado = agregarAHistorial(previo, itemDeHistorial(product));
+            localStorage.setItem(STORAGE_KEYS.browseHistory, JSON.stringify(actualizado));
         } catch {
             /* ignore */
         }

@@ -4,6 +4,7 @@ import { environment } from '@env/environment';
 import { firstValueFrom } from 'rxjs';
 import { PageResponse } from '@core/models/pagination.model';
 import { Attendance, AttendanceRequest, CheckInOutRequest, AttendanceSummary } from '../models/attendance.model';
+import { toHttpParams } from '@core/utils/http-params.util';
 
 /** Filtros server-side del listado paginado de asistencia. Todos opcionales. */
 export interface AttendanceFiltros {
@@ -86,17 +87,17 @@ export class AttendanceService {
     async getAttendancePaged(filtros: AttendanceFiltros = {}): Promise<PageResponse<Attendance>> {
         this._loading.set(true);
         try {
-            const params: Record<string, string> = {
-                page: String(filtros.page ?? 0),
-                size: String(filtros.size ?? 15),
-            };
-            if (filtros.search) params['search'] = filtros.search;
-            if (filtros.employeeId != null) params['employeeId'] = String(filtros.employeeId);
-            if (filtros.departmentId != null) params['departmentId'] = String(filtros.departmentId);
-            if (filtros.tipoRegistro) params['tipoRegistro'] = filtros.tipoRegistro;
-            if (filtros.aprobadoPorId != null) params['aprobadoPorId'] = String(filtros.aprobadoPorId);
-            if (filtros.fechaDesde) params['fechaDesde'] = filtros.fechaDesde;
-            if (filtros.fechaHasta) params['fechaHasta'] = filtros.fechaHasta;
+            let params = toHttpParams({
+                page: filtros.page ?? 0,
+                size: filtros.size ?? 15,
+                search: filtros.search,
+                employeeId: filtros.employeeId,
+                departmentId: filtros.departmentId,
+                tipoRegistro: filtros.tipoRegistro,
+                aprobadoPorId: filtros.aprobadoPorId,
+                fechaDesde: filtros.fechaDesde,
+                fechaHasta: filtros.fechaHasta,
+            });
             return await firstValueFrom(
                 this.http.get<PageResponse<Attendance>>(`${this.baseUrl}/paged`, { params })
             );

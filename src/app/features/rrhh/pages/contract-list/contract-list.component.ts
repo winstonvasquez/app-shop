@@ -23,6 +23,7 @@ import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { ButtonComponent, CatalogSelectComponent, ServerSearchSelectComponent } from '@shared/components';
 import { employeeSelectSource } from '../../components/select-sources';
 import { MONEDA, CURRENCY_DISPLAY } from '@shared/constants/sunat.constants';
+import { contratoRequestDesdeForm, filtrosDeContrato } from './contract-list.form';
 import { CatalogService } from '@core/services/catalog.service';
 import { bloquearEnEdicion } from '@shared/utils/form-lock';
 
@@ -261,23 +262,28 @@ export class ContractListComponent implements OnInit {
             .catch(() => this.empleadosFiltro.set([]));
     }
 
-    /** Carga la página actual server-side (search + TODOS los filtros avanzados + 20/pág). */
-    private loadPage(): void {
-        this.contractService.loadContractsPaged({
-            page: this.currentPage(),
-            size: this.pageSize(),
-            search: this.searchQuery() || undefined,
-            status: this.filterStatus() || undefined,
-            type: this.filterType() || undefined,
-            jornadaLaboral: this.filterJornadaLaboral() || undefined,
-            moneda: this.filterMoneda() || undefined,
+    /** Estado actual del toolbar, sin traducir. La normalización a query vive en `filtrosDeContrato`. */
+    private estadoDeFiltros() {
+        return {
+            search: this.searchQuery(),
+            status: this.filterStatus(),
+            type: this.filterType(),
+            jornadaLaboral: this.filterJornadaLaboral(),
+            moneda: this.filterMoneda(),
             employeeId: this.filterEmployeeId(),
             departmentId: this.filterDepartmentId(),
             fechaInicioDesde: this.filterFechaInicioDesde(),
             fechaInicioHasta: this.filterFechaInicioHasta(),
             fechaFinDesde: this.filterFechaFinDesde(),
             fechaFinHasta: this.filterFechaFinHasta(),
-        }).then(res => {
+        };
+    }
+
+    /** Carga la página actual server-side (search + TODOS los filtros avanzados + 20/pág). */
+    private loadPage(): void {
+        this.contractService.loadContractsPaged(
+            filtrosDeContrato(this.estadoDeFiltros(), this.currentPage(), this.pageSize()),
+        ).then(res => {
             this.totalElements.set(res.totalElements);
             this.totalPages.set(res.totalPages);
         }).catch(err => {
@@ -421,19 +427,7 @@ export class ContractListComponent implements OnInit {
         this.submitting.set(true);
         this.submitError.set(null);
         try {
-            const val = this.contractForm.getRawValue();
-            const request = {
-                employeeId: val.employeeId!,
-                tipoContrato: val.tipoContrato!,
-                fechaInicio: val.fechaInicio!,
-                fechaFin: val.fechaFin || undefined,
-                salarioBase: val.salarioBase!,
-                moneda: val.moneda ?? MONEDA.PEN,
-                jornadaLaboral: val.jornadaLaboral!,
-                horasSemanales: val.horasSemanales!,
-                periodoPruebaMeses: val.periodoPruebaMeses ?? undefined,
-                documentoContratoUrl: val.documentoContratoUrl || undefined,
-            };
+            const request = contratoRequestDesdeForm(this.contractForm.getRawValue());
             const sel = this.selectedContract();
             if (this.editMode() && sel) {
                 await this.contractService.updateContract(sel.id, request);

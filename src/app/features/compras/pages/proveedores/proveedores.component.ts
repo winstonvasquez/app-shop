@@ -19,6 +19,7 @@ import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { bloquearEnEdicion } from '@shared/utils/form-lock';
 import { environment } from '@env/environment';
+import { valoresFormularioProveedor } from './proveedores.form';
 
 @Component({
     selector: 'app-proveedores',
@@ -311,24 +312,7 @@ export class ProveedoresComponent implements OnInit {
     openEditModal(proveedor: Proveedor): void {
         this.editMode.set(true);
         this.selectedProveedor.set(proveedor);
-        this.proveedorForm.patchValue({
-            ruc: proveedor.ruc,
-            razonSocial: proveedor.razonSocial,
-            nombreComercial: proveedor.nombreComercial ?? '',
-            condicionSunat: proveedor.condicionSunat ?? 'HABIDO',
-            estadoSunat: proveedor.estadoSunat ?? 'ACTIVO',
-            estado: proveedor.estado ?? 'ACTIVO',
-            domicilioFiscal: proveedor.domicilioFiscal ?? '',
-            contactoNombre: proveedor.contactoNombre ?? '',
-            contactoTelefono: proveedor.contactoTelefono ?? '',
-            contactoEmail: proveedor.contactoEmail ?? '',
-            banco: proveedor.banco ?? '',
-            cuentaBanco: proveedor.cuentaBanco ?? '',
-            condicionPago: proveedor.condicionPago ?? 'CONTADO',
-            monedaPreferida: proveedor.monedaPreferida ?? MONEDA.PEN,
-            nivelProveedor: proveedor.nivelProveedor ?? '',
-            agenteRetencion: proveedor.agenteRetencion ?? false
-        });
+        this.proveedorForm.patchValue(valoresFormularioProveedor(proveedor));
         this.aplicarBloqueos();
         this.submitError.set(null);
         this.showModal.set(true);

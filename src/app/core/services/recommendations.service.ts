@@ -4,6 +4,7 @@ import { Observable, EMPTY } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { environment } from '@env/environment';
 import { ProductResponse } from '@core/models/product.model';
+import { toHttpParams } from '@core/utils/http-params.util';
 
 @Injectable({ providedIn: 'root' })
 export class RecommendationsService {
@@ -17,15 +18,18 @@ export class RecommendationsService {
     }
 
     getParaTi(usuarioId?: number, limite = 8): Observable<ProductResponse[]> {
-        const params: Record<string, string> = { limite: limite.toString() };
-        if (usuarioId) params['usuarioId'] = usuarioId.toString();
+        let params = toHttpParams({
+            limite,
+            usuarioId,
+        });
         return this.http.get<ProductResponse[]>(`${this.baseUrl}/para-ti`, { params })
             .pipe(catchError(() => EMPTY));
     }
 
     trackVisualizacion(productoId: number, usuarioId?: number): void {
-        const params: Record<string, string> = {};
-        if (usuarioId) params['usuarioId'] = usuarioId.toString();
+        let params = toHttpParams({
+            usuarioId,
+        });
         this.http.post(`${this.baseUrl}/historial/${productoId}`, null, { params })
             .pipe(catchError(() => EMPTY))
             .subscribe();

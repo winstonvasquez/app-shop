@@ -5,7 +5,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { merge } from 'rxjs';
 import { FormBuilder, FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
-import { VacationService, VacationRequest, TipoVacacion } from '../../services/vacation.service';
+import { VacationService, VacationRequest } from '../../services/vacation.service';
 import { EmployeeService } from '../../services/employee.service';
 import { DepartmentService } from '../../services/department.service';
 import { Department } from '../../models/department.model';
@@ -27,6 +27,7 @@ import { DateInputComponent } from '@shared/ui/forms/date-input/date-input.compo
 import { ButtonComponent, CatalogSelectComponent, ServerSearchSelectComponent, RichTextEditorComponent } from '@shared/components';
 import { employeeSelectSource } from '../../components/select-sources';
 import { bloquearSiempre } from '@shared/utils/form-lock';
+import { diasDeVacacion, filtrosDeVacacion, solicitudDeVacacion } from './vacation-list.form';
 
 @Component({
     selector: 'app-vacation-list',
@@ -255,19 +256,11 @@ export class VacationListComponent implements OnInit {
      * cuando era 0, así que una licencia de un solo día quedaba en 0 días.
      */
     private recalcularDias(): void {
-        const inicio = this.vacacionForm.controls.fechaInicio.value;
-        const fin = this.vacacionForm.controls.fechaFin.value;
-        const control = this.vacacionForm.controls.dias;
-
-        if (!inicio || !fin) {
-            control.setValue(0, { emitEvent: false });
-            return;
-        }
-
-        const desde = new Date(inicio);
-        const hasta = new Date(fin);
-        const dias = Math.round((hasta.getTime() - desde.getTime()) / 86_400_000) + 1;
-        control.setValue(dias > 0 ? dias : 0, { emitEvent: false });
+        const dias = diasDeVacacion(
+            this.vacacionForm.controls.fechaInicio.value,
+            this.vacacionForm.controls.fechaFin.value,
+        );
+        this.vacacionForm.controls.dias.setValue(dias, { emitEvent: false });
     }
 
     /**
@@ -307,24 +300,29 @@ export class VacationListComponent implements OnInit {
         this.loadBalances();
     }
 
+    /** Estado actual del toolbar, sin traducir. La normalización a query vive en `filtrosDeVacacion`. */
+    private estadoDeFiltros() {
+        return {
+            search: this.searchQuery(),
+            estado: this.filterEstado(),
+            tipoVacacion: this.filterTipoVacacion(),
+            employeeId: this.filterEmployeeId(),
+            departmentId: this.filterDepartmentId(),
+            aprobadoPorId: this.filterAprobadoPorId(),
+            fechaInicioDesde: this.filterFechaInicioDesde(),
+            fechaInicioHasta: this.filterFechaInicioHasta(),
+            fechaFinDesde: this.filterFechaFinDesde(),
+            fechaFinHasta: this.filterFechaFinHasta(),
+            fechaAprobacionDesde: this.filterFechaAprobDesde(),
+            fechaAprobacionHasta: this.filterFechaAprobHasta(),
+        };
+    }
+
     /** Carga la página actual server-side con TODOS los filtros del toolbar. */
     private loadPage(): void {
-        this.vacationService.loadVacationsPaged({
-            page: this.currentPage(),
-            size: this.pageSize(),
-            search: this.searchQuery() || undefined,
-            estado: this.filterEstado() || undefined,
-            tipoVacacion: this.filterTipoVacacion() || undefined,
-            employeeId: this.filterEmployeeId() ? Number(this.filterEmployeeId()) : undefined,
-            departmentId: this.filterDepartmentId() ? Number(this.filterDepartmentId()) : undefined,
-            aprobadoPorId: this.filterAprobadoPorId() ? Number(this.filterAprobadoPorId()) : undefined,
-            fechaInicioDesde: this.filterFechaInicioDesde() || undefined,
-            fechaInicioHasta: this.filterFechaInicioHasta() || undefined,
-            fechaFinDesde: this.filterFechaFinDesde() || undefined,
-            fechaFinHasta: this.filterFechaFinHasta() || undefined,
-            fechaAprobacionDesde: this.filterFechaAprobDesde() || undefined,
-            fechaAprobacionHasta: this.filterFechaAprobHasta() || undefined,
-        }).then(res => {
+        this.vacationService.loadVacationsPaged(
+            filtrosDeVacacion(this.estadoDeFiltros(), this.currentPage(), this.pageSize()),
+        ).then(res => {
             this.totalElements.set(res.totalElements);
             this.totalPages.set(res.totalPages);
         }).catch(err => {
@@ -438,14 +436,7 @@ export class VacationListComponent implements OnInit {
             // getRawValue(): "dias" está deshabilitado (bloquearSiempre) y por eso NO
             // aparece en .value — con .value viajaría `undefined` al backend.
             const val = this.vacacionForm.getRawValue();
-            await this.vacationService.createVacationRequest({
-                employeeId: val.employeeId!,
-                fechaInicio: val.fechaInicio!,
-                fechaFin:    val.fechaFin!,
-                dias:        val.dias!,
-                motivo:      val.motivo ?? undefined,
-                tipoVacacion: (val.tipoVacacion as TipoVacacion) ?? undefined,
-            });
+            await this.vacationService.createVacationRequest(solicitudDeVacacion(val));
             this.closeModal();
             this.loadPage();
         } catch (err) {

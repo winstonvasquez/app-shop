@@ -3,6 +3,7 @@ import { DatePipe, DecimalPipe } from '@angular/common';
 import { RouterLink, ActivatedRoute } from '@angular/router';
 import { OrderService } from '@core/services/order.service';
 import { OrderResponse } from '@core/models/order.model';
+import { ESTADO_PEDIDO_BADGE, EstadoPedido } from '@shared/constants/order-status.constants';
 
 @Component({
     selector: 'app-order-confirmation',
@@ -39,21 +40,13 @@ export class OrderConfirmationComponent implements OnInit {
         });
     }
 
-    /** Clase de badge según el estado del pedido (verde/azul/ámbar/rojo). */
+    /**
+     * Clase de badge según el estado del pedido, leída de `ESTADO_PEDIDO_BADGE` (fuente única
+     * del frontend, espejo del `EstadoPedido` del backend). El ámbar es el estado por defecto:
+     * un estado que no esté en el mapa se pinta como «en curso», nunca como éxito ni como error.
+     */
     badgeClass(estado: string | undefined): string {
-        switch ((estado ?? '').toUpperCase()) {
-            case 'ENTREGADO':
-            case 'PAGADO':
-            case 'COMPLETADO':
-                return 'badge-success';
-            case 'ENVIADO':
-            case 'EN_PREPARACION':
-                return 'badge-info';
-            case 'CANCELADO':
-            case 'RECHAZADO':
-                return 'badge-error';
-            default:
-                return 'badge-warning';
-        }
+        const clave = (estado ?? '').toUpperCase() as EstadoPedido;
+        return ESTADO_PEDIDO_BADGE[clave] ?? 'badge-warning';
     }
 }

@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { environment } from '@env/environment';
+import { toHttpParams } from '@core/utils/http-params.util';
 
 export interface AuditLog {
     id: string;
@@ -61,15 +62,16 @@ export class AuditLogService {
     private usersBase = `${environment.apiUrls.users}/api/users`;
 
     buscar(params: AuditLogFiltros = {}) {
-        let p = new HttpParams();
-        if (params.entidadTipo) p = p.set('entidadTipo', params.entidadTipo);
-        if (params.accion) p = p.set('accion', params.accion);
-        if (params.usuarioId) p = p.set('usuarioId', params.usuarioId);
-        if (params.desde) p = p.set('desde', params.desde);
-        if (params.hasta) p = p.set('hasta', params.hasta);
-        if (params.search) p = p.set('search', params.search);
-        if (params.page !== undefined) p = p.set('page', params.page.toString());
-        if (params.size !== undefined) p = p.set('size', params.size.toString());
+        let p = toHttpParams({
+            entidadTipo: params.entidadTipo,
+            accion: params.accion,
+            usuarioId: params.usuarioId,
+            desde: params.desde,
+            hasta: params.hasta,
+            search: params.search,
+            page: params.page,
+            size: params.size,
+        });
         return this.http.get<PageResponse<AuditLog>>(this.base, { params: p });
     }
 

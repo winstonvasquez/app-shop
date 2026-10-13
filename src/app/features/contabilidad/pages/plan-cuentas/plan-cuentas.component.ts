@@ -1,6 +1,7 @@
 import { Component, inject, signal, computed, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { CuentaService, CuentaContableRequest, CuentaContableUpdateRequest } from '../../services/cuenta.service';
+import { CuentaService } from '../../services/cuenta.service';
+import { CuentaFormRaw, construirCuentaRequest, construirCuentaUpdateRequest } from './plan-cuentas.form';
 import { CatalogService } from '@core/services/catalog.service';
 import { PaginationChangeEvent } from '@shared/ui/pagination/pagination.component';
 import { DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
@@ -580,27 +581,12 @@ export class PlanCuentasComponent implements OnInit {
         this.submitError.set(null);
 
         // getRawValue(): en edición "codigo" está deshabilitado y no saldría en .value.
-        const raw = this.cuentaForm.getRawValue();
+        const raw = this.cuentaForm.getRawValue() as CuentaFormRaw;
         const id = this.selectedId();
 
         const operacion = this.editMode() && id
-            ? this.cuentaService.actualizar(id, {
-                  nombre: raw.nombre,
-                  tipo: raw.tipo,
-                  cuentaPadreId: raw.cuentaPadreId || null,
-                  estado: raw.estado,
-                  esAnalitica: raw.esAnalitica,
-                  aceptaMovimiento: raw.aceptaMovimiento,
-              } satisfies CuentaContableUpdateRequest)
-            : this.cuentaService.crear({
-                  codigo: raw.codigo,
-                  nombre: raw.nombre,
-                  tipo: raw.tipo,
-                  cuentaPadreId: raw.cuentaPadreId || null,
-                  estado: raw.estado,
-                  esAnalitica: raw.esAnalitica,
-                  aceptaMovimiento: raw.aceptaMovimiento,
-              } satisfies CuentaContableRequest);
+            ? this.cuentaService.actualizar(id, construirCuentaUpdateRequest(raw))
+            : this.cuentaService.crear(construirCuentaRequest(raw));
 
         operacion.subscribe({
             next: () => {
