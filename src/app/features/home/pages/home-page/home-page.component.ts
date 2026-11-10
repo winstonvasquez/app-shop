@@ -6,7 +6,7 @@ import { catchError, of } from 'rxjs';
 
 import { FlashDealsSectionComponent } from '@features/home/components/flash-deals-section/flash-deals-section.component';
 import { ProductShowcaseSectionComponent } from '@features/home/components/product-showcase-section/product-showcase-section.component';
-import { DsButtonComponent, DsBadgeComponent, DsCategoryTileComponent, DsCategoryTile, DsProductCardComponent, DsProduct } from '@shared/ui/ds';
+import { DsButtonComponent, DsBadgeComponent, DsProductCardComponent, DsProduct } from '@shared/ui/ds';
 
 import { CategoryService } from '@core/services/category.service';
 import { BannerService, Banner } from '@features/home/services/banner.service';
@@ -21,6 +21,11 @@ import { conEnvioGratis } from '@features/cart/utils/envio-gratis';
 
 const HERO_AUTO_ROTATE_MS = 6000;     // intervalo entre slides automáticos
 
+/** Tonos de la paleta del home (ver `--psy-*` en la plantilla); las categorías los recorren en orden. */
+const TONOS = ['urgencia', 'impulso', 'calidad', 'ahorro', 'confianza', 'novedad'] as const;
+
+interface CategoriaDelHome { id: number; name: string; image?: string; tone: string; }
+
 @Component({
     selector: 'app-home-page',
     standalone: true,
@@ -33,7 +38,6 @@ const HERO_AUTO_ROTATE_MS = 6000;     // intervalo entre slides automáticos
         ProductShowcaseSectionComponent,
         DsButtonComponent,
         DsBadgeComponent,
-        DsCategoryTileComponent,
         DsProductCardComponent,
     ],
     templateUrl: './home-page.component.html',
@@ -47,8 +51,7 @@ export class HomePageComponent implements OnInit, OnDestroy {
     private cartService             = inject(CartService);
     public  searchService           = inject(SearchService);
 
-    /** Categorías reales mapeadas al shape DS (`name`, `count`, `image`, `tone`). */
-    readonly categories = signal<DsCategoryTile[]>([]);
+    readonly categories = signal<CategoriaDelHome[]>([]);
 
     /** Slider hero — múltiples banners con auto-rotation y nav manual. */
     readonly banners      = signal<Banner[]>([]);
@@ -63,6 +66,7 @@ export class HomePageComponent implements OnInit, OnDestroy {
     @ViewChild('paraTiScroll') paraTiScroll?: ElementRef<HTMLDivElement>;
 
     private autoRotateTimer?: ReturnType<typeof setInterval>;
+    private relojTimer?: ReturnType<typeof setInterval>;
 
     /** Bullets de confianza — patrón "trust strip" del DS. */
     private zonaEnvio = inject(ZonaEnvioService);
@@ -70,10 +74,10 @@ export class HomePageComponent implements OnInit, OnDestroy {
     readonly trustItems = computed(() => {
         const umbral = this.zonaEnvio.envioGratisDesde();
         return [
-            ...(umbral ? [{ icon: 'truck', title: 'Envío gratis', sub: `Desde S/ ${umbral}` }] : []),
-            { icon: 'shield', title: 'Compra protegida',  sub: 'Garantía 30 días' },
-            { icon: 'zap',    title: 'Entrega rápida',    sub: '24h en Lima' },
-            { icon: 'lock',   title: 'Pago seguro',       sub: 'PCI DSS · Yape' },
+            ...(umbral ? [{ icon: 'truck', title: 'Envío gratis', sub: `Desde S/ ${umbral}`, tone: 'ahorro' }] : []),
+            { icon: 'shield', title: 'Compra protegida',  sub: 'Garantía 30 días', tone: 'confianza' },
+            { icon: 'zap',    title: 'Entrega rápida',    sub: '24h en Lima', tone: 'impulso' },
+            { icon: 'lock',   title: 'Pago seguro',       sub: 'PCI DSS · Yape', tone: 'novedad' },
         ];
     });
     /** Subtítulo por defecto del hero; la frase de envío gratis sólo aparece con umbral real. */
@@ -100,11 +104,12 @@ export class HomePageComponent implements OnInit, OnDestroy {
         this.zonaEnvio.cargarUmbral();
         this.loadData();
         this.loadParaTi();
-        setInterval(() => this.now.set(new Date()), 1000);
+        this.relojTimer = setInterval(() => this.now.set(new Date()), 1000);
     }
 
     ngOnDestroy(): void {
         this.stopAutoRotate();
+        clearInterval(this.relojTimer);
     }
 
     /** Slider — nav manual y por dot. Resetean el timer auto. */
@@ -165,35 +170,29 @@ export class HomePageComponent implements OnInit, OnDestroy {
         this.startAutoRotate();
     }
 
+    /** «Ver ofertas» lleva a la franja de ofertas del propio home: el catálogo no tiene un orden por descuento. */
     onHeroCta(): void {
-        // Sin vista dedicada de "ofertas" todavía; mejor proxy: catálogo
-        // ordenado por descuento. products-page lee queryParams.sort.
-        this.router.navigate(['/products'], { queryParams: { sort: 'descuento,desc' } });
+        document.getElementById('ofertas')?.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    irAOfertas(e: Event): void {
+        e.preventDefault();
+        this.onHeroCta();
     }
 
     onHeroSecondary(): void {
-        // Sin vista dedicada de "categorías"; el catálogo ya muestra el panel
-        // de categorías como filtro lateral.
         this.router.navigate(['/products']);
     }
 
-    onCategoryClick(c: DsCategoryTile): void {
-        const original = this.categoriesRaw().find(x => x.nombre === c.name);
-        if (original) this.searchService.setCategoryId(original.id);
+    onCategoryClick(c: CategoriaDelHome): void {
+        this.searchService.setCategoryId(c.id);
         this.router.navigate(['/products']);
     }
-
-    private categoriesRaw = signal<{ id: number; nombre: string }[]>([]);
 
     private loadData(): void {
         this.categoryService.getAllSimple().subscribe((cats: { id: number; nombre: string; imagenUrl?: string }[]) => {
-            this.categoriesRaw.set(cats);
             this.categories.set(
-                cats.slice(0, 8).map((c, i) => ({
-                    name: c.nombre,
-                    image: c.imagenUrl,
-                    tone: i,
-                })),
+                cats.slice(0, 16).map((c, i) => ({ id: c.id, name: c.nombre, image: c.imagenUrl, tone: TONOS[i % TONOS.length] })),
             );
         });
 

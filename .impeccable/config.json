@@ -1,0 +1,17 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "broken-image",
+        "value": "*",
+        "files": [
+          "src/app/features/home/pages/home-page/home-page.component.html"
+        ],
+        "createdAt": "2026-11-10T22:01:42.535Z",
+        "reason": "agente: falso positivo, el src es un binding Angular [src]=c.image dentro de @if (c.image)"
+      }
+    ]
+  }
+}

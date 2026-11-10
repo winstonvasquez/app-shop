@@ -3,9 +3,9 @@
         <header class="head">
             <div class="title-row">
                 @switch (type()) {
-                    @case ('best-sellers') { <lucide-icon name="award"  [size]="20" class="ic brand"/> }
-                    @case ('top-rated')    { <lucide-icon name="star"   [size]="20" class="ic accent"/> }
-                    @case ('new-arrivals') { <lucide-icon name="sparkles" [size]="20" class="ic ok"/> }
+                    @case ('best-sellers') { <span class="chip"><lucide-icon name="award" [size]="18"/></span> }
+                    @case ('top-rated')    { <span class="chip"><lucide-icon name="star" [size]="18"/></span> }
+                    @case ('new-arrivals') { <span class="chip"><lucide-icon name="sparkles" [size]="18"/></span> }
                 }
                 <h2>{{ title() }}</h2>
             </div>
@@ -43,23 +43,34 @@
 }
 
 <style>
-    .ds-showcase { font-family: var(--f-sans); }
-    .head {
-        display: flex; justify-content: space-between; align-items: baseline;
-        margin-bottom: 8px;
+    .ds-showcase {
+        font-family: var(--f-sans);
+        background: var(--c-surface);
+        border: 1px solid var(--c-border);
+        border-radius: var(--r-xl);
+        padding: 16px 20px 8px;
     }
-    .title-row { display: flex; align-items: center; gap: 8px; }
+    .head {
+        display: flex; justify-content: space-between; align-items: center;
+        margin-bottom: 10px;
+    }
+    .title-row { display: flex; align-items: center; gap: 10px; }
     .title-row h2 {
         font-family: var(--f-display);
-        font-size: 24px; font-weight: 800;
+        font-size: 22px; font-weight: 800;
         color: var(--c-text);
         margin: 0; letter-spacing: -0.02em;
     }
-    .ic.brand  { color: var(--c-brand); }
-    .ic.accent { color: var(--c-accent); }
-    .ic.ok     { color: var(--c-success); }
+    .chip {
+        width: 34px; height: 34px; border-radius: 999px;
+        display: inline-flex; align-items: center; justify-content: center;
+        background: var(--tone-soft, var(--c-surface2));
+        color: var(--tone-ink, var(--c-brand));
+    }
     .more {
-        color: var(--c-brand); font-size: 13px; font-weight: 700;
+        color: var(--tone-ink, var(--c-brand)); font-size: 13px; font-weight: 700;
+        background: var(--tone-soft, var(--c-surface2));
+        padding: 6px 12px; border-radius: 999px;
         text-decoration: none; cursor: pointer;
     }
 
@@ -76,8 +87,8 @@
         opacity: .9; transition: opacity 120ms, transform 120ms, background 120ms;
     }
     .nav-btn:hover {
-        opacity: 1; background: var(--c-brand); color: var(--c-onBrand, #fff);
-        border-color: var(--c-brand);
+        opacity: 1; background: var(--tone, var(--c-brand)); color: #fff;
+        border-color: var(--tone, var(--c-brand));
     }
     .nav-btn.left  { left: -12px; }
     .nav-btn.right { right: -12px; }

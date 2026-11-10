@@ -1,36 +1,21 @@
 <!--
-    HOME — DS Confianza
-    Estructura: hero + side promos · trust strip · categorías 8col · flash deals · para-ti · recomendados
-    Paleta y tokens via --c-*, --r-*, --s-*, --f-*.
--->
-<!--
-    GAPS — todos los espacios verticales se controlan desde aquí:
-    - --home-gap        : separación entre cada section (hero, trust, categorías, ofertas, etc.)
-    - --home-pad-top    : aire arriba (entre header global y primer banner)
-    - --home-pad-bottom : aire abajo (entre última section y footer)
-    Cambiar SOLO los 3 valores de abajo para ajustar todo el spacing del home.
--->
-<div class="ds-home"
-     style="background: var(--c-bg); min-height: 100%;
-            display: flex; flex-direction: column;
-            --home-gap: 4px;
-            --home-pad-top: 16px;
-            --home-pad-bottom: 16px;
-            gap: var(--home-gap);
-            padding-top: var(--home-pad-top);
-            padding-bottom: var(--home-pad-bottom);">
+    HOME — DS Confianza, organizado como un gran marketplace:
+    hero · beneficios · atajos por intención · categorías · ofertas · para ti · carruseles · catálogo.
 
-    <!-- ════════════════════════════════════════════════════════
-         HERO + 2 SIDE PROMOS
-         ════════════════════════════════════════════════════════ -->
-    <section class="hero-grid" style="padding: 0 !important; margin: 0 !important;">
+    PALETA POR TONOS (psicología del color). Cada bloque declara `data-tone` y TODO su color
+    sale de una sola variable `--tone`: los fondos son mezclas de ese tono con la superficie
+    (`--tone-soft`) y los textos con el color de texto (`--tone-ink`), así que funcionan en claro
+    y oscuro. Para matizar la tienda basta tocar los seis `--psy-*` de `.ds-home` (o los dos
+    porcentajes `--tint` / `--ink`); no hay colores sueltos más abajo.
+-->
+<div class="ds-home">
 
+    <!-- HERO — carrusel a todo el ancho -->
+    <section>
         <div class="hero"
              [style.backgroundImage]="heroBanner()?.imagenUrl
-                ? 'linear-gradient(110deg, rgba(11,61,145,.78) 0%, rgba(6,42,107,.62) 60%, rgba(14,163,113,.55) 100%), url(' + heroBanner()?.imagenUrl + ')'
-                : null"
-             [style.backgroundSize]="'cover'"
-             [style.backgroundPosition]="'center'">
+                ? 'linear-gradient(90deg, rgba(6,16,40,.6) 0%, rgba(6,16,40,.3) 40%, rgba(6,16,40,0) 62%), url(' + heroBanner()?.imagenUrl + ')'
+                : null">
 
             <ds-badge tone="accent" size="sm">Solo hoy · 24h</ds-badge>
             <h1 class="hero-title">
@@ -77,104 +62,96 @@
                 }
             </div>
         </div>
-
-        <div class="side-stack">
-            <div class="side-promo light">
-                <ds-badge tone="success" size="sm">Nuevo</ds-badge>
-                <h3>Vuelta al cole</h3>
-                <p>Útiles, mochilas y tech para estudiar</p>
-                <a class="side-cta">Comprar →</a>
-            </div>
-            <div class="side-promo raised">
-                <ds-badge tone="brand" size="sm">App exclusivo</ds-badge>
-                <h3>S/ 30 OFF</h3>
-                <p>En tu primera compra desde la app</p>
-                <a class="side-cta">Descargar →</a>
-            </div>
-        </div>
-
     </section>
 
-    <!-- ════════════════════════════════════════════════════════
-         TRUST STRIP
-         ════════════════════════════════════════════════════════ -->
-    <section class="trust-wrap" style="padding: 0 !important; margin: 0 !important;">
-        <div class="trust">
-            @for (t of trustItems(); track t.title) {
-                <div class="trust-item">
-                    <div class="trust-icon">
-                        <lucide-icon [name]="t.icon" [size]="22"/>
-                    </div>
-                    <div>
-                        <div class="trust-t">{{ t.title }}</div>
-                        <div class="trust-s">{{ t.sub }}</div>
-                    </div>
+    <!-- BENEFICIOS — cada promesa con su color: verde ahorro, azul seguridad, naranja rapidez, violeta pago -->
+    <section class="trust">
+        @for (t of trustItems(); track t.title) {
+            <div class="trust-item" [attr.data-tone]="t.tone">
+                <div class="trust-icon"><lucide-icon [name]="t.icon" [size]="20"/></div>
+                <div>
+                    <div class="trust-t">{{ t.title }}</div>
+                    <div class="trust-s">{{ t.sub }}</div>
                 </div>
-            }
-        </div>
+            </div>
+        }
     </section>
 
-    <!-- ════════════════════════════════════════════════════════
-         CATEGORÍAS — 8 columnas
-         ════════════════════════════════════════════════════════ -->
+    <!-- ATAJOS — comprar por intención; cada uno abre una consulta real del catálogo -->
+    <section class="atajos">
+        <a class="atajo" data-tone="urgencia" href="/home#ofertas" (click)="irAOfertas($event)">
+            <span class="atajo-ic"><lucide-icon name="zap" [size]="22"/></span>
+            <span class="atajo-txt"><b>Ofertas relámpago</b><small>Terminan hoy</small></span>
+            <lucide-icon name="arrow-right" [size]="18" class="atajo-go"/>
+        </a>
+        <a class="atajo" data-tone="impulso" [routerLink]="['/products']" [queryParams]="{ sort: 'sales' }">
+            <span class="atajo-ic"><lucide-icon name="flame" [size]="22"/></span>
+            <span class="atajo-txt"><b>Más vendidos</b><small>Lo que todos llevan</small></span>
+            <lucide-icon name="arrow-right" [size]="18" class="atajo-go"/>
+        </a>
+        <a class="atajo" data-tone="calidad" [routerLink]="['/products']" [queryParams]="{ rating: '5' }">
+            <span class="atajo-ic"><lucide-icon name="star" [size]="22"/></span>
+            <span class="atajo-txt"><b>Mejor valorados</b><small>Elegidos por clientes</small></span>
+            <lucide-icon name="arrow-right" [size]="18" class="atajo-go"/>
+        </a>
+        <a class="atajo" data-tone="novedad" [routerLink]="['/products']" [queryParams]="{ new: 'true' }">
+            <span class="atajo-ic"><lucide-icon name="sparkles" [size]="22"/></span>
+            <span class="atajo-txt"><b>Lo nuevo</b><small>Recién llegados</small></span>
+            <lucide-icon name="arrow-right" [size]="18" class="atajo-go"/>
+        </a>
+    </section>
+
+    <!-- CATEGORÍAS — fila de círculos, un tono por categoría -->
     @if (categories().length) {
-        <section class="section" style="padding: 0 !important; margin: 0 !important;">
-            <header class="section-head">
+        <section class="panel">
+            <header class="head">
                 <h2>Compra por categoría</h2>
-                <a class="link-action">Ver todas →</a>
+                <a class="more" data-tone="confianza" [routerLink]="['/products']">Ver todas →</a>
             </header>
-            <div class="cat-grid">
-                @for (c of categories(); track c.name) {
-                    <div (click)="onCategoryClick(c)">
-                        <ds-category-tile [c]="c"/>
-                    </div>
+            <div class="cat-row">
+                @for (c of categories(); track c.id) {
+                    <button type="button" class="cat" [attr.data-tone]="c.tone" (click)="onCategoryClick(c)">
+                        <span class="cat-ring">
+                            @if (c.image) {
+                                <img [src]="c.image" alt="" loading="lazy"/>
+                            } @else {
+                                {{ c.name.charAt(0) }}
+                            }
+                        </span>
+                        <span class="cat-name">{{ c.name }}</span>
+                    </button>
                 }
             </div>
         </section>
     }
 
-    <!-- ════════════════════════════════════════════════════════
-         FLASH DEALS — strip con timer
-         ════════════════════════════════════════════════════════ -->
-    <section class="section" style="padding: 0 !important; margin: 0 !important;">
-        <div class="flash-card">
-            <div class="flash-bar">
-                <div class="flash-left">
-                    <lucide-icon name="zap" [size]="22"/>
-                    <span class="flash-title">OFERTAS RELÁMPAGO</span>
-                    <span class="flash-meta">Termina en</span>
-                    <div class="flash-clock">
-                        <span class="flash-num">{{ flashTime()[0] }}</span>
-                        <span>:</span>
-                        <span class="flash-num">{{ flashTime()[1] }}</span>
-                        <span>:</span>
-                        <span class="flash-num">{{ flashTime()[2] }}</span>
-                    </div>
-                </div>
-                <a class="flash-link">Ver todas →</a>
+    <!-- OFERTAS RELÁMPAGO — rojo→naranja: urgencia y escasez -->
+    <section id="ofertas" class="flash-card" data-tone="urgencia">
+        <div class="flash-bar">
+            <lucide-icon name="zap" [size]="22"/>
+            <span class="flash-title">Ofertas relámpago</span>
+            <span class="flash-meta">Termina en</span>
+            <div class="flash-clock" role="timer">
+                <span class="flash-num">{{ flashTime()[0] }}</span>:
+                <span class="flash-num">{{ flashTime()[1] }}</span>:
+                <span class="flash-num">{{ flashTime()[2] }}</span>
             </div>
-            <div class="flash-body">
-                <app-flash-deals-section/>
-            </div>
+        </div>
+        <div class="flash-body">
+            <app-flash-deals-section vista="strip"/>
         </div>
     </section>
 
-    <!-- ════════════════════════════════════════════════════════
-         PARA TI — recomendaciones personalizadas (dinámicas)
-         Solo se renderiza cuando el backend devuelve resultados.
-         ════════════════════════════════════════════════════════ -->
+    <!-- PARA TI — azul: confianza, «te conocemos». Sólo si el backend devuelve resultados -->
     @if (paraTi().length > 0) {
-        <section class="section" style="padding: 0 !important; margin: 0 !important;">
-            <div class="ds-showcase">
-                <header class="head">
-                    <div class="title-row">
-                        <lucide-icon name="sparkles" [size]="20" class="ic para-ti"/>
-                        <h2>Recomendados para ti</h2>
-                    </div>
-                    <a class="more" [routerLink]="['/products']">
-                        Ver más →
-                    </a>
-                </header>
+        <section class="panel" data-tone="confianza">
+            <header class="head">
+                <div class="title-row">
+                    <span class="chip"><lucide-icon name="heart" [size]="18"/></span>
+                    <h2>Recomendados para ti</h2>
+                </div>
+                <a class="more" [routerLink]="['/products']">Ver más →</a>
+            </header>
                 <div class="strip">
                     <button type="button" (click)="scrollParaTi(-1)" class="nav-btn left" aria-label="Anterior">
                         <lucide-icon name="chevron-left" [size]="16"/>
@@ -192,56 +169,81 @@
                         <lucide-icon name="chevron-right" [size]="16"/>
                     </button>
                 </div>
-            </div>
         </section>
     }
 
-    <!-- ════════════════════════════════════════════════════════
-         RECOMENDADOS — 3 secciones (más vendidos / 5★ / nuevos)
-         ════════════════════════════════════════════════════════ -->
-    <section class="section" style="padding: 0 !important; margin: 0 !important;">
-        <app-product-showcase-section
-            type="best-sellers"
-            [title]="'home.bestSellers' | translate"
-            [linkParams]="{ sort: 'sales' }"/>
-    </section>
+    <!-- CARRUSELES — naranja impulso · ámbar calidad · violeta novedad -->
+    <app-product-showcase-section data-tone="impulso"
+        type="best-sellers"
+        [title]="'home.bestSellers' | translate"
+        [linkParams]="{ sort: 'sales' }"/>
 
-    <section class="section" style="padding: 0 !important; margin: 0 !important;">
-        <app-product-showcase-section
-            type="top-rated"
-            [title]="'home.topRated' | translate"
-            [linkParams]="{ rating: '5' }"/>
-    </section>
+    <app-product-showcase-section data-tone="calidad"
+        type="top-rated"
+        [title]="'home.topRated' | translate"
+        [linkParams]="{ rating: '5' }"/>
 
-    <section class="section last" style="padding: 0 !important; margin: 0 !important;">
-        <app-product-showcase-section
-            type="new-arrivals"
-            [title]="'home.newArrivals' | translate"
-            [linkParams]="{ new: 'true' }"/>
+    <app-product-showcase-section data-tone="novedad"
+        type="new-arrivals"
+        [title]="'home.newArrivals' | translate"
+        [linkParams]="{ new: 'true' }"/>
+
+    <!-- CATÁLOGO — grilla con «ver más», verde: seguir explorando sin presión -->
+    <section class="panel" data-tone="ahorro">
+        <header class="head">
+            <div class="title-row">
+                <span class="chip"><lucide-icon name="shopping-bag" [size]="18"/></span>
+                <h2>Sigue explorando</h2>
+            </div>
+            <a class="more" [routerLink]="['/products']">Ver catálogo →</a>
+        </header>
+        <app-flash-deals-section vista="grid"/>
     </section>
 
 </div>
 
 <style>
-    .ds-home { font-family: var(--f-sans); color: var(--c-text); }
+    .ds-home {
+        /* ── Los seis tonos. Cambiar aquí repinta toda la tienda. ── */
+        --psy-urgencia:  #D92D20;            /* rojo: urgencia, escasez → ofertas */
+        --psy-impulso:   var(--c-accent);    /* naranja: energía, acción → más vendidos */
+        --psy-calidad:   #C99400;            /* ámbar: valor, optimismo → mejor valorados */
+        --psy-ahorro:    var(--c-success);   /* verde: ahorro, tranquilidad → envío, catálogo */
+        --psy-confianza: var(--c-brand);     /* azul: seguridad → pagos, recomendaciones */
+        --psy-novedad:   #6D3FD1;            /* violeta: novedad, exclusividad → lo nuevo */
+        --tint: 11%;                         /* cuánta tinta lleva un fondo teñido */
+        --ink:  80%;                         /* cuánta tinta lleva un texto teñido */
 
-    /* ── HERO — gap controlado por .ds-home flex ── */
-    .hero-grid {
-        width: 100%;
-        padding: 0;
-        display: grid; grid-template-columns: 1fr 320px; gap: 8px;
-        align-items: stretch;        /* hero y side-stack misma altura — sin saltos */
+        font-family: var(--f-sans); color: var(--c-text);
+        background: var(--c-bg); min-height: 100%;
+        display: flex; flex-direction: column; gap: 16px;
+        padding: 16px 0 24px;
     }
+    /* la capa base da margen inferior a todo <section>; aquí el ritmo lo pone el gap */
+    .ds-home > section { margin: 0; }
+    .ds-home [data-tone="urgencia"]  { --tone: var(--psy-urgencia); }
+    .ds-home [data-tone="impulso"]   { --tone: var(--psy-impulso); }
+    .ds-home [data-tone="calidad"]   { --tone: var(--psy-calidad); }
+    .ds-home [data-tone="ahorro"]    { --tone: var(--psy-ahorro); }
+    .ds-home [data-tone="confianza"] { --tone: var(--psy-confianza); }
+    .ds-home [data-tone="novedad"]   { --tone: var(--psy-novedad); }
+    .ds-home [data-tone] {
+        --tone-soft: color-mix(in srgb, var(--tone) var(--tint), var(--c-surface));
+        --tone-ink:  color-mix(in srgb, var(--tone) var(--ink), var(--c-text));
+    }
+
+    /* ── HERO ── */
     .hero {
         position: relative; border-radius: var(--r-xl); overflow: hidden;
         background: linear-gradient(110deg, var(--c-brand) 0%, var(--c-brandHi) 60%, var(--c-accent2, var(--c-brand)) 100%);
+        background-size: cover; background-position: center;
         /* padding-left amplio para que el chevron-left no se superponga al contenido */
         padding: 24px 32px 20px 15%;
         color: #fff;
         display: flex; flex-direction: column; justify-content: center; gap: 8px;
         /* min-height fija evita que el hero se "contraiga" al cambiar texto del slider
            o al cargar el banner async; el contenido se centra verticalmente. */
-        min-height: 280px;
+        min-height: 320px;
         height: 100%;
     }
     .hero-title {
@@ -293,127 +295,146 @@
     .hero-nav.left  { left: 12px; }
     .hero-nav.right { right: 12px; }
 
-    .side-stack { display: grid; grid-template-rows: 1fr 1fr; gap: 10px; }
-    .side-promo {
-        border: 1px solid var(--c-border);
-        border-radius: var(--r-lg);
-        padding: 10px 14px;
-        display: flex; flex-direction: column;
-        justify-content: flex-start; gap: 4px;
-    }
-    .side-promo.light  { background: var(--c-surface); }
-    .side-promo.raised { background: var(--c-surface2); }
-    .side-promo h3 {
-        font-size: 18px; font-weight: 700;
-        margin: 4px 0 2px; color: var(--c-text);
-        font-family: var(--f-sans);
-    }
-    .side-promo p { font-size: 13px; margin: 0; color: var(--c-muted); }
-    .side-cta {
-        color: var(--c-brand);
-        font-size: 13px; font-weight: 700;
-        margin-top: 4px; cursor: pointer; text-decoration: none;
-    }
 
-    /* ── TRUST STRIP — gap controlado por .ds-home flex ── */
-    .trust-wrap { width: 100%; padding: 0; }
+    /* ── BENEFICIOS ── */
     .trust {
         background: var(--c-surface);
         border: 1px solid var(--c-border);
         border-radius: var(--r-lg);
-        padding: 10px 16px;
-        display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
+        padding: 12px 16px;
+        display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;
     }
     .trust-item { display: flex; gap: 12px; align-items: center; }
     .trust-icon {
-        width: 40px; height: 40px;
-        background: var(--c-surface2);
-        color: var(--c-brand);
-        border-radius: var(--r-md);
+        width: 40px; height: 40px; flex-shrink: 0;
+        background: var(--tone-soft); color: var(--tone-ink);
+        border-radius: 999px;
         display: inline-flex; align-items: center; justify-content: center;
     }
     .trust-t { font-size: 14px; font-weight: 700; color: var(--c-text); }
     .trust-s { font-size: 12px; color: var(--c-muted); }
 
-    /* ── SECTIONS GENERICAS — gap controlado por .ds-home flex (4px global) ── */
-    .section {
-        width: 100%;
-        padding: 0;                 /* el gap del .ds-home flex ya separa las secciones */
+    /* ── ATAJOS ── */
+    .atajos { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+    .atajo {
+        display: flex; align-items: center; gap: 12px;
+        padding: 14px 16px;
+        background: var(--tone-soft);
+        border: 1px solid color-mix(in srgb, var(--tone) 28%, var(--c-surface));
+        border-radius: var(--r-lg);
+        color: var(--c-text); text-decoration: none; cursor: pointer;
+        transition: transform 150ms, box-shadow 150ms, background 150ms;
     }
-    .section.last { padding-bottom: 16px; }
-    .section-head {
-        display: flex; align-items: baseline; justify-content: space-between;
-        margin-bottom: 16px;          /* RESTAURADO al original — no toca el header */
+    .atajo:hover {
+        transform: translateY(-2px);
+        background: color-mix(in srgb, var(--tone) 18%, var(--c-surface));
+        box-shadow: 0 10px 24px -12px var(--tone);
     }
-    .section-head h2 {
-        font-family: var(--f-display);
-        font-size: 24px; font-weight: 800;
-        color: var(--c-text);
-        margin: 0; letter-spacing: -0.02em;
+    .atajo:focus-visible, .cat:focus-visible { outline: 2px solid var(--tone); outline-offset: 2px; }
+    .atajo-ic {
+        width: 44px; height: 44px; flex-shrink: 0; border-radius: 999px;
+        background: var(--tone); color: #fff;
+        display: inline-flex; align-items: center; justify-content: center;
     }
-    .link-action {
-        color: var(--c-brand);
-        font-size: 13px; font-weight: 700;
-        cursor: pointer; text-decoration: none;
-    }
+    .atajo-txt { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+    .atajo-txt b { font-size: 15px; font-weight: 700; }
+    .atajo-txt small { font-size: 12px; color: var(--c-muted); }
+    .atajo-go { color: var(--tone-ink); transition: transform 150ms; }
+    .atajo:hover .atajo-go { transform: translateX(3px); }
 
-    /* ── CATEGORÍAS ─────────────────────────────────── */
-    .cat-grid {
-        display: grid;
-        grid-template-columns: repeat(8, 1fr); gap: 12px;
-    }
-
-    /* ── FLASH DEALS ────────────────────────────────── */
-    .flash-card {
+    /* ── PANEL — mismo marco que los carruseles ── */
+    .panel {
         background: var(--c-surface);
-        border: 2px solid var(--c-brand);
+        border: 1px solid var(--c-border);
         border-radius: var(--r-xl);
-        overflow: hidden;
+        padding: 16px 20px 8px;
     }
-    .flash-bar {
-        background: var(--c-brand);
-        color: var(--c-onBrand, #fff);
-        padding: 12px 20px;
-        display: flex; align-items: center; justify-content: space-between; gap: 12px;
-    }
-    .flash-left { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-    .flash-title {
-        font-family: var(--f-display);
-        font-size: 22px; font-weight: 800; letter-spacing: .01em;
-    }
-    .flash-meta { font-size: 13px; opacity: .9; }
-    .flash-clock { display: inline-flex; gap: 4px; align-items: center; }
-    .flash-num {
-        background: rgba(0, 0, 0, .3);
-        padding: 2px 6px; border-radius: 4px;
-        font-weight: 800; font-size: 14px;
-        min-width: 26px; text-align: center;
-    }
-    .flash-link {
-        color: var(--c-onBrand, #fff);
-        font-size: 13px; font-weight: 700;
-        cursor: pointer; text-decoration: none;
-    }
-    .flash-body { padding: 16px; }
-
-    /* ── PARA TI — showcase inline (mismo patrón que ds-showcase) ── */
-    .ds-showcase { font-family: var(--f-sans); }
     .head {
-        display: flex; justify-content: space-between; align-items: baseline;
-        margin-bottom: 8px;
+        display: flex; justify-content: space-between; align-items: center;
+        margin-bottom: 10px;
     }
-    .title-row { display: flex; align-items: center; gap: 8px; }
-    .title-row h2 {
+    .title-row { display: flex; align-items: center; gap: 10px; }
+    .head h2 {
         font-family: var(--f-display);
-        font-size: 24px; font-weight: 800;
+        font-size: 22px; font-weight: 800;
         color: var(--c-text);
         margin: 0; letter-spacing: -0.02em;
     }
-    .ic.para-ti { color: var(--c-brand); }
+    .chip {
+        width: 34px; height: 34px; border-radius: 999px;
+        display: inline-flex; align-items: center; justify-content: center;
+        background: var(--tone-soft); color: var(--tone-ink);
+    }
     .more {
-        color: var(--c-brand); font-size: 13px; font-weight: 700;
+        color: var(--tone-ink); background: var(--tone-soft);
+        font-size: 13px; font-weight: 700;
+        padding: 6px 12px; border-radius: 999px;
         text-decoration: none; cursor: pointer;
     }
+
+    /* ── CATEGORÍAS ── */
+    /* Una sola fila: caben las que caben y el resto se recorta (para eso está «Ver todas»).
+       En móvil la fila se desliza con el dedo. */
+    .cat-row {
+        display: grid; gap: 8px;
+        grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+        grid-template-rows: auto; grid-auto-rows: 0;
+        overflow: hidden; padding: 4px 2px 12px;
+    }
+    @media (max-width: 640px) {
+        .cat-row { display: flex; overflow-x: auto; scrollbar-width: none; }
+        .cat { flex: 0 0 84px; }
+    }
+    .cat {
+        display: flex; flex-direction: column; align-items: center; gap: 8px;
+        background: none; border: none; padding: 4px; cursor: pointer;
+        font-family: inherit; color: var(--c-text); border-radius: var(--r-md);
+    }
+    .cat-ring {
+        width: 84px; height: 84px; border-radius: 999px; overflow: hidden;
+        background: var(--tone-soft); color: var(--tone-ink);
+        border: 2px solid color-mix(in srgb, var(--tone) 35%, var(--c-surface));
+        display: inline-flex; align-items: center; justify-content: center;
+        font-family: var(--f-display); font-size: 30px; font-weight: 800;
+        transition: transform 150ms, border-color 150ms, box-shadow 150ms;
+    }
+    .cat-ring img { width: 100%; height: 100%; object-fit: cover; }
+    .cat:hover .cat-ring {
+        transform: translateY(-3px); border-color: var(--tone);
+        box-shadow: 0 10px 20px -10px var(--tone);
+    }
+    .cat-name { font-size: 13px; font-weight: 600; text-align: center; line-height: 1.25; }
+    .cat:hover .cat-name { color: var(--tone-ink); }
+
+    /* ── OFERTAS RELÁMPAGO ── */
+    .flash-card {
+        background: var(--c-surface);
+        border: 1px solid color-mix(in srgb, var(--tone) 35%, var(--c-surface));
+        border-radius: var(--r-xl);
+        overflow: hidden;
+        scroll-margin-top: 16px;
+    }
+    .flash-bar {
+        background: linear-gradient(100deg, var(--psy-urgencia), color-mix(in srgb, var(--psy-urgencia) 45%, var(--psy-impulso)));
+        color: #fff;
+        padding: 12px 20px;
+        display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    }
+    .flash-title {
+        font-family: var(--f-display);
+        font-size: 22px; font-weight: 800; letter-spacing: -0.01em;
+    }
+    .flash-meta { font-size: 13px; opacity: .92; margin-left: 8px; }
+    .flash-clock { display: inline-flex; gap: 4px; align-items: center; font-weight: 800; }
+    .flash-num {
+        background: #fff; color: var(--psy-urgencia);
+        padding: 3px 7px; border-radius: 6px;
+        font-weight: 800; font-size: 15px; font-variant-numeric: tabular-nums;
+        min-width: 30px; text-align: center;
+    }
+    .flash-body { padding: 16px 20px 4px; }
+
+    /* ── CARRUSEL «PARA TI» ── */
     .strip { position: relative; }
     .nav-btn {
         position: absolute; top: 50%; transform: translateY(-50%);
@@ -427,8 +448,8 @@
         opacity: .9; transition: opacity 120ms, transform 120ms, background 120ms;
     }
     .nav-btn:hover {
-        opacity: 1; background: var(--c-brand); color: var(--c-onBrand, #fff);
-        border-color: var(--c-brand);
+        opacity: 1; background: var(--tone, var(--c-brand)); color: #fff;
+        border-color: var(--tone, var(--c-brand));
     }
     .nav-btn.left  { left: -12px; }
     .nav-btn.right { right: -12px; }
@@ -444,17 +465,21 @@
         scroll-snap-align: start;
     }
 
-    /* ── RESPONSIVE ─────────────────────────────────── */
+    /* ── RESPONSIVE ── */
     @media (max-width: 1024px) {
-        .hero-grid { grid-template-columns: 1fr; }
-        .cat-grid { grid-template-columns: repeat(4, 1fr); }
-        .trust { grid-template-columns: repeat(2, 1fr); }
+        .atajos { grid-template-columns: repeat(2, 1fr); }
     }
     @media (max-width: 640px) {
-        .hero { padding: 28px 24px 28px 18%; min-height: 220px; }
+        /* el arte del banner vive a la derecha: en angosto quedaría detrás del texto */
+        .hero { padding: 28px 24px 28px 18%; min-height: 220px; background-position: left center; }
         .hero-title { font-size: 36px; }
-        .cat-grid { grid-template-columns: repeat(2, 1fr); }
-        .trust { grid-template-columns: 1fr; }
-        .flash-title { font-size: 18px; }
+        .atajo { padding: 10px 12px; }
+        .atajo-txt small, .atajo-go { display: none; }
+        .panel { padding: 12px 12px 4px; }
+        .flash-title, .head h2 { font-size: 18px; }
+        .cat-ring { width: 68px; height: 68px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .atajo, .atajo-go, .cat-ring { transition: none; }
     }
 </style>

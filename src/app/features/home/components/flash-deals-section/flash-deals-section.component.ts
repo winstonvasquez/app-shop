@@ -1,5 +1,5 @@
 import {
-    Component, inject, signal, computed,
+    Component, inject, input, signal, computed,
     ChangeDetectionStrategy, effect, untracked,
     ViewChild, ElementRef,
 } from '@angular/core';
@@ -29,6 +29,9 @@ const FLASH_HORAS = 18;
 })
 export class FlashDealsSectionComponent {
     @ViewChild('scrollContainer') scrollContainer?: ElementRef<HTMLDivElement>;
+
+    /** `strip`: carrusel de las destacadas (ofertas). `grid`: el resto del catálogo con «ver más». */
+    vista = input<'strip' | 'grid'>('strip');
 
     private productService = inject(ProductService);
     private router = inject(Router);

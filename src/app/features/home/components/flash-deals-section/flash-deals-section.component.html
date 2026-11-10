@@ -4,7 +4,8 @@
 -->
 <div class="ds-flash">
 
-    <div class="strip" #stripWrap>
+    @if (vista() === 'strip') {
+    <div class="strip">
         <button (click)="scroll(-1)" class="nav-btn left" aria-label="Anterior">
             <lucide-icon name="chevron-left" [size]="16"/>
         </button>
@@ -29,7 +30,7 @@
             <lucide-icon name="chevron-right" [size]="16"/>
         </button>
     </div>
-
+    } @else {
     @if (remainingProducts().length > 0) {
         <div class="grid">
             @for (product of remainingProducts(); track product.id) {
@@ -52,6 +53,7 @@
             </button>
         }
     </div>
+    }
 </div>
 
 <style>
@@ -69,8 +71,8 @@
         opacity: .9; transition: opacity 120ms, background 120ms;
     }
     .nav-btn:hover {
-        opacity: 1; background: var(--c-brand); color: var(--c-onBrand, #fff);
-        border-color: var(--c-brand);
+        opacity: 1; background: var(--tone, var(--c-brand)); color: #fff;
+        border-color: var(--tone, var(--c-brand));
     }
     .nav-btn.left  { left: -12px; }
     .nav-btn.right { right: -12px; }
