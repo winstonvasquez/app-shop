@@ -75,8 +75,12 @@
     <div class="drawer-form-grid">
       <div class="col-span-2">
         <label class="input-label">Tipo de Movimiento <span class="text-error">*</span></label>
-        <app-catalog-select tabla="TIPO_MOVIMIENTO_INVENTARIO" formControlName="movementType"
-          placeholder="Seleccionar..."></app-catalog-select>
+        <select class="form-control" formControlName="movementType">
+          <option value="">Seleccionar...</option>
+          @for (t of tiposManuales(); track t.codigo) {
+            <option [value]="t.codigo">{{ t.valor }}</option>
+          }
+        </select>
       </div>
 
       <div>
@@ -152,7 +156,7 @@
       </div>
 
       <app-form-field label="Motivo" [control]="getCtrl('reason')"
-        type="text" placeholder="Motivo del movimiento" />
+        type="text" placeholder="Motivo del movimiento" [required]="motivoRequerido()" />
 
       <div>
         <label class="input-label">Tipo Referencia</label>

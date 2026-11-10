@@ -73,6 +73,8 @@ export class EnviosPageComponent implements OnInit {
     // Avanzar estado (transportistas sin integración de tracking API)
     showAdvance       = signal(false);
     advanceTarget     = signal<Envio | null>(null);
+    /** Estado destino de la acción abierta (avanzar, entrega fallida, reintento, devuelto, cancelar). */
+    advanceStatus     = signal<EnvioStatus | null>(null);
     advancing         = signal(false);
     advanceError      = signal<string | null>(null);
 
@@ -82,6 +84,19 @@ export class EnviosPageComponent implements OnInit {
         DISPATCHED:       'IN_TRANSIT',
         IN_TRANSIT:       'OUT_FOR_DELIVERY'
     };
+
+    /**
+     * Transiciones fuera de la línea recta que el backend permite (ShipmentCommandService.TRANSICIONES).
+     * RETURNED/CANCELLED sólo cambian el estado del envío: no reingresan stock ni tocan el pedido.
+     */
+    private readonly ACCIONES_ESTADO: { label: string; icon: string; class: string; to: EnvioStatus; from: EnvioStatus[] }[] = [
+        { label: 'Entrega fallida', icon: '⚠️', class: 'btn-danger', to: 'FAILED_DELIVERY',
+          from: ['DISPATCHED', 'IN_TRANSIT', 'OUT_FOR_DELIVERY'] },
+        { label: 'Reintentar entrega', icon: '🔁', class: 'btn-view', to: 'OUT_FOR_DELIVERY', from: ['FAILED_DELIVERY'] },
+        { label: 'Marcar devuelto', icon: '↩️', class: 'btn-view', to: 'RETURNED',
+          from: ['DISPATCHED', 'IN_TRANSIT', 'OUT_FOR_DELIVERY', 'FAILED_DELIVERY'] },
+        { label: 'Cancelar envío', icon: '✖️', class: 'btn-danger', to: 'CANCELLED', from: ['PENDING_DISPATCH'] },
+    ];
 
     // Confirmación de entrega (POD) con GPS
     showConfirm       = signal(false);
@@ -183,13 +198,18 @@ export class EnviosPageComponent implements OnInit {
         {
             label: 'Avanzar estado', icon: '🚚', class: 'btn-view',
             show: (row) => row.status in this.NEXT_STATUS,
-            onClick: (row) => this.openAdvance(row)
+            onClick: (row) => this.openAdvance(row, this.NEXT_STATUS[row.status])
         },
         {
             label: 'Confirmar entrega', icon: '📍', class: 'btn-primary',
             show: (row) => row.status === 'OUT_FOR_DELIVERY',
             onClick: (row) => this.openConfirm(row)
-        }
+        },
+        ...this.ACCIONES_ESTADO.map((a): TableAction<Envio> => ({
+            label: a.label, icon: a.icon, class: a.class,
+            show: (row) => a.from.includes(row.status),
+            onClick: (row) => this.openAdvance(row, a.to)
+        }))
     ];
 
     form: FormGroup;
@@ -394,9 +414,11 @@ export class EnviosPageComponent implements OnInit {
         });
     }
 
-    // ── Avanzar estado (PENDING_DISPATCH → DISPATCHED → IN_TRANSIT → OUT_FOR_DELIVERY) ──
-    openAdvance(envio: Envio): void {
+    // ── Cambio de estado: avanzar, entrega fallida, reintento, devuelto, cancelar ──
+    openAdvance(envio: Envio, to: EnvioStatus | undefined): void {
+        if (!to) return;
         this.advanceTarget.set(envio);
+        this.advanceStatus.set(to);
         this.advanceForm.reset();
         this.advanceError.set(null);
         this.showAdvance.set(true);
@@ -405,20 +427,19 @@ export class EnviosPageComponent implements OnInit {
     closeAdvance(): void {
         this.showAdvance.set(false);
         this.advanceTarget.set(null);
+        this.advanceStatus.set(null);
     }
 
     /** Estado destino legible para el envío actualmente en el drawer (o '' si no aplica). */
     nextStatusLabel(): string {
-        const envio = this.advanceTarget();
-        if (!envio) return '';
-        const next = this.NEXT_STATUS[envio.status];
+        const next = this.advanceStatus();
         return next ? this.statusLabel(next) : '';
     }
 
     submitAdvance(): void {
         const envio = this.advanceTarget();
         if (!envio) return;
-        const next = this.NEXT_STATUS[envio.status];
+        const next = this.advanceStatus();
         if (!next) return;
         if (this.advanceForm.invalid) { this.advanceForm.markAllAsTouched(); return; }
         const v = this.advanceForm.getRawValue();

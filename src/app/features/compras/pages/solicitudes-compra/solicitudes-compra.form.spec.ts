@@ -290,7 +290,7 @@ describe('claseBadgeEstadoSolicitud', () => {
 
     it('borrador y cancelada son neutras: ninguna exige acción del aprobador', () => {
         expect(claseBadgeEstadoSolicitud('BORRADOR')).toBe('badge badge-neutral');
-        expect(claseBadgeEstadoSolicitud('CANCELADA')).toBe('badge badge-neutral');
+        expect(claseBadgeEstadoSolicitud('CANCELADA')).toBe('badge badge-error');
     });
 
     it('cae a neutro sin estado o ante un estado desconocido', () => {

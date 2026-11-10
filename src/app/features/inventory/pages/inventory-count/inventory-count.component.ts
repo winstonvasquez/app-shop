@@ -1,8 +1,9 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import {
     FormBuilder, ReactiveFormsModule, Validators, FormGroup, FormArray, FormControl
 } from '@angular/forms';
 import { InventoryApiService } from '../../services/inventory-api.service';
+import { ProductsApiService } from '@features/products/services/products-api.service';
 import { InventoryCount, InventoryCountDetail, InventoryCountStatus, Warehouse } from '../../models/inventory.models';
 import {
     DataTableComponent, TableColumn, TableAction, PaginationEvent, FilterConfig, FilterChangeEvent,
@@ -42,6 +43,7 @@ import { conteoCrearPayload } from './inventory-count.form';
 })
 export class InventoryCountComponent {
     private readonly api = inject(InventoryApiService);
+    private readonly productsApi = inject(ProductsApiService);
     private readonly fb = inject(FormBuilder);
     readonly catalog = inject(CatalogService);
 
@@ -89,9 +91,16 @@ export class InventoryCountComponent {
 
     showDetailDrawer = signal(false);
     detailTarget = signal<InventoryCount | null>(null);
+    /** Nombres de producto del detalle abierto; mientras no llegan, la columna cae a «Producto #id». */
+    private readonly productNames = signal<Map<number, string>>(new Map());
+    /** Líneas con referencia nueva al llegar los nombres, para que la tabla se repinte. */
+    readonly detailRows = computed(() => {
+        this.productNames();
+        return (this.detailTarget()?.details ?? []).map(d => ({ ...d }));
+    });
 
     detailColumns: TableColumn<InventoryCountDetail>[] = [
-        { key: 'productId', label: 'Producto', render: (r) => `#${r.productId}` },
+        { key: 'productId', label: 'Producto', render: (r) => this.productNames().get(r.productId) ?? `Producto #${r.productId}` },
         { key: 'systemQuantity', label: 'Cant. Sistema', align: 'right',
           render: (r) => r.systemQuantity.toLocaleString('es-PE') },
         { key: 'countedQuantity', label: 'Cant. Contada', align: 'right',
@@ -339,6 +348,11 @@ export class InventoryCountComponent {
     openDetail(count: InventoryCount): void {
         this.detailTarget.set(count);
         this.showDetailDrawer.set(true);
+        // Mismo resolvedor en bloque que stock-view; si falla, queda «Producto #id».
+        this.productsApi.getProducts({ page: 0, size: 500 }).subscribe({
+            next: (page) => this.productNames.set(new Map(page.content.map(p => [p.id, p.nombre]))),
+            error: () => this.productNames.set(new Map())
+        });
     }
 
     closeDetailDrawer(): void {

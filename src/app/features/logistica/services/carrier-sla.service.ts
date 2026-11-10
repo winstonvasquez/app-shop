@@ -11,6 +11,7 @@ import {
     RecommendationParams
 } from '../models/carrier-sla.model';
 import { toHttpParams } from '@core/utils/http-params.util';
+import { mapHttpError } from '@features/inventory/utils/map-http-error';
 
 /**
  * Servicio de SLA/performance/recomendación de transportistas.
@@ -28,28 +29,28 @@ export class CarrierSlaService {
 
     // ── SLA CRUD (CarrierSlaController: /api/carriers/{carrierId}/sla) ──────
     getSlas(carrierId: string): Observable<CarrierSla[]> {
-        return this.http.get<CarrierSla[]>(`${this.baseUrl}/${carrierId}/sla`);
+        return this.http.get<CarrierSla[]>(`${this.baseUrl}/${carrierId}/sla`).pipe(mapHttpError());
     }
 
     createSla(carrierId: string, body: CarrierSlaRequest): Observable<CarrierSla> {
-        return this.http.post<CarrierSla>(`${this.baseUrl}/${carrierId}/sla`, body);
+        return this.http.post<CarrierSla>(`${this.baseUrl}/${carrierId}/sla`, body).pipe(mapHttpError());
     }
 
     updateSla(carrierId: string, slaId: string, body: CarrierSlaRequest): Observable<CarrierSla> {
-        return this.http.put<CarrierSla>(`${this.baseUrl}/${carrierId}/sla/${slaId}`, body);
+        return this.http.put<CarrierSla>(`${this.baseUrl}/${carrierId}/sla/${slaId}`, body).pipe(mapHttpError());
     }
 
     deleteSla(carrierId: string, slaId: string): Observable<void> {
-        return this.http.delete<void>(`${this.baseUrl}/${carrierId}/sla/${slaId}`);
+        return this.http.delete<void>(`${this.baseUrl}/${carrierId}/sla/${slaId}`).pipe(mapHttpError());
     }
 
     // ── Performance / Dashboard (CarrierController) ─────────────────────────
     getPerformance(carrierId: string): Observable<CarrierPerformanceMetric[]> {
-        return this.http.get<CarrierPerformanceMetric[]>(`${this.baseUrl}/${carrierId}/performance`);
+        return this.http.get<CarrierPerformanceMetric[]>(`${this.baseUrl}/${carrierId}/performance`).pipe(mapHttpError());
     }
 
     getDashboard(carrierId: string): Observable<CarrierDashboard> {
-        return this.http.get<CarrierDashboard>(`${this.baseUrl}/${carrierId}/dashboard`);
+        return this.http.get<CarrierDashboard>(`${this.baseUrl}/${carrierId}/dashboard`).pipe(mapHttpError());
     }
 
     /**
@@ -64,6 +65,6 @@ export class CarrierSlaService {
             provincia: params.provincia,
             serviceType: params.serviceType,
         });
-        return this.http.get<CarrierRecommendation[]>(`${this.baseUrl}/recommend`, { params: httpParams });
+        return this.http.get<CarrierRecommendation[]>(`${this.baseUrl}/recommend`, { params: httpParams }).pipe(mapHttpError());
     }
 }

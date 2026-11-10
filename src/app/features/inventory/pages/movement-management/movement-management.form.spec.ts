@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { MovimientoFormValue, movimientoCrearPayload } from './movement-management.form';
+import { MovimientoFormValue, motivoObligatorio, movimientoCrearPayload, TIPOS_MOVIMIENTO_MANUALES } from './movement-management.form';
 
 const BASE: MovimientoFormValue = {
     productId: 1, warehouseId: 2, movementType: 'ENTRADA_COMPRA',
@@ -57,5 +57,20 @@ describe('movimientoCrearPayload', () => {
         expect(p.movementType).toBe('ENTRADA_AJUSTE');
         // `yyyy-MM-dd` a secas daba 400 en el backend (LocalDateTime).
         expect(p.movementDate).toMatch(/^2026-12-31T\d{2}:\d{2}:\d{2}$/);
+    });
+});
+
+describe('tipos manuales y motivo', () => {
+    it('los tipos reservados a otros documentos no son manuales', () => {
+        for (const t of ['SALIDA_VENTA', 'ENTRADA_COMPRA', 'ENTRADA_TRANSFERENCIA', 'SALIDA_TRANSFERENCIA']) {
+            expect(TIPOS_MOVIMIENTO_MANUALES).not.toContain(t);
+        }
+    });
+
+    it('el motivo es obligatorio en ajustes, merma y consumo, no en devolución', () => {
+        expect(motivoObligatorio('SALIDA_MERMA')).toBe(true);
+        expect(motivoObligatorio('ENTRADA_AJUSTE')).toBe(true);
+        expect(motivoObligatorio('SALIDA_CONSUMO')).toBe(true);
+        expect(motivoObligatorio('ENTRADA_DEVOLUCION')).toBe(false);
     });
 });

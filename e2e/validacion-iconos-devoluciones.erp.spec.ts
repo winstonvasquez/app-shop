@@ -11,7 +11,8 @@ test('los iconos de eliminar del gestor de footer se ven', async ({ page }) => {
     await page.goto('/admin/footer-manager');
     await page.waitForTimeout(3500);
 
-    const iconos = page.locator('button svg, button lucide-icon svg');
+    // :visible — el botón de menú móvil del header (oculto por CSS en escritorio) mide 0x0 a propósito.
+    const iconos = page.locator('button:visible svg');
     const n = await iconos.count();
     expect(n, 'la pantalla debe tener botones con icono').toBeGreaterThan(0);
 

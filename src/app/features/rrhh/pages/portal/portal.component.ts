@@ -1,10 +1,12 @@
 import { Component, OnInit, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
 import { AlertComponent } from '@shared/ui/feedback/alert/alert.component';
 import { ButtonComponent } from '@shared/components';
 import { DataTableComponent, TableColumn } from '@shared/ui/tables/data-table/data-table.component';
 import { DateInputComponent } from '@shared/ui/forms/date-input/date-input.component';
+import { mensajeDeErrorHttp } from '@core/utils/http-error.util';
 import { CatalogService } from '@core/services/catalog.service';
 import { SelfServiceService } from '../../services/self-service.service';
 import { Employee } from '../../models/employee.model';
@@ -44,6 +46,8 @@ export class PortalComponent implements OnInit {
     // ── Mi Asistencia (mes) ───────────────────────────────────────────────
     attendanceMonth = signal<string>(currentMonth());
     attendanceLoading = signal(false);
+    marcando = signal(false);
+    marcacionError = signal<string | null>(null);
 
     // ── Mis Vacaciones: solicitar (form basado en signals, no reactive forms) ──
     showVacationForm = signal(false);
@@ -216,6 +220,21 @@ export class PortalComponent implements OnInit {
             this.attendance.set([]);
         } finally {
             this.attendanceLoading.set(false);
+        }
+    }
+
+    /** Marca la entrada o salida del propio empleado (el backend lo resuelve del JWT; el body no lleva employeeId). */
+    async marcar(tipo: 'entrada' | 'salida'): Promise<void> {
+        this.marcando.set(true);
+        this.marcacionError.set(null);
+        try {
+            await (tipo === 'entrada' ? this.selfService.checkIn() : this.selfService.checkOut());
+            await this.loadAttendance();
+        } catch (err) {
+            this.marcacionError.set(err instanceof HttpErrorResponse
+                ? mensajeDeErrorHttp(err) : 'No se pudo registrar la marcación.');
+        } finally {
+            this.marcando.set(false);
         }
     }
 

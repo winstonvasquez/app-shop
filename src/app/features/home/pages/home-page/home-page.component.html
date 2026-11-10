@@ -42,7 +42,7 @@
                 }
             </h1>
             <p class="hero-sub">
-                {{ heroBanner()?.subtitulo ?? 'Tecnología, hogar y moda con descuentos que no se repiten. Envío gratis en compras desde S/ 99.' }}
+                {{ heroBanner()?.subtitulo ?? heroSubDefault() }}
             </p>
             <div class="hero-actions">
                 <ds-button variant="accent" size="lg" iconRight="arrow-right" (click)="onHeroCta()">
@@ -100,7 +100,7 @@
          ════════════════════════════════════════════════════════ -->
     <section class="trust-wrap" style="padding: 0 !important; margin: 0 !important;">
         <div class="trust">
-            @for (t of trustItems; track t.title) {
+            @for (t of trustItems(); track t.title) {
                 <div class="trust-item">
                     <div class="trust-icon">
                         <lucide-icon [name]="t.icon" [size]="22"/>

@@ -1,4 +1,5 @@
-import { Component, input, output, signal, computed } from '@angular/core';
+import { Component, inject, input, output, signal, computed } from '@angular/core';
+import { ZonaEnvioService } from '@core/services/zona-envio.service';
 import { Variant } from '@features/products/models/variant.model';
 import { NgClass } from '@angular/common';
 import { TranslateModule } from '@ngx-translate/core';
@@ -21,6 +22,10 @@ export class ProductVariantsComponent {
   product = input<ProductVariantsMeta>();
   variants = input.required<Variant[]>();
   addToCart = output<{ variant: Variant, quantity: number }>();
+
+  /** Umbral real de envío gratis; null = no se promete. */
+  readonly umbralEnvioGratis = inject(ZonaEnvioService).envioGratisDesde;
+  constructor() { inject(ZonaEnvioService).cargarUmbral(); }
 
   selectedVariantIndex = signal<number>(0);
   quantity = signal<number>(1);

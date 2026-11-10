@@ -37,5 +37,15 @@ export class PosReceiptComponent {
         return (val ?? 0).toFixed(2);
     }
 
+    tipoDocLabel(tipo: string | null | undefined): string {
+        switch (tipo) {
+            case '1': return 'DNI';
+            case '6': return 'RUC';
+            case '4': return 'CE';
+            case '7': return 'Pasaporte';
+            default: return 'Documento';
+        }
+    }
+
     // «Enviar recibo por email» retirado: el backend respondía `queued` y nunca enviaba nada.
 }

@@ -37,10 +37,8 @@ describe('mapearProductoADsProduct', () => {
         expect(mapearProductoADsProduct(producto()).badge).toBeUndefined();
     });
 
-    it('el envío gratis se deduce del precio, desde S/ 99', () => {
-        expect(mapearProductoADsProduct(producto({ precioBase: 99 })).shipFree).toBe(true);
-        expect(mapearProductoADsProduct(producto({ precioBase: 98.99 })).shipFree).toBe(false);
-        expect(mapearProductoADsProduct(producto({ precioBase: undefined })).shipFree).toBe(false);
+    it('no promete envío gratis por su cuenta: el umbral real lo aplica quien lo conoce', () => {
+        expect(mapearProductoADsProduct(producto({ precioBase: 500 })).shipFree).toBeUndefined();
     });
 
     it('el sello de vendedor destacado sólo aparece si starSeller', () => {

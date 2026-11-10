@@ -47,7 +47,7 @@
     }
 
     <p class="text-sm text-subtle mb-sm">
-      Producto #{{ selectedStock()?.productId }} — {{ selectedStock()?.warehouseName }}
+      {{ productName(selectedStock()?.productId) }} — {{ selectedStock()?.warehouseName }}
     </p>
 
     <app-form-field label="Stock mínimo" [control]="getThresholdsCtrl('minimumStock')"

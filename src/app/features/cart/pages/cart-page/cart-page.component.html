@@ -20,24 +20,24 @@
         <div class="left">
 
             <!-- Free shipping progress -->
-            @if (cartItems().length > 0) {
-                <div class="free-strip" [class.is-complete]="missingForFree() === 0">
+            @if (cartItems().length > 0 && envioGratis(); as eg) {
+                <div class="free-strip" [class.is-complete]="eg.gratis">
                     <lucide-icon name="truck" [size]="20" class="strip-ic"/>
                     <div class="strip-body">
                         <div class="strip-title">
-                            @if (missingForFree() === 0) {
-                                ¡Envío gratis premium aplicado!
+                            @if (eg.gratis) {
+                                ¡Envío gratis!
                             } @else {
-                                ¡Te faltan
-                                <strong>S/ {{ missingForFree().toFixed(2) }}</strong>
-                                para envío gratis premium!
+                                Te faltan
+                                <strong>S/ {{ eg.falta.toFixed(2) }}</strong>
+                                para envío gratis
                             }
                         </div>
                         <div class="strip-track">
-                            <div class="strip-fill" [style.width.%]="freeProgress()"></div>
+                            <div class="strip-fill" [style.width.%]="eg.progreso"></div>
                         </div>
                     </div>
-                    @if (missingForFree() > 0) {
+                    @if (!eg.gratis) {
                         <ds-button variant="ghost" size="sm" routerLink="/products">Agregar productos</ds-button>
                     }
                 </div>
@@ -94,9 +94,6 @@
                                 <h4 class="row-name">{{ item.name }}</h4>
                                 @if (item.variantName) {
                                     <div class="row-variant">{{ item.variantName }}</div>
-                                }
-                                @if (item.price >= 99) {
-                                    <ds-badge tone="success" size="xs">Envío gratis</ds-badge>
                                 }
                                 <div class="row-controls">
                                     <div class="qty-mini">
@@ -161,7 +158,7 @@
                     }
                     <div class="sum-row">
                         <span class="muted">Envío</span>
-                        <span class="ok strong">{{ missingForFree() === 0 ? 'GRATIS' : 'A calcular' }}</span>
+                        <span class="ok strong">{{ envioGratis()?.gratis ? 'GRATIS' : 'A calcular' }}</span>
                     </div>
                 </div>
 

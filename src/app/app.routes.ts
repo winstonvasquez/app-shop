@@ -47,6 +47,13 @@ export const routes: Routes = [
                     import('./features/products/pages/product-detail-page/product-detail-page.component')
                         .then(m => m.ProductDetailPageComponent),
             },
+            // Libro de Reclamaciones virtual (público; Ley 29571). Antes de info/:slug no hace falta: path distinto.
+            {
+                path: 'libro-reclamaciones',
+                loadComponent: () =>
+                    import('./features/info/libro-reclamaciones/libro-reclamaciones.component')
+                        .then(m => m.LibroReclamacionesComponent),
+            },
             {
                 path: 'info/:slug',
                 loadComponent: () =>

@@ -4,6 +4,7 @@ import { Observable, map } from 'rxjs';
 import { Transportista, TransportistaPage, CreateTransportistaDto, TransportistaFiltros } from '../models/transportista.model';
 import { PAGINATION } from '@shared/constants/app.constants';
 import { toHttpParams } from '@core/utils/http-params.util';
+import { mapHttpError } from '@features/inventory/utils/map-http-error';
 
 @Injectable({ providedIn: 'root' })
 export class TransportistaService {
@@ -23,7 +24,7 @@ export class TransportistaService {
             .set('companyId', companyId)
             .set('page', String(page))
             .set('size', String(size));
-        return this.http.get<Transportista[] | TransportistaPage>(this.baseUrl, { params }).pipe(
+        return this.http.get<Transportista[] | TransportistaPage>(this.baseUrl, { params }).pipe(mapHttpError()).pipe(
             map(res => this.normalizarPagina(res, page, size))
         );
     }
@@ -65,19 +66,19 @@ export class TransportistaService {
             fechaCreacionHasta: filtros.fechaCreacionHasta,
             q: filtros.q,
         });
-        return this.http.get<TransportistaPage>(`${this.baseUrl}/paged`, { params });
+        return this.http.get<TransportistaPage>(`${this.baseUrl}/paged`, { params }).pipe(mapHttpError());
     }
 
     getById(id: string, companyId: string): Observable<Transportista> {
-        return this.http.get<Transportista>(`${this.baseUrl}/${id}`, { params: { companyId } });
+        return this.http.get<Transportista>(`${this.baseUrl}/${id}`, { params: { companyId } }).pipe(mapHttpError());
     }
 
     create(dto: CreateTransportistaDto): Observable<Transportista> {
-        return this.http.post<Transportista>(this.baseUrl, dto);
+        return this.http.post<Transportista>(this.baseUrl, dto).pipe(mapHttpError());
     }
 
     update(id: string, dto: Partial<CreateTransportistaDto>): Observable<Transportista> {
-        return this.http.put<Transportista>(`${this.baseUrl}/${id}`, dto);
+        return this.http.put<Transportista>(`${this.baseUrl}/${id}`, dto).pipe(mapHttpError());
     }
 
     /**
@@ -88,6 +89,6 @@ export class TransportistaService {
      */
     toggleActivo(id: string, active: boolean): Observable<void> {
         const accion = active ? 'activate' : 'deactivate';
-        return this.http.put<void>(`${this.baseUrl}/${id}/${accion}`, {});
+        return this.http.put<void>(`${this.baseUrl}/${id}/${accion}`, {}).pipe(mapHttpError());
     }
 }

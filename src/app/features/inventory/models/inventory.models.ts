@@ -145,6 +145,8 @@ export interface InventoryTransfer {
     sentBy?: string;
     receivedBy?: string;
     details?: InventoryTransferItem[];
+    /** GRE motivo 04 generada al despachar (null hasta entonces); id en /logistics/api guías. */
+    guiaRemisionId?: string | null;
     createdAt: string;
     updatedAt?: string;
     tenantId?: string;
@@ -216,6 +218,10 @@ export interface KardexEntry {
     unitCost?: number;
     totalCost?: number;
     balanceAfter: number;
+    /** Costo promedio tras el movimiento; null en movimientos anteriores a la valorización del saldo. */
+    balanceUnitCost?: number | null;
+    /** Valor del saldo tras el movimiento; null en históricos. */
+    balanceValue?: number | null;
     referenceType?: string;
     referenceNumber?: string;
     reason?: string;

@@ -1,8 +1,8 @@
+import { codigoSunatDeComprobante } from '../../models/comprobante-sunat';
 import { Component, inject, signal, computed, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { PeriodoService, PeriodoContable } from '../../services/periodo.service';
-import { ExportService } from '@shared/services/export.service';
 import { BackendExportService, BackendExportConfig } from '@shared/services/backend-export.service';
 import { PleService } from '../../services/ple.service';
 import { CatalogService } from '@core/services/catalog.service';
@@ -15,8 +15,20 @@ import {
 import { catalogFilter, signalFilter } from '@shared/ui/tables/data-table/filter-helpers';
 import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 import { toHttpParams } from '@core/utils/http-params.util';
-import { VentaPLE, generarPLE14 } from '../../utils/ple-libro14.util';
-import { formatPeriodoPLE } from '../../utils/ple-formato.util';
+
+/** Comprobante de venta tal como lo devuelve el registro de ventas del backend. */
+export interface VentaPLE {
+    fecha: string;
+    tipoComprobante: string;
+    serie: string;
+    numero: string;
+    rucCliente: string;
+    razonSocial: string;
+    baseImponible: number;
+    igv: number;
+    total: number;
+    estado: string;
+}
 
 @Component({
     selector: 'app-registro-ventas',
@@ -28,7 +40,6 @@ import { formatPeriodoPLE } from '../../utils/ple-formato.util';
 export class RegistroVentasComponent implements OnInit {
     private http = inject(HttpClient);
     private periodoService = inject(PeriodoService);
-    private exportService = inject(ExportService);
     private backendExportService = inject(BackendExportService);
     private pleService = inject(PleService);
     readonly catalog = inject(CatalogService);
@@ -88,7 +99,7 @@ export class RegistroVentasComponent implements OnInit {
         filename: 'registro-ventas',
         params: () => ({
             periodoId: this.periodoSeleccionado(),
-            voucherTipo: this.filterTipoComprobante(),
+            voucherTipo: codigoSunatDeComprobante(this.filterTipoComprobante()),
             estadoSunat: this.filterEstadoSunat(),
             clienteTipoDoc: this.filterClienteTipoDoc(),
             fechaDesde: this.fechaDesde() ?? undefined,
@@ -162,13 +173,6 @@ export class RegistroVentasComponent implements OnInit {
         });
     }
 
-    // PLE Libro 14 — formato SUNAT pipe-delimited (generación local)
-    exportarPLE() {
-        const periodo = this.periodos().find(p => p.id === this.periodoSeleccionado());
-        const periodoStr = periodo ? formatPeriodoPLE(periodo.nombre) : '20260300';
-        this.exportService.descargarTxt(generarPLE14(this.ventas(), periodoStr), `LE${periodoStr}140100001100_1_1`);
-    }
-
     exportarCSV() {
         // Exportación SERVER-SIDE (mismo endpoint /export que exportConfig, formato csv).
         this.backendExportService.download(this.exportConfig, 'csv');
@@ -232,7 +236,7 @@ export class RegistroVentasComponent implements OnInit {
             periodoId: this.periodoSeleccionado(),
             page: this.currentPage(),
             size: this.pageSize(),
-            voucherTipo: this.filterTipoComprobante(),
+            voucherTipo: codigoSunatDeComprobante(this.filterTipoComprobante()),
             estadoSunat: this.filterEstadoSunat(),
             clienteTipoDoc: this.filterClienteTipoDoc(),
             fechaDesde: this.fechaDesde() ? this.fechaDesde()! : undefined,

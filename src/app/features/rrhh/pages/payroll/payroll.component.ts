@@ -2,6 +2,9 @@ import { Component, inject, signal, computed, OnInit, ChangeDetectionStrategy } 
 import { DecimalPipe, DatePipe } from '@angular/common';
 import { FormBuilder, FormControl, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
+import { HttpErrorResponse } from '@angular/common/http';
+import { ConfirmModalService } from '@shared/services/confirm-modal.service';
+import { mensajeDeErrorHttp } from '@core/utils/http-error.util';
 import { PayrollService } from '../../services/payroll.service';
 import { EmployeeService } from '../../services/employee.service';
 import { DepartmentService } from '../../services/department.service';
@@ -22,6 +25,7 @@ import { AdminFormSectionComponent } from '@shared/ui/forms/admin-form-section/a
 import { ServerSearchSelectComponent } from '@shared/components';
 import { employeeSelectSource } from '../../components/select-sources';
 import { boletaRequestDesdeForm, formularioDesdeBoleta } from './payroll.form';
+import { enPagoTesoreria, etiquetaEstadoPlanilla, puedeSolicitarPago } from './payroll.pago';
 
 /**
  * Planilla del periodo — orquesta el motor de nómina del backend (microshopusers).
@@ -51,6 +55,7 @@ export class PayrollComponent implements OnInit {
     private readonly fb = inject(FormBuilder);
     readonly catalog = inject(CatalogService);
     private readonly router = inject(Router);
+    private readonly confirmModal = inject(ConfirmModalService);
 
     /** Fuente server-side del select de empleado del drawer de boleta individual. */
     readonly employeeSource = employeeSelectSource(this.employeeService);
@@ -171,7 +176,9 @@ export class PayrollComponent implements OnInit {
         { key: 'neto', label: 'Neto', align: 'right', render: r => `S/ ${r.neto.toFixed(2)}` },
         {
             key: 'estado', label: 'Estado', html: true,
-            render: r => `<span class="badge ${this.estadoBadge(r.estado)}">${this.catalog.label('ESTADO_PLANILLA', r.estado) || r.estado}</span>`
+            render: r => enPagoTesoreria(r)
+                ? `<span class="badge badge-info">${etiquetaEstadoPlanilla(r)}</span>`
+                : `<span class="badge ${this.estadoBadge(r.estado)}">${this.catalog.label('ESTADO_PLANILLA', r.estado) || r.estado}</span>`
         },
         {
             key: 'fechaPago', label: 'Fecha de pago',
@@ -188,6 +195,12 @@ export class PayrollComponent implements OnInit {
             // una boleta APROBADA/PAGADA/CANCELADA y solo podia fallar al guardar.
             show: row => row.estado === 'GENERADO',
             onClick: row => this.openCorregirBoleta(row),
+        },
+        {
+            label: 'Eliminar', icon: 'delete', class: 'btn-icon-delete',
+            // Solo GENERADO: DELETE /payroll/{id} responde 409 si ya se aprobó (hay pago y asiento).
+            show: row => row.estado === 'GENERADO',
+            onClick: row => { void this.eliminar(row); },
         },
     ];
 
@@ -410,18 +423,50 @@ export class PayrollComponent implements OnInit {
         }
     }
 
+    /** «Solicitar pago»: el backend crea el pago en tesorería; la boleta sigue APROBADO hasta que tesorería lo confirme. */
     async pagar(p: Payroll): Promise<void> {
         this.accionando.set(true);
         this.error.set(null);
         try {
-            await this.payrollService.markAsPaid(p.id);
-            this.mensaje.set(`Boleta de ${p.employeeName ?? ('#' + p.employeeId)} marcada como pagada.`);
-        } catch {
-            this.error.set('No se pudo marcar como pagada.');
+            const upd = await this.payrollService.markAsPaid(p.id);
+            const quien = p.employeeName ?? ('#' + p.employeeId);
+            this.mensaje.set(upd.estado === 'PAGADO'
+                ? `Boleta de ${quien}: sin monto a pagar, queda como pagada.`
+                : `Pago de la boleta de ${quien} solicitado a tesorería; pasará a PAGADO cuando tesorería lo confirme.`);
+        } catch (err) {
+            this.error.set(err instanceof HttpErrorResponse ? mensajeDeErrorHttp(err) : 'No se pudo solicitar el pago a tesorería.');
         } finally {
             this.accionando.set(false);
         }
     }
+
+    /** Elimina una boleta GENERADA (para corregir asistencia/contrato y volver a «Generar»). */
+    async eliminar(p: Payroll): Promise<void> {
+        const nombre = p.employeeName ?? ('#' + p.employeeId);
+        const ok = await this.confirmModal.confirm({
+            title: 'Eliminar boleta',
+            message: `Se eliminará la boleta de ${nombre} (${p.periodo}). Podrá volver a generarla con «Generar planilla».`,
+            confirmLabel: 'Eliminar',
+            variant: 'danger',
+        });
+        if (!ok) return;
+        this.accionando.set(true);
+        this.error.set(null);
+        try {
+            await this.payrollService.deletePayroll(p.id);
+            this.mensaje.set(`Boleta de ${nombre} eliminada.`);
+        } catch (err) {
+            this.error.set(err instanceof HttpErrorResponse ? mensajeDeErrorHttp(err) : 'No se pudo eliminar la boleta.');
+        } finally {
+            this.accionando.set(false);
+        }
+        // Recarga ambas vistas (tarjeta por periodo y listado paginado) aunque el DELETE falle (p. ej. 409 por estado viejo).
+        try { await this.payrollService.getByPeriod(this.periodo); } catch { /* el error de arriba ya informa */ }
+        this.loadBoletasPage();
+    }
+
+    readonly puedeSolicitarPago = puedeSolicitarPago;
+    readonly enPagoTesoreria = enPagoTesoreria;
 
     verBoleta(payrollId: number): void {
         this.router.navigate(['/admin/rrhh/boleta', payrollId]);

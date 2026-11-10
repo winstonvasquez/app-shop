@@ -21,7 +21,6 @@ import { FloatingChatComponent } from '@shared/components/floating-chat/floating
 import { CartDrawerComponent } from '@shared/components/cart-drawer/cart-drawer.component';
 import { ProductQuickviewComponent } from '@shared/components/product-quickview/product-quickview.component';
 import { AuthModal } from '@shared/components/auth-modal/auth-modal.component';
-import { ToastContainerComponent } from '@shared/components/toast/toast-container.component';
 import { FlashSaleBannerComponent } from '@shared/components/flash-sale-banner/flash-sale-banner.component';
 import { CategoryMegaMenuComponent } from '@shared/components/category-mega-menu/category-mega-menu.component';
 
@@ -38,7 +37,6 @@ import { CategoryMegaMenuComponent } from '@shared/components/category-mega-menu
         CartDrawerComponent,
         ProductQuickviewComponent,
         AuthModal,
-        ToastContainerComponent,
         FlashSaleBannerComponent,
         CategoryMegaMenuComponent,
     ],

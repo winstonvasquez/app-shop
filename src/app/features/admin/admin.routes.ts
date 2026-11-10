@@ -76,6 +76,10 @@ export const adminRoutes: Routes = [
                 loadComponent: () => import('./pages/transacciones/transacciones.component').then(m => m.TransaccionesComponent)
             },
             {
+                path: 'reclamos',
+                loadComponent: () => import('./pages/reclamos/reclamos.component').then(m => m.ReclamosComponent)
+            },
+            {
                 path: 'returns',
                 loadComponent: () => import('./pages/returns/returns.component').then(m => m.ReturnsComponent)
             },

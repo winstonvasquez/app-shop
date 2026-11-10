@@ -3,6 +3,8 @@ import { TranslateModule } from '@ngx-translate/core';
 import { Router } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
 import { CartItem, CartService } from '@features/cart/services/cart.service';
+import { estadoEnvioGratis } from '@features/cart/utils/envio-gratis';
+import { ZonaEnvioService } from '@core/services/zona-envio.service';
 
 @Component({
     selector: 'app-cart-drawer',
@@ -25,6 +27,12 @@ export class CartDrawerComponent {
 
     /** Subtotal sin descuentos = mismo cartTotal por ahora (drawer simple) */
     subtotal = this.cartTotal;
+
+    private zonaEnvio = inject(ZonaEnvioService);
+    /** Envío gratis con el umbral real del backend (el cupón no se conoce aquí); null = sin promesa. */
+    envioGratis = computed(() => estadoEnvioGratis(this.subtotal(), this.zonaEnvio.envioGratisDesde()));
+
+    constructor() { this.zonaEnvio.cargarUmbral(); }
 
     /** Cuántos items distintos hay seleccionados */
     selectedItemsCount = computed(() =>

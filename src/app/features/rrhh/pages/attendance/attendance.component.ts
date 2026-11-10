@@ -2,6 +2,7 @@ import {
     Component, OnInit, inject, signal,
     ChangeDetectionStrategy
 } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule, Validators, FormControl } from '@angular/forms';
 import { AttendanceService } from '../../services/attendance.service';
 import { EmployeeService } from '../../services/employee.service';
@@ -12,7 +13,7 @@ import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
 import {
-    DataTableComponent, TableColumn, FilterConfig, FilterChangeEvent,
+    DataTableComponent, TableColumn, TableAction, FilterConfig, FilterChangeEvent,
     DateRangeFilterConfig, DateRangeChangeEvent, PaginationEvent,
 } from '@shared/ui/tables/data-table/data-table.component';
 import { catalogFilter, signalFilter } from '@shared/ui/tables/data-table/filter-helpers';
@@ -23,6 +24,8 @@ import { AdminFormSectionComponent } from '@shared/ui/forms/admin-form-section/a
 import { ButtonComponent, CatalogSelectComponent, ServerSearchSelectComponent, RichTextEditorComponent } from '@shared/components';
 import { employeeSelectSource } from '../../components/select-sources';
 import { CatalogService } from '@core/services/catalog.service';
+import { mensajeDeErrorHttp } from '@core/utils/http-error.util';
+import { correccionDesdeForm, formularioDesdeAsistencia } from './attendance.form';
 import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 
 type TipoRegistro = 'NORMAL' | 'TARDANZA' | 'FALTA' | 'PERMISO' | 'LICENCIA' | 'VACACIONES';
@@ -121,6 +124,11 @@ export class AttendanceComponent implements OnInit {
         { key: 'observaciones', label: 'Observaciones', html: true, render: row => row.observaciones ?? '—' },
     ];
 
+    /** Corregir un registro (PUT con motivo obligatorio; el backend rechaza con 409 si la planilla del mes ya está aprobada/pagada). */
+    actions: TableAction<Attendance>[] = [
+        { label: 'Corregir', icon: 'edit', onClick: row => this.openCorregir(row) },
+    ];
+
     /**
      * Exportación SERVER-SIDE: el backend genera XLSX/CSV con datos limpios
      * (respeta todos los filtros actuales). Ver /hr/api/attendance/export.
@@ -148,6 +156,54 @@ export class AttendanceComponent implements OnInit {
         tipoRegistro:  ['NORMAL', Validators.required],
         observaciones: [''],
     });
+
+    // ── Corrección (PUT /hr/api/attendance/{id}) ──────────────────────────────
+    readonly showCorregir  = signal(false);
+    readonly corrigiendo   = signal<Attendance | null>(null);
+    readonly corregirError = signal<string | null>(null);
+
+    readonly correccionForm = this.fb.group({
+        horaEntrada:   [''],
+        horaSalida:    [''],
+        tipoRegistro:  ['NORMAL', Validators.required],
+        observaciones: [''],
+        justificacion: [''],
+        motivo:        ['', [Validators.required, Validators.maxLength(500)]],
+    });
+
+    openCorregir(a: Attendance): void {
+        this.corrigiendo.set(a);
+        this.correccionForm.reset(formularioDesdeAsistencia(a));
+        this.corregirError.set(null);
+        this.showCorregir.set(true);
+    }
+
+    closeCorregir(): void {
+        this.showCorregir.set(false);
+        this.corrigiendo.set(null);
+    }
+
+    async onCorregir(): Promise<void> {
+        const original = this.corrigiendo();
+        const motivo = this.correccionForm.controls.motivo;
+        if (!original || this.correccionForm.invalid || !motivo.value?.trim()) {
+            this.correccionForm.markAllAsTouched();
+            return;
+        }
+        this.submitting.set(true);
+        this.corregirError.set(null);
+        try {
+            await this.attendanceService.correctAttendance(original.id, correccionDesdeForm(this.correccionForm.getRawValue()));
+            this.closeCorregir();
+            await this.loadAttendances();
+        } catch (err) {
+            // 409 = planilla del mes ya aprobada/pagada: se muestra el mensaje del backend tal cual.
+            this.corregirError.set(err instanceof HttpErrorResponse
+                ? mensajeDeErrorHttp(err) : 'No se pudo corregir la asistencia.');
+        } finally {
+            this.submitting.set(false);
+        }
+    }
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
     async ngOnInit(): Promise<void> {

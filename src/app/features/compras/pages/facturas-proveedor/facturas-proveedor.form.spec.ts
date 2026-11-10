@@ -4,7 +4,33 @@ import {
     claseBadgeMatch,
     claseBadgeSunat,
     construirRegistrarFacturaRequest,
+    diasDeCondicionPago,
+    sugerirVencimiento,
 } from './facturas-proveedor.form';
+
+describe('diasDeCondicionPago', () => {
+    it('CREDITO_N da N y lo demás 0', () => {
+        expect(diasDeCondicionPago('CREDITO_30')).toBe(30);
+        expect(diasDeCondicionPago('CREDITO_60')).toBe(60);
+        expect(diasDeCondicionPago('CONTADO')).toBe(0);
+        expect(diasDeCondicionPago('RARA')).toBe(0);
+        expect(diasDeCondicionPago(null)).toBe(0);
+    });
+});
+
+describe('sugerirVencimiento', () => {
+    it('suma los días de la condición a la emisión, cruzando mes y año', () => {
+        expect(sugerirVencimiento('2026-08-01', 'CREDITO_30')).toBe('2026-08-31');
+        expect(sugerirVencimiento('2026-12-15', 'CREDITO_30')).toBe('2027-01-14');
+    });
+    it('CONTADO vence el mismo día', () => {
+        expect(sugerirVencimiento('2026-08-01', 'CONTADO')).toBe('2026-08-01');
+    });
+    it('sin emisión válida no sugiere nada', () => {
+        expect(sugerirVencimiento('', 'CREDITO_30')).toBe('');
+        expect(sugerirVencimiento(null, 'CREDITO_30')).toBe('');
+    });
+});
 
 describe('construirRegistrarFacturaRequest', () => {
     it('con el formulario completo copia todo y no aplica ningún default', () => {
@@ -133,6 +159,7 @@ describe('construirRegistrarFacturaRequest', () => {
 describe('claseBadgeEstadoFactura', () => {
     it('pinta cada estado del ciclo de aprobación', () => {
         expect(claseBadgeEstadoFactura('PENDIENTE')).toBe('badge badge-warning');
+        expect(claseBadgeEstadoFactura('PENDIENTE_REVISION')).toBe('badge badge-warning');
         expect(claseBadgeEstadoFactura('APROBADA')).toBe('badge badge-success');
         expect(claseBadgeEstadoFactura('RECHAZADA')).toBe('badge badge-error');
     });

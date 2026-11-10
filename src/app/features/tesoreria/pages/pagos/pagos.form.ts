@@ -1,4 +1,4 @@
-import { PaymentRequest } from '../../models/tesoreria.model';
+import { PagarPagoRequest, PaymentRequest } from '../../models/tesoreria.model';
 import { MONEDA } from '@shared/constants/sunat.constants';
 
 /**
@@ -49,4 +49,28 @@ export function construirPaymentRequest(v: ValoresFormularioPago, tenantId: numb
         concepto: v.concepto,
         bankAccountId: v.bankAccountId ?? undefined,
     };
+}
+
+/** Valores del drawer «Ejecutar pago». */
+export interface ValoresFormularioPagar {
+    origenTipo: 'BANCO' | 'CAJA';
+    origenId: number | null;
+    numeroOperacion?: string | null;
+}
+
+/** El número de operación es obligatorio salvo en EFECTIVO (mismo criterio que PaymentService.markAsPaid). */
+export function requiereNumeroOperacion(metodoPago: string | null | undefined): boolean {
+    return metodoPago !== 'EFECTIVO';
+}
+
+/**
+ * Arma el body de /pagar: UNA sola de bankAccountId/cajaId (el backend rechaza ambas) y el
+ * número de operación recortado, ausente si está vacío.
+ */
+export function construirPagarRequest(v: ValoresFormularioPagar): PagarPagoRequest {
+    const numeroOperacion = v.numeroOperacion?.trim() || undefined;
+    const id = v.origenId ?? undefined;
+    return v.origenTipo === 'CAJA'
+        ? { cajaId: id, numeroOperacion }
+        : { bankAccountId: id, numeroOperacion };
 }

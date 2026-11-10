@@ -76,7 +76,12 @@
                             <span class="badge {{ col.color }}">{{ col.label }}</span>
                             <span class="kanban-column-count">{{ col.ordenes.length }} OC</span>
                         </div>
-                        <span class="kanban-column-total">S/ {{ totalColumna(col) | number:'1.2-2' }}</span>
+                        <span class="kanban-column-total">
+                            @for (t of totalesColumna(col); track t.moneda; let ult = $last) {
+                                {{ t.total | currency: t.moneda : 'symbol-narrow' : '1.2-2' }}{{ ult ? '' : ' · ' }}
+                            }
+                            @empty { {{ 0 | currency: 'PEN' : 'symbol-narrow' : '1.2-2' }} }
+                        </span>
                     </div>
 
                     <!-- Cards -->
@@ -88,7 +93,7 @@
                                     <span class="kanban-card-fecha">{{ oc.fechaEmision }}</span>
                                 </div>
                                 <div class="kanban-card-proveedor">{{ oc.proveedorNombre ?? 'Proveedor' }}</div>
-                                <div class="kanban-card-total">S/ {{ (oc.total ?? 0) | number:'1.2-2' }}</div>
+                                <div class="kanban-card-total">{{ (oc.total ?? 0) | currency: (oc.moneda || 'PEN') : 'symbol-narrow' : '1.2-2' }}</div>
                                 @if (oc.fechaEntregaEstimada) {
                                     <div class="kanban-card-entrega">Entrega: {{ oc.fechaEntregaEstimada }}</div>
                                 }

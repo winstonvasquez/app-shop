@@ -1,0 +1,103 @@
+@if (auth.puedeGestionarTienda()) {
+<div class="mt-6 pt-6 border-t border-[var(--color-border)] px-6 pb-6">
+    <div class="flex items-center justify-between gap-3 mb-3">
+        <p class="turno-section-title !mb-0">Turnos de la empresa</p>
+        <select class="h-8 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-raised)] text-on text-xs px-2"
+            [value]="estado()" (change)="cambiarEstado($any($event.target).value)" aria-label="Filtrar por estado">
+            <option value="ABIERTO">Abiertos</option>
+            <option value="CERRADO">Cerrados</option>
+            <option value="">Todos</option>
+        </select>
+    </div>
+
+    @if (error()) {
+    <p class="text-xs mb-2" style="color:var(--color-error)" role="alert">{{ error() }}</p>
+    }
+    @if (aviso()) {
+    <p class="text-xs mb-2" style="color:var(--color-success)">{{ aviso() }}</p>
+    }
+
+    <div class="overflow-x-auto">
+        <table class="w-full text-xs">
+            <thead>
+                <tr class="text-left text-muted">
+                    <th class="py-1 pr-2 font-semibold">Turno</th>
+                    <th class="py-1 pr-2 font-semibold">Cajero</th>
+                    <th class="py-1 pr-2 font-semibold">Apertura</th>
+                    <th class="py-1 pr-2 font-semibold text-right">Diferencia</th>
+                    <th class="py-1 font-semibold text-right">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (t of turnos(); track t.id) {
+                <tr class="border-t border-[var(--color-border)]">
+                    <td class="py-2 pr-2">
+                        <span class="font-semibold">#{{ t.id }}</span>
+                        <span class="ml-1" [style.color]="t.estado === 'ABIERTO' ? 'var(--color-success)' : 'var(--color-text-muted)'">{{ t.estado }}</span>
+                        @if (t.cierreForzoso) {
+                        <span class="ml-1 font-semibold" style="color:var(--color-warning)"
+                            [title]="t.observacionCierre ?? ''">forzoso</span>
+                        }
+                    </td>
+                    <td class="py-2 pr-2">Cajero {{ t.cajeroId }}</td>
+                    <td class="py-2 pr-2">{{ t.fechaApertura | date:'dd/MM HH:mm' }}</td>
+                    <td class="py-2 pr-2 text-right font-semibold"
+                        [style.color]="t.diferenciaArqueo === null || t.diferenciaArqueo === 0 ? null : (t.diferenciaArqueo < 0 ? 'var(--color-error)' : 'var(--color-warning)')">
+                        @if (t.diferenciaArqueo === null) {
+                        —
+                        } @else {
+                        {{ t.diferenciaArqueo > 0 ? '+' : '' }}S/{{ fmt(t.diferenciaArqueo) }}
+                        {{ t.diferenciaArqueo < 0 ? '(faltante)' : (t.diferenciaArqueo > 0 ? '(sobrante)' : '') }}
+                        }
+                    </td>
+                    <td class="py-2 text-right whitespace-nowrap">
+                        @if (t.estado === 'CERRADO') {
+                        <button type="button" class="btn-secondary !h-7 !text-[11px] !px-2 !rounded-lg" (click)="verZ.emit(t.id)">Ver Z</button>
+                        } @else {
+                        <button type="button" class="btn-primary !h-7 !text-[11px] !px-2 !rounded-lg !bg-[var(--color-danger)]"
+                            (click)="abrirForzoso(t)">Cierre forzoso</button>
+                        }
+                    </td>
+                </tr>
+                } @empty {
+                <tr>
+                    <td colspan="5" class="py-4 text-center text-muted">{{ cargando() ? 'Cargando…' : 'Sin turnos para mostrar' }}</td>
+                </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    @if (totalPages() > 1) {
+    <div class="flex items-center justify-end gap-2 mt-2 text-xs">
+        <button type="button" class="btn-secondary !h-7 !px-2 !rounded-lg" [disabled]="page() === 0" (click)="irA(page() - 1)">‹</button>
+        <span>{{ page() + 1 }} / {{ totalPages() }}</span>
+        <button type="button" class="btn-secondary !h-7 !px-2 !rounded-lg" [disabled]="page() + 1 >= totalPages()" (click)="irA(page() + 1)">›</button>
+    </div>
+    }
+</div>
+
+@if (forzoso(); as f) {
+<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+    <div class="bg-[var(--color-surface)] rounded-xl border border-[var(--color-border)] shadow-xl overflow-y-auto max-h-[90vh] p-4 max-w-md w-full">
+        <h3 class="text-base font-bold text-on mb-1">Cierre forzoso — turno #{{ f.id }}</h3>
+        <p class="text-xs text-muted mb-3">Cajero {{ f.cajeroId }}. Queda registrado quién lo cerró y el motivo.
+            Las órdenes retenidas que tenga quedarán expiradas.</p>
+        @if (!contando()) {
+        <label class="amount-label" for="forzoso-obs">Observación (obligatoria)</label>
+        <textarea id="forzoso-obs" rows="3" maxlength="255"
+            class="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-raised)] text-on text-xs p-2"
+            placeholder="Ej.: el cajero se fue sin cerrar el turno" [value]="observacion()"
+            (input)="observacion.set($any($event.target).value)"></textarea>
+        <div class="flex gap-2 mt-3">
+            <button type="button" class="btn-secondary flex-1 !rounded-lg" (click)="cancelarForzoso()">Cancelar</button>
+            <button type="button" class="btn-primary flex-1 !rounded-lg" [disabled]="observacion().trim() === ''"
+                (click)="contando.set(true)">Continuar al conteo</button>
+        </div>
+        } @else {
+        <app-pos-denomination-counter (confirmed)="cerrarForzoso($event)" (cancel)="cancelarForzoso()" />
+        }
+    </div>
+</div>
+}
+}

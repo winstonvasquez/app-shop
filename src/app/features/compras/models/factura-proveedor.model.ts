@@ -13,6 +13,13 @@ export interface FacturaProveedor {
     igv: number;
     total: number;
     moneda?: string;
+    /** COMPRAS-6: null/0 cuando no aplica detracción o retención. Neto = total − detracción − retención. */
+    codigoDetraccion?: string | null;
+    porcentajeDetraccion?: number | null;
+    montoDetraccion?: number | null;
+    porcentajeRetencion?: number | null;
+    montoRetencion?: number | null;
+    montoNetoPagar?: number | null;
     estado: string;
     resultadoMatch?: string;
     /**
@@ -23,6 +30,12 @@ export interface FacturaProveedor {
     observaciones?: string;
     items?: FacturaProveedorItem[];
     createdAt?: string;
+}
+
+/** Espejo de `TipoComprobanteDto`: tipos que el backend sabe registrar y aprobar. */
+export interface TipoComprobanteRegistrable {
+    codigo: string;
+    codigoSunat: string;
 }
 
 export interface FacturaProveedorItem {

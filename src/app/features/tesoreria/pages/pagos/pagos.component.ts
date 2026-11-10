@@ -19,13 +19,15 @@ import { ButtonComponent, CatalogSelectComponent } from '@shared/components';
 import { CatalogService } from '@core/services/catalog.service';
 import { PagosService } from '../../services/pagos.service';
 import { CuentasBancariasService } from '../../services/cuentas-bancarias.service';
+import { CajasService } from '../../services/cajas.service';
 import { AuthService } from '@core/auth/auth.service';
-import { Payment, Page, BankAccount } from '../../models/tesoreria.model';
-import { construirPaymentRequest } from './pagos.form';
+import { Payment, Page, BankAccount, CashRegister } from '../../models/tesoreria.model';
+import { construirPaymentRequest, construirPagarRequest, requiereNumeroOperacion } from './pagos.form';
 import { MONEDA, CURRENCY_DISPLAY } from '@shared/constants/sunat.constants';
 import { PAGINATION } from '@shared/constants/app.constants';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
+import { hoyLocalISO } from '@core/utils/local-datetime.util';
 
 @Component({
     selector: 'app-pagos',
@@ -41,6 +43,7 @@ import { environment } from '@env/environment';
 export class PagosComponent implements OnInit {
     private pagosService = inject(PagosService);
     private cuentasService = inject(CuentasBancariasService);
+    private cajasService = inject(CajasService);
     private auth         = inject(AuthService);
     private fb           = inject(FormBuilder);
     private destroyRef   = inject(DestroyRef);
@@ -127,6 +130,28 @@ export class PagosComponent implements OnInit {
         this.cuentasBancarias().filter(c => c.moneda === this.selectedMoneda())
     );
 
+    // -- Drawer "Ejecutar pago": de donde sale el dinero + n de operacion --
+    showPayDrawer = signal(false);
+    pagoAPagar    = signal<Payment | null>(null);
+    pagando       = signal(false);
+    payErrorMsg   = signal<string | null>(null);
+    cajasAbiertas = signal<CashRegister[]>([]);
+    /** Espejo de payForm.origenTipo (ver ngOnInit). */
+    payOrigenTipo = signal<'BANCO' | 'CAJA'>('BANCO');
+    payForm: FormGroup = this.fb.group({
+        origenTipo:      ['BANCO'],
+        origenId:        [null, Validators.required],
+        numeroOperacion: [''],
+    });
+    /** Misma moneda que el pago: el backend responde 409 si no coincide. */
+    payCuentas = computed(() =>
+        this.cuentasBancarias().filter(c => c.moneda === this.pagoAPagar()?.moneda)
+    );
+    payCajas = computed(() =>
+        this.cajasAbiertas().filter(c => (c.moneda ?? MONEDA.PEN) === this.pagoAPagar()?.moneda)
+    );
+    payRequiereOperacion = computed(() => requiereNumeroOperacion(this.pagoAPagar()?.metodoPago));
+
     countPendientes   = computed(() => this.pagos().filter(p => p.estado === 'PENDING').length);
     countAprobados    = computed(() => this.pagos().filter(p => p.estado === 'APPROVED').length);
     countPagados      = computed(() => this.pagos().filter(p => p.estado === 'PAID').length);
@@ -193,6 +218,12 @@ export class PagosComponent implements OnInit {
     ngOnInit(): void {
         this.load();
         this.subscribeMonedaChanges();
+        this.payForm.get('origenTipo')!.valueChanges
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe((t: 'BANCO' | 'CAJA') => {
+                this.payOrigenTipo.set(t);
+                this.payForm.get('origenId')!.setValue(null);
+            });
     }
 
     /**
@@ -283,7 +314,7 @@ export class PagosComponent implements OnInit {
     }
 
     openCreateDrawer(): void {
-        const today = new Date().toISOString().split('T')[0];
+        const today = hoyLocalISO();
         this.pagoForm.reset({
             tipoPago: 'PROVEEDOR', metodoPago: 'TRANSFERENCIA', moneda: MONEDA.PEN,
             bankAccountId: null, fechaSolicitud: today, monto: null
@@ -331,8 +362,40 @@ export class PagosComponent implements OnInit {
         this.ejecutarAccion(p, id => this.pagosService.reject(id, motivo), () => this.showRejectDrawer.set(false));
     }
 
+    /** Abre el drawer: pagar exige cuenta o caja de salida y, si no es EFECTIVO, el n de operacion. */
     pay(p: Payment): void {
-        this.ejecutarAccion(p, id => this.pagosService.markAsPaid(id));
+        const efectivo = !requiereNumeroOperacion(p.metodoPago);
+        const op = this.payForm.get('numeroOperacion')!;
+        op.setValidators(efectivo ? [] : [Validators.required]);
+        this.payForm.reset({ origenTipo: efectivo ? 'CAJA' : 'BANCO', origenId: null, numeroOperacion: '' });
+        this.payOrigenTipo.set(efectivo ? 'CAJA' : 'BANCO');
+        this.pagoAPagar.set(p);
+        this.payErrorMsg.set(null);
+        this.loadCuentasBancarias();
+        this.cajasService.getAll({ estado: 'ABIERTA', size: 100 })
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe({
+                next: res => this.cajasAbiertas.set(res.content),
+                error: () => this.cajasAbiertas.set([])
+            });
+        this.showPayDrawer.set(true);
+    }
+
+    confirmarPago(): void {
+        const p = this.pagoAPagar();
+        if (!p?.id || this.payForm.invalid) { this.payForm.markAllAsTouched(); return; }
+        this.pagando.set(true);
+        this.payErrorMsg.set(null);
+        this.pagosService.markAsPaid(p.id, construirPagarRequest(this.payForm.getRawValue()))
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe({
+                next: () => { this.pagando.set(false); this.showPayDrawer.set(false); this.load(); },
+                // 409 (saldo insuficiente, moneda, caja cerrada...) y 400 traen su motivo en `detail`.
+                error: (err: HttpErrorResponse) => {
+                    this.payErrorMsg.set(mensajeDeErrorHttp(err));
+                    this.pagando.set(false);
+                }
+            });
     }
 
     private ejecutarAccion(p: Payment, op: (id: number) => Observable<Payment>, alExito?: () => void): void {

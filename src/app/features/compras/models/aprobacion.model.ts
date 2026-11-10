@@ -31,3 +31,9 @@ export interface ConfigAprobacionRequest {
     /** null/undefined = no tocar. Único canal para REACTIVAR un nivel dado de baja (DELETE solo desactiva). Ignorado en la creación. */
     activo?: boolean;
 }
+
+/** Espejo de `ParametroEmpresaDto` (compras): parámetro booleano por empresa. */
+export interface ParametroEmpresa {
+    clave: string;
+    valor: boolean;
+}

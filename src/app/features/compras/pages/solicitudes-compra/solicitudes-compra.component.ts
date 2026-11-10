@@ -10,6 +10,7 @@ import {
 import { ReactiveFormsModule, FormBuilder, Validators, FormArray, FormGroup } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
+import { detalleDelBackend, mensajeDeErrorHttp } from '@core/utils/http-error.util';
 import { SolicitudCompraService } from '../../services/solicitud-compra.service';
 import { AuthService } from '@core/auth/auth.service';
 import { CatalogService } from '@core/services/catalog.service';
@@ -428,15 +429,14 @@ export class SolicitudesCompraComponent implements OnInit {
     }
 
     aprobarSolicitud(id: string): void {
-        const user = this.authService.currentUser();
-        if (!user) return;
-        this.solicitudService.aprobarSolicitud(id, String(user.userId)).subscribe({
+        this.solicitudService.aprobarSolicitud(id).subscribe({
             next: () => {
                 this.closeDetail();
                 this.loadSolicitudes();
             },
-            error: (err) => {
-                this.actionError.set('Error al aprobar la solicitud');
+            error: (err: HttpErrorResponse) => {
+                // 400 de autoaprobación: «No puede aprobar una solicitud que usted mismo creó».
+                this.actionError.set(mensajeDeErrorHttp(err, { 400: detalleDelBackend(err) ?? 'Error al aprobar la solicitud' }));
                 console.error(err);
                 this.cdr.markForCheck();
             },

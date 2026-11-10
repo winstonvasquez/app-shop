@@ -233,7 +233,7 @@
 <!-- Drawer: Avanzar estado (transportistas sin integración de tracking API) -->
 <app-drawer
   [isOpen]="showAdvance()"
-  title="Avanzar estado del envío"
+  [title]="advanceStatus() === 'FAILED_DELIVERY' ? 'Registrar entrega fallida' : 'Cambiar estado del envío'"
   size="sm" side="right" [hasFooter]="true"
   (closed)="closeAdvance()">
 
@@ -249,6 +249,11 @@
       <p class="text-sm" style="margin-bottom:0.75rem">
         Nuevo estado: <strong>{{ nextStatusLabel() }}</strong>
       </p>
+      @if (advanceStatus() === 'RETURNED') {
+        <p class="text-subtle" style="font-size:0.8rem;margin-bottom:0.75rem">
+          Marcar devuelto sólo registra el estado: no reingresa stock ni modifica el pedido.
+        </p>
+      }
 
       <div style="margin-bottom:0.75rem">
         <label class="input-label">Ubicación <span class="text-error">*</span></label>
@@ -260,7 +265,7 @@
 
       <div>
         <label class="input-label">Descripción <span class="text-error">*</span></label>
-        <input class="form-input" formControlName="description" placeholder="Ej: Envío recogido por el transportista" />
+        <input class="form-input" formControlName="description" placeholder="Ej: Envío recogido por el transportista / Cliente ausente" />
         @if (advanceForm.get('description')?.invalid && advanceForm.get('description')?.touched) {
           <span class="input-error-message">La descripción es requerida</span>
         }
@@ -270,7 +275,7 @@
 
   <div slot="footer">
     <app-button icon="x" label="Cancelar" variant="secondary" (click)="closeAdvance()" />
-    <app-button icon="check" label="Avanzar estado" variant="primary"
+    <app-button icon="check" [label]="nextStatusLabel() ? 'Pasar a ' + nextStatusLabel() : 'Confirmar'" variant="primary"
       [loading]="advancing()" [disabled]="advanceForm.invalid" (click)="submitAdvance()" />
   </div>
 </app-drawer>

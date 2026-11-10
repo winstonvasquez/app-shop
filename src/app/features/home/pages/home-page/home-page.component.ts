@@ -16,6 +16,8 @@ import { AuthService } from '@core/auth/auth.service';
 import { CartService } from '@features/cart/services/cart.service';
 import { ProductResponse } from '@core/models/product.model';
 import { mapearProductoADsProduct } from '@shared/ui/ds';
+import { ZonaEnvioService } from '@core/services/zona-envio.service';
+import { conEnvioGratis } from '@features/cart/utils/envio-gratis';
 
 const HERO_AUTO_ROTATE_MS = 6000;     // intervalo entre slides automáticos
 
@@ -55,19 +57,31 @@ export class HomePageComponent implements OnInit, OnDestroy {
     readonly hasMultiple  = computed(() => this.banners().length > 1);
 
     /** Recomendaciones personalizadas "Para ti" — vacío hasta que carga. */
-    readonly paraTi = signal<DsProduct[]>([]);
+    private readonly paraTiBase = signal<DsProduct[]>([]);
+    readonly paraTi = computed(() => conEnvioGratis(this.paraTiBase(), this.zonaEnvio.envioGratisDesde()));
 
     @ViewChild('paraTiScroll') paraTiScroll?: ElementRef<HTMLDivElement>;
 
     private autoRotateTimer?: ReturnType<typeof setInterval>;
 
     /** Bullets de confianza — patrón "trust strip" del DS. */
-    readonly trustItems = [
-        { icon: 'truck',  title: 'Envío gratis',      sub: 'Desde S/ 99' },
-        { icon: 'shield', title: 'Compra protegida',  sub: 'Garantía 30 días' },
-        { icon: 'zap',    title: 'Entrega rápida',    sub: '24h en Lima' },
-        { icon: 'lock',   title: 'Pago seguro',       sub: 'PCI DSS · Yape' },
-    ];
+    private zonaEnvio = inject(ZonaEnvioService);
+    /** El primer bullet sólo existe si el backend publica un umbral de envío gratis. */
+    readonly trustItems = computed(() => {
+        const umbral = this.zonaEnvio.envioGratisDesde();
+        return [
+            ...(umbral ? [{ icon: 'truck', title: 'Envío gratis', sub: `Desde S/ ${umbral}` }] : []),
+            { icon: 'shield', title: 'Compra protegida',  sub: 'Garantía 30 días' },
+            { icon: 'zap',    title: 'Entrega rápida',    sub: '24h en Lima' },
+            { icon: 'lock',   title: 'Pago seguro',       sub: 'PCI DSS · Yape' },
+        ];
+    });
+    /** Subtítulo por defecto del hero; la frase de envío gratis sólo aparece con umbral real. */
+    readonly heroSubDefault = computed(() => {
+        const umbral = this.zonaEnvio.envioGratisDesde();
+        return 'Tecnología, hogar y moda con descuentos que no se repiten.'
+            + (umbral ? ` Envío gratis en compras desde S/ ${umbral}.` : '');
+    });
 
     /** Cuenta regresiva del strip de flash deals — re-render cada minuto. */
     private now = signal<Date>(new Date());
@@ -83,6 +97,7 @@ export class HomePageComponent implements OnInit, OnDestroy {
     });
 
     ngOnInit(): void {
+        this.zonaEnvio.cargarUmbral();
         this.loadData();
         this.loadParaTi();
         setInterval(() => this.now.set(new Date()), 1000);
@@ -198,7 +213,7 @@ export class HomePageComponent implements OnInit, OnDestroy {
         this.recommendationsService.getParaTi(usuarioId)
             .pipe(catchError(() => of<ProductResponse[]>([])))
             .subscribe((productos: ProductResponse[]) => {
-                this.paraTi.set(productos.map(p => mapearProductoADsProduct(p)));
+                this.paraTiBase.set(productos.map(p => mapearProductoADsProduct(p)));
             });
     }
 }

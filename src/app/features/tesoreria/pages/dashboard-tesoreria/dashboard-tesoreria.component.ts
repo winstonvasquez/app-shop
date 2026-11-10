@@ -2,103 +2,87 @@ import { Component, inject, signal, computed, OnInit, ChangeDetectionStrategy } 
 import { DecimalPipe, DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
-import { NgApexchartsModule } from 'ng-apexcharts';
 import { CajasService } from '../../services/cajas.service';
 import { PagosService } from '../../services/pagos.service';
-import { MovimientosFinancierosService } from '../../services/movimientos-financieros.service';
-import { CashRegister, Payment, FinancialMovement } from '../../models/tesoreria.model';
-import { ChartDefaultsService, CHART_COLORS } from '@shared/services/chart-defaults.service';
-import {
-    ApexAxisChartSeries, ApexChart, ApexFill, ApexGrid,
-    ApexStroke, ApexTooltip, ApexXAxis, ApexYAxis,
-    ApexNonAxisChartSeries, ApexPlotOptions, ApexLegend
-} from 'ng-apexcharts';
+import { MovimientosFinancierosService, FlujoCaja } from '../../services/movimientos-financieros.service';
+import { CuentasBancariasService } from '../../services/cuentas-bancarias.service';
+import { CashRegister, Payment, FinancialMovement, BankAccount } from '../../models/tesoreria.model';
 import { ButtonComponent } from '@shared/components';
+import { MONEDA } from '@shared/constants/sunat.constants';
+import { hoyLocalISO } from '@core/utils/local-datetime.util';
+import { pageTotalElements } from '@core/models/pagination.model';
+import { simboloMoneda, sumarPorMoneda } from './dashboard-tesoreria.params';
 
 @Component({
     selector: 'app-dashboard-tesoreria',
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [DecimalPipe, DatePipe, RouterLink, NgApexchartsModule, ButtonComponent],
+    imports: [DecimalPipe, DatePipe, RouterLink, ButtonComponent],
     templateUrl: './dashboard-tesoreria.component.html'
 })
 export class DashboardTesoreriaComponent implements OnInit {
     private cajasService = inject(CajasService);
     private pagosService = inject(PagosService);
     private movimientosService = inject(MovimientosFinancierosService);
-    private readonly chartDefaults = inject(ChartDefaultsService);
+    private cuentasService = inject(CuentasBancariasService);
+
+    readonly simbolo = simboloMoneda;
 
     cargando = signal(false);
     error = signal<string | null>(null);
     cajas = signal<CashRegister[]>([]);
+    cuentas = signal<BankAccount[]>([]);
     pagosRecientes = signal<Payment[]>([]);
+    /** Total REAL de pagos PENDING (consulta propia, no un conteo sobre la página de recientes). */
+    pagosPendientes = signal(0);
     movimientos = signal<FinancialMovement[]>([]);
+    /** Totales de HOY por moneda, calculados por el backend (flujo-caja), no sumando una página. */
+    flujosHoy = signal<FlujoCaja[]>([]);
     readonly hoy = new Date();
 
     cajasAbiertas  = computed(() => this.cajas().filter(c => c.estado === 'ABIERTA').length);
     totalCajas     = computed(() => this.cajas().length);
-    saldoTotalCajas = computed(() =>
-        this.cajas().filter(c => c.estado === 'ABIERTA').reduce((s, c) => s + (c.saldoActual ?? 0), 0)
-    );
-    pagosPendientes = computed(() => this.pagosRecientes().filter(p => p.estado === 'PENDING').length);
-    ingresosHoy = computed(() => {
-        const hoy = this.hoy.toISOString().split('T')[0];
-        return this.movimientos()
-            .filter(m => m.tipoMovimiento === 'INGRESO' && m.fecha?.startsWith(hoy))
-            .reduce((s, m) => s + (m.monto ?? 0), 0);
-    });
-    egresosHoy = computed(() => {
-        const hoy = this.hoy.toISOString().split('T')[0];
-        return this.movimientos()
-            .filter(m => m.tipoMovimiento === 'EGRESO' && m.fecha?.startsWith(hoy))
-            .reduce((s, m) => s + (m.monto ?? 0), 0);
-    });
+    saldoCajas = computed(() => sumarPorMoneda(
+        this.cajas().filter(c => c.estado === 'ABIERTA').map(c => ({ moneda: c.moneda, monto: c.saldoActual ?? 0 }))
+    ));
+    saldoBancos = computed(() => sumarPorMoneda(
+        this.cuentas().filter(c => c.estado === 'ACTIVA').map(c => ({ moneda: c.moneda, monto: c.saldoActual ?? 0 }))
+    ));
+    ingresosHoy = computed(() => this.lineasHoy('totalIngresos'));
+    egresosHoy  = computed(() => this.lineasHoy('totalEgresos'));
 
-    /* ── Chart: Flujo de caja (área doble) ────────────────────── */
-    areaChart: ApexChart = this.chartDefaults.areaChart(240);
-    areaSeries: ApexAxisChartSeries = [
-        { name: 'Ingresos', data: [4200, 5800, 3900, 7200, 6100, 8400, 5700] },
-        { name: 'Egresos',  data: [3100, 4200, 2800, 5100, 4300, 6200, 4100] }
-    ];
-    areaXAxis: ApexXAxis = this.chartDefaults.xAxis(this.chartDefaults.last7DayLabels());
-    areaYAxis: ApexYAxis = this.chartDefaults.yAxis('S/ ');
-    areaFill: ApexFill = {
-        type: 'gradient',
-        gradient: {
-            shade: 'dark', type: 'vertical', shadeIntensity: 0.3,
-            opacityFrom: 0.45, opacityTo: 0.05,
-        }
-    };
-    areaStroke: ApexStroke = this.chartDefaults.areaStroke(2);
-    areaGrid: ApexGrid = this.chartDefaults.grid();
-    areaColors = [CHART_COLORS[2], CHART_COLORS[0]];
-    areaLegend: ApexLegend = { ...this.chartDefaults.legend(), position: 'top' };
-    areaTooltip: ApexTooltip = { theme: 'dark', y: { formatter: (v: number) => 'S/ ' + v.toLocaleString('es-PE') } };
-
-    /* ── Chart: Distribución por tipo pago (donut) ────────────── */
-    donutChart: ApexChart = this.chartDefaults.donutChart(200);
-    donutSeries: ApexNonAxisChartSeries = [42, 28, 18, 12];
-    donutLabels = ['Efectivo', 'Transferencia', 'Tarjeta', 'Otros'];
-    donutColors = [CHART_COLORS[0], CHART_COLORS[2], CHART_COLORS[1], CHART_COLORS[5]];
-    donutPlot: ApexPlotOptions = this.chartDefaults.donutPlotOptions('62%');
-    donutLegend: ApexLegend = { ...this.chartDefaults.legend(), position: 'bottom' };
+    /** PEN siempre; USD sólo si hubo movimiento ese día. */
+    private lineasHoy(campo: 'totalIngresos' | 'totalEgresos') {
+        return this.flujosHoy()
+            .filter(f => f.moneda === MONEDA.PEN || f.totalIngresos > 0 || f.totalEgresos > 0)
+            .map(f => ({ moneda: f.moneda, monto: f[campo] ?? 0 }));
+    }
 
     ngOnInit(): void { this.cargar(); }
 
     cargar(): void {
         this.cargando.set(true);
         this.error.set(null);
+        const hoy = hoyLocalISO();
         forkJoin({
             cajas: this.cajasService.getAll({ page: 0, size: 50 }),
             pagos: this.pagosService.getAll(0, 10),
-            movimientos: this.movimientosService.getAll({ page: 0, size: 20 })
+            pendientes: this.pagosService.getAll(0, 1, { estado: 'PENDING' }),
+            cuentas: this.cuentasService.getAll({ page: 0, size: 100, estado: 'ACTIVA' }),
+            movimientos: this.movimientosService.getAll({ page: 0, size: 20 }),
+            pen: this.movimientosService.getFlujoCaja(hoy, hoy, MONEDA.PEN),
+            usd: this.movimientosService.getFlujoCaja(hoy, hoy, MONEDA.USD)
         }).subscribe({
-            next: ({ cajas, pagos, movimientos }) => {
+            next: ({ cajas, pagos, pendientes, cuentas, movimientos, pen, usd }) => {
                 // `CajasService.getAll` declara `Page<CashRegister>`; pagos y movimientos sí
                 // pueden llegar como array plano, y por eso solo esos dos se normalizan.
                 this.cajas.set(cajas.content);
                 this.pagosRecientes.set(Array.isArray(pagos) ? pagos : (pagos?.content ?? []));
                 this.movimientos.set(Array.isArray(movimientos) ? movimientos : (movimientos?.content ?? []));
+                this.pagosPendientes.set(Array.isArray(pendientes)
+                    ? pendientes.filter(p => p.estado === 'PENDING').length : pageTotalElements(pendientes));
+                this.cuentas.set(Array.isArray(cuentas) ? cuentas : (cuentas?.content ?? []));
+                this.flujosHoy.set([pen, usd]);
                 this.cargando.set(false);
             },
             error: () => { this.error.set('No disponible'); this.cargando.set(false); }

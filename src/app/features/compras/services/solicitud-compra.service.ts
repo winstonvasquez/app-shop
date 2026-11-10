@@ -149,13 +149,11 @@ export class SolicitudCompraService {
         });
     }
 
-    aprobarSolicitud(id: string, aprobadorId: string): Observable<SolicitudCompra> {
-        const companyId = this.authService.currentUser()?.activeCompanyId ?? '';
-        const headers = new HttpHeaders({
-            'X-Company-Id': companyId,
-            'X-Aprobador-Id': aprobadorId
+    /** El aprobador es el userId del JWT (backend); ya no viaja X-Aprobador-Id. */
+    aprobarSolicitud(id: string): Observable<SolicitudCompra> {
+        return this.http.post<SolicitudCompra>(`${this.baseUrl}/${id}/aprobar`, {}, {
+            headers: this.getCompanyHeaders()
         });
-        return this.http.post<SolicitudCompra>(`${this.baseUrl}/${id}/aprobar`, {}, { headers });
     }
 
     rechazarSolicitud(id: string, motivo: string): Observable<SolicitudCompra> {

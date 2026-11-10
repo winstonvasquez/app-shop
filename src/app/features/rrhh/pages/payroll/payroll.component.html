@@ -98,7 +98,12 @@
               <td class="table-cell text-right font-mono font-bold" style="color:var(--color-warning)">{{ descuentos(p) | number:'1.2-2' }}</td>
               <td class="table-cell text-right font-mono font-bold" style="color:var(--color-success)">{{ p.neto | number:'1.2-2' }}</td>
               <td class="table-cell">
-                <span class="badge" [class]="estadoBadge(p.estado)">{{ p.estado }}</span>
+                @if (enPagoTesoreria(p)) {
+                  <span class="badge badge-info">Pago solicitado a tesorería</span>
+                  <div style="font-size:0.65rem;color:var(--color-text-muted);margin-top:2px">Pendiente de confirmación en tesorería</div>
+                } @else {
+                  <span class="badge" [class]="estadoBadge(p.estado)">{{ p.estado }}</span>
+                }
                 @if (p.estado === 'PAGADO' && p.fechaPago) {
                   <div style="font-size:0.65rem;color:var(--color-text-muted);margin-top:2px">{{ p.fechaPago | date:'dd/MM/yyyy' }}</div>
                 }
@@ -108,9 +113,10 @@
                   <button class="btn btn-secondary" style="font-size:0.72rem;padding:4px 10px" (click)="verBoleta(p.id)">Ver boleta</button>
                   @if (p.estado === 'GENERADO') {
                     <button class="btn btn-primary" style="font-size:0.72rem;padding:4px 10px" [disabled]="accionando()" (click)="aprobar(p)">Aprobar</button>
+                    <button class="btn btn-secondary" style="font-size:0.72rem;padding:4px 10px" [disabled]="accionando()" (click)="eliminar(p)">Eliminar</button>
                   }
-                  @if (p.estado === 'APROBADO') {
-                    <button class="btn btn-primary" style="font-size:0.72rem;padding:4px 10px" [disabled]="accionando()" (click)="pagar(p)">Pagar</button>
+                  @if (puedeSolicitarPago(p)) {
+                    <button class="btn btn-primary" style="font-size:0.72rem;padding:4px 10px" [disabled]="accionando()" (click)="pagar(p)">Solicitar pago</button>
                   }
                 </div>
               </td>

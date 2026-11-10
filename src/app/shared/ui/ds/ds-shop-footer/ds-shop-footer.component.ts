@@ -47,6 +47,11 @@ interface FooterColumn { title: string; links: FooterLink[]; }
             </div>
             <div class="bar">
                 <span>{{ copyright() }}</span>
+                <!-- Fuera de las columnas editables: el libro es obligatorio (Ley 29571) y no debe poder quitarse desde el admin. -->
+                <a class="libro" routerLink="/libro-reclamaciones">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                    Libro de Reclamaciones
+                </a>
                 <div class="pays">
                     @for (p of payments; track p) {
                         <span class="pay">{{ p }}</span>
@@ -100,6 +105,12 @@ interface FooterColumn { title: string; links: FooterLink[]; }
             display: flex; justify-content: space-between; align-items: center;
             font-size: 12px; color: var(--c-muted);
         }
+        .libro {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 4px 10px; border: 1px solid var(--c-border); border-radius: var(--r-md);
+            font-weight: 600; color: var(--c-text); text-decoration: none;
+        }
+        .libro:hover { border-color: var(--c-brand); color: var(--c-brand); }
         .pays { display: flex; gap: 8px; }
         .pay {
             padding: 3px 8px; border: 1px solid var(--c-border);

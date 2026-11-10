@@ -61,12 +61,14 @@ export class PosOfflineSyncService {
     async saveOfflineVenta(
         request: VentaPosRequest,
         companyId: number,
+        redondeo = 0,
     ): Promise<OfflineVenta> {
         const offlineVenta: OfflineVenta = {
             idempotencyKey: this.offlineDb.generateIdempotencyKey(),
             companyId,
             turnoCajaId: request.turnoCajaId,
             request,
+            redondeo,
             numeroTicketTemp: this.offlineDb.generateTempTicket(),
             estado: 'PENDIENTE',
             intentos: 0,

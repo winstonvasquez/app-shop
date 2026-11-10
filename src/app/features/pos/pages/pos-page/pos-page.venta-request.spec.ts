@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { CarritoParaVenta, construirVentaPosRequest, errorFacturaSinRuc, tipoDocSunat } from './pos-page.venta-request';
+import {
+    CarritoParaVenta, construirVentaPosRequest, errorBoletaSinIdentificar, errorEfectivoInsuficiente, errorFacturaSinRuc,
+    errorReferenciaOperacion, textoDiferenciaArqueo, tipoDocSunat,
+} from './pos-page.venta-request';
 import { CartItem, ProductoCatalogoPOS } from '../../models/catalogo-pos.model';
 
 function producto(varianteId: number): ProductoCatalogoPOS {
@@ -287,5 +290,68 @@ describe('construirVentaPosRequest — pago dividido', () => {
         }));
         expect(req.pagos).toBeUndefined();
         expect(req.montoRecibido).toBeUndefined();
+    });
+});
+
+describe('errorBoletaSinIdentificar', () => {
+    it('no exige nada en factura, bajo el umbral o justo en él', () => {
+        expect(errorBoletaSinIdentificar('FACTURA', 5000, '0', '')).toBeNull();
+        expect(errorBoletaSinIdentificar('BOLETA', 700, '0', '')).toBeNull();
+    });
+    it('bloquea boleta > 700 sin documento válido', () => {
+        expect(errorBoletaSinIdentificar('BOLETA', 700.01, '0', '')).toContain('identificar');
+        expect(errorBoletaSinIdentificar('BOLETA', 900, '1', '00000000')).toContain('identificar');
+        expect(errorBoletaSinIdentificar('BOLETA', 900, '1', '1234')).toContain('identificar');
+    });
+    it('deja pasar DNI, RUC, CE o pasaporte válidos', () => {
+        expect(errorBoletaSinIdentificar('BOLETA', 900, '1', '45678912')).toBeNull();
+        expect(errorBoletaSinIdentificar('BOLETA', 900, '6', '20123456789')).toBeNull();
+        expect(errorBoletaSinIdentificar('BOLETA', 900, '4', 'X123')).toBeNull();
+    });
+});
+
+describe('errorEfectivoInsuficiente', () => {
+    it('sólo aplica a efectivo simple con monto informado', () => {
+        expect(errorEfectivoInsuficiente('TARJETA', false, 20, 50)).toBeNull();
+        expect(errorEfectivoInsuficiente('EFECTIVO', true, 20, 50)).toBeNull();
+        expect(errorEfectivoInsuficiente('EFECTIVO', false, 0, 50)).toBeNull();
+    });
+    it('rechaza lo que no cubre y acepta exacto o con tolerancia', () => {
+        expect(errorEfectivoInsuficiente('EFECTIVO', false, 20, 50)).toContain('no cubre');
+        expect(errorEfectivoInsuficiente('EFECTIVO', false, 50, 50)).toBeNull();
+        expect(errorEfectivoInsuficiente('EFECTIVO', false, 49.995, 50)).toBeNull();
+    });
+});
+
+describe('textoDiferenciaArqueo', () => {
+    it('distingue cuadrado, sobrante y faltante', () => {
+        expect(textoDiferenciaArqueo(100, 100)).toContain('cuadrado');
+        expect(textoDiferenciaArqueo(110, 100)).toContain('sobrante de S/10.00');
+        expect(textoDiferenciaArqueo(90, 100)).toContain('faltante de S/10.00');
+        expect(textoDiferenciaArqueo(90, undefined)).toBe('Turno cerrado con arqueo');
+    });
+});
+
+describe('N.º de operación', () => {
+    it('viaja sólo con TARJETA/YAPE/PLIN y se recorta', () => {
+        expect(construirVentaPosRequest(carrito({ metodoPagoPrimario: 'YAPE', referenciaOperacion: ' 123456 ' })).referenciaOperacion).toBe('123456');
+        expect(construirVentaPosRequest(carrito({ metodoPagoPrimario: 'EFECTIVO', referenciaOperacion: '123' })).referenciaOperacion).toBeUndefined();
+        expect(construirVentaPosRequest(carrito({ metodoPagoPrimario: 'TARJETA', referenciaOperacion: '  ' })).referenciaOperacion).toBeUndefined();
+    });
+    it('en pago dividido va por línea y no a nivel de venta', () => {
+        const req = construirVentaPosRequest(carrito({
+            pagoDividido: true,
+            metodoPagoPrimario: 'MIXTO',
+            referenciaOperacion: 'IGNORADA',
+            pagos: [{ metodo: 'EFECTIVO', monto: 5, referencia: 'x' }, { metodo: 'YAPE', monto: 5, referencia: 'Y-77' }],
+        }));
+        expect(req.referenciaOperacion).toBeUndefined();
+        expect(req.pagos?.map(p => p.referencia)).toEqual([undefined, 'Y-77']);
+    });
+    it('valida el formato del backend', () => {
+        expect(errorReferenciaOperacion('AB-12/3')).toBeNull();
+        expect(errorReferenciaOperacion('')).toBeNull();
+        expect(errorReferenciaOperacion('a'.repeat(41))).toContain('40');
+        expect(errorReferenciaOperacion('ñ<>')).toContain('40');
     });
 });

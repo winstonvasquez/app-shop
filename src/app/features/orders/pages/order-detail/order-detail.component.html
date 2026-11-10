@@ -45,14 +45,96 @@
             </div>
             <div>
                 <p class="text-xs text-[var(--color-text-muted)]">Estado</p>
-                <span [class]="getEstadoBadgeClass(order()!.estado)">{{ order()!.estado }}</span>
+                <span [class]="getEstadoBadgeClass(order()!.estado)">{{ catalog.label('ESTADO_PEDIDO', order()!.estado) }}</span>
             </div>
             <div class="text-right">
                 <p class="text-xs text-[var(--color-text-muted)]">Total</p>
                 <p class="text-xl font-bold text-[var(--color-accent)]">S/ {{ order()!.total | number:'1.2-2' }}</p>
             </div>
         </div>
+        @if (order()!.estado === 'PENDIENTE') {
+        <div class="card-body border-t border-[var(--color-border)] flex flex-wrap items-center justify-between gap-3">
+            @if (confirmandoCancelar()) {
+                <p class="text-sm text-[var(--color-text-primary)]">¿Seguro que quieres cancelar este pedido? Esta acción no se puede deshacer.</p>
+                <div class="flex gap-2">
+                    <button class="btn btn-secondary" [disabled]="cancelando()" (click)="confirmandoCancelar.set(false)">Volver</button>
+                    <button class="btn btn-danger" [disabled]="cancelando()" (click)="cancelarPedido()">
+                        {{ cancelando() ? 'Cancelando…' : 'Sí, cancelar pedido' }}
+                    </button>
+                </div>
+            } @else {
+                <p class="text-sm text-[var(--color-text-muted)]">Aún no se procesa: puedes cancelarlo sin costo.</p>
+                <button class="btn btn-secondary" (click)="confirmandoCancelar.set(true)">Cancelar pedido</button>
+            }
+            @if (cancelError()) {
+                <p class="w-full text-sm text-[var(--color-error)]">{{ cancelError() }}</p>
+            }
+        </div>
+        }
     </div>
+
+    <!-- Seguimiento del envío (logística) -->
+    @if (tracking(); as t) {
+    @if (tieneEnvio(t)) {
+    <div class="card mb-4">
+        <div class="card-header"><h3 class="card-title">Seguimiento del envío</h3></div>
+        <div class="card-body grid grid-cols-2 gap-3 text-sm">
+            <div>
+                <p class="text-xs text-[var(--color-text-muted)]">N° de seguimiento</p>
+                <p class="font-mono font-medium text-[var(--color-text-primary)]">{{ t.trackingNumber }}</p>
+            </div>
+            @if (t.status) {
+            <div>
+                <p class="text-xs text-[var(--color-text-muted)]">Estado del envío</p>
+                <p class="font-medium text-[var(--color-text-primary)]">{{ t.status }}</p>
+            </div>
+            }
+            @if (t.dispatchedAt) {
+            <div>
+                <p class="text-xs text-[var(--color-text-muted)]">Despachado</p>
+                <p class="text-[var(--color-text-primary)]">{{ t.dispatchedAt | date:'dd/MM/yyyy HH:mm' }}</p>
+            </div>
+            }
+            @if (t.actualDeliveryDate) {
+            <div>
+                <p class="text-xs text-[var(--color-text-muted)]">Entregado</p>
+                <p class="text-[var(--color-text-primary)]">{{ t.actualDeliveryDate | date:'dd/MM/yyyy HH:mm' }}</p>
+            </div>
+            } @else if (t.estimatedDeliveryDate) {
+            <div>
+                <p class="text-xs text-[var(--color-text-muted)]">Entrega estimada</p>
+                <p class="text-[var(--color-text-primary)]">{{ t.estimatedDeliveryDate | date:'dd/MM/yyyy' }}</p>
+            </div>
+            }
+        </div>
+    </div>
+    }
+    }
+
+    <!-- Comprobante electrónico (sólo cuando ya tiene serie y número) -->
+    @if (comprobante(); as c) {
+    @if (c.cpeSerie && c.cpeNumero) {
+    <div class="card mb-4">
+        <div class="card-header"><h3 class="card-title">Comprobante</h3></div>
+        <div class="card-body flex flex-wrap justify-between gap-3 text-sm">
+            <div>
+                <p class="text-xs text-[var(--color-text-muted)]">{{ c.cpeTipo || 'Comprobante' }}</p>
+                <p class="font-mono font-bold text-[var(--color-text-primary)]">{{ c.cpeSerie }}-{{ c.cpeNumero }}</p>
+            </div>
+            <div>
+                <p class="text-xs text-[var(--color-text-muted)]">Estado SUNAT</p>
+                <p class="font-medium text-[var(--color-text-primary)]">{{ catalog.label('ESTADO_CPE_SUNAT', c.cpeEstado) }}</p>
+            </div>
+            @if (c.cpeFechaEmision) {
+            <div>
+                <p class="text-xs text-[var(--color-text-muted)]">Emitido</p>
+                <p class="text-[var(--color-text-primary)]">{{ c.cpeFechaEmision | date:'dd/MM/yyyy' }}</p>
+            </div>
+            }
+        </div>
+    </div>
+    }
+    }
 
     <!-- Timeline de estados -->
     @if (order()!.estado !== 'CANCELADO') {
@@ -99,14 +181,65 @@
         <div class="card-header"><h3 class="card-title">Artículos ({{ order()!.detalles!.length }})</h3></div>
         <div class="card-body p-0">
             @for (item of order()!.detalles!; track item.id) {
-            <div class="flex justify-between items-center px-5 py-3 border-b border-[var(--color-border)] last:border-0">
-                <div class="flex-1">
-                    <p class="text-sm font-medium text-[var(--color-text-primary)]">{{ item.productoNombre }}</p>
-                    <p class="text-xs text-[var(--color-text-muted)]">Cant: {{ item.cantidad }} × S/ {{ item.precioUnitario | number:'1.2-2' }}</p>
+            <div class="px-5 py-3 border-b border-[var(--color-border)] last:border-0">
+                <div class="flex justify-between items-center">
+                    <div class="flex-1">
+                        <p class="text-sm font-medium text-[var(--color-text-primary)]">{{ item.productoNombre }}</p>
+                        <p class="text-xs text-[var(--color-text-muted)]">Cant: {{ item.cantidad }} × S/ {{ item.precioUnitario | number:'1.2-2' }}</p>
+                    </div>
+                    <p class="font-bold text-[var(--color-text-primary)]">S/ {{ item.subtotal | number:'1.2-2' }}</p>
                 </div>
-                <p class="font-bold text-[var(--color-text-primary)]">S/ {{ item.subtotal | number:'1.2-2' }}</p>
+                @if (puedeResenar()) {
+                    @if (resenados().has(item.productoId)) {
+                        <p class="mt-2 text-xs text-[var(--color-success)]">¡Gracias por calificar este producto!</p>
+                    } @else if (resenando() === item.productoId) {
+                        <div class="mt-3 flex flex-col gap-2">
+                            <div class="flex gap-1" role="radiogroup" aria-label="Calificación">
+                                @for (n of estrellas; track n) {
+                                <button type="button" class="text-2xl leading-none"
+                                    role="radio" [attr.aria-checked]="resenaCalificacion() === n" [attr.aria-label]="n + ' de 5'"
+                                    [style.color]="n <= resenaCalificacion() ? 'var(--color-accent)' : 'var(--color-border)'"
+                                    (click)="resenaCalificacion.set(n)">★</button>
+                                }
+                            </div>
+                            <textarea class="input w-full" rows="2" maxlength="500" placeholder="Cuéntanos tu experiencia (opcional)"
+                                [value]="resenaComentario()" (input)="resenaComentario.set($any($event.target).value)"></textarea>
+                            @if (resenaError()) {
+                                <p class="text-xs text-[var(--color-error)]">{{ resenaError() }}</p>
+                            }
+                            <div class="flex gap-2">
+                                <button type="button" class="btn btn-primary" [disabled]="enviandoResena()" (click)="enviarResena(item.productoId)">
+                                    {{ enviandoResena() ? 'Enviando…' : 'Enviar calificación' }}
+                                </button>
+                                <button type="button" class="btn btn-secondary" [disabled]="enviandoResena()" (click)="resenando.set(null)">Cancelar</button>
+                            </div>
+                        </div>
+                    } @else {
+                        <button type="button" class="mt-2 text-sm text-[var(--color-primary)] hover:brightness-110"
+                            (click)="abrirResena(item.productoId)">Calificar producto</button>
+                    }
+                }
             </div>
             }
+        </div>
+        <div class="card-body border-t border-[var(--color-border)] text-sm flex flex-col gap-1">
+            <div class="flex justify-between text-[var(--color-text-secondary)]">
+                <span>Subtotal</span><span>S/ {{ subtotalLineas() | number:'1.2-2' }}</span>
+            </div>
+            @if (order()!.descuentoTotal) {
+            <div class="flex justify-between text-[var(--color-success)]">
+                <span>Descuento@if (order()!.codigoCupon) { ({{ order()!.codigoCupon }}) }</span>
+                <span>− S/ {{ order()!.descuentoTotal | number:'1.2-2' }}</span>
+            </div>
+            }
+            @if (order()!.costoEnvio) {
+            <div class="flex justify-between text-[var(--color-text-secondary)]">
+                <span>Envío</span><span>S/ {{ order()!.costoEnvio | number:'1.2-2' }}</span>
+            </div>
+            }
+            <div class="flex justify-between font-bold text-[var(--color-text-primary)]">
+                <span>Total</span><span>S/ {{ order()!.total | number:'1.2-2' }}</span>
+            </div>
         </div>
     </div>
     }
@@ -119,7 +252,8 @@
             <p class="font-bold text-[var(--color-text-primary)]">{{ order()!.direccionEnvio!.nombreDestinatario }}</p>
             <p class="text-sm text-[var(--color-text-secondary)]">{{ order()!.direccionEnvio!.direccion }}</p>
             <p class="text-sm text-[var(--color-text-secondary)]">
-                {{ order()!.direccionEnvio!.ciudad }}@if (order()!.direccionEnvio!.region) {, {{ order()!.direccionEnvio!.region }}}
+                {{ order()!.direccionEnvio!.ciudad }}@if (order()!.direccionEnvio!.provincia) {, {{ order()!.direccionEnvio!.provincia }}}@if (order()!.direccionEnvio!.region) {, {{ order()!.direccionEnvio!.region }}}
+                @if (order()!.direccionEnvio!.referencia) {<br>Referencia: {{ order()!.direccionEnvio!.referencia }}}
             </p>
             @if (order()!.direccionEnvio!.telefono) {
                 <p class="text-sm text-[var(--color-text-muted)] mt-1">Tel: {{ order()!.direccionEnvio!.telefono }}</p>

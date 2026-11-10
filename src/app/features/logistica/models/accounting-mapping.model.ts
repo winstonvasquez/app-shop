@@ -1,5 +1,5 @@
 /**
- * Mapeo contable PCGE para eventos logísticos (envíos, devoluciones, ajustes de inventario).
+ * Mapeo contable PCGE para eventos logísticos (ajustes de inventario).
  * Ver com.microshop.logistica.infrastructure.rest.controller.AccountingMappingController.
  */
 export interface AccountingMapping {
@@ -29,15 +29,16 @@ export interface AccountingMappingRequest {
 }
 
 /**
- * Tipos de evento conocidos, ver LogisticsAccountingService (constantes EVENT_*).
- * El backend NO restringe el valor a este set (columna String libre) — se ofrecen
- * como sugerencia porque son los únicos que el servicio dispara automáticamente hoy.
+ * Tipos de evento que logística contabiliza (InventoryMovementService → /automatico de contabilidad).
+ * Las cuentas del mapeo reemplazan a las de respaldo (faltante 659/201, sobrante 201/759).
  */
 export const EVENT_TYPES_CONOCIDOS = [
-    { value: 'SHIPMENT_COST', label: 'Costo de envío (SHIPMENT_COST)' },
-    { value: 'RETURN_REFUND', label: 'Devolución (RETURN_REFUND)' },
-    { value: 'INVENTORY_ADJUSTMENT', label: 'Ajuste de inventario (INVENTORY_ADJUSTMENT)' },
+    { value: 'AJUSTE_INVENTARIO_FALTANTE', label: 'Ajuste de inventario — faltante (AJUSTE_INVENTARIO_FALTANTE)' },
+    { value: 'AJUSTE_INVENTARIO_SOBRANTE', label: 'Ajuste de inventario — sobrante (AJUSTE_INVENTARIO_SOBRANTE)' },
 ] as const;
+
+/** Tipos antiguos que ya nadie consume: el mapeo existe pero NO genera asiento. */
+export const EVENT_TYPES_SIN_EFECTO: readonly string[] = ['SHIPMENT_COST', 'RETURN_REFUND', 'INVENTORY_ADJUSTMENT'];
 
 /** Filtros opcionales para `GET /logistics/api/accounting-mappings` (listado paginado server-side). */
 export interface AccountingMappingFiltros {
@@ -52,7 +53,8 @@ export interface AccountingMappingFiltros {
     q?: string;
 }
 
+/** Respuesta 200 de POST /test/{eventType}; el rechazo de contabilidad llega como 400 con su motivo. */
 export interface TestAsientoResultado {
-    ok: boolean;
-    mensaje: string;
+    aceptado: boolean;
+    tipo: string;
 }

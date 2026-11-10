@@ -69,7 +69,13 @@
             </div>
             <div>
                 <label class="input-label">Tipo Documento</label>
-                <app-catalog-select tabla="TIPO_COMPROBANTE" formControlName="tipoDocumento"></app-catalog-select>
+                <select class="form-input" formControlName="tipoDocumento">
+                    @for (t of tiposComprobante(); track t.codigo) {
+                        <option [value]="t.codigo">{{ catalog.label('TIPO_COMPROBANTE', t.codigo) }}</option>
+                    }
+                </select>
+                <!-- COMPRAS-7: NOTA_CREDITO no se ofrece aquí; el backend la rechaza con 400. -->
+                <p class="text-xs text-muted mt-1">La nota de crédito del proveedor no se registra aquí: se genera desde la devolución a proveedor (Compras → Devoluciones).</p>
             </div>
             <div>
                 <label class="input-label">Moneda</label>
@@ -82,6 +88,7 @@
             <div>
                 <label class="input-label">Fecha Vencimiento</label>
                 <input type="date" class="form-input" formControlName="fechaVencimiento" />
+                <p class="text-xs text-muted mt-1">Se sugiere según la condición de pago de la OC; puede editarla.</p>
             </div>
             <div class="col-span-2">
                 <label class="input-label">Observaciones</label>
@@ -143,6 +150,7 @@
                 <div><span class="text-muted">Factura:</span> <span class="font-mono">{{ fac.serie }}-{{ fac.numero }}</span></div>
                 <div><span class="text-muted">OC:</span> <span class="font-mono">{{ fac.ordenCompraCodigo }}</span></div>
                 <div><span class="text-muted">Emisión:</span> {{ fac.fechaEmision }}</div>
+                <div><span class="text-muted">Vencimiento:</span> {{ fac.fechaVencimiento || '—' }}</div>
                 <div><span class="text-muted">Estado:</span> <span [class]="getEstadoBadge(fac.estado)">{{ catalog.label('ESTADO_FACTURA_PROVEEDOR', fac.estado) }}</span></div>
                 <div><span class="text-muted">3-Way Match:</span> <span [class]="getMatchBadge(fac.resultadoMatch)">{{ catalog.label('RESULTADO_MATCH_3VIA', fac.resultadoMatch) }}</span></div>
                 <div>
@@ -156,11 +164,20 @@
             </div>
 
             <div class="card p-3 text-sm">
-                <div class="flex justify-between"><span class="text-muted">Subtotal:</span><span>S/ {{ fac.subtotal.toFixed(2) }}</span></div>
-                <div class="flex justify-between"><span class="text-muted">IGV (18%):</span><span>S/ {{ fac.igv.toFixed(2) }}</span></div>
+                <div class="flex justify-between"><span class="text-muted">Subtotal:</span><span>{{ fac.subtotal | currency: (fac.moneda || 'PEN') : 'symbol-narrow' : '1.2-2' }}</span></div>
+                <div class="flex justify-between"><span class="text-muted">IGV (18%):</span><span>{{ fac.igv | currency: (fac.moneda || 'PEN') : 'symbol-narrow' : '1.2-2' }}</span></div>
                 <div class="flex justify-between font-semibold border-t border-[var(--color-border)] pt-2 mt-2">
-                    <span>Total:</span><span>S/ {{ fac.total.toFixed(2) }}</span>
+                    <span>Total:</span><span>{{ fac.total | currency: (fac.moneda || 'PEN') : 'symbol-narrow' : '1.2-2' }}</span>
                 </div>
+                @if (fac.montoDetraccion) {
+                    <div class="flex justify-between"><span class="text-muted">Detracción {{ fac.codigoDetraccion ? '(' + fac.codigoDetraccion + ') ' : '' }}{{ fac.porcentajeDetraccion }}%:</span><span>− {{ fac.montoDetraccion | currency: (fac.moneda || 'PEN') : 'symbol-narrow' : '1.2-2' }}</span></div>
+                }
+                @if (fac.montoRetencion) {
+                    <div class="flex justify-between"><span class="text-muted">Retención IGV {{ fac.porcentajeRetencion }}%:</span><span>− {{ fac.montoRetencion | currency: (fac.moneda || 'PEN') : 'symbol-narrow' : '1.2-2' }}</span></div>
+                }
+                @if (fac.montoNetoPagar != null) {
+                    <div class="flex justify-between font-semibold"><span>Neto a pagar:</span><span>{{ fac.montoNetoPagar | currency: (fac.moneda || 'PEN') : 'symbol-narrow' : '1.2-2' }}</span></div>
+                }
             </div>
 
             @if (fac.items && fac.items.length > 0) {
@@ -174,8 +191,8 @@
                             </span>
                         </div>
                         <div class="text-muted mt-1">
-                            Cant: {{ item.cantidad }} · Precio: S/ {{ item.precioUnitario.toFixed(2) }}
-                            · Subtotal: S/ {{ item.subtotal.toFixed(2) }}
+                            Cant: {{ item.cantidad }} · Precio: {{ item.precioUnitario | currency: (fac.moneda || 'PEN') : 'symbol-narrow' : '1.2-2' }}
+                            · Subtotal: {{ item.subtotal | currency: (fac.moneda || 'PEN') : 'symbol-narrow' : '1.2-2' }}
                         </div>
                         @if (item.observaciones) {
                             <p class="text-xs text-muted mt-1">{{ item.observaciones }}</p>
@@ -184,9 +201,13 @@
                 }
             }
 
-            @if (fac.estado === 'PENDIENTE') {
+            @if (fac.estado === 'PENDIENTE' || fac.estado === 'PENDIENTE_REVISION') {
                 <div class="flex gap-3 mt-4">
-                    <app-button label="Aprobar" variant="success" icon="check-circle" (click)="aprobarFactura(fac.id!)" />
+                    @if (fac.estado === 'PENDIENTE_REVISION') {
+                        <app-button label="Aprobar con diferencias" variant="success" icon="check-circle" (click)="aprobarFactura(fac.id!, true)" />
+                    } @else {
+                        <app-button label="Aprobar" variant="success" icon="check-circle" (click)="aprobarFactura(fac.id!)" />
+                    }
                     <app-button label="Rechazar" variant="danger" icon="x-circle" (click)="openRechazarModal()" />
                     <app-button label="Validar en SUNAT" variant="secondary" icon="shield-check"
                         [loading]="validandoSunatId() === fac.id" [disabled]="validandoSunatId() === fac.id"

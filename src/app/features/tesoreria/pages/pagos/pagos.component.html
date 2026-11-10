@@ -183,3 +183,74 @@
         [loading]="cargando()" [disabled]="cargando()" (click)="confirmarRechazo()" />
   </div>
 </app-drawer>
+
+<!-- Drawer: Ejecutar pago -->
+<app-drawer
+  [isOpen]="showPayDrawer()"
+  title="Ejecutar Pago"
+  size="md"
+  side="right"
+  [hasFooter]="true"
+  (closed)="showPayDrawer.set(false)">
+
+  @if (payErrorMsg()) {
+    <div class="bg-[var(--color-error-subtle,color-mix(in_oklch,var(--color-primary)_10%,transparent))] border border-[var(--color-error)] rounded-lg p-[var(--space-sm)] mb-[var(--space-md)] text-[var(--color-error)] text-sm">
+      {{ payErrorMsg() }}
+    </div>
+  }
+
+  <form [formGroup]="payForm" class="flex flex-col gap-4">
+    <p class="text-sm">
+      Pago a <strong>{{ pagoAPagar()?.beneficiarioNombre }}</strong> por
+      <strong>{{ pagoAPagar()?.moneda }} {{ pagoAPagar()?.monto | number:'1.2-2' }}</strong>
+      ({{ pagoAPagar()?.metodoPago }}). El monto se descuenta del saldo elegido.
+    </p>
+
+    <div>
+      <label class="input-label">Sale de <span class="text-[var(--color-error)]">*</span></label>
+      <select class="form-input" formControlName="origenTipo">
+        <option value="BANCO">Cuenta bancaria</option>
+        <option value="CAJA">Caja</option>
+      </select>
+    </div>
+
+    <div>
+      <label class="input-label">
+        {{ payOrigenTipo() === 'CAJA' ? 'Caja' : 'Cuenta bancaria' }} <span class="text-[var(--color-error)]">*</span>
+      </label>
+      <select class="form-input" formControlName="origenId">
+        <option [ngValue]="null">-- Seleccionar --</option>
+        @if (payOrigenTipo() === 'CAJA') {
+          @for (c of payCajas(); track c.id) {
+            <option [ngValue]="c.id">{{ c.nombre }} ({{ c.saldoActual | number:'1.2-2' }})</option>
+          }
+        } @else {
+          @for (c of payCuentas(); track c.id) {
+            <option [ngValue]="c.id">{{ c.banco }} - {{ c.numeroCuenta }} ({{ c.saldoActual | number:'1.2-2' }})</option>
+          }
+        }
+      </select>
+      <span class="input-hint">Solo cuentas activas y cajas abiertas en {{ pagoAPagar()?.moneda }}</span>
+      @if (payForm.controls['origenId'].invalid && payForm.controls['origenId'].touched) {
+        <span class="input-error-message">Seleccione la cuenta o caja de salida</span>
+      }
+    </div>
+
+    <div>
+      <label class="input-label">
+        N.º de operación @if (payRequiereOperacion()) { <span class="text-[var(--color-error)]">*</span> }
+      </label>
+      <input class="form-input" type="text" maxlength="50" formControlName="numeroOperacion"
+             placeholder="Constancia de bancarización" />
+      @if (payForm.controls['numeroOperacion'].invalid && payForm.controls['numeroOperacion'].touched) {
+        <span class="input-error-message">Obligatorio cuando el método no es efectivo</span>
+      }
+    </div>
+  </form>
+
+  <div slot="footer">
+    <app-button icon="x" label="Cancelar" variant="secondary" [disabled]="pagando()" (click)="showPayDrawer.set(false)" />
+    <app-button icon="save" label="Confirmar Pago" variant="primary"
+        [loading]="pagando()" [disabled]="pagando()" (click)="confirmarPago()" />
+  </div>
+</app-drawer>

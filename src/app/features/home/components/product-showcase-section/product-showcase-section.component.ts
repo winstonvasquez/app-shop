@@ -1,5 +1,5 @@
 import {
-    Component, input, signal, inject, OnInit,
+    Component, input, signal, computed, inject, OnInit,
     ChangeDetectionStrategy, ViewChild, ElementRef,
 } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
@@ -10,6 +10,8 @@ import { ProductService } from '@core/services/product.service';
 import { CartService } from '@features/cart/services/cart.service';
 import { DsProductCardComponent, DsProduct } from '@shared/ui/ds';
 import { mapearProductoADsProduct } from '@shared/ui/ds';
+import { ZonaEnvioService } from '@core/services/zona-envio.service';
+import { conEnvioGratis } from '@features/cart/utils/envio-gratis';
 import { consultaDeShowcase, ShowcaseType } from '@features/home/utils/showcase.util';
 
 export type { ShowcaseType };
@@ -33,10 +35,12 @@ export class ProductShowcaseSectionComponent implements OnInit {
     private router         = inject(Router);
     private cartService    = inject(CartService);
 
-    products = signal<DsProduct[]>([]);
+    private zonaEnvio = inject(ZonaEnvioService);
+    private productsBase = signal<DsProduct[]>([]);
+    products = computed(() => conEnvioGratis(this.productsBase(), this.zonaEnvio.envioGratisDesde()));
     loading  = signal(false);
 
-    ngOnInit() { this.loadProducts(); }
+    ngOnInit() { this.zonaEnvio.cargarUmbral(); this.loadProducts(); }
 
     scroll(direction: number): void {
         this.scrollContainer?.nativeElement.scrollBy({ left: direction * 300, behavior: 'smooth' });
@@ -66,7 +70,7 @@ export class ProductShowcaseSectionComponent implements OnInit {
             filter,
         ).subscribe({
             next: (page) => {
-                this.products.set(page.content.map(p => mapearProductoADsProduct(p, { badgeDeSeccion })));
+                this.productsBase.set(page.content.map(p => mapearProductoADsProduct(p, { badgeDeSeccion })));
                 this.loading.set(false);
             },
             error: () => this.loading.set(false),

@@ -62,8 +62,11 @@
                 <p class="font-bold text-[var(--color-text-primary)]">{{ order()!.direccionEnvio!.nombreDestinatario }}</p>
                 <p class="text-sm text-[var(--color-text-secondary)]">{{ order()!.direccionEnvio!.direccion }}</p>
                 <p class="text-sm text-[var(--color-text-secondary)]">
-                    {{ order()!.direccionEnvio!.ciudad }}@if (order()!.direccionEnvio!.region) {, {{ order()!.direccionEnvio!.region }}}
+                    {{ order()!.direccionEnvio!.ciudad }}@if (order()!.direccionEnvio!.provincia) {, {{ order()!.direccionEnvio!.provincia }}}@if (order()!.direccionEnvio!.region) {, {{ order()!.direccionEnvio!.region }}}
                 </p>
+                @if (order()!.direccionEnvio!.referencia) {
+                    <p class="text-sm text-[var(--color-text-muted)]">Referencia: {{ order()!.direccionEnvio!.referencia }}</p>
+                }
                 @if (order()!.direccionEnvio!.telefono) {
                     <p class="text-sm text-[var(--color-text-muted)] mt-1">Tel: {{ order()!.direccionEnvio!.telefono }}</p>
                 }

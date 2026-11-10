@@ -2,6 +2,7 @@ import { Injectable, signal, computed } from '@angular/core';
 import { CartItem, DescuentoTipo, ProductoCatalogoPOS } from '../models/catalogo-pos.model';
 import { MetodoPagoDividido, MetodoPagoPos, PagoMixto, TipoCpe } from '../models/venta-pos.model';
 import { SUNAT_RATES } from '@shared/constants/sunat.constants';
+import { redondeoDeCobro, redondeoEfectivo } from './pos-carrito.redondeo';
 
 @Injectable({ providedIn: 'root' })
 export class PosCarritoService {
@@ -24,6 +25,9 @@ export class PosCarritoService {
         { metodo: 'EFECTIVO', monto: 0 },
         { metodo: 'YAPE',     monto: 0 },
     ]);
+
+    /** N.º de operación del pago digital simple (TARJETA/YAPE/PLIN); opcional. */
+    readonly referenciaOperacion = signal<string>('');
 
     /** Gift card aplicada al carrito */
     readonly giftCardCodigo = signal<string>('');
@@ -55,19 +59,29 @@ export class PosCarritoService {
         this.totalConDescuento() - this.baseImponible()
     );
 
+    /** POS-8: lo que se deja de cobrar por redondear el efectivo a la baja a S/ 0.10 (0 si no hay efectivo). */
+    readonly redondeo = computed(() =>
+        redondeoDeCobro(this.pagoDividido(), this.metodoPago(), this.pagos(), this.totalFinal())
+    );
+
+    /** Lo que el cajero cobra de verdad: el total menos el redondeo del efectivo. El comprobante sigue por el total. */
+    readonly totalACobrar = computed(() => Math.max(0, this.totalFinal() - this.redondeo()));
+
     readonly vuelto = computed(() => {
         if (this.pagoDividido()) {
             const totalPagado = this.pagos().reduce((s, p) => s + (p.monto || 0), 0);
-            return Math.max(0, totalPagado - this.totalFinal());
+            return Math.max(0, totalPagado - this.totalACobrar());
         }
-        return Math.max(0, this.montoRecibido() - this.totalFinal());
+        // Vuelto sólo en efectivo: con tarjeta/Yape/Plin no hay cajón del que devolver (el backend lo ignora).
+        if (this.metodoPago() !== 'EFECTIVO') return 0;
+        return Math.max(0, this.montoRecibido() - this.totalACobrar());
     });
 
     /** Cuánto falta por cubrir en modo pago dividido */
     readonly faltaPorCubrir = computed(() => {
         if (!this.pagoDividido()) return 0;
         const totalPagado = this.pagos().reduce((s, p) => s + (p.monto || 0), 0);
-        return Math.max(0, this.totalFinal() - totalPagado);
+        return Math.max(0, this.totalACobrar() - totalPagado);
     });
 
     /** Método principal (el de mayor monto) cuando hay pago dividido */
@@ -165,6 +179,7 @@ export class PosCarritoService {
         this.clienteNumeroDoc.set('');
         this.pagoDividido.set(false);
         this.pagos.set([{ metodo: 'EFECTIVO', monto: 0 }, { metodo: 'YAPE', monto: 0 }]);
+        this.referenciaOperacion.set('');
         this.giftCardCodigo.set('');
         this.giftCardMonto.set(0);
         this.autorizacion.set(null);
@@ -183,9 +198,10 @@ export class PosCarritoService {
         const on = !this.pagoDividido();
         this.pagoDividido.set(on);
         if (on) {
-            // Pre-llenar primer método con el total
+            // Pre-llenar primer método con el total (en efectivo, ya redondeado a la baja: lo que se cobra de verdad)
+            const metodo: MetodoPagoDividido = this.metodoPago() === 'MIXTO' ? 'EFECTIVO' : (this.metodoPago() as MetodoPagoDividido);
             this.pagos.set([
-                { metodo: this.metodoPago() === 'MIXTO' ? 'EFECTIVO' : (this.metodoPago() as MetodoPagoDividido), monto: this.totalFinal() },
+                { metodo, monto: metodo === 'EFECTIVO' ? Math.round((this.totalFinal() - redondeoEfectivo(this.totalFinal())) * 100) / 100 : this.totalFinal() },
                 { metodo: 'YAPE', monto: 0 },
             ]);
         }
@@ -193,6 +209,10 @@ export class PosCarritoService {
 
     setPagoMonto(index: number, monto: number): void {
         this.pagos.update(list => list.map((p, i) => i === index ? { ...p, monto: Math.max(0, monto) } : p));
+    }
+
+    setPagoReferencia(index: number, referencia: string): void {
+        this.pagos.update(list => list.map((p, i) => i === index ? { ...p, referencia } : p));
     }
 
     setPagoMetodo(index: number, metodo: MetodoPagoDividido): void {

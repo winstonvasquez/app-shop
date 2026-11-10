@@ -177,6 +177,15 @@ export class PayrollService {
         return updated;
     }
 
+    /**
+     * Elimina una boleta GENERADA (DELETE /{id}, 204). El backend responde 409 si ya no está
+     * GENERADO (aprobada/pagada = ya hay pago y asiento). Tras eliminar se puede volver a generar.
+     */
+    async deletePayroll(id: number): Promise<void> {
+        await firstValueFrom(this.http.delete<void>(`${this.baseUrl}/${id}`));
+        this._payrolls.update(list => list.filter(p => p.id !== id));
+    }
+
     private replaceInList(payroll: Payroll): void {
         this._payrolls.update(list => list.map(p => p.id === payroll.id ? payroll : p));
     }

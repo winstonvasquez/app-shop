@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { AuthService } from '../../../core/auth/auth.service';
-import { Payment, PaymentRequest, Page } from '../models/tesoreria.model';
+import { Payment, PaymentRequest, PagarPagoRequest, Page } from '../models/tesoreria.model';
 import { toHttpParams } from '@core/utils/http-params.util';
 
 @Injectable({
@@ -53,8 +53,9 @@ export class PagosService {
         return this.http.post<Payment>(`${this.apiUrl}/${id}/rechazar`, { motivo }, { params: this.tenantParams() });
     }
 
-    markAsPaid(id: number): Observable<Payment> {
-        return this.http.post<Payment>(`${this.apiUrl}/${id}/pagar`, {}, { params: this.tenantParams() });
+    /** El backend exige cuenta o caja de salida (y nº de operación si no es EFECTIVO): un body vacío da 400. */
+    markAsPaid(id: number, body: PagarPagoRequest): Observable<Payment> {
+        return this.http.post<Payment>(`${this.apiUrl}/${id}/pagar`, body, { params: this.tenantParams() });
     }
 
     private tenantParams() {

@@ -1,7 +1,23 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
+import { mensajeDeErrorHttp } from '@core/utils/http-error.util';
 import { AprobacionService } from '../../services/aprobacion.service';
-import { ConfigAprobacionRequest, NivelAprobacion } from '../../models/aprobacion.model';
+import { ConfigAprobacionRequest, NivelAprobacion, ParametroEmpresa } from '../../models/aprobacion.model';
 import { ButtonComponent } from '@shared/components';
+
+/** Parámetros de compras por empresa que se editan aquí (claves = `ParametroEmpresaCommandService`). */
+export const PARAMETROS_COMPRAS: readonly { clave: string; titulo: string; ayuda: string }[] = [
+    {
+        clave: 'COMPRAS_AGENTE_RETENCION',
+        titulo: 'Empresa agente de retención del IGV',
+        ayuda: 'Si está activo, las facturas de proveedores no agentes por más de S/ 700 se pagan con 3% de IGV retenido; si no, se pagan completas.',
+    },
+    {
+        clave: 'COMPRAS_PERMITE_AUTOAPROBACION',
+        titulo: 'Permitir autoaprobación de órdenes',
+        ayuda: 'Si está activo, quien creó la orden (o ya aprobó otro nivel) puede aprobar también; útil sólo si la empresa tiene un único aprobador.',
+    },
+];
 
 @Component({
     selector: 'app-config-aprobaciones',
@@ -12,6 +28,11 @@ import { ButtonComponent } from '@shared/components';
 })
 export class ConfigAprobacionesComponent implements OnInit {
     private aprobacionService = inject(AprobacionService);
+
+    readonly parametrosDef = PARAMETROS_COMPRAS;
+    parametros = signal<Record<string, boolean>>({});
+    guardandoParametro = signal<string | null>(null);
+    errorParametros = signal<string | null>(null);
 
     niveles = signal<NivelAprobacion[]>([]);
     loading = signal(false);
@@ -35,6 +56,30 @@ export class ConfigAprobacionesComponent implements OnInit {
 
     ngOnInit(): void {
         this.cargarNiveles();
+        this.aprobacionService.getParametros().subscribe({
+            next: (lista: ParametroEmpresa[]) =>
+                this.parametros.set(Object.fromEntries(lista.map(p => [p.clave, p.valor]))),
+            error: (err: HttpErrorResponse) => this.errorParametros.set(mensajeDeErrorHttp(err)),
+        });
+    }
+
+    cambiarParametro(clave: string, input: HTMLInputElement): void {
+        const valor = input.checked;
+        this.guardandoParametro.set(clave);
+        this.errorParametros.set(null);
+        this.aprobacionService.fijarParametro(clave, valor).subscribe({
+            next: p => {
+                this.parametros.update(m => ({ ...m, [p.clave]: p.valor }));
+                this.guardandoParametro.set(null);
+            },
+            error: (err: HttpErrorResponse) => {
+                // Sólo ADMIN puede fijarlos: el 403 trae su mensaje. El binding no cambió, así que Angular
+                // no repinta: se devuelve el checkbox a mano a su valor previo.
+                input.checked = !valor;
+                this.errorParametros.set(mensajeDeErrorHttp(err));
+                this.guardandoParametro.set(null);
+            },
+        });
     }
 
     cargarNiveles(): void {

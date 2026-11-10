@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { Router } from '@angular/router';
 import {
     FormBuilder, ReactiveFormsModule, Validators, FormGroup, FormArray, FormControl
 } from '@angular/forms';
@@ -43,6 +44,7 @@ import { transferCrearPayload } from './transfer-management.form';
 export class TransferManagementComponent {
     private readonly api = inject(InventoryApiService);
     private readonly fb = inject(FormBuilder);
+    private readonly router = inject(Router);
     readonly catalog = inject(CatalogService);
 
     transfers = signal<InventoryTransfer[]>([]);
@@ -107,6 +109,8 @@ export class TransferManagementComponent {
           render: (r) => r.sourceWarehouseName ?? String(r.sourceWarehouseId) },
         { key: 'destinationWarehouseName', label: 'Destino',
           render: (r) => r.destinationWarehouseName ?? String(r.destinationWarehouseId) },
+        { key: 'guiaRemisionId', label: 'Guía de remisión',
+          render: (r) => r.guiaRemisionId ? 'Generada' : '—' },
         {
             key: 'status', label: 'Estado', html: true,
             render: (r) => {
@@ -144,6 +148,12 @@ export class TransferManagementComponent {
     }
 
     actions: TableAction<InventoryTransfer>[] = [
+        {
+            label: 'Ver guía',
+            class: 'btn btn-secondary',
+            show: (r) => !!r.guiaRemisionId,
+            onClick: (r) => this.router.navigate(['/admin/logistica/guias'], { queryParams: { guiaId: r.guiaRemisionId } })
+        },
         {
             label: 'Enviar',
             class: 'btn btn-secondary',

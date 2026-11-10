@@ -1,0 +1,98 @@
+<div class="reclamos-page">
+    <app-page-header title="Libro de Reclamaciones"
+        [subtitle]="'Reclamos y quejas de consumidores. El plazo de respuesta es de ' + params.reclamoPlazoDias() + ' días hábiles.'"
+        [breadcrumbs]="breadcrumbs">
+    </app-page-header>
+
+    @if (error()) {
+    <app-alert type="error" [message]="error()!" [dismissible]="true" (dismiss)="error.set(null)"></app-alert>
+    }
+
+    <app-data-table
+        [data]="reclamos()"
+        [columns]="columns"
+        [actions]="actions"
+        [loading]="loading()"
+        [searchable]="false"
+        [filters]="filters"
+        [currentPage]="currentPage()"
+        [pageSize]="pageSize()"
+        [totalElements]="totalElements()"
+        [totalPages]="totalPages()"
+        (filterChange)="onFilterChange($event)"
+        (filtersClear)="onFiltersClear()"
+        (pageChange)="onPageChange($event)">
+    </app-data-table>
+
+    <app-drawer
+        [isOpen]="!!seleccionado()"
+        [title]="'Hoja de reclamación ' + (seleccionado()?.codigo ?? '')"
+        size="lg"
+        side="right"
+        [hasFooter]="true"
+        (closed)="cerrar()">
+
+        @if (seleccionado(); as r) {
+        <div class="p-md border border-[var(--color-border)] rounded-md mb-md">
+            <span class="badge" [class]="plazoDe(r).badge">{{ plazoDe(r).texto }}</span>
+            <p class="text-sm text-subtle mt-sm"><strong class="text-on">Registrado:</strong> {{ r.fechaRegistro | date:'medium' }}</p>
+            <p class="text-sm text-subtle"><strong class="text-on">Fecha límite de respuesta:</strong> {{ fechaLegible(r.fechaLimiteRespuesta) }}</p>
+        </div>
+
+        <h3 class="text-lg font-bold text-on mb-sm">Consumidor</h3>
+        <div class="p-md border border-[var(--color-border)] rounded-md mb-md">
+            <p class="text-sm text-subtle"><strong class="text-on">Nombre:</strong> {{ r.consumidorNombre }}</p>
+            <p class="text-sm text-subtle"><strong class="text-on">{{ etiquetaDoc(r.consumidorTipoDoc) }}:</strong> {{ r.consumidorNumDoc }}</p>
+            <p class="text-sm text-subtle"><strong class="text-on">Domicilio:</strong> {{ r.domicilio }}</p>
+            <p class="text-sm text-subtle"><strong class="text-on">Correo:</strong> {{ r.email }}</p>
+            @if (r.telefono) {
+            <p class="text-sm text-subtle"><strong class="text-on">Teléfono:</strong> {{ r.telefono }}</p>
+            }
+            @if (r.menorEdad) {
+            <p class="text-sm text-subtle"><strong class="text-on">Menor de edad. Apoderado:</strong>
+                {{ r.apoderadoNombre }} ({{ etiquetaDoc(r.apoderadoTipoDoc) }} {{ r.apoderadoNumDoc }})</p>
+            }
+        </div>
+
+        <h3 class="text-lg font-bold text-on mb-sm">Bien contratado</h3>
+        <div class="p-md border border-[var(--color-border)] rounded-md mb-md">
+            <p class="text-sm text-subtle"><strong class="text-on">{{ r.bienTipo === 'SERVICIO' ? 'Servicio' : 'Producto' }}:</strong> {{ r.bienDescripcion }}</p>
+            @if (r.montoReclamado !== null) {
+            <p class="text-sm text-subtle"><strong class="text-on">Monto reclamado:</strong> S/ {{ r.montoReclamado }}</p>
+            }
+        </div>
+
+        <h3 class="text-lg font-bold text-on mb-sm">{{ r.tipo === 'QUEJA' ? 'Queja' : 'Reclamo' }}</h3>
+        <div class="p-md border border-[var(--color-border)] rounded-md mb-md">
+            <p class="text-sm text-subtle mb-sm"><strong class="text-on">Detalle:</strong> {{ r.detalle }}</p>
+            <p class="text-sm text-subtle"><strong class="text-on">Pedido del consumidor:</strong> {{ r.pedidoConsumidor }}</p>
+        </div>
+
+        <h3 class="text-lg font-bold text-on mb-sm">Respuesta</h3>
+        @if (r.estado === 'RESPONDIDO') {
+        <div class="p-md border border-[var(--color-border)] rounded-md">
+            <p class="text-sm text-subtle mb-sm">{{ r.respuesta }}</p>
+            <p class="text-xs text-subtle">Respondido el {{ r.fechaRespuesta | date:'medium' }}</p>
+        </div>
+        } @else {
+        <div class="flex flex-col gap-sm">
+            <textarea class="input" rows="5" [attr.maxlength]="respuestaMax" [value]="respuesta()"
+                (input)="respuesta.set($any($event.target).value)"
+                placeholder="Respuesta al consumidor (queda registrada y no se puede editar)"></textarea>
+            <p class="text-xs text-subtle">{{ respuesta().length }}/{{ respuestaMax }}. La respuesta no se envía por correo: contáctese con el consumidor por los datos de arriba.</p>
+            @if (errorRespuesta()) {
+            <p class="text-sm text-[var(--color-error)]">{{ errorRespuesta() }}</p>
+            }
+            <div>
+                <app-button label="Registrar respuesta" variant="primary" icon="check-circle"
+                    [disabled]="!puedeResponder()" [loading]="guardando()" (click)="responder()"></app-button>
+            </div>
+        </div>
+        }
+        }
+
+        <div slot="footer">
+            <app-button label="Cerrar" variant="secondary" icon="x" (click)="cerrar()"></app-button>
+        </div>
+    </app-drawer>
+</div>

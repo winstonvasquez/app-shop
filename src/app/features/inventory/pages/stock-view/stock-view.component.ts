@@ -138,6 +138,11 @@ export class StockViewComponent {
     // ── Drawer: editar umbrales (mín./máx./punto de reorden) ──────────
     showThresholdsDrawer = signal(false);
     selectedStock = signal<InventoryStock | null>(null);
+
+    /** Título del panel de umbrales: nombre resuelto, o «Producto #id» si el maestro no lo trae. */
+    productName(id: number | undefined): string {
+        return id === undefined ? '' : (this.productNames().get(id) ?? `Producto #${id}`);
+    }
     submittingThresholds = signal(false);
     thresholdsError = signal<string | null>(null);
 

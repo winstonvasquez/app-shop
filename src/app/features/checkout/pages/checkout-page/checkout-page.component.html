@@ -54,16 +54,6 @@
             <!-- LEFT COLUMN -->
             <div class="w-full lg:w-2/3 flex flex-col gap-4">
 
-                <!-- Green Banners -->
-                <div class="bg-[var(--color-success)] text-white p-3 rounded-lg flex items-center gap-2 font-bold shadow-sm">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4">
-                        </path>
-                    </svg>
-                    {{ 'checkout.envioGratis' | translate }}
-                </div>
-
                 <!-- Guest Form (solo para invitados no autenticados) -->
                 @if (isGuest()) {
                 <div class="bg-[var(--color-surface)] rounded-lg p-5 shadow-sm border border-[var(--color-border)]">
@@ -126,6 +116,12 @@
 
                     <div class="mt-5 border-t border-[var(--color-border)] pt-4">
                         <h3 class="text-sm font-bold text-[var(--color-text-primary)] mb-3">Método de envío</h3>
+                        @if (envioGratis(); as eg) {
+                        <p class="mb-3 text-xs font-semibold text-[var(--color-success)]">
+                            @if (eg.gratis) { Envío gratis en este pedido }
+                            @else { Te faltan S/ {{ eg.falta | number:'1.2-2' }} para envío gratis }
+                        </p>
+                        }
                         @if (zonas().length) {
                         <div class="flex flex-col gap-2">
                             @for (zona of zonas(); track zona.id) {
@@ -144,26 +140,19 @@
                                     </p>
                                 </div>
                                 <span class="text-sm font-bold"
-                                    [class.text-[var(--color-success)]]="zona.costoEnvio === 0"
-                                    [class.text-[var(--color-text-primary)]]="zona.costoEnvio > 0">
-                                    {{ zona.costoEnvio === 0 ? 'GRATIS' : ('S/ ' + (zona.costoEnvio | number:'1.2-2')) }}
+                                    [class.text-[var(--color-success)]]="costoEnvioDe(zona) === 0"
+                                    [class.text-[var(--color-text-primary)]]="costoEnvioDe(zona) > 0">
+                                    {{ costoEnvioDe(zona) === 0 ? 'GRATIS' : ('S/ ' + (costoEnvioDe(zona) | number:'1.2-2')) }}
                                 </span>
                             </label>
                             }
                         </div>
+                        } @else if (zonaCargando()) {
+                        <p class="text-sm text-[var(--color-text-muted)]">Calculando envío…</p>
+                        } @else if (zonaMensaje()) {
+                        <p class="p-3 rounded-lg text-sm border border-[var(--color-warning)] text-[var(--color-text-primary)] bg-[var(--color-surface-raised)]">{{ zonaMensaje() }}</p>
                         } @else {
-                        <div class="flex items-start gap-3">
-                            <div class="mt-0.5 text-[var(--color-success)]">
-                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                                    <path d="M8 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM15 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z"/>
-                                    <path d="M3 4a1 1 0 00-1 1v8a1 1 0 001 1h1a2.5 2.5 0 015 0h2a2.5 2.5 0 015 0h1a1 1 0 001-1v-3.382a1 1 0 00-.553-.894L15 6h-2V5a1 1 0 00-1-1H3z"/>
-                                </svg>
-                            </div>
-                            <div>
-                                <p class="font-bold text-[var(--color-text-primary)]">Envío Estándar - GRATIS</p>
-                                <p class="text-sm text-[var(--color-text-muted)]">Entrega estimada de 4 a 10 días hábiles</p>
-                            </div>
-                        </div>
+                        <p class="text-sm text-[var(--color-text-muted)]">Agrega una dirección para calcular el envío.</p>
                         }
                     </div>
                     <!-- Delivery Guarantee -->
@@ -176,6 +165,52 @@
                                     clip-rule="evenodd"></path>
                             </svg> Reembolso de artículos dañados</div>
                     </div>
+                </div>
+
+                <!-- Comprobante de pago (TIENDA-1) -->
+                <div class="bg-[var(--color-surface)] rounded-lg p-5 shadow-sm border border-[var(--color-border)]">
+                    <h2 class="text-lg font-bold mb-4 text-[var(--color-text-primary)]">Comprobante de pago</h2>
+                    <div class="flex gap-6 mb-4">
+                        <label class="flex items-center gap-2 cursor-pointer text-sm text-[var(--color-text-primary)]">
+                            <input type="radio" name="comprobante" class="w-4 h-4 accent-[var(--color-accent)]"
+                                [checked]="tipoComprobante() === 'BOLETA'" (change)="setTipoComprobante('BOLETA')">
+                            Boleta
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer text-sm text-[var(--color-text-primary)]">
+                            <input type="radio" name="comprobante" class="w-4 h-4 accent-[var(--color-accent)]"
+                                [checked]="tipoComprobante() === 'FACTURA'" (change)="setTipoComprobante('FACTURA')">
+                            Factura (con RUC)
+                        </label>
+                    </div>
+                    <app-admin-form-section [columns]="2">
+                        @if (tipoComprobante() === 'FACTURA') {
+                        <app-form-field label="RUC" [required]="true">
+                            <input type="text" inputmode="numeric" maxlength="11" class="form-input" placeholder="20123456789"
+                                [value]="numDocCliente()" (input)="setNumDocCliente($any($event.target).value)">
+                        </app-form-field>
+                        <app-form-field label="Razón social" [required]="true">
+                            <input type="text" class="form-input" placeholder="Mi Empresa S.A.C."
+                                maxlength="200" [value]="razonSocial()" (input)="setRazonSocial($any($event.target).value)">
+                        </app-form-field>
+                        } @else {
+                        <app-form-field label="Tipo de documento">
+                            <select class="form-input" [value]="tipoDocCliente()" (change)="setTipoDocCliente($any($event.target).value)">
+                                <option value="1">DNI</option>
+                                <option value="4">Carné de extranjería</option>
+                                <option value="7">Pasaporte</option>
+                            </select>
+                        </app-form-field>
+                        <app-form-field label="Número de documento" [required]="finalTotal() > umbralBoleta">
+                            <input type="text" class="form-input" [attr.maxlength]="tipoDocCliente() === '1' ? 8 : 20"
+                                [value]="numDocCliente()" (input)="setNumDocCliente($any($event.target).value)">
+                        </app-form-field>
+                        }
+                    </app-admin-form-section>
+                    @if (comprobanteTocado() && errorComprobante()) {
+                    <p class="text-xs text-[var(--color-error)] mt-2">{{ errorComprobante() }}</p>
+                    } @else if (tipoComprobante() === 'BOLETA' && finalTotal() > umbralBoleta) {
+                    <p class="text-xs text-[var(--color-text-muted)] mt-2">Las boletas por más de S/ {{ umbralBoleta }} requieren el documento del comprador.</p>
+                    }
                 </div>
 
                 <!-- Payment Methods -->
@@ -275,7 +310,7 @@
 
                                     <button
                                         type="submit"
-                                        [disabled]="isLoading()"
+                                        [disabled]="isLoading() || !selectedZona()"
                                         class="btn btn-primary w-full mt-2">
                                         @if (isLoading()) {
                                         <span class="flex items-center justify-center gap-2">
@@ -304,7 +339,7 @@
                                     }
                                     <button
                                         (click)="initiateYapePayment()"
-                                        [disabled]="yapeLoading()"
+                                        [disabled]="yapeLoading() || !selectedZona()"
                                         class="w-full bg-[var(--color-yape)] text-white font-bold py-3 px-4 rounded-xl hover:brightness-110 transition-all disabled:opacity-50 flex items-center justify-center gap-2">
                                         @if (yapeLoading()) {
                                         <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
@@ -420,9 +455,9 @@
                                 <span>S/ {{ cartTotal().toFixed(2) }}</span>
                             </div>
                             <div class="flex justify-between font-medium"
-                                [class.text-[var(--color-success)]]="shippingCost() === 0">
+                                [class.text-[var(--color-success)]]="!!selectedZona() && shippingCost() === 0">
                                 <span>Envío{{ selectedZona() ? ' · ' + selectedZona()!.nombre : '' }}</span>
-                                <span>{{ shippingCost() === 0 ? 'Gratis' : ('S/ ' + (shippingCost() | number:'1.2-2')) }}</span>
+                                <span>{{ !selectedZona() ? 'Por calcular' : shippingCost() === 0 ? 'Gratis' : ('S/ ' + (shippingCost() | number:'1.2-2')) }}</span>
                             </div>
                             @if (couponDiscount() > 0) {
                                 <div class="flex justify-between text-[var(--color-success)] font-medium">
@@ -438,6 +473,7 @@
                             <div class="text-right">
                                 <span class="text-xl font-bold text-[var(--color-accent)] leading-none block">S/ {{ finalTotal() |
                                     number:'1.2-2' }}</span>
+                                <span class="text-xs text-[var(--color-text-muted)] block mt-1">Incluye IGV S/ {{ igvDelTotal() | number:'1.2-2' }}</span>
                             </div>
                         </div>
 
@@ -449,7 +485,7 @@
 
                         <!-- Submit Button — despacha al flujo de pago según método -->
                         <div class="mb-5">
-                            <button (click)="confirmCheckout()" [disabled]="isProcessing() || !selectedPaymentMethod()"
+                            <button (click)="confirmCheckout()" [disabled]="isProcessing() || !selectedPaymentMethod() || !selectedZona()"
                                 class="btn btn-primary btn-lg w-full rounded-full active:scale-95">
                                 @if (isProcessing()) {
                                 <span class="flex items-center justify-center gap-2">

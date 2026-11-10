@@ -4,7 +4,10 @@
         <!-- Total a cobrar -->
         <div class="numpad-total-section">
             <p class="numpad-total-label">Total a cobrar</p>
-            <p class="numpad-total-amount">S/{{ fmt(carrito.totalFinal()) }}</p>
+            <p class="numpad-total-amount">S/{{ fmt(carrito.totalACobrar()) }}</p>
+            @if (carrito.redondeo() > 0) {
+            <p class="numpad-items-count">Total S/{{ fmt(carrito.totalFinal()) }} · Redondeo −S/ {{ fmt(carrito.redondeo()) }}</p>
+            }
             <p class="numpad-items-count">{{ carrito.itemCount() }} ítem(s) en el pedido</p>
         </div>
 

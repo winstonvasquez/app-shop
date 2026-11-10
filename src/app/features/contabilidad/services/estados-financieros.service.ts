@@ -2,21 +2,35 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '@env/environment';
 
-export interface LineaBalance { codigo: string; nombre: string; monto: number; }
+/** Espejo de `PartidaFinancieraDto` (backend). */
+export interface LineaBalance { codigo: string; nombre: string; saldo: number; }
+/** Espejo de `BalanceGeneralDto`. */
 export interface BalanceGeneral {
+    anno: number;
     activos: LineaBalance[];
     pasivos: LineaBalance[];
     patrimonio: LineaBalance[];
-    totalActivo: number;
-    totalPasivoPlusPatrimonio: number;
+    totalActivos: number;
+    totalPasivos: number;
+    totalPatrimonio: number;
 }
+/** Espejo de `EstadoResultadosDto`. `gastos` es toda la clase 6 (incluye el costo de ventas 69). */
 export interface EstadoResultados {
+    anno: number;
     ingresos: LineaBalance[];
     gastos: LineaBalance[];
+    totalIngresos: number;
+    totalGastos: number;
+    utilidadBruta: number;
     utilidadNeta: number;
 }
+/** Espejo de `FlujoEfectivoDto`. */
 export interface FlujoEfectivo {
-    flujoOperativo: number;
+    anno: number;
+    operacion: LineaBalance[];
+    inversion: LineaBalance[];
+    financiamiento: LineaBalance[];
+    flujoOperacion: number;
     flujoInversion: number;
     flujoFinanciamiento: number;
     flujoNeto: number;

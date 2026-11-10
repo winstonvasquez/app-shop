@@ -8,6 +8,8 @@ export interface DenominacionConteo {
 export interface CierreArqueoData {
     montoCierreContado: number;
     denominaciones: DenominacionConteo[];
+    /** Sólo el cierre forzoso la manda (obligatoria ahí). */
+    observacion?: string;
 }
 
 @Component({
@@ -23,6 +25,9 @@ export class PosDenominationCounterComponent {
 
     readonly billetes = [200, 100, 50, 20, 10];
     readonly monedas = [5, 2, 1, 0.50, 0.20, 0.10];
+
+    /** Paso de confirmación: el cierre es irreversible y registra el arqueo en tesorería con este conteo. */
+    readonly confirmando = signal(false);
 
     private readonly conteos = signal<Map<number, number>>(new Map());
 

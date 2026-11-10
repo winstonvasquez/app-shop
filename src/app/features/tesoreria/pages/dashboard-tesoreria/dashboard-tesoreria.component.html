@@ -19,7 +19,7 @@
     }
 
     <!-- KPI Cards -->
-    <div class="kpi-grid kpi-grid-5">
+    <div class="kpi-grid">
         <div class="kpi-card kpi-card-blue">
             <div class="kpi-top">
                 <span class="kpi-label">Cajas Abiertas</span>
@@ -44,8 +44,30 @@
                     </svg>
                 </div>
             </div>
-            <div class="kpi-value" style="font-size:1.4rem">S/ {{ saldoTotalCajas() | number:'1.2-2' }}</div>
-            <div class="kpi-sub">saldo acumulado</div>
+            <div class="kpi-value" style="font-size:1.4rem">
+                @for (l of saldoCajas(); track l.moneda) {
+                    <div>{{ simbolo(l.moneda) }} {{ l.monto | number:'1.2-2' }}</div>
+                }
+            </div>
+            <div class="kpi-sub">cajas abiertas</div>
+        </div>
+
+        <div class="kpi-card kpi-card-blue">
+            <div class="kpi-top">
+                <span class="kpi-label">Saldo en Bancos</span>
+                <div class="kpi-icon kpi-icon-blue">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M3 10l9-6 9 6M5 10v9m4-9v9m6-9v9m4-9v9M3 21h18"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="kpi-value" style="font-size:1.4rem">
+                @for (l of saldoBancos(); track l.moneda) {
+                    <div>{{ simbolo(l.moneda) }} {{ l.monto | number:'1.2-2' }}</div>
+                }
+            </div>
+            <div class="kpi-sub">cuentas activas</div>
         </div>
 
         <div class="kpi-card kpi-card-teal">
@@ -58,7 +80,11 @@
                     </svg>
                 </div>
             </div>
-            <div class="kpi-value" style="font-size:1.4rem">S/ {{ ingresosHoy() | number:'1.2-2' }}</div>
+            <div class="kpi-value" style="font-size:1.4rem">
+                @for (l of ingresosHoy(); track l.moneda) {
+                    <div>{{ simbolo(l.moneda) }} {{ l.monto | number:'1.2-2' }}</div>
+                }
+            </div>
             <div class="kpi-sub">movimientos INGRESO</div>
         </div>
 
@@ -72,7 +98,11 @@
                     </svg>
                 </div>
             </div>
-            <div class="kpi-value" style="font-size:1.4rem">S/ {{ egresosHoy() | number:'1.2-2' }}</div>
+            <div class="kpi-value" style="font-size:1.4rem">
+                @for (l of egresosHoy(); track l.moneda) {
+                    <div>{{ simbolo(l.moneda) }} {{ l.monto | number:'1.2-2' }}</div>
+                }
+            </div>
             <div class="kpi-sub">movimientos EGRESO</div>
         </div>
 
@@ -94,51 +124,7 @@
     @if (cargando()) {
         <div class="loading-container"><div class="spinner"></div></div>
     } @else {
-        <!-- Charts row -->
-        <div class="dash-row dash-row-2-1 mb-5">
-            <!-- Área: Flujo de caja 7 días -->
-            <div class="chart-card">
-                <div class="chart-card-header">
-                    <span class="chart-card-title">Flujo de Caja — Últimos 7 días</span>
-                    <a routerLink="/tesoreria/flujo-caja" style="font-size:0.8125rem;color:var(--color-primary)">Ver completo →</a>
-                </div>
-                <div class="chart-card-body">
-                    <apx-chart
-                        [series]="areaSeries"
-                        [chart]="areaChart"
-                        [xaxis]="areaXAxis"
-                        [yaxis]="areaYAxis"
-                        [fill]="areaFill"
-                        [stroke]="areaStroke"
-                        [grid]="areaGrid"
-                        [colors]="areaColors"
-                        [legend]="areaLegend"
-                        [dataLabels]="{ enabled: false }"
-                        [tooltip]="areaTooltip">
-                    </apx-chart>
-                </div>
-            </div>
-
-            <!-- Donut: Distribución por método -->
-            <div class="chart-card">
-                <div class="chart-card-header">
-                    <span class="chart-card-title">Por Método de Pago</span>
-                </div>
-                <div class="chart-card-body">
-                    <apx-chart
-                        [series]="donutSeries"
-                        [chart]="donutChart"
-                        [labels]="donutLabels"
-                        [colors]="donutColors"
-                        [plotOptions]="donutPlot"
-                        [legend]="donutLegend"
-                        [dataLabels]="{ enabled: false }"
-                        [tooltip]="{ theme: 'dark' }">
-                    </apx-chart>
-                </div>
-            </div>
-        </div>
-
+        <!-- Gráficos de flujo/método de pago retirados: eran series fijas inventadas (flujo real en /tesoreria/flujo-caja). -->
         <!-- Estado de cajas + Pagos recientes -->
         <div class="dash-row dash-row-1-1 mb-5">
             <div class="card">
@@ -159,7 +145,7 @@
                             <tr class="table-row">
                                 <td class="table-cell font-semibold">{{ caja.nombre }}</td>
                                 <td class="table-cell text-right" style="font-variant-numeric:tabular-nums">
-                                    S/ {{ caja.saldoActual | number:'1.2-2' }}
+                                    {{ simbolo(caja.moneda) }} {{ caja.saldoActual | number:'1.2-2' }}
                                 </td>
                                 <td class="table-cell">
                                     <span [class]="caja.estado === 'ABIERTA' ? 'badge badge-success' : 'badge badge-neutral'">
@@ -200,7 +186,7 @@
                                     <div class="text-subtle" style="font-size:0.75rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px">{{ pago.concepto }}</div>
                                 </td>
                                 <td class="table-cell text-right" style="font-variant-numeric:tabular-nums">
-                                    S/ {{ pago.monto | number:'1.2-2' }}
+                                    {{ simbolo(pago.moneda) }} {{ pago.monto | number:'1.2-2' }}
                                 </td>
                                 <td class="table-cell">
                                     <span [class]="badgePago(pago.estado)">{{ pago.estado }}</span>
@@ -242,7 +228,7 @@
                             <td class="table-cell text-subtle" style="font-size:0.875rem">{{ mov.origen }}</td>
                             <td class="table-cell text-right font-bold" style="white-space:nowrap;font-variant-numeric:tabular-nums"
                                 [style.color]="mov.tipoMovimiento === 'INGRESO' ? 'var(--color-success)' : 'var(--color-warning)'">
-                                {{ mov.tipoMovimiento === 'EGRESO' ? '-' : '+' }}S/ {{ mov.monto | number:'1.2-2' }}
+                                {{ mov.tipoMovimiento === 'EGRESO' ? '-' : '+' }}{{ simbolo(mov.moneda) }} {{ mov.monto | number:'1.2-2' }}
                             </td>
                         </tr>
                     }

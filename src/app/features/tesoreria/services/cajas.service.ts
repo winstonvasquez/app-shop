@@ -21,6 +21,12 @@ export interface CajaUpdateRequest {
     observaciones?: string;
 }
 
+/** POST /{id}/abrir: otro saldo distinto al de cierre exige confirmarAjuste=true (409 si no). */
+export interface AbrirCajaRequest {
+    saldoInicial: number;
+    confirmarAjuste: boolean;
+}
+
 /** Filtros server-side del listado de cajas. Todos opcionales. */
 export interface CajaFiltros {
     page?: number;
@@ -88,9 +94,9 @@ export class CajasService {
     }
 
     /** Rutas reales del controller: POST /{id}/abrir y /{id}/cerrar, ambas con tenantId por query param. */
-    open(id: number, saldoInicial: number): Observable<CashRegister> {
+    open(id: number, req: AbrirCajaRequest): Observable<CashRegister> {
         const params = new HttpParams().set('tenantId', this.tenantId.toString());
-        return this.http.post<CashRegister>(`${this.apiUrl}/${id}/abrir`, { saldoInicial }, { params });
+        return this.http.post<CashRegister>(`${this.apiUrl}/${id}/abrir`, req, { params });
     }
 
     close(id: number, saldoFinal: number): Observable<CashRegister> {

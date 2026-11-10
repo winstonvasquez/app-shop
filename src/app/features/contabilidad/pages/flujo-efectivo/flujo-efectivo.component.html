@@ -43,7 +43,7 @@
             <div class="card">
                 <div class="card-body">
                     <p class="text-muted text-sm mb-1">Actividades Operativas</p>
-                    <p class="text-xl font-bold">S/ {{ flujo()!.flujoOperativo | number:'1.2-2' }}</p>
+                    <p class="text-xl font-bold">S/ {{ flujo()!.flujoOperacion | number:'1.2-2' }}</p>
                     <p class="text-muted text-sm mt-1">Operaciones del negocio</p>
                 </div>
             </div>
@@ -99,7 +99,7 @@
                         <tbody>
                             <tr class="table-row">
                                 <td class="table-cell">Actividades Operativas</td>
-                                <td class="table-cell text-right">{{ flujo()!.flujoOperativo | number:'1.2-2' }}</td>
+                                <td class="table-cell text-right">{{ flujo()!.flujoOperacion | number:'1.2-2' }}</td>
                             </tr>
                             <tr class="table-row">
                                 <td class="table-cell">Actividades de Inversión</td>

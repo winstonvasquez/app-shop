@@ -158,3 +158,8 @@
         display: none;
     }
 }
+/* Hamburguesa: sólo <768px (donde el sidebar sale de pantalla). Va en SCSS porque `.icon-button`
+   (sin capa) ganaría a la utilidad `md:hidden` de Tailwind (en @layer). */
+@media (min-width: 768px) {
+    .menu-button { display: none; }
+}

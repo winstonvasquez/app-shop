@@ -57,10 +57,12 @@ export class SystemParameterService {
 
     // Parámetros financieros peruanos
     public igvRate = computed(() => parseFloat(this.get('IGV_RATE', '0.18')));
-    public uitAnio = computed(() => parseFloat(this.get('UIT_ANIO', '5150')));
+    public uitAnio = computed(() => parseFloat(this.get('UIT_ANIO', '5500')));
     public serieBoletaDefault = computed(() => this.get('SERIE_BOLETA', CPE_SERIE.BOLETA_DEFAULT));
     public serieFacturaDefault = computed(() => this.get('SERIE_FACTURA', CPE_SERIE.FACTURA_DEFAULT));
-    public rmv = computed(() => parseFloat(this.get('RMV', '1025')));
+    public rmv = computed(() => parseFloat(this.get('RMV', '1130')));
+    /** Días hábiles para responder un reclamo (configurable; máximo legal 15). */
+    public reclamoPlazoDias = computed(() => Math.min(15, Math.max(1, parseInt(this.get('RECLAMO_PLAZO_DIAS_HABILES', '15'), 10) || 15)));
 
     /**
      * Loads parameters from the backend. Typically called at AppInit.

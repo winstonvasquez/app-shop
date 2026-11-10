@@ -24,6 +24,26 @@ export interface CarritoParaVenta {
     montoRecibido: number;
     /** Token de supervisor a enviar; la página lo pasa sólo si el descuento de la venta lo exige. */
     autorizacionToken?: string;
+    /** N.º de operación del pago digital simple (se ignora en pago dividido, donde va por línea). */
+    referenciaOperacion?: string;
+}
+
+/** Medios con comprobante conciliable: sólo ellos llevan N.º de operación (en EFECTIVO/GIFT_CARD/MIXTO no aplica). */
+const METODOS_DIGITALES: readonly string[] = ['TARJETA', 'YAPE', 'PLIN'];
+
+/** Referencia limpia para enviar, o undefined si el medio no es digital o quedó en blanco. */
+function referenciaDigital(metodo: string, referencia: string | undefined): string | undefined {
+    const r = referencia?.trim();
+    return r && METODOS_DIGITALES.includes(metodo) ? r : undefined;
+}
+
+/** Mismo formato que valida el backend: ≤40 caracteres de `[A-Za-z0-9 ._/#-]`. Null si es válida o vacía. */
+export function errorReferenciaOperacion(referencia: string | undefined): string | null {
+    const r = referencia?.trim();
+    if (!r) return null;
+    return /^[A-Za-z0-9 ._/#-]{1,40}$/.test(r)
+        ? null
+        : 'El N.º de operación admite hasta 40 letras, números y . _ / # -';
 }
 
 /**
@@ -54,6 +74,7 @@ export function construirVentaPosRequest(carrito: CarritoParaVenta): VentaPosReq
 
     const giftCardCodigo = carrito.giftCardCodigo || undefined;
     const soloGiftCard = giftCardCodigo !== undefined && carrito.giftCardCubreTodo;
+    const metodoPago: MetodoPagoPos = soloGiftCard ? 'GIFT_CARD' : carrito.metodoPagoPrimario;
 
     return {
         turnoCajaId: carrito.turnoCajaId,
@@ -65,7 +86,7 @@ export function construirVentaPosRequest(carrito: CarritoParaVenta): VentaPosReq
             autorizadoPor: i.autorizadoPor ?? undefined,
             bolsas: i.bolsas > 0 ? i.bolsas : undefined,
         })),
-        metodoPago: soloGiftCard ? 'GIFT_CARD' : carrito.metodoPagoPrimario,
+        metodoPago,
         tipoCpe: carrito.tipoCpe,
         clienteId: carrito.clienteId ?? undefined,
         clienteNombre: carrito.clienteNombre || undefined,
@@ -74,7 +95,10 @@ export function construirVentaPosRequest(carrito: CarritoParaVenta): VentaPosReq
         giftCardCodigo,
         descuento: carrito.descuento || undefined,
         montoRecibido: soloGiftCard ? undefined : (pagoDividido ? montoTotalPagos : (carrito.montoRecibido || undefined)),
-        pagos: pagoDividido && !soloGiftCard ? carrito.pagos.filter(p => p.monto > 0) : undefined,
+        pagos: pagoDividido && !soloGiftCard
+            ? carrito.pagos.filter(p => p.monto > 0).map(p => ({ ...p, referencia: referenciaDigital(p.metodo, p.referencia) }))
+            : undefined,
+        referenciaOperacion: pagoDividido ? undefined : referenciaDigital(metodoPago, carrito.referenciaOperacion),
         autorizacionToken: carrito.autorizacionToken || undefined,
     };
 }
@@ -96,4 +120,53 @@ export function errorFacturaSinRuc(
     return clienteTipoDoc === '6' && /^\d{11}$/.test(clienteNumeroDoc)
         ? null
         : 'Para emitir factura selecciona un cliente con RUC';
+}
+
+/**
+ * Umbral de identificación de la boleta (S/). Espejo del default del backend (BOLETA_MONTO_IDENTIFICACION):
+ * el servidor sigue siendo quien decide; esto sólo evita cobrar para recibir el 400 después.
+ */
+export const BOLETA_MONTO_IDENTIFICACION = 700;
+
+/** Mismo criterio de documento válido que el backend: DNI 8 dígitos no ceros, RUC 11 dígitos, CE/pasaporte no vacío. */
+function documentoAdquirenteValido(tipoDoc: string, numero: string): boolean {
+    const n = numero.trim();
+    switch (tipoDoc) {
+        case '1': return /^\d{8}$/.test(n) && !/^0+$/.test(n);
+        case '6': return /^\d{11}$/.test(n);
+        case '4': case '7': return n.length > 0;
+        default: return false;
+    }
+}
+
+/** Boleta por más de S/700 sin adquirente identificado: mensaje de bloqueo ANTES de cobrar; null si se puede. */
+export function errorBoletaSinIdentificar(
+    tipoCpe: TipoCpe, total: number, clienteTipoDoc: string, clienteNumeroDoc: string,
+): string | null {
+    if (tipoCpe !== 'BOLETA' || total <= BOLETA_MONTO_IDENTIFICACION) return null;
+    return documentoAdquirenteValido(clienteTipoDoc, clienteNumeroDoc)
+        ? null
+        : `La boleta por más de S/${BOLETA_MONTO_IDENTIFICACION} requiere identificar al cliente (DNI, CE, pasaporte o RUC válido)`;
+}
+
+const TOLERANCIA_EFECTIVO = 0.01;
+
+/** Efectivo informado que no alcanza el total a cubrir; null si no hay monto informado, no es efectivo o alcanza. */
+export function errorEfectivoInsuficiente(
+    metodo: MetodoPagoPos, pagoDividido: boolean, montoRecibido: number, total: number,
+): string | null {
+    if (pagoDividido || metodo !== 'EFECTIVO' || !(montoRecibido > 0)) return null;
+    return montoRecibido < total - TOLERANCIA_EFECTIVO
+        ? `El efectivo recibido (S/${montoRecibido.toFixed(2)}) no cubre el total (S/${total.toFixed(2)})`
+        : null;
+}
+
+/** Resultado del arqueo para el aviso de cierre: contado − esperado (el backend devuelve el esperado en montoCierreReal). */
+export function textoDiferenciaArqueo(contado: number, esperado: number | null | undefined): string {
+    if (esperado == null) return 'Turno cerrado con arqueo';
+    const dif = Math.round((contado - esperado) * 100) / 100;
+    if (dif === 0) return 'Turno cerrado: arqueo cuadrado';
+    return dif > 0
+        ? `Turno cerrado: sobrante de S/${dif.toFixed(2)} (contado S/${contado.toFixed(2)}, esperado S/${esperado.toFixed(2)})`
+        : `Turno cerrado: faltante de S/${(-dif).toFixed(2)} (contado S/${contado.toFixed(2)}, esperado S/${esperado.toFixed(2)})`;
 }

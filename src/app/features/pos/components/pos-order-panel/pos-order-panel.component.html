@@ -166,6 +166,17 @@
                 <span class="totals-currency">S/</span>{{ fmt(carrito.totalFinal()) }}
             </span>
         </div>
+        <!-- POS-8: el efectivo se cobra a la baja a S/0.10; el comprobante sigue por el TOTAL -->
+        @if (carrito.redondeo() > 0) {
+        <div class="totals-row totals-row--discount">
+            <span>Redondeo (efectivo)</span>
+            <span class="totals-val">−S/ {{ fmt(carrito.redondeo()) }}</span>
+        </div>
+        <div class="totals-row">
+            <span>A cobrar en efectivo</span>
+            <span class="totals-val">S/ {{ fmt(carrito.totalACobrar()) }}</span>
+        </div>
+        }
     </div>
 
     <!-- Pago -->
@@ -215,7 +226,8 @@
         </button>
 
         @if (!carrito.pagoDividido()) {
-        <!-- Modo simple -->
+        <!-- Modo simple: monto recibido/vuelto sólo existen en efectivo (tarjeta/Yape/Plin no dan vuelto) -->
+        @if (carrito.metodoPago() === 'EFECTIVO') {
         <div class="payment-amounts">
             <div class="amount-group">
                 <label class="amount-label">Monto recibido</label>
@@ -232,6 +244,17 @@
                 </div>
             </div>
         </div>
+        }
+        <!-- N.º de operación (voucher/Yape/Plin) para poder conciliar el cobro; opcional -->
+        @if (carrito.metodoPago() === 'TARJETA' || carrito.metodoPago() === 'YAPE' || carrito.metodoPago() === 'PLIN') {
+        <div class="amount-group mt-2">
+            <label class="amount-label" for="pos-ref-operacion">N.º de operación (opcional)</label>
+            <input id="pos-ref-operacion" type="text" maxlength="40" autocomplete="off"
+                class="w-full h-8 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-raised)] text-on text-xs px-3"
+                placeholder="Voucher / código de operación" [value]="carrito.referenciaOperacion()"
+                (input)="carrito.referenciaOperacion.set($any($event.target).value)">
+        </div>
+        }
         } @else {
         <!-- Modo pago dividido -->
         <div style="margin-top:8px;display:flex;flex-direction:column;gap:6px">
@@ -253,6 +276,12 @@
                     (click)="carrito.quitarPago($index)">✕</button>
                 }
             </div>
+            @if (pago.metodo !== 'EFECTIVO') {
+            <input type="text" maxlength="40" autocomplete="off"
+                class="w-full h-7 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-raised)] text-on text-xs px-3"
+                placeholder="N.º de operación (opcional)" [value]="pago.referencia ?? ''"
+                (input)="carrito.setPagoReferencia($index, $any($event.target).value)">
+            }
             }
             <button class="btn-secondary !h-7 !text-[11px] !rounded-lg"
                 (click)="carrito.agregarPago()" [disabled]="carrito.pagos().length >= 4">
@@ -332,7 +361,7 @@
                 </svg>
                 Cobrar
                 <span class="ml-2 font-mono text-[16px] bg-black/20 px-2 py-0.5 rounded-md">S/{{
-                    fmt(carrito.totalFinal()) }}</span>
+                    fmt(carrito.pagoDividido() ? carrito.totalFinal() : carrito.totalACobrar()) }}</span>
             </button>
         </div>
 

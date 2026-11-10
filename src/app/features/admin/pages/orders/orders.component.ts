@@ -11,8 +11,10 @@ import { VentasParametrosService } from '../../services/ventas-parametros.servic
 import { PaginationConfig, pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 import {
   filtrosDePedidos, FiltrosPedidoCrudos, clienteDePedido, etiquetaDe,
-  METODOS_PAGO_PEDIDO, ESTADOS_PAGO_PEDIDO
+  METODOS_PAGO_PEDIDO, ESTADOS_PAGO_PEDIDO, errorReferenciaPago, REFERENCIA_PAGO_MAX,
+  comprobanteDePedido, estadoCpeDePedido, accionesDePedido
 } from './orders.params';
+import { ConfirmModalService } from '@shared/services/confirm-modal.service';
 import { DataTableComponent, TableColumn, TableAction, PaginationEvent, SortEvent, FilterConfig, FilterChangeEvent, DateRangeFilterConfig, DateRangeChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { catalogFilter, staticFilter } from '@shared/ui/tables/data-table/filter-helpers';
 import { CatalogService } from '@core/services/catalog.service';
@@ -47,7 +49,8 @@ export class OrdersComponent implements OnInit {
   private readonly orderService = inject(OrderService);
   private readonly auth = inject(AuthService);
   private readonly translate = inject(TranslateService);
-  private readonly parametros = inject(VentasParametrosService);
+  private readonly confirmModal = inject(ConfirmModalService);
+  protected readonly parametros = inject(VentasParametrosService);
   readonly catalog = inject(CatalogService);
 
   // Data Signals
@@ -183,6 +186,15 @@ export class OrdersComponent implements OnInit {
         render: (row) => `${CURRENCY_DISPLAY.SYMBOL_PEN} ${row.total.toFixed(2)}`
       },
       {
+        key: 'cpeSerie',
+        label: 'Comprobante',
+        html: true,
+        render: (row) => {
+          const est = estadoCpeDePedido(row.cpeEstado);
+          return `${comprobanteDePedido(row)}${est ? ` <span class="badge ${est.badge}">${est.label}</span>` : ''}`;
+        }
+      },
+      {
         key: 'estado',
         label: this.translate.instant('admin.orders.colEstado'),
         sortable: true,
@@ -314,11 +326,52 @@ export class OrdersComponent implements OnInit {
   }
 
   closeModal(): void {
+    this.confirmandoPago.set(false);
     this.showModal.set(false);
     this.selectedOrder.set(null);
   }
 
-  updateStatus(newStatus: string): void {
+  // «Marcar pagado»: confirmación + N.º de operación (cobro manual no se puede deshacer salvo cancelando).
+  confirmandoPago = signal(false);
+  referenciaPago = signal('');
+  readonly errorReferencia = computed(() =>
+    errorReferenciaPago(this.selectedOrder()?.metodoPago, this.referenciaPago()));
+
+  iniciarCobro(): void {
+    this.referenciaPago.set('');
+    this.confirmandoPago.set(true);
+  }
+
+  cancelarCobro(): void {
+    this.confirmandoPago.set(false);
+  }
+
+  confirmarCobro(): void {
+    if (this.errorReferencia()) return;
+    const referencia = this.referenciaPago().trim();
+    this.updateStatus('PAGADO', referencia || undefined);
+  }
+
+  /** Acciones válidas del pedido abierto: una sola función estado+método+pago (ver `accionesDePedido`). */
+  readonly acciones = computed(() => {
+    const o = this.selectedOrder();
+    return accionesDePedido(o?.estado, o?.metodoPago, o?.estadoPago);
+  });
+
+  /** Contra entrega: el cliente no recibe el paquete → cancela y devuelve el stock. Irreversible, pide confirmación. */
+  async rechazarEntrega(): Promise<void> {
+    const order = this.selectedOrder();
+    if (!order) return;
+    const ok = await this.confirmModal.confirm({
+      title: 'Rechazado en entrega',
+      message: `El pedido #${order.id} se cancelará y el stock volverá al almacén. No se había cobrado, así que no hay cobro que revertir.`,
+      confirmLabel: 'Registrar rechazo',
+      variant: 'danger',
+    });
+    if (ok) this.updateStatus('CANCELADO', undefined, 'Rechazado en entrega');
+  }
+
+  updateStatus(newStatus: string, referenciaPago?: string, observacion?: string): void {
     const order = this.selectedOrder();
     if (!order) return;
 
@@ -331,14 +384,20 @@ export class OrdersComponent implements OnInit {
 
     this.loadingDetails.set(true); // Reusamos flag de carga modal
 
-    this.orderService.updateStatus(order.id, { estado: newStatus as OrderStatus }).subscribe({
+    this.orderService.updateStatus(order.id, { estado: newStatus as OrderStatus, referenciaPago, observacion }).subscribe({
       next: (updatedOrder) => {
+        this.confirmandoPago.set(false);
         // Actualizar la orden en la lista local para reflejar el cambio sin recargar todo
         this.orders.update(current =>
           current.map(o => o.id === updatedOrder.id ? { ...o, estado: updatedOrder.estado } : o)
         );
         // La respuesta es un resumen con `detalles: []`: se conserva el pedido cargado y sólo cambia el estado.
-        this.selectedOrder.update(o => o && { ...o, estado: updatedOrder.estado });
+        // ponytail: el backend no devuelve la referencia en el detalle; se conserva la enviada mientras el drawer siga abierto.
+        // estadoPago cambia sin cambiar el estado en el cobro posterior a la entrega (ENTREGADO + PAGADO).
+        this.selectedOrder.update(o => o && {
+          ...o, estado: updatedOrder.estado, estadoPago: updatedOrder.estadoPago ?? o.estadoPago,
+          referenciaPago: referenciaPago ?? o.referenciaPago
+        });
         this.loadingDetails.set(false);
       },
       error: (err) => {
@@ -348,7 +407,10 @@ export class OrdersComponent implements OnInit {
     });
   }
 
+  readonly referenciaMax = REFERENCIA_PAGO_MAX;
   readonly clienteDe = clienteDePedido;
+  readonly comprobanteDe = comprobanteDePedido;
+  readonly estadoCpeDe = estadoCpeDePedido;
   readonly etiquetaMetodoPago = (c: string | undefined) => etiquetaDe(METODOS_PAGO_PEDIDO, c);
   readonly etiquetaEstadoPago = (c: string | undefined) => etiquetaDe(ESTADOS_PAGO_PEDIDO, c);
 

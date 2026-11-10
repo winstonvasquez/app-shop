@@ -7,6 +7,7 @@ import { LucideAngularModule } from 'lucide-angular';
 
 import { CategoryService } from '@core/services/category.service';
 import { CategoryResponse } from '@core/models/category.model';
+import { pageTotalElements, pageTotalPages } from '@core/models/pagination.model';
 import { SearchService } from '@shared/services/search.service';
 import { AnalyticsService } from '@core/services/analytics.service';
 import { ProductService, FiltrosDisponibles } from '@core/services/product.service';
@@ -14,6 +15,8 @@ import { CartService } from '@features/cart/services/cart.service';
 import { PAGINATION } from '@shared/constants/app.constants';
 import { CatalogSelectComponent } from '@shared/components';
 import { mapearProductoADsProduct } from '@shared/ui/ds';
+import { ZonaEnvioService } from '@core/services/zona-envio.service';
+import { conEnvioGratis } from '@features/cart/utils/envio-gratis';
 import {
     ChipDeFiltro,
     construirConsultaCatalogo,
@@ -89,7 +92,9 @@ export class ProductsPageComponent implements OnInit {
     currentPage   = signal(1);
     readonly pageSize = PAGE_SIZE;
 
-    products      = signal<DsProduct[]>([]);
+    private zonaEnvio = inject(ZonaEnvioService);
+    private productsBase = signal<DsProduct[]>([]);
+    products      = computed(() => conEnvioGratis(this.productsBase(), this.zonaEnvio.envioGratisDesde()));
     totalPages    = signal(0);
     totalElements = signal(0);
     loading       = signal(false);
@@ -150,6 +155,7 @@ export class ProductsPageComponent implements OnInit {
     });
 
     ngOnInit() {
+        this.zonaEnvio.cargarUmbral();
         this.categoryService.getAllSimple().pipe(takeUntilDestroyed(this.destroyRef)).subscribe(cats => {
             this.categories.set(cats);
             this.loadFiltrosDisponibles();
@@ -235,9 +241,9 @@ export class ProductsPageComponent implements OnInit {
                 filter,
             ).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
                 next: (data) => {
-                    this.products.set(data.content.map(p => mapearProductoADsProduct(p)));
-                    this.totalPages.set(data.totalPages ?? 1);
-                    this.totalElements.set(data.totalElements ?? 0);
+                    this.productsBase.set(data.content.map(p => mapearProductoADsProduct(p)));
+                    this.totalPages.set(pageTotalPages(data) || 1);
+                    this.totalElements.set(pageTotalElements(data));
                     this.loading.set(false);
                 },
                 error: () => this.loading.set(false),
@@ -247,12 +253,12 @@ export class ProductsPageComponent implements OnInit {
 
         this.productService.getAllCachedFiltered(page - 1, this.pageSize, busqueda, catId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
             next: (data) => {
-                this.products.set(data.content.map(p => mapearProductoADsProduct(p)));
-                this.totalPages.set(data.totalPages ?? 1);
-                this.totalElements.set(data.totalElements ?? 0);
+                this.productsBase.set(data.content.map(p => mapearProductoADsProduct(p)));
+                this.totalPages.set(pageTotalPages(data) || 1);
+                this.totalElements.set(pageTotalElements(data));
                 this.loading.set(false);
                 if (busqueda) {
-                    this.analyticsService.trackSearch(busqueda, data.totalElements ?? 0);
+                    this.analyticsService.trackSearch(busqueda, pageTotalElements(data));
                 }
             },
             error: () => this.loading.set(false),

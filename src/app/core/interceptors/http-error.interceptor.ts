@@ -28,6 +28,8 @@ function esSilencioso(error: HttpErrorResponse, url: string, autenticado: boolea
     if (error.status === HTTP_STATUS.notFound && url.includes('/parametros')) return true;
     // Los diálogos de PIN (supervisor y desbloqueo del POS) muestran su propio error (PIN erróneo, 429).
     if (url.includes('/pos/autorizaciones') || url.includes('/auth/pin-login')) return true;
+    // El dashboard de contabilidad calcula el IGV de fondo y ya muestra «Sin cálculo» si el rol no puede.
+    if (error.status === HTTP_STATUS.forbidden && url.includes('/declaracion-igv/calcular')) return true;
     // 401/403 con la sesión ya cerrada: peticiones en vuelo o polling de fondo al hacer logout.
     const noAutorizado = error.status === HTTP_STATUS.unauthorized || error.status === HTTP_STATUS.forbidden;
     return noAutorizado && !autenticado;

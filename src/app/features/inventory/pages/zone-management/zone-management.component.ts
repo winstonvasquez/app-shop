@@ -1,3 +1,4 @@
+import { ConfirmModalService } from '@shared/services/confirm-modal.service';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators, FormGroup, FormControl } from '@angular/forms';
 import { WmsApiService } from '../../services/wms-api.service';
@@ -37,6 +38,7 @@ import { bloquearEnEdicion } from '@shared/utils/form-lock';
 })
 export class ZoneManagementComponent {
     private readonly api = inject(WmsApiService);
+    private readonly confirmModal = inject(ConfirmModalService);
     private readonly almacenApi = inject(AlmacenService);
     private readonly authService = inject(AuthService);
     private readonly fb = inject(FormBuilder);
@@ -172,7 +174,13 @@ export class ZoneManagementComponent {
         });
     }
 
-    deleteLocation(id: string): void {
+    async deleteLocation(id: string): Promise<void> {
+        const ok = await this.confirmModal.confirm({
+            title: 'Eliminar ubicación',
+            message: 'Esta acción no se puede deshacer.',
+            confirmLabel: 'Eliminar', variant: 'danger',
+        });
+        if (!ok) return;
         this.api.deleteZoneLocation(id).subscribe({
             next: () => this.loadZoneLocations(),
             error: (err: Error) => this.locationsError.set(err.message)

@@ -63,6 +63,8 @@ describe('construirOrderRequest', () => {
                 region: 'Lima',
                 nombreDestinatario: 'Ana Quispe',
                 telefono: '987654321',
+                referencia: 'Frente al parque',
+                provincia: 'Lima',
             },
             metodoPago: 'VIS',
             codigoCupon: 'VERANO10',
@@ -88,6 +90,22 @@ describe('construirOrderRequest', () => {
         expect(r.codigoCupon).toBeUndefined();
         expect(r.zonaEnvioId).toBeUndefined();
         expect(r.direccionEnvio.pais).toBe('Perú');
+        // Referencia vacía o en blanco no viaja; la larga se acota a 200 (DireccionEnvioDto).
+        const sinRef = construirOrderRequest(datos({ direccion: direccion({ referencia: '   ', provincia: '' }) }));
+        expect(sinRef.direccionEnvio.referencia).toBeUndefined();
+        expect(sinRef.direccionEnvio.provincia).toBeUndefined();
+        expect(construirOrderRequest(datos({ direccion: direccion({ referencia: 'x'.repeat(250) }) }))
+            .direccionEnvio.referencia).toHaveLength(200);
+    });
+
+    it('el comprobante viaja en el pedido y, al cambiar, cambia la firma (renueva la clave de idempotencia)', () => {
+        const base = construirOrderRequest(datos());
+        const factura = construirOrderRequest(datos({
+            comprobante: { tipoComprobante: 'FACTURA', tipoDocCliente: '6', numDocCliente: '20100070970', razonSocial: 'Empresa SAC' },
+        }));
+        expect(base.tipoComprobante).toBeUndefined();
+        expect(factura).toMatchObject({ tipoComprobante: 'FACTURA', tipoDocCliente: '6', numDocCliente: '20100070970', razonSocial: 'Empresa SAC' });
+        expect(JSON.stringify(factura)).not.toBe(JSON.stringify(base));
     });
 
     // ── invitado vs. usuario logueado ────────────────────────────────────────────────────

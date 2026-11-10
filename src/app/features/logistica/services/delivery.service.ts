@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { mapHttpError } from '@features/inventory/utils/map-http-error';
 
 export interface ConfirmDeliveryBody {
     receivedBy: string;
@@ -35,10 +36,10 @@ export class DeliveryService {
     private readonly baseUrl = '/logistics/api/deliveries';
 
     confirmDelivery(shipmentId: string, body: ConfirmDeliveryBody): Observable<DeliveryConfirmation> {
-        return this.http.post<DeliveryConfirmation>(`${this.baseUrl}/confirm/${shipmentId}`, body);
+        return this.http.post<DeliveryConfirmation>(`${this.baseUrl}/confirm/${shipmentId}`, body).pipe(mapHttpError());
     }
 
     getConfirmation(shipmentId: string): Observable<DeliveryConfirmation> {
-        return this.http.get<DeliveryConfirmation>(`${this.baseUrl}/shipment/${shipmentId}`);
+        return this.http.get<DeliveryConfirmation>(`${this.baseUrl}/shipment/${shipmentId}`).pipe(mapHttpError());
     }
 }

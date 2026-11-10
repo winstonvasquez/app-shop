@@ -6,6 +6,8 @@ import { toSignal } from '@angular/core/rxjs-interop';
 
 import { CartService, CartItem } from '@features/cart/services/cart.service';
 import { lineasParaCupon } from '@features/cart/utils/carrito.util';
+import { estadoEnvioGratis } from '@features/cart/utils/envio-gratis';
+import { ZonaEnvioService } from '@core/services/zona-envio.service';
 import { ConfigService, MedioPago, Certificacion } from '@core/services/config.service';
 import { OrderService } from '@core/services/order.service';
 import { WishlistService } from '@core/services/wishlist.service';
@@ -13,12 +15,9 @@ import { finalize } from 'rxjs/operators';
 
 import {
     DsButtonComponent,
-    DsBadgeComponent,
     DsPriceComponent,
     DsThumbComponent,
 } from '@shared/ui/ds';
-
-const FREE_SHIPPING_THRESHOLD = 99;
 
 @Component({
     selector: 'app-cart-page',
@@ -28,7 +27,6 @@ const FREE_SHIPPING_THRESHOLD = 99;
         LucideAngularModule,
         RouterLink,
         DsButtonComponent,
-        DsBadgeComponent,
         DsPriceComponent,
         DsThumbComponent,
     ],
@@ -40,6 +38,7 @@ export class CartPageComponent {
     orderService  = inject(OrderService);
     wishlistService = inject(WishlistService);
     router        = inject(Router);
+    private zonaEnvioService = inject(ZonaEnvioService);
 
     cartItems = this.cartService.cartItems;
     cartTotal = this.cartService.cartTotal;
@@ -62,15 +61,12 @@ export class CartPageComponent {
     /** Ahorro respecto al precio "stock" (no manejamos originalPrice por item, así que 0 por ahora). */
     readonly savings = signal<number>(0);
 
-    /** Cuánto falta para envío gratis premium (S/ 99). */
-    readonly missingForFree = computed(() => Math.max(0, FREE_SHIPPING_THRESHOLD - this.subtotal()));
-    readonly freeProgress   = computed(() => {
-        const ratio = this.subtotal() / FREE_SHIPPING_THRESHOLD;
-        return Math.min(100, Math.max(0, ratio * 100));
-    });
-
     /** Descuento real validado por backend (POST /sales/api/v1/cupones/validate). */
     readonly couponDiscount = computed(() => this._couponDiscount());
+
+    /** Envío gratis: misma regla que el servidor (subtotal − cupón >= umbral real). null = no hay promesa que mostrar. */
+    readonly envioGratis = computed(() =>
+        estadoEnvioGratis(this.subtotal() - this.savings() - this.couponDiscount(), this.zonaEnvioService.envioGratisDesde()));
 
     readonly total = computed(() => Math.max(0, this.subtotal() - this.savings() - this.couponDiscount()));
 
@@ -78,6 +74,7 @@ export class CartPageComponent {
     readonly installment = computed(() => +(this.total() / 12).toFixed(2));
 
     constructor() {
+        this.zonaEnvioService.cargarUmbral();
         // Revalida el cupón ya aplicado al entrar y cada vez que cambia la selección/cantidades:
         // la estimación depende de las líneas seleccionadas (alcance PRODUCTO/CATEGORÍA).
         effect(() => {

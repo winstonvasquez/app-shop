@@ -19,6 +19,19 @@ export interface FinancialMovementRequest {
     origenId?: number;
 }
 
+/** Body de POST .../movimientos/transferencia (TransferenciaRequestDto): origen y destino sólo CAJA o BANCO. */
+export interface TransferenciaRequest {
+    tenantId: number;
+    origenTipo: 'CAJA' | 'BANCO';
+    origenId: number;
+    destinoTipo: 'CAJA' | 'BANCO';
+    destinoId: number;
+    monto: number;
+    moneda: string;
+    fecha?: string;
+    descripcion?: string;
+}
+
 /** Respuesta de GET .../movimientos/flujo-caja (montos serializados como número JSON). */
 export interface FlujoCaja {
     tenantId: number;
@@ -94,6 +107,19 @@ export class MovimientosFinancierosService {
             moneda,
         });
         return this.http.get<FlujoCaja>(`${this.apiUrl}/flujo-caja`, { params });
+    }
+
+    /** Traspaso atómico: devuelve [egreso(origen), ingreso(destino)]. 409 si no hay saldo / moneda distinta / caja cerrada. */
+    transferir(req: TransferenciaRequest, idempotencyKey?: string): Observable<FinancialMovement[]> {
+        // El controller lee `Idempotency-Key`: un doble clic o un reintento tras corte no duplica el traspaso.
+        const headers = idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : undefined;
+        return this.http.post<FinancialMovement[]>(`${this.apiUrl}/transferencia`, req, { headers });
+    }
+
+    /** Crea el contramovimiento (ANUL-<id>). 400 si no es manual, 409 si ya está anulado o no se puede aplicar. */
+    anular(id: number, motivo: string): Observable<FinancialMovement> {
+        const params = toHttpParams({ tenantId: this.tenantId });
+        return this.http.post<FinancialMovement>(`${this.apiUrl}/${id}/anular`, { motivo }, { params });
     }
 
     registerMovement(movement: FinancialMovementRequest): Observable<FinancialMovement> {

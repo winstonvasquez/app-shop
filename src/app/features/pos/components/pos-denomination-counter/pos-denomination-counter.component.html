@@ -29,8 +29,19 @@
         <span class="text-lg font-bold text-on">S/ {{ totalContado().toFixed(2) }}</span>
     </div>
 
+    @if (confirmando()) {
+    <p class="text-sm text-on mt-4">
+        Vas a cerrar el turno con <strong>S/ {{ totalContado().toFixed(2) }}</strong> contados.
+        El arqueo queda registrado y no se puede deshacer; al cerrar verás el sobrante o faltante.
+    </p>
+    <div class="flex gap-2 mt-3">
+        <button class="btn-secondary flex-1" (click)="confirmando.set(false)">Volver al conteo</button>
+        <button class="btn-primary flex-1" (click)="onConfirm()">Cerrar turno</button>
+    </div>
+    } @else {
     <div class="flex gap-2 mt-4">
         <button class="btn-secondary flex-1" (click)="cancel.emit()">Cancelar</button>
-        <button class="btn-primary flex-1" (click)="onConfirm()">Confirmar Cierre</button>
+        <button class="btn-primary flex-1" (click)="confirmando.set(true)">Confirmar Cierre</button>
     </div>
+    }
 </div>

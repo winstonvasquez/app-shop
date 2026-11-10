@@ -14,6 +14,9 @@ import { PageHeaderComponent } from '@shared/ui/layout/page-header/page-header.c
 import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.component';
 import { ButtonComponent, CatalogSelectComponent } from '@shared/components';
 import { CajasService, CajaRequest, CajaUpdateRequest } from '../../services/cajas.service';
+import { construirAbrirRequest, diferenciaMonto, textoDiferenciaCierre } from './cajas.form';
+import { mensajeDeErrorHttp } from '@core/utils/http-error.util';
+import { HttpErrorResponse } from '@angular/common/http';
 import { CashRegister, Page } from '../../models/tesoreria.model';
 import { PAGINATION } from '@shared/constants/app.constants';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
@@ -45,6 +48,13 @@ export class CajasComponent implements OnInit {
     guardando     = signal(false);
     errorMsg      = signal<string | null>(null);
     actionErrorMsg = signal<string | null>(null);
+    /** Resultado del último cierre (faltante/sobrante), visible sobre la tabla. */
+    cierreMsg      = signal<string | null>(null);
+    /**
+     * Aviso de ajuste de fondo al abrir con otro monto. La confirmación es inline en el drawer (2.º clic) y no un
+     * modal encima: con el modal, Esc cerraba también el drawer y disparaba el confirm() nativo de cambios sin guardar.
+     */
+    ajusteMsg      = signal<string | null>(null);
 
     currentPage   = signal(0);
     pageSize      = signal<number>(PAGINATION.defaultPageSize);
@@ -95,11 +105,7 @@ export class CajasComponent implements OnInit {
     efectivoContado = new FormControl<number | null>(null, [Validators.required, Validators.min(0)]);
     private efectivoContadoValor = toSignal(this.efectivoContado.valueChanges, { initialValue: null });
     /** Contado − saldo del sistema (null mientras no se digite). Redondeo a centavos para no pintar 0.1+0.2. */
-    diferenciaCierre = computed(() => {
-        const contado = this.efectivoContadoValor();
-        const saldo = this.selectedCaja()?.saldoActual ?? 0;
-        return contado == null ? null : Math.round((contado - saldo) * 100) / 100;
-    });
+    diferenciaCierre = computed(() => diferenciaMonto(this.efectivoContadoValor(), this.selectedCaja()?.saldoActual));
 
     /** Solo editable mientras la caja esté CERRADA — ver CashRegisterService.update. */
     editForm: FormGroup = this.fb.group({
@@ -169,7 +175,13 @@ export class CajasComponent implements OnInit {
           onClick: r => this.openActionDrawer(r, 'cerrar') },
     ];
 
-    ngOnInit(): void { this.load(); }
+    ngOnInit(): void {
+        this.load();
+        // Cambiar el monto invalida la confirmación pedida.
+        this.actionForm.get('saldoInicial')!.valueChanges
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe(() => this.ajusteMsg.set(null));
+    }
 
     load(): void {
         this.cargando.set(true);
@@ -258,9 +270,11 @@ export class CajasComponent implements OnInit {
     openActionDrawer(caja: CashRegister, tipo: 'abrir' | 'cerrar'): void {
         this.selectedCaja.set(caja);
         this.actionType.set(tipo);
-        this.actionForm.reset({ saldoInicial: 0 });
+        // Reabrir parte del saldo con que cerró la caja: con 0 el backend responde 409.
+        this.actionForm.reset({ saldoInicial: caja.saldoActual ?? 0 });
         this.efectivoContado.reset(null);
         this.actionErrorMsg.set(null);
+        this.ajusteMsg.set(null);
         this.showActionDrawer.set(true);
     }
 
@@ -317,17 +331,41 @@ export class CajasComponent implements OnInit {
         if (!caja?.id) return;
         const cerrando = this.actionType() === 'cerrar';
         if (cerrando && this.efectivoContado.invalid) { this.efectivoContado.markAsTouched(); return; }
+        if (!cerrando && this.actionForm.invalid) { this.actionForm.markAllAsTouched(); return; }
+
+        const saldoInicial: number = this.actionForm.value.saldoInicial ?? 0;
+        const ajuste = diferenciaMonto(saldoInicial, caja.saldoActual);
+        const hayAjuste = !cerrando && ajuste !== 0;
+        if (hayAjuste && !this.ajusteMsg()) {
+            // Otro monto que el de cierre = ajuste de fondo (movimiento de caja): exige confirmación explícita (2.º clic).
+            this.ajusteMsg.set(`La caja cerró con ${(caja.saldoActual ?? 0).toFixed(2)} y la abre con ${saldoInicial.toFixed(2)}. `
+                + `Se registrará un ${(ajuste ?? 0) > 0 ? 'ingreso' : 'egreso'} de ${Math.abs(ajuste ?? 0).toFixed(2)} por la diferencia. Pulse «Confirmar ajuste y abrir» para continuar.`);
+            return;
+        }
+        const ajusteConfirmado = hayAjuste;
+
         this.guardando.set(true);
+        this.actionErrorMsg.set(null);
         const op = cerrando
             ? this.cajasService.close(caja.id, this.efectivoContado.value ?? 0)
-            : this.cajasService.open(caja.id, this.actionForm.value.saldoInicial ?? 0);
+            : this.cajasService.open(caja.id, construirAbrirRequest(saldoInicial, caja.saldoActual, ajusteConfirmado));
         op.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-            next: () => { this.showActionDrawer.set(false); this.guardando.set(false); this.load(); },
-            error: (err: { error?: { detail?: string } }) => {
-                this.actionErrorMsg.set(err?.error?.detail ?? 'Error al ejecutar operación');
+            next: res => {
+                this.cierreMsg.set(cerrando ? this.mensajeCierre(caja.nombre, res.diferenciaCierre) : null);
+                this.showActionDrawer.set(false); this.guardando.set(false); this.load();
+            },
+            error: (err: HttpErrorResponse) => {
+                this.actionErrorMsg.set(mensajeDeErrorHttp(err));
                 this.guardando.set(false);
             }
         });
+    }
+
+    private mensajeCierre(nombre: string, diferencia: number | null | undefined): string {
+        const d = diferencia ?? 0;
+        return d === 0
+            ? `Caja ${nombre} cerrada: ${textoDiferenciaCierre(d)}.`
+            : `Caja ${nombre} cerrada con ${textoDiferenciaCierre(d)} de ${Math.abs(d).toFixed(2)}; quedó registrado como movimiento y asiento.`;
     }
 
     getControl(form: FormGroup, name: string): FormControl {

@@ -1,3 +1,4 @@
+import { ConfirmModalService } from '@shared/services/confirm-modal.service';
 import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators, FormGroup, FormControl } from '@angular/forms';
 import { HttpClient, HttpParams } from '@angular/common/http';
@@ -39,6 +40,7 @@ import { environment } from '@env/environment';
 })
 export class LotManagementComponent implements OnInit {
     private readonly api = inject(WmsApiService);
+    private readonly confirmModal = inject(ConfirmModalService);
     private readonly fb = inject(FormBuilder);
     private readonly http = inject(HttpClient);
 
@@ -337,7 +339,13 @@ export class LotManagementComponent implements OnInit {
         return productId != null ? productIdToUuid(productId) : null;
     }
 
-    eliminar(id: string): void {
+    async eliminar(id: string): Promise<void> {
+        const ok = await this.confirmModal.confirm({
+            title: 'Eliminar lote',
+            message: 'Se perderá la trazabilidad del lote. Esta acción no se puede deshacer.',
+            confirmLabel: 'Eliminar', variant: 'danger',
+        });
+        if (!ok) return;
         this.api.deleteLot(id).subscribe({
             next: () => this.loadLots(),
             error: (err: Error) => this.error.set(err.message)

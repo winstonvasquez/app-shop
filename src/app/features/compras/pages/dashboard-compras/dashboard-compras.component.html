@@ -72,17 +72,21 @@
                 <span class="chart-card-title">Top Proveedores por Monto</span>
             </div>
             <div class="chart-card-body">
-                <apx-chart
-                    [series]="barSeries"
-                    [chart]="barChart"
-                    [xaxis]="barXAxis"
-                    [yaxis]="barYAxis"
-                    [plotOptions]="barPlot"
-                    [grid]="barGrid"
-                    [colors]="barColors"
-                    [dataLabels]="barDataLabels"
-                    [tooltip]="barTooltip">
-                </apx-chart>
+                @if (barSeries[0].data.length) {
+                    <apx-chart
+                        [series]="barSeries"
+                        [chart]="barChart"
+                        [xaxis]="barXAxis"
+                        [yaxis]="barYAxis"
+                        [plotOptions]="barPlot"
+                        [grid]="barGrid"
+                        [colors]="barColors"
+                        [dataLabels]="barDataLabels"
+                        [tooltip]="barTooltip">
+                    </apx-chart>
+                } @else {
+                    <p class="text-muted text-center py-md">Sin datos del periodo</p>
+                }
             </div>
         </div>
 

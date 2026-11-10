@@ -17,6 +17,14 @@ export interface OrderResponse {
     codigoCupon?: string;
     /** Estado del pago (PagoEntity.EstadoPago). */
     estadoPago?: string;
+    /** N.º de operación del pago (pago.referenciaTransaccion); null si no hay. */
+    referenciaPago?: string | null;
+    /** Comprobante SUNAT del pedido; null/ausente = aún sin comprobante. */
+    cpeTipo?: 'BOLETA' | 'FACTURA' | null;
+    cpeSerie?: string | null;
+    cpeNumero?: string | null;
+    cpeEstado?: 'PENDIENTE' | 'EMITIDO' | 'ERROR' | null;
+    cpeFechaEmision?: string | null;
 }
 
 export interface OrderDetail {
@@ -39,6 +47,10 @@ export interface DireccionEnvio {
     region?: string;
     nombreDestinatario?: string;
     telefono?: string;
+    /** «Frente al parque…» (máx. 200): lo que permite al courier entregar. */
+    referencia?: string;
+    /** Máx. 100. */
+    provincia?: string;
 }
 
 export interface OrderRequest {
@@ -49,6 +61,13 @@ export interface OrderRequest {
     metodoPago: string;
     codigoCupon?: string;
     zonaEnvioId?: number;
+    /** BOLETA | FACTURA; ausente = BOLETA. */
+    tipoComprobante?: 'BOLETA' | 'FACTURA';
+    /** Catálogo 06 SUNAT: 1=DNI, 4=CE, 6=RUC, 7=Pasaporte. */
+    tipoDocCliente?: string;
+    numDocCliente?: string;
+    /** Obligatoria en FACTURA. */
+    razonSocial?: string;
 }
 
 /** Respuesta de confirmación de pago en el backend. */
@@ -73,5 +92,8 @@ export interface OrderDetailRequest {
 
 export interface OrderStatusUpdate {
     estado: string;
-    observaciones?: string;
+    /** Nombre real del campo en `PedidoEstadoUpdateDto` (antes «observaciones», que el backend ignoraba). */
+    observacion?: string;
+    /** N.º de operación del cobro manual (PUT estado=PAGADO); obligatorio para transferencia/Yape/Plin. */
+    referenciaPago?: string;
 }

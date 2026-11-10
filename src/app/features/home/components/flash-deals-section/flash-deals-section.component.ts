@@ -12,6 +12,8 @@ import { SearchService } from '@shared/services/search.service';
 import { CartService } from '@features/cart/services/cart.service';
 import { DsProductCardComponent, DsProduct } from '@shared/ui/ds';
 import { mapearProductoADsProduct } from '@shared/ui/ds';
+import { ZonaEnvioService } from '@core/services/zona-envio.service';
+import { conEnvioGratis } from '@features/cart/utils/envio-gratis';
 
 const FEATURED_COUNT = 10;
 /** Tarjetas por página que se anuncian como oferta relámpago, y horas que dice el contador. */
@@ -33,7 +35,9 @@ export class FlashDealsSectionComponent {
     private cartService = inject(CartService);
     searchService = inject(SearchService);
 
-    products    = signal<DsProduct[]>([]);
+    private zonaEnvio = inject(ZonaEnvioService);
+    private productsBase = signal<DsProduct[]>([]);
+    products    = computed(() => conEnvioGratis(this.productsBase(), this.zonaEnvio.envioGratisDesde()));
     currentPage = signal(0);
     pageSize    = signal(24);
     loading     = signal(false);
@@ -43,11 +47,12 @@ export class FlashDealsSectionComponent {
     remainingProducts = computed(() => this.products().slice(FEATURED_COUNT));
 
     constructor() {
+        this.zonaEnvio.cargarUmbral();
         effect(() => {
             const query = this.searchService.searchQuery();
             const catId = this.searchService.categoryId();
             untracked(() => {
-                this.products.set([]);
+                this.productsBase.set([]);
                 this.currentPage.set(0);
                 this.hasMore.set(true);
                 this.loadProducts(query, catId);
@@ -90,7 +95,7 @@ export class FlashDealsSectionComponent {
                     ...mapearProductoADsProduct(p),
                     flash: i < FLASH_COUNT ? FLASH_HORAS : undefined,
                 }));
-                this.products.update(current => [...current, ...newProducts]);
+                this.productsBase.update(current => [...current, ...newProducts]);
                 this.hasMore.set(!page.last);
                 this.currentPage.update(p => p + 1);
                 this.loading.set(false);

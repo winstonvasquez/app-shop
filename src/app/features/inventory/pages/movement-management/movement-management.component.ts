@@ -22,7 +22,7 @@ import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
 import { warehouseSelectSource } from '../../components/select-sources';
 import { movimientosFiltrosParams } from './movement-management.params';
-import { movimientoCrearPayload } from './movement-management.form';
+import { motivoObligatorio, movimientoCrearPayload, TIPOS_MOVIMIENTO_MANUALES } from './movement-management.form';
 
 @Component({
     selector: 'app-movement-management',
@@ -82,6 +82,10 @@ export class MovementManagementComponent {
     /** Estado de putaway (sugerencia de ubicación para entradas). */
     movementTypeValue = signal<string>('');
     readonly isEntrada = computed(() => this.movementTypeValue().startsWith('ENTRADA'));
+    readonly motivoRequerido = computed(() => motivoObligatorio(this.movementTypeValue()));
+    /** Sólo los tipos manuales: el resto los genera su documento (venta, compra, transferencia). */
+    readonly tiposManuales = computed(() =>
+        this.catalog.options('TIPO_MOVIMIENTO_INVENTARIO')().filter(o => TIPOS_MOVIMIENTO_MANUALES.includes(o.codigo)));
     putawaySuggestions = signal<PutawaySuggestion[]>([]);
     loadingPutaway = signal(false);
     putawaySearched = signal(false);
@@ -161,7 +165,11 @@ export class MovementManagementComponent {
         this.form.get('movementType')!.valueChanges
             .pipe(takeUntilDestroyed())
             .subscribe((v) => {
-                this.movementTypeValue.set((v as string) ?? '');
+                const tipo = (v as string) ?? '';
+                this.movementTypeValue.set(tipo);
+                const reason = this.getCtrl('reason');
+                reason.setValidators(motivoObligatorio(tipo) ? [Validators.required] : []);
+                reason.updateValueAndValidity({ emitEvent: false });
                 this.resetPutaway();
             });
     }

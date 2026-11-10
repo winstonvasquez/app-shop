@@ -12,3 +12,15 @@ export function fechaALocalDateTime(fecha: string, conHoraActual = false, ahora:
     const dos = (n: number): string => String(n).padStart(2, '0');
     return `${fecha}T${dos(ahora.getHours())}:${dos(ahora.getMinutes())}:${dos(ahora.getSeconds())}`;
 }
+
+const dos = (n: number): string => String(n).padStart(2, '0');
+
+/** Hoy en zona local como `yyyy-MM-dd`. `toISOString()` da el día siguiente desde las 19:00 en Lima (UTC-5). */
+export function hoyLocalISO(hoy: Date = new Date()): string {
+    return `${hoy.getFullYear()}-${dos(hoy.getMonth() + 1)}-${dos(hoy.getDate())}`;
+}
+
+/** Mes local como `yyyy-MM` (periodos de planilla): `toISOString()` salta de mes la última noche. */
+export function mesLocalISO(hoy: Date = new Date()): string {
+    return hoyLocalISO(hoy).slice(0, 7);
+}

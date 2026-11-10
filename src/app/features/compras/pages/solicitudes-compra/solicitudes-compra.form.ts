@@ -126,7 +126,7 @@ export function valoresLineaSolicitud(item: SolicitudCompraItem): ValoresLineaSo
 
 /**
  * Color del estado de la solicitud. Solo la aprobación pendiente avisa en ámbar;
- * borrador y cancelada son neutras porque ninguna exige acción del aprobador, y
+ * borrador es neutra porque no exige acción del aprobador, y
  * convertida en OC se distingue en `accent` por ser el final del ciclo.
  */
 export function claseBadgeEstadoSolicitud(estado: string | undefined): string {
@@ -136,7 +136,7 @@ export function claseBadgeEstadoSolicitud(estado: string | undefined): string {
         APROBADA: 'badge badge-success',
         RECHAZADA: 'badge badge-error',
         CONVERTIDA_OC: 'badge badge-accent',
-        CANCELADA: 'badge badge-neutral',
+        CANCELADA: 'badge badge-error', // rojo en todos los módulos (cotizaciones, transferencias)
     };
     return (estado && mapa[estado]) || 'badge badge-neutral';
 }

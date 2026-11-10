@@ -1,6 +1,22 @@
 import { fechaALocalDateTime } from '@core/utils/local-datetime.util';
 import { InventoryMovementRequest, InventoryMovementType } from '../../models/inventory.models';
 
+/**
+ * Tipos que el usuario puede registrar a mano. SALIDA_VENTA, ENTRADA_COMPRA y *_TRANSFERENCIA los
+ * genera su documento de origen y el backend los rechaza con 400 (InventoryMovementService.TIPOS_RESERVADOS).
+ */
+export const TIPOS_MOVIMIENTO_MANUALES: readonly string[] = [
+    'ENTRADA_AJUSTE', 'SALIDA_AJUSTE', 'ENTRADA_DEVOLUCION', 'SALIDA_DEVOLUCION',
+    'ENTRADA_PRODUCCION', 'SALIDA_CONSUMO', 'SALIDA_MERMA'
+];
+
+/** Tipos cuyo motivo es obligatorio (espejo de InventoryMovementService.TIPOS_CON_MOTIVO). */
+const TIPOS_CON_MOTIVO: readonly string[] = ['ENTRADA_AJUSTE', 'SALIDA_AJUSTE', 'SALIDA_MERMA', 'SALIDA_CONSUMO'];
+
+export function motivoObligatorio(tipo: string): boolean {
+    return TIPOS_CON_MOTIVO.includes(tipo);
+}
+
 /** Valores crudos del formulario de alta de movimiento (`form.getRawValue()`). */
 export type MovimientoFormValue = {
     productId: number | string | null;

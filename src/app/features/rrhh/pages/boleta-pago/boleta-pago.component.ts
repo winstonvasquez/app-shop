@@ -10,6 +10,9 @@ import { Employee } from '../../models/employee.model';
 import { CompanyService } from '@features/admin/services/company.service';
 import { CompanyResponse } from '@features/admin/models/company.model';
 import { AuthService } from '@core/auth/auth.service';
+import { HttpErrorResponse } from '@angular/common/http';
+import { mensajeDeErrorHttp } from '@core/utils/http-error.util';
+import { enPagoTesoreria, etiquetaEstadoPlanilla, puedeSolicitarPago, vencimientoCts } from '../payroll/payroll.pago';
 
 /**
  * Boleta de pago con PROCEDENCIA: carga una planilla persistida por su payrollId
@@ -91,10 +94,10 @@ import { AuthService } from '@core/auth/auth.service';
           @if (p.estado === 'GENERADO') {
             <button class="btn btn-primary" [disabled]="accionando()" (click)="aprobar(p)">Aprobar</button>
           }
-          @if (p.estado === 'APROBADO') {
-            <button class="btn btn-primary" [disabled]="accionando()" (click)="pagar(p)">Marcar como pagada</button>
+          @if (puedeSolicitarPago(p)) {
+            <button class="btn btn-primary" [disabled]="accionando()" (click)="pagar(p)">Solicitar pago</button>
           }
-          <span class="badge" [class]="estadoBadge(p.estado)" style="margin-left:auto">{{ p.estado }}</span>
+          <span class="badge" [class]="enPagoTesoreria(p) ? 'badge-info' : estadoBadge(p.estado)" style="margin-left:auto">{{ etiquetaEstadoPlanilla(p) }}</span>
         </div>
         @if (error(); as e) {
           <div class="card no-print" style="margin-bottom:var(--space-md);border-left:3px solid var(--color-error)">
@@ -186,6 +189,7 @@ import { AuthService } from '@core/auth/auth.service';
               <div class="seccion-titulo">Beneficios Sociales del Periodo (pago aparte)</div>
               <div class="datos-grid">
                 <div class="dato-fila"><span class="dato-label">CTS (semestral):</span><span class="dato-valor">S/ {{ p.cts | number:'1.2-2' }}</span></div>
+                <div class="dato-fila"><span class="dato-label">Depósito:</span><span class="dato-valor">Pendiente en tesorería@if (vencimientoCts(p.periodo); as v) { — vence el {{ v }}}</span></div>
               </div>
             </div>
           }
@@ -285,14 +289,20 @@ export class BoletaPagoComponent implements OnInit {
         }
     }
 
+    readonly puedeSolicitarPago = puedeSolicitarPago;
+    readonly enPagoTesoreria = enPagoTesoreria;
+    readonly etiquetaEstadoPlanilla = etiquetaEstadoPlanilla;
+    readonly vencimientoCts = vencimientoCts;
+
+    /** «Solicitar pago»: la boleta sigue APROBADO («Pago solicitado a tesorería») hasta que tesorería confirme. */
     async pagar(p: Payroll): Promise<void> {
         this.accionando.set(true);
         this.error.set(null);
         try {
             const updated = await this.payrollService.markAsPaid(p.id);
             this.planilla.set(updated);
-        } catch {
-            this.error.set('No se pudo marcar como pagada (¿estado no es APROBADO?).');
+        } catch (err) {
+            this.error.set(err instanceof HttpErrorResponse ? mensajeDeErrorHttp(err) : 'No se pudo solicitar el pago a tesorería.');
         } finally {
             this.accionando.set(false);
         }

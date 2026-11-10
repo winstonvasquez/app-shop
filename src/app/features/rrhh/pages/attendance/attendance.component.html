@@ -15,6 +15,7 @@
 <app-data-table
     [data]="attendances()"
     [columns]="columns"
+    [actions]="actions"
     [loading]="loading()"
     [searchable]="true"
     searchPlaceholder="Buscar por empleado u observaciones..."
@@ -109,6 +110,73 @@
                 [disabled]="submitting()"
                 (click)="onSubmit()">
             {{ submitting() ? 'Registrando...' : 'Registrar' }}
+        </button>
+    </div>
+
+</app-drawer>
+
+<!-- ── Drawer: Corregir asistencia (motivo obligatorio) ───────────────── -->
+<app-drawer
+    [isOpen]="showCorregir()"
+    title="Corregir asistencia"
+    size="md"
+    [hasFooter]="true"
+    (closed)="closeCorregir()">
+
+    <form [formGroup]="correccionForm" (ngSubmit)="onCorregir()">
+
+        @if (corregirError()) {
+            <app-alert type="error" [message]="corregirError()!" />
+        }
+
+        @if (corrigiendo(); as a) {
+            <p class="text-subtle text-sm" style="margin-bottom: var(--space-md)">
+                {{ a.employeeName ?? getEmployeeName(a.employeeId) }} — {{ a.fecha }}.
+                Se reemplazan hora, tipo, observaciones y justificación; la corrección queda registrada con su motivo.
+            </p>
+        }
+
+        <app-admin-form-section [columns]="2">
+            <div>
+                <label class="input-label">Hora Entrada</label>
+                <input type="time" class="form-input" formControlName="horaEntrada" />
+            </div>
+            <div>
+                <label class="input-label">Hora Salida</label>
+                <input type="time" class="form-input" formControlName="horaSalida" />
+            </div>
+        </app-admin-form-section>
+
+        <div style="margin-bottom: var(--space-md)">
+            <label class="input-label">Tipo de Registro <span style="color: var(--color-error)">*</span></label>
+            <app-catalog-select tabla="TIPO_REGISTRO_ASISTENCIA" formControlName="tipoRegistro" placeholder="— Seleccionar —" />
+        </div>
+
+        <div style="margin-bottom: var(--space-md)">
+            <label class="input-label">Observaciones</label>
+            <app-rich-text-editor [rows]="3" formControlName="observaciones" />
+        </div>
+
+        <div style="margin-bottom: var(--space-md)">
+            <label class="input-label">Justificación</label>
+            <input type="text" class="form-input" maxlength="500" formControlName="justificacion" />
+        </div>
+
+        <div>
+            <label class="input-label">Motivo de la corrección <span style="color: var(--color-error)">*</span></label>
+            <input type="text" class="form-input" maxlength="500" formControlName="motivo"
+                   placeholder="Ej. Olvidó marcar la salida" />
+            @if (correccionForm.controls.motivo.invalid && correccionForm.controls.motivo.touched) {
+                <span class="input-error-message">El motivo es obligatorio</span>
+            }
+        </div>
+
+    </form>
+
+    <div slot="footer" class="form-actions">
+        <app-button label="Cancelar" icon="x" variant="secondary" type="button" (click)="closeCorregir()" />
+        <button class="btn btn-primary" type="button" [disabled]="submitting()" (click)="onCorregir()">
+            {{ submitting() ? 'Guardando...' : 'Guardar corrección' }}
         </button>
     </div>
 

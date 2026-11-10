@@ -46,6 +46,9 @@
                 <label>
                     Serie Boleta
                     <input type="text" formControlName="serieBoleta" maxlength="4" placeholder="B001">
+                    @if (form.controls['serieBoleta'].invalid && form.controls['serieBoleta'].touched) {
+                        <small class="form-hint" style="color:var(--color-error)">{{ msjSerieBoleta }}</small>
+                    }
                     @if (editingId()) {
                         <small class="form-hint">Correlativo SUNAT: no editable tras el primer comprobante</small>
                     }
@@ -53,6 +56,9 @@
                 <label>
                     Serie Factura
                     <input type="text" formControlName="serieFactura" maxlength="4" placeholder="F001">
+                    @if (form.controls['serieFactura'].invalid && form.controls['serieFactura'].touched) {
+                        <small class="form-hint" style="color:var(--color-error)">{{ msjSerieFactura }}</small>
+                    }
                     @if (editingId()) {
                         <small class="form-hint">Correlativo SUNAT: no editable tras el primer comprobante</small>
                     }

@@ -15,6 +15,10 @@ export interface Attendance {
     justificacion?: string;
     ubicacionEntrada?: string;
     ubicacionSalida?: string;
+    /** userId de quien corrigió; null si nunca se corrigió. */
+    corregidoPor?: number | null;
+    motivoCorreccion?: string | null;
+    fechaCorreccion?: string | null;
     createdAt: string;
 }
 
@@ -28,6 +32,16 @@ export interface AttendanceRequest {
     justificacion?: string;
     ubicacionEntrada?: string;
     ubicacionSalida?: string;
+}
+
+/** Cuerpo de PUT /hr/api/attendance/{id}: REEMPLAZA hora/tipo/observaciones/justificación; `motivo` es obligatorio. */
+export interface AttendanceCorrectionRequest {
+    horaEntrada?: string;
+    horaSalida?: string;
+    tipoRegistro: AttendanceType;
+    observaciones?: string;
+    justificacion?: string;
+    motivo: string;
 }
 
 export interface CheckInOutRequest {

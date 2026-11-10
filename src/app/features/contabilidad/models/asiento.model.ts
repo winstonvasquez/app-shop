@@ -12,6 +12,9 @@ export interface Asiento {
     totalDebe: number;
     totalHaber: number;
     movimientos: Movimiento[];
+    /** Documento de origen del asiento automático («PED-17», «POS-5»…). Null en manuales y en filas previas a V19. */
+    referencia?: string | null;
+    referenciaTipo?: string | null;
 }
 
 export interface Movimiento {

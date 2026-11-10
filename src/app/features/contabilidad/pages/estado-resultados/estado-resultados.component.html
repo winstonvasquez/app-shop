@@ -5,9 +5,9 @@
             <p class="page-subtitle">Pérdidas y Ganancias · PCGE 2020</p>
         </div>
         <div class="page-actions">
-            <select class="form-input" (change)="onPeriodoChange($event)">
-                @for (p of periodos(); track p.id) {
-                    <option [value]="p.id" [selected]="p.id === periodoId()">{{ p.nombre }}</option>
+            <select class="form-input" (change)="onAnnoChange($event)">
+                @for (a of annos(); track a) {
+                    <option [value]="a" [selected]="a === anno()">{{ a }}</option>
                 }
             </select>
         </div>
@@ -24,7 +24,7 @@
             <div class="card">
                 <div class="card-header">
                     <h2 class="card-title">Estado de Resultados por Función</h2>
-                    <span class="badge badge-neutral">Periodo: {{ periodoNombre() }}</span>
+                    <span class="badge badge-neutral">Año: {{ anno() }}</span>
                 </div>
                 <div class="card-body">
 
@@ -34,13 +34,13 @@
                         @if (ingresos().length === 0) {
                             <p class="text-muted text-sm">Sin ingresos registrados</p>
                         } @else {
-                            @for (l of ingresos(); track l.codigo) {
+                            @for (l of ingresos(); track $index) {
                                 <div class="flex justify-between items-center py-2 border-b border-border/50">
                                     <span class="text-sm">
                                         <span class="font-mono text-xs text-muted mr-2">{{ l.codigo }}</span>
                                         {{ l.nombre }}
                                     </span>
-                                    <span class="font-semibold text-success-hover">S/ {{ l.monto | number:'1.2-2' }}</span>
+                                    <span class="font-semibold text-success-hover">S/ {{ l.saldo | number:'1.2-2' }}</span>
                                 </div>
                             }
                         }
@@ -52,17 +52,17 @@
 
                     <!-- COSTO DE VENTAS -->
                     <div class="mb-6">
-                        <h3 class="text-sm font-bold text-subtle uppercase tracking-wider mb-2">Costo de Ventas (Grupo 6x)</h3>
+                        <h3 class="text-sm font-bold text-subtle uppercase tracking-wider mb-2">Costo de Ventas (Cuenta 69)</h3>
                         @if (costoVentas().length === 0) {
                             <p class="text-muted text-sm">Sin costo de ventas registrado</p>
                         } @else {
-                            @for (l of costoVentas(); track l.codigo) {
+                            @for (l of costoVentas(); track $index) {
                                 <div class="flex justify-between items-center py-2 border-b border-border/50">
                                     <span class="text-sm">
                                         <span class="font-mono text-xs text-muted mr-2">{{ l.codigo }}</span>
                                         {{ l.nombre }}
                                     </span>
-                                    <span class="font-semibold text-error-hover">( S/ {{ l.monto | number:'1.2-2' }} )</span>
+                                    <span class="font-semibold text-error-hover">( S/ {{ l.saldo | number:'1.2-2' }} )</span>
                                 </div>
                             }
                         }
@@ -82,27 +82,27 @@
 
                     <!-- GASTOS OPERATIVOS -->
                     <div class="mb-6">
-                        <h3 class="text-sm font-bold text-subtle uppercase tracking-wider mb-2">Gastos Operativos (Grupos 9x)</h3>
-                        @if (gastosOperativos().length === 0) {
-                            <p class="text-muted text-sm">Sin gastos operativos registrados</p>
+                        <h3 class="text-sm font-bold text-subtle uppercase tracking-wider mb-2">Otros Gastos (Grupo 6, excepto 69)</h3>
+                        @if (otrosGastos().length === 0) {
+                            <p class="text-muted text-sm">Sin otros gastos registrados</p>
                         } @else {
-                            @for (l of gastosOperativos(); track l.codigo) {
+                            @for (l of otrosGastos(); track $index) {
                                 <div class="flex justify-between items-center py-2 border-b border-border/50">
                                     <span class="text-sm">
                                         <span class="font-mono text-xs text-muted mr-2">{{ l.codigo }}</span>
                                         {{ l.nombre }}
                                     </span>
-                                    <span class="font-semibold text-error-hover">( S/ {{ l.monto | number:'1.2-2' }} )</span>
+                                    <span class="font-semibold text-error-hover">( S/ {{ l.saldo | number:'1.2-2' }} )</span>
                                 </div>
                             }
                         }
                     </div>
 
-                    <!-- UTILIDAD OPERATIVA -->
+                    <!-- UTILIDAD NETA -->
                     <div class="flex justify-between items-center py-3 border-y-2 border-border mb-6">
-                        <span class="font-bold text-on text-lg">UTILIDAD OPERATIVA</span>
-                        <span class="font-bold text-xl" [class]="utilidadOperativa() >= 0 ? 'text-success-hover' : 'text-error-hover'">
-                            S/ {{ utilidadOperativa() | number:'1.2-2' }}
+                        <span class="font-bold text-on text-lg">UTILIDAD NETA</span>
+                        <span class="font-bold text-xl" [class]="utilidadNeta() >= 0 ? 'text-success-hover' : 'text-error-hover'">
+                            S/ {{ utilidadNeta() | number:'1.2-2' }}
                         </span>
                     </div>
 
@@ -116,8 +116,8 @@
                         </div>
                         <div class="card">
                             <div class="card-body">
-                                <div class="input-label">Margen Operativo</div>
-                                <div class="font-bold text-2xl">{{ margenOperativo() }}%</div>
+                                <div class="input-label">Margen Neto</div>
+                                <div class="font-bold text-2xl">{{ margenNeto() }}%</div>
                             </div>
                         </div>
                         <div class="card">

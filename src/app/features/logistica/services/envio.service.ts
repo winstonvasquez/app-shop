@@ -11,6 +11,7 @@ export interface UpdateEnvioStatusBody {
 }
 import { PAGINATION } from '@shared/constants/app.constants';
 import { toHttpParams } from '@core/utils/http-params.util';
+import { mapHttpError } from '@features/inventory/utils/map-http-error';
 
 /** Filtros server-side del listado de envíos (`GET /logistics/api/shipments`). Todos opcionales. */
 export interface EnvioFiltros {
@@ -61,15 +62,15 @@ export class EnvioService {
             registradoDesde: filtros.registradoDesde,
             registradoHasta: filtros.registradoHasta,
         });
-        return this.http.get<EnvioPage>(this.baseUrl, { params });
+        return this.http.get<EnvioPage>(this.baseUrl, { params }).pipe(mapHttpError());
     }
 
     getById(id: string, companyId: string): Observable<Envio> {
-        return this.http.get<Envio>(`${this.baseUrl}/${id}`, { params: { companyId } });
+        return this.http.get<Envio>(`${this.baseUrl}/${id}`, { params: { companyId } }).pipe(mapHttpError());
     }
 
     create(dto: CreateEnvioDto): Observable<Envio> {
-        return this.http.post<Envio>(this.baseUrl, dto);
+        return this.http.post<Envio>(this.baseUrl, dto).pipe(mapHttpError());
     }
 
     /**
@@ -78,14 +79,14 @@ export class EnvioService {
      * llegaba a OUT_FOR_DELIVERY y "Confirmar entrega" quedaba inalcanzable.
      */
     updateStatus(id: string, body: UpdateEnvioStatusBody): Observable<Envio> {
-        return this.http.put<Envio>(`${this.baseUrl}/${id}/status`, body);
+        return this.http.put<Envio>(`${this.baseUrl}/${id}/status`, body).pipe(mapHttpError());
     }
 
     addTrackingEvent(shipmentId: string, event: Partial<TrackingEvent>): Observable<TrackingEvent> {
-        return this.http.post<TrackingEvent>(`${this.trackingUrl}/${shipmentId}/events`, event);
+        return this.http.post<TrackingEvent>(`${this.trackingUrl}/${shipmentId}/events`, event).pipe(mapHttpError());
     }
 
     trackByNumber(trackingNumber: string): Observable<Envio> {
-        return this.http.get<Envio>(`${this.trackingUrl}/${trackingNumber}`);
+        return this.http.get<Envio>(`${this.trackingUrl}/${trackingNumber}`).pipe(mapHttpError());
     }
 }

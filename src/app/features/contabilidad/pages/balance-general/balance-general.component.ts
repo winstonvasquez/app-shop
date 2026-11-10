@@ -1,14 +1,9 @@
 import { Component, inject, signal, computed, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
-import { AsientoService } from '../../services/asiento.service';
-import { PeriodoService, PeriodoContable } from '../../services/periodo.service';
+import { EstadosFinancierosService, BalanceGeneral, LineaBalance } from '../../services/estados-financieros.service';
+import { PeriodoService } from '../../services/periodo.service';
 
-interface LineaBalance {
-    codigo: string;
-    nombre: string;
-    monto: number;
-}
-
+/** Balance General ACUMULADO (PCGE 2020). El backend ya incluye «Resultado del ejercicio» en el patrimonio y en su total: aquí NO se vuelve a sumar. */
 @Component({
     selector: 'app-balance-general',
     standalone: true,
@@ -17,79 +12,56 @@ interface LineaBalance {
     templateUrl: './balance-general.component.html'
 })
 export class BalanceGeneralComponent implements OnInit {
-    private asientoService = inject(AsientoService);
+    private estados = inject(EstadosFinancierosService);
     private periodoService = inject(PeriodoService);
 
-    readonly periodos = signal<PeriodoContable[]>([]);
-    readonly periodoId = signal<string>('');
+    readonly annos = signal<number[]>([new Date().getFullYear()]);
+    readonly anno = signal(new Date().getFullYear());
     readonly isLoading = signal(false);
     readonly error = signal<string | null>(null);
-    readonly lineas = signal<{ cuentaCodigo: string; cuentaNombre: string; saldoDeudor: number; saldoAcreedor: number }[]>([]);
+    readonly balance = signal<BalanceGeneral | null>(null);
 
-    // PCGE 2020: Activo → grupos 1 y 2 (saldo deudor)
-    readonly activo = computed<LineaBalance[]>(() =>
-        this.lineas()
-            .filter(l => /^[12]/.test(l.cuentaCodigo) && l.saldoDeudor > 0)
-            .map(l => ({ codigo: l.cuentaCodigo, nombre: l.cuentaNombre, monto: l.saldoDeudor }))
-    );
+    readonly activo = computed<LineaBalance[]>(() => this.balance()?.activos ?? []);
+    readonly pasivo = computed<LineaBalance[]>(() => this.balance()?.pasivos ?? []);
+    readonly patrimonio = computed<LineaBalance[]>(() => this.balance()?.patrimonio ?? []);
 
-    // PCGE 2020: Pasivo → grupos 4 (cuentas por pagar) y parte de 3 (saldo acreedor cuentas reales)
-    readonly pasivo = computed<LineaBalance[]>(() =>
-        this.lineas()
-            .filter(l => /^4/.test(l.cuentaCodigo) && l.saldoAcreedor > 0)
-            .map(l => ({ codigo: l.cuentaCodigo, nombre: l.cuentaNombre, monto: l.saldoAcreedor }))
-    );
-
-    // PCGE 2020: Patrimonio → grupo 5
-    readonly patrimonio = computed<LineaBalance[]>(() =>
-        this.lineas()
-            .filter(l => /^5/.test(l.cuentaCodigo) && l.saldoAcreedor > 0)
-            .map(l => ({ codigo: l.cuentaCodigo, nombre: l.cuentaNombre, monto: l.saldoAcreedor }))
-    );
-
-    readonly totalActivo = computed(() => this.activo().reduce((s, l) => s + l.monto, 0));
-    readonly totalPasivo = computed(() => this.pasivo().reduce((s, l) => s + l.monto, 0));
-    readonly totalPatrimonio = computed(() => this.patrimonio().reduce((s, l) => s + l.monto, 0));
-    readonly ecuacionCuadra = computed(() =>
-        Math.abs(this.totalActivo() - this.totalPasivo() - this.totalPatrimonio()) < 0.01
-    );
+    readonly totalActivo = computed(() => this.balance()?.totalActivos ?? 0);
+    readonly totalPasivo = computed(() => this.balance()?.totalPasivos ?? 0);
+    readonly totalPatrimonio = computed(() => this.balance()?.totalPatrimonio ?? 0);
     readonly diferencia = computed(() =>
         Math.abs(this.totalActivo() - this.totalPasivo() - this.totalPatrimonio())
     );
+    readonly ecuacionCuadra = computed(() => this.diferencia() < 0.01);
 
     ngOnInit(): void {
         this.periodoService.listar().subscribe({
             next: periodos => {
-                this.periodos.set(periodos);
-                const abierto = periodos.find(p => p.estado === 'ABIERTO') ?? periodos[0];
-                if (abierto) {
-                    this.periodoId.set(abierto.id);
-                    this.cargarBalance();
+                const annos = [...new Set(periodos.map(p => p.anno))].sort((a, b) => b - a);
+                if (annos.length > 0) {
+                    this.annos.set(annos);
+                    if (!annos.includes(this.anno())) this.anno.set(annos[0]);
                 }
+                this.cargarBalance();
             },
-            error: () => this.error.set('No se pudo cargar la lista de periodos')
+            error: () => this.cargarBalance()
         });
     }
 
-    onPeriodoChange(event: Event): void {
-        this.periodoId.set((event.target as HTMLSelectElement).value);
+    onAnnoChange(event: Event): void {
+        this.anno.set(+(event.target as HTMLSelectElement).value);
         this.cargarBalance();
     }
 
     private cargarBalance(): void {
-        const pid = this.periodoId();
-        if (!pid) return;
         this.isLoading.set(true);
         this.error.set(null);
-        this.asientoService.obtenerBalanceComprobacion(pid).subscribe({
-            next: (data) => {
-                const lineas = (data as unknown as { lineas?: { cuentaCodigo: string; cuentaNombre: string; saldoDeudor: number; saldoAcreedor: number }[] }).lineas
-                    ?? (data as unknown as { cuentaCodigo: string; cuentaNombre: string; saldoDeudor: number; saldoAcreedor: number }[]);
-                this.lineas.set(Array.isArray(lineas) ? lineas : []);
+        this.estados.balanceGeneral(this.anno()).subscribe({
+            next: balance => {
+                this.balance.set(balance);
                 this.isLoading.set(false);
             },
             error: () => {
-                this.error.set('No se pudo cargar el balance de comprobación. Verifica que el servicio de contabilidad esté activo.');
+                this.error.set('No se pudo cargar el balance general. Verifica que el servicio de contabilidad esté activo.');
                 this.isLoading.set(false);
             }
         });

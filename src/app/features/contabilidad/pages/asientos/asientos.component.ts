@@ -395,6 +395,16 @@ export class AsientosComponent implements OnInit {
             render: (r) => `<span class="badge badge-neutral text-xs">${r.origen}</span>`
         },
         {
+            // Texto sin enlace: ni pedidos (/admin/orders), ni ventas POS, ni facturas de proveedor tienen
+            // hoy ruta de detalle que acepte un id, así que un link llevaría a una lista sin filtrar.
+            key: 'referencia',
+            label: 'Documento',
+            html: true,
+            render: (r) => r.referencia
+                ? `<span class="font-mono text-xs">${r.referencia.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</span>`
+                : '<span class="text-muted">—</span>'
+        },
+        {
             key: 'totalDebe',
             label: 'Debe (S/)',
             align: 'right',

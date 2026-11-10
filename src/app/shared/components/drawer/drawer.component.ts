@@ -1,4 +1,4 @@
-import { Component, input, output, HostListener, ChangeDetectionStrategy, effect, signal, DestroyRef, inject } from '@angular/core';
+import { Component, input, output, HostListener, ChangeDetectionStrategy, effect, signal, DestroyRef, inject, afterNextRender, Injector, viewChild, ElementRef } from '@angular/core';
 import { LucideAngularModule } from 'lucide-angular';
 
 export type DrawerSide = 'left' | 'right';
@@ -18,13 +18,15 @@ export type DrawerSize = 'sm' | 'md' | 'lg' | 'xl' | 'full';
                (click)="close()"></div>
 
           <!-- Panel -->
-          <aside class="drawer"
+          <aside class="drawer" #panel tabindex="-1"
                  [class]="'drawer-' + side() + ' drawer-' + size()"
                  [class.drawer-oculto]="isInert()"
                  [style.z-index]="zIndex() + 1"
                  [attr.inert]="isInert() ? '' : null"
-                 role="complementary"
-                 [attr.aria-label]="title()">
+                 role="dialog" aria-modal="true"
+                 [attr.aria-label]="title()"
+                 (input)="marcarCambios($event)"
+                 (change)="marcarCambios($event)">
             <div class="drawer-header">
               <h3 class="drawer-title">{{ title() }}</h3>
               @if (closable()) {
@@ -195,6 +197,17 @@ export class DrawerComponent {
     private static readonly Z_INDEX_STEP = 2;
 
     private readonly destroyRef = inject(DestroyRef);
+    private readonly injector = inject(Injector);
+    private readonly panel = viewChild<ElementRef<HTMLElement>>('panel');
+
+    /**
+     * true si el usuario tocó un control de formulario desde que se abrió. Se detecta por los
+     * eventos `input`/`change` que burbujean desde el contenido proyectado, así ningún formulario
+     * tiene que declarar nada. Sólo cuentan los controles dentro de un `<form>` (los buscadores
+     * de un panel de detalle no son datos a perder). Si el padre cierra poniendo isOpen=false
+     * (guardado correcto) no pasa por close(): no pregunta.
+     */
+    private conCambios = false;
 
     /** z-index propio de este drawer dentro de la pila (overlay = zIndex, panel = zIndex+1). */
     readonly zIndex = signal(DrawerComponent.BASE_Z_INDEX);
@@ -204,8 +217,11 @@ export class DrawerComponent {
     constructor() {
         effect(() => {
             if (this.isOpen()) {
+                this.conCambios = false;
                 this.pushToStack();
+                afterNextRender(() => this.enfocarPrimerControl(), { injector: this.injector });
             } else {
+                this.conCambios = false;
                 this.removeFromStack();
             }
         });
@@ -234,10 +250,29 @@ export class DrawerComponent {
         });
     }
 
+    /** Foco dentro del panel al abrir (como `app-modal`): primer control del cuerpo, o el panel mismo. */
+    private enfocarPrimerControl(): void {
+        const panel = this.panel()?.nativeElement;
+        if (!panel || this.isInert()) return;
+        const primero = panel.querySelector<HTMLElement>(
+            '.drawer-body input:not([type=hidden]):not([disabled]), .drawer-body select:not([disabled]), .drawer-body textarea:not([disabled])');
+        (primero ?? panel).focus();
+    }
+
+    marcarCambios(event: Event): void {
+        const t = event.target;
+        if (t instanceof HTMLElement && t.closest('form') && !t.matches('[type=search]')) this.conCambios = true;
+    }
+
     close() {
+        // El listener de Esc vive en TODAS las instancias, también las cerradas.
+        if (!this.isOpen()) return;
         // Un drawer inerte (tapado por otro encima) no debe cerrarse por click/Esc.
         if (this.isInert()) return;
-        if (this.closable()) this.closed.emit();
+        if (!this.closable()) return;
+        // Clic fuera / Esc / X con el formulario a medias descartaba todo en silencio.
+        if (this.conCambios && !confirm('Hay cambios sin guardar. ¿Descartarlos?')) return;
+        this.closed.emit();
     }
 
     @HostListener('document:keydown.escape')

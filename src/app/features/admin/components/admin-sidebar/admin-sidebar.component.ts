@@ -34,6 +34,7 @@ const ALL_NAV_GROUPS: NavGroup[] = [
       { label: 'Productos', route: '/admin/products', icon: 'box' },
       { label: 'Categorías', route: '/admin/categories', icon: 'tag' },
       { label: 'Devoluciones', route: '/admin/returns', icon: 'return' },
+      { label: 'Libro de Reclamaciones', route: '/admin/reclamos', icon: 'file' },
       { label: 'Promociones', route: '/admin/promotions', icon: 'tag' },
       { label: 'Clientes', route: '/admin/customers', icon: 'users' }
     ]
@@ -161,6 +162,7 @@ const ALL_NAV_GROUPS: NavGroup[] = [
       { label: 'Asistencia',      route: '/admin/rrhh/attendance',  icon: 'calendar'      },
       { label: 'Vacaciones',      route: '/admin/rrhh/vacations',   icon: 'sun'           },
       { label: 'Nómina',          route: '/admin/rrhh/payroll',     icon: 'document'      },
+      { label: 'Liquidaciones',   route: '/admin/rrhh/liquidaciones', icon: 'document'    },
       { label: 'Evaluaciones',    route: '/admin/rrhh/evaluations', icon: 'chart-bar'     },
       { label: 'Criterios de Evaluación', route: '/admin/rrhh/evaluations/criteria', icon: 'list' },
       { label: 'Metas y Objetivos', route: '/admin/rrhh/goals',     icon: 'chart-bar'     },
@@ -254,6 +256,8 @@ export class AdminSidebarComponent implements OnInit {
 
   // Collapsible sidebar state inputs/outputs
   collapsed = input<boolean>(false);
+  /** Drawer abierto en <768px (en escritorio el sidebar es fijo y esto no aplica). */
+  mobileOpen = input<boolean>(false);
   toggleCollapse = output<boolean>();
 
   readonly themePickerOpen = signal(false);

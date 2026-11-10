@@ -1,5 +1,7 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { mensajeDeErrorHttp } from '@core/utils/http-error.util';
+import { PATRON_SERIE_BOLETA, PATRON_SERIE_FACTURA, MSJ_SERIE_BOLETA, MSJ_SERIE_FACTURA } from './sucursales.params';
 import { DataTableComponent, TableColumn, TableAction, PaginationEvent, FilterConfig, FilterChangeEvent, DateRangeFilterConfig, DateRangeChangeEvent } from '@shared/ui/tables/data-table/data-table.component';
 import { staticFilter, signalFilter, ACTIVO_OPTIONS } from '@shared/ui/tables/data-table/filter-helpers';
 import { PageHeaderComponent } from '@shared/ui/layout/page-header/page-header.component';
@@ -105,8 +107,8 @@ export class SucursalesComponent implements OnInit {
         direccion: [''],
         ubigeo: [''],
         telefono: [''],
-        serieBoleta: [''],
-        serieFactura: [''],
+        serieBoleta: ['', Validators.pattern(PATRON_SERIE_BOLETA)],
+        serieFactura: ['', Validators.pattern(PATRON_SERIE_FACTURA)],
         // Baja lógica reversible: permite reactivar una sucursal desactivada desde el propio formulario.
         activo: [true],
     });
@@ -117,6 +119,9 @@ export class SucursalesComponent implements OnInit {
      * bloqueadas en edición, nunca ocultas.
      */
     private static readonly CAMPOS_BLOQUEADOS = ['serieBoleta', 'serieFactura'] as const;
+
+    protected readonly msjSerieBoleta = MSJ_SERIE_BOLETA;
+    protected readonly msjSerieFactura = MSJ_SERIE_FACTURA;
 
     isEmpty = computed(() => !this.loading() && this.sucursales().length === 0);
 
@@ -261,7 +266,8 @@ export class SucursalesComponent implements OnInit {
             },
             error: err => {
                 this.submitting.set(false);
-                this.submitError.set(err?.error?.detail ?? 'Error al guardar');
+                // 409 = «La serie XXXX ya está asignada a otra sucursal»: el detalle del backend, no el texto genérico.
+                this.submitError.set(err instanceof HttpErrorResponse ? mensajeDeErrorHttp(err) : 'Error al guardar');
             },
         });
     }

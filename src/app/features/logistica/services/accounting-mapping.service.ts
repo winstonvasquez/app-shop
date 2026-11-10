@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '@env/environment';
 import { PageResponse } from '@core/models/pagination.model';
-import { AccountingMapping, AccountingMappingRequest, AccountingMappingFiltros } from '../models/accounting-mapping.model';
+import { AccountingMapping, AccountingMappingRequest, AccountingMappingFiltros, TestAsientoResultado } from '../models/accounting-mapping.model';
 import { toHttpParams } from '@core/utils/http-params.util';
 
 @Injectable({ providedIn: 'root' })
@@ -56,9 +56,10 @@ export class AccountingMappingService {
     /**
      * Dispara un asiento contable REAL de prueba hacia Contabilidad usando el
      * mapeo configurado para `eventType`. Monto mínimo por defecto (0.01) para
-     * no ensuciar los libros con montos significativos.
+     * no ensuciar los libros con montos significativos. Síncrono: 200 si contabilidad
+     * lo aceptó, 400 con su motivo si lo rechazó.
      */
-    probar(eventType: string, amount = 0.01): Observable<void> {
-        return this.http.post<void>(`${this.baseUrl}/test/${eventType}?amount=${amount}`, {});
+    probar(eventType: string, amount = 0.01): Observable<TestAsientoResultado> {
+        return this.http.post<TestAsientoResultado>(`${this.baseUrl}/test/${eventType}?amount=${amount}`, {});
     }
 }

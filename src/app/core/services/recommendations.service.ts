@@ -5,10 +5,12 @@ import { catchError } from 'rxjs/operators';
 import { environment } from '@env/environment';
 import { ProductResponse } from '@core/models/product.model';
 import { toHttpParams } from '@core/utils/http-params.util';
+import { AuthService } from '@core/auth/auth.service';
 
 @Injectable({ providedIn: 'root' })
 export class RecommendationsService {
     private readonly http = inject(HttpClient);
+    private readonly auth = inject(AuthService);
     private readonly baseUrl = `${environment.apiUrls.sales}/api/v1/recomendaciones`;
 
     getSimilares(productoId: number, limite = 8): Observable<ProductResponse[]> {
@@ -27,6 +29,8 @@ export class RecommendationsService {
     }
 
     trackVisualizacion(productoId: number, usuarioId?: number): void {
+        // POST /historial exige sesion: sin ella el backend responde 403 en cada producto visto
+        if (!this.auth.isAuthenticated()) return;
         let params = toHttpParams({
             usuarioId,
         });

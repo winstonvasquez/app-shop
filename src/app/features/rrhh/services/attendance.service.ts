@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { environment } from '@env/environment';
 import { firstValueFrom } from 'rxjs';
 import { PageResponse } from '@core/models/pagination.model';
-import { Attendance, AttendanceRequest, CheckInOutRequest, AttendanceSummary } from '../models/attendance.model';
+import { Attendance, AttendanceCorrectionRequest, AttendanceRequest, CheckInOutRequest, AttendanceSummary } from '../models/attendance.model';
 import { toHttpParams } from '@core/utils/http-params.util';
 
 /** Filtros server-side del listado paginado de asistencia. Todos opcionales. */
@@ -43,6 +43,11 @@ export class AttendanceService {
         } finally {
             this._loading.set(false);
         }
+    }
+
+    /** Corrige un registro (PUT /{id}). 409 si la planilla del mes ya está aprobada/pagada. */
+    async correctAttendance(id: number, request: AttendanceCorrectionRequest): Promise<Attendance> {
+        return firstValueFrom(this.http.put<Attendance>(`${this.baseUrl}/${id}`, request));
     }
 
     async checkIn(request: CheckInOutRequest): Promise<Attendance> {

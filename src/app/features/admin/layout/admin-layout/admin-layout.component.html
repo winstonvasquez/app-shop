@@ -1,8 +1,13 @@
 <div class="admin-layout" [class.sidebar-collapsed]="isSidebarCollapsed()">
-    <app-admin-sidebar [collapsed]="isSidebarCollapsed()" (toggleCollapse)="onToggleCollapse($event)" />
+    <app-admin-sidebar [collapsed]="isSidebarCollapsed()" [mobileOpen]="mobileOpen()"
+        (toggleCollapse)="onToggleCollapse($event)" />
+
+    @if (mobileOpen()) {
+    <div class="fixed inset-0 z-[90] bg-black/40 md:hidden" (click)="mobileOpen.set(false)" aria-hidden="true"></div>
+    }
 
     <div class="main-content">
-        <app-admin-header />
+        <app-admin-header (menuToggle)="mobileOpen.set(!mobileOpen())" />
 
         <main class="dashboard-content">
             <router-outlet />

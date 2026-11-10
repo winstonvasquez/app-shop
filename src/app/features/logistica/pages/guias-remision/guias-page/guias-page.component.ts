@@ -1,5 +1,6 @@
 import { Component, inject, signal, OnInit, ChangeDetectionStrategy, computed } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { ButtonComponent, CatalogSelectComponent, ServerSearchSelectComponent, UbigeoSelectComponent } from '@shared/components';
 import { DrawerComponent } from '../../../../../shared/components/drawer/drawer.component';
 import { GuiaRemisionService } from '../../../services/guia-remision.service';
@@ -32,6 +33,7 @@ export class GuiasPageComponent implements OnInit {
     private readonly almacenService = inject(AlmacenService);
     private readonly authService   = inject(AuthService);
     private readonly fb            = inject(FormBuilder);
+    private readonly route         = inject(ActivatedRoute);
     private readonly catalog       = inject(CatalogService);
 
     /** Fuente server-side para el selector de almacén de origen, scopeada a companyId. */
@@ -47,6 +49,9 @@ export class GuiasPageComponent implements OnInit {
     readonly guardando       = signal(false);
     readonly errorMsg        = signal<string | null>(null);
     readonly itemForms       = signal<ItemFormularioGuia[]>([]);
+
+    /** Guía enfocada desde un traslado (?guiaId=): el listado muestra sólo esa guía hasta limpiar. */
+    readonly guiaFocoId      = signal<string | null>(this.route.snapshot.queryParamMap.get('guiaId'));
 
     /** Almacenes de la empresa, para el select de filtro "Almacén de origen" del toolbar. */
     readonly almacenesFiltro = signal<Almacen[]>([]);
@@ -151,7 +156,9 @@ export class GuiasPageComponent implements OnInit {
           render: (row) => row.fechaEmision
             ? new Date(row.fechaEmision).toLocaleDateString('es-PE') : '-' },
         { key: 'motivoTraslado', label: 'Motivo',
-          render: (row) => this.catalog.label('MOTIVO_TRASLADO_SUNAT', row.motivoTraslado) },
+          // Motivo 04: el stock lo mueve el traslado entre almacenes (TRF), no esta guía.
+          render: (row) => this.catalog.label('MOTIVO_TRASLADO_SUNAT', row.motivoTraslado)
+            + (row.motivoTraslado === '04' ? ' (stock por traslado)' : '') },
         { key: 'destinatarioRazonSocial', label: 'Destinatario',
           render: (row) => row.destinatarioRazonSocial || '—' },
         { key: 'vehiculoPlaca', label: 'Placa/Conductor',
@@ -177,8 +184,15 @@ export class GuiasPageComponent implements OnInit {
             onClick: (row) => this.cambiarEstado(row.id, 'EN_TRASLADO')
         },
         {
+            // La GRE manual nace PENDIENTE (antes EMITIDA); EN_TRASLADO→RECIBIDA/ANULADA ya lo permite el backend.
+            label: 'Confirmar llegada', icon: '📦', class: 'btn-view',
+            show: (row) => row.estado === 'EN_TRASLADO',
+            onClick: (row) => this.cambiarEstado(row.id, 'RECIBIDA')
+        },
+        {
             label: 'Anular', icon: '✕', class: 'btn-view',
-            show: (row) => row.estado === 'EMITIDA',
+            // No en EN_TRASLADO: la salida de stock ya se registró y anular no la revierte.
+            show: (row) => row.estado === 'PENDIENTE' || row.estado === 'EMITIDA',
             onClick: (row) => this.cambiarEstado(row.id, 'ANULADA')
         },
     ];
@@ -217,6 +231,25 @@ export class GuiasPageComponent implements OnInit {
 
     cargarGuias() {
         this.loading.set(true);
+        const foco = this.guiaFocoId();
+        if (foco) {
+            this.guiaService.getGuiaById(foco, this.companyId).subscribe({
+                next: (g) => {
+                    this.guias.set([g]);
+                    this.totalElements.set(1);
+                    this.totalPages.set(1);
+                    this.loading.set(false);
+                },
+                error: () => {
+                    this.guias.set([]);
+                    this.totalElements.set(0);
+                    this.totalPages.set(0);
+                    this.loading.set(false);
+                    this.errorMsg.set('No se encontró la guía de remisión del traslado.');
+                }
+            });
+            return;
+        }
         this.guiaService.getGuias(this.companyId, {
             page: this.currentPage(),
             size: this.pageSize(),
@@ -245,6 +278,7 @@ export class GuiasPageComponent implements OnInit {
 
     /** La búsqueda por texto también va al backend (`q`), no filtra la página cargada. */
     onSearch(term: string) {
+        this.guiaFocoId.set(null);
         this.searchQuery.set(term);
         this.currentPage.set(0);
         this.cargarGuias();
@@ -258,6 +292,7 @@ export class GuiasPageComponent implements OnInit {
 
     onFilterChangeEvent(event: FilterChangeEvent) {
         const valor = event.value != null ? String(event.value) : '';
+        this.guiaFocoId.set(null);
         switch (event.field) {
             case 'estado':            this.filterEstado.set(valor); break;
             case 'motivoTraslado':    this.filterMotivoTraslado.set(valor); break;
@@ -287,6 +322,7 @@ export class GuiasPageComponent implements OnInit {
 
     /** "Limpiar filtros": resetea todo y recarga UNA sola vez. */
     onFiltersClear() {
+        this.guiaFocoId.set(null);
         this.searchQuery.set('');
         this.filterEstado.set('');
         this.filterMotivoTraslado.set('');
@@ -325,7 +361,8 @@ export class GuiasPageComponent implements OnInit {
 
     cambiarEstado(id: string, estado: string) {
         this.guiaService.actualizarEstado(id, estado, this.companyId).subscribe({
-            next: () => this.cargarGuias()
+            next: () => this.cargarGuias(),
+            error: () => this.errorMsg.set('No se pudo cambiar el estado de la guía. Verifique que la transición sea válida.')
         });
     }
 

@@ -26,7 +26,7 @@ export class FlujoEfectivoComponent implements OnInit {
         const f = this.flujo();
         if (!f) return [0, 0, 0];
         return [
-            Math.abs(f.flujoOperativo),
+            Math.abs(f.flujoOperacion),
             Math.abs(f.flujoInversion),
             Math.abs(f.flujoFinanciamiento),
         ];

@@ -1,4 +1,4 @@
-import { ApplicationConfig, provideBrowserGlobalErrorListeners, importProvidersFrom, APP_INITIALIZER } from '@angular/core';
+import { ApplicationConfig, provideBrowserGlobalErrorListeners, importProvidersFrom, APP_INITIALIZER, LOCALE_ID, DEFAULT_CURRENCY_CODE } from '@angular/core';
 import {
   LUCIDE_ICONS, LucideIconProvider,
   // Estado / feedback
@@ -89,6 +89,9 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     provideRouter(routes),
+    // Sin esto el locale efectivo es en-US: `| currency` pintaba $ y las fechas salían en inglés.
+    { provide: LOCALE_ID, useValue: 'es-PE' },
+    { provide: DEFAULT_CURRENCY_CODE, useValue: 'PEN' },
     provideHttpClient(
       withInterceptors([authInterceptor, languageInterceptor, tenantInterceptor, httpErrorInterceptor]),
       withFetch()

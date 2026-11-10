@@ -14,6 +14,12 @@
     </div>
   </app-page-header>
 
+  @if (cierreMsg()) {
+    <div class="p-3 mb-4" style="background:var(--color-surface-alt,rgba(0,0,0,0.04));border:1px solid var(--color-border);border-radius:8px;font-size:0.875rem">
+      {{ cierreMsg() }}
+    </div>
+  }
+
   <!-- Tabla -->
   <app-data-table
     [data]="cajas()"
@@ -128,6 +134,12 @@
            [value]="(selectedCaja()?.saldoActual ?? 0) | number:'1.2-2'" readonly>
   </div>
 
+  @if (ajusteMsg()) {
+    <div class="p-3 mb-4" style="background:var(--color-warning-subtle,rgba(240,140,0,0.12));border:1px solid var(--color-warning,#F08C00);border-radius:8px;font-size:0.875rem">
+      {{ ajusteMsg() }}
+    </div>
+  }
+
   @if (actionType() === 'abrir') {
     <form [formGroup]="actionForm">
       <app-form-field
@@ -135,7 +147,8 @@
         [control]="getControl(actionForm, 'saldoInicial')"
         type="number"
         placeholder="0.00"
-        [required]="true">
+        [required]="true"
+        hint="Precargado con el saldo de cierre. Si digita otro monto se registra un ajuste y se le pedirá confirmar.">
       </app-form-field>
     </form>
   } @else {
@@ -162,7 +175,7 @@
 
   <div slot="footer">
     <app-button icon="x" label="Cancelar" variant="secondary" [disabled]="guardando()" (click)="showActionDrawer.set(false)" />
-    <app-button [icon]="actionType() === 'abrir' ? 'door-open' : 'door-closed'" [label]="actionType() === 'abrir' ? 'Abrir Caja' : 'Confirmar Cierre'" [variant]="actionType() === 'abrir' ? 'primary' : 'secondary'" [loading]="guardando()" [disabled]="guardando() || (actionType() === 'cerrar' && efectivoContado.invalid)" (click)="ejecutarAccion()" />
+    <app-button [icon]="actionType() === 'abrir' ? 'door-open' : 'door-closed'" [label]="actionType() === 'abrir' ? (ajusteMsg() ? 'Confirmar ajuste y abrir' : 'Abrir Caja') : 'Confirmar Cierre'" [variant]="actionType() === 'abrir' ? 'primary' : 'secondary'" [loading]="guardando()" [disabled]="guardando() || (actionType() === 'cerrar' && efectivoContado.invalid)" (click)="ejecutarAccion()" />
   </div>
 </app-drawer>
 

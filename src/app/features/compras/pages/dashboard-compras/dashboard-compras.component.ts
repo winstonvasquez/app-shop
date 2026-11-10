@@ -43,9 +43,10 @@ export class DashboardComprasComponent implements OnInit {
 
     /* ── Chart: Top Proveedores (bar horizontal) ──────────────── */
     barChart: ApexChart = { ...this.chartDefaults.barChart(true, 240), type: 'bar' };
-    barSeries: ApexAxisChartSeries = [{ name: 'Monto (S/)', data: [45200, 38700, 29400, 22800, 18100] }];
+    // Sin datos de ejemplo: una empresa sin compras debe ver el estado vacío, no proveedores inventados.
+    barSeries: ApexAxisChartSeries = [{ name: 'Monto (S/)', data: [] }];
     barXAxis: ApexXAxis = {
-        categories: ['Prov. A', 'Prov. B', 'Prov. C', 'Prov. D', 'Prov. E'],
+        categories: [],
         labels: { style: { colors: this.chartDefaults.textColor, fontSize: '12px' } },
         axisBorder: { show: false }, axisTicks: { show: false },
     };

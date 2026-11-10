@@ -11,6 +11,8 @@ export interface OfflineVenta {
     companyId: number;
     turnoCajaId: number;
     request: VentaPosRequest;
+    /** POS-8: redondeo del efectivo calculado al cobrar (informativo; el servidor lo recalcula al sincronizar). */
+    redondeo?: number;
     /** Ticket temporal formato OFF-XXXXXX */
     numeroTicketTemp: string;
     /** RECHAZADA: el servidor respondió y no la acepta (regla de negocio); reintentarla no cambia nada. */

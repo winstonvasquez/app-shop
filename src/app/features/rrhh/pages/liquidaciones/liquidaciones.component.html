@@ -1,0 +1,91 @@
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Liquidaciones al cese</h1>
+    <p class="page-subtitle">CTS, vacaciones y gratificación truncas. Al registrar se genera el pago pendiente en tesorería (si tesorería no responde, no se registra nada). No genera asiento contable.</p>
+  </div>
+</div>
+
+<div class="card" style="margin-bottom:var(--space-lg)">
+  <div class="card-body">
+    <label class="input-label">Calcular liquidación de</label>
+    <app-server-search-select [dataSource]="employeeSource" [formControl]="empleado"
+                              placeholder="Buscar empleado cesado por nombre o código…" />
+  </div>
+</div>
+
+@if (mensaje(); as m) {
+  <div class="card" style="margin-bottom:var(--space-md);border-left:3px solid var(--color-info)">
+    <div class="card-body" style="padding:12px 16px;font-size:0.85rem">{{ m }}</div>
+  </div>
+}
+@if (error(); as e) {
+  <div class="card" style="margin-bottom:var(--space-md);border-left:3px solid var(--color-error)">
+    <div class="card-body" style="padding:12px 16px;font-size:0.85rem;color:var(--color-error)">{{ e }}</div>
+  </div>
+}
+
+@if (calculo(); as c) {
+  <div class="card" style="margin-bottom:var(--space-lg)">
+    <div class="card-header"><h3 class="card-title">Cálculo — {{ c.employeeName }}</h3></div>
+    <div class="card-body">
+      <p style="font-size:0.85rem;margin-bottom:var(--space-md)">
+        Ingreso {{ c.fechaIngreso | date:'dd/MM/yyyy' }} · Cese {{ c.fechaCese | date:'dd/MM/yyyy' }} ·
+        Remuneración computable S/ {{ c.remuneracionComputable | number:'1.2-2' }}
+      </p>
+      <table class="data-table">
+        <thead><tr><th class="table-cell">Concepto</th><th class="table-cell">Base</th><th class="table-cell text-right">Monto (S/)</th></tr></thead>
+        <tbody>
+          <tr><td class="table-cell">Gratificación trunca</td><td class="table-cell">{{ c.mesesGratificacion }} mes(es)</td><td class="table-cell text-right font-mono">{{ c.gratificacionTrunca | number:'1.2-2' }}</td></tr>
+          <tr><td class="table-cell">Bonificación extraordinaria (9 %)</td><td class="table-cell">—</td><td class="table-cell text-right font-mono">{{ c.bonificacionExtraordinaria | number:'1.2-2' }}</td></tr>
+          <tr><td class="table-cell">CTS trunca (pago directo, no se deposita)</td><td class="table-cell">{{ c.mesesCts }} mes(es)</td><td class="table-cell text-right font-mono">{{ c.ctsTrunca | number:'1.2-2' }}</td></tr>
+          <tr><td class="table-cell">Vacaciones no gozadas</td><td class="table-cell">{{ c.diasVacacionesPendientes | number:'1.0-2' }} día(s)</td><td class="table-cell text-right font-mono">{{ c.vacacionesNoGozadas | number:'1.2-2' }}</td></tr>
+          <tr><td class="table-cell">Vacaciones truncas</td><td class="table-cell">{{ c.mesesRecordVacacional }} mes(es)</td><td class="table-cell text-right font-mono">{{ c.vacacionesTruncas | number:'1.2-2' }}</td></tr>
+        </tbody>
+        <tfoot>
+          <tr style="font-weight:700;border-top:2px solid var(--color-border)">
+            <td class="table-cell" colspan="2">TOTAL</td>
+            <td class="table-cell text-right font-mono">{{ c.total | number:'1.2-2' }}</td>
+          </tr>
+        </tfoot>
+      </table>
+      <div style="margin-top:var(--space-md);display:flex;gap:var(--space-sm);align-items:center;flex-wrap:wrap">
+        <input class="input-field" type="text" maxlength="500" placeholder="Observaciones (opcional)"
+               style="flex:1;min-width:240px" [(ngModel)]="observaciones">
+        <button class="btn btn-primary" [disabled]="cargando()" (click)="registrar()">Registrar liquidación</button>
+      </div>
+    </div>
+  </div>
+}
+
+<div class="card">
+  <div class="card-header"><h3 class="card-title">Liquidaciones registradas</h3></div>
+  <div class="card-body">
+    @if (lista().length === 0) {
+      <p style="font-size:0.85rem;color:var(--color-text-muted)">Aún no hay liquidaciones registradas. Se calculan al finalizar el contrato de un trabajador.</p>
+    } @else {
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th class="table-cell">Empleado</th><th class="table-cell">Cese</th>
+            <th class="table-cell text-right">Gratificación</th><th class="table-cell text-right">CTS</th>
+            <th class="table-cell text-right">Vacaciones</th><th class="table-cell text-right">Total</th>
+            <th class="table-cell">Registrada</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (l of lista(); track l.id) {
+            <tr>
+              <td class="table-cell">{{ l.employeeName }}</td>
+              <td class="table-cell">{{ l.fechaCese | date:'dd/MM/yyyy' }}</td>
+              <td class="table-cell text-right font-mono">{{ l.gratificacionTrunca + l.bonificacionExtraordinaria | number:'1.2-2' }}</td>
+              <td class="table-cell text-right font-mono">{{ l.ctsTrunca | number:'1.2-2' }}</td>
+              <td class="table-cell text-right font-mono">{{ l.vacacionesNoGozadas + l.vacacionesTruncas | number:'1.2-2' }}</td>
+              <td class="table-cell text-right font-mono font-bold">{{ l.total | number:'1.2-2' }}</td>
+              <td class="table-cell">{{ l.createdAt | date:'dd/MM/yyyy HH:mm' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  </div>
+</div>

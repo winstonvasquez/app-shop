@@ -71,6 +71,26 @@
             </div>
         </div>
 
+        <!-- Movimientos de caja -->
+        <div class="turno-ventas-section">
+            <p class="turno-section-title">Movimientos de caja</p>
+            <div class="turno-ventas-rows">
+                @for (m of movimientos(); track m.id) {
+                <div class="turno-ventas-row" [class.turno-ventas-row--anulacion]="m.tipo === 'RETIRO'">
+                    <span>{{ m.tipo === 'INGRESO' ? 'Ingreso' : 'Retiro' }} · {{ m.motivo }}
+                        <small class="opacity-60">{{ m.fechaCreacion | date:'HH:mm' }}</small></span>
+                    <span class="mono fw-bold">{{ m.tipo === 'INGRESO' ? '+' : '−' }}S/{{ fmt(m.monto) }}</span>
+                </div>
+                } @empty {
+                <div class="turno-ventas-row"><span class="opacity-60">Sin movimientos en este turno</span></div>
+                }
+            </div>
+            <div class="turno-total-row">
+                <span>Efectivo esperado en caja</span>
+                <span class="turno-total-amount">S/{{ fmt(efectivoEsperado()) }}</span>
+            </div>
+        </div>
+
         <!-- CPE emitidos -->
         <div class="turno-cpe-section">
             <p class="turno-section-title">{{ 'pos.turno.sunatDocuments' | translate }}</p>
@@ -164,6 +184,21 @@
             <p class="text-xs mt-1" style="color:var(--color-error)">Ingresa un monto válido (0 o mayor)</p>
             }
         </div>
+        @if (sucursales().length > 0) {
+        <div class="amount-group mt-4">
+            <label class="amount-label" for="turno-sucursal">Sucursal (define la serie de los comprobantes)</label>
+            <select id="turno-sucursal"
+                class="w-full h-11 px-3 rounded-lg bg-[var(--color-surface)] border border-[var(--color-border)]"
+                [value]="sucursalId() ?? ''" (change)="sucursalElegida.set($any($event.target).value)">
+                @if (sucursales().length > 1) {
+                <option value="">Sin sucursal (serie general)</option>
+                }
+                @for (s of sucursales(); track s.id) {
+                <option [value]="s.id">{{ s.nombre }}</option>
+                }
+            </select>
+        </div>
+        }
         <button class="btn-primary w-full gap-2 !h-12 !rounded-xl mt-4" [disabled]="montoApertura() === null"
             (click)="confirmarApertura()">
             <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
@@ -175,6 +210,9 @@
         </button>
 
         }
+
+        <app-pos-turnos-gestion (verZ)="verReporteZ.emit($event)"
+            (turnoCerrado)="turnoCerradoPorSupervisor.emit($event)" />
 
     </div>
 </div>

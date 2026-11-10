@@ -56,6 +56,24 @@
                     etiquetaMetodoPago(selectedOrder()?.metodoPago) }}</p>
                 <p class="text-sm text-subtle mb-xs"><strong class="text-on">Estado del pago:</strong> {{
                     etiquetaEstadoPago(selectedOrder()?.estadoPago) }}</p>
+                <p class="text-sm text-subtle mb-xs"><strong class="text-on">Comprobante:</strong>
+                    {{ comprobanteDe(selectedOrder()!) }}
+                    @if (estadoCpeDe(selectedOrder()?.cpeEstado); as cpe) {
+                    <span class="badge" [class]="cpe.badge">{{ cpe.label }}</span>
+                    }
+                </p>
+                @if (selectedOrder()?.direccionEnvio; as dir) {
+                <p class="text-sm text-subtle mb-xs"><strong class="text-on">Envío a:</strong>
+                    {{ dir.direccion }}, {{ dir.ciudad }}@if (dir.provincia) {, {{ dir.provincia }}}@if (dir.region) {, {{ dir.region }}}
+                </p>
+                @if (dir.referencia) {
+                <p class="text-sm text-subtle mb-xs"><strong class="text-on">Referencia:</strong> {{ dir.referencia }}</p>
+                }
+                }
+                @if (selectedOrder()?.referenciaPago) {
+                <p class="text-sm text-subtle mb-xs"><strong class="text-on">N.º de operación:</strong> {{
+                    selectedOrder()?.referenciaPago }}</p>
+                }
                 <p class="text-sm text-subtle"><strong class="text-on">Total:</strong> {{ selectedOrder()?.total |
                     currency }}</p>
             </div>
@@ -63,28 +81,67 @@
                 <h3 class="text-lg font-bold text-on mb-sm">Estado</h3>
                 <div class="flex flex-col gap-sm">
                     <div>
-                        <span class="badge-erp" [class]="'badge-' + selectedOrder()?.estado?.toLowerCase()">
-                            {{ selectedOrder()?.estado }}
+                        <span class="badge" [class]="parametros.getBadgeEstadoPedido(selectedOrder()?.estado ?? '')">
+                            {{ parametros.getLabelEstadoPedido(selectedOrder()?.estado ?? '') }}
                         </span>
                     </div>
                     <div class="flex gap-sm mt-sm">
-                        @if (selectedOrder()?.estado === 'PENDIENTE') {
-                        <app-button label="Marcar Pagado" variant="primary" size="sm" icon="check-circle"
-                            [loading]="loadingDetails()" (click)="updateStatus('PAGADO')"></app-button>
-                        <app-button label="Cancelar" variant="danger" size="sm" icon="x-circle"
-                            [loading]="loadingDetails()" (click)="updateStatus('CANCELADO')"></app-button>
-                        }
-                        @if (selectedOrder()?.estado === 'PAGADO') {
+                        @for (accion of acciones(); track accion) {
+                        @switch (accion) {
+                        @case ('ENVIAR') {
                         <app-button label="Enviar" variant="primary" size="sm" icon="shopping-bag"
                             [loading]="loadingDetails()" (click)="updateStatus('ENVIADO')"></app-button>
+                        }
+                        @case ('MARCAR_PAGADO') {
+                        <app-button label="Marcar Pagado" variant="primary" size="sm" icon="check-circle"
+                            [loading]="loadingDetails()" (click)="iniciarCobro()"></app-button>
+                        }
+                        @case ('REGISTRAR_COBRO') {
+                        <app-button label="Registrar cobro" variant="primary" size="sm" icon="check-circle"
+                            [loading]="loadingDetails()" (click)="iniciarCobro()"></app-button>
+                        }
+                        @case ('ENTREGAR') {
+                        <app-button label="Entregado" variant="success" size="sm" icon="check-circle"
+                            [loading]="loadingDetails()" (click)="updateStatus('ENTREGADO')"></app-button>
+                        }
+                        @case ('RECHAZAR_ENTREGA') {
+                        <app-button label="Rechazado en entrega" variant="danger" size="sm" icon="x-circle"
+                            [loading]="loadingDetails()" (click)="rechazarEntrega()"></app-button>
+                        }
+                        @case ('CANCELAR') {
                         <app-button label="Cancelar" variant="danger" size="sm" icon="x-circle"
                             [loading]="loadingDetails()" (click)="updateStatus('CANCELADO')"></app-button>
                         }
-                        @if (selectedOrder()?.estado === 'ENVIADO') {
-                        <app-button label="Entregar" variant="success" size="sm" icon="check-circle"
-                            [loading]="loadingDetails()" (click)="updateStatus('ENTREGADO')"></app-button>
+                        }
                         }
                     </div>
+                    @if (confirmandoPago() && (acciones().includes('MARCAR_PAGADO') || acciones().includes('REGISTRAR_COBRO'))) {
+                    <div class="p-md border border-[var(--color-border)] rounded-md flex flex-col gap-sm">
+                        <p class="text-sm text-subtle">
+                            @if (selectedOrder()?.estado === 'ENTREGADO') {
+                            Al registrar el cobro se emite el comprobante, se contabiliza la venta y se registra
+                            el ingreso en tesorería. El pedido sigue como entregado.
+                            } @else {
+                            Al marcar el pedido como pagado se emite el comprobante, se contabiliza la venta,
+                            se registra el ingreso en tesorería y se solicita el picking. No se puede deshacer salvo cancelando.
+                            }
+                        </p>
+                        <label class="text-sm text-on" for="referencia-pago">N.º de operación</label>
+                        <input id="referencia-pago" type="text" class="input" [attr.maxlength]="referenciaMax"
+                            [value]="referenciaPago()" (input)="referenciaPago.set($any($event.target).value)"
+                            placeholder="Ej. 00123456 (transferencia, Yape, Plin)">
+                        @if (errorReferencia(); as msg) {
+                        <p class="text-sm text-[var(--color-error)]">{{ msg }}</p>
+                        }
+                        <div class="flex gap-sm">
+                            <app-button label="Confirmar pago" variant="primary" size="sm" icon="check-circle"
+                                [disabled]="!!errorReferencia()" [loading]="loadingDetails()"
+                                (click)="confirmarCobro()"></app-button>
+                            <app-button label="Volver" variant="secondary" size="sm" icon="x"
+                                (click)="cancelarCobro()"></app-button>
+                        </div>
+                    </div>
+                    }
                 </div>
             </div>
         </div>

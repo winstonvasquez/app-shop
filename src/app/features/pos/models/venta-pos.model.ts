@@ -20,6 +20,8 @@ export interface PagoMixto {
     // El backend rechaza GIFT_CARD y MIXTO dentro de pagos[] (400).
     metodo: Exclude<MetodoPagoPos, 'MIXTO' | 'GIFT_CARD'>;
     monto: number;
+    /** N.º de operación/voucher (opcional, ≤40; el backend lo ignora en EFECTIVO). */
+    referencia?: string;
 }
 /** Método de una línea de pago dividido (el backend no admite MIXTO ni GIFT_CARD ahí). */
 export type MetodoPagoDividido = PagoMixto['metodo'];
@@ -61,6 +63,8 @@ export interface VentaPosResponse {
     totalIcbper: number;
     montoRecibido?: number;
     vuelto: number;
+    /** POS-8: lo que se dejó de cobrar al redondear el efectivo a la baja a S/ 0.10 (0/ausente si no hubo efectivo). `total` no cambia. */
+    redondeo?: number | null;
     estado: EstadoVentaPos;
     fechaCreacion: string;
     cajeroId: number;
@@ -74,6 +78,12 @@ export interface VentaPosResponse {
     totalMonedaExtranjera?: number;
     /** Nota de crédito emitida al anular una venta con BOLETA/FACTURA; null si no hubo (o no está anulada). */
     numeroNcAnulacion?: string | null;
+    /** Emisor real (maestro de users); el recibo no imprime literales. Opcional: ventas antiguas/offline pueden no traerlo. */
+    rucEmisor?: string | null;
+    razonSocialEmisor?: string | null;
+    /** Documento del adquirente (código SUNAT: 1 DNI, 4 CE, 6 RUC, 7 pasaporte). */
+    clienteTipoDoc?: string | null;
+    clienteNumeroDoc?: string | null;
 }
 
 export interface VentaPosItemRequest {
@@ -99,6 +109,8 @@ export interface VentaPosRequest {
     /** Con gift card, referido al RESTO que queda tras aplicarla. */
     montoRecibido?: number;
     pagos?: PagoMixto[];
+    /** N.º de operación de un único medio digital (TARJETA/YAPE/PLIN); en pago mixto va en `pagos[].referencia`. */
+    referenciaOperacion?: string;
     /** La gift card es un pago: el backend consume min(saldo, total). */
     giftCardCodigo?: string;
     moneda?: string;

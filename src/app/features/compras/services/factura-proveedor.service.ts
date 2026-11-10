@@ -4,7 +4,7 @@ import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { environment } from '@env/environment';
 import { AuthService } from '@core/auth/auth.service';
-import { FacturaProveedor, RegistrarFacturaRequest, CpeParsedInvoice } from '../models/factura-proveedor.model';
+import { FacturaProveedor, RegistrarFacturaRequest, CpeParsedInvoice, TipoComprobanteRegistrable } from '../models/factura-proveedor.model';
 import { Page, adaptSpringPage } from '@core/models/pagination.model';
 import { toHttpParams } from '@core/utils/http-params.util';
 
@@ -71,6 +71,13 @@ export class FacturaProveedorService {
         );
     }
 
+    /** Tipos de comprobante que el backend acepta registrar (el catálogo TIPO_COMPROBANTE trae más). */
+    tiposComprobante(): Observable<TipoComprobanteRegistrable[]> {
+        return this.http.get<TipoComprobanteRegistrable[]>(`${this.baseUrl}/tipos-comprobante`, {
+            headers: this.getHeaders(),
+        });
+    }
+
     getById(id: string): Observable<FacturaProveedor> {
         return this.http.get<FacturaProveedor>(`${this.baseUrl}/${id}`, { headers: this.getHeaders() });
     }
@@ -85,9 +92,11 @@ export class FacturaProveedorService {
         return this.http.post<FacturaProveedor>(this.baseUrl, request, { headers: this.getHeaders() });
     }
 
-    aprobar(id: string): Observable<FacturaProveedor> {
+    /** `forzar=true` aprueba una factura PENDIENTE_REVISION (diferencias en el 3-way match). */
+    aprobar(id: string, forzar = false): Observable<FacturaProveedor> {
         return this.http.post<FacturaProveedor>(`${this.baseUrl}/${id}/aprobar`, {}, {
             headers: this.getHeaders(),
+            params: { forzar },
         });
     }
 

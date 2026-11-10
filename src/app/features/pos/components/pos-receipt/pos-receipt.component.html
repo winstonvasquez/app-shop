@@ -11,14 +11,20 @@
                         d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 3H6.28l-.31-1.243A1 1 0 005 1H3z" />
                     <path d="M16 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM6.5 18a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" />
                 </svg>
-                <span class="receipt-company-name">MicroShop</span>
+                <span class="receipt-company-name">{{ v.razonSocialEmisor || '—' }}</span>
             </div>
-            <p class="receipt-ruc">DEMO COMERCIAL S.A.C. · RUC: 20123456789</p>
-            <p class="receipt-address">Lima, Perú</p>
+            @if (v.rucEmisor) {
+            <p class="receipt-ruc">RUC: {{ v.rucEmisor }}</p>
+            }
+            <!-- Sin literales de emisor: razón social y RUC salen del maestro (misma fuente que el QR). -->
+            @if (v.tipoCpe !== 'SIN_CPE') {
             <div class="receipt-cpe-badge">
                 <span>🇵🇪</span>
                 {{ v.tipoCpe }} Electrónica — SUNAT
             </div>
+            } @else {
+            <div class="receipt-cpe-badge">Ticket de venta — sin comprobante electrónico</div>
+            }
         </div>
 
         <!-- Cuerpo del comprobante -->
@@ -47,6 +53,12 @@
                     <span>{{ 'pos.receipt.customer' | translate }}</span>
                     <strong>{{ v.clienteNombre ?? 'Público general' }}</strong>
                 </div>
+                @if (v.clienteNumeroDoc) {
+                <div class="receipt-meta-row">
+                    <span>{{ tipoDocLabel(v.clienteTipoDoc) }}</span>
+                    <strong class="receipt-meta-mono">{{ v.clienteNumeroDoc }}</strong>
+                </div>
+                }
                 <div class="receipt-meta-row">
                     <span>{{ 'pos.receipt.cashier' | translate }}</span>
                     <strong>{{ v.cajeroNombre }}</strong>
@@ -73,20 +85,21 @@
 
             <!-- Totales -->
             <div class="receipt-totals">
-                <div class="receipt-total-row">
-                    <span>{{ 'pos.receipt.subtotal' | translate }}</span>
-                    <span class="mono">S/{{ fmt(v.subtotal) }}</span>
-                </div>
-                <div class="receipt-total-row">
-                    <span>{{ 'pos.receipt.igv' | translate }}</span>
-                    <span class="mono">S/{{ fmt(v.igv) }}</span>
-                </div>
+                <!-- v.subtotal ya es la base TRAS el descuento: el descuento se muestra antes, no como resta aparte. -->
                 @if (v.descuento > 0) {
                 <div class="receipt-total-row receipt-total-row--discount">
                     <span>{{ 'pos.receipt.discount' | translate }}</span>
                     <span class="mono">−S/{{ fmt(v.descuento) }}</span>
                 </div>
                 }
+                <div class="receipt-total-row">
+                    <span>Op. gravada</span>
+                    <span class="mono">S/{{ fmt(v.subtotal) }}</span>
+                </div>
+                <div class="receipt-total-row">
+                    <span>{{ 'pos.receipt.igv' | translate }}</span>
+                    <span class="mono">S/{{ fmt(v.igv) }}</span>
+                </div>
                 @if (v.totalIcbper > 0) {
                 <div class="receipt-total-row">
                     <span>ICBPER (bolsas)</span>
@@ -133,6 +146,12 @@
                 <div class="receipt-total-row">
                     <span>{{ v.metodoPago }} {{ 'pos.receipt.received' | translate }}</span>
                     <span class="mono">S/{{ fmt(v.montoRecibido) }}</span>
+                </div>
+                }
+                @if ((v.redondeo ?? 0) > 0) {
+                <div class="receipt-total-row">
+                    <span>Redondeo</span>
+                    <span class="mono">−S/{{ fmt(v.redondeo) }}</span>
                 </div>
                 }
                 @if (v.vuelto > 0) {

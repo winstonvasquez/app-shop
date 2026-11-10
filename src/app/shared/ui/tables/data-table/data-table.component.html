@@ -160,7 +160,12 @@
                     <tr>
                         <td [attr.colspan]="columns().length + (selectable() ? 1 : 0) + (hasActions() ? 1 : 0)" class="empty-state">
                             <div class="empty-message">
-                                <p>No hay datos disponibles</p>
+                                @if (activeFilterCount() > 0) {
+                                    <p>Ningún resultado con estos filtros</p>
+                                    <button type="button" class="btn-secondary" (click)="onClearFilters()">Limpiar filtros</button>
+                                } @else {
+                                    <p>No hay datos disponibles</p>
+                                }
                             </div>
                         </td>
                     </tr>

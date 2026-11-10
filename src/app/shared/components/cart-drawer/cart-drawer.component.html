@@ -108,7 +108,7 @@
                 </div>
                 <div class="summary-row">
                     <span>Envío</span>
-                    @if (subtotal() >= 99) {
+                    @if (envioGratis()?.gratis) {
                         <span class="ok">
                             <lucide-icon name="truck" [size]="13"/> Gratis
                         </span>
@@ -122,13 +122,15 @@
                 </div>
             </div>
 
-            @if (subtotal() < 99 && cartItems().length > 0) {
+            @if (envioGratis(); as eg) {
+              @if (!eg.gratis && cartItems().length > 0) {
                 <div class="free-ship-hint">
                     <lucide-icon name="info" [size]="13"/>
                     Te faltan
-                    <strong>S/ {{ (99 - subtotal()).toFixed(2) }}</strong>
+                    <strong>S/ {{ eg.falta.toFixed(2) }}</strong>
                     para envío gratis
                 </div>
+              }
             }
 
             <div class="cart-actions">

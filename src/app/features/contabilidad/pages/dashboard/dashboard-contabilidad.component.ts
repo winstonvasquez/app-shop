@@ -4,6 +4,7 @@ import { AsientoService } from '../../services/asiento.service';
 import { PeriodoService } from '../../services/periodo.service';
 import { ChartDefaultsService, CHART_COLORS } from '@shared/services/chart-defaults.service';
 import { EstadosFinancierosService, EstadoResultados } from '../../services/estados-financieros.service';
+import { DeclaracionIgvService, PDT621 } from '../../services/declaracion-igv.service';
 import {
     ApexAxisChartSeries, ApexChart, ApexDataLabels, ApexFill,
     ApexGrid, ApexLegend, ApexPlotOptions, ApexStroke, ApexTooltip, ApexXAxis, ApexYAxis,
@@ -32,7 +33,7 @@ import {
         <div class="kpi-grid kpi-grid-4">
             <div class="kpi-card kpi-card-green">
                 <div class="kpi-top">
-                    <span class="kpi-label">Ingresos del Mes</span>
+                    <span class="kpi-label">Ingresos del Año</span>
                     <div class="kpi-icon kpi-icon-green">
                         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -41,12 +42,11 @@ import {
                     </div>
                 </div>
                 <div class="kpi-value" style="font-size:1.5rem">{{ formatoMonto(ingresos()) }}</div>
-                <div class="kpi-trend trend-up">▲ 12.4% vs mes anterior</div>
             </div>
 
             <div class="kpi-card kpi-card-red">
                 <div class="kpi-top">
-                    <span class="kpi-label">Gastos del Mes</span>
+                    <span class="kpi-label">Gastos del Año</span>
                     <div class="kpi-icon kpi-icon-red">
                         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -55,7 +55,6 @@ import {
                     </div>
                 </div>
                 <div class="kpi-value" style="font-size:1.5rem">{{ formatoMonto(gastos()) }}</div>
-                <div class="kpi-trend trend-down">▼ 3.1% vs mes anterior</div>
             </div>
 
             <div class="kpi-card kpi-card-blue">
@@ -68,8 +67,8 @@ import {
                         </svg>
                     </div>
                 </div>
-                <div class="kpi-value" style="font-size:1.5rem">{{ formatoMonto(utilidadNeta()) }}</div>
-                <div class="kpi-trend trend-up">▲ Margen {{ margen() }}%</div>
+                <div class="kpi-value" style="font-size:1.5rem">{{ formatoMonto(utilidadBruta()) }}</div>
+                <div class="kpi-trend trend-neutral">Margen bruto {{ margen() }}%</div>
             </div>
 
             <div class="kpi-card kpi-card-yellow">
@@ -83,7 +82,7 @@ import {
                     </div>
                 </div>
                 <div class="kpi-value" style="font-size:1.5rem">{{ formatoMonto(igv()) }}</div>
-                <div class="kpi-trend trend-neutral">Vence 12/03/2026</div>
+                <div class="kpi-trend trend-neutral">{{ pdt()?.fechaVencimiento ? 'Vence ' + pdt()?.fechaVencimiento : 'Sin cálculo del periodo' }}</div>
             </div>
         </div>
 
@@ -92,11 +91,11 @@ import {
             <!-- Bar: Ingresos vs Gastos 6 meses -->
             <div class="chart-card">
                 <div class="chart-card-header">
-                    <span class="chart-card-title">Ingresos vs Gastos — Últimos 6 meses</span>
+                    <span class="chart-card-title">Ingresos vs Gastos — {{ anno() }}</span>
                 </div>
                 <div class="chart-card-body">
                     <apx-chart
-                        [series]="barSeries"
+                        [series]="barSeries()"
                         [chart]="barChart"
                         [xaxis]="barXAxis"
                         [yaxis]="barYAxis"
@@ -117,7 +116,7 @@ import {
                 </div>
                 <div class="chart-card-body" style="padding-top:0">
                     <apx-chart
-                        [series]="radialSeries"
+                        [series]="radialSeries()"
                         [chart]="radialChart"
                         [colors]="radialColors"
                         [plotOptions]="radialPlot"
@@ -161,17 +160,17 @@ import {
                     <tbody>
                         <tr class="table-row">
                             <td class="table-cell font-medium">IGV (PDT 621)</td>
-                            <td class="table-cell text-subtle">Marzo 2026</td>
+                            <td class="table-cell text-subtle">{{ periodoActual() }}</td>
                             <td class="table-cell text-right font-mono">{{ formatoMonto(igv()) }}</td>
-                            <td class="table-cell" style="color:var(--color-warning)">12/03/2026</td>
-                            <td class="table-cell"><span class="badge badge-warning">Pendiente</span></td>
+                            <td class="table-cell" style="color:var(--color-warning)">{{ pdt()?.fechaVencimiento ?? '—' }}</td>
+                            <td class="table-cell"><span class="badge badge-warning">{{ pdt()?.estado ?? 'Sin calcular' }}</span></td>
                         </tr>
                         <tr class="table-row">
                             <td class="table-cell font-medium">Renta — RMT (1.5%)</td>
-                            <td class="table-cell text-subtle">Marzo 2026</td>
+                            <td class="table-cell text-subtle">{{ periodoActual() }}</td>
                             <td class="table-cell text-right font-mono">{{ formatoMonto(renta()) }}</td>
-                            <td class="table-cell" style="color:var(--color-warning)">12/03/2026</td>
-                            <td class="table-cell"><span class="badge badge-warning">Pendiente</span></td>
+                            <td class="table-cell" style="color:var(--color-warning)">{{ pdt()?.fechaVencimiento ?? '—' }}</td>
+                            <td class="table-cell"><span class="badge badge-warning">{{ pdt()?.estado ?? 'Sin calcular' }}</span></td>
                         </tr>
                     </tbody>
                 </table>
@@ -184,30 +183,27 @@ export class DashboardContabilidadComponent implements OnInit {
     private readonly periodoService = inject(PeriodoService);
     private readonly chartDefaults = inject(ChartDefaultsService);
     private readonly estadosService = inject(EstadosFinancierosService);
+    private readonly igvService = inject(DeclaracionIgvService);
 
     readonly periodoActual = signal('Cargando...');
     readonly anno = signal(new Date().getFullYear());
     readonly estadoResultados = signal<EstadoResultados | null>(null);
     readonly cargandoDashboard = signal(false);
 
-    readonly ingresos = computed(() =>
-        this.estadoResultados()?.ingresos.reduce((sum, l) => sum + l.monto, 0) ?? 0
-    );
-    readonly gastos = computed(() =>
-        this.estadoResultados()?.gastos.reduce((sum, l) => sum + l.monto, 0) ?? 0
-    );
-    readonly utilidadNeta = computed(() => this.estadoResultados()?.utilidadNeta ?? 0);
-    igv       = signal(0);
-    igvDebito = signal(0);
-    igvCredito = signal(0);
-    renta     = signal(0);
+    readonly ingresos = computed(() => this.estadoResultados()?.totalIngresos ?? 0);
+    readonly gastos = computed(() => this.estadoResultados()?.totalGastos ?? 0);
+    readonly utilidadBruta = computed(() => this.estadoResultados()?.utilidadBruta ?? 0);
+
+    /** PDT 621 calculado (sin persistir) del periodo actual; null si no hay periodo o el rol no puede calcular. */
+    readonly pdt = signal<PDT621 | null>(null);
+    readonly igv = computed(() => this.pdt()?.igvNeto ?? 0);
+    readonly igvDebito = computed(() => this.pdt()?.igvVentas ?? 0);
+    readonly igvCredito = computed(() => this.pdt()?.igvCompras ?? 0);
+    readonly renta = computed(() => this.pdt()?.rentaMensual ?? 0);
 
     readonly margen = computed(() => {
         const ing = this.ingresos();
-        if (ing === 0) return 0;
-        const util = this.utilidadNeta();
-        if (!isFinite(util / ing)) return 0;
-        return ((util / ing) * 100).toFixed(1);
+        return ing === 0 ? '0.0' : ((this.utilidadBruta() / ing) * 100).toFixed(1);
     });
 
     formatoMonto = (monto: number): string =>
@@ -215,11 +211,12 @@ export class DashboardContabilidadComponent implements OnInit {
 
     /* ── Chart: Bar ingresos vs gastos ────────────────────────── */
     barChart: ApexChart = this.chartDefaults.barChart(false, 260);
-    barSeries: ApexAxisChartSeries = [
-        { name: 'Ingresos', data: [112000, 125000, 138000, 130000, 142000, 147999] as number[] },
-        { name: 'Gastos',   data: [78000,  82000,  75000,  88000,  79000,  82400] as number[] }
-    ];
-    barXAxis: ApexXAxis = this.chartDefaults.xAxis(this.chartDefaults.last6MonthLabels());
+    // Totales reales del año (estado de resultados); no hay serie mensual en el backend.
+    readonly barSeries = computed<ApexAxisChartSeries>(() => [
+        { name: 'Ingresos', data: [this.ingresos()] },
+        { name: 'Gastos',   data: [this.gastos()] }
+    ]);
+    barXAxis: ApexXAxis = this.chartDefaults.xAxis([String(this.anno())]);
     barYAxis: ApexYAxis = this.chartDefaults.yAxis('S/ ');
     barPlot: ApexPlotOptions = this.chartDefaults.barPlotOptions(false, 6, '65%');
     barGrid: ApexGrid = this.chartDefaults.grid();
@@ -229,7 +226,10 @@ export class DashboardContabilidadComponent implements OnInit {
 
     /* ── Chart: Radial IGV ────────────────────────────────────── */
     radialChart: ApexChart = this.chartDefaults.radialChart(180);
-    radialSeries: ApexNonAxisChartSeries = [56]; /* igvCredito / igvDebito * 100 */
+    readonly radialSeries = computed<ApexNonAxisChartSeries>(() => {
+        const deb = this.igvDebito();
+        return [deb > 0 ? Math.min(100, Math.round((this.igvCredito() / deb) * 100)) : 0];
+    });
     radialColors = [CHART_COLORS[2]];
     radialPlot: ApexPlotOptions = this.chartDefaults.radialPlotOptions(CHART_COLORS[2]);
 
@@ -237,7 +237,7 @@ export class DashboardContabilidadComponent implements OnInit {
 
     private _cargarPeriodo() {
         this.periodoService.actual().subscribe({
-            next: (periodo) => this.periodoActual.set(periodo.nombre),
+            next: (periodo) => { this.periodoActual.set(periodo.nombre); this._cargarIgv(periodo.id); },
             error: () => this._cargarPeriodoFallback()
         });
     }
@@ -246,10 +246,18 @@ export class DashboardContabilidadComponent implements OnInit {
         this.periodoService.listar().subscribe({
             next: (lista) => {
                 const abierto = lista.find(p => p.estado === 'ABIERTO');
-                if (abierto) this.periodoActual.set(abierto.nombre);
+                if (abierto) { this.periodoActual.set(abierto.nombre); this._cargarIgv(abierto.id); }
                 else this.periodoActual.set('Sin periodo activo');
             },
             error: () => this.periodoActual.set('Sin periodo activo')
+        });
+    }
+
+    private _cargarIgv(periodoId: string) {
+        // Los valores de renta no afectan al IGV; se usa el régimen por defecto de la pantalla de declaración.
+        this.igvService.calcular({ periodoId, regimenRenta: 'RMT', coeficienteRenta: 0.015 }).subscribe({
+            next: pdt => this.pdt.set(pdt),
+            error: () => this.pdt.set(null),
         });
     }
 

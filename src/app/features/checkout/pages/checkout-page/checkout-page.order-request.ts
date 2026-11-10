@@ -1,6 +1,7 @@
 import { DireccionEnvio, OrderRequest } from '@core/models/order.model';
 import { Address, AddressInput } from '@core/services/address/address.service';
 import { CartItem } from '@features/cart/services/cart.service';
+import { ComprobanteDelPedido } from './checkout-page.rules';
 
 /**
  * Instantánea del checkout en el instante de confirmar. Son los mismos valores que exponen las
@@ -18,6 +19,8 @@ export interface DatosDelCheckout {
     metodoPago: string;
     codigoCupon: string | null;
     zonaEnvioId: number | null | undefined;
+    /** Salida de `comprobanteParaPedido`; ausente = el backend asume BOLETA sin documento. */
+    comprobante?: ComprobanteDelPedido;
 }
 
 /**
@@ -52,6 +55,7 @@ export function construirOrderRequest(datos: DatosDelCheckout): OrderRequest {
         metodoPago: datos.metodoPago,
         codigoCupon: datos.codigoCupon ?? undefined,
         zonaEnvioId: datos.zonaEnvioId ?? undefined,
+        ...datos.comprobante,
     };
 }
 
@@ -68,6 +72,9 @@ function direccionDeEnvio(direccion: Address): DireccionEnvio {
         region: direccion.departamento,
         nombreDestinatario: direccion.nombreDestinatario ?? '',
         telefono: direccion.telefonoDestinatario ?? '',
+        // Opcionales: ausentes si están vacías (el backend acota 200/100).
+        referencia: direccion.referencia?.trim().slice(0, 200) || undefined,
+        provincia: direccion.provincia?.trim().slice(0, 100) || undefined,
     };
 }
 

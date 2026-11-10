@@ -7,8 +7,18 @@ export interface Payment {
     estado: 'PENDING' | 'APPROVED' | 'PAID' | 'REJECTED';
     fechaSolicitud: string;
     concepto: string;
+    metodoPago?: string;
     numeroOperacion?: string;
+    bankAccountId?: number | null;
+    cajaId?: number | null;
     createdAt?: string;
+}
+
+/** Cuerpo de POST /pagos/{id}/pagar (PagarPagoRequestDto): exactamente uno de bankAccountId/cajaId. */
+export interface PagarPagoRequest {
+    bankAccountId?: number;
+    cajaId?: number;
+    numeroOperacion?: string;
 }
 
 export interface PaymentRequest {
@@ -40,6 +50,8 @@ export interface CashRegister {
     estado: 'ABIERTA' | 'CERRADA';
     saldoActual: number;
     saldoInicial?: number;
+    /** Contado - saldo del sistema al cerrar (null si nunca se cerró). */
+    diferenciaCierre?: number | null;
     fechaApertura?: string;
     fechaCierre?: string;
     observaciones?: string;
@@ -54,6 +66,13 @@ export interface FinancialMovement {
     fecha: string;
     descripcion: string;
     numeroOperacion?: string;
+    origenId?: number | null;
+    referencia?: string | null;
+    /** En una anulación (ANUL-<id>) apunta al movimiento original. */
+    relacionadoId?: number | null;
+    fechaVencimiento?: string | null;
+    /** true = el movimiento se registró pero su asiento contable falló y hay que contabilizarlo a mano. */
+    asientoPendiente?: boolean;
 }
 
 export interface BankAccount {

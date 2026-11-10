@@ -5,6 +5,7 @@ import {
 import { LucideAngularModule } from 'lucide-angular';
 import { RouterLink } from '@angular/router';
 import { LanguageService } from '@core/i18n/language.service';
+import { ZonaEnvioService } from '@core/services/zona-envio.service';
 
 /**
  * TopBar — utility bar con envío/protección/ubicación + ayuda/idioma.
@@ -21,9 +22,11 @@ import { LanguageService } from '@core/i18n/language.service';
         <div class="bar">
             <div class="inner">
                 <div class="group">
+                    @if (umbralEnvioGratis(); as umbral) {
                     <a class="item link" routerLink="/info/envios">
-                        <lucide-icon name="truck" [size]="14"/> Envío gratis desde S/ 99
+                        <lucide-icon name="truck" [size]="14"/> Envío gratis desde S/ {{ umbral }}
                     </a>
+                    }
                     <a class="item link" routerLink="/info/privacidad">
                         <lucide-icon name="shield" [size]="14"/> Compra protegida
                     </a>
@@ -115,6 +118,11 @@ import { LanguageService } from '@core/i18n/language.service';
 export class DsTopBarComponent {
     private langSvc = inject(LanguageService);
     private host = inject(ElementRef);
+    private zonaEnvio = inject(ZonaEnvioService);
+    /** Umbral real de envío gratis; null = no se promete. */
+    readonly umbralEnvioGratis = this.zonaEnvio.envioGratisDesde;
+
+    constructor() { this.zonaEnvio.cargarUmbral(); }
 
     readonly languages = this.langSvc.availableLanguages;
     readonly currentLang = () =>

@@ -1,14 +1,9 @@
 import { Component, inject, signal, computed, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
-import { AsientoService } from '../../services/asiento.service';
-import { PeriodoService, PeriodoContable } from '../../services/periodo.service';
+import { EstadosFinancierosService, EstadoResultados, LineaBalance } from '../../services/estados-financieros.service';
+import { PeriodoService } from '../../services/periodo.service';
 
-interface LineaEstado {
-    codigo: string;
-    nombre: string;
-    monto: number;
-}
-
+/** Estado de Resultados ACUMULADO del año: ingresos (clase 7) - gastos (clase 6; el costo de ventas es la 69). */
 @Component({
     selector: 'app-estado-resultados',
     standalone: true,
@@ -17,91 +12,65 @@ interface LineaEstado {
     templateUrl: './estado-resultados.component.html'
 })
 export class EstadoResultadosComponent implements OnInit {
-    private asientoService = inject(AsientoService);
+    private estados = inject(EstadosFinancierosService);
     private periodoService = inject(PeriodoService);
 
-    readonly periodos = signal<PeriodoContable[]>([]);
-    readonly periodoId = signal<string>('');
+    readonly annos = signal<number[]>([new Date().getFullYear()]);
+    readonly anno = signal(new Date().getFullYear());
     readonly isLoading = signal(false);
     readonly error = signal<string | null>(null);
-    readonly lineas = signal<{ cuentaCodigo: string; cuentaNombre: string; saldoDeudor: number; saldoAcreedor: number }[]>([]);
+    readonly estado = signal<EstadoResultados | null>(null);
 
-    readonly periodoNombre = computed(() => {
-        const p = this.periodos().find(x => x.id === this.periodoId());
-        return p?.nombre ?? '';
-    });
-
-    // PCGE 2020: Ingresos → grupo 7 (saldo acreedor)
-    readonly ingresos = computed<LineaEstado[]>(() =>
-        this.lineas()
-            .filter(l => /^7/.test(l.cuentaCodigo) && l.saldoAcreedor > 0)
-            .map(l => ({ codigo: l.cuentaCodigo, nombre: l.cuentaNombre, monto: l.saldoAcreedor }))
+    readonly ingresos = computed<LineaBalance[]>(() => this.estado()?.ingresos ?? []);
+    readonly costoVentas = computed<LineaBalance[]>(() =>
+        (this.estado()?.gastos ?? []).filter(l => l.codigo.startsWith('69'))
+    );
+    readonly otrosGastos = computed<LineaBalance[]>(() =>
+        (this.estado()?.gastos ?? []).filter(l => !l.codigo.startsWith('69'))
     );
 
-    // PCGE 2020: Costo de ventas → cuenta 69 (saldo deudor)
-    readonly costoVentas = computed<LineaEstado[]>(() =>
-        this.lineas()
-            .filter(l => /^69/.test(l.cuentaCodigo) && l.saldoDeudor > 0)
-            .map(l => ({ codigo: l.cuentaCodigo, nombre: l.cuentaNombre, monto: l.saldoDeudor }))
-    );
+    readonly totalIngresos = computed(() => this.estado()?.totalIngresos ?? 0);
+    readonly totalCostoVentas = computed(() => this.costoVentas().reduce((s, l) => s + l.saldo, 0));
+    readonly utilidadBruta = computed(() => this.estado()?.utilidadBruta ?? 0);
+    readonly utilidadNeta = computed(() => this.estado()?.utilidadNeta ?? 0);
 
-    // PCGE 2020: Gastos operativos → grupos 9x (distribución funcional de gastos)
-    readonly gastosOperativos = computed<LineaEstado[]>(() =>
-        this.lineas()
-            .filter(l => /^9/.test(l.cuentaCodigo) && l.saldoDeudor > 0)
-            .map(l => ({ codigo: l.cuentaCodigo, nombre: l.cuentaNombre, monto: l.saldoDeudor }))
-    );
-
-    readonly totalIngresos = computed(() => this.ingresos().reduce((s, l) => s + l.monto, 0));
-    readonly totalCostoVentas = computed(() => this.costoVentas().reduce((s, l) => s + l.monto, 0));
-    readonly totalGastosOperativos = computed(() => this.gastosOperativos().reduce((s, l) => s + l.monto, 0));
-    readonly utilidadBruta = computed(() => this.totalIngresos() - this.totalCostoVentas());
-    readonly utilidadOperativa = computed(() => this.utilidadBruta() - this.totalGastosOperativos());
-
-    readonly margenBruto = computed(() => {
-        if (this.totalIngresos() === 0) return '0.0';
-        return ((this.utilidadBruta() / this.totalIngresos()) * 100).toFixed(1);
-    });
-
-    readonly margenOperativo = computed(() => {
-        if (this.totalIngresos() === 0) return '0.0';
-        return ((this.utilidadOperativa() / this.totalIngresos()) * 100).toFixed(1);
-    });
+    readonly margenBruto = computed(() => this.margen(this.utilidadBruta()));
+    readonly margenNeto = computed(() => this.margen(this.utilidadNeta()));
 
     ngOnInit(): void {
         this.periodoService.listar().subscribe({
             next: periodos => {
-                this.periodos.set(periodos);
-                const abierto = periodos.find(p => p.estado === 'ABIERTO') ?? periodos[0];
-                if (abierto) {
-                    this.periodoId.set(abierto.id);
-                    this.cargarDatos();
+                const annos = [...new Set(periodos.map(p => p.anno))].sort((a, b) => b - a);
+                if (annos.length > 0) {
+                    this.annos.set(annos);
+                    if (!annos.includes(this.anno())) this.anno.set(annos[0]);
                 }
+                this.cargarDatos();
             },
-            error: () => this.error.set('No se pudo cargar la lista de periodos')
+            error: () => this.cargarDatos()
         });
     }
 
-    onPeriodoChange(event: Event): void {
-        this.periodoId.set((event.target as HTMLSelectElement).value);
+    onAnnoChange(event: Event): void {
+        this.anno.set(+(event.target as HTMLSelectElement).value);
         this.cargarDatos();
     }
 
+    private margen(utilidad: number): string {
+        const ing = this.totalIngresos();
+        return ing === 0 ? '0.0' : ((utilidad / ing) * 100).toFixed(1);
+    }
+
     private cargarDatos(): void {
-        const pid = this.periodoId();
-        if (!pid) return;
         this.isLoading.set(true);
         this.error.set(null);
-        this.asientoService.obtenerBalanceComprobacion(pid).subscribe({
-            next: (data) => {
-                // BalanceComprobacion del servicio — extraer líneas (array) del payload
-                const lineas = (data as unknown as { lineas?: { cuentaCodigo: string; cuentaNombre: string; saldoDeudor: number; saldoAcreedor: number }[] }).lineas
-                    ?? (data as unknown as { cuentaCodigo: string; cuentaNombre: string; saldoDeudor: number; saldoAcreedor: number }[]);
-                this.lineas.set(Array.isArray(lineas) ? lineas : []);
+        this.estados.estadoResultados(this.anno()).subscribe({
+            next: data => {
+                this.estado.set(data);
                 this.isLoading.set(false);
             },
             error: () => {
-                this.error.set('No se pudo cargar los datos contables. Verifica que el servicio esté activo.');
+                this.error.set('No se pudo cargar el estado de resultados. Verifica que el servicio esté activo.');
                 this.isLoading.set(false);
             }
         });

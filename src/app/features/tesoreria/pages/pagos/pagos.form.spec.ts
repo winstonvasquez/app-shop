@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { construirPaymentRequest, ValoresFormularioPago } from './pagos.form';
+import { construirPagarRequest, construirPaymentRequest, requiereNumeroOperacion, ValoresFormularioPago } from './pagos.form';
 
 const completo: ValoresFormularioPago = {
     tipoPago: 'PROVEEDOR',
@@ -65,5 +65,27 @@ describe('construirPaymentRequest', () => {
 
     it('conserva un monto de 0 tal cual, para que el rechazo lo dé la validación', () => {
         expect(construirPaymentRequest({ ...minimo, monto: 0 }, 1).monto).toBe(0);
+    });
+});
+
+describe('construirPagarRequest', () => {
+    it('con cuenta bancaria manda sólo bankAccountId', () => {
+        expect(construirPagarRequest({ origenTipo: 'BANCO', origenId: 4, numeroOperacion: ' OP-1 ' }))
+            .toEqual({ bankAccountId: 4, numeroOperacion: 'OP-1' });
+    });
+
+    it('con caja manda sólo cajaId y omite el número de operación vacío', () => {
+        const r = construirPagarRequest({ origenTipo: 'CAJA', origenId: 2, numeroOperacion: '  ' });
+        expect(r.cajaId).toBe(2);
+        expect(r.bankAccountId).toBeUndefined();
+        expect(r.numeroOperacion).toBeUndefined();
+    });
+});
+
+describe('requiereNumeroOperacion', () => {
+    it('sólo EFECTIVO queda exento', () => {
+        expect(requiereNumeroOperacion('EFECTIVO')).toBe(false);
+        expect(requiereNumeroOperacion('TRANSFERENCIA')).toBe(true);
+        expect(requiereNumeroOperacion('CHEQUE')).toBe(true);
     });
 });

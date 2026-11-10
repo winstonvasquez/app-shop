@@ -52,6 +52,23 @@ export function construirRegistrarFacturaRequest(fv: ValoresFormularioFactura): 
     };
 }
 
+/** Días de plazo de una condición de pago: CREDITO_30 → 30; CONTADO, nula o desconocida → 0 (igual que el backend). */
+export function diasDeCondicionPago(condicionPago: string | null | undefined): number {
+    const m = /^CREDITO_(\d+)$/.exec(condicionPago ?? '');
+    return m ? Number(m[1]) : 0;
+}
+
+/**
+ * Vencimiento sugerido = emisión + días de la condición de pago de la OC (`yyyy-MM-dd`).
+ * Vacío si la emisión no es una fecha válida. Aritmética en UTC para no correr el día por zona horaria.
+ */
+export function sugerirVencimiento(fechaEmision: string | null | undefined, condicionPago: string | null | undefined): string {
+    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(fechaEmision ?? '');
+    if (!m) return '';
+    const d = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3]) + diasDeCondicionPago(condicionPago)));
+    return d.toISOString().substring(0, 10);
+}
+
 /**
  * Semáforo del ciclo de aprobación interno de la factura: pendiente avisa,
  * aprobada confirma, rechazada alarma. Cualquier estado no contemplado se pinta
@@ -60,6 +77,7 @@ export function construirRegistrarFacturaRequest(fv: ValoresFormularioFactura): 
 export function claseBadgeEstadoFactura(estado: string): string {
     const mapa: Record<string, string> = {
         PENDIENTE: 'badge badge-warning',
+        PENDIENTE_REVISION: 'badge badge-warning',
         APROBADA: 'badge badge-success',
         RECHAZADA: 'badge badge-error',
     };

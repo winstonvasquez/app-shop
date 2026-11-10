@@ -34,6 +34,16 @@ export class SelfServiceService {
         return firstValueFrom(this.http.get<Attendance[]>(`${this.baseUrl}/attendance`, { params: { month } }));
     }
 
+    /** Marca la entrada del PROPIO empleado (resuelto del JWT). 409 si ya hay registro hoy. */
+    async checkIn(ubicacion?: string): Promise<Attendance> {
+        return firstValueFrom(this.http.post<Attendance>(`${this.baseUrl}/attendance/check-in`, { ubicacion }));
+    }
+
+    /** Marca la salida del PROPIO empleado. 400 si no hay ingreso hoy; 409 si ya marcó salida. */
+    async checkOut(ubicacion?: string): Promise<Attendance> {
+        return firstValueFrom(this.http.post<Attendance>(`${this.baseUrl}/attendance/check-out`, { ubicacion }));
+    }
+
     async getEvaluations(): Promise<Evaluation[]> {
         return firstValueFrom(this.http.get<Evaluation[]>(`${this.baseUrl}/evaluations`));
     }

@@ -3,7 +3,7 @@ import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '@env/environment';
 import { AuthService } from '@core/auth/auth.service';
-import { AprobacionPendiente, ConfigAprobacionRequest, NivelAprobacion } from '../models/aprobacion.model';
+import { AprobacionPendiente, ConfigAprobacionRequest, NivelAprobacion, ParametroEmpresa } from '../models/aprobacion.model';
 import { toHttpParams } from '@core/utils/http-params.util';
 
 @Injectable({ providedIn: 'root' })
@@ -37,20 +37,24 @@ export class AprobacionService {
         });
     }
 
-    aprobar(aprobacionId: string, comentario: string, aprobadorId: string, aprobadorNombre: string): Observable<void> {
-        const headers = this.getHeaders()
-            .set('X-Aprobador-Id', aprobadorId)
-            .set('X-Aprobador-Nombre', aprobadorNombre);
+    /** El aprobador sale del JWT en el backend (COMPRAS-11): ya no viajan X-Aprobador-Id/Nombre. */
+    aprobar(aprobacionId: string, comentario: string): Observable<void> {
         return this.http.post<void>(`${this.baseUrl}/aprobaciones/${aprobacionId}/aprobar`,
-            { comentario }, { headers });
+            { comentario }, { headers: this.getHeaders() });
     }
 
-    rechazar(aprobacionId: string, motivo: string, aprobadorId: string, aprobadorNombre: string): Observable<void> {
-        const headers = this.getHeaders()
-            .set('X-Aprobador-Id', aprobadorId)
-            .set('X-Aprobador-Nombre', aprobadorNombre);
+    rechazar(aprobacionId: string, motivo: string): Observable<void> {
         return this.http.post<void>(`${this.baseUrl}/aprobaciones/${aprobacionId}/rechazar`,
-            { motivo }, { headers });
+            { motivo }, { headers: this.getHeaders() });
+    }
+
+    getParametros(): Observable<ParametroEmpresa[]> {
+        return this.http.get<ParametroEmpresa[]>(`${this.baseUrl}/parametros-empresa`, { headers: this.getHeaders() });
+    }
+
+    fijarParametro(clave: string, valor: boolean): Observable<ParametroEmpresa> {
+        return this.http.put<ParametroEmpresa>(`${this.baseUrl}/parametros-empresa/${clave}`,
+            { valor }, { headers: this.getHeaders() });
     }
 
     /** `activo` undefined = sin filtrar (activos + inactivos, necesario para reactivar). */

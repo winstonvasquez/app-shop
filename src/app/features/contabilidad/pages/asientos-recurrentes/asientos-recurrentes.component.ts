@@ -1,3 +1,4 @@
+import { ConfirmModalService } from '@shared/services/confirm-modal.service';
 import {
     Component,
     inject,
@@ -55,6 +56,7 @@ import { mensajeDeErrorDeControl } from '@shared/utils/form-errors';
 })
 export class AsientosRecurrentesComponent implements OnInit {
     private service = inject(AsientoRecurrenteService);
+    private confirmModal = inject(ConfirmModalService);
     private fb = inject(FormBuilder);
     readonly catalog = inject(CatalogService);
 
@@ -157,7 +159,7 @@ export class AsientosRecurrentesComponent implements OnInit {
             onClick: r => this.ejecutarAhora(r.id)
         },
         {
-            label: 'Desactivar', icon: 'x', class: 'btn-view',
+            label: 'Desactivar', icon: 'x', class: 'btn-icon-delete',
             show: r => r.active,
             onClick: r => this.desactivar(r.id)
         },
@@ -394,9 +396,16 @@ export class AsientosRecurrentesComponent implements OnInit {
         });
     }
 
-    desactivar(id: string): void {
+    async desactivar(id: string): Promise<void> {
+        const ok = await this.confirmModal.confirm({
+            title: 'Desactivar asiento recurrente',
+            message: 'Dejará de generarse automáticamente hasta que se reactive.',
+            confirmLabel: 'Desactivar', variant: 'danger',
+        });
+        if (!ok) return;
         this.service.desactivar(id).subscribe({
             next: () => this.cargar(),
+            error: () => this.error.set('No se pudo desactivar el asiento recurrente.'),
         });
     }
 

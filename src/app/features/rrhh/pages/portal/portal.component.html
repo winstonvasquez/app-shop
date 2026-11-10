@@ -191,6 +191,13 @@
                 (change)="onMonthChange($any($event.target).value)" />
         </div>
         <div class="card-body">
+            <div style="display: flex; gap: var(--space-sm); margin-bottom: var(--space-md)">
+                <app-button label="Marcar entrada" variant="primary" size="sm" (click)="marcar('entrada')" [disabled]="marcando()" />
+                <app-button label="Marcar salida" variant="secondary" size="sm" (click)="marcar('salida')" [disabled]="marcando()" />
+            </div>
+            @if (marcacionError()) {
+                <app-alert type="error" [message]="marcacionError()!" />
+            }
             <app-data-table
                 [data]="attendance()"
                 [columns]="attendanceColumns"

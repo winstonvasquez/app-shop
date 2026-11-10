@@ -5,9 +5,9 @@
             <p class="page-subtitle">Estado de Situación Financiera · PCGE 2020</p>
         </div>
         <div class="page-actions">
-            <select class="form-input" (change)="onPeriodoChange($event)">
-                @for (p of periodos(); track p.id) {
-                    <option [value]="p.id" [selected]="p.id === periodoId()">{{ p.nombre }}</option>
+            <select class="form-input" (change)="onAnnoChange($event)">
+                @for (a of annos(); track a) {
+                    <option [value]="a" [selected]="a === anno()">{{ a }}</option>
                 }
             </select>
         </div>
@@ -30,7 +30,7 @@
                 </div>
                 <div class="card-body">
                     @if (activo().length === 0) {
-                        <p class="text-subtle text-center py-4">Sin cuentas de activo en este periodo</p>
+                        <p class="text-subtle text-center py-4">Sin cuentas de activo en este año</p>
                     } @else {
                         <table class="table w-full">
                             <thead>
@@ -41,11 +41,11 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @for (l of activo(); track l.codigo) {
+                                @for (l of activo(); track $index) {
                                     <tr class="table-row">
                                         <td class="table-cell font-mono text-sm text-subtle">{{ l.codigo }}</td>
                                         <td class="table-cell text-sm">{{ l.nombre }}</td>
-                                        <td class="table-cell text-right font-semibold">{{ l.monto | number:'1.2-2' }}</td>
+                                        <td class="table-cell text-right font-semibold">{{ l.saldo | number:'1.2-2' }}</td>
                                     </tr>
                                 }
                             </tbody>
@@ -65,7 +65,7 @@
                 <div class="card">
                     <div class="card-header">
                         <h2 class="card-title">PASIVO</h2>
-                        <span class="badge badge-neutral">Grupos 4–5</span>
+                        <span class="badge badge-neutral">Grupo 4</span>
                     </div>
                     <div class="card-body">
                         @if (pasivo().length === 0) {
@@ -73,11 +73,11 @@
                         } @else {
                             <table class="table w-full">
                                 <tbody>
-                                    @for (l of pasivo(); track l.codigo) {
+                                    @for (l of pasivo(); track $index) {
                                         <tr class="table-row">
                                             <td class="table-cell font-mono text-sm text-subtle">{{ l.codigo }}</td>
                                             <td class="table-cell text-sm">{{ l.nombre }}</td>
-                                            <td class="table-cell text-right font-semibold">{{ l.monto | number:'1.2-2' }}</td>
+                                            <td class="table-cell text-right font-semibold">{{ l.saldo | number:'1.2-2' }}</td>
                                         </tr>
                                     }
                                 </tbody>
@@ -95,7 +95,7 @@
                 <div class="card">
                     <div class="card-header">
                         <h2 class="card-title">PATRIMONIO</h2>
-                        <span class="badge badge-neutral">Grupo 5</span>
+                        <span class="badge badge-neutral">Grupo 5 + resultado</span>
                     </div>
                     <div class="card-body">
                         @if (patrimonio().length === 0) {
@@ -103,11 +103,11 @@
                         } @else {
                             <table class="table w-full">
                                 <tbody>
-                                    @for (l of patrimonio(); track l.codigo) {
+                                    @for (l of patrimonio(); track $index) {
                                         <tr class="table-row">
                                             <td class="table-cell font-mono text-sm text-subtle">{{ l.codigo }}</td>
                                             <td class="table-cell text-sm">{{ l.nombre }}</td>
-                                            <td class="table-cell text-right font-semibold">{{ l.monto | number:'1.2-2' }}</td>
+                                            <td class="table-cell text-right font-semibold">{{ l.saldo | number:'1.2-2' }}</td>
                                         </tr>
                                     }
                                 </tbody>

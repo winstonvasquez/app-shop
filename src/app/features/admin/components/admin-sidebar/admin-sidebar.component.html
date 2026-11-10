@@ -1,7 +1,8 @@
 <aside
   [class.w-sidebar-expanded]="!collapsed()"
   [class.w-sidebar-collapsed]="collapsed()"
-  class="sidebar-container fixed left-0 top-0 bottom-0 overflow-y-auto overflow-x-hidden z-[100] -translate-x-full md:translate-x-0 transition-all duration-300 ease-in-out bg-[var(--color-sidebar-bg,#0E1B2C)] border-r border-[var(--color-sidebar-border,#1A2A42)] flex flex-col justify-between">
+  [class.-translate-x-full]="!mobileOpen()"
+  class="sidebar-container fixed left-0 top-0 bottom-0 overflow-y-auto overflow-x-hidden z-[100] md:translate-x-0 transition-all duration-300 ease-in-out bg-[var(--color-sidebar-bg,#0E1B2C)] border-r border-[var(--color-sidebar-border,#1A2A42)] flex flex-col justify-between">
   
   <div>
     <!-- Header: Logo & Toggle Button -->

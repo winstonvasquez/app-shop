@@ -23,6 +23,13 @@
     <app-alert type="error" [message]="error()!" [dismissible]="true" (dismiss)="error.set(null)" />
   }
 
+  @if (currentProductId()) {
+    <p class="text-subtle" style="font-size:0.75rem;margin-bottom:0.5rem">
+      «—» en Costo Prom. Saldo y Valor Saldo: movimientos anteriores a la valorización del saldo;
+      el costo promedio de entonces no se puede reconstruir.
+    </p>
+  }
+
   @if (!currentProductId() && !loading()) {
     <div class="empty-state">
       <p class="empty-state-desc">Buscá un producto por nombre para ver su historial de kardex.</p>

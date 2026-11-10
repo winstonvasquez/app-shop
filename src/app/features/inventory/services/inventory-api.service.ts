@@ -17,6 +17,7 @@ import {
     StockThresholdsRequest
 } from '../models/inventory.models';
 import { toHttpParams } from '@core/utils/http-params.util';
+import { mapHttpError } from '@features/inventory/utils/map-http-error';
 
 /**
  * KPIs del dashboard de inventario. Refleja el contrato real del backend
@@ -188,7 +189,7 @@ export class InventoryApiService {
 
 
     getWarehouses(): Observable<Warehouse[]> {
-        return this.http.get<Warehouse[]>(`${this.baseUrl}/warehouses`);
+        return this.http.get<Warehouse[]>(`${this.baseUrl}/warehouses`).pipe(mapHttpError());
     }
 
     /**
@@ -204,23 +205,23 @@ export class InventoryApiService {
     ): Observable<PageResponse<Warehouse>> {
         return this.http.get<PageResponse<Warehouse>>(`${this.baseUrl}/warehouses/paged`, {
             params: toHttpParams({ page, size, search, active, isPrincipal, city, createdAtDesde, createdAtHasta })
-        });
+        }).pipe(mapHttpError());
     }
 
     createWarehouse(payload: Partial<Warehouse>): Observable<Warehouse> {
-        return this.http.post<Warehouse>(`${this.baseUrl}/warehouses`, payload);
+        return this.http.post<Warehouse>(`${this.baseUrl}/warehouses`, payload).pipe(mapHttpError());
     }
 
     updateWarehouse(id: number, payload: Partial<Warehouse>): Observable<Warehouse> {
-        return this.http.put<Warehouse>(`${this.baseUrl}/warehouses/${id}`, payload);
+        return this.http.put<Warehouse>(`${this.baseUrl}/warehouses/${id}`, payload).pipe(mapHttpError());
     }
 
     deleteWarehouse(id: number): Observable<void> {
-        return this.http.delete<void>(`${this.baseUrl}/warehouses/${id}`);
+        return this.http.delete<void>(`${this.baseUrl}/warehouses/${id}`).pipe(mapHttpError());
     }
 
     getLocationsByWarehouse(warehouseId: number): Observable<Location[]> {
-        return this.http.get<Location[]>(`${this.baseUrl}/locations/by-warehouse/${warehouseId}`);
+        return this.http.get<Location[]>(`${this.baseUrl}/locations/by-warehouse/${warehouseId}`).pipe(mapHttpError());
     }
 
     /**
@@ -241,23 +242,23 @@ export class InventoryApiService {
     } = {}): Observable<PageResponse<Location>> {
         return this.http.get<PageResponse<Location>>(`${this.baseUrl}/locations/paged`, {
             params: toHttpParams({ ...params })
-        });
+        }).pipe(mapHttpError());
     }
 
     createLocation(payload: Partial<Location>): Observable<Location> {
-        return this.http.post<Location>(`${this.baseUrl}/locations`, payload);
+        return this.http.post<Location>(`${this.baseUrl}/locations`, payload).pipe(mapHttpError());
     }
 
     updateLocation(id: number, payload: Partial<Location>): Observable<Location> {
-        return this.http.put<Location>(`${this.baseUrl}/locations/${id}`, payload);
+        return this.http.put<Location>(`${this.baseUrl}/locations/${id}`, payload).pipe(mapHttpError());
     }
 
     deleteLocation(id: number): Observable<void> {
-        return this.http.delete<void>(`${this.baseUrl}/locations/${id}`);
+        return this.http.delete<void>(`${this.baseUrl}/locations/${id}`).pipe(mapHttpError());
     }
 
     getStockByWarehouse(warehouseId: number): Observable<InventoryStock[]> {
-        return this.http.get<InventoryStock[]>(`${this.baseUrl}/inventory/stock/warehouse/${warehouseId}`);
+        return this.http.get<InventoryStock[]>(`${this.baseUrl}/inventory/stock/warehouse/${warehouseId}`).pipe(mapHttpError());
     }
 
     /**
@@ -278,25 +279,25 @@ export class InventoryApiService {
                 updatedAtDesde: filtros.updatedAtDesde,
                 updatedAtHasta: filtros.updatedAtHasta
             })
-        });
+        }).pipe(mapHttpError());
     }
 
     getStockByProduct(productId: number): Observable<InventoryStock[]> {
-        return this.http.get<InventoryStock[]>(`${this.baseUrl}/inventory/stock/product/${productId}`);
+        return this.http.get<InventoryStock[]>(`${this.baseUrl}/inventory/stock/product/${productId}`).pipe(mapHttpError());
     }
 
     getLowStock(): Observable<InventoryStock[]> {
-        return this.http.get<InventoryStock[]>(`${this.baseUrl}/inventory/stock/below-minimum`);
+        return this.http.get<InventoryStock[]>(`${this.baseUrl}/inventory/stock/below-minimum`).pipe(mapHttpError());
     }
 
     /** Define stock mínimo, máximo y punto de reorden — sin esto quedan en 0 y las alertas nunca disparan. */
     setStockThresholds(warehouseId: number, productId: number, payload: StockThresholdsRequest): Observable<InventoryStock> {
         return this.http.put<InventoryStock>(
-            `${this.baseUrl}/inventory/stock/${warehouseId}/${productId}/thresholds`, payload);
+            `${this.baseUrl}/inventory/stock/${warehouseId}/${productId}/thresholds`, payload).pipe(mapHttpError());
     }
 
     createMovement(payload: InventoryMovementRequest): Observable<InventoryMovement> {
-        return this.http.post<InventoryMovement>(`${this.baseUrl}/inventory/movements`, payload);
+        return this.http.post<InventoryMovement>(`${this.baseUrl}/inventory/movements`, payload).pipe(mapHttpError());
     }
 
     /**
@@ -330,26 +331,26 @@ export class InventoryApiService {
         if (params?.warehouseId !== undefined) {
             return this.http.get<PageResponse<InventoryMovement>>(`${this.baseUrl}/inventory/movements/warehouse/${params.warehouseId}`, {
                 params: httpParams
-            });
+            }).pipe(mapHttpError());
         }
 
-        return this.http.get<PageResponse<InventoryMovement>>(`${this.baseUrl}/inventory/movements`, { params: httpParams });
+        return this.http.get<PageResponse<InventoryMovement>>(`${this.baseUrl}/inventory/movements`, { params: httpParams }).pipe(mapHttpError());
     }
 
     createTransfer(payload: InventoryTransferRequest): Observable<InventoryTransfer> {
-        return this.http.post<InventoryTransfer>(`${this.baseUrl}/transfers`, payload);
+        return this.http.post<InventoryTransfer>(`${this.baseUrl}/transfers`, payload).pipe(mapHttpError());
     }
 
     sendTransfer(id: number): Observable<InventoryTransfer> {
-        return this.http.post<InventoryTransfer>(`${this.baseUrl}/transfers/${id}/send`, {});
+        return this.http.post<InventoryTransfer>(`${this.baseUrl}/transfers/${id}/send`, {}).pipe(mapHttpError());
     }
 
     receiveTransfer(id: number): Observable<InventoryTransfer> {
-        return this.http.post<InventoryTransfer>(`${this.baseUrl}/transfers/${id}/receive`, {});
+        return this.http.post<InventoryTransfer>(`${this.baseUrl}/transfers/${id}/receive`, {}).pipe(mapHttpError());
     }
 
     cancelTransfer(id: number, motivo?: string): Observable<InventoryTransfer> {
-        return this.http.post<InventoryTransfer>(`${this.baseUrl}/transfers/${id}/cancel`, { motivo: motivo || undefined });
+        return this.http.post<InventoryTransfer>(`${this.baseUrl}/transfers/${id}/cancel`, { motivo: motivo || undefined }).pipe(mapHttpError());
     }
 
     /**
@@ -372,15 +373,15 @@ export class InventoryApiService {
         receivedDateHasta?: string;
     }): Observable<PageResponse<InventoryTransfer>> {
         const httpParams = toHttpParams(params);
-        return this.http.get<PageResponse<InventoryTransfer>>(`${this.baseUrl}/transfers`, { params: httpParams });
+        return this.http.get<PageResponse<InventoryTransfer>>(`${this.baseUrl}/transfers`, { params: httpParams }).pipe(mapHttpError());
     }
 
     getPendingTransfers(): Observable<InventoryTransfer[]> {
-        return this.http.get<InventoryTransfer[]>(`${this.baseUrl}/transfers/pending`);
+        return this.http.get<InventoryTransfer[]>(`${this.baseUrl}/transfers/pending`).pipe(mapHttpError());
     }
 
     createInventoryCount(payload: InventoryCountRequest): Observable<InventoryCount> {
-        return this.http.post<InventoryCount>(`${this.baseUrl}/inventory/counts`, payload);
+        return this.http.post<InventoryCount>(`${this.baseUrl}/inventory/counts`, payload).pipe(mapHttpError());
     }
 
     /**
@@ -399,7 +400,7 @@ export class InventoryApiService {
         adjustedDateHasta?: string;
     }): Observable<PageResponse<InventoryCount>> {
         const httpParams = toHttpParams(params);
-        return this.http.get<PageResponse<InventoryCount>>(`${this.baseUrl}/inventory/counts`, { params: httpParams });
+        return this.http.get<PageResponse<InventoryCount>>(`${this.baseUrl}/inventory/counts`, { params: httpParams }).pipe(mapHttpError());
     }
 
     /**
@@ -409,11 +410,11 @@ export class InventoryApiService {
      */
     /** Cierra un conteo EN_PROCESO (congela como paso previo al ajuste). Idempotente en backend. */
     closeInventoryCount(id: number): Observable<InventoryCount> {
-        return this.http.post<InventoryCount>(`${this.baseUrl}/inventory/counts/${id}/close`, {});
+        return this.http.post<InventoryCount>(`${this.baseUrl}/inventory/counts/${id}/close`, {}).pipe(mapHttpError());
     }
 
     applyCountAdjustments(id: number): Observable<InventoryCount> {
-        return this.http.post<InventoryCount>(`${this.baseUrl}/inventory/counts/${id}/apply-adjustments`, {});
+        return this.http.post<InventoryCount>(`${this.baseUrl}/inventory/counts/${id}/apply-adjustments`, {}).pipe(mapHttpError());
     }
 
     /**
@@ -433,11 +434,11 @@ export class InventoryApiService {
                 movementDateHasta: filtros.movementDateHasta,
                 q: filtros.q
             })
-        });
+        }).pipe(mapHttpError());
     }
 
     getDashboardSummary(): Observable<DashboardSummary> {
-        return this.http.get<DashboardSummary>(`${this.baseUrl}/dashboard/inventory`);
+        return this.http.get<DashboardSummary>(`${this.baseUrl}/dashboard/inventory`).pipe(mapHttpError());
     }
 
     /**
@@ -464,14 +465,14 @@ export class InventoryApiService {
                 page: params?.page ?? 0,
                 size: params?.size ?? 15
             })
-        });
+        }).pipe(mapHttpError());
     }
 
     /** Sugerencias de putaway (ubicación de almacenamiento) para una recepción. */
     getPutawaySuggestions(warehouseId: number, productId: number, quantity?: number): Observable<PutawayResponse> {
         return this.http.get<PutawayResponse>(`${this.baseUrl}/inventory/putaway/suggest`, {
             params: toHttpParams({ warehouseId, productId, quantity })
-        });
+        }).pipe(mapHttpError());
     }
 
     // ── ASN (recepción controlada) ────────────────────────────────────
@@ -495,20 +496,20 @@ export class InventoryApiService {
     }): Observable<PageResponse<Asn>> {
         return this.http.get<PageResponse<Asn>>(`${this.baseUrl}/inventory/asn`, {
             params: toHttpParams(params)
-        });
+        }).pipe(mapHttpError());
     }
 
     getAsn(id: number): Observable<Asn> {
-        return this.http.get<Asn>(`${this.baseUrl}/inventory/asn/${id}`);
+        return this.http.get<Asn>(`${this.baseUrl}/inventory/asn/${id}`).pipe(mapHttpError());
     }
 
     createAsn(body: CreateAsnRequest): Observable<Asn> {
-        return this.http.post<Asn>(`${this.baseUrl}/inventory/asn`, body);
+        return this.http.post<Asn>(`${this.baseUrl}/inventory/asn`, body).pipe(mapHttpError());
     }
 
     /** Recibe un ASN: confirma cantidades, genera entradas al kardex y marca el estado. */
     receiveAsn(id: number, body: ReceiveAsnRequest): Observable<Asn> {
-        return this.http.post<Asn>(`${this.baseUrl}/inventory/asn/${id}/receive`, body);
+        return this.http.post<Asn>(`${this.baseUrl}/inventory/asn/${id}/receive`, body).pipe(mapHttpError());
     }
 
     exportInventoryReport(params: {
@@ -530,6 +531,6 @@ export class InventoryApiService {
         return this.http.get(`${this.baseUrl}/reports/inventory`, {
             params: httpParams,
             responseType: 'blob'
-        });
+        }).pipe(mapHttpError());
     }
 }

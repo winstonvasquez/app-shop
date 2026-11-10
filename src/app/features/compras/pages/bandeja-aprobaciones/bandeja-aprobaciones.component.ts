@@ -69,12 +69,11 @@ export class BandejaAprobacionesComponent implements OnInit {
 
     confirmarAprobacion(): void {
         const id = this.selectedId();
-        const user = this.authService.currentUser();
-        if (!id || !user) return;
+        if (!id) return;
         this.guardando.set(true);
         this.errorAccion.set(null);
         this.aprobacionService
-            .aprobar(id, this.comentario(), String(user.userId), user.username)
+            .aprobar(id, this.comentario())
             .subscribe({
                 next: () => {
                     this.guardando.set(false);
@@ -90,12 +89,11 @@ export class BandejaAprobacionesComponent implements OnInit {
 
     confirmarRechazo(): void {
         const id = this.selectedId();
-        const user = this.authService.currentUser();
-        if (!id || !user) return;
+        if (!id) return;
         this.guardando.set(true);
         this.errorAccion.set(null);
         this.aprobacionService
-            .rechazar(id, this.motivo(), String(user.userId), user.username)
+            .rechazar(id, this.motivo())
             .subscribe({
                 next: () => {
                     this.guardando.set(false);

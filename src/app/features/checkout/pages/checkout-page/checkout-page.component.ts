@@ -6,6 +6,7 @@ import { BreadcrumbComponent, BreadcrumbItem } from '@shared/components/breadcru
 import { DsButtonComponent } from '@shared/ui/ds';
 import { CartService } from '@features/cart/services/cart.service';
 import { lineasParaCupon } from '@features/cart/utils/carrito.util';
+import { estadoEnvioGratis, costoEnvioAplicable } from '@features/cart/utils/envio-gratis';
 import { OrderService } from '@core/services/order.service';
 import { SystemParameterService } from '@core/services/system-parameter.service';
 import { ConfigService, MedioPago, Certificacion } from '@core/services/config.service';
@@ -24,6 +25,10 @@ import { FormFieldComponent } from '@shared/ui/forms/form-field/form-field.compo
 import { AdminFormSectionComponent } from '@shared/ui/forms/admin-form-section/admin-form-section.component';
 import { mensajeDeErrorDeControl } from '@shared/utils/form-errors';
 import { construirOrderRequest, direccionLocalDeInvitado } from './checkout-page.order-request';
+import {
+  comprobanteParaPedido, DatosComprobante, errorDeComprobante, igvIncluido, TipoComprobante, TipoDocumento,
+  UMBRAL_BOLETA_IDENTIFICADA, zonaAutoseleccionada,
+} from './checkout-page.rules';
 
 @Component({
   selector: 'app-checkout-page',
@@ -116,7 +121,47 @@ export class CheckoutPageComponent implements OnInit {
 
   zonas = signal<ZonaEnvio[]>([]);
   selectedZona = signal<ZonaEnvio | null>(null);
-  shippingCost = computed(() => this.selectedZona()?.costoEnvio ?? 0);
+  /** true mientras se consulta la zona de la dirección elegida (evita parpadear «sin cobertura»). */
+  zonaCargando = signal(false);
+  zonaConsultaFallida = signal(false);
+  /** Sin zona resuelta no hay flete que cobrar y el backend rechaza el pedido: se dice por qué. */
+  zonaMensaje = computed<string | null>(() => {
+    if (!this.selectedAddress() || this.zonaCargando() || this.selectedZona()) return null;
+    if (this.zonaConsultaFallida()) return 'No pudimos consultar las zonas de envío. Vuelve a elegir la dirección.';
+    return this.zonas().length === 0
+      ? 'Aún no despachamos a este distrito. Prueba con otra dirección.'
+      : 'Elige una zona de envío para continuar.';
+  });
+  /** Umbral de envío gratis: el de la zona (autoridad del backend) o el global ya cargado. */
+  private umbralEnvioGratis = computed(() =>
+    this.selectedZona()?.envioGratisDesde ?? this.zonas()[0]?.envioGratisDesde ?? this.zonaEnvioService.envioGratisDesde());
+  /** Subtotal − cupón: la misma base que usa el servidor para decidir el envío gratis. */
+  private netoParaEnvio = computed(() => this.cartTotal() - this.couponDiscount());
+  /** null = la tienda no ofrece envío gratis (no se muestra cartel). */
+  envioGratis = computed(() => estadoEnvioGratis(this.netoParaEnvio(), this.umbralEnvioGratis()));
+  /** Flete que cobrará el servidor para una zona (0 si se alcanza el umbral). */
+  costoEnvioDe(zona: ZonaEnvio): number {
+    return costoEnvioAplicable(zona.costoEnvio, this.netoParaEnvio(), this.umbralEnvioGratis());
+  }
+  shippingCost = computed(() => {
+    const z = this.selectedZona();
+    return z ? this.costoEnvioDe(z) : 0;
+  });
+
+  // ── Comprobante de pago (TIENDA-1) ─────────────────────────────────────────
+  readonly umbralBoleta = UMBRAL_BOLETA_IDENTIFICADA;
+  tipoComprobante = signal<TipoComprobante>('BOLETA');
+  tipoDocCliente = signal<TipoDocumento>('1');
+  numDocCliente = signal('');
+  razonSocial = signal('');
+  /** Se activa al teclear o al fallar la confirmación: no se grita antes de que el cliente escriba. */
+  comprobanteTocado = signal(false);
+  comprobante = computed<DatosComprobante>(() => ({
+    tipo: this.tipoComprobante(), tipoDoc: this.tipoDocCliente(),
+    numDoc: this.numDocCliente(), razonSocial: this.razonSocial(),
+  }));
+  errorComprobante = computed(() => errorDeComprobante(this.comprobante(), this.finalTotal()));
+  igvDelTotal = computed(() => igvIncluido(this.finalTotal()));
 
   // El crédito de tienda se retiró del checkout: no viajaba al backend ni se consumía (se reutilizaba sin fin).
   finalTotal = computed(() => this.cartTotal() - this.couponDiscount() + this.shippingCost());
@@ -155,6 +200,7 @@ export class CheckoutPageComponent implements OnInit {
   });
 
   ngOnInit() {
+    this.zonaEnvioService.cargarUmbral();
     this.configService.getMediosPago().subscribe({
       next: data => {
         this.paymentMethods.set(data);
@@ -167,10 +213,8 @@ export class CheckoutPageComponent implements OnInit {
     this.analyticsService.trackBeginCheckout(this.cartTotal(), this.selectedItems().length);
     const cuponDelCarrito = this.appliedCouponCode();
     if (cuponDelCarrito) this.validarCupon(cuponDelCarrito);
-    // F2.2: la resolución de zona/costo de envío se dispara cuando se conoce una dirección
-    // real (loadAddresses/selectAddress/saveNewAddress) — antes se traía TODA la lista de
-    // zonas sin filtrar y se autoseleccionaba zonas[0], sin relación con la dirección del
-    // usuario. Hasta entonces zonas queda vacío → shippingCost() cae al fallback gratuito.
+    // F2.2: la zona/costo de envío se resuelve cuando se conoce una dirección real
+    // (loadAddresses/selectAddress/saveNewAddress). Sin zona resuelta el pedido no se puede confirmar.
 
     if (this.isGuest()) {
       // Pre-llenar formulario de invitado con datos guardados si existen
@@ -206,15 +250,18 @@ export class CheckoutPageComponent implements OnInit {
    * dirección efectiva, en vez de una zona arbitraria sin relación con la dirección real.
    */
   private resolverZonaPorDireccion(addr: Address): void {
-    this.zonaEnvioService.getZonas(addr.distrito).subscribe({
+    this.zonaCargando.set(true);
+    this.zonaConsultaFallida.set(false);
+    this.zonas.set([]);
+    this.selectedZona.set(null);
+    this.zonaEnvioService.getZonas(addr.distrito, addr.departamento).pipe(
+      finalize(() => this.zonaCargando.set(false))
+    ).subscribe({
       next: zonas => {
         this.zonas.set(zonas);
-        this.selectedZona.set(zonas.find(z => z.distrito === addr.distrito) ?? zonas[0] ?? null);
+        this.selectedZona.set(zonaAutoseleccionada(zonas, addr.distrito));
       },
-      error: () => {
-        this.zonas.set([]);
-        this.selectedZona.set(null);
-      },
+      error: () => this.zonaConsultaFallida.set(true),
     });
   }
 
@@ -280,6 +327,26 @@ export class CheckoutPageComponent implements OnInit {
     });
   }
 
+  setTipoComprobante(tipo: TipoComprobante): void {
+    this.tipoComprobante.set(tipo);
+    this.comprobanteTocado.set(true);
+  }
+
+  setTipoDocCliente(tipo: string): void {
+    this.tipoDocCliente.set(tipo === '4' || tipo === '7' ? tipo : '1');
+    this.comprobanteTocado.set(true);
+  }
+
+  setNumDocCliente(valor: string): void {
+    this.numDocCliente.set(valor);
+    this.comprobanteTocado.set(true);
+  }
+
+  setRazonSocial(valor: string): void {
+    this.razonSocial.set(valor);
+    this.comprobanteTocado.set(true);
+  }
+
   selectZona(zona: ZonaEnvio): void {
     this.selectedZona.set(zona);
   }
@@ -332,6 +399,7 @@ export class CheckoutPageComponent implements OnInit {
       metodoPago: this.selectedPaymentMethod(),
       codigoCupon: this.appliedCouponCode(),
       zonaEnvioId: this.selectedZona()?.id,
+      comprobante: comprobanteParaPedido(this.comprobante()),
     });
   }
 
@@ -356,7 +424,31 @@ export class CheckoutPageComponent implements OnInit {
       this.errorMessage.set('Por favor selecciona una dirección de envío');
       return false;
     }
+    if (!this.selectedZona()) {
+      this.errorMessage.set(this.zonaMensaje() ?? 'Estamos calculando el envío de tu dirección');
+      return false;
+    }
+    const errorDoc = this.errorComprobante();
+    if (errorDoc) {
+      this.comprobanteTocado.set(true);
+      this.errorMessage.set(errorDoc);
+      return false;
+    }
     return true;
+  }
+
+  /** Última clave de idempotencia con la firma del pedido al que pertenece. */
+  private idem: { firma: string; clave: string } | null = null;
+
+  /**
+   * Un reintento tras un timeout debe llevar la MISMA clave (el backend devuelve el pedido ya creado en
+   * vez de duplicarlo), pero si cambió el carrito, la zona, la dirección, el pago o el cupón la clave se
+   * renueva: el replay idempotente se resuelve antes de validar ítems y devolvería el pedido viejo.
+   */
+  private claveIdempotencia(pedido: OrderRequest): string {
+    const firma = JSON.stringify(pedido);
+    if (this.idem?.firma !== firma) this.idem = { firma, clave: crypto.randomUUID() };
+    return this.idem.clave;
   }
 
   /**
@@ -366,7 +458,7 @@ export class CheckoutPageComponent implements OnInit {
    */
   private async crearPedidoPendiente(): Promise<{ orderId: number; total: number }> {
     const orderRequest = this.buildOrderRequest();
-    const response = await firstValueFrom(this.orderService.createOrder(orderRequest, crypto.randomUUID()));
+    const response = await firstValueFrom(this.orderService.createOrder(orderRequest, this.claveIdempotencia(orderRequest)));
     const orderId = response.id ?? (response as unknown as { orderId?: number }).orderId;
     if (!orderId) {
       throw new Error('El servidor no retornó un ID de pedido válido');
@@ -379,6 +471,7 @@ export class CheckoutPageComponent implements OnInit {
    * Quita del carrito sólo lo pagado y limpia los datos de sesión de invitado tras un pago exitoso.
    */
   private limpiarTrasExito(orderId: number): void {
+    this.idem = null;   // el próximo checkout es otro pedido: clave nueva
     // Antes de vaciar: finalTotal() sale del carrito, y tras removeSelected() ya no incluye lo pagado.
     const total = this.finalTotal();
     this.cartService.removeSelected();
@@ -395,6 +488,7 @@ export class CheckoutPageComponent implements OnInit {
    * @param motivo  Razón de cancelación (ej. 'PAGO_FALLIDO', 'TIMEOUT')
    */
   private cancelarPedido(orderId: number, motivo: string): void {
+    this.idem = null;   // el reintento tras un pago fallido debe crear un pedido nuevo, no reponer el cancelado
     this.orderService.cancelOrder(orderId, motivo).subscribe({
       error: () => {
         // Ignorar error de cancelación — el backend tiene proceso batch de limpieza
@@ -615,15 +709,16 @@ export class CheckoutPageComponent implements OnInit {
 
     const orderRequest = this.buildOrderRequest();
 
-    this.orderService.createOrder(orderRequest, crypto.randomUUID()).subscribe({
+    this.orderService.createOrder(orderRequest, this.claveIdempotencia(orderRequest)).subscribe({
       next: (response) => {
         this.isLoading.set(false);
         const orderId = response.id ?? (response as unknown as { orderId?: number }).orderId ?? 0;
         this.limpiarTrasExito(orderId);
         this.router.navigate(['/orders/confirmation', orderId]);
       },
-      error: () => {
-        this.errorMessage.set(this.translate.instant('checkout.orderError'));
+      error: (err: Error) => {
+        // El mensaje del backend ("Stock insuficiente para SKU X", "zona no disponible"…) dice qué corregir.
+        this.errorMessage.set(err.message || this.translate.instant('checkout.orderError'));
         this.isLoading.set(false);
       }
     });

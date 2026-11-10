@@ -17,6 +17,27 @@
     </div>
   </div>
 
+  <div class="card mb-4">
+    <div class="card-body">
+      <h2 class="font-semibold mb-2">Parámetros de compras</h2>
+      @if (errorParametros()) {
+        <p class="text-sm" style="color:var(--color-error)">{{ errorParametros() }}</p>
+      }
+      @for (p of parametrosDef; track p.clave) {
+        <div class="flex items-start gap-2 mb-2">
+          <input type="checkbox" [id]="p.clave"
+            [checked]="parametros()[p.clave] === true"
+            [disabled]="guardandoParametro() === p.clave"
+            (change)="cambiarParametro(p.clave, $any($event.target))" />
+          <label [for]="p.clave" class="input-label mb-0">
+            {{ p.titulo }}
+            <span class="text-xs text-muted" style="display:block">{{ p.ayuda }}</span>
+          </label>
+        </div>
+      }
+    </div>
+  </div>
+
   @if (loading()) {
     <div class="loading-container"><div class="spinner"></div></div>
   } @else {

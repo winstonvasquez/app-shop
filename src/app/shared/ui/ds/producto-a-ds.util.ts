@@ -4,9 +4,6 @@ import type { DsProduct } from './ds-product-card/ds-product-card.component';
 /** Umbral de «quedan pocas» del storefront. */
 const STOCK_BAJO = 5;
 
-/** Importe desde el que el envío deja de cobrarse (el mismo que promete el trust strip del home). */
-const ENVIO_GRATIS_DESDE = 99;
-
 export interface OpcionesDeMapeo {
     /** Insignia propia de la sección (p. ej. `'NUEVO'` en «Recién llegados»). */
     badgeDeSeccion?: string;
@@ -31,7 +28,8 @@ export interface OpcionesDeMapeo {
  *   La cadena usa `??` y no `||` para que un `promocionEtiqueta` nulo no pise al `badge`.
  * - **Un producto sin stock informado NO se anuncia como «pocas unidades»:** `undefined` es «no sé»,
  *   no «cero».
- * - **El envío gratis se deduce del precio**, no lo manda el backend: desde S/ 99.
+ * - **No decide `shipFree`:** el umbral de envío gratis lo publica el backend (zonas) y lo aplica
+ *   quien tiene el servicio (`conEnvioGratis`, features/cart/utils/envio-gratis); sin umbral no hay promesa.
  * - **La imagen es la marcada como principal**; si ninguna lo está (o su url viene vacía), la
  *   primera que haya llegado.
  */
@@ -46,7 +44,6 @@ export function mapearProductoADsProduct(p: ProductResponse, opciones: OpcionesD
         stock: p.stock,
         badge: insigniaDeProducto(p, opciones.badgeDeSeccion),
         tag: p.starSeller ? 'Recomendado' : undefined,
-        shipFree: (p.precioBase ?? 0) >= ENVIO_GRATIS_DESDE,
         image: urlDeImagenPrincipal(p.imagenes),
         ...opciones.extra,
     };

@@ -1,3 +1,4 @@
+import { ConfirmModalService } from '@shared/services/confirm-modal.service';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators, FormGroup, FormControl } from '@angular/forms';
 import { WmsApiService } from '../../services/wms-api.service';
@@ -44,6 +45,7 @@ import { debeAplicarCambioDeStatus, reglaReposicionPayload } from './replenishme
 })
 export class ReplenishmentRulesComponent {
     private readonly api = inject(WmsApiService);
+    private readonly confirmModal = inject(ConfirmModalService);
     private readonly almacenApi = inject(AlmacenService);
     private readonly forecastApi = inject(ForecastService);
     private readonly authService = inject(AuthService);
@@ -393,7 +395,13 @@ export class ReplenishmentRulesComponent {
         });
     }
 
-    eliminar(id: string): void {
+    async eliminar(id: string): Promise<void> {
+        const ok = await this.confirmModal.confirm({
+            title: 'Eliminar regla de reposición',
+            message: 'Esta acción no se puede deshacer.',
+            confirmLabel: 'Eliminar', variant: 'danger',
+        });
+        if (!ok) return;
         this.api.deleteReplenishmentRule(id).subscribe({
             next: () => this.loadRules(),
             error: (err: Error) => this.error.set(err.message)

@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { Devolucion, CreateDevolucionDto, CreateInspeccionDto, InspeccionDevolucion } from '../models/devolucion.model';
 import { PageResponse } from '@core/models/pagination.model';
 import { toHttpParams } from '@core/utils/http-params.util';
+import { mapHttpError } from '@features/inventory/utils/map-http-error';
 
 /** Filtros server-side del listado de devoluciones (`GET /logistics/api/returns`). Todos opcionales. */
 export interface DevolucionFiltros {
@@ -50,11 +51,11 @@ export class DevolucionService {
             receivedAtDesde: filtros.receivedAtDesde,
             receivedAtHasta: filtros.receivedAtHasta,
         });
-        return this.http.get<PageResponse<Devolucion>>(this.baseUrl, { params });
+        return this.http.get<PageResponse<Devolucion>>(this.baseUrl, { params }).pipe(mapHttpError());
     }
 
     getById(id: string, companyId: string): Observable<Devolucion> {
-        return this.http.get<Devolucion>(`${this.baseUrl}/${id}`, { params: { companyId } });
+        return this.http.get<Devolucion>(`${this.baseUrl}/${id}`, { params: { companyId } }).pipe(mapHttpError());
     }
 
     /**
@@ -62,7 +63,7 @@ export class DevolucionService {
      * `customerId` va como query param, NO en el body (contrato del backend).
      */
     create(dto: CreateDevolucionDto, customerId: string): Observable<Devolucion> {
-        return this.http.post<Devolucion>(this.baseUrl, dto, { params: { customerId } });
+        return this.http.post<Devolucion>(this.baseUrl, dto, { params: { customerId } }).pipe(mapHttpError());
     }
 
     aprobar(id: string, companyId: string, returnTrackingNumber?: string): Observable<Devolucion> {
@@ -70,11 +71,11 @@ export class DevolucionService {
             `${this.baseUrl}/${id}/approve`,
             returnTrackingNumber ? { returnTrackingNumber } : {},
             { params: { companyId } }
-        );
+        ).pipe(mapHttpError());
     }
 
     rechazar(id: string, motivo: string, companyId: string): Observable<Devolucion> {
-        return this.http.put<Devolucion>(`${this.baseUrl}/${id}/reject`, { motivo }, { params: { companyId } });
+        return this.http.put<Devolucion>(`${this.baseUrl}/${id}/reject`, { motivo }, { params: { companyId } }).pipe(mapHttpError());
     }
 
     marcarRecibida(id: string, companyId: string, warehouseId?: string): Observable<Devolucion> {
@@ -82,7 +83,7 @@ export class DevolucionService {
             `${this.baseUrl}/${id}/receive`,
             warehouseId ? { warehouseId } : {},
             { params: { companyId } }
-        );
+        ).pipe(mapHttpError());
     }
 
     /**
@@ -90,12 +91,12 @@ export class DevolucionService {
      * reingresa stock por cada ítem con disposición RESTOCK. Responde 201 con la inspección, no con la devolución.
      */
     registrarInspeccion(id: string, dto: CreateInspeccionDto): Observable<InspeccionDevolucion> {
-        return this.http.post<InspeccionDevolucion>(`${this.baseUrl}/${id}/inspection`, dto);
+        return this.http.post<InspeccionDevolucion>(`${this.baseUrl}/${id}/inspection`, dto).pipe(mapHttpError());
     }
 
     /** 404 si la devolución no tiene inspección estructurada. */
     getInspeccion(id: string): Observable<InspeccionDevolucion> {
-        return this.http.get<InspeccionDevolucion>(`${this.baseUrl}/${id}/inspection`);
+        return this.http.get<InspeccionDevolucion>(`${this.baseUrl}/${id}/inspection`).pipe(mapHttpError());
     }
 
     registrarReembolso(id: string, amount: number, notas: string, companyId: string): Observable<Devolucion> {
@@ -103,6 +104,6 @@ export class DevolucionService {
             `${this.baseUrl}/${id}/refund`,
             { monto: amount, notas },
             { params: { companyId } }
-        );
+        ).pipe(mapHttpError());
     }
 }

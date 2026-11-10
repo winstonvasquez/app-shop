@@ -2,6 +2,7 @@ import {
     Component, OnInit, inject, signal, computed,
     ChangeDetectionStrategy
 } from '@angular/core';
+import { Router } from '@angular/router';
 import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ContractService } from '../../services/contract.service';
 import { EmployeeService } from '../../services/employee.service';
@@ -47,6 +48,7 @@ import { bloquearEnEdicion } from '@shared/utils/form-lock';
 })
 export class ContractListComponent implements OnInit {
     private readonly contractService = inject(ContractService);
+    private readonly router = inject(Router);
     private readonly employeeService = inject(EmployeeService);
     private readonly departmentService = inject(DepartmentService);
     private readonly fb = inject(FormBuilder);
@@ -457,6 +459,8 @@ export class ContractListComponent implements OnInit {
             await this.contractService.terminateContract(sel.id, this.terminateMotivo.value!);
             this.closeTerminateModal();
             this.loadPage();
+            // El cese genera derechos (CTS/vacaciones/gratificación truncas): se lleva al cálculo de la liquidación.
+            void this.router.navigate(['/admin/rrhh/liquidaciones'], { queryParams: { employeeId: sel.employeeId } });
         } catch (err) {
             this.error.set((err as Error).message ?? 'Error al finalizar contrato');
         } finally {

@@ -1,0 +1,178 @@
+<div class="lr">
+    <div class="lr-wrap">
+        <a routerLink="/" class="lr-back">&larr; Volver a la tienda</a>
+
+        @if (constancia(); as c) {
+        <!-- ══ Constancia ══ -->
+        <section class="lr-card lr-constancia" aria-live="polite">
+            <p class="lr-kicker">Reclamo registrado</p>
+            <h1 class="lr-title">Hoja de reclamación N.º {{ c.codigo }}</h1>
+            <p class="lr-lead">
+                Guarda este código: es la constancia de tu {{ c.tipo === 'QUEJA' ? 'queja' : 'reclamo' }}.
+                {{ sc.storeName() }} debe responderte a más tardar el
+                <strong>{{ fechaLegible(c.fechaLimiteRespuesta) }}</strong> ({{ params.reclamoPlazoDias() }} días hábiles).
+            </p>
+            <dl class="lr-resumen">
+                <div><dt>Consumidor</dt><dd>{{ c.consumidorNombre }}</dd></div>
+                <div><dt>Tipo</dt><dd>{{ c.tipo === 'QUEJA' ? 'Queja' : 'Reclamo' }}</dd></div>
+                <div><dt>Bien contratado</dt><dd>{{ c.bienTipo === 'SERVICIO' ? 'Servicio' : 'Producto' }}: {{ c.bienDescripcion }}</dd></div>
+                <div><dt>Correo de contacto</dt><dd>{{ c.email }}</dd></div>
+            </dl>
+            <p class="lr-note">Por ahora no enviamos constancia por correo: guarda o imprime esta pantalla.</p>
+            <div class="lr-actions">
+                <ds-button variant="primary" icon="printer" (click)="imprimir()">Imprimir constancia</ds-button>
+                <a routerLink="/" class="lr-link">Volver al inicio</a>
+            </div>
+        </section>
+        } @else {
+        <header class="lr-head">
+            <h1 class="lr-title">Libro de Reclamaciones</h1>
+            <p class="lr-lead">
+                Hoja de reclamación virtual de <strong>{{ sc.storeName() }}</strong>, conforme al Código de
+                Protección y Defensa del Consumidor (Ley N.º 29571). Recibirás respuesta en un plazo máximo de {{ params.reclamoPlazoDias() }} días hábiles.
+            </p>
+        </header>
+
+        <form class="lr-form" [formGroup]="form" (ngSubmit)="enviar()" novalidate>
+
+            <!-- 1. Consumidor -->
+            <section class="lr-card">
+                <h2 class="lr-h2">1. Identificación del consumidor reclamante</h2>
+                <div class="lr-grid">
+                    <label class="lr-f lr-full">
+                        <span>Nombre completo *</span>
+                        <input type="text" formControlName="consumidorNombre" maxlength="200" autocomplete="name"
+                            [class.is-invalid]="errores().consumidorNombre">
+                        @if (errores().consumidorNombre; as m) { <small class="lr-err">{{ m }}</small> }
+                    </label>
+                    <label class="lr-f">
+                        <span>Tipo de documento *</span>
+                        <select formControlName="consumidorTipoDoc">
+                            @for (t of tiposDoc; track t.value) { <option [value]="t.value">{{ t.label }}</option> }
+                        </select>
+                    </label>
+                    <label class="lr-f">
+                        <span>N.º de documento *</span>
+                        <input type="text" formControlName="consumidorNumDoc" maxlength="20" inputmode="text"
+                            [class.is-invalid]="errores().consumidorNumDoc">
+                        @if (errores().consumidorNumDoc; as m) { <small class="lr-err">{{ m }}</small> }
+                    </label>
+                    <label class="lr-f lr-full">
+                        <span>Domicilio *</span>
+                        <input type="text" formControlName="domicilio" maxlength="250" autocomplete="street-address"
+                            [class.is-invalid]="errores().domicilio">
+                        @if (errores().domicilio; as m) { <small class="lr-err">{{ m }}</small> }
+                    </label>
+                    <label class="lr-f">
+                        <span>Teléfono</span>
+                        <input type="tel" formControlName="telefono" maxlength="20" autocomplete="tel"
+                            [class.is-invalid]="errores().telefono">
+                        @if (errores().telefono; as m) { <small class="lr-err">{{ m }}</small> }
+                    </label>
+                    <label class="lr-f">
+                        <span>Correo electrónico *</span>
+                        <input type="email" formControlName="email" maxlength="150" autocomplete="email"
+                            [class.is-invalid]="errores().email">
+                        @if (errores().email; as m) { <small class="lr-err">{{ m }}</small> }
+                    </label>
+                    <label class="lr-check lr-full">
+                        <input type="checkbox" formControlName="menorEdad">
+                        <span>El consumidor es menor de edad (se requieren los datos de su padre, madre o apoderado)</span>
+                    </label>
+                    @if (form.controls.menorEdad.value) {
+                    <label class="lr-f lr-full">
+                        <span>Nombre del padre, madre o apoderado *</span>
+                        <input type="text" formControlName="apoderadoNombre" maxlength="200"
+                            [class.is-invalid]="errores().apoderadoNombre">
+                        @if (errores().apoderadoNombre; as m) { <small class="lr-err">{{ m }}</small> }
+                    </label>
+                    <label class="lr-f">
+                        <span>Tipo de documento del apoderado *</span>
+                        <select formControlName="apoderadoTipoDoc">
+                            @for (t of tiposDoc; track t.value) { <option [value]="t.value">{{ t.label }}</option> }
+                        </select>
+                    </label>
+                    <label class="lr-f">
+                        <span>N.º de documento del apoderado *</span>
+                        <input type="text" formControlName="apoderadoNumDoc" maxlength="20"
+                            [class.is-invalid]="errores().apoderadoNumDoc">
+                        @if (errores().apoderadoNumDoc; as m) { <small class="lr-err">{{ m }}</small> }
+                    </label>
+                    }
+                </div>
+            </section>
+
+            <!-- 2. Bien contratado -->
+            <section class="lr-card">
+                <h2 class="lr-h2">2. Identificación del bien contratado</h2>
+                <div class="lr-grid">
+                    <label class="lr-f">
+                        <span>Bien contratado *</span>
+                        <select formControlName="bienTipo">
+                            <option value="PRODUCTO">Producto</option>
+                            <option value="SERVICIO">Servicio</option>
+                        </select>
+                    </label>
+                    <label class="lr-f">
+                        <span>Monto reclamado (S/)</span>
+                        <input type="number" formControlName="montoReclamado" min="0" step="0.01" inputmode="decimal"
+                            [class.is-invalid]="errores().montoReclamado">
+                        @if (errores().montoReclamado; as m) { <small class="lr-err">{{ m }}</small> }
+                    </label>
+                    <label class="lr-f lr-full">
+                        <span>Descripción del producto o servicio *</span>
+                        <textarea formControlName="bienDescripcion" rows="2" maxlength="500"
+                            [class.is-invalid]="errores().bienDescripcion"></textarea>
+                        @if (errores().bienDescripcion; as m) { <small class="lr-err">{{ m }}</small> }
+                    </label>
+                </div>
+            </section>
+
+            <!-- 3. Reclamación -->
+            <section class="lr-card">
+                <h2 class="lr-h2">3. Detalle de la reclamación y pedido del consumidor</h2>
+                <fieldset class="lr-tipo">
+                    <legend>Tipo *</legend>
+                    <label class="lr-radio">
+                        <input type="radio" formControlName="tipo" value="RECLAMO">
+                        <span><strong>Reclamo</strong>: disconformidad con los productos o servicios adquiridos.</span>
+                    </label>
+                    <label class="lr-radio">
+                        <input type="radio" formControlName="tipo" value="QUEJA">
+                        <span><strong>Queja</strong>: disconformidad no relacionada con el producto o servicio, o malestar por la atención recibida.</span>
+                    </label>
+                </fieldset>
+                <div class="lr-grid">
+                    <label class="lr-f lr-full">
+                        <span>Detalle *</span>
+                        <textarea formControlName="detalle" rows="4" maxlength="2000"
+                            [class.is-invalid]="errores().detalle"></textarea>
+                        @if (errores().detalle; as m) { <small class="lr-err">{{ m }}</small> }
+                    </label>
+                    <label class="lr-f lr-full">
+                        <span>Pedido del consumidor *</span>
+                        <textarea formControlName="pedidoConsumidor" rows="3" maxlength="1000"
+                            placeholder="Qué solución solicitas (reembolso, cambio, disculpas…)"
+                            [class.is-invalid]="errores().pedidoConsumidor"></textarea>
+                        @if (errores().pedidoConsumidor; as m) { <small class="lr-err">{{ m }}</small> }
+                    </label>
+                </div>
+                <p class="lr-note">
+                    La formulación del reclamo no impide acudir a otras vías de solución de controversias ni es
+                    requisito previo para interponer una denuncia ante el INDECOPI.
+                </p>
+            </section>
+
+            @if (fallo()) {
+            <p class="lr-fallo" role="alert">{{ fallo() }}</p>
+            }
+
+            <div class="lr-actions">
+                <ds-button variant="primary" type="submit" [disabled]="enviando()">
+                    {{ enviando() ? 'Enviando…' : 'Enviar hoja de reclamación' }}
+                </ds-button>
+            </div>
+        </form>
+        }
+    </div>
+</div>

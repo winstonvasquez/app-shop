@@ -1,3 +1,4 @@
+import { ConfirmModalService } from '@shared/services/confirm-modal.service';
 import { Component, inject, signal, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -25,6 +26,7 @@ import {
 })
 export class ReglasAsientoComponent implements OnInit {
     private service = inject(ReglaAsientoService);
+    private confirmModal = inject(ConfirmModalService);
     readonly catalog = inject(CatalogService);
 
     readonly reglas = signal<ReglaAsiento[]>([]);
@@ -110,7 +112,7 @@ export class ReglasAsientoComponent implements OnInit {
             onClick: r => this.abrirEditar(r)
         },
         {
-            label: 'Desactivar', icon: 'x', class: 'btn-view',
+            label: 'Desactivar', icon: 'x', class: 'btn-icon-delete',
             show: r => r.activo,
             onClick: r => this.desactivar(r.id)
         },
@@ -273,7 +275,13 @@ export class ReglasAsientoComponent implements OnInit {
         });
     }
 
-    desactivar(id: string) {
+    async desactivar(id: string) {
+        const ok = await this.confirmModal.confirm({
+            title: 'Desactivar regla',
+            message: 'La regla dejará de aplicarse a los asientos automáticos hasta que se reactive.',
+            confirmLabel: 'Desactivar', variant: 'danger',
+        });
+        if (!ok) return;
         this.service.desactivar(id).subscribe({
             next: () => this.cargar(),
             error: (err: unknown) => {

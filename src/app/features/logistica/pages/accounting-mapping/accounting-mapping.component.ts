@@ -1,3 +1,4 @@
+import { ConfirmModalService } from '@shared/services/confirm-modal.service';
 import { Component, inject, signal, computed, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -7,7 +8,7 @@ import {
     DataTableComponent, TableColumn, TableAction, PaginationEvent,
     FilterConfig, FilterChangeEvent, DateRangeFilterConfig, DateRangeChangeEvent
 } from '@shared/ui/tables/data-table/data-table.component';
-import { catalogFilter, staticFilter, ACTIVO_OPTIONS } from '@shared/ui/tables/data-table/filter-helpers';
+import { staticFilter, ACTIVO_OPTIONS } from '@shared/ui/tables/data-table/filter-helpers';
 import { NOTIFICATION_DURATION } from '@shared/constants/ui.constants';
 import { USER_ROLE } from '@shared/constants/feature-flags.constants';
 import { AuthService } from '@core/auth/auth.service';
@@ -17,7 +18,7 @@ import {
     AccountingMappingService,
 } from '../../services/accounting-mapping.service';
 import {
-    AccountingMapping, AccountingMappingRequest, EVENT_TYPES_CONOCIDOS,
+    AccountingMapping, AccountingMappingRequest, EVENT_TYPES_CONOCIDOS, EVENT_TYPES_SIN_EFECTO,
 } from '../../models/accounting-mapping.model';
 
 @Component({
@@ -29,6 +30,7 @@ import {
 })
 export class AccountingMappingComponent implements OnInit {
     private service = inject(AccountingMappingService);
+    private confirmModal = inject(ConfirmModalService);
     private authService = inject(AuthService);
     readonly catalog = inject(CatalogService);
 
@@ -66,10 +68,10 @@ export class AccountingMappingComponent implements OnInit {
     readonly totalElements = signal(0);
     readonly totalPages = signal(0);
 
-    // Filtros select del toolbar. eventType sale de erp_parameters (TIPO_EVENTO_CONTABLE_LOGISTICA);
-    // activo es una columna boolean (sin catálogo, mismo patrón que ordenes-compra).
+    // Filtros select del toolbar. eventType: los dos tipos que logística consume hoy (el catálogo
+    // TIPO_EVENTO_CONTABLE_LOGISTICA del seed aún lista los tres retirados); activo es una columna boolean (sin catálogo, mismo patrón que ordenes-compra).
     readonly filters: FilterConfig[] = [
-        catalogFilter(this.catalog, 'TIPO_EVENTO_CONTABLE_LOGISTICA', 'eventType', 'Tipo de evento'),
+        staticFilter('eventType', 'Tipo de evento', EVENT_TYPES_CONOCIDOS.map(t => ({ value: t.value, label: t.label }))),
         staticFilter('activo', 'Estado', ACTIVO_OPTIONS)
     ];
 
@@ -81,6 +83,7 @@ export class AccountingMappingComponent implements OnInit {
         {
             key: 'eventType', label: 'Tipo de evento', html: true,
             render: m => `<span class="badge badge-neutral">${m.eventType}</span>`
+                + (EVENT_TYPES_SIN_EFECTO.includes(m.eventType) ? ' <span class="badge badge-warning">Sin efecto</span>' : '')
         },
         { key: 'debitAccount', label: 'Cuenta débito' },
         { key: 'creditAccount', label: 'Cuenta crédito' },
@@ -111,7 +114,7 @@ export class AccountingMappingComponent implements OnInit {
     readonly actions: TableAction<AccountingMapping>[] = [
         {
             label: 'Probar', icon: 'zap', class: 'btn-view',
-            show: m => m.activo && this.puedeAdministrar(),
+            show: m => m.activo && this.puedeAdministrar() && !EVENT_TYPES_SIN_EFECTO.includes(m.eventType),
             onClick: m => this.probar(m),
         },
         {
@@ -120,7 +123,7 @@ export class AccountingMappingComponent implements OnInit {
             onClick: m => this.abrirEditar(m),
         },
         {
-            label: 'Eliminar', icon: 'trash-2', class: 'btn-view',
+            label: 'Eliminar', icon: 'trash-2', class: 'btn-icon-delete',
             show: m => m.activo && this.puedeAdministrar(),
             onClick: m => this.eliminar(m.id),
         },
@@ -223,9 +226,8 @@ export class AccountingMappingComponent implements OnInit {
 
     /**
      * El backend SÍ permite cambiar `eventType` en el PUT (sin validar duplicados
-     * como en el POST), pero el frontend lo bloquea en edición: es la clave que
-     * `LogisticsAccountingService` usa para resolver el mapeo automáticamente
-     * (findByEventTypeAndTenantId) — cambiarlo aquí podría romper ese enrutamiento
+     * como en el POST), pero el frontend lo bloquea en edición: es la clave con la que
+     * logística resuelve el mapeo al contabilizar un ajuste (findByEventTypeAndTenantId) — cambiarlo aquí podría romper ese enrutamiento
      * en silencio. Para renombrar: crear uno nuevo + eliminar el anterior.
      */
     abrirEditar(m: AccountingMapping) {
@@ -269,7 +271,13 @@ export class AccountingMappingComponent implements OnInit {
         });
     }
 
-    eliminar(id: string) {
+    async eliminar(id: string) {
+        const ok = await this.confirmModal.confirm({
+            title: 'Eliminar mapeo contable',
+            message: 'Los asientos de este evento volverán a usar las cuentas por defecto. Esta acción no se puede deshacer.',
+            confirmLabel: 'Eliminar', variant: 'danger',
+        });
+        if (!ok) return;
         this.service.eliminar(id).subscribe({
             next: () => this.cargar(),
             error: (err: unknown) => {
@@ -286,10 +294,12 @@ export class AccountingMappingComponent implements OnInit {
         this.probandoEventType.set(m.eventType);
         this.resultadoPrueba.set(null);
         this.service.probar(m.eventType).subscribe({
-            next: () => {
+            next: res => {
                 this.resultadoPrueba.set({
-                    eventType: m.eventType, ok: true,
-                    mensaje: `Asiento de prueba enviado a Contabilidad para "${m.eventType}" (S/ 0.01).`,
+                    eventType: m.eventType, ok: res.aceptado,
+                    mensaje: res.aceptado
+                        ? `Contabilidad aceptó el asiento de prueba de "${m.eventType}" (S/ 0.01).`
+                        : `Contabilidad no confirmó el asiento de prueba de "${m.eventType}".`,
                 });
                 this.probandoEventType.set(null);
                 this.ocultarResultadoLuego();
@@ -297,7 +307,7 @@ export class AccountingMappingComponent implements OnInit {
             error: (err: unknown) => {
                 this.resultadoPrueba.set({
                     eventType: m.eventType, ok: false,
-                    mensaje: this.mensajeError(err, `No se pudo enviar el asiento de prueba para "${m.eventType}"`),
+                    mensaje: this.mensajeError(err, `Contabilidad rechazó el asiento de prueba de "${m.eventType}"`),
                 });
                 this.probandoEventType.set(null);
                 this.ocultarResultadoLuego();

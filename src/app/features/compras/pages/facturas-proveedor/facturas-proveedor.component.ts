@@ -6,7 +6,11 @@ import {
     computed,
     ChangeDetectionStrategy,
     ChangeDetectorRef,
+    DestroyRef,
 } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { mensajeDeErrorHttp, detalleDelBackend } from '@core/utils/http-error.util';
 import { ReactiveFormsModule, FormBuilder, Validators, FormArray, FormGroup } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
@@ -18,7 +22,7 @@ import { OrdenCompraService } from '../../services/orden-compra.service';
 import { ordenCompraSelectSource } from '../../components/select-sources';
 import { OrdenCompraItem } from '../../models/orden-compra.model';
 import { catalogFilter, signalFilter, staticFilter } from '@shared/ui/tables/data-table/filter-helpers';
-import { FacturaProveedor, RegistrarFacturaRequest, CpeParsedInvoice } from '../../models/factura-proveedor.model';
+import { FacturaProveedor, RegistrarFacturaRequest, CpeParsedInvoice, TipoComprobanteRegistrable } from '../../models/factura-proveedor.model';
 import { ButtonComponent, CatalogSelectComponent, ServerSearchSelectComponent, RichTextEditorComponent } from '@shared/components';
 import { DrawerComponent } from '@shared/components/drawer/drawer.component';
 import { PageHeaderComponent, Breadcrumb } from '@shared/ui/layout/page-header/page-header.component';
@@ -35,11 +39,12 @@ import {
 } from '@shared/ui/tables/data-table/data-table.component';
 import { BackendExportConfig } from '@shared/services/backend-export.service';
 import { environment } from '@env/environment';
+import { CurrencyPipe } from '@angular/common';
 import { MONEDA } from '@shared/constants/sunat.constants';
 import { PAGINATION } from '@shared/constants/app.constants';
 import { CatalogService } from '@core/services/catalog.service';
 import {
-    claseBadgeEstadoFactura, claseBadgeMatch, claseBadgeSunat, construirRegistrarFacturaRequest
+    claseBadgeEstadoFactura, claseBadgeMatch, claseBadgeSunat, construirRegistrarFacturaRequest, sugerirVencimiento
 } from './facturas-proveedor.form';
 import { construirFiltrosFactura } from './facturas-proveedor.filtros';
 
@@ -58,6 +63,7 @@ import { construirFiltrosFactura } from './facturas-proveedor.filtros';
         CatalogSelectComponent,
         ServerSearchSelectComponent,
         RichTextEditorComponent,
+        CurrencyPipe,
     ],
     templateUrl: './facturas-proveedor.component.html',
 })
@@ -67,7 +73,15 @@ export class FacturasProveedorComponent implements OnInit {
     private readonly ordenCompraService = inject(OrdenCompraService);
     private readonly fb = inject(FormBuilder);
     private readonly cdr = inject(ChangeDetectorRef);
+    private readonly destroyRef = inject(DestroyRef);
     readonly catalog = inject(CatalogService);
+
+    /** Tipos que el backend sabe registrar Y aprobar (GET tipos-comprobante). Sin respuesta: sólo FACTURA. */
+    tiposComprobante = signal<TipoComprobanteRegistrable[]>([{ codigo: 'FACTURA', codigoSunat: '01' }]);
+    /** Condición de pago de la OC elegida; base del vencimiento sugerido. */
+    private condicionPagoOc: string | null = null;
+    /** Último vencimiento puesto por la sugerencia: si el usuario lo cambió a mano, ya no se pisa. */
+    private vencimientoSugerido = '';
 
     // Data source para <app-server-search-select> de OC en el drawer de alta
     readonly ordenCompraSource = ordenCompraSelectSource(this.ordenCompraService);
@@ -121,7 +135,14 @@ export class FacturasProveedorComponent implements OnInit {
         { key: 'factura', label: 'Factura', render: (row) => `${row.serie}-${row.numero}` },
         { key: 'ordenCompraCodigo', label: 'OC' },
         { key: 'fechaEmision', label: 'Fecha' },
+        { key: 'fechaVencimiento', label: 'Vencimiento', render: (row) => row.fechaVencimiento ?? '—' },
         { key: 'total', label: 'Total', align: 'right', render: (row) => `S/ ${row.total.toFixed(2)}` },
+        {
+            // COMPRAS-6: neto = total − detracción − retención; sólo se distingue del total cuando aplica alguna.
+            key: 'montoNetoPagar', label: 'Neto a pagar', align: 'right',
+            render: (row) => row.montoNetoPagar == null ? '—'
+                : `${row.montoNetoPagar.toFixed(2)}${row.montoDetraccion || row.montoRetencion ? ' (detr./ret.)' : ''}`,
+        },
         {
             key: 'estado',
             label: 'Estado',
@@ -221,15 +242,35 @@ export class FacturasProveedorComponent implements OnInit {
     ngOnInit(): void {
         this.loadFacturas();
         this.loadProveedoresFiltro();
+        this.facturaService.tiposComprobante().subscribe({
+            next: (tipos) => { if (tipos.length > 0) this.tiposComprobante.set(tipos); },
+            error: () => { /* se queda sólo FACTURA: mejor poco que ofrecer tipos que no se pueden aprobar */ },
+        });
         this.facturaForm.get('ordenCompraId')!.valueChanges.subscribe((id: string | null) => {
             this.onOrdenSeleccionada(id);
         });
+        // `control.value` no es señal: la sugerencia de vencimiento se recalcula por valueChanges.
+        this.facturaForm.get('fechaEmision')!.valueChanges
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe(() => this.sugerirFechaVencimiento());
+    }
+
+    /** Sugiere emisión + días de la condición de pago de la OC, salvo que el usuario ya haya escrito otra fecha. */
+    private sugerirFechaVencimiento(): void {
+        const ctrl = this.facturaForm.get('fechaVencimiento')!;
+        const actual = ctrl.value ?? '';
+        if (actual && actual !== this.vencimientoSugerido) return;
+        const nueva = sugerirVencimiento(this.facturaForm.get('fechaEmision')!.value, this.condicionPagoOc);
+        this.vencimientoSugerido = nueva;
+        ctrl.setValue(nueva, { emitEvent: false });
+        this.cdr.markForCheck();
     }
 
     /** Al elegir la OC en el selector, precarga sus ítems para resolver `ordenItemId` sin UUIDs a mano. */
     private onOrdenSeleccionada(ordenCompraId: string | null): void {
         if (!ordenCompraId) {
             this.itemsOrdenSeleccionada.set([]);
+            this.condicionPagoOc = null;
             this.syncOrdenItemIdControls();
             return;
         }
@@ -237,7 +278,11 @@ export class FacturasProveedorComponent implements OnInit {
         this.ordenCompraService.getOrdenById(ordenCompraId).subscribe({
             next: (orden) => {
                 this.itemsOrdenSeleccionada.set(orden.items ?? []);
+                // La moneda de la factura debe coincidir con la de la OC (si no, el 3-way match la deja en PENDIENTE_REVISION).
+                if (orden.moneda) this.facturaForm.patchValue({ moneda: orden.moneda as typeof MONEDA.PEN });
                 this.syncOrdenItemIdControls();
+                this.condicionPagoOc = orden.condicionPago ?? null;
+                this.sugerirFechaVencimiento();
                 this.loadingItemsOrden.set(false);
                 this.cdr.markForCheck();
             },
@@ -384,6 +429,8 @@ export class FacturasProveedorComponent implements OnInit {
     }
 
     openCreateForm(): void {
+        this.condicionPagoOc = null;
+        this.vencimientoSugerido = '';
         this.facturaForm.reset({ tipoDocumento: 'FACTURA', moneda: MONEDA.PEN });
         while (this.itemsArray.length > 0) this.itemsArray.removeAt(0);
         this.itemsArray.push(this.createItemGroup());
@@ -492,7 +539,8 @@ export class FacturasProveedorComponent implements OnInit {
                 this.loadFacturas();
             },
             error: (err) => {
-                this.submitError.set('Error al registrar factura');
+                // El 400 del backend trae el motivo (p. ej. tipo no admitido): se muestra tal cual.
+                this.submitError.set(err instanceof HttpErrorResponse ? mensajeDeErrorHttp(err) : 'Error al registrar factura');
                 this.submitting.set(false);
                 console.error(err);
                 this.cdr.markForCheck();
@@ -500,14 +548,16 @@ export class FacturasProveedorComponent implements OnInit {
         });
     }
 
-    aprobarFactura(id: string): void {
-        this.facturaService.aprobar(id).subscribe({
+    aprobarFactura(id: string, forzar = false): void {
+        if (forzar && !confirm('La factura tiene diferencias con la OC/recepción. ¿Aprobar de todas formas?')) return;
+        this.facturaService.aprobar(id, forzar).subscribe({
             next: () => {
                 this.closeDetail();
                 this.loadFacturas();
             },
             error: (err) => {
-                this.actionError.set('Error al aprobar factura');
+                // El 400 trae su motivo (p. ej. moneda extranjera sin tipo de cambio en la OC).
+                this.actionError.set(err instanceof HttpErrorResponse ? mensajeDeErrorHttp(err, { 400: detalleDelBackend(err) ?? 'Error al aprobar factura' }) : 'Error al aprobar factura');
                 console.error(err);
                 this.cdr.markForCheck();
             },

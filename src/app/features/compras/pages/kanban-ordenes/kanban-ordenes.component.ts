@@ -1,5 +1,5 @@
 import { Component, OnInit, ChangeDetectionStrategy, signal, inject } from '@angular/core';
-import { DecimalPipe } from '@angular/common';
+import { CurrencyPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '@core/auth/auth.service';
 import { OrdenCompra } from '../../models/orden-compra.model';
@@ -21,7 +21,7 @@ interface KanbanColumna {
     selector: 'app-kanban-ordenes',
     standalone: true,
     imports: [
-        DecimalPipe,
+        CurrencyPipe,
         FormsModule,
         ButtonComponent,
         CatalogSelectComponent,
@@ -191,7 +191,13 @@ export class KanbanOrdenesComponent implements OnInit {
         });
     }
 
-    totalColumna(col: KanbanColumna): number {
-        return col.ordenes.reduce((s, o) => s + (o.total ?? 0), 0);
+    /** Total de la columna por moneda: sumar PEN y USD en una sola cifra sería un número sin sentido. */
+    totalesColumna(col: KanbanColumna): { moneda: string; total: number }[] {
+        const porMoneda = new Map<string, number>();
+        for (const o of col.ordenes) {
+            const m = o.moneda || 'PEN';
+            porMoneda.set(m, (porMoneda.get(m) ?? 0) + (o.total ?? 0));
+        }
+        return [...porMoneda].map(([moneda, total]) => ({ moneda, total }));
     }
 }

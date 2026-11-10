@@ -1,8 +1,12 @@
 import { Injectable, inject } from '@angular/core';
-import { Observable, catchError, of, throwError } from 'rxjs';
+import { Observable, catchError, map, of, throwError } from 'rxjs';
 import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
-import { TurnoCaja, TurnoCajaApertura } from '../models/turno-caja.model';
+import { TurnoCaja, TurnoCajaApertura, TurnoCajaListado } from '../models/turno-caja.model';
+import { Sucursal } from '../models/venta-pos.model';
+import { Page, adaptSpringPage } from '@core/models/pagination.model';
+import { toHttpParams } from '@core/utils/http-params.util';
 import { ReporteXZ } from '../components/pos-report-viewer/pos-report-viewer.component';
+import { CierreArqueoData } from '../components/pos-denomination-counter/pos-denomination-counter.component';
 import { environment } from '@env/environment';
 
 @Injectable({ providedIn: 'root' })
@@ -14,8 +18,9 @@ export class PosTurnoService {
         return this.http.post<TurnoCaja>(`${this.baseUrl}/abrir`, apertura);
     }
 
-    cerrarTurno(turnoId: number): Observable<TurnoCaja> {
-        return this.http.post<TurnoCaja>(`${this.baseUrl}/${turnoId}/cerrar`, {});
+    /** Sucursales activas de la empresa, para elegir dónde se abre la caja. */
+    listarSucursales(companyId: number): Observable<Sucursal[]> {
+        return this.http.get<Sucursal[]>(`${environment.apiUrls.pos}/sucursales`, { params: toHttpParams({ companyId }) });
     }
 
     /**
@@ -35,8 +40,20 @@ export class PosTurnoService {
         return this.http.get<TurnoCaja>(`${this.baseUrl}/${turnoId}/resumen`);
     }
 
-    cerrarTurnoConArqueo(turnoId: number, data: unknown): Observable<TurnoCaja> {
+    cerrarTurnoConArqueo(turnoId: number, data: CierreArqueoData): Observable<TurnoCaja> {
         return this.http.post<TurnoCaja>(`${this.baseUrl}/${turnoId}/cerrar-arqueo`, data);
+    }
+
+    /** Listado de turnos de la empresa (sólo ADMIN/GERENTE; otro rol recibe 403). */
+    listarTurnos(filtros: { estado?: string; page: number; size: number }): Observable<Page<TurnoCajaListado>> {
+        const { page, size } = filtros;
+        return this.http.get<unknown>(`${environment.apiUrls.pos}/turnos`, { params: toHttpParams({ ...filtros }) }).pipe(
+            map(raw => adaptSpringPage<TurnoCajaListado>(raw, page, size)));
+    }
+
+    /** Cierre de un turno ajeno por un supervisor (`cerrar-arqueo` sobre turno de otro cajero da 403). */
+    cierreForzoso(turnoId: number, data: CierreArqueoData): Observable<TurnoCaja> {
+        return this.http.post<TurnoCaja>(`${this.baseUrl}/${turnoId}/cierre-forzoso`, data);
     }
 
     getReporteX(turnoId: number): Observable<ReporteXZ> {

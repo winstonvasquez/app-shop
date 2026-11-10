@@ -1,5 +1,6 @@
 import { Component, OnInit, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
-import { DatePipe } from '@angular/common';
+import { CurrencyPipe, DatePipe } from '@angular/common';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators, FormGroup, FormControl } from '@angular/forms';
 import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
 import { CatalogService } from '@core/services/catalog.service';
@@ -55,6 +56,7 @@ export interface ContratoActivoOption {
     AlertComponent,
     LoadingSpinnerComponent,
     DatePipe,
+    CurrencyPipe,
     ButtonComponent,
     CatalogSelectComponent,
     ServerSearchSelectComponent,
@@ -224,6 +226,13 @@ export class OrdenesCompraComponent implements OnInit {
             contratoId: [''],
             moneda: [MONEDA.PEN as Moneda],
             tipoCambio: [null as number | null]
+        });
+        // El backend responde 400 si la moneda no es PEN y falta tipoCambio > 0.
+        // valueChanges (no effect): control.value no es señal.
+        this.ocForm.get('moneda')!.valueChanges.pipe(takeUntilDestroyed()).subscribe((m: string | null) => {
+            const tc = this.ocForm.get('tipoCambio')!;
+            tc.setValidators(m && m !== MONEDA.PEN ? [Validators.required, Validators.min(0.0001)] : []);
+            tc.updateValueAndValidity();
         });
     }
 
@@ -525,8 +534,8 @@ export class OrdenesCompraComponent implements OnInit {
                 this.closeForm();
                 this.loadOrdenes();
             },
-            error: (err: Error) => {
-                this.submitError.set(err.message);
+            error: (err: HttpErrorResponse) => {
+                this.submitError.set(mensajeDeErrorHttp(err));
                 this.submitting.set(false);
             }
         });

@@ -12,6 +12,7 @@ import {
     KardexLogisticoEntry, LotSelectionStrategy
 } from '../models/wms-zone.models';
 import { toHttpParams } from '@core/utils/http-params.util';
+import { mapHttpError } from '@features/inventory/utils/map-http-error';
 
 /**
  * API del dominio WMS "logística" (Almacén = UUID, `com.microshop.logistica`):
@@ -44,49 +45,49 @@ export class WmsApiService {
     } = {}): Observable<PageResponse<WarehouseZone>> {
         return this.http.get<PageResponse<WarehouseZone>>(`${this.baseUrl}/zonas`, {
             params: toHttpParams({ page: 0, size: 20, ...params })
-        });
+        }).pipe(mapHttpError());
     }
 
     createZone(payload: CreateZoneRequest): Observable<WarehouseZone> {
-        return this.http.post<WarehouseZone>(`${this.baseUrl}/zonas`, payload);
+        return this.http.post<WarehouseZone>(`${this.baseUrl}/zonas`, payload).pipe(mapHttpError());
     }
 
     updateZone(id: string, payload: CreateZoneRequest): Observable<WarehouseZone> {
-        return this.http.put<WarehouseZone>(`${this.baseUrl}/zonas/${id}`, payload);
+        return this.http.put<WarehouseZone>(`${this.baseUrl}/zonas/${id}`, payload).pipe(mapHttpError());
     }
 
     deleteZone(id: string): Observable<void> {
-        return this.http.delete<void>(`${this.baseUrl}/zonas/${id}`);
+        return this.http.delete<void>(`${this.baseUrl}/zonas/${id}`).pipe(mapHttpError());
     }
 
     getZone(id: string): Observable<WarehouseZone> {
-        return this.http.get<WarehouseZone>(`${this.baseUrl}/zonas/${id}`);
+        return this.http.get<WarehouseZone>(`${this.baseUrl}/zonas/${id}`).pipe(mapHttpError());
     }
 
     // ── Ubicaciones (dentro de una zona) ────────────────────────────────
     getZoneLocations(zoneId?: string, page = 0, size = 20): Observable<PageResponse<ZoneLocation>> {
         return this.http.get<PageResponse<ZoneLocation>>(`${this.baseUrl}/ubicaciones`, {
             params: toHttpParams({ zoneId, page, size })
-        });
+        }).pipe(mapHttpError());
     }
 
     createZoneLocation(payload: CreateZoneLocationRequest): Observable<ZoneLocation> {
-        return this.http.post<ZoneLocation>(`${this.baseUrl}/ubicaciones`, payload);
+        return this.http.post<ZoneLocation>(`${this.baseUrl}/ubicaciones`, payload).pipe(mapHttpError());
     }
 
     updateZoneLocation(id: string, payload: CreateZoneLocationRequest): Observable<ZoneLocation> {
-        return this.http.put<ZoneLocation>(`${this.baseUrl}/ubicaciones/${id}`, payload);
+        return this.http.put<ZoneLocation>(`${this.baseUrl}/ubicaciones/${id}`, payload).pipe(mapHttpError());
     }
 
     deleteZoneLocation(id: string): Observable<void> {
-        return this.http.delete<void>(`${this.baseUrl}/ubicaciones/${id}`);
+        return this.http.delete<void>(`${this.baseUrl}/ubicaciones/${id}`).pipe(mapHttpError());
     }
 
     // ── Lotes ────────────────────────────────────────────────────────
     getLotsByProducto(productoId: string, fefo = false): Observable<Lot[]> {
         return this.http.get<Lot[]>(`${this.baseUrl}/lotes`, {
             params: toHttpParams({ productoId, fefo })
-        });
+        }).pipe(mapHttpError());
     }
 
     /**
@@ -111,46 +112,46 @@ export class WmsApiService {
     } = {}): Observable<PageResponse<Lot>> {
         return this.http.get<PageResponse<Lot>>(`${this.baseUrl}/lotes/paged`, {
             params: toHttpParams({ ...params })
-        });
+        }).pipe(mapHttpError());
     }
 
     createLot(payload: CreateLotRequest): Observable<Lot> {
-        return this.http.post<Lot>(`${this.baseUrl}/lotes`, payload);
+        return this.http.post<Lot>(`${this.baseUrl}/lotes`, payload).pipe(mapHttpError());
     }
 
     updateLot(id: string, payload: CreateLotRequest): Observable<Lot> {
-        return this.http.put<Lot>(`${this.baseUrl}/lotes/${id}`, payload);
+        return this.http.put<Lot>(`${this.baseUrl}/lotes/${id}`, payload).pipe(mapHttpError());
     }
 
     deleteLot(id: string): Observable<void> {
-        return this.http.delete<void>(`${this.baseUrl}/lotes/${id}`);
+        return this.http.delete<void>(`${this.baseUrl}/lotes/${id}`).pipe(mapHttpError());
     }
 
     getLotsExpiringSoon(dias = 30): Observable<LotExpirationAlert[]> {
         return this.http.get<LotExpirationAlert[]>(`${this.baseUrl}/lotes/vencimiento-proximo`, {
             params: toHttpParams({ dias })
-        });
+        }).pipe(mapHttpError());
     }
 
     consumirLote(productoId: string, cantidad: number, strategy: LotSelectionStrategy): Observable<void> {
-        return this.http.post<void>(`${this.baseUrl}/lotes/consumir`, { productoId, cantidad, strategy });
+        return this.http.post<void>(`${this.baseUrl}/lotes/consumir`, { productoId, cantidad, strategy }).pipe(mapHttpError());
     }
 
     // ── Números de serie ─────────────────────────────────────────────
     registrarSerial(payload: CreateSerialRequest): Observable<SerialNumberWms> {
-        return this.http.post<SerialNumberWms>(`${this.baseUrl}/numeros-serie`, payload);
+        return this.http.post<SerialNumberWms>(`${this.baseUrl}/numeros-serie`, payload).pipe(mapHttpError());
     }
 
     cambiarStatusSerial(id: string, status: SerialStatusWms): Observable<SerialNumberWms> {
         return this.http.patch<SerialNumberWms>(`${this.baseUrl}/numeros-serie/${id}/status`, null, {
             params: toHttpParams({ status })
-        });
+        }).pipe(mapHttpError());
     }
 
     buscarSerial(serial: string): Observable<SerialNumberWms> {
         return this.http.get<SerialNumberWms>(`${this.baseUrl}/numeros-serie/buscar`, {
             params: toHttpParams({ serial })
-        });
+        }).pipe(mapHttpError());
     }
 
     /**
@@ -172,7 +173,7 @@ export class WmsApiService {
     } = {}): Observable<PageResponse<SerialNumberWms>> {
         return this.http.get<PageResponse<SerialNumberWms>>(`${this.baseUrl}/numeros-serie`, {
             params: toHttpParams({ ...params })
-        });
+        }).pipe(mapHttpError());
     }
 
     // ── Reglas de reposición automática ─────────────────────────────
@@ -206,30 +207,30 @@ export class WmsApiService {
                 lastPoCreatedAtDesde: params?.lastPoCreatedAtDesde,
                 lastPoCreatedAtHasta: params?.lastPoCreatedAtHasta
             })
-        });
+        }).pipe(mapHttpError());
     }
 
     createReplenishmentRule(payload: CreateReplenishmentRuleRequest): Observable<ReplenishmentRule> {
-        return this.http.post<ReplenishmentRule>(`${this.baseUrl}/reglas-reposicion`, payload);
+        return this.http.post<ReplenishmentRule>(`${this.baseUrl}/reglas-reposicion`, payload).pipe(mapHttpError());
     }
 
     updateReplenishmentRule(id: string, payload: CreateReplenishmentRuleRequest): Observable<ReplenishmentRule> {
-        return this.http.put<ReplenishmentRule>(`${this.baseUrl}/reglas-reposicion/${id}`, payload);
+        return this.http.put<ReplenishmentRule>(`${this.baseUrl}/reglas-reposicion/${id}`, payload).pipe(mapHttpError());
     }
 
     cambiarStatusReplenishmentRule(id: string, status: string): Observable<ReplenishmentRule> {
         return this.http.patch<ReplenishmentRule>(`${this.baseUrl}/reglas-reposicion/${id}/status`, null, {
             params: toHttpParams({ status })
-        });
+        }).pipe(mapHttpError());
     }
 
     deleteReplenishmentRule(id: string): Observable<void> {
-        return this.http.delete<void>(`${this.baseUrl}/reglas-reposicion/${id}`);
+        return this.http.delete<void>(`${this.baseUrl}/reglas-reposicion/${id}`).pipe(mapHttpError());
     }
 
     /** Dispara manualmente la creación de una OC real en microshopcompras a partir de la regla. */
     createPoFromRule(id: string): Observable<{ purchaseOrderId: string }> {
-        return this.http.post<{ purchaseOrderId: string }>(`${this.baseUrl}/reglas-reposicion/${id}/create-po`, {});
+        return this.http.post<{ purchaseOrderId: string }>(`${this.baseUrl}/reglas-reposicion/${id}/create-po`, {}).pipe(mapHttpError());
     }
 
     // ── Kardex por almacén ───────────────────────────────────────────
@@ -258,6 +259,6 @@ export class WmsApiService {
                 page: filtros.page ?? 0,
                 size: filtros.size ?? 20
             })
-        });
+        }).pipe(mapHttpError());
     }
 }

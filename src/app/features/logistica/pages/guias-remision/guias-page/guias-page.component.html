@@ -8,6 +8,15 @@
     </div>
   </app-page-header>
 
+  <!-- Errores de acciones de fila (enviar SUNAT / cambiar estado); los del alta salen dentro del drawer -->
+  @if (errorMsg() && !showModal()) {
+    <app-alert type="error" [message]="errorMsg()!" [dismissible]="true" (dismiss)="errorMsg.set(null)" />
+  }
+
+  @if (guiaFocoId()) {
+    <app-alert type="info" message="Mostrando la guía generada por el traslado entre almacenes. Limpia los filtros para ver todas." />
+  }
+
   <!-- Tabla (filtro de estado en el toolbar) -->
   <app-data-table
     [data]="guias()"
@@ -66,6 +75,9 @@
         <div class="form-field-wrapper">
           <label class="input-label">Motivo de Traslado *</label>
           <app-catalog-select tabla="MOTIVO_TRASLADO_SUNAT" formControlName="motivoTraslado" placeholder="— Seleccionar —" />
+          @if (greForm.value.motivoTraslado === '04') {
+            <p class="text-muted text-sm mt-1">Motivo 04: esta guía NO mueve stock. El stock lo gobierna el traslado entre almacenes (Inventario → Transferencias), que genera su propia guía al despacharse.</p>
+          }
         </div>
         <div class="form-field-wrapper">
           <label class="input-label">Modalidad *</label>
